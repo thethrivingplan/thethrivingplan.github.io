@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Nice List — Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,800;1,6..72,400&family=Libre+Franklin:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f7f3; --surface:#ffffff; --surface2:#eef2ec; --ink:#16211a; --muted:#4c5a50; --line:#d8ded4;
+  --green:#1d5c3f; --green-deep:#123d29; --rust:#b4502a; --amber:#e9a13b; --gold-bg:#fdf3e0;
+  --red:#9c2f22; --red-bg:#fbeae7; --ok-bg:#e6f2e9; --warn-bg:#fdf3e0; --grey-bg:#eceee9;
+  --shadow:0 10px 30px rgba(18,40,26,.10);
+  /* House compass slate — the standard family (Thriving Plan template):
+     slate #47596b, slate-deep #33424f, ring/tick blue-grey #8fa6ba,
+     slate-soft #e3e9ee, white face. The page keeps its own green theme;
+     only the compass wears slate. */
+  --slate:#47596b; --slate-deep:#33424f; --slate-line:#8fa6ba; --slate-soft:#e3e9ee; --slate-face:#ffffff;
+  --lane:104px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#101612; --surface:#18211b; --surface2:#1f2b22; --ink:#eef3ec; --muted:#a9b8ab; --line:#33443a;
+  --green:#5ec48f; --green-deep:#0d2417; --rust:#e08a63; --amber:#e9a13b; --gold-bg:#2b2110;
+  --red:#f09284; --red-bg:#331a16; --ok-bg:#17301f; --warn-bg:#2b2110; --grey-bg:#232c25; --shadow:0 10px 30px rgba(0,0,0,.4);}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Libre Franklin",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--green);text-underline-offset:3px}
+h1,h2,h3{font-family:"Newsreader",Georgia,serif;line-height:1.05;margin:0}
+/* Reserved compass lane — the standard layout: content column + a lane at
+   the right that the compass owns at every scroll position, so it never
+   overlaps page content in portrait or landscape. */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) var(--lane);max-width:1184px;margin:0 auto}
+.wrap{max-width:none;margin:0;padding:0 20px 120px;min-width:0}
+.lane{border-left:1px solid var(--line)}
+.lane-inner{position:sticky;top:0;height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;padding:10px 6px}
+.mono{font-family:"IBM Plex Mono",monospace}
+
+/* Free banner */
+.freebar{background:var(--green-deep);color:#fff;padding:18px 20px;text-align:center}
+.freebar .big{font-family:"Newsreader",serif;font-weight:800;font-size:clamp(24px,5vw,38px);letter-spacing:.01em}
+.freebar .sub{font-size:15px;opacity:.92;margin-top:4px}
+.freebar a{color:#ffd98a;font-weight:700}
+.freebar button{background:none;border:none;color:#ffd98a;font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0;font-family:inherit}
+
+header.hero{padding:44px 0 8px}
+.kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--rust)}
+h1{font-size:clamp(38px,7vw,64px);font-weight:800;margin:10px 0 14px}
+.lede{font-size:clamp(17px,2.4vw,20px);color:var(--muted);max-width:760px}
+.meta{margin-top:14px;font-size:13px;color:var(--muted)}
+.lens{margin:26px 0;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--green);padding:18px 20px;border-radius:6px}
+.lens h2{font-size:22px;margin-bottom:8px}
+.lens p{margin:6px 0;font-size:15px}
+.lens strong{color:var(--ink)}
+
+/* Summary table -> cards */
+.compare{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}
+.person-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.person-card .role{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--rust)}
+.person-card h3{font-size:27px}
+.person-card p{margin:0;font-size:14.5px;color:var(--muted)}
+.person-card .verdict{font-size:14px;color:var(--ink);background:var(--surface2);border-radius:6px;padding:10px 12px}
+.badge{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px}
+.badge.active{background:var(--ok-bg);color:var(--green)}
+.badge.held{background:var(--warn-bg);color:#8a5c00}
+@media (prefers-color-scheme: dark){.badge.held{color:var(--amber)}}
+.badge.nodoor{background:var(--red-bg);color:var(--red)}
+.person-card a.go{margin-top:auto;font-weight:700}
+
+/* Nav chips */
+.jumpnav{position:sticky;top:0;z-index:30;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.jumpnav a{border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600}
+.jumpnav a:hover{border-color:var(--green);color:var(--green)}
+
+section.profile{margin-top:56px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.profile-head{padding:28px 28px 8px}
+.profile-head .role{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--rust)}
+.profile-head h2{font-size:clamp(30px,5vw,44px);margin:6px 0 8px}
+.profile-head .aka{color:var(--muted);font-size:16px}
+.scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px 28px 6px}
+.score{background:var(--surface2);border-radius:8px;padding:14px}
+.score .lab{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+.score .val{font-family:"Newsreader",serif;font-size:19px;font-weight:700;margin-top:5px;line-height:1.25}
+.body{padding:10px 28px 28px}
+.body h3{font-size:23px;margin:26px 0 8px;padding-top:18px;border-top:1px solid var(--line)}
+.body h3:first-child{border-top:none;padding-top:6px}
+.body p,.body li{font-size:15.5px}
+.body ul{padding-left:20px;margin:8px 0}
+.body li{margin:6px 0}
+.src{font-size:12.5px;color:var(--muted)}
+.src a{color:var(--muted);font-weight:600}
+.cant{display:inline-block;background:var(--warn-bg);border:1px solid var(--amber);color:inherit;border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:700}
+.callout{border-radius:8px;padding:14px 16px;margin:14px 0;font-size:15px}
+.callout.warn{background:var(--warn-bg);border:1px solid var(--amber)}
+.callout.red{background:var(--red-bg);border:1px solid var(--red)}
+.callout.ok{background:var(--ok-bg);border:1px solid var(--green)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px}
+th{text-align:left;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.grade{font-weight:800;white-space:nowrap}
+.grade.sup{color:var(--green)} .grade.uns{color:var(--red)} .grade.unv{color:#8a5c00}
+@media (prefers-color-scheme: dark){.grade.unv{color:var(--amber)}}
+details{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:700;padding:13px 16px;font-size:15.5px}
+details .inner{padding:0 16px 16px}
+details .inner p,details .inner li{font-size:15px}
+.chartbox{background:var(--surface2);border-radius:8px;padding:16px;margin:14px 0}
+.chartbox h4{margin:0 0 4px;font-size:15px}
+.chartbox p{font-size:13px;color:var(--muted);margin:0 0 10px}
+.door{background:var(--surface2);border-radius:8px;padding:16px;margin:12px 0}
+.door p{margin:5px 0;font-size:15px}
+.hello{background:var(--gold-bg);border:1px dashed var(--amber);border-radius:8px;padding:16px;margin:14px 0}
+.hello h4{margin:0 0 6px;font-size:16px}
+.hello pre{white-space:pre-wrap;font-family:"Libre Franklin",sans-serif;font-size:14.5px;line-height:1.55;margin:8px 0;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px}
+.copybtn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
+.copybtn:active{transform:scale(.98)}
+.copied{font-size:13px;color:var(--green);font-weight:700;margin-left:8px}
+.openq{margin-top:56px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px 28px}
+.openq h2{font-size:28px;margin-bottom:10px}
+footer{margin-top:48px;color:var(--muted);font-size:13.5px}
+footer p{margin:6px 0}
+
+/* Compass — the house template (Thriving Plan page's compass), wearing the
+   standard slate family with a white face. It rests in the reserved lane at
+   the right — on a phone at the centre of the right column, mid-height —
+   and never overlaps page content. One tap on the button (or its Navigate
+   pill) toggles it; it stays open while you move; the centre button names
+   your last place and ONLY closes the compass, never jumps — going back
+   belongs to Previous part. No cardinal letters anywhere on the face. */
+.compass-launcher{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:60}
+#compassHint{display:none;width:84px;text-align:center;font-size:12px;font-weight:600;line-height:1.35;color:var(--ink);background:var(--surface);border:1px solid var(--slate-line);border-radius:6px;box-shadow:var(--shadow);padding:7px 6px}
+#compassHint.show{display:block}
+#compassBtn{width:66px;height:66px;border-radius:50%;border:2px solid var(--slate);background:var(--slate-face);color:var(--slate-deep);cursor:pointer;box-shadow:0 2px 10px rgba(20,32,44,.22);touch-action:manipulation;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;padding:0}
+#compassBtn:hover{border-color:var(--slate-deep);box-shadow:0 2px 14px rgba(20,32,44,.32)}
+#compassBtn svg{width:100%;height:100%;display:block}
+#compassX{font-size:24px;font-weight:700;line-height:1;color:var(--slate-deep)}
+#compassCaption{font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.05em;color:#fff;background:var(--slate-deep);border:1.5px solid var(--slate-deep);border-radius:999px;padding:3px 11px;cursor:pointer;box-shadow:var(--shadow);touch-action:manipulation;white-space:nowrap}
+#compassCaption:hover{background:var(--slate);border-color:var(--slate)}
+#compassBtn:focus-visible,#compassCaption:focus-visible,#compassClose:focus-visible,#compassPrev:focus-visible,.compass-card a:focus-visible{outline:2px solid var(--slate-deep);outline-offset:2px}
+#compass{position:fixed;right:calc(var(--lane) + 12px + env(safe-area-inset-right));top:50%;translate:0 -50%;z-index:59;display:none;width:min(420px,calc(100vw - var(--lane) - 36px))}
+#compass.open{display:block;animation:compassBloom .22s ease-out}
+@keyframes compassBloom{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.compass-card{background:var(--surface);color:var(--ink);border:2px solid var(--slate-deep);border-radius:14px;width:100%;padding:24px;box-shadow:var(--shadow);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto}
+.compass-card p{color:var(--muted);font-size:14px;margin:0 0 14px}
+.compass-card p strong{color:var(--ink)}
+.compass-card a{display:block;padding:12px 14px;border:1px solid var(--line);border-radius:8px;margin:8px 0;text-decoration:none;color:var(--ink);font-weight:600}
+.compass-card a:hover{border-color:var(--slate-deep)}
+.compass-card a .pg-name{display:block;font-weight:700}
+.compass-card a .pg-desc{display:block;font-size:13.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.compass-group{font-family:"Newsreader",Georgia,serif;font-size:21px;font-weight:700;color:var(--ink);margin:18px 0 4px}
+.compass-group:first-of-type{margin-top:2px}
+.compass-group.pages{margin-top:22px;padding-top:16px;border-top:1px solid var(--slate-line)}
+.compass-group-note{font-size:13.5px;color:var(--muted);margin:0 0 8px}
+#compassPrev{width:100%;text-align:left;background:var(--slate-soft);color:var(--slate-deep);border:1px solid var(--slate-line);border-radius:8px;padding:12px 14px;font-weight:700;cursor:pointer;font-family:inherit;font-size:15px;margin:0 0 6px}
+#compassPrev:hover{border-color:var(--slate-deep)}
+#compassPrev .prev-name{font-weight:600}
+#compassClose{width:100%;margin-top:14px;background:var(--slate-deep);color:#fff;border:2px solid var(--slate-deep);border-radius:8px;padding:13px;font-weight:800;cursor:pointer;font-family:inherit;font-size:15px}
+#compassClose:hover{background:var(--slate)}
+@media print{.lane,#compass{display:none!important}}
+
+@media (max-width:760px){
+  :root{--lane:76px}
+  #compassBtn{width:60px;height:60px}
+  #compassHint{width:66px;font-size:11px}
+  #compassCaption{font-size:11px;padding:3px 9px}
+  #compass{right:calc(8px + env(safe-area-inset-right));top:auto;bottom:calc(12px + env(safe-area-inset-bottom));translate:none;width:min(420px,calc(100vw - 16px))}
+  .compare{grid-template-columns:1fr}
+  .scoreboard{grid-template-columns:1fr;padding:14px 18px 4px}
+  .profile-head,.body{padding-left:18px;padding-right:18px}
+  .openq{padding:20px}
+  table,thead,tbody,tr,th,td{display:block;width:100%}
+  thead{display:none}
+  td{border-bottom:none;padding:6px 4px}
+  tr{border-bottom:1px solid var(--line);padding:8px 0}
+  .grade{white-space:normal}
+}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} #compass.open{animation:none} }
+
+/* ===== House uniform bar (Nov 14) — replaces the old right-lane compass ===== */
+.lane,#compass{display:none!important}
+.layout{grid-template-columns:minmax(0,1fr);max-width:880px}
+.wrap{padding:0 20px 48px}
+html{scroll-padding-bottom:124px}
+body{padding-bottom:118px}
+body[data-dock="top"]{padding-bottom:0;padding-top:118px}
+body[data-dock="left"]{padding-bottom:0;padding-left:92px}
+body[data-dock="right"]{padding-bottom:0;padding-right:92px}
+.hbar{position:fixed;z-index:80;left:0;right:0;bottom:0;display:flex;justify-content:space-evenly;align-items:flex-start;gap:8px;background:var(--surface);border-top:1.5px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(0,0,0,.12)}
+body[data-dock="top"] .hbar{bottom:auto;top:0;border-top:none;border-bottom:1.5px solid var(--line);padding-top:calc(8px + env(safe-area-inset-top));box-shadow:0 6px 20px rgba(0,0,0,.12)}
+body[data-dock="left"] .hbar,body[data-dock="right"] .hbar{top:0;bottom:0;flex-direction:column;justify-content:center;align-items:center;width:84px}
+body[data-dock="left"] .hbar{right:auto;border-top:none;border-right:1.5px solid var(--line)}
+body[data-dock="right"] .hbar{left:auto;border-top:none;border-left:1.5px solid var(--line)}
+.hstack{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;font:inherit;text-decoration:none;color:var(--ink);min-width:86px;padding:0}
+body[data-dock="left"] .hstack,body[data-dock="right"] .hstack{min-width:0}
+.hstack:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+.hdisc{width:52px;height:52px;border-radius:50%;background:var(--slate);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;border:2px solid var(--slate-deep);flex:none}
+.hdisc svg{width:26px;height:26px;fill:#fff;display:block}
+.hpill{font-size:11.5px;font-weight:700;background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;text-align:center;line-height:1.25;color:var(--ink)}
+.hpanel{position:fixed;z-index:90;left:10px;right:10px;bottom:104px;max-height:calc(100dvh - 130px);overflow:auto;background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.28);padding:16px}
+body[data-dock="top"] .hpanel{bottom:auto;top:104px}
+@media(min-width:700px){.hpanel{left:auto;width:440px}}
+.hpanel h3{margin:0 40px 6px 0;font-family:"Newsreader",Georgia,serif;font-size:24px;font-weight:700}
+.hpanel .x{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;font-size:16px}
+.hpanel .x:focus-visible,.foldbtn:focus-visible,.pg-list a:focus-visible,.pg-list button:focus-visible,.bookends button:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+.hpanel .small{font-size:14px;color:var(--muted);margin:0 0 6px}
+.foldbtn{width:100%;text-align:left;font:inherit;font-weight:700;font-size:16px;padding:13px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--ink);cursor:pointer;margin-top:10px;display:flex;justify-content:space-between}
+.pg-list{display:grid;gap:6px;margin-top:8px}
+.pg-list a,.pg-list .row{text-align:left;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:600;display:block}
+.pg-list a:hover{border-color:var(--green)}
+.pg-list button{text-align:left;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;font-weight:600}
+.pg-head{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 0;font-weight:700}
+.bookends{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.bookends button{font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 13px;cursor:pointer}
+.set-face{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:var(--surface);overflow:hidden}
+.set-face summary{font-size:16px;font-weight:700;padding:13px 15px;cursor:pointer;list-style:none}
+.set-face summary::-webkit-details-marker{display:none}
+.set-face summary .face{display:block;font-weight:400;font-size:14px;color:var(--muted);margin-top:3px}
+.set-face .sbody{padding:2px 15px 14px;border-top:1px solid var(--line)}
+.hpick{display:block;margin:6px 0;font-size:15px}
+#missing details{margin:0}
+@media print{.hbar,.hpanel{display:none!important}}
+</style>
+</head>
+<body id="top">
+
+<div class="freebar">
+  <div class="big">Free — always free.</div>
+  <div class="sub">This page is <button id="offlineBtn" type="button">available offline</button> — tap that to download a copy and keep it. No ads. No account. No cost, ever.</div>
+</div>
+
+<div class="layout">
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">The Nice List · Deep Dive · Research dated 7 November 2026</div>
+  <h1>Three people, dug into properly.</h1>
+  <p class="lede">These are the three names the first record-check put on the nice list: <strong>Laura Lynne Jackson</strong>, the medium who passed Windbridge's blinded certification screening and was one of 20 certified mediums in the 2015 quintuple-blind study whose group result was positive; <strong>Daniel Browning Smith</strong>, whose flexibility is Guinness-documented; and <strong>Scott Flansburg</strong>, whose calculation speed is Guinness-documented. This page goes one layer deeper on each — their story, what the record actually proves, how the ability is explained, what they're doing now, and the public door to reach them, where one exists.</p>
+  <p class="meta">Research only — nobody was contacted for this page. Every fact below carries its source. Anything the research could not confirm is printed as <span class="cant">cannot-verify</span>, never filled in.</p>
+</header>
+
+<div class="lens">
+  <h2>How to read these profiles</h2>
+  <p><strong>Results and mechanism are graded separately.</strong> A documented result — a record set, a study published — stands on its own shelf. <em>Why</em> it happened is a second, separate question, and it gets its own grade.</p>
+  <p><strong>Skeptical claims get graded too.</strong> “It was just cold reading” is a claim, and it has to fit the specific case — a blinded phone protocol is not a stage show. Each skeptical explanation below is marked <strong>supported</strong>, <strong>unsupported</strong>, or <strong>unverifiable</strong> against that person's actual record.</p>
+  <p><strong>Fit notes are analysis, not their claims.</strong> Where a profile says what someone could contribute to a community plan, that is our reading of the record, labelled as such — not something they said or promised.</p>
+</div>
+
+<nav class="jumpnav" aria-label="Jump to a person">
+  <a href="#jackson">Laura Lynne Jackson</a>
+  <a href="#smith">Daniel Browning Smith</a>
+  <a href="#flansburg">Scott Flansburg</a>
+  <a href="#open-questions">Open questions</a>
+  <a href="#missing">What are we missing?</a>
+  <a href="#bottom">Bottom ↓</a>
+</nav>
+
+<div class="compare">
+  <article class="person-card">
+    <span class="role">Psychic medium</span>
+    <h3>Laura Lynne Jackson</h3>
+    <span class="badge active">● Active now · public doors open</span>
+    <p><strong>Strongest verified result:</strong> Passed the Windbridge Institute's 8-step screening, including blinded phone readings, in 2011 — and was one of 20 certified mediums in the 2015 quintuple-blind study.</p>
+    <div class="verdict"><strong>Read it carefully:</strong> the 2015 result is a <em>group</em> result across 20 mediums. No Jackson-specific score has ever been published.</div>
+    <a class="go" href="#jackson">Full profile ↓</a>
+  </article>
+  <article class="person-card">
+    <span class="role">Contortionist · “Rubberboy”</span>
+    <h3>Daniel Browning Smith</h3>
+    <span class="badge nodoor">● No public door found · no verified current activity</span>
+    <p><strong>Strongest verified result:</strong> Guinness-official — fastest entry into a locked straitjacket, <strong>2 min 8 sec</strong>, 16 Aug 1999. Seven Guinness records are widely reported; only about four can be individually named from accessible sources.</p>
+    <div class="verdict"><strong>Mechanism:</strong> hypermobile Ehlers-Danlos syndrome — medically coherent, self-reported with a physician commentator on ABC News; no published clinical case on Smith himself.</div>
+    <a class="go" href="#smith">Full profile ↓</a>
+  </article>
+  <article class="person-card">
+    <span class="role">Mental calculator · “The Human Calculator”</span>
+    <h3>Scott Flansburg</h3>
+    <span class="badge active">● Active now · booking form open</span>
+    <p><strong>Strongest verified result:</strong> Guinness-listed “Fastest Human Calculator” (2001 &amp; 2003 books) — added 38 to itself <strong>36 times in 15 seconds</strong>, 27 Apr 2000, Wembley.</p>
+    <div class="verdict"><strong>Mechanism:</strong> a teachable method — left-to-right addition, number patterns, the “power of 9s” — plus practice. That is his own claim, and it is why he can sell it as a course.</div>
+    <a class="go" href="#flansburg">Full profile ↓</a>
+  </article>
+</div>
+
+<!-- ============ JACKSON ============ -->
+<section class="profile" id="jackson">
+  <div class="profile-head">
+    <div class="role">Profile 1 · Psychic medium</div>
+    <h2>Laura Lynne Jackson</h2>
+    <p class="aka">Former Long Island high-school English teacher · author of two confirmed NYT bestsellers (<em>Guided</em>, 2025, is the third book) · Windbridge Certified Research Medium since 2011 · ~200K Instagram followers</p>
+  </div>
+  <div class="scoreboard">
+    <div class="score"><div class="lab">Results layer</div><div class="val">Passed blinded screening; group study result positive</div></div>
+    <div class="score"><div class="lab">Mechanism layer</div><div class="val">Survival of consciousness — not accepted by mainstream science</div></div>
+    <div class="score"><div class="lab">Right now</div><div class="val">New book <em>Guided</em> (11 Nov 2025); Omega workshops 2025, 2026 &amp; 2027</div></div>
+  </div>
+  <div class="body">
+    <h3>Her story</h3>
+    <p>In her own introduction: “My name is Laura Lynne, I am a wife, a mother of three, a teacher — and a psychic medium.” <span class="src">Source: <a href="http://lauralynnejackson.com/events/" target="_blank" rel="noopener">her official site</a></span></p>
+    <p>In a 2025/26 interview she describes childhood experiences she didn't know were unusual — “I would see people in colors” — and sensing her grandfather's passing at age 11 while swimming with her brother and sister. Book summaries of <em>The Light Between Us</em> add that the gift, in her telling, runs in her family; that she at times shut the ability down; and that she studied English literature, including at Oxford, before teaching. <span class="src">Sources: <a href="https://famouspsychicmediums.com/episodes/psychic-medium-and-author-laura-lynne-jackson-talking-with-natasha-34/" target="_blank" rel="noopener">interview transcript</a></span></p>
+    <p>The turning point was a twenty-year double life: by day, a full-time high-school English teacher on Long Island; in private, readings. She was certified by the Forever Family Foundation (a grief-support nonprofit) in 2005, then by the Windbridge Institute in 2011, then wrote <em>The Light Between Us</em> (Dial Press, 27 Oct 2015) — a <em>New York Times</em> bestseller, since translated into more than 20 languages and sold in over 35 countries. <em>Signs: The Secret Language of the Universe</em> followed on 18 Jun 2019, also a NYT bestseller. She lives on Long Island with her husband Garrett, an attorney, and three children. <span class="src">Sources: <a href="https://www.penguinrandomhouse.com/books/251432/the-light-between-us-by-laura-lynne-jackson/" target="_blank" rel="noopener">Penguin Random House</a> · <a href="https://www.penguinrandomhouse.com/books/554649/signs-by-laura-lynne-jackson/" target="_blank" rel="noopener">Signs</a> · <a href="https://www.eomega.org/workshops/teachers/laura-lynne-jackson" target="_blank" rel="noopener">Omega Institute bio</a></span></p>
+
+    <h3>Results layer — what the record actually shows</h3>
+    <p><strong>The Windbridge certification, honestly described.</strong> Before joining Windbridge research, each medium is screened over several months through 8 steps: (1) written questionnaire, (2) personality/psychological tests, (3) phone interview with an existing certified medium, (4) phone interview with a Windbridge investigator, (5) <strong>two blinded phone readings</strong>, (6) mediumship research training, (7) human-research-subjects training, (8) grief training. Only Step 5 is a performance test — the other seven are screening, interviews, and training. Beischel's own account says certification cost the Institute $7,000–$10,000 per hopeful, one in four washed out, and about 20 survived. Jackson's publisher states she “underwent and passed” the process in 2011. <span class="src">Sources: <a href="https://tracibray.com/mediumship-research" target="_blank" rel="noopener">the 8 steps</a> · <a href="https://psi-encyclopedia.spr.ac.uk/articles/windbridge-research-center/" target="_blank" rel="noopener">Psi Encyclopedia</a> · <a href="https://www.penguin.co.nz/authors/laura-lynne-jackson" target="_blank" rel="noopener">Penguin NZ</a></span></p>
+    <div class="callout warn"><strong>No individual score exists in public.</strong> No source found publishes Jackson's own accuracy scores from any of this. <span class="cant">cannot-verify any Jackson-specific score</span> — what exists is the group's result, below.</div>
+    <p><strong>The 2015 quintuple-blind study</strong> (Beischel, Boccuzzi, Biuso &amp; Rock, <em>EXPLORE</em> 11(2):136–142): 20 Windbridge Certified Research Mediums performed 86 readings by phone under blinded conditions — mediums, raters, and experimenters all blinded. Published results: estimated accuracy of target vs decoy readings p=.05, d=0.49 (n=27); calculated accuracy p=.002, d=0.75 (n=31); hits vs misses p&lt;.0001 and p=.002; global scores p=.001, d=0.57 (n=58); sitters selecting their target reading over a decoy p=.01 (n=58). The authors concluded that because normal sensory sources were eliminated, “a non-local source (however controversial) remains the most likely explanation.” <span class="src">Source: <a href="https://pubmed.ncbi.nlm.nih.gov/25666383/" target="_blank" rel="noopener">PubMed abstract</a></span></p>
+
+    <div class="chartbox">
+      <h4>Inside the 2015 study: specific-question accuracy by topic</h4>
+      <p>Target readings vs decoy readings, four scored sections (n=31). Overall: targets 52.8% ±3.9% vs decoys 36.6% ±3.8% (p=.002, d=.75). Per-topic decoy figures were not published in sources read, so the decoy line shown is the overall decoy average. This is a group result for 20 mediums — it does not isolate Jackson.</p>
+      <svg viewBox="0 0 680 250" width="100%" role="img" aria-label="Bar chart: personality 67 percent, physical description 53.9, hobbies 49.4, cause of death 41.3, against a decoy average of 36.6 percent">
+        <line x1="180" y1="10" x2="180" y2="205" stroke="var(--line)"/>
+        <line x1="180" y1="205" x2="650" y2="205" stroke="var(--line)"/>
+        <!-- decoy avg line at 36.6% -> x = 180 + 36.6*4.2 = 334 -->
+        <line x1="334" y1="10" x2="334" y2="205" stroke="var(--rust)" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="340" y="22" font-size="12" fill="var(--rust)" font-weight="700">Decoy average 36.6%</text>
+        <!-- bars scale: 4.2px per % -->
+        <text text-anchor="end" x="168" y="48" font-size="13" fill="var(--ink)">Personality</text>
+        <rect x="180" y="32" width="281" height="24" fill="var(--green)"/><text x="468" y="48" font-size="13" font-weight="700" fill="var(--ink)">67.0%</text>
+        <text text-anchor="end" x="168" y="94" font-size="13" fill="var(--ink)">Physical description</text>
+        <rect x="180" y="78" width="226" height="24" fill="var(--green)"/><text x="413" y="94" font-size="13" font-weight="700" fill="var(--ink)">53.9%</text>
+        <text text-anchor="end" x="168" y="140" font-size="13" fill="var(--ink)">Hobbies</text>
+        <rect x="180" y="124" width="207" height="24" fill="var(--green)"/><text x="394" y="140" font-size="13" font-weight="700" fill="var(--ink)">49.4%</text>
+        <text text-anchor="end" x="168" y="186" font-size="13" fill="var(--ink)">Cause of death</text>
+        <rect x="180" y="170" width="173" height="24" fill="var(--green)"/><text x="360" y="186" font-size="13" font-weight="700" fill="var(--ink)">41.3%</text>
+        <text x="180" y="230" font-size="11" fill="var(--muted)">0%</text><text x="385" y="230" font-size="11" fill="var(--muted)">50%</text><text x="610" y="230" font-size="11" fill="var(--muted)">100%</text>
+      </svg>
+      <p class="src">Data: <a href="https://newthinkingallowed.org/correlating-mediums-accuracy-with-five-facets-of-mindfulness-julie-beischel/" target="_blank" rel="noopener">broken-out study data via New Thinking Allowed</a></p>
+    </div>
+
+    <p><strong>A documented notable reading (anecdotal, not controlled).</strong> In Nov 2025, podcaster Nora McInerny devoted an episode to a reading Jackson gave her the previous year, roughly ten years after her husband Aaron's death — including Jackson relaying that a pregnancy McInerny lost just before Aaron died “was never meant for this world, but was meant for him on the other side,” as recounted by McInerny herself. That is a sitter's testimonial, not a blinded or scored reading. Jackson also appears in Netflix's <em>Surviving Death</em> and History's <em>The UnXplained</em> per promoter bios; episode-level detail is <span class="cant">cannot-verify</span> from sources read. <span class="src">Source: <a href="https://feelingsand.co/podcasts/thanks-for-asking/talking-to-my-dead-husband-with-psychic-medium-laura-lynne-jackson/" target="_blank" rel="noopener">Thanks for Asking podcast</a></span></p>
+
+    <h3>Mechanism layer — her explanation, and the criticism at full size</h3>
+    <p><strong>Her explanation:</strong> psychic ability reads a living person's energy field/aura (clairvoyance, clairaudience, clairsentience); mediumship connects with the consciousness of the deceased, which she distinguishes from psychic reading; the dead communicate through “signs” and a “Team of Light” — loved ones, guides, “God energy.” Consciousness, in her account, is non-local and survives bodily death. Windbridge's own framing is the narrower term “anomalous information reception.” <span class="src">Sources: <a href="https://www.shortform.com/podcast/episode/on-purpose-with-jay-shetty-2024-05-13-episode-summary-laura-lynne-jackson-how-to-know-what-your-inner-voice-really-means-4-steps-to-tap-into-your-own-psychic-abilities" target="_blank" rel="noopener">Jay Shetty episode summary</a> · <a href="https://skeptiko.com/51-dr-julie-beischel-responds-to-critics-of-psychic-medium-research/" target="_blank" rel="noopener">Beischel on AIR</a></span></p>
+    <p><strong>The strongest criticism, printed whole:</strong></p>
+    <ul>
+      <li><strong>Scientific consensus:</strong> “There is no reliable evidence that mediums can communicate with the dead; reported successes are generally attributed to cold reading, the Barnum effect, selective reporting, sensory leakage or fraud.”</li>
+      <li><strong>Certification has no mainstream standing:</strong> Windbridge and Forever Family Foundation screening procedures “are not recognised by mainstream scientific or professional bodies.”</li>
+      <li><strong>Named critics</strong> — Richard Wiseman, Ray Hyman, and skeptical organisations — argue high-profile studies suffered inadequate blinding, optional stopping, biased scoring, and insufficient guards against sensory leakage and fraud; positive results concentrate in specialist parapsychology journals (<em>EXPLORE</em> published both key Windbridge papers) rather than general scientific literature.</li>
+      <li><strong>Even the proponent-side meta-analysis concedes weakness:</strong> Tressoldi et al. (2021) reported “a small but statistically significant effect, while noting heterogeneity and the possibility of publication bias.”</li>
+      <li><strong>Survival vs “super-psi” is undecidable even on proponents' terms:</strong> in earlier triple-blind work, a high-level psychic ability in the living “masquerading as discarnate communications could not be ruled out” — so even a real anomaly would not prove the <em>dead</em> are the source, which is Jackson's specific claim.</li>
+    </ul>
+    <p class="src">Sources: <a href="https://en.wikipedia.org/wiki/Mediumship_studies" target="_blank" rel="noopener">Mediumship studies overview</a> · <a href="https://psi-encyclopedia.spr.ac.uk/articles/julie-beischel/" target="_blank" rel="noopener">Psi Encyclopedia — Beischel</a> · <a href="https://www.qcc.cuny.edu/socialSciences/ppecorino/PHIL_of_RELIGION_TEXT/CHAPTER_5_ARGUMENTS_EXPERIENCE/Medium-SchwartzStudy.htm" target="_blank" rel="noopener">Hyman's critique</a></p>
+
+    <details>
+      <summary>Skeptical explanations, graded as claims against her specific case</summary>
+      <div class="inner">
+        <table>
+          <thead><tr><th>Skeptical claim</th><th>Grade</th><th>Basis</th></tr></thead>
+          <tbody>
+            <tr><td>Cold reading explains her Windbridge results</td><td class="grade uns">Unsupported</td><td>Readings were by phone, sitters absent/blinded, a proxy used, no feedback channel documented in the protocol.</td></tr>
+            <tr><td>Cold reading / Barnum effect explains her private &amp; gallery readings</td><td class="grade unv">Unverifiable</td><td>No blind-scored transcripts of her commercial or gallery readings were found; the McInerny reading is a retrospective testimonial.</td></tr>
+            <tr><td>Subjective validation / rater bias inflates the 2015 result</td><td class="grade sup">Supported as a live risk — not proven to explain the effect away</td><td>Sitters scored their own readings, mitigated by blinded target-vs-decoy forced choice (p=.01); Hyman/Wiseman document this failure mode in predecessor studies.</td></tr>
+            <tr><td>Sensory leakage / experimenter cueing</td><td class="grade uns">Unsupported as a demonstrated flaw</td><td>The design's stated purpose was eliminating cueing; no independent replication or raw-data audit by mainstream labs was found — so independent checking is also unverifiable.</td></tr>
+            <tr><td>Fraud / “hot reading” by Jackson</td><td class="grade uns">Unsupported</td><td>No allegation, complaint, or evidence against Jackson specifically was found; blinded sitters were anonymous to the mediums.</td></tr>
+            <tr><td>Publication bias explains the literature's positivity</td><td class="grade sup">Supported</td><td>Conceded as possible in the proponent meta-analysis; both key papers are in <em>EXPLORE</em>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <h3>Current work, 2024–2026</h3>
+    <ul>
+      <li><strong>New book:</strong> <em>Guided: The Secret Path to an Illuminated Life</em>, Dial Press, 11 Nov 2025, ISBN 9780593729571. Launch events included a free virtual pre-release event (3 Nov 2025), Greenvale NY (10 Nov), and The Strand, NYC (11 Nov). Audible lists all three of her books as NYT bestsellers — the NYT-list claim for <em>Guided</em> itself is publisher/retailer-asserted and <span class="cant">cannot-verify</span> against the NYT list directly. <span class="src">Source: <a href="https://www.booksamillion.com/p/Guided/Laura-Lynne-Jackson/9780593729571" target="_blank" rel="noopener">Books-A-Million listing</a></span></li>
+      <li><strong>Teaching:</strong> Omega Institute weekend “An Illuminated Life,” 12–14 Sep 2025, Rhinebeck NY, repeated Sep 2026 to large hall audiences; a further Omega workshop is already promoted for 24–26 Sep 2027. Paid webinar “Connecting With Your Team of Light,” 26 Feb 2025, $99.</li>
+      <li><strong>Conferences/media:</strong> billed speaker at PSI Games, 31 Jul–2 Aug 2026, Charlotte NC.</li>
+      <li><strong>Her model is teach-the-method:</strong> <em>Signs</em> and <em>Guided</em> are how-to books for readers to perceive signs themselves, plus recurring workshops — while her one-to-one reading waitlist is closed (below), pushing demand toward group teaching.</li>
+    </ul>
+
+    <h3>Conduct record, to Nov 2026</h3>
+    <ul>
+      <li><strong>Helping work:</strong> board member of the Forever Family Foundation — “a nonprofit, science-based organization dedicated to helping people in grief, where she volunteers her time and services” — and of the Rhine Research Center. A Rhine fundraiser raffle (draw 21 Jan 2027) offers a one-hour phone reading with her as a prize, all proceeds to the Rhine, noting her “waiting list has been closed for years and she's not accepting new clients.” <span class="src">Sources: <a href="https://www.eomega.org/workshops/teachers/laura-lynne-jackson" target="_blank" rel="noopener">Omega bio</a> · <a href="https://ymlp.com/z16Hrd" target="_blank" rel="noopener">Rhine raffle</a></span></li>
+      <li><strong>Readings access, in her own site's words:</strong> “I am no longer able to add new clients and have had to close my wait list… my current wait list is years long… I cannot energetically do more than a few readings per week.” <span class="src">Source: <a href="https://lauralynnejackson.com/schedule-a-reading/" target="_blank" rel="noopener">her site</a></span></li>
+      <li><strong>She is the victim in the one scam story found:</strong> on 11 Dec 2025 she warned followers about a spoofed email soliciting investment-account details for “thematic trading,” stamped “IT'S A SCAM!”, with phishing-reporting instructions.</li>
+      <li><strong>Adverse record: none found.</strong> Searches for controversy, complaint, lawsuit, or scam attaching to Jackson herself returned no case, regulator action, or credible complaint. That is “none found in web sources searched,” not proof none exists.</li>
+    </ul>
+    <div class="callout warn"><strong>Site anomaly — flagged, not an accusation:</strong> when researchers fetched her official site's events page on 7 Nov 2026, the returned text was heavily interleaved with unrelated online-casino affiliate links — consistent with SEO-spam injection or a compromised/parked page version. The cause, and whether a human visitor sees the same content, is <span class="cant">cannot-verify</span>.</div>
+
+    <h3>Public doors — research only, nobody contacted</h3>
+    <div class="door">
+      <p><strong>Speaking (from her own site):</strong> Harry Walker Agency — <a href="mailto:info@harrywalker.com">info@harrywalker.com</a>, cc <a href="mailto:LLJinformation@gmail.com">LLJinformation@gmail.com</a>. Her page stresses: “This is only for speaking engagements, NOT reading requests.”</p>
+      <p><strong>Publicity / media:</strong> Michelle Jasmine, Penguin Random House — <a href="mailto:mjasmine@penguinrandomhouse.com">mjasmine@penguinrandomhouse.com</a></p>
+      <p><strong>Readings:</strong> no door — waitlist closed, no new clients.</p>
+      <p class="src">Source for both doors: <a href="https://lauralynnejackson.com/book-laura-lynne-jackson/" target="_blank" rel="noopener">lauralynnejackson.com/book-laura-lynne-jackson</a>. A third-party bureau also lists her but states a listing “does not imply an agency affiliation” — the Harry Walker door is the one she publishes herself.</p>
+    </div>
+
+    <div class="hello">
+      <h4>Draft hello — written, NOT sent</h4>
+      <p style="font-size:14px;margin:0">One person at a time, through the door she publishes, with the reason it's her in the first lines. No sequence, no follow-up chase — silence is a complete answer.</p>
+      <pre id="hello-jackson">Subject: Your grief work, and a free community plan
+
+Hello,
+
+I'm writing from the Thriving Plan — a free, always-free community plan, built in the open. We keep a public record-check of people whose work demonstrably helps people, graded on the documented record: results on one shelf, explanations on another, criticism printed at full size beside both.
+
+Your record is why this note exists: the Windbridge blinded screening you passed in 2011, the group study that followed, and the grief work — the Forever Family Foundation board, the years of readings behind a closed waitlist — are all on that record, with the contest over the science printed right beside them, because that's how the page treats everyone.
+
+If it ever interests you, the door is open — a conversation, a workshop idea, or nothing at all. No ask attached to this note, and no follow-up if we don't hear back.
+
+The plan: https://thethrivingplan.fwh.is
+
+— The Thriving Plan team</pre>
+      <button class="copybtn" data-copy="hello-jackson" type="button">Copy this draft</button><span class="copied" hidden>Copied ✓</span>
+    </div>
+
+    <h3>Fit notes — <em>analysis, not Jackson's claims</em></h3>
+    <p>Her concrete contribution to a community plan would be <strong>grief-work facilitation and a tested-medium perspective</strong>: a structured vocabulary for continuing bonds with the dead (signs, “Team of Light”) that her audiences demonstrably use for coping — Omega's own clip has her advising listeners to invite grievers to “tell me about your loved one… tell me a story” rather than fix the grief; experience running large, emotionally intense group sessions; and reach (three bestsellers, ~200K followers). <strong>Risk note:</strong> her central factual claim — communication with the dead — is rejected by mainstream science (above). Any community use should frame her as grief-support / spiritual practice, not validated science, and should never promise contact with specific deceased people.</p>
+  </div>
+</section>
+
+<!-- ============ SMITH ============ -->
+<section class="profile" id="smith">
+  <div class="profile-head">
+    <div class="role">Profile 2 · Contortionist</div>
+    <h2>Daniel Browning Smith</h2>
+    <p class="aka">“Rubberboy” · born 8 May 1979, Meridian, Mississippi · co-host of History's <em>Stan Lee's Superhumans</em> · 5′8″, renowned among peers for frontbending, backbending, and dislocations</p>
+  </div>
+  <div class="scoreboard">
+    <div class="score"><div class="lab">Results layer</div><div class="val">1 record verified on Guinness's own site; ~4 of 7 named anywhere</div></div>
+    <div class="score"><div class="lab">Mechanism layer</div><div class="val">Hypermobile EDS + years of formal training</div></div>
+    <div class="score"><div class="lab">Right now</div><div class="val">No verified activity found, 2024–2026</div></div>
+  </div>
+  <div class="body">
+    <h3>His story</h3>
+    <p>The emergence story is told consistently: inspired by contortionists from age four, he “began to jump off the top bunk bed and land in a straddle split, much to the amazement of his family,” and street-performed in his teens. At 18 he joined the Bindlestiff Family Cirkus, then trained under Master Lu Yi at the San Francisco School of Circus Arts. <span class="cant">cannot-verify</span> the exact start: ABC News has him saying “I joined a circus when I was 17,” and some bios say he ran away at 17 to Ward Hall's sideshow — age (17 vs 18) and first troupe (Bindlestiff vs Ward Hall) conflict across sources. <span class="src">Sources: <a href="https://en.wikipedia.org/wiki/Daniel_Browning_Smith" target="_blank" rel="noopener">Wikipedia biography</a> · <a href="https://www.mycentraloregon.com/2015/03/12/rare-medical-condition-is-secret-to-contortionists-ability/" target="_blank" rel="noopener">ABC News, syndicated</a></span></p>
+    <p>The career that followed: NBA halftime acts, Cirque du Soleil's <em>Solstrom</em>, and a long screen résumé — <em>Carnivàle</em> (Rollo the Rubberboy), <em>CSI</em> (Sqweegel, the contortionist killer, 2010), <em>CSI: NY</em>, <em>Monk</em>, <em>Kiss Kiss Bang Bang</em> (2005), <em>You Don't Mess with the Zohan</em> (2008), <em>Paranormal Activity 3</em> stunt work — plus co-hosting/narrating <em>Stan Lee's Superhumans</em> (2010–2014) and reaching the Vegas round of <em>America's Got Talent</em> season 2 (2007).</p>
+
+    <h3>Results layer — the seven Guinness records, as far as sources allow</h3>
+    <div class="callout ok"><strong>Verified on Guinness's own site (1 of 7):</strong> Fastest time to enter a locked straitjacket — <strong>2 min 8 sec</strong>, 16 Aug 1999, Hollywood, on the set of <em>Guinness World Records: Primetime</em>. <span class="src">Source: <a href="https://www.guinnessworldrecords.com/world-records/74649-fastest-time-to-enter-a-locked-straitjacket" target="_blank" rel="noopener">guinnessworldrecords.com</a></span></div>
+    <ul>
+      <li><strong>Most Flexible Man (2007)</strong> — “the record he wanted the most… for dislocating both legs and arms and turning his torso 180 degrees,” per his own site's bio.</li>
+      <li><strong>Most Contortionists in a Box</strong> — set after the straitjacket record, per his bio. A 2008 listing gives the solo box he performed with: an 18-gallon box, 13.5″ × 16″ × 19.5″.</li>
+      <li><strong>Fastest time to pass through an unstrung tennis racket three times</strong> — set in China, per his official site; ABC News independently describes him as holding this record and “most flexible person.” The time value was not found — <span class="cant">cannot-verify the time</span>.</li>
+      <li><strong>The remaining three:</strong> the total of seven is stated by Wikipedia and his own site's branding (“7 Guinness World Records' Most Flexible Man”), and counts in older coverage grew over time (3 records in 2008). <span class="cant">The other three records could not be individually enumerated from any reliable source found — titles, dates, and values cannot-verify.</span> Whether all seven are still current (vs held historically) is also <span class="cant">cannot-verify</span> from Guinness's public site, which returned only the straitjacket listing. Low-quality pages inventing record titles were not used.</li>
+    </ul>
+    <p class="src">Sources: <a href="http://therubberboy.com/TV.php" target="_blank" rel="noopener">his official site</a> · <a href="https://www.oursportscentral.com/services/releases/rubberboy-to-appear-at-prairiethunder-game-saturday/n-3598595" target="_blank" rel="noopener">2008 sports listing</a></p>
+
+    <h3>Mechanism layer — a diagnosis, plus training</h3>
+    <p><strong>In his own words</strong> (ABC News <em>20/20</em>, Mar 2015): “I can dislocate both arms, both legs, turn my torso 180 degrees and all kinds of crazy stuff” — and the secret is Ehlers-Danlos syndrome: “It's a collagen disorder, and it makes me very, very flexible.” The segment included physician commentator Dr Michael Holick (Boston Medical Center / Boston University), estimating “probably one in 1,000 people have it.” Hypermobile EDS is one of 13 EDS types; affected people “often have extremely mobile joints which are vulnerable to dislocation and skin which is easily bruised,” many with severe pain (Tinkle et al. 2017).</p>
+    <div class="callout warn"><strong>Grade the diagnosis honestly:</strong> no primary medical record, imaging study, or case report on Smith himself was found. The hEDS diagnosis is documented as his consistent, long-standing self-report, amplified by news coverage — <strong>medically coherent and uncontradicted, but clinically <span class="cant">cannot-verify</span> from public sources.</strong></div>
+    <p><strong>Training is the other half — and a corrective to “born rubber.”</strong> hEDS is relatively common among contortionists due to tendon and ligament laxity, but extreme flexibility “often necessitates extensive conditioning and strength training to ensure stability and reduce the risk of long-term injury.” Smith's years under Master Lu Yi are the documented training component. <strong>The cost:</strong> he “experienced only moderate pain for most of his contortion career, but eventually had to give up performing as his condition progressed” — sourced to his own Facebook post, so treat it as single-chain, low-to-moderate confidence.</p>
+
+    <h3>Current work, 2024–2026</h3>
+    <div class="callout red"><strong>No verified current work found.</strong> Reference sources list his years active as 2002–2016. Targeted searches for 2024/2025/2026 interviews, appearances, or social accounts returned only namesakes, recycled viral listicles repeating his record count, and his static official website (content from the pre-2017 era). A claim on one low-quality source that he posts contortion content on TikTok and Instagram as of Nov 2025 is <span class="cant">cannot-verify</span> — no primary account or post was located. Historically he was a teacher/amplifier at scale — co-hosting a global TV series hunting for other “superhumans” — but currently, on public evidence, there is no book, course, tour, or active channel to point to.</div>
+
+    <h3>Conduct record, to Nov 2026</h3>
+    <ul>
+      <li><strong>Adverse record: none found for this person.</strong> Searches pairing his full name with lawsuit/arrest/controversy/complaint returned only unrelated namesakes — explicitly not him. No complaints about his performances or business conduct were found.</li>
+      <li><strong>Charity/education work: <span class="cant">cannot-verify any</span>.</strong> No foundation, charity partnership, or formal education program in his name was found. The closest documented helping contribution is his public disclosure of hEDS on national TV in 2015, which functioned as rare-disease awareness. Claims on low-quality bios that he is an active EDS advocate today are <span class="cant">cannot-verify</span>.</li>
+    </ul>
+
+    <h3>Public doors — stated plainly</h3>
+    <div class="door">
+      <p><strong>No public contact door was found.</strong> His official site, <a href="http://therubberboy.com/" target="_blank" rel="noopener">therubberboy.com</a>, says for corporate shows to “contact his booking office for rates and information” — but the fetched page publishes <strong>no email address, phone number, or contact form</strong>.</p>
+      <p>A third-party listing (BookingEventEntertainment, “The Rubberboy — Circus Act, Los Angeles, CA”) offers an enquiry route with “Fees: Contact for Pricing,” but its affiliation with Smith is <span class="cant">cannot-verify</span>, so it is not printed here as his door. No publisher or foundation door exists to list — no books or foundation were found.</p>
+      <p><strong>So there is no hello for Smith on this page.</strong> A shot needs a door the person published. Where no door exists, that's a fine answer too — he stays on the list, graded on his record, uncontacted.</p>
+    </div>
+
+    <h3>Fit notes — <em>analysis, not Smith's claims</em></h3>
+    <p>His concrete contribution would be <strong>the documented extreme-body record itself</strong>: a living demonstration that a genetic connective-tissue condition can be trained, with discipline, into world-record performance — useful for disability/difference-positive programming (a body that is medically “disordered” achieving elite performance, with the honest caveat that the same condition ended his performing career), circus-arts and physical-literacy inspiration for young performers, and EDS/hypermobility awareness. <strong>Practical caveat:</strong> with no verified current activity and no public contact door, he is the least actionable of the three — any plan depending on his participation needs a private-channel verification step first, and any live-performance expectation conflicts with the report that he gave up performing.</p>
+  </div>
+</section>
+
+<!-- ============ FLANSBURG ============ -->
+<section class="profile" id="flansburg">
+  <div class="profile-head">
+    <div class="role">Profile 3 · Mental calculator</div>
+    <h2>Scott Flansburg</h2>
+    <p class="aka">“The Human Calculator” — a name given by Regis Philbin · born 28 Dec 1963, Herkimer, New York · U.S. Air Force veteran · author of <em>Math Magic</em> (1993) and <em>Math Magic for Your Kids</em> (1998)</p>
+  </div>
+  <div class="scoreboard">
+    <div class="score"><div class="lab">Results layer</div><div class="val">Guinness-listed 2001 &amp; 2003; record set 27 Apr 2000</div></div>
+    <div class="score"><div class="lab">Mechanism layer</div><div class="val">Teachable method + practice — his own claim, and it holds up as one</div></div>
+    <div class="score"><div class="lab">Right now</div><div class="val">School assembly 6 Nov 2026; online course; Herkimer basketball foundation</div></div>
+  </div>
+  <div class="body">
+    <h3>His story</h3>
+    <p>The discovery, in his own repeated telling, happened at age nine: not paying attention in math class, asked to add four numbers on the blackboard, he added the columns <strong>left to right</strong> instead of right to left as taught — and solved it. He then kept a running tally of his family's groceries so his father could hand the cashier an exact check before the total was rung up, and began noticing that “the shapes and numbers of angles in numbers were clues to their values,” counting 0–9 on his fingers instead of 1–10. A fifth-grade teacher, Mr Mike Potter, later let him share his own carry-free multiplication method with the class — “it was screaming at me from off the board — I can't not see it.” <span class="src">Sources: <a href="https://en.wikipedia.org/wiki/Scott_Flansburg" target="_blank" rel="noopener">Wikipedia biography</a> · <a href="https://www.instagram.com/reel/Da3H0toAi4L/" target="_blank" rel="noopener">his own telling, Instagram</a></span></p>
+    <p>The chapter older bios omit: he “served over six years with the United States Air Force Office of Special Investigations working in the Tech Services Division supporting high-level investigative and intelligence operations” (2026 veterans-podcast description). Secondary bios add enlistment in 1982 after West Canada Valley High School, service to 1988 including Yokota, Japan — single-source-chain detail, moderate confidence. From ~1990 he used the ability in entertainment and education; in 1991 he co-created “The Human Calculator System” (study guide + cassettes) and appeared on the infomercial <em>Amazing Discoveries</em>. In 1999 he invented a 13-month “Human Calculator Calendar” using zero as a day, month, and year. TV peak: episode 1 of <em>Stan Lee's Superhumans</em> (History, 5 Aug 2010) and hosting <em>The Human Calculator</em> on H2 (Jan 2016). In 2019, with his father dying, he returned to Herkimer — which led to the basketball-history campaign below. <span class="src">Source: <a href="https://podcast.app/air-force-vet-scott-flansburg-the-recalibrated-podcast-s01e05-e441869888" target="_blank" rel="noopener">The Recalibrated podcast</a></span></p>
+
+    <h3>Results layer</h3>
+    <div class="callout ok"><strong>The Guinness record, best-documented form:</strong> “Scott Flansburg of Phoenix, Arizona, USA, correctly added a randomly selected two-digit number (38) to itself 36 times in 15 seconds without the use of a calculator on 27 April 2000 on the set of Guinness World Records in Wembley, UK.” The <em>Guinness Book of World Records</em> listed him as “Fastest Human Calculator” in <strong>2001 and 2003</strong> — the feat being to add the number more times in 15 seconds than someone could with a calculator. <span class="src">Sources: Guinness-derived wording reproduced in secondary material; restated by <a href="https://geeksaroundglobe.com/meet-the-fastest-human-calculator-who-shattered-a-guinness-world-record-with-his-mind-in-just-15-seconds" target="_blank" rel="noopener">2025 profiles</a> and <a href="https://en.wikipedia.org/wiki/Scott_Flansburg" target="_blank" rel="noopener">Wikipedia</a></span></div>
+    <ul>
+      <li><strong>Date conflict, flagged:</strong> one 2026 blog claims the record was set in 1990. 1990 is when his entertainment/education career began; the 27 Apr 2000 date is supported by every other source including the Guinness-derived wording. Treat the 1990 record date as <strong>erroneous</strong>.</li>
+      <li><strong>Televised self-beating (not shown as Guinness-listed):</strong> 26 Apr 2009, on Japanese primetime <em>Asahi's Otona no Sonata</em>, he broke his own record with 37 answers in 15 seconds.</li>
+      <li><strong>Breadth, televised and checkable in real time:</strong> he can mentally add, subtract, multiply, divide, and find square and cube roots almost instantly, with calculator accuracy — demonstrated across <em>Oprah</em>, <em>Ellen</em>, <em>The Tonight Show</em>, <em>Larry King Live</em>, <em>Today</em>, and <em>Good Morning America</em>. His own site adds that “his mental calculations are faster than his ability to speak the answers” — in the 15-second format, the bottleneck is speech, by his account.</li>
+      <li><strong>Independent context:</strong> the Mental Calculation World Cup — a specialist, non-promotional body — hosted him as a presenter and described him as “more an auditory than a visual calculator.” But no peer-reviewed laboratory verification of his speed was found: <span class="cant">cannot-verify any lab-grade independent replication</span>. The verification chain is Guinness adjudication plus decades of live TV demonstrations with audience-supplied numbers.</li>
+    </ul>
+
+    <h3>Mechanism layer — a method, not a mystery</h3>
+    <p><strong>His explanation:</strong> numbers should be learned 0–9, not 1–10; everything “goes back to the number nine” (Day 1 of his course is “The Power of 9's,” with digit-pattern and 9-check techniques); addition is done left to right; and with practice “everyone has the ability to do mental math.” His stated mission: “Why has it become so socially acceptable to be bad at math?… We have to change the attitude” — students should learn calculation methods rather than relying on table memorization. <span class="src">Sources: <a href="https://scottflansburg.com/become-a-human-calculator-course-student-edition/" target="_blank" rel="noopener">his course page</a> · <a href="https://scottflansburg.com/about-scott/" target="_blank" rel="noopener">about page</a></span></p>
+    <div class="callout warn"><strong>The TV brain-scan claim stays in this layer, not the results layer.</strong> <em>Stan Lee's Superhumans</em> Ep. 101 reported an fMRI scan while he calculated: activity in Brodmann area 44 was said to be absent, with activity instead higher and closer to the motor cortex. <strong>This was a television segment, not a peer-reviewed study</strong> — no paper was found. It is also internally inconsistent in retelling: in a Jul 2026 interview clip, Flansburg himself recounts researchers finding that “rather than one ‘math center’ lighting up, his whole brain activated, particularly an area called Broca's area (Area 44)… 12 other brain areas came online” — roughly the opposite emphasis. Grade: <strong>unverifiable as neuroscience</strong>; usable only as “a TV show scanned him and reported atypical activation.”</div>
+    <p><strong>The ordinary explanation, and why it doesn't debunk him:</strong> the record task is narrow and highly practicable — repeatedly adding 38 produces the sequence of multiples of 38, so the feat is partly rapid production of a memorised-pattern sequence at ~2.4 answers/sec, limited by speech. Forum-level critics make the same point about his other feats (cube roots via memorised cubes 1–9; division by 7 via the recurring 142857 cycle): “more down to good memory and lots of practice than any particular insight.” That reframes the mechanism as trained technique + memory — which is <em>compatible with Flansburg's own teachability claim</em>, and is exactly why his method works as a course. No fraud allegation against Flansburg was found.</p>
+
+    <h3>Current work, 2024–2026</h3>
+    <ul>
+      <li><strong>School touring — current and concrete:</strong> on 6 Nov 2026, video shows him giving a live assembly at Gansevoort Elementary, leading children in a start-from-zero counting exercise, “challenging students to ‘unlock the calculators in their minds.’” <span class="src">Source: <a href="https://www.facebook.com/reel/1439483474359260/" target="_blank" rel="noopener">Sentinel Media video</a></span></li>
+      <li><strong>Online course (his main scalable product):</strong> <em>Become a Human Calculator – Student Edition</em> — 14 hours, a 7-day curriculum (9s, addition/subtraction, cross-multiplication, squaring/roots/division, calendar algorithm), priced $197 (3-month) / $297 (1-year) / $397 (lifetime) at crawl time, rated 4.7/5 “based on 1,967 reviews,” claiming “65,217 currently enrolled” and subtitles in 109 languages. Enrolment and review figures are self-reported on a sales page — <span class="cant">cannot-verify</span>.</li>
+      <li><strong>The Counting Bee:</strong> he created The Counting Bee™, an annual STEM competition for K-12 students across public, private, charter, and home schools; inaugural competition 8 Nov 2018 in Arizona; format is 15-second rounds, random starting numbers, counting by a fixed number, difficulty rising by level. <span class="cant">No 2024–2026 edition, results, or registration page was found — cannot-verify the Bee is currently running</span>, despite “annual host and ambassador” remaining in his standard bio. Site: <a href="https://www.thecountingbee.org/" target="_blank" rel="noopener">thecountingbee.org</a></li>
+      <li><strong>Herkimer basketball work (now a major share of his public activity):</strong> founder/CEO of Herkimer Originals and its foundation; board member of the Herkimer 9 Foundation; owner/operator of the Herkimer Originals ABA team since 2021; the team competed in The Basketball Tournament's $1M winner-take-all event in 2024.</li>
+      <li><strong>Media 2026:</strong> <em>The Recalibrated</em> veterans podcast (12 Feb 2026), SuperTalk Mississippi radio (promoted 6 Mar 2026), Kim Alexis podcast clips (Jul 2026). Reach note: X/Twitter @HumanCalculator ~7K followers — modest social reach; his scale is institutional (schools, bureaus, course platform), not social-media-driven. He is also listed as an ambassador for World Maths Day in standard bios — current-edition participation <span class="cant">cannot-verify</span>.</li>
+    </ul>
+
+    <h3>Conduct record, to Nov 2026</h3>
+    <ul>
+      <li><strong>Helping work:</strong> four decades of school presentations since ~1990 — NASA, IBM, the Smithsonian, and the National Council of Teachers of Mathematics among institutional hosts — with the stated mission “to use education to elevate math confidence and self-esteem in adults and children.” The nonprofit Herkimer 9 Foundation aims “to revitalize this block back to 1891… a museum… a basketball/sports field house to host tournaments and events” for a declined former Erie Canal town. He is a U.S. Air Force veteran.</li>
+      <li><strong>The basketball-origin claim — disputed history, not misconduct:</strong> Flansburg campaigns that basketball was invented in Herkimer in 1890 by 16-year-old Lambert Will, tossing cabbages into peach baskets, a year before Naismith's Springfield game. The Basketball Hall of Fame's curator told the NYT “No comment” as “the official statement at this time”; a critical summary notes “No one can prove it. There is no paperwork, no official rules, and no direct connection between Will and Naismith.” Print it as a contested historical claim he advocates — not established fact, and not wrongdoing. <span class="src">Source: <a href="https://goodnewsplanet.com/who-really-invented-basketball-the-human-calculator-thinks-he-knows/" target="_blank" rel="noopener">NYT story, syndicated</a></span></li>
+      <li><strong>Marketing note (observable, not a complaint record):</strong> his course sales page uses high-pressure copy (“VALID ONLY FOR TODAY!!!”, countdown-style discount code, “results are guaranteed” with a 15-day refund) alongside the unverified enrolment claim. No consumer-protection action, lawsuit, or credible complaint against Flansburg was found.</li>
+      <li><strong>Adverse record otherwise: none found.</strong></li>
+    </ul>
+
+    <h3>Public doors — research only, nobody contacted</h3>
+    <div class="door">
+      <p><strong>His own site (the door to use first):</strong> booking form for corporate and school events — <a href="https://scottflansburg.com/speaking/" target="_blank" rel="noopener">scottflansburg.com/speaking</a></p>
+      <p><strong>Speakers bureaus (published contacts):</strong> Eagles Talent — <a href="mailto:info@eaglestalent.com">info@eaglestalent.com</a>, 973-313-9800 · Premiere Speakers Bureau — <a href="mailto:inquiries@premierespeakers.com">inquiries@premierespeakers.com</a>, 615-261-4000</p>
+      <p><strong>Organisation press contact, as published by the team itself:</strong> a Jun 2024 Herkimer Originals news release lists “Scott Flansburg, Herkimer Originals, (602) 999-0630.” Publisher: HarperCollins. Data-broker pages purporting to list his personal emails/phones were <em>not</em> used — they are not doors he published.</p>
+    </div>
+
+    <div class="hello">
+      <h4>Draft hello — written for his own booking form, NOT sent</h4>
+      <p style="font-size:14px;margin:0">A form he chose beats email — it never passes through a spam filter's suspicion. Short, plain, one link, the reason it's him up front. No follow-up chase.</p>
+      <pre id="hello-flansburg">Hello Scott,
+
+I'm writing from the Thriving Plan — a free, always-free community plan, built in the open. We keep a public record-check of people whose work demonstrably helps people, graded on the documented record.
+
+Your record is why this note exists: the Guinness record from Wembley in 2000 is on it, and so is what you've done with it since — four decades of school assemblies, Math Magic, and a method you insist anyone can learn. We saw the Gansevoort Elementary assembly this month. That "nobody should be proud of being bad at math" message is exactly the kind of knowledge-sharing the plan exists to spread.
+
+If a conversation about bringing that to more kids — through the plan's education work — ever interests you, the door is open. No ask attached, and no follow-up if we don't hear back.
+
+The plan: https://thethrivingplan.fwh.is
+
+— The Thriving Plan team</pre>
+      <button class="copybtn" data-copy="hello-flansburg" type="button">Copy this draft</button><span class="copied" hidden>Copied ✓</span>
+    </div>
+
+    <h3>Fit notes — <em>analysis, not Flansburg's claims</em></h3>
+    <p>His concrete contribution is <strong>mental-math education for kids, ready-made</strong>: a codified, teachable curriculum (left-to-right addition, 9-patterns, cross-multiplication, calendar algorithm) already packaged as a 7-day course, two HarperCollins books, and a school-assembly format he was still delivering in Nov 2026; a competition format (Counting Bee 15-second rounds) designed for K-12 — though a community plan should first confirm the Bee's current operating status; and an anti-“bad at math” confidence message aimed at self-esteem, with a track record of presenting to mainstream education bodies (NCTM, Smithsonian, NASA). He is the lowest-risk, highest-readiness of the three for an education-focused community program: the skill is ordinary science, demonstrable live, and he actively books school events through a public form.</p>
+  </div>
+</section>
+
+<!-- ============ OPEN QUESTIONS ============ -->
+<section class="openq" id="open-questions">
+  <h2>Open questions — printed, not papered over</h2>
+  <ol style="font-size:15.5px;padding-left:22px">
+    <li style="margin:8px 0"><strong>Jackson's individual Windbridge scores</strong> — only group data for 20 mediums is published in sources read. Also open: episode-level detail of her <em>Surviving Death</em> appearance, and <em>Guided</em>'s NYT-list placement verified from the NYT itself.</li>
+    <li style="margin:8px 0"><strong>Smith's full seven records</strong> — only the straitjacket record is on Guinness's public site; three more are named on his own site/ABC; three remain unnamed in reliable sources. Also open: the tennis-racket record's time, whether all seven are still current, any clinical documentation of his hEDS beyond self-report + news coverage, and <em>any</em> Smith activity, charity work, or working contact channel for 2024–2026.</li>
+    <li style="margin:8px 0"><strong>Flansburg's live programs</strong> — whether the Counting Bee and World Maths Day roles are active in 2024–2026; his course's claimed 65,217 enrolments and 1,967 reviews; any peer-reviewed verification of his speed or of the <em>Superhumans</em> fMRI claim.</li>
+    <li style="margin:8px 0"><strong>Smith's circus start</strong> — age 17 vs 18, Bindlestiff Family Cirkus vs Ward Hall's sideshow; sources conflict.</li>
+    <li style="margin:8px 0"><strong>The casino-spam text</strong> found in the fetch of Jackson's official events page on 7 Nov 2026 — cause unknown.</li>
+    <li style="margin:8px 0"><strong>Verification method, honestly:</strong> this research was gathered by web-index search/fetch (several pages crawled within minutes of reading on 7 Nov 2026); the live research browser failed to open tabs during the mission, so no claim here is marked “verified live in browser.”</li>
+  </ol>
+  <p style="font-size:15px">Bottom line from the research: Jackson and Flansburg are currently active teacher/amplifiers at scale — books, workshops, courses, school tours. Smith is a historically documented record-holder whose current availability could not be verified at all — treat him as inactive and unreachable on public evidence until proven otherwise.</p>
+</section>
+
+
+<!-- ============ WHAT ARE WE MISSING ============ -->
+<section class="openq" id="missing">
+  <details id="missing-door">
+    <summary>What are we missing?</summary>
+    <div class="inner">
+      <p style="font-size:15px">Whole fields have nothing to do with our lives, and what&rsquo;s broken in them stays invisible until the person living in them speaks. If this page missed something, got something wrong, or a different tool is what&rsquo;s really needed, say so &mdash; you&rsquo;re the expert on your field; we bring the treatment.</p>
+      <p style="font-size:15px"><a href="https://theposterboard.fwh.is" target="_blank" rel="noopener"><strong>Say it on the Poster Board &#8599;</strong></a> &mdash; public, no account needed. That&rsquo;s where missing pieces land, and where new pages start.</p>
+    </div>
+  </details>
+</section>
+
+<footer id="bottom">
+  <p><strong>Principal sources:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/25666383/" target="_blank" rel="noopener">PubMed — Beischel et al. 2015</a> · <a href="https://psi-encyclopedia.spr.ac.uk/articles/windbridge-research-center/" target="_blank" rel="noopener">Psi Encyclopedia — Windbridge</a> · <a href="https://en.wikipedia.org/wiki/Mediumship_studies" target="_blank" rel="noopener">Mediumship studies</a> · <a href="https://www.guinnessworldrecords.com/world-records/74649-fastest-time-to-enter-a-locked-straitjacket" target="_blank" rel="noopener">Guinness — Smith straitjacket record</a> · <a href="https://www.mycentraloregon.com/2015/03/12/rare-medical-condition-is-secret-to-contortionists-ability/" target="_blank" rel="noopener">ABC News — Smith &amp; EDS</a> · <a href="https://scottflansburg.com/about-scott/" target="_blank" rel="noopener">Flansburg — about</a> · <a href="https://lauralynnejackson.com/book-laura-lynne-jackson/" target="_blank" rel="noopener">Jackson — booking page</a></p>
+  <p>Part of The Thriving Plan's people watch — graded on the documented record, both shelves printed. Nobody was contacted in the making of this page; the two hellos above are drafts, marked as drafts, and sending any hello is a separate, deliberate step. <a href="#top">Back to top ↑</a></p>
+  <p>Copyleft: this page&rsquo;s text and design are shared under CC BY-SA 4.0 &mdash; copy it, print it, hand it on. Researched and written with AI help (Muse), checked against the sources linked on the page.</p>
+</footer>
+</div>
+
+
+</div>
+
+<!-- House uniform bar -->
+<nav class="hbar" aria-label="Page bar">
+  <a class="hstack" href="#missing" id="missing-stack"><span class="hdisc" aria-hidden="true">?!</span><span class="hpill">What are we missing</span></a>
+  <button class="hstack" type="button" id="nav-stack" aria-expanded="false"><span class="hdisc" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#fff" stroke-width="2"/><polygon points="20,6 23.5,20 20,34 16.5,20" fill="#fff"/><polygon points="6,20 20,16.5 34,20 20,23.5" fill="#fff" opacity=".5"/></svg></span><span class="hpill">Navigate</span></button>
+  <button class="hstack" type="button" id="set-stack" aria-expanded="false"><span class="hdisc" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span class="hpill">Settings</span></button>
+</nav>
+
+<div class="hpanel" id="nav-panel" role="dialog" aria-label="Go to" hidden>
+  <button class="x" type="button" data-hclose aria-label="Close navigation">✕</button>
+  <h3>Go to</h3>
+  <p class="small">Navigation only — settings live under Settings. Each door off this page opens in its own view, with its own address, so refreshing always reloads the page you are actually on.</p>
+  <div class="bookends"><button type="button" id="h-prev">← Previous part</button><button type="button" id="h-top">Top of page ↑</button><button type="button" id="h-bottom">Bottom of page ↓</button></div>
+  <p class="small" style="margin-top:10px">Last place: <strong id="h-last">Laura Lynne Jackson</strong> — tap a stack again or Close to stay where you are.</p>
+  <button class="foldbtn" type="button" id="fold-this-btn" aria-expanded="false">This page <span>Open ▸</span></button>
+  <div id="fold-this" hidden><div class="pg-list">
+        <button type="button" data-place="jackson">Laura Lynne Jackson</button>
+        <button type="button" data-place="smith">Daniel Browning Smith</button>
+        <button type="button" data-place="flansburg">Scott Flansburg</button>
+        <button type="button" data-place="open-questions">Open questions</button>
+        <button type="button" data-place="missing">What are we missing?</button>
+  </div></div>
+  <button class="foldbtn" type="button" id="fold-other-btn" aria-expanded="false">Other pages <span>Open ▸</span></button>
+  <div id="fold-other" hidden><div class="pg-list">
+        <a href="https://thethrivingplan.fwh.is" target="_blank" rel="noopener">The Thriving Plan ↗</a>
+        <a href="https://muse.ai/s/any-legal-case-the-record-qs6xc8xpohxpxmo/3Mz7y6LxZlpRvFjKrNn0KOpzMW44OTcYbNm-VJ4EkrU" target="_blank" rel="noopener">Any Legal Case — The Record ↗</a>
+        <a href="https://thethrivingplan.fwh.is/for-veterans-the-record.html" target="_blank" rel="noopener">For Veterans — The Record ↗</a>
+        <a href="https://thethrivingplan.fwh.is/the-thought-process.html" target="_blank" rel="noopener">The Thought Process ↗</a>
+        <a href="https://thethrivingplan.fwh.is/test-runs.html" target="_blank" rel="noopener">Test Runs — The Results ↗</a>
+        <a href="https://thethrivingplan.fwh.is/flights" target="_blank" rel="noopener">US Flights Grounded — November 13, 2026 ↗</a>
+        <a href="https://thethrivingplan.fwh.is/mkultra-and-mind-control-the-record.html" target="_blank" rel="noopener">MKUltra and Mind Control — The Record ↗</a>
+        <a href="https://muse.ai/s/my-dui-case-the-record-mxg6xc3xdxdh5xjxg/lI3LrVPdIODp8oddo6XOtXN563MXu5VJS-DLgl-AEIk" target="_blank" rel="noopener">My DUI Case — The Record ↗</a>
+        <span class="row">Officials Resigned Since the Election</span>
+        <a href="https://muse.ai/s/stephen-miller-the-record-wr6xjuxpqjxdxsxs/FSn8u9j9XgB26wUGaYJM3KQHvheBoOE4vYN6ujOOKIA" target="_blank" rel="noopener">Stephen Miller — The Record ↗</a>
+        <span class="row">Texas Senate 2026 — The Record</span>
+        <span class="row">The Trump Record — Visual Map</span>
+        <span class="row">Trump and Minors — Question Examined</span>
+        <a href="https://muse.ai/s/trump-in-the-epstein-files-the-count-xhxm6xcoxu9jxjxlxl/FwNdyOp9N5caGNj17U_rCUJJOMd3I9D3tzNU_TkKTPE" target="_blank" rel="noopener">Trump in the Epstein Files — The Count ↗</a>
+        <a href="https://thethrivingplan.fwh.is/copyleft-vs-copyright.html" target="_blank" rel="noopener">Copyleft vs Copyright ↗</a>
+        <a href="https://muse.ai/s/what-abortion-is-xmn6xmx0xlx0qxexuxk/WXkpuDFzwhUrYwcQLnxmYJ1O1zDjVBBhJ-Vl4QjRWuc" target="_blank" rel="noopener">What Abortion Is ↗</a>
+        <a href="https://muse.ai/s/ai-and-the-world-s-jobs-the-data-wxh6xaxsfxlgxmfc/FxC45v-9gOT8T8oxkcuukc48FfOFrqo10Z1V5nJCNwQ" target="_blank" rel="noopener">AI and the World's Jobs — The Data ↗</a>
+        <span class="row">The No-Money Switch</span>
+        <span class="row">Darryl Anka — the man who channels Bashar</span>
+        <span class="row">Dave Chappelle — The Criticism, Broken Down</span>
+        <span class="row">The Darkest Goddesses — The Record</span>
+        <span class="row">Psychics &amp; Superhumans — Record Check</span>
+        <span class="row">Was Hitler a Socialist?</span>
+        <a href="https://muse.ai/s/which-party-votes-to-keep-prices-high-xpxk6xaxfhxouexqx0/oAX038eb09fo5zrDq3Vb7pVTOL_URqX6PLjqC_Lc0O4" target="_blank" rel="noopener">Which Party Votes to Keep Prices High? — The Stats ↗</a>
+        <a href="https://muse.ai/s/the-issue-game-your-ballot-2026-txp6xbrxuxzi4m7/pYdIs0SV7Weq3ynY1AGPFln_xR-twW2TYeiqzKUaWaw" target="_blank" rel="noopener">Truth and Dare — Your Ballot 2026 ↗</a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a>
+        <p class="pg-head">Tools</p>
+        <a href="https://thethrivingplan.fwh.is/find-a-coupon.html" target="_blank" rel="noopener">Find a Coupon ↗</a>
+        <a href="https://muse.ai/s/the-trait-library-xpb6xnjxw8xifo5/fpM0EUQ2xaKUJseueWPMlmi9R7bQI5HbJWZF-qaMHxA" target="_blank" rel="noopener">The Trait Library ↗</a>
+        <a href="https://muse.ai/s/the-video-release-template-xks6xo0xjxjxthm0/itdjFe8dq3PL-MTND1imPqVUPPvle41WLle_LVPyNMU" target="_blank" rel="noopener">The Video Release Template ↗</a>
+        <span class="row">The Shopping List</span>
+        <p class="pg-head">For fun</p>
+        <a href="https://thethrivingplan.fwh.is/stars" target="_blank" rel="noopener">Star Chart Maker ↗</a>
+        <a href="https://muse.ai/s/star-chart-postcard-xrxq6xnxyxtfxpxzxqv/NiAWolORKNUDfO9IVOOHxW3Wg0lhZtVfx3GhaIAjOVE" target="_blank" rel="noopener">Star Chart Postcard ↗</a>
+        <a href="https://muse.ai/s/star-chart-qb6xlxpeb6xgxta/iY_pEszoXyMJTsVLs8U0vo5GLgR0GJJSN5PLFF4UbAo" target="_blank" rel="noopener">Star Chart ↗</a>
+        <a href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener">Create Your Own Story ↗</a>
+        <a href="https://thethrivingplan.fwh.is/a-modern-day-brontosaurus.html" target="_blank" rel="noopener">A Modern-Day Brontosaurus ↗</a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a>
+        <p class="pg-head">Still growing</p>
+        <p class="compass-group-note">Early ideas. Some were an hour's thought. They have their place — they're not finished.</p>
+        <a href="https://thethrivingplan.fwh.is/unicorns-do-not-exist.html" target="_blank" rel="noopener">Unicorns Do Not Exist ↗</a>
+        <span class="row">Don't Jump</span>
+        <span class="row">Dutch Bros &amp; the Windmill</span>
+        <span class="row">Invention Help, by the Record</span>
+        <span class="row">Launch Page</span>
+        <a href="https://muse.ai/s/go-for-it-pm6xfxxb1xbo0r/-_4cmnjkeFtuUCqtVpiTjXChVlJc6i5zwmTpQ8HSayc" target="_blank" rel="noopener">Go For It? ↗</a>
+        <span class="row">Purple Halloween String Lights — Side-by-Side</span>
+  </div></div>
+  <div class="bookends"><button type="button" data-hclose>Close ✕</button></div>
+</div>
+
+<div class="hpanel" id="set-panel" role="dialog" aria-label="Page settings" hidden>
+  <button class="x" type="button" data-sclose aria-label="Close settings">✕</button>
+  <h3>Settings</h3>
+  <p class="small">Settings live on this device only — nothing here is sent anywhere.</p>
+  <details class="set-face"><summary>Bar position<span class="face">Where the bar sits — Bottom is the default. Saved on this device, for this page.</span></summary>
+    <div class="sbody">
+      <label class="hpick"><input type="radio" name="hdock" value="bottom"> Bottom — the default</label>
+      <label class="hpick"><input type="radio" name="hdock" value="top"> Top</label>
+      <label class="hpick"><input type="radio" name="hdock" value="left"> Left</label>
+      <label class="hpick"><input type="radio" name="hdock" value="right"> Right</label>
+      <p class="small">Changing it may take a moment to settle — that is normal.</p>
+    </div></details>
+  <details class="set-face"><summary>About this page<span class="face">Free, copyleft, and how it was made.</span></summary>
+    <div class="sbody"><p class="small">Free. Always free, with an offline copy from the door at the top. Copyleft CC BY-SA 4.0. Researched and written with AI help (Muse), checked against the sources linked on the page. This page has no visitor input to save — the draft hellos are copied, not stored — so nothing you do here is kept.</p></div></details>
+  <div class="bookends"><button type="button" data-sclose>Close ✕</button></div>
+</div>
+
+<script>
+// Offline download: save this page itself
+document.getElementById('offlineBtn').addEventListener('click', function(){
+  var html = '<!doctype html>\n' + document.documentElement.outerHTML;
+  var blob = new Blob([html], {type:'text/html'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'the-nice-list-deep-dive.html';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+});
+// Copy hello drafts
+document.querySelectorAll('[data-copy]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var text = document.getElementById(btn.getAttribute('data-copy')).textContent;
+    var done = btn.parentElement.querySelector('.copied');
+    function show(){ if(done){ done.hidden = false; setTimeout(function(){ done.hidden = true; }, 2500); } }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(show).catch(function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); show(); } catch(e){}
+      ta.remove();
+    }
+  });
+});
+// House uniform bar — navigation only; settings live under Settings.
+// Each door off this page opens in its own view (target="_blank"), so
+// refreshing always reloads the page you are actually on.
+(function(){
+  var KEY='nice-list-deep-dive-dock';
+  function apply(v){ document.body.setAttribute('data-dock', v||'bottom');
+    var rs=document.querySelectorAll('input[name="hdock"]'); for(var i=0;i<rs.length;i++) rs[i].checked=(rs[i].value===(v||'bottom')); }
+  var saved='bottom'; try{ saved=localStorage.getItem(KEY)||'bottom'; }catch(e){}
+  apply(saved);
+  var rs=document.querySelectorAll('input[name="hdock"]');
+  for(var i=0;i<rs.length;i++) rs[i].addEventListener('change',function(){ apply(this.value); try{ localStorage.setItem(KEY,this.value); }catch(e){} });
+  var navP=document.getElementById('nav-panel'), setP=document.getElementById('set-panel');
+  var navB=document.getElementById('nav-stack'), setB=document.getElementById('set-stack');
+  function foldReset(){ ['fold-this','fold-other'].forEach(function(id){document.getElementById(id).hidden=true;});
+    ['fold-this-btn','fold-other-btn'].forEach(function(id){var b=document.getElementById(id); b.setAttribute('aria-expanded','false'); b.querySelector('span').textContent='Open \u25B8';}); }
+  function openP(p){ navP.hidden=(p!==navP); setP.hidden=(p!==setP); if(p===navP) foldReset(); }
+  function closeAll(){ navP.hidden=true; setP.hidden=true; navB.setAttribute('aria-expanded','false'); setB.setAttribute('aria-expanded','false'); }
+  navB.addEventListener('click',function(){ if(navP.hidden){openP(navP); navB.setAttribute('aria-expanded','true');} else closeAll(); });
+  setB.addEventListener('click',function(){ if(setP.hidden){openP(setP); setB.setAttribute('aria-expanded','true');} else closeAll(); });
+  document.querySelectorAll('[data-hclose],[data-sclose]').forEach(function(b){ b.addEventListener('click',closeAll); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeAll(); });
+  [['fold-this-btn','fold-this'],['fold-other-btn','fold-other']].forEach(function(pair){
+    var b=document.getElementById(pair[0]), body=document.getElementById(pair[1]);
+    b.addEventListener('click',function(){ var opening=body.hidden; body.hidden=!opening; b.setAttribute('aria-expanded',String(opening)); b.querySelector('span').textContent=opening?'Close \u25BE':'Open \u25B8'; });
+  });
+  var NAMES={'jackson':'Laura Lynne Jackson','smith':'Daniel Browning Smith','flansburg':'Scott Flansburg','open-questions':'Open questions','missing':'What are we missing?'};
+  var last='jackson', stack=[];
+  function go(id,record){ var el=document.getElementById(id); if(!el) return;
+    if(record!==false && last!==id) stack.push(last);
+    last=id; document.getElementById('h-last').textContent=NAMES[id]||id;
+    if(el.tagName==='DETAILS') el.open=true;
+    var d=el.querySelector('details'); if(d) d.open=true;
+    if(id==='missing'){ var md=document.getElementById('missing-door'); if(md) md.open=true; }
+    el.scrollIntoView(); closeAll(); }
+  document.querySelectorAll('#fold-this [data-place]').forEach(function(b){ b.addEventListener('click',function(){ go(b.getAttribute('data-place')); }); });
+  document.getElementById('h-prev').addEventListener('click',function(){ var p=stack.pop(); if(p) go(p,false); else window.scrollTo(0,0); });
+  document.getElementById('h-top').addEventListener('click',function(){ stack.push(last); window.scrollTo(0,0); closeAll(); });
+  document.getElementById('h-bottom').addEventListener('click',function(){ stack.push(last); window.scrollTo(0,document.body.scrollHeight); closeAll(); });
+  document.getElementById('missing-stack').addEventListener('click',function(){ var d=document.getElementById('missing-door'); if(d) d.open=true; last='missing'; document.getElementById('h-last').textContent=NAMES['missing']; });
+})();
+</script>
+</body>
+</html>
