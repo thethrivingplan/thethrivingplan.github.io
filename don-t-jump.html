@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:,">
+<title>Don't Jump</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#070605; --bg2:#0e0b09; --paper:#d8c49a; --paper2:#c9b184; --ink:#1a140d;
+  --text:#e8ddc8; --muted:#a89a80; --dim:#6f6350;
+  --red:#b3392e; --red-bright:#e0483a; --amber:#d9a441; --line:#3a2f22;
+  --card:#14100c; --card2:#1b1610;
+  --safe-b: env(safe-area-inset-bottom,0px); --safe-t: env(safe-area-inset-top,0px);
+  --safe-l: env(safe-area-inset-left,0px); --safe-r: env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,'Times New Roman',serif;line-height:1.55;
+  padding:calc(4px + var(--safe-t)) calc(14px + var(--safe-r)) calc(120px + var(--safe-b)) calc(14px + var(--safe-l));
+  overflow-x:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
+  background:radial-gradient(ellipse at 50% 42%,transparent 42%,rgba(0,0,0,.55) 78%,rgba(0,0,0,.92) 100%)}
+main{max-width:680px;margin:0 auto;position:relative;z-index:1}
+button{font-family:inherit;cursor:pointer}
+h1,h2,h3{font-weight:normal}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+
+/* ---------- room backdrop ---------- */
+.room{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(ellipse 60% 34% at 50% 88%,rgba(217,164,65,.10),transparent 70%),
+  linear-gradient(#050403,#0a0806 60%,#060504)}
+.room .figure-shadow{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);width:150px;height:300px;opacity:.5;
+  background:radial-gradient(ellipse 50% 18% at 50% 8%,#000 60%,transparent 71%),linear-gradient(#000,#050403);
+  border-radius:50% 50% 12px 12px/38% 38% 8px 8px;filter:blur(3px)}
+
+/* ---------- door ---------- */
+.door{text-align:center;padding:12px 4px 8px}
+.door .over{letter-spacing:.35em;font-size:.72rem;color:var(--dim);text-transform:uppercase}
+.door h1{font-size:clamp(3rem,14vw,5.2rem);letter-spacing:.06em;margin:.06em 0 .02em;color:#efe3c8;
+  text-shadow:0 0 34px rgba(217,164,65,.22),0 2px 0 #000}
+.door .sub{color:var(--muted);font-style:italic;margin:0 0 12px}
+.warn{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;text-align:left;margin:0 0 10px}
+.warn p{margin:.35em 0;font-size:.98rem}
+.warn strong{color:var(--amber);letter-spacing:.04em}
+.dialbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:0 0 10px;text-align:left}
+.dialbox .lab{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.dial{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.dial button{min-height:58px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:1.05rem;letter-spacing:.08em;padding:8px 4px}
+.dial button small{display:block;font-size:.72rem;color:var(--muted);letter-spacing:0;margin-top:3px}
+.dial button[aria-pressed="true"]{border-color:var(--red-bright);background:#2a130f;color:#ffd9d2;box-shadow:0 0 0 1px var(--red) inset}
+.framing{font-size:1rem;color:var(--text);margin:16px 2px}
+.micline{font-size:.92rem;color:var(--muted);margin:10px 2px}
+#micBtn{min-height:50px;border-radius:8px;border:1px dashed var(--dim);background:transparent;color:var(--text);padding:10px 16px;font-size:.95rem;width:100%}
+#micBtn[aria-pressed="true"]{border-style:solid;border-color:var(--amber);color:var(--amber)}
+#micStatus{font-size:.85rem;color:var(--dim);min-height:1.3em;margin:6px 0 0}
+#beginBtn{display:block;width:100%;min-height:68px;margin:16px 0 6px;border:none;border-radius:10px;
+  background:var(--red);color:#fff;font-size:1.5rem;letter-spacing:.22em;box-shadow:0 6px 30px rgba(179,57,46,.35)}
+#beginBtn:active{transform:translateY(1px)}
+
+/* ---------- layers (details) ---------- */
+.layer{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:14px 0}
+.layer>.layer-summary{cursor:pointer;padding:16px;font-size:1.02rem;min-height:56px;display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:inherit;font-family:inherit}
+.layer>.layer-summary .chev{margin-left:auto;color:var(--dim)}
+.layer .inner{padding:2px 16px 18px;border-top:1px solid var(--line)}
+.layer p,.layer li{font-size:.97rem}
+.term{color:var(--amber);background:none;border:none;border-bottom:1px dotted var(--amber);padding:0;font-size:inherit;font-family:inherit;text-decoration:none;cursor:pointer}
+.small{font-size:.87rem;color:var(--muted)}
+blockquote{margin:10px 0;padding:8px 14px;border-left:3px solid var(--dim);color:var(--muted);font-style:italic}
+
+/* ---------- game ---------- */
+#game{display:none}
+.topbar{display:flex;align-items:center;gap:10px;margin:8px 0 10px}
+#progress{font-size:.9rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.topbar .sp{flex:1}
+.iconbtn{min-width:52px;min-height:52px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:1.15rem}
+.stage{display:grid;gap:12px}
+.examiner{display:flex;gap:14px;align-items:flex-end;min-height:118px}
+.examiner svg{flex:0 0 74px;filter:drop-shadow(0 0 12px rgba(0,0,0,.9))}
+.speech{flex:1;background:#100d0a;border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-height:104px}
+.speech .who{font-size:.72rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);margin:0 0 6px}
+#questionText{font-size:clamp(1.12rem,4.6vw,1.4rem);margin:0;min-height:2.6em}
+#questionText .caret{display:inline-block;width:.55em;background:var(--amber);color:transparent;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.chartwrap{position:relative;border-radius:6px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.7),0 0 60px rgba(217,164,65,.07)}
+#chart{display:block;width:100%;height:210px;background:var(--paper)}
+.chartlabels{position:absolute;top:6px;left:10px;font-family:'Courier New',monospace;font-size:.68rem;color:rgba(26,20,13,.75);line-height:1.5;pointer-events:none}
+#stamp{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+#stamp span{font-family:'Courier New',monospace;font-weight:bold;letter-spacing:.08em;color:var(--red);
+  border:4px solid var(--red);border-radius:6px;padding:8px 14px;font-size:clamp(1rem,5.4vw,1.7rem);text-align:center;
+  transform:rotate(-7deg);background:rgba(216,196,154,.25);max-width:92%}
+#stamp.show{display:flex}
+#stamp.show span{animation:slam .28s ease-out}
+@keyframes slam{0%{transform:rotate(-7deg) scale(2.6);opacity:0}60%{opacity:1}100%{transform:rotate(-7deg) scale(1)}}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.answers button{min-height:76px;font-size:1.6rem;letter-spacing:.2em;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--text)}
+.answers button:active{background:#2c2317}
+.answers button:disabled{opacity:.35}
+#verdictLine{min-height:1.6em;text-align:center;font-family:'Courier New',monospace;color:var(--muted);margin:2px 0 0}
+#deadpanLine{min-height:1.5em;text-align:center;font-style:italic;color:#8d7c5c;margin:2px 0 6px;font-size:.98rem}
+.laptop{display:flex;align-items:center;gap:10px;background:#0d0a07;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.laptop .screen{flex:0 0 64px;height:42px;border-radius:3px;background:linear-gradient(160deg,#2b5ea7,#3a7bd5 55%,#24507f);border:2px solid #222;position:relative;overflow:hidden;animation:wheeze 5s ease-in-out infinite}
+.laptop .screen::after{content:"";position:absolute;left:6px;bottom:5px;width:22px;height:5px;background:rgba(255,255,255,.55);border-radius:2px}
+@keyframes wheeze{0%,100%{filter:brightness(1)}48%{filter:brightness(1)}52%{filter:brightness(.72)}56%{filter:brightness(1.05)}60%{filter:brightness(.9)}64%{filter:brightness(1)}}
+.laptop .lt{font-family:'Courier New',monospace;font-size:.7rem;color:var(--dim);line-height:1.45}
+#glitch{position:absolute;inset:0;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,rgba(43,94,167,.20) 0 3px,transparent 3px 7px),linear-gradient(90deg,rgba(224,72,58,.12),rgba(43,94,167,.12));mix-blend-mode:screen}
+#glitch.on{opacity:1}
+#stamp span.scratched{text-decoration:line-through;text-decoration-thickness:5px;text-decoration-color:#1a140d;opacity:.75}
+#rankLine{font-size:1.15rem;color:var(--amber);letter-spacing:.06em;margin:4px 0 10px}
+#copyBtn{width:100%;min-height:56px;border-radius:10px;border:1px solid var(--amber);background:transparent;color:var(--amber);font-size:1rem;margin-top:14px;padding:10px}
+#copyText{font-size:.9rem;color:var(--muted);font-style:italic;margin:14px 4px 0}
+#examinerExit{margin:18px 0 0;font-style:italic;color:#8d7c5c}
+#nextBtn{display:none;width:100%;min-height:58px;border-radius:10px;border:1px solid var(--amber);background:transparent;color:var(--amber);font-size:1.05rem;letter-spacing:.14em}
+
+/* ---------- scare layers ---------- */
+#scareFace{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.25);pointer-events:none}
+#scareFace.show{display:flex}
+#scareFace svg{width:min(92vw,520px);filter:drop-shadow(0 0 60px rgba(230,225,205,.35))}
+#scareFace.show svg{animation:lunge .8s cubic-bezier(.16,.84,.3,1) forwards}
+@keyframes lunge{0%{transform:scale(.3) translateY(26px);opacity:0}14%{opacity:1}45%{transform:scale(1.06) translateY(0)}72%{transform:scale(1.22)}100%{transform:scale(1.34)}}
+#shadowPass{position:fixed;top:0;bottom:0;width:46vw;z-index:39;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);left:-50vw}
+#shadowPass.go{animation:passby 1.15s ease-in-out}
+#shadowPass.go.soft{animation-duration:2.2s;opacity:.55}
+@keyframes passby{0%{left:-50vw;opacity:0}18%{opacity:.9}82%{opacity:.9}100%{left:110vw;opacity:0}}
+.shake{animation:shake .5s linear}
+@keyframes shake{0%,100%{transform:translate(0)}15%{transform:translate(-9px,5px)}30%{transform:translate(8px,-6px)}45%{transform:translate(-7px,-4px)}60%{transform:translate(7px,5px)}75%{transform:translate(-4px,2px)}90%{transform:translate(4px,-2px)}}
+
+/* ---------- ending ---------- */
+#ending{display:none;text-align:center;padding:34px 6px}
+#ending .big{font-size:clamp(1.3rem,5.6vw,1.8rem);line-height:1.5;margin:0 0 8px}
+#ending .big b{color:var(--red-bright)}
+#playAgain{width:100%;min-height:64px;border:none;border-radius:10px;background:var(--red);color:#fff;font-size:1.25rem;letter-spacing:.18em;margin-top:18px}
+
+/* ---------- reminder banner ---------- */
+#reminderBar{display:none;background:#2a2113;border:1px solid var(--amber);border-radius:10px;padding:14px 16px;margin:14px 0}
+#reminderBar.show{display:block}
+#reminderBar .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#reminderBar button{min-height:48px;border-radius:8px;border:1px solid var(--amber);background:transparent;color:var(--amber);padding:8px 16px}
+.remctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.remctl input[type=range]{flex:1;min-width:140px;accent-color:var(--amber)}
+#remToggle{min-height:52px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:10px 18px}
+#remToggle[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+
+/* ---------- term sheet ---------- */
+#termSheet{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;background:#171310;border-top:2px solid var(--amber);
+  border-radius:16px 16px 0 0;padding:20px calc(18px + var(--safe-r)) calc(20px + var(--safe-b)) calc(18px + var(--safe-l));
+  max-height:72vh;overflow:auto;box-shadow:0 -20px 60px rgba(0,0,0,.8)}
+#termSheet.show{display:block}
+#termSheet h3{margin:.1em 0 .4em;font-size:1.3rem;color:var(--amber)}
+#termClose{min-height:52px;width:100%;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--text);margin-top:10px}
+
+/* ---------- house uniform bar (Nov 14) ---------- */
+  body{padding-bottom:calc(118px + var(--safe-b))}
+  body[data-dock="top"]{padding-bottom:calc(24px + var(--safe-b));padding-top:calc(118px + var(--safe-t))}
+  body[data-dock="left"]{padding-bottom:calc(24px + var(--safe-b));padding-left:calc(96px + var(--safe-l))}
+  body[data-dock="right"]{padding-bottom:calc(24px + var(--safe-b));padding-right:calc(96px + var(--safe-r))}
+  main a{color:var(--amber)}
+  .free-banner{border:1px solid var(--amber);border-radius:10px;padding:8px 14px;margin:0 0 8px;background:#171208;text-align:center}
+  .free-banner .big{font-size:1.05rem;margin:0;color:var(--amber)}
+  .free-banner p.small{margin:4px 0 0}
+  #termSheet{z-index:95}
+  .hbar{position:fixed;z-index:80;left:0;right:0;bottom:0;display:flex;justify-content:space-evenly;align-items:flex-start;gap:8px;background:#14100c;border-top:1.5px solid var(--line);padding:8px 10px calc(8px + var(--safe-b));box-shadow:0 -6px 20px rgba(0,0,0,.5)}
+  body[data-dock="top"] .hbar{bottom:auto;top:0;border-top:none;border-bottom:1.5px solid var(--line);padding-top:calc(8px + var(--safe-t));box-shadow:0 6px 20px rgba(0,0,0,.5)}
+  body[data-dock="left"] .hbar,body[data-dock="right"] .hbar{top:0;bottom:0;flex-direction:column;justify-content:center;align-items:center;width:84px}
+  body[data-dock="left"] .hbar{right:auto;border-top:none;border-right:1.5px solid var(--line)}
+  body[data-dock="right"] .hbar{left:auto;border-top:none;border-left:1.5px solid var(--line)}
+  .hstack{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;font:inherit;text-decoration:none;color:var(--text);min-width:86px}
+  body[data-dock="left"] .hstack,body[data-dock="right"] .hstack{min-width:0}
+  .hdisc{width:52px;height:52px;border-radius:50%;background:#2a2113;color:var(--amber);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;border:2px solid var(--amber);flex:none}
+  .hdisc svg{width:26px;height:26px;fill:var(--amber)}
+  .hpill{font-size:11.5px;font-weight:700;background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;text-align:center;line-height:1.25;color:var(--text)}
+  .hpanel{position:fixed;z-index:90;left:10px;right:10px;bottom:104px;max-height:calc(100dvh - 130px);overflow:auto;background:#14100c;color:var(--text);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.6);padding:16px}
+  body[data-dock="top"] .hpanel{bottom:auto;top:104px}
+  @media(min-width:700px){.hpanel{left:auto;width:440px}}
+  .hpanel h3{margin:0 40px 6px 0;font-size:1.25rem;color:var(--amber)}
+  .hpanel .x{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card2);color:var(--text);cursor:pointer;font-size:16px}
+  .hpanel .small{font-size:.87rem;color:var(--muted)}
+  .foldbtn{width:100%;text-align:left;font:inherit;font-weight:700;font-size:1rem;padding:13px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--text);cursor:pointer;margin-top:10px;display:flex;justify-content:space-between}
+  .pg-list{display:grid;gap:6px;margin-top:8px}
+  .pg-list a,.pg-list .row{text-align:left;font-size:.95rem;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#100d0a;color:var(--text);text-decoration:none;font-weight:600;display:block}
+  .pg-list button{text-align:left;font:inherit;font-size:.95rem;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#100d0a;color:var(--text);cursor:pointer;font-weight:600;width:100%}
+  .pg-head{font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 0;font-weight:700}
+  .bookends{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .bookends button{font:inherit;font-size:.85rem;font-weight:700;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:999px;padding:7px 13px;cursor:pointer}
+  .set-face{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:#100d0a}
+  .set-face summary{font-size:1rem;padding:13px 15px;cursor:pointer;list-style:none;color:var(--text)}
+  .set-face summary::-webkit-details-marker{display:none}
+  .set-face summary .face{display:block;font-weight:400;font-size:.87rem;color:var(--muted);margin-top:4px}
+  .set-face .sbody{padding:2px 15px 14px;border-top:1px solid var(--line)}
+  .hpick{display:block;margin:6px 0;font-size:.95rem}
+
+@media (orientation:landscape) and (max-height:520px){
+  .door h1{font-size:2.6rem}
+  .door{padding-top:8px}
+  .stage{grid-template-columns:1fr 1fr;align-items:start}
+  .chartwrap{grid-column:1/-1}
+  #chart{height:150px}
+  .examiner{min-height:90px}
+  .speech{min-height:88px}
+  body{padding-bottom:calc(110px + var(--safe-b))}
+}
+@media (prefers-reduced-motion:reduce){
+  .shake,#stamp.show span,#shadowPass.go{animation:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="room" aria-hidden="true"><div class="figure-shadow"></div></div>
+
+<main id="top">
+  <div class="free-banner" role="banner">
+    <p class="big">Free. Always free.<br>This page is <a href="#" id="offline-door">available offline</a> for free.</p>
+    <p class="small">Tap &ldquo;available offline&rdquo; for a copy that works with no connection. No ads, no account — ever.</p>
+  </div>
+
+  <!-- reminder lands in the flow, never over anything -->
+  <div id="reminderBar" role="alert">
+    <strong>Your rabbit-hole reminder.</strong>
+    <div>You set this yourself — time to step back down the hole, or out of it. It only ever appears because you turned it on.</div>
+    <div class="row">
+      <button id="remSnooze" type="button">Snooze +10 minutes</button>
+      <button id="remDismiss" type="button">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- ================= THE DOOR ================= -->
+  <section id="door" aria-label="Start">
+    <div class="door">
+      <p class="over">A quiet room · Eight questions</p>
+      <h1>DON&rsquo;T JUMP</h1>
+      <p class="sub">Sit down. Answer honestly. Watch the needle.</p>
+
+      <div class="warn" role="note">
+        <p><strong>⚠ Flashing images.</strong> This game contains sudden flashing images. If flashing lights affect you, set the dial below to OFF before you begin.</p>
+        <p><strong>⚠ Sudden loud sounds.</strong> This game contains sudden loud sounds — including a short scream, used as a blip and cut off fast. Lower your volume first if that is a problem for you — and there is a mute button on the game screen, always.</p>
+      </div>
+
+      <div class="dialbox">
+        <p class="lab" id="dialLabel">Scare intensity — pick before you play</p>
+        <div class="dial" role="group" aria-labelledby="dialLabel">
+          <button type="button" data-level="full" aria-pressed="true">FULL<small>sight + sound</small></button>
+          <button type="button" data-level="mild" aria-pressed="false">MILD<small>sight, softer</small></button>
+          <button type="button" data-level="off" aria-pressed="false">OFF<small>shadows only</small></button>
+        </div>
+        <p class="small" style="margin:10px 0 0">OFF means no flash and no loud sound, ever. The needle still does what it does.</p>
+      </div>
+
+      <p class="framing">A game about what <a class="term" href="#term-polygraph" data-term="polygraph">polygraphs</a> actually measure. A demonstration, not coaching for any real test.</p>
+
+      <p class="micline">Optional: let the page listen (microphone) so your own gasp moves the needle. Sound is never recorded and never leaves this device.</p>
+      <p class="micline">The page ignores its own scare sounds — the microphone only counts what it hears after they end. It will not grade its own scream.</p>
+      <p class="micline">With headphones on, the speaker-bleed problem mostly disappears; the gate protects speaker play.</p>
+      <button id="micBtn" type="button" aria-pressed="false">🎙 Enable microphone (optional)</button>
+      <p id="micStatus" aria-live="polite"></p>
+
+      <button id="beginBtn" type="button">BEGIN</button>
+      <p class="small note-below">Buttons-only play is the complete game. No accounts. Nothing you do here is saved anywhere or leaves this device.</p>
+    </div>
+  </section>
+
+  <!-- ================= THE GAME ================= -->
+  <section id="game" aria-label="The examination">
+    <div class="topbar">
+      <span id="progress">Question 1 of 8</span>
+      <span class="sp"></span>
+      <button class="iconbtn" id="muteBtn" type="button" aria-pressed="false" aria-label="Mute sound">🔊</button>
+    </div>
+    <div class="stage" id="stage">
+      <div class="examiner">
+        <svg width="74" height="118" viewBox="0 0 74 118" aria-hidden="true">
+          <ellipse cx="37" cy="20" rx="13" ry="16" fill="#000"/>
+          <path d="M37 34 C20 34 12 52 10 78 L8 118 L66 118 L64 78 C62 52 54 34 37 34 Z" fill="#000"/>
+          <ellipse cx="32" cy="19" rx="2.2" ry="1.4" fill="#3d3423"/>
+          <ellipse cx="42" cy="19" rx="2.2" ry="1.4" fill="#3d3423"/>
+        </svg>
+        <div class="speech">
+          <p class="who">The Examiner</p>
+          <p id="questionText" aria-live="polite"></p>
+        </div>
+      </div>
+      <div class="laptop" aria-hidden="true">
+        <div class="screen"></div>
+        <div class="lt">THE MACHINE<br>an old laptop in the corner · it wheezes · nobody touches it</div>
+      </div>
+      <div class="chartwrap" id="chartwrap">
+        <canvas id="chart" width="660" height="210" aria-label="Polygraph chart: three pen lines — heart, breath, sweat"></canvas>
+        <div class="chartlabels">♥ HEART<br>≈ BREATH<br>~ SWEAT</div>
+        <div id="stamp" aria-live="assertive"><span id="stampText"></span></div>
+        <div id="glitch" aria-hidden="true"></div>
+      </div>
+      <div>
+        <div class="answers">
+          <button id="yesBtn" type="button">YES</button>
+          <button id="noBtn" type="button">NO</button>
+        </div>
+        <p id="verdictLine" aria-live="polite"></p>
+        <p id="deadpanLine" aria-live="polite"></p>
+        <button id="nextBtn" type="button">NEXT QUESTION →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ENDING ================= -->
+  <section id="ending" aria-label="The result">
+    <p class="big" id="endingText"></p>
+    <p id="rankLine"></p>
+    <p class="small">That is the whole demonstration. Everything below this line is the depth — open it only if you want it.</p>
+    <p id="copyText"></p>
+    <button id="copyBtn" type="button">COPY MY RESULT</button>
+    <p id="examinerExit">The Examiner will see you again.</p>
+    <button id="playAgain" type="button">PLAY AGAIN</button>
+  </section>
+
+  <!-- ================= THE RECORD DOOR ================= -->
+  <section class="layer" id="record">
+    <button class="layer-summary" type="button" aria-expanded="false">What a real polygraph actually measures — the record <span class="chev">▾</span></button>
+    <div class="inner" hidden>
+      <p>A <a class="term" href="#term-polygraph" data-term="polygraph">polygraph</a> does not detect lies. It records three things: <strong>heart rate, breathing, and sweat</strong> — the body&rsquo;s arousal. Fear, embarrassment, anger, and a sudden noise all move the same needles. There is <strong>no bodily response unique to deception</strong>.</p>
+      <p>The <a class="term" href="#term-nrc" data-term="nrc">National Research Council</a> reviewed the evidence in 2003. Its finding, in its own words: for specific-incident tests, polygraphs sort people</p>
+      <blockquote>&ldquo;well above chance, though well below perfection&rdquo;</blockquote>
+      <p>— and for screening (testing many people to find a few), its accuracy is</p>
+      <blockquote>&ldquo;insufficient to justify reliance.&rdquo;</blockquote>
+      <p>The <a class="term" href="#term-apa" data-term="apa">American Psychological Association</a>: most psychologists agree there is <strong>little evidence polygraph tests can accurately detect lies</strong>.</p>
+      <p>Courts generally <strong>exclude</strong> polygraph results — yet the same results are still used in investigations, in plea negotiations, and as supervision conditions. The front door is closed; the side doors are open.</p>
+      <p>The wire-free version — <a class="term" href="#term-vsa" data-term="vsa">voice-stress analysis</a>, run over an ordinary phone call — performs at <strong>chance level</strong> in controlled studies. No wires, same confidence, no better accuracy.</p>
+      <p>Two words from the machine&rsquo;s own vocabulary, opened up: <a class="term" href="#term-inconclusive" data-term="inconclusive">inconclusive</a> · <a class="term" href="#term-baseline" data-term="baseline">the baseline</a> · <a class="term" href="#term-deception" data-term="deception">deception indicated</a></p>
+      <p class="small">Sources: National Research Council, <em>The Polygraph and Lie Detection</em> (2003); American Psychological Association, &ldquo;The Truth About Lie Detectors (aka Polygraph Tests).&rdquo; The quotes above are the sources&rsquo; own words.</p>
+    </div>
+  </section>
+
+  <!-- ================= HOW / LIVING PAGE / COMPASS / REMINDER ================= -->
+  <section class="layer" id="how">
+    <button class="layer-summary" type="button" aria-expanded="false">How this page works — the depth <span class="chev">▾</span></button>
+    <div class="inner" hidden>
+      <h3 style="margin:.4em 0">A living page</h3>
+      <p>This page was built on <strong>October 28, 2026</strong>, and it is a living page: it can be updated, corrected, and extended, and the copy you are reading is the current version. Nothing you do here is saved anywhere and nothing leaves this device — your answers, your scare-dial setting, and your counts live only in this page, only while it is open.</p>
+      <p>The page keeps your place only in its own address (the part after the #), where the platform allows that. Honestly stated: in some in-app viewers a refresh resets the page completely, and no place-keeping survives that. If the room goes dark and starts over, that is the viewer, not you.</p>
+
+      <h3>The needle</h3>
+      <p>The chart is simulated — there are no sensors and nothing is measured. The needles obey dread and the scare, never your answers. The microphone, if you enabled it, is the one real input: a loud sound from you — a gasp — drives the needles during a scare. One guard on it, and it is a standard tool with an honest name: a <strong>noise gate, keyed to the machine&rsquo;s own voice</strong>. The microphone&rsquo;s startle detection sits behind a gate sidechained to the page&rsquo;s own sound — while the page is making any sound, the gate is closed and nothing registers as you; it opens on a short hold and a release tail (the release is the allowance for speaker bleed and room echo). The page&rsquo;s own scare sounds can never be mistaken for your gasp. Only a new loud sound from you, heard after the gate opens, counts. That is the entire trick, shown plainly here and nowhere on the game&rsquo;s surface.</p>
+      <p><a class="term" href="#term-baseline" data-term="baseline">The baseline</a> · <a class="term" href="#term-inconclusive" data-term="inconclusive">Inconclusive</a> · <a class="term" href="#term-vsa" data-term="vsa">Voice-stress analysis</a></p>
+
+      <h3>The compass</h3>
+      <p>The bar at the bottom of the page is this house&rsquo;s compass, the same on every page. In the middle sits the compass disc over the word <strong>Navigate</strong>: tap it and the <strong>Go to</strong> panel opens — <strong>This page</strong> (every part of the page you are standing on) and <strong>Other pages</strong> (every other page there is), each folded shut until you open it, with your last place named and Top / Bottom one tap away. Every door off this page opens in its own view, with its own address, so refreshing always reloads the page you are actually on. At the bar&rsquo;s left end, the <strong>?!</strong> disc jumps to this page&rsquo;s <em>What are we missing?</em> door; at the right end, the gear opens <strong>Settings</strong> — where the bar itself can be moved (bottom, top, left, or right) and stays where you put it, on this device only.</p>
+
+      <h3>Rabbit-hole reminder</h3>
+      <p>This reminder is <strong>off by default and never turns itself on</strong>. If you turn it on, then after the interval you choose, a plain bar appears at the top of this page suggesting you surface for air. That is all it does. It has a one-tap snooze (+10 minutes) and a one-tap dismiss. It lives in this page&rsquo;s memory only — close the page and it is gone; nothing is stored anywhere.</p>
+      <div class="remctl">
+        <button id="remToggle" type="button" aria-pressed="false">Reminder: OFF</button>
+        <label for="remRange" class="small">Every</label>
+        <input type="range" id="remRange" min="10" max="60" step="5" value="20">
+        <span id="remVal">20 min</span>
+      </div>
+      <p class="small" id="remStatus">The reminder is off.</p>
+    </div>
+  </section>
+  <!-- ================= WHAT ARE WE MISSING ================= -->
+  <section id="missing">
+    <div class="layer" id="missing-door">
+      <button class="layer-summary" type="button" aria-expanded="false">What are we missing? <span class="chev">▾</span></button>
+      <div class="inner" hidden>
+        <p>Tell us what&rsquo;s missing, what&rsquo;s wrong, and what tool is really needed. This page was built from the published record on polygraphs — if a source is missing, a quote is wrong, or the demonstration itself misses the point, say so. You&rsquo;re the expert on what you came here needing; we bring the treatment.</p>
+        <p><a href="https://theposterboard.fwh.is" target="_blank" rel="noopener"><strong>Say it on the Poster Board ↗</strong></a> — public, no account needed. That&rsquo;s where missing pieces land, and where new pages start.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="small" style="text-align:center;margin:22px 0 0">DON&rsquo;T JUMP · built October 28, 2026 · a demonstration, not coaching for any real test</p>
+  <p class="small" style="text-align:center;margin:6px 0 0">Copyleft CC BY-SA 4.0 — copy it, print it, hand it on. Built with AI help (Muse), checked against the sources named on the page.</p>
+</main>
+
+<!-- scare layers -->
+<div id="shadowPass" aria-hidden="true"></div>
+<div id="scareFace" aria-hidden="true">
+  <svg viewBox="0 0 200 260" role="presentation">
+    <ellipse cx="100" cy="130" rx="78" ry="112" fill="#ded9c8"/>
+    <ellipse cx="100" cy="130" rx="78" ry="112" fill="none" stroke="#8f8a76" stroke-width="2"/>
+    <ellipse cx="70" cy="105" rx="11" ry="17" fill="#0a0908"/>
+    <ellipse cx="130" cy="105" rx="11" ry="17" fill="#0a0908"/>
+    <ellipse cx="100" cy="168" rx="13" ry="26" fill="#0a0908"/>
+    <path d="M88 138 Q100 144 112 138" stroke="#6b675a" stroke-width="3" fill="none"/>
+  </svg>
+</div>
+
+<!-- term sheet -->
+<div id="termSheet" role="dialog" aria-modal="false" aria-labelledby="termTitle">
+  <h3 id="termTitle"></h3>
+  <div id="termBody"></div>
+  <button id="termClose" type="button">Close</button>
+</div>
+
+<!-- House uniform bar -->
+<nav class="hbar" aria-label="Page bar">
+  <a class="hstack" href="#missing" id="missing-stack"><span class="hdisc" aria-hidden="true">?!</span><span class="hpill">What are we missing</span></a>
+  <button class="hstack" type="button" id="nav-stack" aria-expanded="false"><span class="hdisc" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#d9a441" stroke-width="2"/><polygon points="20,6 23.5,20 20,34 16.5,20" fill="#d9a441"/><polygon points="6,20 20,16.5 34,20 20,23.5" fill="#d9a441" opacity=".5"/></svg></span><span class="hpill">Navigate</span></button>
+  <button class="hstack" type="button" id="set-stack" aria-expanded="false"><span class="hdisc" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span class="hpill">Settings</span></button>
+</nav>
+
+<div class="hpanel" id="nav-panel" role="dialog" aria-label="Go to" hidden>
+  <button class="x" type="button" data-hclose aria-label="Close navigation">✕</button>
+  <h3>Go to</h3>
+  <p class="small">Navigation only — settings live under Settings. Each door off this page opens in its own view, with its own address, so refreshing always reloads the page you are actually on.</p>
+  <div class="bookends"><button type="button" id="h-prev">← Previous part</button><button type="button" id="h-top">Top of page ↑</button><button type="button" id="h-bottom">Bottom of page ↓</button></div>
+  <p class="small" style="margin-top:10px">Last place: <strong id="h-last">The door</strong> — tap a stack again or Close to stay where you are.</p>
+  <button class="foldbtn" type="button" id="fold-this-btn" aria-expanded="false">This page <span>Open ▸</span></button>
+  <div id="fold-this" hidden><div class="pg-list">
+        <button type="button" data-place="door">The door — start screen</button>
+        <button type="button" data-place="game">The examination</button>
+        <button type="button" data-place="ending">The ending card</button>
+        <button type="button" data-place="record">The record — what a polygraph measures</button>
+        <button type="button" data-place="how">How this page works</button>
+        <button type="button" data-place="missing">What are we missing?</button>
+  </div></div>
+  <button class="foldbtn" type="button" id="fold-other-btn" aria-expanded="false">Other pages <span>Open ▸</span></button>
+  <div id="fold-other" hidden><div class="pg-list">
+        <a href="https://thethrivingplan.fwh.is" target="_blank" rel="noopener">The Thriving Plan ↗</a>
+        <a href="https://muse.ai/s/any-legal-case-the-record-qs6xc8xpohxpxmo/3Mz7y6LxZlpRvFjKrNn0KOpzMW44OTcYbNm-VJ4EkrU" target="_blank" rel="noopener">Any Legal Case — The Record ↗</a>
+        <a href="https://thethrivingplan.fwh.is/for-veterans-the-record.html" target="_blank" rel="noopener">For Veterans — The Record ↗</a>
+        <a href="https://thethrivingplan.fwh.is/the-thought-process.html" target="_blank" rel="noopener">The Thought Process ↗</a>
+        <a href="https://thethrivingplan.fwh.is/test-runs.html" target="_blank" rel="noopener">Test Runs — The Results ↗</a>
+        <a href="https://thethrivingplan.fwh.is/flights" target="_blank" rel="noopener">US Flights Grounded — November 13, 2026 ↗</a>
+        <a href="https://thethrivingplan.fwh.is/mkultra-and-mind-control-the-record.html" target="_blank" rel="noopener">MKUltra and Mind Control — The Record ↗</a>
+        <a href="https://muse.ai/s/my-dui-case-the-record-mxg6xc3xdxdh5xjxg/lI3LrVPdIODp8oddo6XOtXN563MXu5VJS-DLgl-AEIk" target="_blank" rel="noopener">My DUI Case — The Record ↗</a>
+        <span class="row">Officials Resigned Since the Election</span>
+        <a href="https://muse.ai/s/stephen-miller-the-record-wr6xjuxpqjxdxsxs/FSn8u9j9XgB26wUGaYJM3KQHvheBoOE4vYN6ujOOKIA" target="_blank" rel="noopener">Stephen Miller — The Record ↗</a>
+        <span class="row">Texas Senate 2026 — The Record</span>
+        <span class="row">The Trump Record — Visual Map</span>
+        <span class="row">Trump and Minors — Question Examined</span>
+        <a href="https://muse.ai/s/trump-in-the-epstein-files-the-count-xhxm6xcoxu9jxjxlxl/FwNdyOp9N5caGNj17U_rCUJJOMd3I9D3tzNU_TkKTPE" target="_blank" rel="noopener">Trump in the Epstein Files — The Count ↗</a>
+        <a href="https://thethrivingplan.fwh.is/copyleft-vs-copyright.html" target="_blank" rel="noopener">Copyleft vs Copyright ↗</a>
+        <a href="https://muse.ai/s/what-abortion-is-xmn6xmx0xlx0qxexuxk/WXkpuDFzwhUrYwcQLnxmYJ1O1zDjVBBhJ-Vl4QjRWuc" target="_blank" rel="noopener">What Abortion Is ↗</a>
+        <a href="https://muse.ai/s/ai-and-the-world-s-jobs-the-data-wxh6xaxsfxlgxmfc/FxC45v-9gOT8T8oxkcuukc48FfOFrqo10Z1V5nJCNwQ" target="_blank" rel="noopener">AI and the World's Jobs — The Data ↗</a>
+        <span class="row">The No-Money Switch</span>
+        <span class="row">Darryl Anka — the man who channels Bashar</span>
+        <span class="row">Dave Chappelle — The Criticism, Broken Down</span>
+        <span class="row">The Darkest Goddesses — The Record</span>
+        <span class="row">Psychics &amp; Superhumans — Record Check</span>
+        <span class="row">Was Hitler a Socialist?</span>
+        <a href="https://muse.ai/s/which-party-votes-to-keep-prices-high-xpxk6xaxfhxouexqx0/oAX038eb09fo5zrDq3Vb7pVTOL_URqX6PLjqC_Lc0O4" target="_blank" rel="noopener">Which Party Votes to Keep Prices High? — The Stats ↗</a>
+        <span class="row">The Nice List — Deep Dive</span>
+        <a href="https://muse.ai/s/the-issue-game-your-ballot-2026-txp6xbrxuxzi4m7/pYdIs0SV7Weq3ynY1AGPFln_xR-twW2TYeiqzKUaWaw" target="_blank" rel="noopener">Truth and Dare — Your Ballot 2026 ↗</a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a>
+        <p class="pg-head">Tools</p>
+        <a href="https://thethrivingplan.fwh.is/find-a-coupon.html" target="_blank" rel="noopener">Find a Coupon ↗</a>
+        <a href="https://muse.ai/s/the-trait-library-xpb6xnjxw8xifo5/fpM0EUQ2xaKUJseueWPMlmi9R7bQI5HbJWZF-qaMHxA" target="_blank" rel="noopener">The Trait Library ↗</a>
+        <a href="https://muse.ai/s/the-video-release-template-xks6xo0xjxjxthm0/itdjFe8dq3PL-MTND1imPqVUPPvle41WLle_LVPyNMU" target="_blank" rel="noopener">The Video Release Template ↗</a>
+        <span class="row">The Shopping List</span>
+        <p class="pg-head">For fun</p>
+        <a href="https://thethrivingplan.fwh.is/stars" target="_blank" rel="noopener">Star Chart Maker ↗</a>
+        <a href="https://muse.ai/s/star-chart-postcard-xrxq6xnxyxtfxpxzxqv/NiAWolORKNUDfO9IVOOHxW3Wg0lhZtVfx3GhaIAjOVE" target="_blank" rel="noopener">Star Chart Postcard ↗</a>
+        <a href="https://muse.ai/s/star-chart-qb6xlxpeb6xgxta/iY_pEszoXyMJTsVLs8U0vo5GLgR0GJJSN5PLFF4UbAo" target="_blank" rel="noopener">Star Chart ↗</a>
+        <a href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener">Create Your Own Story ↗</a>
+        <a href="https://thethrivingplan.fwh.is/a-modern-day-brontosaurus.html" target="_blank" rel="noopener">A Modern-Day Brontosaurus ↗</a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a>
+        <p class="pg-head">Still growing</p>
+        <p class="small">Early ideas. Some were an hour’s thought. They have their place — they’re not finished.</p>
+        <a href="https://thethrivingplan.fwh.is/unicorns-do-not-exist.html" target="_blank" rel="noopener">Unicorns Do Not Exist ↗</a>
+        <span class="row">Dutch Bros &amp; the Windmill</span>
+        <span class="row">Invention Help, by the Record</span>
+        <span class="row">Launch Page</span>
+        <a href="https://muse.ai/s/go-for-it-pm6xfxxb1xbo0r/-_4cmnjkeFtuUCqtVpiTjXChVlJc6i5zwmTpQ8HSayc" target="_blank" rel="noopener">Go For It? ↗</a>
+        <span class="row">Purple Halloween String Lights — Side-by-Side</span>
+  </div></div>
+  <div class="bookends"><button type="button" data-hclose>Close ✕</button></div>
+</div>
+
+<div class="hpanel" id="set-panel" role="dialog" aria-label="Page settings" hidden>
+  <button class="x" type="button" data-sclose aria-label="Close settings">✕</button>
+  <h3>Settings</h3>
+  <p class="small">Settings live on this device only — nothing here is sent anywhere.</p>
+  <details class="set-face"><summary>Bar position<span class="face">Where the bar sits — Bottom is the default. Saved on this device, for this page.</span></summary>
+    <div class="sbody">
+      <label class="hpick"><input type="radio" name="hdock" value="bottom"> Bottom — the default</label>
+      <label class="hpick"><input type="radio" name="hdock" value="top"> Top</label>
+      <label class="hpick"><input type="radio" name="hdock" value="left"> Left</label>
+      <label class="hpick"><input type="radio" name="hdock" value="right"> Right</label>
+      <p class="small">Changing it may take a moment to settle — that is normal.</p>
+      <div class="bookends"><button type="button" id="dock-forget">Forget — back to Bottom</button></div>
+    </div></details>
+  <details class="set-face"><summary>About this page<span class="face">Free, copyleft, and how it was made.</span></summary>
+    <div class="sbody"><p class="small">Free. Always free, with an offline copy from the door at the top. Copyleft CC BY-SA 4.0. Built with AI help (Muse), checked against the sources named on the page. Your answers, your scare-dial choice, and your reminder setting live only while this page is open — they are never saved and never sent anywhere. The bar position above is the one thing kept, on this device only, and the Forget button clears it.</p></div></details>
+  <div class="bookends"><button type="button" data-sclose>Close ✕</button></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ================= QUESTION POOL (exact) ================= */
+var SETS = {
+  nathan:["Do you ever watch porn on the internet?","Have you ever lied about liking a gift?","Do you talk to yourself when you're alone?","Have you ever eaten food that fell on the floor?","Do you sing in the car when nobody can hear you?"],
+  everybody:["Have you ever pretended to be on the phone to avoid someone?","Have you ever read someone else's messages over their shoulder?","Have you ever blamed a smell on a pet?","Have you ever taken the last piece and said nothing?","Have you ever rehearsed an argument in the shower?","Have you ever waved back at someone who wasn't waving at you?","Have you ever Googled your own name?","Have you ever eaten a whole meal meant for two people?"],
+  body:["Is your heart beating faster than it should be right now?","Are you breathing manually now that I mentioned it?","Can you feel your tongue in your mouth right now?","Are your hands sweating?","Did you just swallow?","Are you sitting perfectly still — or trying to?"],
+  childhood:["Did you ever blame a sibling or a pet for something you did?","Did you ever stay up past your bedtime and fake being asleep?","Did you believe in something for years before finding out the truth?","Did you ever trade away a lunch item and regret it?","Were you ever scared of a room in your own house?"],
+  taste:["Do you honestly not like Matilda?","Is there a famous movie everyone loves that you secretly can't stand?","Do you have a song you love that you'd never admit to loving?","Have you ever pretended to like a meal someone cooked for you?","Do you still sleep with anything from when you were a kid?"],
+  spooky:["Do you believe in ghosts?","Have you ever felt watched in an empty room?","Is something standing behind you right now?","Have you ever heard your name called when nobody was there?","Do you check behind the shower curtain?","Have you ever run up the stairs after turning the lights off?","Would you spend a whole night alone in a house where something bad happened?","Do you sleep with any light on — even a small one?","Have you ever seen something move out of the corner of your eye?","If I asked you to say Bloody Mary three times, right now, into this dark room — would you?","Are you sure you're alone?"],
+  nowin:["Are you lying right now?","Have you stopped lying since we began?","Would you tell me the truth if it got you in trouble?","Do you trust this machine?","Do you trust me?","Are you scared?","Was that answer the truth?"]
+};
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function drawRun(){
+  var spooky = shuffle(SETS.spooky.slice());
+  var rest = shuffle(SETS.nathan.concat(SETS.everybody,SETS.body,SETS.childhood,SETS.taste,SETS.nowin));
+  var nSpooky = 2 + Math.floor(Math.random()*2); /* 2 or 3 */
+  var run = spooky.slice(0,nSpooky).concat(rest.slice(0,8-nSpooky));
+  return shuffle(run);
+}
+
+/* ================= STATE (page only, nothing stored) ================= */
+var S = {
+  level:"full", muted:false, playing:false,
+  run:[], idx:0, fears:0, lies:0,
+  scareThisQ:false, falsePositiveIdx:-1,
+  answered:false, arousal:0.18, spike:0,
+  micOn:false, scareWindowUntil:0, outputUntil:0, reactionUntil:0,
+  deceptive:0, scratchSoloUntil:0,
+  scareTimer:null, ambientTimer:null, typeTimer:null
+};
+var DEADPAN=["The chart has spoken.","Your body exploded on that one.","It was 100% your body.","The operating system has nothing to do with this.","There is absolutely no uncertainty.","We can do this all night."];
+/* THE KEYED NOISE GATE — the standard studio tool, not a timer hack.
+   The mic's startle detection sits behind a noise gate KEYED (sidechained) to
+   the page's own audio output bus: every sound the page makes registers on the
+   bus, and while the bus is hot the gate is CLOSED — nothing the mic hears can
+   register as player sound. Tuned like a mixer gate, set once:
+   fast close (attack), a short HOLD, then a RELEASE tail — the release is the
+   speaker-bleed and room-echo allowance. It opens on that envelope, and only a
+   new onset heard through the open gate can count as the player's startle. */
+var GATE={ holdMs:120, releaseMs:500 };
+function markOutput(ms){ var until=Date.now()+ms; if(until>S.outputUntil)S.outputUntil=until; }
+function gateGain(now){
+  var closedUntil=S.outputUntil+GATE.holdMs;
+  if(now<closedUntil) return 0;
+  if(now<closedUntil+GATE.releaseMs) return (now-closedUntil)/GATE.releaseMs; /* release ramp */
+  return 1;
+}
+
+/* ================= AUDIO (all synthesized) ================= */
+var AC=null, master=null, scratchGain=null;
+function audio(){
+  if(AC) return true;
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = S.muted?0:0.9; master.connect(AC.destination);
+    /* pen scratch: looped filtered noise, very quiet */
+    var len = AC.sampleRate*1.2, buf = AC.createBuffer(1,len,AC.sampleRate), d = buf.getChannelData(0);
+    for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*0.5;
+    var src = AC.createBufferSource(); src.buffer=buf; src.loop=true;
+    var f = AC.createBiquadFilter(); f.type="bandpass"; f.frequency.value=3200; f.Q.value=0.8;
+    scratchGain = AC.createGain(); scratchGain.gain.value=0.0;
+    src.connect(f); f.connect(scratchGain); scratchGain.connect(master); src.start();
+    return true;
+  }catch(e){ return false; }
+}
+function tone(freq,t0,dur,type,vol,slideTo){
+  if(!AC) return; var o=AC.createOscillator(), g=AC.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(freq,t0);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t0+dur);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+0.05);
+}
+function noiseBurst(dur,vol,freq){
+  if(!AC) return; var len=AC.sampleRate*dur, buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+  for(var i=0;i<len;i++) d[i]=Math.random()*2-1;
+  var src=AC.createBufferSource(); src.buffer=buf;
+  var f=AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value=freq||800;
+  var g=AC.createGain(); g.gain.value=vol;
+  src.connect(f); f.connect(g); g.connect(master); src.start();
+}
+function noiseHit(dur,vol,type,freq,freqEnd){
+  if(!AC) return; var len=Math.max(1,Math.ceil(AC.sampleRate*dur)), buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+  for(var i=0;i<len;i++) d[i]=Math.random()*2-1;
+  var src=AC.createBufferSource(); src.buffer=buf;
+  var f=AC.createBiquadFilter(); f.type=type; f.frequency.setValueAtTime(freq,AC.currentTime);
+  if(freqEnd) f.frequency.exponentialRampToValueAtTime(freqEnd,AC.currentTime+dur);
+  var g=AC.createGain(); g.gain.setValueAtTime(vol,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+dur);
+  src.connect(f); f.connect(g); g.connect(master); src.start();
+}
+function sndBlip(soft){ if(!AC||S.muted) return; var t=AC.currentTime;
+  /* THE BLIP PALETTE — spooky, synthesized, drawn at random like everything else.
+     Every sound is a BLIP: hard ceiling ~half a second, most well under. Short is
+     load-bearing: the blip ends fast, the self-hearing gate closes fast, and the
+     mic's window for the HUMAN's reaction opens almost immediately.
+     FULL: any palette sound at full strength. MILD: only the softer end, low. */
+  var palette = soft ? ["gasp","whisper","sting"] : ["shriek","gasp","slam","whisper","sting"];
+  var pick = palette[Math.floor(Math.random()*palette.length)], dur=0.25;
+  if(pick==="shriek"){ dur=0.3; /* a scream used as a blip — swept and cut off, never a wail */
+    tone(1500,t,dur,"sawtooth",0.20,270); tone(1960,t,dur*0.9,"sawtooth",0.10,340); noiseHit(0.2,0.10,"bandpass",2400,700);
+  } else if(pick==="gasp"){ dur=0.2; noiseHit(dur,soft?0.10:0.20,"bandpass",800,2300);
+  } else if(pick==="slam"){ dur=0.18; tone(64,t,dur,"sine",soft?0.2:0.5,32); noiseHit(0.1,soft?0.06:0.2,"lowpass",420);
+  } else if(pick==="whisper"){ dur=0.34; noiseHit(dur,soft?0.07:0.13,"bandpass",1700,1200);
+  } else { dur=0.22; [110,116.5,220,233].forEach(function(fr){ tone(fr,t,dur,"sawtooth",soft?0.07:0.22); });
+    tone(1244,t,dur*0.8,"square",soft?0.03:0.10); noiseHit(dur,soft?0.08:0.24,"highpass",2400);
+  }
+  markOutput(Math.round(dur*1000));
+}
+function sndThud(){ if(!AC||S.muted) return; markOutput(400); var t=AC.currentTime; tone(72,t,0.35,"sine",0.5,38); noiseBurst(0.12,0.12,300); }
+function sndDrip(){ if(!AC||S.muted) return; markOutput(200); var t=AC.currentTime; tone(880+Math.random()*240,t,0.14,"sine",0.05,300); }
+function sndWhisper(){ if(!AC||S.muted) return; markOutput(750); noiseBurst(0.7,0.028,1800); }
+function sndStamp(){ if(!AC||S.muted) return; markOutput(300); var t=AC.currentTime; tone(58,t,0.22,"sine",0.55,30); noiseBurst(0.08,0.2,500); }
+function sndGlitchStatic(){ if(!AC||S.muted) return; markOutput(200); noiseBurst(0.18,0.05,2600); }
+
+/* ================= CHART ================= */
+var cv=document.getElementById('chart'), ctx=cv.getContext('2d');
+var W=660,H=210, pens=[
+  {y:42, val:0, color:"#7a1f16", phase:0, speed:2.6, amp:1},     /* heart */
+  {y:105,val:0, color:"#1d3a5f", phase:0, speed:0.55, amp:1},    /* breath */
+  {y:168,val:0, color:"#2e4a1e", phase:0, speed:0.32, amp:1}     /* sweat */
+];
+var xPos=0, lastT=0, flick=1;
+function sizeCanvas(){
+  var r=cv.getBoundingClientRect(), dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.max(300,r.width)*dpr; cv.height=210*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=210;
+  ctx.fillStyle="#d8c49a"; ctx.fillRect(0,0,W,H);
+}
+function drawPaper(){
+  ctx.fillStyle="#d8c49a"; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle="rgba(90,70,40,.20)"; ctx.lineWidth=1;
+  for(var gy=14;gy<H;gy+=16){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+  ctx.strokeStyle="rgba(122,31,22,.35)";
+  [73,136].forEach(function(gy){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); });
+}
+function chartLoop(t){
+  requestAnimationFrame(chartLoop);
+  if(!S.playing) return;
+  var dt=Math.min(50,t-(lastT||t)); lastT=t;
+  flick = 0.92 + Math.random()*0.14;
+  /* copy strip left = scrolling paper */
+  var step=Math.max(1,Math.round(dt/16));
+  var img=ctx.getImageData(step,0,Math.max(1,W-step),H);
+  ctx.putImageData(img,0,0);
+  ctx.fillStyle="rgba(216,196,154,"+(0.25*flick)+")"; ctx.fillRect(W-step,0,step,H);
+  ctx.strokeStyle="rgba(90,70,40,.16)"; ctx.beginPath(); ctx.moveTo(W-step,14); ctx.lineTo(W,14); ctx.stroke();
+  S.spike*=Math.pow(0.94, step); if(S.spike<0.01)S.spike=0;
+  var dread = 0.18 + 0.10*Math.sin(t/4200) + (S.answered?0:0.06);
+  var target = Math.min(1, dread + S.spike);
+  S.arousal += (target - S.arousal)*0.3;
+  pens.forEach(function(p){
+    p.phase += p.speed*0.06*step;
+    var base = Math.sin(p.phase)*(p===pens[0]?5:9) + Math.sin(p.phase*2.7)*2;
+    var spikeWave = (Math.random()*2-1) * 26 * S.arousal * (p===pens[0]?1.25:1);
+    var heartPulse = (p===pens[0]) ? Math.max(0,Math.sin(p.phase*3))*7*S.arousal : 0;
+    p.val = p.y + base*(0.5+S.arousal) + spikeWave - heartPulse;
+    if(Date.now()<S.reactionUntil) p.val += (Math.random()*2-1)*13; /* reaction tremor */
+    p.val=Math.max(6,Math.min(H-6,p.val));
+    ctx.strokeStyle=p.color; ctx.lineWidth=(Date.now()<S.reactionUntil)?2.6:1.6; ctx.beginPath();
+    ctx.moveTo(W-step-1,p.val); ctx.lineTo(W,p.val); ctx.stroke();
+  });
+  if(scratchGain) scratchGain.gain.value = S.muted?0:((Date.now()<S.scratchSoloUntil)?0.055:(0.012 + S.arousal*0.03));
+  xPos+=step;
+}
+/* ================= SCARE ================= */
+var scareFace=document.getElementById('scareFace'), shadow=document.getElementById('shadowPass'), stage=document.getElementById('stage');
+function fireScare(){
+  if(!S.playing) return;
+  /* THREE CLASSES, drawn at random per event — never tied to the question,
+     the answer, or the player: VISUAL (silent lunge) · AUDIBLE (blip only) · BOTH.
+     THE NEEDLE MOVES AT THE BLIP: S.spike fires in the same instant as the
+     stimulus, whatever class it is. A mic gasp afterwards draws a second,
+     distinguishable spike — stimulus, then reaction. Nobody explains this. */
+  S.fears++; S.spike=1; S.scareThisQ=true; S.scareWindowUntil=Date.now()+3800;
+  var cls=["visual","audible","both"][Math.floor(Math.random()*3)];
+  function lunge(){ scareFace.classList.add('show'); stage.classList.add('shake');
+    setTimeout(function(){ scareFace.classList.remove('show'); stage.classList.remove('shake'); },820); }
+  function shadowPass(soft){ shadow.classList.remove('go','soft'); void shadow.offsetWidth;
+    shadow.classList.add('go'); if(soft)shadow.classList.add('soft'); }
+  if(S.level==="full"){
+    if(cls==="visual") lunge();
+    else if(cls==="audible") sndBlip(false);
+    else { lunge(); sndBlip(false); }
+  } else if(S.level==="mild"){ /* visual softened to a passing shadow; blips softened */
+    if(cls==="visual") shadowPass(false);
+    else if(cls==="audible") sndBlip(true);
+    else { shadowPass(false); sndBlip(true); }
+  } else { /* OFF: quiet shadows only — no flash, no blips, no loud sounds, any class */
+    shadowPass(true);
+  }
+}
+function scheduleScare(){
+  clearTimeout(S.scareTimer);
+  if(Math.random()<0.62){
+    var delay = 1600 + Math.random()*5200;
+    S.scareTimer=setTimeout(fireScare, delay);
+  }
+}
+/* ================= FUN: GLITCH + MICRO-BEATS ================= */
+var glitchEl=document.getElementById('glitch'), deadpanEl=document.getElementById('deadpanLine'),
+    examinerFig=document.querySelector('.examiner svg');
+function fireGlitch(){
+  if(!S.playing) return;
+  deadpanEl.textContent="“A glitch. Possibly.”";
+  if(S.level==="full"){
+    sndGlitchStatic();
+    var n=0, iv=setInterval(function(){ glitchEl.classList.toggle('on'); n++; if(n>5){clearInterval(iv); glitchEl.classList.remove('on');} },70);
+  } else { /* MILD + OFF: silent and slow — never a flash */
+    glitchEl.style.transition="opacity 1.1s ease"; glitchEl.classList.add('on');
+    setTimeout(function(){ glitchEl.classList.remove('on'); },1300);
+  }
+}
+function microBeats(){
+  /* Examiner gone for one question, back the next — nobody comments */
+  examinerFig.style.opacity = (Math.random()<0.16) ? "0.04" : "1";
+  /* pen scratches on its own for one second, then stops */
+  if(Math.random()<0.22){ setTimeout(function(){ S.scratchSoloUntil=Date.now()+1000; }, 900+Math.random()*1200); }
+  /* a whisper under the room tone */
+  if(Math.random()<0.18){ setTimeout(sndWhisper, 1400+Math.random()*1500); }
+  /* the ancient laptop glitches, rarely */
+  if(Math.random()<0.16){ setTimeout(fireGlitch, 1000+Math.random()*2200); }
+}
+function scheduleAmbient(){
+  clearTimeout(S.ambientTimer);
+  S.ambientTimer=setTimeout(function(){
+    if(S.playing){ if(Math.random()<0.5) sndDrip(); else sndWhisper(); }
+    scheduleAmbient();
+  }, 3800 + Math.random()*5200);
+}
+
+/* ================= GAME FLOW ================= */
+var qEl=document.getElementById('questionText'), progEl=document.getElementById('progress'),
+    verdictEl=document.getElementById('verdictLine'), stampEl=document.getElementById('stamp'),
+    stampText=document.getElementById('stampText'), nextBtn=document.getElementById('nextBtn'),
+    yesBtn=document.getElementById('yesBtn'), noBtn=document.getElementById('noBtn');
+function typeQuestion(text){
+  clearInterval(S.typeTimer); qEl.textContent=""; var i=0;
+  var caret=document.createElement('span'); caret.className='caret'; caret.textContent="|";
+  S.typeTimer=setInterval(function(){
+    i++; qEl.textContent=text.slice(0,i); qEl.appendChild(caret);
+    if(i>=text.length){ clearInterval(S.typeTimer); caret.remove(); }
+  }, 34);
+}
+function askQuestion(){
+  S.answered=false; S.scareThisQ=false; S.spike=0;
+  progEl.textContent="Question "+(S.idx+1)+" of 8";
+  verdictEl.textContent=""; deadpanEl.textContent=""; stampEl.classList.remove('show');
+  stampText.classList.remove('scratched');
+  nextBtn.style.display="none"; yesBtn.disabled=false; noBtn.disabled=false;
+  typeQuestion(S.run[S.idx]);
+  scheduleScare(); microBeats();
+}
+function answer(){
+  if(S.answered||!S.playing) return;
+  S.answered=true; yesBtn.disabled=true; noBtn.disabled=true;
+  clearTimeout(S.scareTimer);
+  var verdict, note="";
+  if(S.scareThisQ){ verdict="DECEPTION INDICATED"; }
+  else if(S.idx===S.falsePositiveIdx){ verdict="DECEPTION INDICATED"; }
+  else if(Math.random()<0.22){ verdict="INCONCLUSIVE"; note="The chart will not settle."; }
+  else { verdict="NO DECEPTION INDICATED"; }
+  if(verdict==="DECEPTION INDICATED") S.deceptive++;
+  setTimeout(function(){ presentVerdict(verdict,note); }, 650);
+}
+function presentVerdict(verdict,note){
+  /* stamp comedy: crooked angles, ink variance, occasional double-stamp.
+     The final stamp on screen ALWAYS matches the scripted verdict. */
+  var rot=(-12+Math.random()*15).toFixed(1);
+  stampText.style.opacity=(0.84+Math.random()*0.16).toFixed(2);
+  stampText.style.boxShadow = Math.random()<0.2 ? "3px 3px 0 rgba(179,57,46,.35)" : "none";
+  function finalStamp(){
+    stampText.classList.remove('scratched');
+    stampText.textContent=verdict;
+    stampText.style.transform="rotate("+rot+"deg)";
+    stampEl.classList.remove('show'); void stampEl.offsetWidth;
+    stampEl.classList.add('show'); sndStamp();
+    verdictEl.textContent=note;
+    if(Math.random()<0.45) deadpanEl.textContent="“"+DEADPAN[Math.floor(Math.random()*DEADPAN.length)]+"”";
+    if(S.idx<7){ nextBtn.textContent="NEXT QUESTION →"; }
+    else { nextBtn.textContent="SEE THE RESULT →"; }
+    nextBtn.style.display="block";
+  }
+  if(Math.random()<0.14){
+    /* rarely: the wrong stamp comes down first, gets scratched out in pen */
+    var others=["NO DECEPTION INDICATED","DECEPTION INDICATED","INCONCLUSIVE"].filter(function(v){return v!==verdict;});
+    stampText.textContent=others[Math.floor(Math.random()*others.length)];
+    stampText.style.transform="rotate("+(-6+Math.random()*8).toFixed(1)+"deg)";
+    stampEl.classList.add('show'); sndStamp();
+    setTimeout(function(){ stampText.classList.add('scratched'); }, 800);
+    setTimeout(finalStamp, 1650);
+  } else finalStamp();
+}
+function endRun(){
+  S.playing=false; clearTimeout(S.scareTimer); clearTimeout(S.ambientTimer);
+  if(scratchGain) scratchGain.gain.value=0;
+  document.getElementById('game').style.display="none";
+  var e=document.getElementById('ending'); e.style.display="block";
+  document.getElementById('endingText').innerHTML=
+    "The machine recorded fear <b>"+S.fears+" time"+(S.fears===1?"":"s")+"</b>. It recorded zero lies. It has never recorded a lie. It can&rsquo;t.";
+  var rank = S.fears<=2 ? "Suspiciously Calm" : (S.fears<=5 ? "Certified Nervous System Owner" : "Officially Terrified — The Chart&rsquo;s Favorite");
+  document.getElementById('rankLine').innerHTML="Your rank: "+rank;
+  document.getElementById('copyText').textContent=
+    "DON'T JUMP stamped me DECEPTIVE "+S.deceptive+" time"+(S.deceptive===1?"":"s")+". I told the truth every time. The machine recorded fear "+S.fears+" times and zero lies — it can't record lies.";
+  setPlace('ending','the ending card'); e.scrollIntoView({behavior:'smooth'});
+}
+document.getElementById('copyBtn').addEventListener('click',function(){
+  var txt=document.getElementById('copyText').textContent, btn=this;
+  function done(){ btn.textContent="COPIED ✓"; setTimeout(function(){ btn.textContent="COPY MY RESULT"; },2200); }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done).catch(function(){ fallback(); }); }
+  else fallback();
+  function fallback(){
+    var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ btn.textContent="COPY FAILED — LONG-PRESS THE LINE ABOVE"; }
+    ta.remove();
+  }
+});
+function startRun(){
+  audio(); if(AC&&AC.state==='suspended')AC.resume();
+  S.run=drawRun(); S.idx=0; S.fears=0; S.lies=0; S.deceptive=0; deadpanEl.textContent="";
+  /* pick a calm false-positive slot: not the first question */
+  S.falsePositiveIdx = 1 + Math.floor(Math.random()*7);
+  S.playing=true;
+  document.getElementById('door').style.display="none";
+  document.getElementById('ending').style.display="none";
+  document.getElementById('game').style.display="block";
+  setPlace('game','the examination');
+  sizeCanvas(); drawPaper(); askQuestion(); scheduleAmbient();
+  document.getElementById('game').scrollIntoView();
+}
+yesBtn.addEventListener('click',answer); noBtn.addEventListener('click',answer);
+nextBtn.addEventListener('click',function(){
+  if(S.idx>=7){ endRun(); } else { S.idx++; askQuestion(); }
+});
+document.getElementById('beginBtn').addEventListener('click',startRun);
+document.getElementById('playAgain').addEventListener('click',function(){
+  document.getElementById('ending').style.display="none"; startRun();
+});
+
+/* dial */
+document.querySelectorAll('.dial button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.dial button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+    b.setAttribute('aria-pressed','true'); S.level=b.getAttribute('data-level');
+  });
+});
+/* mute — always respected: master gain to zero */
+var muteBtn=document.getElementById('muteBtn');
+muteBtn.addEventListener('click',function(){
+  S.muted=!S.muted; muteBtn.setAttribute('aria-pressed',S.muted?'true':'false');
+  muteBtn.textContent=S.muted?'🔇':'🔊'; if(master)master.gain.value=S.muted?0:0.9;
+});
+
+/* ================= MICROPHONE (optional, on-device only) ================= */
+var micBtn=document.getElementById('micBtn'), micStatus=document.getElementById('micStatus');
+micBtn.addEventListener('click',function(){
+  if(S.micOn){ micStatus.textContent="Microphone is on. Your gasp can move the needle."; return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    micStatus.textContent="No microphone is available in this viewer. Buttons-only play is the complete game."; return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    audio(); if(!AC){ micStatus.textContent="Microphone on, but sound is unavailable here. Buttons still play the full game."; }
+    var srcNode=AC?AC.createMediaStreamSource(stream):null;
+    if(!srcNode){ micStatus.textContent="Microphone unavailable here. Buttons-only play is the complete game."; return; }
+    var an=AC.createAnalyser(); an.fftSize=256; srcNode.connect(an);
+    var data=new Uint8Array(an.frequencyBinCount), lastSpike=0, prevPeak=0;
+    (function poll(){
+      an.getByteTimeDomainData(data); var peak=0;
+      for(var i=0;i<data.length;i++){ var v=Math.abs(data[i]-128)/128; if(v>peak)peak=v; }
+      var now=Date.now();
+      /* KEYED GATE, applied like a mixer: the mic's reading is multiplied by the
+         gate's gain envelope. Gate closed (page is sounding, plus hold) → gain 0,
+         nothing registers. Release tail → gain ramps up, so bleed and echo fading
+         under the ramp still cannot pass; only a genuinely new, loud onset heard
+         through the (nearly) open gate counts as the player's startle. */
+      var g = gateGain(now);
+      var newOnset = (peak*g)>0.42 && (prevPeak*g)<=0.42;
+      if(S.playing && g>0.9 && newOnset && now<S.scareWindowUntil && now-lastSpike>1200){
+        /* the SECOND spike — the human's reaction, drawn differently from the
+           stimulus spike: a hard tremor on the pens for about a second */
+        lastSpike=now; S.spike=1; S.reactionUntil=now+1000; S.fears++; S.scareThisQ=true;
+      }
+      prevPeak=peak;
+      requestAnimationFrame(poll);
+    })();
+    S.micOn=true; micBtn.setAttribute('aria-pressed','true'); micBtn.textContent="🎙 Microphone on";
+    micStatus.textContent="Microphone is on. Sound is analyzed on this device only — never recorded, never sent anywhere.";
+  }).catch(function(){
+    micStatus.textContent="Microphone not allowed — that is fine. Buttons-only play is the complete game.";
+  });
+});
+
+/* ================= LAYERS (face + one-tap depth) ================= */
+window.openLayer=function(id){ var el=document.getElementById(id); if(!el) return;
+  var inner=el.querySelector('.inner'), btn=el.querySelector('.layer-summary');
+  if(inner&&inner.hidden){ inner.hidden=false; if(btn)btn.setAttribute('aria-expanded','true'); } };
+document.querySelectorAll('.layer-summary').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var inner=btn.parentElement.querySelector('.inner'); if(!inner)return;
+    var opening=inner.hidden; inner.hidden=!opening; btn.setAttribute('aria-expanded',String(opening));
+  });
+});
+
+/* ================= TERM DOORS ================= */
+var TERMS={
+  polygraph:{t:"Polygraph",b:"<p><strong>What it is:</strong> a machine that records heart rate, breathing, and sweat while a person answers questions.</p><p><strong>What it isn&rsquo;t:</strong> a lie detector. No needle on it responds to lying itself, because no bodily response belongs to lying alone.</p><p><strong>How it works:</strong> an examiner compares reactions to charged questions against reactions to calm ones — the difference is arousal, and arousal has many causes.</p>"},
+  nrc:{t:"National Research Council",b:"<p><strong>What it is:</strong> the research arm of the U.S. National Academies — the body governments ask when they want the science settled.</p><p><strong>What it isn&rsquo;t:</strong> an advocacy group. It has no side in the polygraph business.</p><p><strong>How it works here:</strong> in 2003 it reviewed the polygraph evidence and found specific-incident testing &ldquo;well above chance, though well below perfection,&rdquo; and screening accuracy &ldquo;insufficient to justify reliance.&rdquo;</p>"},
+  apa:{t:"American Psychological Association",b:"<p><strong>What it is:</strong> the largest professional body of psychologists in the United States.</p><p><strong>What it isn&rsquo;t:</strong> a polygraph vendor or an examiner&rsquo;s guild.</p><p><strong>Its position:</strong> most psychologists agree there is little evidence that polygraph tests can accurately detect lies.</p>"},
+  vsa:{t:"Voice-stress analysis",b:"<p><strong>What it is:</strong> software that claims to detect deception from tiny tremors in a voice — no wires, works over a phone call.</p><p><strong>What it isn&rsquo;t:</strong> more accurate for having fewer wires. In controlled studies it performs at chance level — a coin flip wearing a headset.</p><p><strong>How it works:</strong> it measures stress in the voice. Stress, like sweat, is not lying.</p>"},
+  inconclusive:{t:"Inconclusive",b:"<p><strong>What it is:</strong> the machine declining to answer — the chart did not settle into a pattern the examiner will sign.</p><p><strong>What it isn&rsquo;t:</strong> innocence, and it isn&rsquo;t guilt. It is the one verdict that admits the needles were only needles.</p><p><strong>How it happens:</strong> arousal too flat, too wild, or too uneven to read — which is to say, a body being a body.</p>"},
+  baseline:{t:"The baseline",b:"<p><strong>What it is:</strong> the calm comparison readings an examiner takes from easy questions, against which charged questions are judged.</p><p><strong>What it isn&rsquo;t:</strong> neutral ground. The person being tested supplies it — nervous at the easy questions, and every later reading looks calm by comparison; calm at the easy ones, and ordinary nerves later look like guilt.</p><p><strong>How it works:</strong> the machine never measures you against the truth. It measures you against yourself, earlier, in the same frightening room.</p>"},
+  deception:{t:"Deception indicated",b:"<p><strong>What it is:</strong> the stamp that falls when arousal on a charged question rises above the baseline by enough.</p><p><strong>What it isn&rsquo;t:</strong> a recording of a lie. It is a recording of a body reacting — to fear, embarrassment, a memory, a noise in the dark.</p><p><strong>How it works:</strong> heart, breath, and sweat all climb together and the examiner reads the climb as deception. The climb is real. The reading is the leap.</p>"}
+};
+var sheet=document.getElementById('termSheet');
+document.querySelectorAll('.term').forEach(function(b){
+  b.addEventListener('click',function(ev){ ev.preventDefault();
+    var d=TERMS[b.getAttribute('data-term')]; if(!d)return;
+    document.getElementById('termTitle').textContent=d.t;
+    document.getElementById('termBody').innerHTML=d.b;
+    sheet.classList.add('show');
+  });
+});
+document.getElementById('termClose').addEventListener('click',function(){ sheet.classList.remove('show'); });
+
+/* ================= PLACE-KEEPING + COMPASS ================= */
+var PLACES={door:'the door',game:'the examination',ending:'the ending card',record:'the record',how:'how this page works',missing:'what are we missing?',top:'the top'};
+var lastPlace={id:'door',name:'the door'};
+function setPlace(id,name){
+  lastPlace={id:id,name:name};
+  var hl=document.getElementById('h-last'); if(hl) hl.textContent=name;
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+var io=new IntersectionObserver(function(es){
+  es.forEach(function(en){ if(en.isIntersecting) setPlace(en.target.id, PLACES[en.target.id]||en.target.id); });
+},{rootMargin:'-40% 0px -50% 0px'});
+['door','record','how','missing'].forEach(function(id){ var el=document.getElementById(id); if(el)io.observe(el); });
+
+/* ================= RABBIT-HOLE REMINDER (opt-in, in-memory only) ================= */
+var remOn=false, remMinutes=20, remTimer=null;
+var remToggle=document.getElementById('remToggle'), remRange=document.getElementById('remRange'),
+    remVal=document.getElementById('remVal'), remStatus=document.getElementById('remStatus'),
+    remBar=document.getElementById('reminderBar');
+function armReminder(mins){
+  clearTimeout(remTimer);
+  if(!remOn)return;
+  remTimer=setTimeout(function(){
+    remBar.classList.add('show'); remBar.scrollIntoView({behavior:'smooth',block:'center'});
+  }, mins*60*1000);
+  remStatus.textContent="The reminder is on. It will appear here in "+mins+" minutes, in this page only.";
+}
+remRange.addEventListener('input',function(){ remMinutes=parseInt(remRange.value,10); remVal.textContent=remMinutes+" min"; if(remOn)armReminder(remMinutes); });
+remToggle.addEventListener('click',function(){
+  remOn=!remOn; remToggle.setAttribute('aria-pressed',remOn?'true':'false');
+  remToggle.textContent="Reminder: "+(remOn?"ON":"OFF");
+  if(remOn)armReminder(remMinutes); else { clearTimeout(remTimer); remBar.classList.remove('show'); remStatus.textContent="The reminder is off."; }
+});
+document.getElementById('remSnooze').addEventListener('click',function(){ remBar.classList.remove('show'); armReminder(10); remStatus.textContent="Snoozed. It will appear again in 10 minutes."; });
+document.getElementById('remDismiss').addEventListener('click',function(){ remBar.classList.remove('show'); if(remOn)armReminder(remMinutes); });
+
+/* ================= RESIZE / ROTATION ================= */
+var rto=null;
+window.addEventListener('resize',function(){ clearTimeout(rto); rto=setTimeout(function(){ if(S.playing){ sizeCanvas(); } },180); });
+window.addEventListener('orientationchange',function(){ setTimeout(function(){ if(S.playing)sizeCanvas(); },250); });
+
+/* restore place from address where the platform allows */
+if(location.hash){ var h=location.hash.slice(1); if(PLACES[h]) lastPlace={id:h,name:PLACES[h]}; var hl2=document.getElementById('h-last'); if(hl2) hl2.textContent=lastPlace.name; }
+
+requestAnimationFrame(chartLoop);
+})();
+</script>
+<script>
+(function(){
+  // "Available offline" is the download door: it hands the reader a complete
+  // standalone copy of this page, generated from the page itself, so the
+  // offline copy is always the current version.
+  var door = document.getElementById('offline-door');
+  if(!door) return;
+  door.addEventListener('click', function(ev){
+    ev.preventDefault();
+    var html = '<!doctype html>\n' + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'dont-jump.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  });
+})();
+</script>
+
+<script>
+(function(){
+  var KEY='dontjump-dock';
+  function apply(v){ document.body.setAttribute('data-dock', v||'bottom');
+    var rs=document.querySelectorAll('input[name="hdock"]'); for(var i=0;i<rs.length;i++) rs[i].checked=(rs[i].value===(v||'bottom')); }
+  var saved='bottom'; try{ saved=localStorage.getItem(KEY)||'bottom'; }catch(e){}
+  apply(saved);
+  var rs=document.querySelectorAll('input[name="hdock"]');
+  for(var i=0;i<rs.length;i++) rs[i].addEventListener('change',function(){ apply(this.value); try{ localStorage.setItem(KEY,this.value); }catch(e){} });
+  var forget=document.getElementById('dock-forget');
+  if(forget) forget.addEventListener('click',function(){ try{ localStorage.removeItem(KEY); }catch(e){} apply('bottom'); });
+  var navP=document.getElementById('nav-panel'), setP=document.getElementById('set-panel');
+  var navB=document.getElementById('nav-stack'), setB=document.getElementById('set-stack');
+  function foldReset(){ ['fold-this','fold-other'].forEach(function(id){document.getElementById(id).hidden=true;});
+    ['fold-this-btn','fold-other-btn'].forEach(function(id){var b=document.getElementById(id); b.setAttribute('aria-expanded','false'); b.querySelector('span').textContent='Open \u25B8';}); }
+  function openP(p){ navP.hidden=(p!==navP); setP.hidden=(p!==setP); if(p===navP) foldReset(); }
+  function closeAll(){ navP.hidden=true; setP.hidden=true; navB.setAttribute('aria-expanded','false'); setB.setAttribute('aria-expanded','false'); }
+  navB.addEventListener('click',function(){ if(navP.hidden){openP(navP); navB.setAttribute('aria-expanded','true');} else closeAll(); });
+  setB.addEventListener('click',function(){ if(setP.hidden){openP(setP); setB.setAttribute('aria-expanded','true');} else closeAll(); });
+  document.querySelectorAll('[data-hclose],[data-sclose]').forEach(function(b){ b.addEventListener('click',closeAll); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeAll(); });
+  [['fold-this-btn','fold-this'],['fold-other-btn','fold-other']].forEach(function(pair){
+    var b=document.getElementById(pair[0]), body=document.getElementById(pair[1]);
+    b.addEventListener('click',function(){ var opening=body.hidden; body.hidden=!opening; b.setAttribute('aria-expanded',String(opening)); b.querySelector('span').textContent=opening?'Close \u25BE':'Open \u25B8'; });
+  });
+  var NAMES={'door':'The door','game':'The examination','ending':'The ending card','record':'The record','how':'How this page works','missing':'What are we missing?'};
+  var last='door', stack=[];
+  function go(id,record){ var el=document.getElementById(id); if(!el) return;
+    if((id==='game'||id==='ending') && el.style.display!=='block'){ el=document.getElementById('door'); id='door'; }
+    if(record!==false && last!==id) stack.push(last);
+    last=id; document.getElementById('h-last').textContent=NAMES[id]||id;
+    if(window.openLayer) window.openLayer(id==='missing'?'missing-door':id);
+    el.scrollIntoView(); closeAll(); }
+  document.querySelectorAll('#fold-this [data-place]').forEach(function(b){ b.addEventListener('click',function(){ go(b.getAttribute('data-place')); }); });
+  document.getElementById('h-prev').addEventListener('click',function(){ var p=stack.pop(); if(p) go(p,false); else window.scrollTo(0,0); });
+  document.getElementById('h-top').addEventListener('click',function(){ stack.push(last); window.scrollTo(0,0); closeAll(); });
+  document.getElementById('h-bottom').addEventListener('click',function(){ stack.push(last); window.scrollTo(0,document.body.scrollHeight); closeAll(); });
+  document.getElementById('missing-stack').addEventListener('click',function(){ if(window.openLayer) window.openLayer('missing-door'); last='missing'; document.getElementById('h-last').textContent=NAMES['missing']; });
+})();
+</script>
+</body>
+
+</html>
