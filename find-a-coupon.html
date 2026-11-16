@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Find a Coupon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#fbfcfb; --surface:#ffffff; --surface2:#eef4f1; --ink:#14201c; --muted:#4b5d56;
+  --line:#cfddd6; --accent:#0b6b57; --accent-ink:#ffffff; --accent-soft:#dff0e9;
+  --amber:#b45309; --amber-soft:#fdf0dc; --red:#b42318; --red-soft:#fdecea;
+  --slate:#475569; --slate-deep:#334155; --gold:#e8a33d;
+  --shadow:0 10px 30px rgba(20,32,28,.10);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1514; --surface:#17201e; --surface2:#1d2926; --ink:#eef5f1; --muted:#a9bcb3;
+    --line:#33463f; --accent:#3ec9a7; --accent-ink:#06231b; --accent-soft:#173a31;
+    --amber:#f0b35e; --amber-soft:#3a2c14; --red:#ff9a8f; --red-soft:#3d1d1a;
+    --shadow:0 10px 30px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important} }
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55}
+h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;line-height:1.12;margin:0}
+a{color:var(--accent);text-underline-offset:3px}
+button,[role="button"],summary,select,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px 90px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* ---------- Free banner / hero ---------- */
+.freebar{background:var(--accent);color:var(--accent-ink);padding:26px 20px 22px;text-align:center}
+.freebar .big{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(2rem,6.5vw,3.4rem);letter-spacing:.01em;line-height:1.05}
+.freebar p{margin:8px auto 0;max-width:640px;font-size:1.02rem;opacity:.95}
+.offline-door{display:inline-block;margin-top:14px;background:var(--surface);color:var(--accent);border:none;border-radius:999px;
+  padding:12px 22px;min-height:44px;font:600 1rem "IBM Plex Sans",sans-serif;cursor:pointer;box-shadow:var(--shadow)}
+.offline-door:hover{transform:translateY(-1px)}
+.offline-door:focus-visible,a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.offline-note{margin-top:10px;font-size:.85rem;opacity:.85}
+
+.hero{padding:34px 0 8px}
+.hero h1{font-size:clamp(2.1rem,5.5vw,3.2rem);font-weight:800;max-width:16ch}
+.hero .sub{font-size:1.13rem;color:var(--muted);max-width:62ch;margin-top:12px}
+.hardline{margin-top:22px;border:2px solid var(--ink);border-radius:14px;background:var(--surface);padding:18px 20px;display:flex;gap:16px;align-items:flex-start;box-shadow:var(--shadow)}
+.hardline .tag{flex:none;background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:10px;font-size:1.3rem;line-height:1}
+.hardline h2{font-size:1.25rem}
+.hardline p{margin:6px 0 0}
+.hardline strong{color:var(--amber)}
+
+/* ---------- Sections ---------- */
+section{margin-top:52px;scroll-margin-top:18px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:3px solid var(--accent);padding-bottom:10px;margin-bottom:20px}
+.sec-head .motif{font-size:1.35rem}
+.sec-head h2{font-size:clamp(1.5rem,3.6vw,2rem);font-weight:700}
+.sec-head p{margin:4px 0 0;color:var(--muted);width:100%}
+.sec-head{flex-wrap:wrap}
+.explain{background:var(--surface2);border-radius:12px;padding:16px 18px;margin-bottom:20px}
+.explain p{margin:0}
+.explain p + p{margin-top:8px}
+.term{font-weight:600;border-bottom:2px dotted var(--accent);cursor:help}
+
+/* quick start */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.step .n{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-family:"Bricolage Grotesque",sans-serif}
+.step h3{font-size:1.08rem;margin:12px 0 6px}
+.step p{margin:0;color:var(--muted);font-size:.97rem}
+.step p b,.step p strong{color:var(--ink)}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;position:relative}
+.card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:0;border-left:2px dashed var(--line)}
+.card{padding-left:24px}
+.card h3{font-size:1.12rem;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.card h3 a{text-decoration:none}
+.card h3 a:hover{text-decoration:underline}
+.best{font-size:.92rem;margin:8px 0 0}
+.best b{color:var(--accent)}
+.catch{margin:10px 0 0;background:var(--amber-soft);border-radius:10px;padding:10px 12px;font-size:.93rem}
+.catch b{color:var(--amber)}
+.card p.plain{margin:8px 0 0;color:var(--muted);font-size:.96rem}
+.free-chip{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--accent-soft);color:var(--accent);padding:4px 8px;border-radius:999px;white-space:nowrap}
+.warn-chip{background:var(--red-soft);color:var(--red)}
+.card.warn{border-color:var(--red)}
+ul.tight{margin:8px 0 0;padding-left:20px}
+ul.tight li{margin:4px 0}
+.store-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.store{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:.95rem}
+.store b{display:block}
+details{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+summary{cursor:pointer;font-weight:600;color:var(--accent);padding:6px 0;min-height:36px}
+details p,details li{font-size:.96rem}
+
+/* chart */
+.chartcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.chartcard h3{font-size:1.05rem;margin-bottom:4px}
+.chartcard .cap{color:var(--muted);font-size:.94rem;margin:0 0 14px}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{font-family:"IBM Plex Sans",sans-serif;fill:var(--ink)}
+svg.chart .muted-t{fill:var(--muted)}
+svg.chart .grid-l{stroke:var(--line);stroke-width:1}
+.takeaways{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+.take{background:var(--surface2);border-radius:12px;padding:14px 16px;font-size:.96rem}
+.take b{display:block;margin-bottom:4px}
+
+/* avoid */
+.avoid-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.avoid-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.avoid-card.bad{border-top:5px solid var(--red)}
+.avoid-card h3{font-size:1.08rem;margin-bottom:8px}
+.avoid-card p,.avoid-card li{font-size:.96rem}
+.avoid-card p{margin:8px 0 0}
+.check60{background:var(--accent-soft);border-radius:14px;padding:20px}
+.check60 h3{font-size:1.15rem;margin-bottom:10px}
+.check60 ol{margin:0;padding-left:22px}
+.check60 li{margin:7px 0}
+.check60 a{font-weight:600}
+
+/* ---------- Cart checker ---------- */
+.checker{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.checker-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field label{display:block;font-weight:700;font-size:.95rem;margin-bottom:6px}
+.field .hint{font-size:.88rem;color:var(--muted);margin:4px 0 0}
+.field input[type="text"],.field input[type="number"],.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
+  font:inherit;font-size:1rem;padding:11px 12px;min-height:44px}
+.field textarea{min-height:118px;resize:vertical;line-height:1.45}
+.field input:focus,.field textarea:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--accent)}
+.field.full{grid-column:1/-1}
+.photo-box{border:1.5px dashed var(--line);border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--surface2)}
+.photo-box.dragover{border-color:var(--accent);background:var(--accent-soft)}
+.photo-status{font-size:.92rem;color:var(--muted);flex:1;min-width:180px}
+.photo-status.err{color:var(--red);font-weight:600}
+.photo-status.ok{color:var(--accent);font-weight:600}
+.photo-preview{max-width:130px;max-height:96px;border-radius:8px;border:1px solid var(--line);object-fit:cover}
+.ocr-bar{flex-basis:100%;height:10px;background:var(--bg);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.ocr-bar[hidden]{display:none}
+.ocr-fill{height:100%;width:0;background:var(--accent);transition:width .2s ease}
+.checker-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.check-btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;padding:13px 24px;min-height:48px;
+  font:700 1.02rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.check-btn:hover{transform:translateY(-1px)}
+.ghost-btn{background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:11px 18px;min-height:44px;
+  font:600 .95rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.checker-err{color:var(--red);font-weight:600;margin:12px 0 0}
+.checker-err[hidden]{display:none}
+.results{margin-top:22px}
+.results[hidden]{display:none}
+.results h3{font-size:1.15rem;margin:20px 0 8px}
+.results h3:first-child{margin-top:0}
+.result-summary{background:var(--accent-soft);border-radius:12px;padding:14px 16px;font-size:.98rem}
+.door-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.door{display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;border-radius:999px;background:var(--surface);
+  border:1px solid var(--accent);color:var(--accent);font-weight:600;font-size:.92rem;text-decoration:none}
+.door:hover{background:var(--accent);color:var(--accent-ink)}
+.item-card{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:10px;background:var(--bg)}
+.item-card .iname{font-weight:700}
+.item-card .ibrand{color:var(--muted);font-size:.9rem}
+.playbook{margin:8px 0 0;padding-left:0;list-style:none}
+.playbook li{margin:8px 0;padding:10px 12px 10px 38px;position:relative;background:var(--surface2);border-radius:10px;font-size:.96rem}
+.playbook li::before{content:"✓";position:absolute;left:12px;top:10px;color:var(--accent);font-weight:800}
+.copy-row{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.copy-note{font-size:.9rem;color:var(--muted)}
+@media (max-width:760px){ .checker-grid{grid-template-columns:1fr} .checker{padding:16px} }
+
+/* sources */
+.sources{font-size:.9rem;color:var(--muted)}
+.sources li{margin:5px 0}
+.foot{margin-top:56px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:.92rem}
+.foot p{margin:6px 0}
+
+/* ---------- Compass ---------- */
+.compass{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;width:104px}
+.compass-btn{width:92px;height:92px;border-radius:50%;border:3px solid var(--surface);background:var(--slate);color:#fff;cursor:pointer;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px;text-align:center}
+.compass-btn .last{font-size:.68rem;line-height:1.25;font-weight:600;max-width:76px}
+.compass-btn .ring{font-size:1.15rem;line-height:1}
+.navigate-pill{background:var(--slate-deep);color:#fff;font-size:.78rem;font-weight:600;padding:8px 16px;border-radius:999px;min-height:36px;display:inline-flex;align-items:center}
+.compass-panel{position:absolute;right:110px;top:50%;transform:translateY(-50%);width:min(280px,74vw);max-height:76vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.compass-panel[hidden]{display:none}
+.compass-panel h3{font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.compass-panel h3:first-child{margin-top:0}
+.compass-panel a{display:flex;align-items:center;min-height:40px;padding:8px 10px;border-radius:9px;color:var(--ink);text-decoration:none;font-size:.95rem}
+.compass-panel a:hover,.compass-panel a:focus-visible{background:var(--surface2)}
+main{padding-right:118px}
+@media (max-width:760px){
+  .steps,.grid,.takeaways,.avoid-grid,.store-list{grid-template-columns:1fr}
+  main{padding-right:104px}
+  .wrap{padding-left:14px;padding-right:14px}
+  .compass{right:8px;width:88px}
+  .navigate-pill{padding:8px 10px;font-size:.74rem}
+  .compass-btn{width:80px;height:80px}
+  .compass-panel{right:96px}
+  body{font-size:16px}
+}
+@media print{ .compass,.offline-door{display:none} main{padding-right:0} }
+</style>
+</head>
+<body id="top">
+
+<div class="freebar">
+  <div class="big">Free. Always free.</div>
+  <p>Every door on this page costs $0 to use — and this page itself is
+  <button class="offline-door" id="offlineBtn" type="button">available offline for free — tap to download it</button></p>
+  <div class="offline-note">The download saves this whole page as one file you can open anywhere, no connection needed.</div>
+</div>
+
+<main>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Find a Coupon 🎟️</h1>
+    <p class="sub">Free coupon, deal, and cashback sites are all over the internet — most people just don't know where to look. Here are the verified free doors, lowest-friction first, with every catch printed beside the door it belongs to. <b>Already have a cart?</b> <a href="#checker">Check it below</a> — put in the store, paste the cart, type one item, or drop in a photo or screenshot of the cart, and get live coupon doors for exactly that.</p>
+
+    <div class="hardline">
+      <div class="tag" aria-hidden="true">✂️</div>
+      <div>
+        <h2>The hard line: <strong>never pay to use coupons</strong></h2>
+        <p>Real coupons are always free. The moment a coupon costs money — a fee, a subscription, a "club" — it stopped being a saving and became a product: usually your own discount sold back to you. Anything that charges for coupon access is excluded from the lists below and named in the <a href="#avoid">Avoid pile</a> instead.</p>
+      </div>
+    </div>
+  </div>
+
+  <section id="checker" aria-labelledby="checker-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🧾</span><h2 id="checker-h">Check your cart — a store, a cart, or just one item</h2>
+      <p>Put in the store or website you're buying from, paste in what's in your cart, type a single item, or add a photo or screenshot of the cart — and get live coupon doors for that exact store and those exact items.</p></div>
+
+    <div class="explain">
+      <p><b>How this works, honestly:</b> this page can't reach into another store's cart — your browser blocks any site from seeing another site's cart, and that's a protection, not a bug. So you bring the cart here: copy the item list from your cart page and paste it below (item names are all it needs). The checker then builds <b>live searches</b> on the free sites below — RetailMeNot, Slickdeals, Coupons.com and the rest — pre-filled with your store and items, so the codes and deals you see when you tap through are the ones those sites list <em>right now</em>, with their expiry and terms attached. Nothing you type is sent anywhere or saved; the searches only happen when you tap a door.</p>
+      <p><b>Just one item?</b> That works too — type the item (brand + product helps: “Tide Pods 42ct”, “LEGO Star Wars set”, “Nike Air Force 1”) and leave the store blank, or fill in both.</p>
+      <p><b>Got a picture of the cart instead?</b> Use the photo button below — a camera photo of the cart on a screen, a screenshot, or any image file you already have; one door takes any of them. The words in the picture are read by a small open-source reader (<a href="https://github.com/naptha/tesseract.js" target="_blank" rel="noopener">Tesseract.js</a>) that runs <em>inside your browser, on your device</em> — the picture itself is never uploaded, sent anywhere, or saved. What it reads lands in the cart box below, so you can fix any word it misread before the doors are built. Reading a picture needs an internet connection the first time, just to fetch the reader itself.</p>
+    </div>
+
+    <form class="checker" id="checkerForm" novalidate>
+      <div class="checker-grid">
+        <div class="field">
+          <label for="storeInput">Store or website</label>
+          <input type="text" id="storeInput" list="storeList" placeholder="e.g. Target, Walmart, nike.com, Kroger" autocomplete="off" />
+          <datalist id="storeList">
+            <option value="Amazon"></option><option value="Walmart"></option><option value="Target"></option>
+            <option value="Kroger"></option><option value="CVS"></option><option value="Walgreens"></option>
+            <option value="Best Buy"></option><option value="Home Depot"></option><option value="Lowe's"></option>
+            <option value="Macy's"></option><option value="Nike"></option><option value="eBay"></option>
+            <option value="Publix"></option><option value="Safeway"></option><option value="Dollar General"></option>
+            <option value="Cabela's"></option><option value="Kohl's"></option><option value="Old Navy"></option>
+          </datalist>
+          <p class="hint">A name or a website address (nike.com) both work — a website address unlocks the direct RetailMeNot store page.</p>
+        </div>
+        <div class="field">
+          <label for="totalInput">Cart total <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+          <input type="number" id="totalInput" min="0" step="0.01" placeholder="e.g. 86.40" inputmode="decimal" />
+          <p class="hint">Codes die most often on a minimum spend the cart hasn't met — knowing your total tells you which codes can even apply.</p>
+        </div>
+        <div class="field full">
+          <label>Photo or screenshot of your cart <span style="font-weight:400;color:var(--muted)">(optional — any image)</span></label>
+          <div class="photo-box" id="photoBox">
+            <input type="file" id="photoInput" accept="image/*" hidden />
+            <button class="ghost-btn" type="button" id="photoBtn">📷 Add a photo or screenshot of the cart</button>
+            <span class="photo-status" id="photoStatus">Take a picture, use a screenshot, or pick an image file — one door, any picture of the cart. You can also drag an image onto this box.</span>
+            <img class="photo-preview" id="photoPreview" alt="The cart picture you added" hidden />
+            <div class="ocr-bar" id="ocrBar" hidden><div class="ocr-fill" id="ocrFill"></div></div>
+          </div>
+          <p class="hint">The picture is read right here on your device and never leaves it. What it reads appears in the cart box below — glance over it, fix any misread word, and the doors are built from the corrected text.</p>
+        </div>
+        <div class="field full">
+          <label for="cartInput">Your cart, or one item</label>
+          <textarea id="cartInput" placeholder="Paste your cart here, one item per line — prices and quantities are fine, they get cleaned off. Or just type one item:&#10;&#10;Tide Pods laundry detergent 42ct&#10;Charmin Ultra Soft 12 rolls&#10;LEGO City set 60368"></textarea>
+          <p class="hint">On the store's cart page: select the item list, copy, paste here. Lines like “Subtotal”, “Shipping” and “Tax” are filtered out automatically.</p>
+        </div>
+      </div>
+      <div class="checker-actions">
+        <button class="check-btn" type="submit">Check for coupons →</button>
+        <button class="ghost-btn" type="button" id="exampleBtn">Fill in an example cart</button>
+        <button class="ghost-btn" type="button" id="clearBtn">Clear</button>
+      </div>
+      <p class="checker-err" id="checkerErr" hidden>Add a store or at least one item first — that's what the coupon sites need to search.</p>
+
+      <div class="results" id="results" hidden aria-live="polite">
+        <h3>Your coupon doors</h3>
+        <div class="result-summary" id="resultSummary"></div>
+
+        <div id="storeDoorsWrap">
+          <h3 id="storeDoorsH">For the store itself — codes &amp; cashback</h3>
+          <p style="margin:0;color:var(--muted);font-size:.96rem">Store-wide promo codes, free-shipping codes, and cashback rates live here. Start with RetailMeNot and SimplyCodes; if you'll use a cashback portal, start the whole purchase there and use only codes that portal lists, so the cashback doesn't void.</p>
+          <div class="door-row" id="storeDoors"></div>
+        </div>
+
+        <div id="itemDoorsWrap">
+          <h3>For each item — product coupons &amp; price checks</h3>
+          <p style="margin:0;color:var(--muted);font-size:.96rem">Manufacturer coupons (the brand's own coupons, usable at most stores) and deal/price checks for the exact product — a “sale” price elsewhere is only a saving if the price history says so.</p>
+          <div id="itemDoors"></div>
+        </div>
+
+        <h3>Your playbook for this cart</h3>
+        <ul class="playbook" id="playbook"></ul>
+
+        <div class="copy-row">
+          <button class="ghost-btn" type="button" id="copyBtn">Copy these search links</button>
+          <span class="copy-note" id="copyNote">Copies a plain-text list of every door above, to paste into notes or send to someone shopping with you.</span>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section id="how" aria-labelledby="how-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🧭</span><h2 id="how-h">How the free sites stay free</h2></div>
+    <div class="explain">
+      <p>Stores pay <span class="term" title="A percentage of your purchase that the store pays to whoever sent you to them">affiliate commissions</span> — a percentage of the sale — to whoever sent them the buyer. Coupon sites, deal blogs, and <span class="term" title="A site you click through before shopping; the store pays it a commission and it shares part of that commission back with you as cash">cashback portals</span> live on those commissions, on ads, or on both. Cashback portals split the commission with you. That's the whole business model.</p>
+      <p>Why it matters: a free tool is paid by merchants, not by you — so its loyalty follows the money. When a site won't say how it makes money, that's a flag.</p>
+    </div>
+  </section>
+
+  <section id="start" aria-labelledby="start-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">⚡</span><h2 id="start-h">Start here — the three-move stack</h2>
+      <p>If you do only three things, do these. (From the research's quick-start stack.)</p></div>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><h3>Groceries</h3>
+        <p>Join your main store's <b>free loyalty program</b> (its rewards account) and clip its digital coupons in the app. Add <b>Ibotta</b> before each trip — activate the offer first, scan the receipt after.</p></div>
+      <div class="step"><span class="n">2</span><h3>Online checkout</h3>
+        <p>Search <b>RetailMeNot</b> for a code, read its terms, and have a second code ready. If it's Amazon, check the item's price history on <b>CamelCamelCamel</b> first.</p></div>
+      <div class="step"><span class="n">3</span><h3>Bigger online orders</h3>
+        <p>Pick <b>one</b> cashback portal — <b>Rakuten</b> or <b>TopCashback</b>, whichever rate is higher that day — start the trip there, and use only codes that portal lists, so the cashback doesn't void.</p></div>
+    </div>
+  </section>
+
+  <section id="tier1" aria-labelledby="tier1-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🚪</span><h2 id="tier1-h">No account, no install — just go look</h2>
+      <p>The lowest-friction doors. Open the site, find the deal or code, done.</p></div>
+    <div class="grid">
+
+      <article class="card">
+        <h3><a href="https://slickdeals.net" target="_blank" rel="noopener">Slickdeals</a> <span class="free-chip">Free · no account</span></h3>
+        <p class="best"><b>Best for:</b> finding out whether a price is actually good, and catching price mistakes and short-lived sales.</p>
+        <p class="plain">A community deal board: real shoppers post deals, the community votes, editors promote the best to the front page. It's a deal <em>board</em>, not a code vault — many deals need no code at all. Makes money on affiliate links and ads.</p>
+        <p class="catch"><b>Catch:</b> deals die fast. See it, check it, move.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://www.retailmenot.com" target="_blank" rel="noopener">RetailMeNot</a> <span class="free-chip">Free · codes visible without an account</span></h3>
+        <p class="best"><b>Best for:</b> the standard first stop for a promo code at checkout — the biggest promo-code database.</p>
+        <p class="plain">Codes are partly user-submitted and untested, so check the "last used / success" signals on each code before you count on it.</p>
+        <p class="catch"><b>Catch:</b> quantity over quality. Independent testing puts general aggregator code success around 30–40% — see <a href="#will-it-work">Will the code even work?</a> below. Have a second code ready.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://www.coupons.com" target="_blank" rel="noopener">Coupons.com — printable coupons</a> <span class="free-chip">Free · no account to browse or print</span></h3>
+        <p class="best"><b>Best for:</b> manufacturer coupons for groceries and household goods — print at home, use at almost any store.</p>
+        <p class="plain">Selection is thinner than its old heyday — about 46 printables when Clark.com checked.</p>
+        <p class="catch"><b>Catch:</b> before your first print from a device, it asks for a cell number and texts a verification code (anti-fraud, so print limits hold). Most coupons print only 1–2 times per person, and a failed print can still burn your limit — Coupons.com itself suggests saving the coupon as a PDF when the print dialog opens, so a printer jam doesn't cost you the coupon.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://camelcamelcamel.com" target="_blank" rel="noopener">CamelCamelCamel</a> <span class="free-chip">Free · alerts need a free account</span></h3>
+        <p class="best"><b>Best for:</b> telling a real Amazon price drop from a fake "was $X, now $Y" markup game.</p>
+        <p class="plain">Paste an Amazon link and see what the item actually cost over months. Charts need no account; email price-drop alerts need a free one. Amazon only. Funded by affiliate tags and ads.</p>
+        <p class="catch"><b>Catch:</b> none for shoppers beyond that.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://thekrazycouponlady.com" target="_blank" rel="noopener">The Krazy Coupon Lady</a> · <a href="https://hip2save.com" target="_blank" rel="noopener">Hip2Save</a> <span class="free-chip">Free to read · no account</span></h3>
+        <p class="best"><b>Best for:</b> groceries and drugstores (CVS / Walgreens deal scenarios).</p>
+        <p class="plain">Coupon blogs with human deal editors who do the stacking math for you — <span class="term" title="Combining a sale price, a store coupon, a manufacturer coupon, and a rebate app offer on the same items so the discounts add up">stacking</span>: which store, which digital coupon, which rebate app, final price.</p>
+        <p class="catch"><b>Catch:</b> ad-heavy. They earn affiliate commissions and run clearly-labeled sponsored posts — The Krazy Coupon Lady says so on its own disclosure page, which is the honest way to do it. Their best final prices often require combining a store app plus a rebate app.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://www.groupon.com/coupons" target="_blank" rel="noopener">Groupon Coupons</a> <span class="free-chip">Free codes section</span></h3>
+        <p class="best"><b>Best for:</b> verified-ish promo-code listings for big brands.</p>
+        <p class="catch"><b>Catch:</b> don't confuse the free codes section with the <em>vouchers</em> Groupon sells. Buying a voucher is a purchase with its own refund rules — a product, not a coupon.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://www.bradsdeals.com" target="_blank" rel="noopener">Brad's Deals</a> <span class="free-chip">Free to browse</span></h3>
+        <p class="best"><b>Best for:</b> a short, hand-picked daily list instead of a database dump.</p>
+        <p class="plain">Human editors pick a small number of deals daily. Lower volume, higher hit rate.</p>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="tier2" aria-labelledby="tier2-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🛒</span><h2 id="tier2-h">Free account or free app — still $0, one sign-up</h2>
+      <p>A free account is fine. A fee is not. Everything here costs $0; what each one asks of you instead is printed in its catch.</p></div>
+
+    <article class="card" style="margin-bottom:14px">
+      <h3>Your own store's loyalty program + its digital coupons <span class="free-chip">Free to join</span></h3>
+      <p class="best"><b>The single highest-value move for groceries.</b> Clip manufacturer + store coupons to your card in the app; they come off automatically at checkout.</p>
+      <div class="store-list">
+        <div class="store"><b>Kroger</b> (and its banner stores: Fry's, King Soopers, Fred Meyer, Ralphs…) — hundreds of digital coupons weekly, member prices, fuel points.</div>
+        <div class="store"><b>CVS ExtraCare</b> — 2% back in ExtraBucks on most purchases, plus personalized register coupons. CVS policy lets one manufacturer coupon + one CVS coupon stack on the same item.</div>
+        <div class="store"><b>Target Circle</b> — free tier: 1% back in earnings, personalized offers, birthday discount. Target also sells a paid "Circle 360" tier — <em>not needed for coupons</em>; the offers live in the free tier.</div>
+        <div class="store"><b>Also the same pattern:</b> myWalgreens, Dollar General (myDG), Publix, Safeway / Albertsons.</div>
+      </div>
+      <p class="catch"><b>Catch (all of them):</b> the trade is your purchase history — the coupons are personalized <em>because</em> the store tracks what you buy. Digital coupons also require the app/card, which shuts out shoppers without smartphones; paper weekly ads and in-store sale prices remain the no-account fallback.</p>
+    </article>
+
+    <div class="grid">
+      <article class="card">
+        <h3><a href="https://www.rakuten.com" target="_blank" rel="noopener">Rakuten</a> <span class="free-chip">Free account</span></h3>
+        <p class="best"><b>Best for:</b> cashback on online orders — the biggest cashback portal (formerly Ebates), 3,500+ stores.</p>
+        <p class="plain">Click through Rakuten (site, app, or its extension) before buying; the store pays Rakuten a commission and Rakuten shares it with you. Paid quarterly by check or PayPal once you're over ~$5. Rates typically 1–10%+, higher in promos.</p>
+        <p class="catch"><b>Catches:</b> you must start at Rakuten — going direct, using a code from another site, or another extension interfering can void the cashback. Returns void it. The wait is real: quarterly payout, and stores take weeks to confirm. Some users report tracking failures and rare account freezes — keep your order confirmations until you're paid.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://www.topcashback.com" target="_blank" rel="noopener">TopCashback</a> <span class="free-chip">Free account</span></h3>
+        <p class="best"><b>Best for:</b> often a better rate than Rakuten on the same store — check both.</p>
+        <p class="plain">Its stated model is passing <strong>100% of the retailer commission</strong> to members; it makes money from on-site ads and sponsored placements instead. No minimum payout (from $0.01) via bank transfer, PayPal, or gift cards — gift-card payout sometimes adds a small bonus.</p>
+        <p class="catch"><b>Catches:</b> account required. Cashback sits "pending" until the retailer's return window closes (often 30–90 days). Tracking can occasionally fail, and using codes not listed on TopCashback can void it.</p>
+      </article>
+
+      <article class="card">
+        <h3>Ibotta <span class="free-chip">Free app</span></h3>
+        <p class="best"><b>Best for:</b> grocery and household rebates — real cash back, $0.25–$5 per item is typical.</p>
+        <p class="plain">Activate an offer in the app <em>before</em> you shop, buy the item, scan the receipt (or link your store loyalty card). Cash out at $20 via PayPal, Venmo/bank, or gift cards.</p>
+        <p class="catch"><b>Catches:</b> forget to activate first and you earn nothing. Offers are brand-funded, so the app is quietly steering you toward specific brands — and account + receipt data is the product on their side.</p>
+      </article>
+
+      <article class="card">
+        <h3>Fetch Rewards <span class="free-chip">Free app</span></h3>
+        <p class="best"><b>Best for:</b> a set-and-forget extra on receipts you're already getting.</p>
+        <p class="plain">Snap <em>any</em> receipt (grocery, drugstore, restaurant, gas) and earn points; partner brands pay bonus points on specific products. It stacks on the same receipt as Ibotta.</p>
+        <p class="catch"><b>Catches, plainly:</b> the base rate is tiny — a plain receipt earns ~25 points ≈ 2½¢ — and points redeem <strong>only as gift cards, never cash</strong>. It's a slow drip, not a rebate engine; your receipt data is what Fetch sells insight on.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://www.smartsource.com" target="_blank" rel="noopener">SmartSource</a> + manufacturers' own sites <span class="free-chip">Free</span></h3>
+        <p class="best"><b>Best for:</b> printable coupons Coupons.com doesn't have — check both; inventories differ.</p>
+        <p class="plain">SmartSource is the other big printable-coupon source. Brand sites (P&G, Unilever, General Mills…) also post their own printable/downloadable coupons and free-sample offers.</p>
+        <p class="catch"><b>Catch:</b> print limits apply, like Coupons.com.</p>
+      </article>
+
+      <article class="card">
+        <h3><a href="https://simplycodes.com" target="_blank" rel="noopener">CouponFollow / SimplyCodes</a> <span class="free-chip">Free</span></h3>
+        <p class="best"><b>Best for:</b> codes chosen for verification, not volume.</p>
+        <p class="plain">A code tool built around live code testing rather than raw volume — and the publisher of the most detailed public stats on code failure (below). Its checkout tool publicly commits to "standing down" — not overwriting another referrer's affiliate credit — which is the exact practice at the center of the Honey controversy.</p>
+        <p class="catch"><b>Catch:</b> smaller database than RetailMeNot, and its success stats are self-published — interest noted in the numbers section below.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="tier3" aria-labelledby="tier3-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🧩</span><h2 id="tier3-h">Browser extensions — free, useful, read the catch first</h2>
+      <p>An <span class="term" title="A small add-on you install in your web browser; a shopping extension can see the stores you visit and act at checkout">extension</span> is the highest-friction door: it sees every site you shop on. All of these are free. They are not equal.</p></div>
+    <div class="grid">
+      <article class="card">
+        <h3>Capital One Shopping <span class="free-chip">Free · no Capital One account or card needed</span></h3>
+        <p class="best"><b>What it does:</b> auto-tests promo codes at checkout, compares prices across sellers, and pays "Shopping Rewards" on activated offers — despite the name, you do <em>not</em> need a Capital One account or card.</p>
+        <p class="catch"><b>Catches:</b> the rewards are <em>not cash</em> — Capital One's own terms say they "are not equivalent to money and do not have a cash value," and they redeem only as eGift cards. Read that both ways, honestly: legally it's store-locked money, not cash you can aim anywhere — but if the gift card is for a store you'd spend at anyway, it works out to the same saving, face value where you'd already shop. If it helps save money, a gift card can be the equivalent of money. Redeeming can require linking a bank/card (any bank) to confirm eligibility, and rewards can take 30–90 days to post. Also on the record: in 2025, class-action suits accused Capital One Shopping and Microsoft Shopping of affiliate-attribution practices comparable to Honey's — allegations, no findings (see the Honey record below).</p>
+      </article>
+
+      <article class="card">
+        <h3>Rakuten extension <span class="free-chip">Free · same Rakuten account</span></h3>
+        <p class="best"><b>What it does:</b> pops up when a store offers cashback so you don't forget to activate, and tests codes.</p>
+        <p class="catch"><b>Catch:</b> same click-through discipline as Rakuten itself. An extension that can activate cashback can also be the thing that breaks another portal's tracking — pick <strong>one</strong> portal per purchase.</p>
+      </article>
+
+      <article class="card warn">
+        <h3>PayPal Honey <span class="free-chip warn-chip">Listed with a warning — not a recommendation</span></h3>
+        <p class="plain">It still finds working codes for some shoppers and costs nothing. But it sits at the center of the biggest trust controversy in this whole landscape — allegations of silently taking affiliate credit from creators even when it found no discount, and of hiding better codes at partner merchants' request. PayPal disputes the framing, changed some behavior after Google rewrote the rules in March 2025, and as of late 2026 the lawsuits are <em>ongoing with no finding of liability</em>.</p>
+        <p class="plain">If you install it, know the record and decide with eyes open — the full both-sides account is <a href="#honey">directly below</a>.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="will-it-work" aria-labelledby="wiw-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🎲</span><h2 id="wiw-h">Will the code even work? The honest numbers</h2>
+      <p>Success rates depend entirely on who's counting and how. The studies disagree — so here is the spread, with each counter's interest labeled.</p></div>
+
+    <div class="chartcard">
+      <h3>Share of coupon codes that worked, by who counted</h3>
+      <p class="cap">Four counts, four different methods — read them as a range, not a single truth. Full study details under the chart.</p>
+      <svg class="chart" viewBox="0 0 720 314" role="img" aria-label="Bar chart of coupon code success rates: Coupono about 32 percent, CouponZania about 30 percent, CouponDopa 76 percent, SimplyCodes 75.2 percent.">
+        <!-- axis gridlines: plot x from 210 to 690 = 0..100%, so 4.8px per percent -->
+        <line class="grid-l" x1="210" y1="20" x2="210" y2="240"/><line class="grid-l" x1="330" y1="20" x2="330" y2="240"/>
+        <line class="grid-l" x1="450" y1="20" x2="450" y2="240"/><line class="grid-l" x1="570" y1="20" x2="570" y2="240"/>
+        <line class="grid-l" x1="690" y1="20" x2="690" y2="240"/>
+        <text x="210" y="262" text-anchor="middle" font-size="13" class="muted-t">0%</text>
+        <text x="330" y="262" text-anchor="middle" font-size="13" class="muted-t">25%</text>
+        <text x="450" y="262" text-anchor="middle" font-size="13" class="muted-t">50%</text>
+        <text x="570" y="262" text-anchor="middle" font-size="13" class="muted-t">75%</text>
+        <text x="690" y="262" text-anchor="middle" font-size="13" class="muted-t">100%</text>
+        <!-- Coupono 32% -> width 153.6 -->
+        <text x="200" y="58" text-anchor="end" font-size="14" font-weight="600">Coupono</text>
+        <rect x="210" y="38" width="154" height="30" rx="5" fill="#b45309"/>
+        <text x="374" y="58" font-size="14" font-weight="700">~32%</text>
+        <!-- CouponZania 30% -> width 144 -->
+        <text x="200" y="108" text-anchor="end" font-size="14" font-weight="600">CouponZania</text>
+        <rect x="210" y="88" width="144" height="30" rx="5" fill="#b45309"/>
+        <text x="364" y="108" font-size="14" font-weight="700">~30%</text>
+        <!-- CouponDopa 76% -> width 364.8 -->
+        <text x="200" y="158" text-anchor="end" font-size="14" font-weight="600">CouponDopa</text>
+        <rect x="210" y="138" width="365" height="30" rx="5" fill="#0b6b57"/>
+        <text x="585" y="158" font-size="14" font-weight="700">76%</text>
+        <!-- SimplyCodes 75.2% -> width 361 -->
+        <text x="200" y="208" text-anchor="end" font-size="14" font-weight="600">SimplyCodes</text>
+        <rect x="210" y="188" width="361" height="30" rx="5" fill="#0b6b57"/>
+        <text x="581" y="208" font-size="14" font-weight="700">75.2%</text>
+        <text x="210" y="282" font-size="12.5" class="muted-t">Amber = counts of codes listed on aggregator sites / live shopper attempts.</text>
+        <text x="210" y="298" font-size="12.5" class="muted-t">Green = counts from a tool's own controlled or self-reported testing.</text>
+      </svg>
+      <ul class="tight">
+        <li><b>~32% worked</b> — Coupono's analysis of 47,181 "active" codes listed across aggregator sites (May 2026 press release). Coupono sells a verification tool — it benefits from a scary number.</li>
+        <li><b>~30% worked</b> — CouponZania's live crowd-vote data (1,904 shopper attempts, July 2026). A small coupon site; small sample, real checkouts.</li>
+        <li><b>76% worked</b> — CouponDopa's controlled test of 1,000 codes across 11 countries (July 2026). Its key finding: most failures weren't expired codes — they were <b>terms the shopper hadn't met</b> (minimum spend was the #1 cause, then category exclusions and new-customer-only rules). Also a coupon platform with an interest, but the failure-cause breakdown matches every other source.</li>
+        <li><b>75.2% worked</b> — SimplyCodes' self-published figure across 87.2 million codes its own tool tested (2023–2026 data). Self-reported by a seller of a code tool — treat as the optimistic end.</li>
+        <li><b>35% of code users hit a failure in the last 60 days</b> — SimplyCodes' survey of 1,463 US shoppers (April 2026): the most common failure was an <em>expired</em> code (35%), then hidden restrictions (28%), then new-customer-only codes (23%).</li>
+      </ul>
+    </div>
+
+    <div class="takeaways">
+      <div class="take"><b>Read the terms before checkout</b>Minimum spend and exclusions kill more codes than expiration does. The fine print on the code listing — expiry, minimum spend, what it can't be used on — is where codes live or die.</div>
+      <div class="take"><b>Expect to try two codes</b>Codes fed directly by merchants to a site work far more often than scraped or user-dumped codes. Arrive with a backup.</div>
+      <div class="take"><b>Don't let a chatbot invent codes for you</b>Coupons.com's own test (August 2026 — self-interested, but method-described) found under 1 in 4 AI-suggested codes worked.</div>
+      <div class="take"><b>It still pays off</b>Per CouponFollow's household research, consistent coupon users save real money anyway — an average of ~$1,465/year per household is their estimate (advocacy-flavored, labeled as such).</div>
+    </div>
+  </section>
+
+  <section id="honey" aria-labelledby="honey-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🍯</span><h2 id="honey-h">The Honey controversy — both sides, on the record</h2>
+      <p>Honey is a free browser extension (owned by PayPal since a ~$4B acquisition in 2020) that auto-tests promo codes at checkout and pays small "Honey Gold" points back. This is the fullest public account the research found — allegations labeled as allegations, verdicts labeled as verdicts.</p></div>
+
+    <div class="avoid-grid">
+      <article class="avoid-card">
+        <h3>The allegations</h3>
+        <p>From MegaLag's investigation (Dec 2024; parts 2–3, Dec 2025), reported by The Verge, USA Today, Washington Post and others:</p>
+        <ul class="tight">
+          <li><b>Affiliate credit-taking ("cookie stuffing"</b> — replacing the tracking marker that credits a sale<b>):</b> when a shopper arrived via a creator's affiliate link, clicking Honey at checkout — <em>even when Honey found no code and saved the shopper $0</em> — replaced the creator's tracking cookie with Honey's, diverting the commission to PayPal. In MegaLag's demonstration, a $35.60 commission was redirected and the shopper received $0.89 in points.</li>
+          <li><b>Hiding better codes:</b> Honey's merchant partners could control which codes Honey showed, so partner stores' <em>smaller</em> codes were applied while better public codes were suppressed — the opposite of the advertised "we find every working code and apply the best one" (a claim the BBB had already investigated in 2020; Honey discontinued the ad).</li>
+          <li><b>(Dec 2025)</b> Scraping and publishing private/employee-only codes, and building "stand-down evasion" code — logic that detected affiliate-network auditors and behaved compliantly only while being watched.</li>
+        </ul>
+      </article>
+
+      <article class="avoid-card">
+        <h3>PayPal's side, and what happened next</h3>
+        <p><b>PayPal, in its own words:</b> "Honey follows industry rules and practices, including <span class="term" title="The convention that the last link or tool clicked before a purchase gets the affiliate commission for that sale">last-click attribution</span>" (to The Verge). Merchants determine which coupons are offered through Honey (to USA Today). On January 12, 2026, PayPal <b>acknowledged the stand-down-detection code existed and said it had been disabled</b>.</p>
+        <p><b>Facts, not allegations:</b> Google rewrote Chrome Web Store policy in March 2025 to prohibit extensions claiming affiliate commissions without providing a discount or benefit; Honey changed its extension to stop claiming revenue when no discount was applied. Honey lost roughly <b>8 million of its ~20 million Chrome users</b> by the end of 2025. Rakuten Advertising <b>removed Honey from its affiliate network</b> on Jan 12, 2026; Awin confirmed policy breaches and Impact.com also acted.</p>
+        <p><b>The lawsuits:</b> class actions filed Dec 29, 2024 (incl. Wendover Productions; GamersNexus later withdrew as a plaintiff). The first suit was <b>dismissed in Nov 2025</b> for failing to identify a cognizable injury, with leave to amend; an amended complaint followed, and in June 2026 the judge <b>denied PayPal's motion to dismiss</b> the amended case. <b>As of the research date there is no finding of liability and no settlement.</b> The dispute is genuinely unresolved: the mechanics are largely documented; whether they broke contracts/law is what the court is deciding.</p>
+      </article>
+    </div>
+
+    <div class="explain" style="margin-top:14px">
+      <p><b>Why it matters to a shopper, not just creators:</b> your click at checkout decides who gets paid for the sale — and a tool that profits by being clicked last has an incentive to be clicked even when it saves you nothing, and (per allegation 2) to show you a partner's smaller code instead of the best public one. The general lesson applies to <em>every</em> extension above: free code tools are paid by merchants, not by you, and their loyalty follows the money.</p>
+    </div>
+  </section>
+
+  <section id="avoid" aria-labelledby="avoid-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">🚫</span><h2 id="avoid-h">The Avoid pile — paid doors and traps</h2>
+      <p>Two kinds of trouble: things that charge you for coupons, and fake coupons that charge you for everything else. This is where Find a Coupon meets Spot It, Check It, Block It.</p></div>
+
+    <div class="avoid-grid">
+      <article class="avoid-card bad">
+        <h3>Post-transaction "discount clubs"</h3>
+        <p><b>Shoppers Advantage, Great Fun, and kin:</b> pop-ups after an online purchase that enroll you — sometimes via a "$1.99 shipping" or rebate click — into a club billing <b>$12–$59.99/month</b> for coupons and discounts.</p>
+        <p>The US Senate Commerce Committee probed the operators (Affinion/Trilegiant, WebLoyalty, Vertrue) in 2009 after the BBB logged 1,800+ complaints about one subsidiary alone, many from people who didn't know they were enrolled until charges appeared.</p>
+      </article>
+
+      <article class="avoid-card bad">
+        <h3>Fake brand discount clubs</h3>
+        <p>A newer costume on the same scheme: social ads for a famous brand's "members-only warehouse program" with a small joining fee, then a recurring monthly charge under an unrecognizable name, with cancellation made deliberately labyrinthine.</p>
+        <p><b>Tells:</b> not on the brand's real domain, a card demanded before you can see any catalog, countdown timers.</p>
+      </article>
+
+      <article class="avoid-card bad">
+        <h3>Paid coupon books &amp; "coupon savings" memberships</h3>
+        <p>Coupon books sold door-to-door or by subscription, and membership-fee grocery clubs pitched as coupon savings: not necessarily fraudulent — but they fail the rule. You are buying a product whose payoff depends on you redeeming enough of <em>their</em> chosen coupons before expiry. The same brands' coupons are free elsewhere.</p>
+      </article>
+
+      <article class="avoid-card bad">
+        <h3>Paying for clipped coupons or newspaper inserts</h3>
+        <p>Marketplace listings, "coupon fairies," insert sellers: coupons themselves state they may not be sold or transferred; manufacturers treat bought clippings as void, and the trade in bulk clippings is exactly the channel counterfeit rings use (below).</p>
+        <p>The legitimate paper world has also shrunk — digital coupons passed paper in US redemptions for the first time in 2024 (~53% digital) — so the free digital doors above are now the main pile anyway.</p>
+      </article>
+
+      <article class="avoid-card bad">
+        <h3>The social-media freebie</h3>
+        <p>A polished post — "$100 gift card," "free [expensive product]," "90% off everything" — from a look-alike brand page. It wants a click, a share-to-unlock, a survey, or your card/personal details.</p>
+        <p>Real brands' real offers live on the brand's own site/app and never require sharing, surveys, or fees. The FTC's rule: <b>a real prize is free</b>; anyone asking you to pay a "fee" or hand over card/bank/SSN details to claim one is scamming. Never buy from a seller who demands gift cards, wire, payment apps, or crypto — "only scammers will demand you pay in those ways" (FTC). US consumers reported <b>$12.5 billion in fraud losses in 2024</b>, the FTC's highest ever.</p>
+      </article>
+
+      <article class="avoid-card bad">
+        <h3>Counterfeit coupons — a prosecuted federal crime</h3>
+        <p>Fake manufacturer coupons — usually high-value or "free product" coupons circulating as images in social-media coupon groups. The Coupon Information Corporation (the manufacturers' anti-fraud body, est. 1986) estimates <b>$300–600 million/year</b> in US coupon-fraud losses.</p>
+        <p>The largest case: Lori Ann Talens designed ~13,000 counterfeit coupons and sold them via social media/encrypted apps (2017–2020) — <b>$31.8 million in losses, 12 years in prison</b>; her biggest customer got 41 months in June 2026. A fresh multi-defendant counterfeiting case (the invitation-only "Weekly Coupon Service") was charged in Sept 2026 after ~180 CIC undercover buys.</p>
+        <p><b>Tells for shoppers:</b> a coupon for a completely free high-value item; a coupon image with no unique barcode ("PDF coupons" re-shared endlessly); anyone <em>selling</em> coupons; discounts wildly out of line with the brand's real promotions. Legit printable coupons carry a unique tracking barcode and a print limit enforced per person.</p>
+      </article>
+
+      <article class="avoid-card bad">
+        <h3>"Download to unlock" sites &amp; no-name extensions</h3>
+        <p>The code is bait for a software install, a survey wall, or your email. Even "safety" extensions have form here — Web of Trust was pulled from every major browser store in 2016 after being caught selling users' browsing history.</p>
+        <p>Stick to the named doors above; a legitimate coupon tool never needs your credit card.</p>
+      </article>
+
+      <div class="check60" id="check60">
+        <h3>✅ The 60-second check for any coupon</h3>
+        <ol>
+          <li><b>Don't tap the link you were sent.</b></li>
+          <li><b>Open the store's real site or app yourself</b> and look for the offer there.</li>
+          <li><b>Check the fine print</b> — expiry, minimum spend, exclusions.</li>
+          <li><b>If it's not on the retailer's own property, it isn't real.</b></li>
+        </ol>
+        <p style="margin:12px 0 0">Report fakes at <a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener">ReportFraud.ftc.gov</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="sources" aria-labelledby="sources-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">📚</span><h2 id="sources-h">Sources &amp; open questions</h2>
+      <p>Research gathered November 11, 2026. Every figure on this page is as reported on the date shown beside it — prices, rates, and program terms change constantly. Interests are noted where they matter.</p></div>
+    <ul class="sources">
+      <li>Cart checker (added Nov 11, 2026): builds live searches on RetailMeNot, Slickdeals, Coupons.com, Groupon Coupons, Rakuten and CamelCamelCamel at the moment a door is tapped — results, codes, expiry and terms are those sites' own, shown on their pages. No cart data is stored or sent anywhere by this page.</li>
+      <li>Photo cart reader (added Nov 11, 2026): Tesseract.js — open-source OCR (Apache-2.0), loaded from the jsDelivr CDN only when a visitor adds a picture, and run entirely in the visitor's browser. The image is processed on the visitor's device and is never uploaded, sent, or stored by this page; only the words it reads enter the cart box, where the visitor can correct them.</li>
+      <li>Clark.com — Rakuten review (Aug 2026) &amp; Coupons.com guide (Aug 2026), consumer-advocate outlet.</li>
+      <li>The Points Guy — Capital One Shopping explainer (Nov 2026). The Points Party — Capital One Shopping rewards terms (Nov 2026).</li>
+      <li>TopCashback's own help/guide pages (100%-commission model) + BrandUmentals US guide (2026).</li>
+      <li>Coupons.com — FAQ (print limits / phone verification), its AI-code test (Aug 2026, self-interested), its negative-reviews explainer.</li>
+      <li>SimplyCodes / CouponFollow — Coupon Statistics 2026 (survey Apr 2026; self-published platform data). Coupono study via EIN Presswire (May 2026). CouponDopa study via PRWeb (July 2026). CouponZania — live success-rate data + fake-site guide (July 2026).</li>
+      <li>Wikipedia, "PayPal Honey" (crawled Oct 2026), synthesizing The Verge (Dec 2024, Mar 2025), USA Today (Dec 2024), Washington Post (May 2025), 9to5Google, Hello Partner (Jan 2026). The CyberSec Guru — Honey litigation tracker (June 2026 ruling). Consumer Rights Wiki — Honey controversy file; Checkout Saver — Honey review (Oct 2026).</li>
+      <li>The Krazy Coupon Lady — its own affiliate disclosure (2019, current). GetMeCoupons — store coupon-policy guides (2026). Fetch comparison guide — vendor-published, labeled as such. The Penny Hoarder — cash-back apps (2026). WalletGrower — receipt-app tests (2026).</li>
+      <li>Lifewire — free coupon codes roundup. MoneyPantry / USDollarPantry — 24-site coupon tests (2026; affiliate-supported review sites). Blippr — coupon-site/printable guides. SellerSonar (a Keepa competitor — disclosed), Online Tech Tips &amp; KritDeals — price-tracker comparisons (Nov 2026).</li>
+      <li>consumer.ftc.gov — social-media scam-ad and gift-card consumer alerts; FTC fraud-loss figures via Groupon's guide. CartMavo — fake-coupon scam guide built on FTC/BBB guidance (Oct 2026). Groupon Coupons blog — fake-coupon guide (interested party: promotes Groupon).</li>
+      <li>Coupons in the News — counterfeit-coupon case reporting (Sept 2026, June 2026). CIC loss estimates via ASIS Security Management (2022) and fraud-industry summaries.</li>
+      <li>MediaPost — Senate Commerce Committee discount-club probe (2009). South Dakota Attorney General, Consumer Protection — "Buying Clubs" fast facts. CopycatHQ — fake discount club investigation (Oct 2026).</li>
+    </ul>
+    <div class="explain" style="margin-top:16px">
+      <p><b>Open questions, plainly:</b> this research is US-focused, as briefed. Not covered: regional grocery chains beyond the majors; non-US programs; and Karma and other newer AI code tools — only self-published rankings were found for those, so they were excluded rather than guessed at.</p>
+    </div>
+  </section>
+
+  <div class="foot" id="bottom">
+    <p>Find a Coupon — part of The Thriving Plan. Copyleft: this page is CC BY-SA 4.0 — copy it, share it, build on it; anything made from it carries the same freedom. The name (The Thriving Plan) is not part of the grant.</p>
+    <p><a href="#top">Back to the top ↑</a></p>
+  </div>
+
+</div>
+</main>
+
+<!-- Compass: center button names the last place and only opens/closes — it never jumps. -->
+<div class="compass" aria-label="Page navigation">
+  <button class="compass-btn" id="compassBtn" type="button" aria-expanded="false" aria-controls="compassPanel">
+    <span class="ring" aria-hidden="true">🧭</span>
+    <span class="last" id="compassLast">Top of page</span>
+  </button>
+  <span class="navigate-pill">Navigate</span>
+  <nav class="compass-panel" id="compassPanel" hidden aria-label="Go to">
+    <h3>Go to</h3>
+    <a href="#top" data-place="Top of page">Top of page</a>
+    <a href="#checker" data-place="Check your cart">Check your cart</a>
+    <a href="#how" data-place="How free sites stay free">How free sites stay free</a>
+    <a href="#start" data-place="Start here — three-move stack">Start here — three-move stack</a>
+    <a href="#tier1" data-place="No account needed">No account, no install</a>
+    <a href="#tier2" data-place="Free account or app">Free account or free app</a>
+    <a href="#tier3" data-place="Browser extensions">Browser extensions</a>
+    <a href="#will-it-work" data-place="Will the code even work?">Will the code even work?</a>
+    <a href="#honey" data-place="The Honey controversy">The Honey controversy</a>
+    <a href="#avoid" data-place="The Avoid pile">The Avoid pile</a>
+    <a href="#check60" data-place="The 60-second check">The 60-second check</a>
+    <a href="#sources" data-place="Sources & open questions">Sources &amp; open questions</a>
+    <a href="#bottom" data-place="Bottom of page">Bottom of page</a>
+    <h3>Other pages</h3>
+    <a href="https://thethrivingplan.fwh.is" target="_blank" rel="noopener">The Thriving Plan ↗</a>
+  </nav>
+</div>
+
+<script>
+(function(){
+  // Offline door: download this page as a single file.
+  var btn = document.getElementById('offlineBtn');
+  btn.addEventListener('click', function(){
+    var html = '<!doctype html>\n' + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'find-a-coupon.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  });
+
+  // Compass: toggle only — the center button never jumps.
+  var cBtn = document.getElementById('compassBtn');
+  var panel = document.getElementById('compassPanel');
+  var last = document.getElementById('compassLast');
+  function closePanel(){ panel.hidden = true; cBtn.setAttribute('aria-expanded','false'); }
+  cBtn.addEventListener('click', function(){
+    var open = panel.hidden;
+    panel.hidden = !open;
+    cBtn.setAttribute('aria-expanded', String(open));
+  });
+  panel.addEventListener('click', function(e){
+    var a = e.target.closest('a');
+    if(a){ if(a.dataset.place){ last.textContent = a.dataset.place; } closePanel(); }
+  });
+  document.addEventListener('click', function(e){
+    if(!panel.hidden && !e.target.closest('.compass')){ closePanel(); }
+  });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closePanel(); } });
+
+  // ---------- Cart checker ----------
+  var form = document.getElementById('checkerForm');
+  var storeInput = document.getElementById('storeInput');
+  var totalInput = document.getElementById('totalInput');
+  var cartInput = document.getElementById('cartInput');
+  var errEl = document.getElementById('checkerErr');
+  var resultsEl = document.getElementById('results');
+  var summaryEl = document.getElementById('resultSummary');
+  var storeWrap = document.getElementById('storeDoorsWrap');
+  var storeDoorsEl = document.getElementById('storeDoors');
+  var storeDoorsH = document.getElementById('storeDoorsH');
+  var itemWrap = document.getElementById('itemDoorsWrap');
+  var itemDoorsEl = document.getElementById('itemDoors');
+  var playbookEl = document.getElementById('playbook');
+  var collectedLinks = [];
+
+  function enc(s){ return encodeURIComponent(s); }
+  function google(q){ return 'https://www.google.com/search?q=' + enc(q); }
+  function door(href, label){
+    var a = document.createElement('a');
+    a.className = 'door'; a.href = href; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = label;
+    collectedLinks.push(label + ': ' + href);
+    return a;
+  }
+  function cleanStore(raw){
+    var s = raw.trim().replace(/^https?:\/\//i,'').replace(/^www\./i,'');
+    var domain = '';
+    if(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(s.split('/')[0])){ domain = s.split('/')[0].toLowerCase(); }
+    var name = domain ? domain.split('.')[0] : s;
+    name = name.replace(/[-_]+/g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    return { name: name, domain: domain };
+  }
+  var SKIP = /^(subtotal|total|order total|estimated total|shipping|tax|taxes|estimated tax|checkout|your cart|shopping cart|cart|items?|quantity|qty|price|remove|save for later|order summary|pickup|delivery|free shipping|promo code|gift card balance)\b/i;
+  function parseCart(text){
+    var out = [], seen = {};
+    text.split(/\r?\n/).forEach(function(line){
+      var s = line.replace(/[\u2022•·*▪◦]/g,' ').replace(/\s+/g,' ').trim();
+      if(!s || SKIP.test(s)){ return; }
+      s = s.replace(/\$?\s?\d{1,5}[.,]\d{2}\s*(each|ea)?\.?$/i,'')           // trailing price
+           .replace(/^(\d+\s*[x×]\s*)/i,'')                                   // leading qty "2 x"
+           .replace(/\s+[x×]\s*\d+$/i,'')                                    // trailing "x 2"
+           .replace(/qty[:\s]*\d+/ig,'')
+           .replace(/\s+/g,' ').trim();
+      if(s.length < 3 || SKIP.test(s)){ return; }
+      var key = s.toLowerCase();
+      if(seen[key]){ return; }
+      seen[key] = 1; out.push(s);
+    });
+    return out.slice(0, 12);
+  }
+  function brandOf(item){
+    var words = item.split(/\s+/).filter(function(w){ return /[a-z]/i.test(w); });
+    return words.length ? words[0].replace(/[^A-Za-z'’-]/g,'') : '';
+  }
+
+  var GROCERY = ['kroger','walmart','target','cvs','walgreens','publix','safeway','albertsons','dollar general','heb','h-e-b','meijer','aldi','costco','sam','food lion','giant','stop & shop','shoprite'];
+  function isGrocery(name){ var n = name.toLowerCase(); return GROCERY.some(function(g){ return n.indexOf(g) !== -1; }); }
+
+  function buildPlaybook(store, items, total){
+    var tips = [];
+    if(store && isGrocery(store.name)){
+      tips.push('Groceries at ' + store.name + ': clip the store\u2019s own digital coupons in its free loyalty app first \u2014 that\u2019s the highest-value move on this page \u2014 then check the manufacturer coupons per item below, then activate matching Ibotta offers before you shop.');
+    }
+    if(store && store.name.toLowerCase().indexOf('amazon') !== -1){
+      tips.push('Amazon cart: run each big-ticket item through CamelCamelCamel (linked per item below) before trusting a \u201csale\u201d price \u2014 and check whether Subscribe & Save or a clip-on product-page coupon applies to repeat buys.');
+    }
+    if(store){
+      tips.push('One promo code per order is the usual rule at ' + store.name + '. Read each code\u2019s terms \u2014 minimum spend and exclusions kill more codes than expiration does (see \u201cWill the code even work?\u201d below) \u2014 and arrive with a second code ready.');
+      tips.push('Cashback order of operations: pick ONE portal (Rakuten or TopCashback), start the purchase there, and use only codes that portal lists. A code from another site can void the cashback.');
+    }
+    if(items.length){
+      tips.push('Item coupons stack differently from store codes: a manufacturer coupon (Coupons.com / the brand\u2019s own site) usually combines with a store coupon and a sale price on the same item in-store. Online, the store\u2019s checkout decides \u2014 the terms on the code say which.');
+    }
+    if(total){
+      tips.push('Your total is $' + total.toFixed(2) + '. Hold it against each code\u2019s minimum spend before you count on it \u2014 and if you\u2019re just under a free-shipping threshold, a code that needs a higher spend may be worth less than the shipping it unlocks. Do the subtraction, not the headline.');
+    }
+    if(!store && items.length){
+      tips.push('No store named: the per-item doors below search across stores. Manufacturer coupons work at most stores, so they\u2019re the widest door for a single item.');
+    }
+    tips.push('Run the 60-second check on anything that looks too good: if the offer isn\u2019t on the retailer\u2019s own site or app, it isn\u2019t real.');
+    return tips;
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var store = cleanStore(storeInput.value || '');
+    var hasStore = !!(storeInput.value || '').trim();
+    var items = parseCart(cartInput.value || '');
+    var total = parseFloat(totalInput.value);
+    if(isNaN(total) || total <= 0){ total = null; }
+    if(!hasStore && !items.length){ errEl.hidden = false; resultsEl.hidden = true; return; }
+    errEl.hidden = true;
+    collectedLinks = [];
+    storeDoorsEl.textContent = ''; itemDoorsEl.textContent = ''; playbookEl.textContent = '';
+
+    summaryEl.textContent = '';
+    var bits = [];
+    if(hasStore){ bits.push('Store: ' + store.name + (store.domain ? ' (' + store.domain + ')' : '')); }
+    bits.push('Items checked: ' + (items.length ? String(items.length) : 'none \u2014 store codes only'));
+    if(total){ bits.push('Cart total: $' + total.toFixed(2)); }
+    var sumLine = document.createElement('div');
+    sumLine.style.fontWeight = '600';
+    sumLine.textContent = bits.join('  ·  ');
+    summaryEl.appendChild(sumLine);
+    var sumNote = document.createElement('div');
+    sumNote.style.fontSize = '.92rem'; sumNote.style.marginTop = '4px';
+    sumNote.textContent = 'Every door opens a live search on that site, pre-filled for you. Codes there carry their own expiry and terms \u2014 this page doesn\u2019t invent codes, it points you at the places that list real ones.';
+    summaryEl.appendChild(sumNote);
+
+    // Store doors
+    if(hasStore){
+      storeWrap.hidden = false;
+      storeDoorsH.textContent = 'For ' + store.name + ' itself \u2014 codes & cashback';
+      if(store.domain){
+        storeDoorsEl.appendChild(door('https://www.retailmenot.com/view/' + store.domain, 'RetailMeNot \u2014 ' + store.name + ' codes ↗'));
+      } else {
+        storeDoorsEl.appendChild(door(google('site:retailmenot.com ' + store.name + ' coupons promo codes'), 'RetailMeNot \u2014 ' + store.name + ' codes ↗'));
+      }
+      storeDoorsEl.appendChild(door(google('site:simplycodes.com ' + store.name + ' promo code'), 'SimplyCodes \u2014 verified codes ↗'));
+      storeDoorsEl.appendChild(door('https://slickdeals.net/newsearch/?q=' + enc(store.name), 'Slickdeals \u2014 ' + store.name + ' deals ↗'));
+      storeDoorsEl.appendChild(door(google('site:groupon.com/coupons ' + store.name + ' promo code'), 'Groupon Coupons \u2014 ' + store.name + ' ↗'));
+      storeDoorsEl.appendChild(door(google('site:rakuten.com ' + store.name + ' cash back'), 'Rakuten \u2014 cashback rate ↗'));
+      storeDoorsEl.appendChild(door(google(store.name + ' promo code coupon ' + new Date().getFullYear()), 'Web search \u2014 latest codes ↗'));
+    } else { storeWrap.hidden = true; }
+
+    // Item doors
+    if(items.length){
+      itemWrap.hidden = false;
+      items.forEach(function(item){
+        var card = document.createElement('div'); card.className = 'item-card';
+        var nm = document.createElement('div'); nm.className = 'iname'; nm.textContent = item;
+        card.appendChild(nm);
+        var brand = brandOf(item);
+        if(brand && brand.toLowerCase() !== item.toLowerCase()){
+          var br = document.createElement('div'); br.className = 'ibrand';
+          br.textContent = 'Brand guess: ' + brand + ' \u2014 manufacturer coupons are listed under the brand.';
+          card.appendChild(br);
+        }
+        var row = document.createElement('div'); row.className = 'door-row';
+        row.appendChild(door(google('site:coupons.com ' + item + ' coupon'), 'Coupons.com \u2014 printable coupon ↗'));
+        if(brand){ row.appendChild(door(google(brand + ' official site coupons offers'), brand + ' \u2014 maker\u2019s own coupons ↗')); }
+        row.appendChild(door('https://slickdeals.net/newsearch/?q=' + enc(item), 'Slickdeals \u2014 deals on this item ↗'));
+        if(store && store.name.toLowerCase().indexOf('amazon') !== -1){
+          row.appendChild(door('https://camelcamelcamel.com/search?sq=' + enc(item), 'CamelCamelCamel \u2014 Amazon price history ↗'));
+        } else {
+          row.appendChild(door(google(item + ' price comparison deal'), 'Price check across stores ↗'));
+        }
+        if(hasStore){ row.appendChild(door(google(store.name + ' ' + item + ' coupon'), store.name + ' \u00d7 this item ↗')); }
+        card.appendChild(row);
+        itemDoorsEl.appendChild(card);
+      });
+    } else { itemWrap.hidden = true; }
+
+    buildPlaybook(hasStore ? store : null, items, total).forEach(function(t){
+      var li = document.createElement('li'); li.textContent = t; playbookEl.appendChild(li);
+    });
+
+    resultsEl.hidden = false;
+    resultsEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  });
+
+  document.getElementById('exampleBtn').addEventListener('click', function(){
+    storeInput.value = 'Target';
+    totalInput.value = '64.18';
+    cartInput.value = 'Tide Pods laundry detergent 42ct  $15.99\nCharmin Ultra Soft toilet paper 12 rolls  $12.49\nColgate Total toothpaste  $4.29\nSubtotal  $32.77\nShipping  $5.99';
+    errEl.hidden = true;
+    form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {cancelable:true}));
+  });
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    storeInput.value = ''; totalInput.value = ''; cartInput.value = '';
+    resultsEl.hidden = true; errEl.hidden = true;
+    var pv = document.getElementById('photoPreview'); pv.hidden = true; pv.removeAttribute('src');
+    setPhotoStatus('Take a picture, use a screenshot, or pick an image file — one door, any picture of the cart. You can also drag an image onto this box.', '');
+  });
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var note = document.getElementById('copyNote');
+    var text = 'Coupon doors from Find a Coupon (free, always free):\n' + collectedLinks.join('\n');
+    function done(){ note.textContent = 'Copied \u2014 ' + collectedLinks.length + ' doors. Paste them anywhere.'; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ note.textContent = 'Copy was blocked by the browser \u2014 the doors above still work one tap at a time.'; });
+    } else { note.textContent = 'Copy isn\u2019t available in this browser \u2014 the doors above still work one tap at a time.'; }
+  });
+
+  // ---------- Photo / screenshot cart reader ----------
+  // The picture is read on the visitor's own device by Tesseract.js (open-source
+  // OCR), loaded from a CDN only when a picture is added. The image itself is
+  // never uploaded, sent, or stored by this page.
+  var photoInput = document.getElementById('photoInput');
+  var photoBtn = document.getElementById('photoBtn');
+  var photoStatus = document.getElementById('photoStatus');
+  var photoPreview = document.getElementById('photoPreview');
+  var photoBox = document.getElementById('photoBox');
+  var ocrBar = document.getElementById('ocrBar');
+  var ocrFill = document.getElementById('ocrFill');
+  var tessPromise = null;
+  function setPhotoStatus(msg, cls){
+    photoStatus.textContent = msg;
+    photoStatus.className = 'photo-status' + (cls ? ' ' + cls : '');
+  }
+  function loadTesseract(){
+    if(window.Tesseract){ return Promise.resolve(window.Tesseract); }
+    if(tessPromise){ return tessPromise; }
+    tessPromise = new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js';
+      s.onload = function(){ window.Tesseract ? resolve(window.Tesseract) : reject(new Error('reader missing')); };
+      s.onerror = function(){ reject(new Error('reader failed to load')); };
+      document.head.appendChild(s);
+    });
+    return tessPromise;
+  }
+  function detectStore(text){
+    if((storeInput.value || '').trim()){ return; }
+    var low = ' ' + text.toLowerCase() + ' ';
+    var names = ['Walmart','Target','Kroger','CVS','Walgreens','Amazon','Best Buy','Home Depot',"Lowe's","Macy's",'Nike','eBay','Publix','Safeway','Dollar General',"Cabela's","Kohl's",'Old Navy','Costco','Meijer','Aldi'];
+    for(var i = 0; i < names.length; i++){
+      if(low.indexOf(names[i].toLowerCase()) !== -1){ storeInput.value = names[i]; return; }
+    }
+  }
+  function readPhoto(file){
+    if(!file){ return; }
+    if(file.type && file.type.indexOf('image/') !== 0){
+      setPhotoStatus('That file isn\u2019t an image — pick a photo or screenshot of the cart.', 'err');
+      return;
+    }
+    try { photoPreview.src = URL.createObjectURL(file); photoPreview.hidden = false; } catch(e){}
+    ocrBar.hidden = false; ocrFill.style.width = '4%';
+    setPhotoStatus('Loading the reader\u2026 (first time only \u2014 it fetches a small reading tool, then does the reading on your device)', '');
+    loadTesseract().then(function(T){
+      setPhotoStatus('Reading your picture on this device\u2026', '');
+      return T.recognize(file, 'eng', { logger: function(m){
+        if(m.status === 'recognizing text'){ ocrFill.style.width = Math.max(5, Math.round(m.progress * 100)) + '%'; }
+      }});
+    }).then(function(res){
+      ocrFill.style.width = '100%';
+      setTimeout(function(){ ocrBar.hidden = true; }, 600);
+      var text = (res && res.data && res.data.text ? res.data.text : '').replace(/\n{3,}/g, '\n\n').trim();
+      if(!text){
+        setPhotoStatus('The reader couldn\u2019t find any words in that picture. A straighter, closer shot of the item list usually reads better \u2014 or type or paste the items in the box below.', 'err');
+        return;
+      }
+      cartInput.value = text;
+      detectStore(text);
+      var items = parseCart(text);
+      if(items.length){
+        errEl.hidden = true;
+        setPhotoStatus('Read ' + items.length + ' item' + (items.length === 1 ? '' : 's') + ' from your picture \u2014 they\u2019re in the cart box below and your doors are built. If a word got misread, fix it in the box and tap \u201cCheck for coupons\u201d again to rebuild.', 'ok');
+        if(form.requestSubmit){ form.requestSubmit(); } else { form.dispatchEvent(new Event('submit', {cancelable:true})); }
+      } else {
+        setPhotoStatus('The picture was read, but no item lines could be picked out of it. The words it found are in the cart box below \u2014 trim them to one item per line, or type the items in.', 'err');
+      }
+    }).catch(function(){
+      ocrBar.hidden = true;
+      setPhotoStatus('The picture reader couldn\u2019t start \u2014 it needs an internet connection the first time it runs. Your picture went nowhere; type or paste the items in the box below instead.', 'err');
+    });
+  }
+  photoBtn.addEventListener('click', function(){ photoInput.click(); });
+  photoInput.addEventListener('change', function(){
+    readPhoto(photoInput.files && photoInput.files[0]);
+    photoInput.value = '';
+  });
+  ['dragenter','dragover'].forEach(function(ev){
+    photoBox.addEventListener(ev, function(e){ e.preventDefault(); photoBox.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    photoBox.addEventListener(ev, function(e){ e.preventDefault(); photoBox.classList.remove('dragover'); });
+  });
+  photoBox.addEventListener('drop', function(e){
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    readPhoto(f);
+  });
+
+  // Track the reader's place so the compass center names it.
+  var map = { checker:'Check your cart', how:'How free sites stay free', start:'Start here — three-move stack', tier1:'No account, no install',
+    tier2:'Free account or free app', tier3:'Browser extensions', 'will-it-work':'Will the code even work?',
+    honey:'The Honey controversy', avoid:'The Avoid pile', sources:'Sources & open questions' };
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting && map[en.target.id]){ last.textContent = map[en.target.id]; } });
+    }, { rootMargin:'-40% 0px -50% 0px' });
+    Object.keys(map).forEach(function(id){ var el = document.getElementById(id); if(el){ io.observe(el); } });
+  }
+})();
+</script>
+</body>
+</html>

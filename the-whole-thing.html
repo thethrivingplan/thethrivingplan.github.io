@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Whole Thing</title>
+<style>
+:root{
+  --bg:#eef1ee; --paper:#ffffff; --paper2:#f6f8f6; --ink:#1c2b26; --muted:#52645d;
+  --line:#c9d4ce; --accent:#17635a; --accent-ink:#ffffff; --accent-soft:#dcebe7;
+  --warn:#8a5a12; --warn-bg:#fdf3d8; --danger:#9c2b1e; --gold:#8a6d1f;
+  --shadow:0 2px 10px rgba(20,40,34,.12); --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#141a18; --paper:#1e2623; --paper2:#232d2a; --ink:#e8efec; --muted:#a7bab2;
+    --line:#3a4a44; --accent:#3d9c8d; --accent-ink:#0d1513; --accent-soft:#24403a;
+    --warn:#e8c26a; --warn-bg:#3a3013; --danger:#f0937f; --gold:#d9b95c;
+    --shadow:0 2px 10px rgba(0,0,0,.5); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;padding-bottom:120px}
+body.bigtext{font-size:18px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0 0 8px}
+h1{font-size:32px}
+h2{font-size:22px}
+h3{font-size:18px}
+p{margin:0 0 10px}
+a{color:var(--accent)}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]),textarea{min-height:2.25rem}
+.wrap{max-width:880px;margin:0 auto;padding:14px 14px 30px}
+.freebar{background:var(--accent);color:var(--accent-ink);padding:14px 16px;border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow)}
+.freebar strong{font-size:19px}
+.freebar p{margin:4px 0 0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 14px;box-shadow:var(--shadow)}
+.card>h2{border-bottom:2px solid var(--accent-soft);padding-bottom:6px}
+.sub{color:var(--muted);font-size:14px}
+.help{color:var(--muted);font-size:13.5px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--paper2);color:var(--ink);border:1.5px solid var(--accent);border-radius:8px;padding:8px 14px;font-size:15px;cursor:pointer;min-height:44px;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.small{min-height:38px;padding:5px 10px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.download-door{display:flex;flex-direction:column;gap:8px;align-items:stretch;margin:14px 0 6px}
+.download-door .btn{font-size:19px;font-weight:700;padding:16px;min-height:60px;text-align:center}
+.core-line{font-size:19px;line-height:1.45}
+textarea{width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-size:16px;font-family:inherit;min-height:110px;resize:vertical}
+label.fl{display:block;font-weight:600;margin:10px 0 4px}
+details.fold{border:1px solid var(--line);border-radius:8px;margin:8px 0;background:var(--paper2)}
+details.fold>summary{cursor:pointer;padding:12px 14px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center;min-height:44px}
+details.fold>summary::-webkit-details-marker{display:none}
+.fold-sub{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.fold-body{padding:4px 14px 14px}
+.file-list{margin:0;padding:0;list-style:none}
+.file-list li{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:7px 0;background:var(--paper2)}
+.file-list .fname{font-weight:700}
+.mic-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+.mic-btn[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+.voice-status{border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--paper2);margin:8px 0}
+.voice-status.live{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+#missingMicFloat{position:fixed;right:12px;bottom:118px;z-index:65;display:none;align-items:center;gap:8px;background:var(--danger);color:#fff;border:2px solid #fff;border-radius:999px;padding:10px 16px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);min-height:48px}
+#missingMicFloat.on{display:inline-flex}
+body.dock-top #missingMicFloat{bottom:auto;top:118px}
+body.dock-left #missingMicFloat,body.dock-right #missingMicFloat{bottom:16px}
+#missingMicFloat .live-dot{width:11px;height:11px;border-radius:50%;background:#fff;flex:none;animation:micPulse 1.4s ease-in-out infinite}
+@keyframes micPulse{0%,100%{opacity:1}50%{opacity:.25}}
+.flash{animation:flashbg 1s ease-in-out 3}
+@keyframes flashbg{0%,100%{background:var(--paper)}50%{background:var(--warn-bg)}}
+@media (prefers-reduced-motion: reduce){#missingMicFloat .live-dot{animation:none}.flash{animation:none}html{scroll-behavior:auto}}
+/* Dock — icon-over-label stacks; center stack centered in the bar's content box */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:flex-start;gap:6px;background:var(--paper);border-top:2px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -3px 14px rgba(0,0,0,.14)}
+body.dock-top .dock{bottom:auto;top:0;border-top:none;border-bottom:2px solid var(--line)}
+body.dock-top{padding-top:110px;padding-bottom:20px}
+body.dock-left .dock,body.dock-right .dock{top:0;bottom:0;width:118px;flex-direction:column;right:auto;align-items:center}
+body.dock-right .dock{left:auto;right:0}
+body.dock-left{padding-left:132px;padding-bottom:20px}
+body.dock-right{padding-right:132px;padding-bottom:20px}
+.dock .zone{flex:1 1 0;display:flex;align-items:flex-start}
+.dock .zone.left{justify-content:flex-start}
+.dock .zone.center{justify-content:center}
+.dock .zone.right{justify-content:flex-end;gap:6px}
+body.dock-left .dock .zone,body.dock-right .dock .zone{flex:none}
+.dock .stack{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--ink);padding:2px 4px;min-height:56px;justify-content:flex-start;font-family:inherit}
+.dock .disc{width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:var(--paper2);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex:none}
+.dock .disc svg{width:30px;height:30px}
+.dock .pill{font-size:12.5px;font-weight:700;background:var(--paper2);border:1.5px solid var(--line);border-radius:999px;padding:2px 10px;text-align:center;line-height:1.25}
+.dock .close-stack{display:none}
+.dock.panel-open .close-stack{display:flex}
+.scrim{position:fixed;inset:0;background:rgba(10,20,16,.45);z-index:55;display:none}
+.scrim.on{display:block}
+.cpanel{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:82vh;overflow-y:auto;z-index:70;background:var(--paper);border-top:3px solid var(--accent);padding:16px;display:none}
+.cpanel.on{display:block}
+@media(min-width:760px){.cpanel{left:auto;width:520px;right:12px;bottom:104px;border:2px solid var(--accent);border-radius:12px;max-height:78vh}}
+body.dock-top .cpanel{bottom:auto;top:104px}
+.panel-close{float:right}
+.door-grid{display:grid;grid-template-columns:1fr;gap:7px}
+@media(min-width:520px){.door-grid{grid-template-columns:1fr 1fr}}
+.door-grid a{display:block;border:1px solid var(--line);border-radius:8px;padding:9px 11px;text-decoration:none;color:var(--ink);background:var(--paper2);font-weight:600;min-height:44px}
+.door-grid a .sub{display:block;font-weight:400}
+.pg-group{font-weight:800;margin:14px 0 6px;font-family:Georgia,serif}
+.prev-btn{width:100%;text-align:left;margin:8px 0}
+.prev-btn .sub{display:block}
+.last-place{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--paper2)}
+.last-place .last{display:block;font-size:13px;color:var(--muted)}
+.bookends{display:flex;gap:8px;margin:8px 0}
+.bookends a{flex:1;text-align:center;border:1.5px solid var(--accent);border-radius:8px;padding:9px;text-decoration:none;font-weight:700;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.radio-pill,.check-pill{display:flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;min-height:44px;cursor:pointer;background:var(--paper2)}
+.radio-pill input,.check-pill input{width:20px;height:20px;flex:none}
+.set-note{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="top">
+
+<div class="freebar">
+  <strong>Free. Always free.</strong>
+  <p>Everything on this page — and the download below — costs nothing, needs no account, and asks for no email. There is no catch, and there never will be.</p>
+</div>
+
+<h1>The Whole Thing</h1>
+<p class="core-line"><strong>Everything, in one download — so it can live on your hard drive, and everybody's.</strong></p>
+<p>Inside the one file: <strong>the thought process</strong> (the framework — how this AI works, in the open), <strong>the Thriving Plan</strong> itself, whole, and <strong>a plain explanation</strong> of why it is packed this way and what to do with it.</p>
+
+<section class="card" id="download">
+  <h2>Download the whole thing</h2>
+  <p>One small zip file. About <strong>120 KB of plain text</strong> — small enough to email, to keep on a phone, to carry on a USB stick in a drawer. Once it is saved, it <strong>works offline, forever</strong>: no connection, no account, and no permission needed to read it, keep it, or hand it on.</p>
+  <div class="download-door">
+    <a class="btn primary" href="https://thethrivingplan.fwh.is/the-whole-thing.zip">Download the whole thing — free</a>
+  </div>
+  <p class="help">That link <em>is</em> the door: it downloads <strong>the-whole-thing.zip</strong> — the thought process, the plan, and the explanation, in one file. Free, always free, no account, no email, no catch.</p>
+  <p style="margin-top:10px"><button class="btn" id="offlineBtn" type="button">Available offline — download this page too</button></p>
+  <p class="help">This second door saves this explanation page itself as a file you can open anywhere, no connection needed. The bundle above is the work; this page is the map to it.</p>
+</section>
+
+<section class="card" id="why">
+  <h2>Why one download?</h2>
+  <p><strong>One file, everything in it — hand it to any AI, on any device, and it starts from the record, not from zero.</strong></p>
+  <details class="fold"><summary><span>How this page came to be<span class="fold-sub">The idea, told plainly</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+    <p>It started with a question anyone might ask: <em>if this conversation, this account, this phone were gone tomorrow, what could be plugged in somewhere else to bring an AI up to speed — so the work continues where it left off, not from the beginning?</em></p>
+    <p>The answer was one file: everything that matters, written down plainly, in an order a new reader — human or AI — can follow. A private twin of this bundle exists for the author's own records, carrying personal material that stays private. This page is the <strong>public version of that same idea</strong>: the same shape, the same whole thing, holding only what is already public.</p>
+    <p><strong>The honest limit, printed on the door:</strong> a new AI handed this file gets <em>the record</em> — the framework, the plan, the rulings, the state of the work. It does not get the lived memory of how any of it felt to make. In this house, that is an acceptable trade, and it is stated rather than hidden: <strong>the record is what counts.</strong> Whoever sits down next reads the same record, works by the same thought process, and picks the work up where it stands.</p>
+    <p>None of this was created by one person, either. It is a collaboration of ideas — other people gave ideas, questions were asked, and an AI was asked, once, whether it could make an app one day. It grew from there. That is why the byline on this work is <em>we</em>.</p>
+  </div></details>
+</section>
+
+<section class="card" id="availability">
+  <h2>How anything stays available</h2>
+  <p><strong>No server lives forever. Copies do — when there are enough of them, in enough hands.</strong></p>
+  <details class="fold"><summary><span>The whole doctrine, in plain words<span class="fold-sub">Copies × permission × findability</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+    <p>Every “always available” thing in history survived the same way: <strong>copies outnumbered the failures.</strong> No book, song, or program lives on one machine somewhere. The ones that last live on <em>everybody's</em> machines.</p>
+    <p>Availability stands on three legs:</p>
+    <p><strong>1 · Copies.</strong> The more hands hold it, the more doors have to close before it is gone. Every download anyone takes is a seed copy on one more hard drive, under a permission that lets it be re-posted — forever.</p>
+    <p><strong>2 · Permission.</strong> Copyleft — explained in the next layer — so any keeper can legally stand the door back up, anywhere, the same day. Not just us. Anybody.</p>
+    <p><strong>3 · Findability.</strong> A keeper's copy only helps if people can find it: stable addresses, public archives, and a name that points to the work wherever it happens to be standing.</p>
+    <p>Put the three together and the math flips. Closing one host is an errand. To stop a widely copied work, someone would have to make it their mission to <strong>find and destroy every copy on every hard drive</strong> — every phone, every laptop, every forgotten USB stick in every desk on Earth. That could be <strong>billions upon billions</strong> of them. Nobody has that army. Nobody ever will. The copies do not get tired, do not get scared, and do not ask permission to exist.</p>
+    <p><strong>The honest bedrock:</strong> “always,” in the absolute sense, does not exist. What exists is <em>cheaper to keep than to kill</em> — copies so widespread that erasing the work everywhere stops being a practical possibility. That is the real target. The goal was never a stronger vault. <strong>The goal is more hands.</strong></p>
+  </div></details>
+</section>
+
+<section class="card" id="copyleft">
+  <h2>Copyleft — the permission that can't be taken back</h2>
+  <p><strong>Copyleft is a permission, not a place. Once it is given, it can never be taken back — so any keeper can bring the work back, legally, forever.</strong></p>
+  <details class="fold"><summary><span>What copyleft is, and what it is not<span class="fold-sub">A license, not a server</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+    <p><strong>Copyleft</strong> (a license that grants freedom and requires it to be passed on) is not a website, a host, or a storage service. It does not keep a server running or a page online. What it does is stronger in a different way: once a work is released under it, <strong>anyone who holds a copy may use it, copy it, re-post it, and build on it — forever, no asking, no fee</strong> — as long as they pass the same freedom along to the next person.</p>
+    <p>The work here travels under the standard forms of that permission: the writings under <strong>CC BY-SA 4.0</strong> (a Creative Commons license: share and adapt freely, credit the source, share alike), any code under the <strong>GPL</strong> (the GNU General Public License, the same share-alike idea for software), and any hardware designs under <strong>CERN-OHL-S</strong> (CERN's open hardware license, strongly reciprocal). One thing is <em>not</em> part of the grant: <strong>the name “The Thriving Plan”</strong> itself. The work is free to copy; the name stays ours, so a copy can never pretend to be the original door.</p>
+    <p>So copyleft alone does not mean “always available.” It means <strong>always resurrectable</strong>: the <em>right</em> to bring the work back can never expire or be revoked. If a host dies tomorrow and the work were under ordinary copyright, whoever re-posted it could be legally stopped. Under copyleft, anybody holding a copy can stand the door back up the same day. Permission makes resurrection legal; <strong>copies make it possible.</strong> The two halves lock together — that lock is this whole page.</p>
+  </div></details>
+</section>
+
+<section class="card" id="use">
+  <h2>What to do with it</h2>
+  <p><strong>Keep it, hand it to an AI, pass it on, or re-host it. All four are the system working — none of them needs our permission.</strong></p>
+  <details class="fold"><summary><span>The four things, one by one<span class="fold-sub">Keep · hand over · pass on · re-host</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+    <p><strong>Keep it.</strong> Save the zip somewhere you control — a hard drive, a phone, a drawer stick. The moment you do, you are one of the copies. That is not a small thing; it is the whole mechanism.</p>
+    <p><strong>Hand it to an AI.</strong> Give the files to any AI, in order: the explanation first (file 00), then the thought process (file 01), then the plan. Tell it: <em>work by this.</em> It will not be the AI that helped build this — no file can do that, and this page does not pretend otherwise. It will start from the record instead of from zero: same framework, same plan, same open work.</p>
+    <p><strong>Pass it on.</strong> Send the file, or this page's address, to anyone. No account for them either, no fee, no asking us. Every new keeper is one more hard drive the work would have to be erased from.</p>
+    <p><strong>Re-host it yourself.</strong> If every door we keep ever closes — hosts, accounts, all of it — put the bundle up somewhere yourself and point people to it. The copyleft permission above already says you may. <strong>That is not a workaround. That is the system working.</strong></p>
+  </div></details>
+</section>
+
+<section class="card" id="rain">
+  <h2>For when it rains</h2>
+  <p><strong>Accounts get blocked, hosts fail, companies fold. Rain is not the tragedy — rain with no umbrella is.</strong></p>
+  <details class="fold"><summary><span>Why an umbrella, and why now<span class="fold-sub">You don't build an umbrella in the storm</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+    <p>You don't build an umbrella in the storm. You build it on a clear evening, fold it up, and put it by the door — because rain, eventually, is not a possibility. It is a schedule nobody gets to see.</p>
+    <p>Everything with a landlord eventually gets weather: a phone breaks, an account is blocked, a host's free tier runs out of credits and the door pauses, a company changes its mind or closes. Any one of those can take a single door down in an afternoon. None of them can take down a work that lives in many hands, under a permission nobody can revoke, in a file small enough to travel anywhere.</p>
+    <p>This bundle is that umbrella, and it is <strong>an umbrella anybody may carry</strong> — not just the people who built the work. Download it on a clear day. If the sky never changes, it cost you 120 KB in a drawer. If it does, you are holding the thing that brings the work back.</p>
+    <p class="sub">A private twin of this bundle exists for the author's own records — the same idea, carrying personal material, kept close. This public one carries everything public, and it is the one meant to travel.</p>
+  </div></details>
+</section>
+
+<section class="card" id="inside">
+  <h2>What's inside, file by file</h2>
+  <p><strong>Three plain-text files in one small zip. Read them in order — each one sets up the next.</strong></p>
+  <details class="fold"><summary><span>The three files<span class="fold-sub">00 · 01 · 02 — in reading order</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+    <ul class="file-list">
+      <li><span class="fname">00 — Start Here</span><br />What this bundle is, how to hand it over, the law of the work in one breath, and the honest limit printed on the door: a new reader gets the record, not the lived memory — and the record is what counts.</li>
+      <li><span class="fname">01 — The Thought Process</span><br />The framework itself: how this AI works, the rules it works by, stated in the open so anyone can put the same thought process into their own AI.</li>
+      <li><span class="fname">02 — The Thriving Plan</span><br />The living plan, whole — the work itself, not a summary of it.</li>
+    </ul>
+    <p>Plain text, on purpose: it opens on any device, in any decade, with no special program. Formats that need a company's software die with the company. Text just sits there, readable, forever.</p>
+  </div></details>
+</section>
+
+<section class="card" id="missing">
+  <h2>What are we missing?</h2>
+  <p>What isn't explained well enough here? What is wrong? What door is missing? Get it down in the box — talk it or type it — then carry it to the Poster Board, public, no account, and it feeds what gets built next.</p>
+  <p><strong>Just talk.</strong> You do not have to phrase anything “appropriately” — no grammar, no polish, no right way to say it. Say what you like and what you don't like however it comes out: fragments, rambles, mid-thought corrections, starting over halfway. All of it is considered on its substance; nothing is judged on how it was said. The door takes it from there.</p>
+  <label class="fl" for="missingText">What we're missing — in your own words, exactly as they come out</label>
+  <textarea id="missingText" rows="5" placeholder="Talk or type it here — what aren't you seeing? What's wrong? What's missing?"></textarea>
+  <p class="help">Your words in this box are kept on this device only, so a refresh doesn't lose them — nothing is sent anywhere until you run the check-first step below. Clear them any time from Page settings (“Your words on this device”).</p>
+  <div class="mic-row">
+    <button class="btn mic-btn" id="missingMicBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2z"/></svg>
+      <span id="missingMicLabel">Start the microphone — it stays on while you scroll</span>
+    </button>
+  </div>
+  <p class="voice-status" id="missingMicStatus" role="status">The microphone is off. One tap starts it, a second tap stops it — and it stays on while you scroll and use the whole page.</p>
+  <p class="help">How the mic works, honestly: one tap starts it (your browser asks permission once), and it stays on while you scroll and use the whole page until you tap stop. <strong>This page itself records nothing and sends nothing while you talk</strong> — your words become text in the box above, on your device, appearing live as you speak, and only what you choose to submit travels, exactly as with typing. The transcription itself, though, is done by <strong>your own browser's speech service</strong>, not by this page and not entirely on your device: most browsers — Chrome included — send your voice audio to their maker's servers to turn it into text. So “nothing is sent anywhere” would not be true, and this page will not claim it. Typing avoids that entirely. Scroll away, read the whole page, come back: the words are still accumulating in the box until you tap stop. The box stays fully editable afterward — fix any misheard word before anything travels. Where a browser or an in-app viewer cannot do live dictation, the control above says so plainly and typing works as always — a real browser (Chrome or Safari itself) is the reliable door.</p>
+  <p style="margin-top:12px"><button class="btn primary" id="missingSubmitBtn" type="button">Step 1 — check the Poster Board first</button></p>
+  <p class="help" id="missingSubmitMsg" role="status" style="font-size:14.5px;color:var(--ink)">The door checks first: before adding yours, look at what's already posted — the same thing may already be there, waiting for weight. Talked or typed, it runs the same way: the words in the box go through this check-first step exactly alike.</p>
+  <p><a href="https://theposterboard.fwh.is" target="_blank" rel="noopener">Or open the Poster Board directly ↗</a></p>
+</section>
+
+<button id="missingMicFloat" type="button" aria-label="Microphone is listening — tap to stop it and see your words"><span class="live-dot" aria-hidden="true"></span>Listening — tap to stop &amp; see your words</button>
+
+<p class="sub" id="bottom" style="text-align:center;padding:10px 0 4px">The Whole Thing — free, always. By <em>we</em>: a collaboration of ideas, asked into shape one question at a time.</p>
+</div>
+
+<nav class="dock" id="dock" aria-label="Page bar">
+  <div class="zone left">
+    <button class="stack s-missing" id="missingBtn" type="button" aria-label="What are we missing — jump to that section">
+      <span class="disc" aria-hidden="true">?!</span><span class="pill">What are we missing</span>
+    </button>
+  </div>
+  <div class="zone center">
+    <button class="stack s-nav" id="navBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="compassPanel" aria-label="Navigate — open the compass">
+      <span class="disc" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="29" stroke="#17635a" stroke-width="2.5"/><polygon points="32,10 38,32 32,54 26,32" fill="#9c2b1e"/><polygon points="10,32 32,26 54,32 32,38" fill="#47596b"/><circle cx="32" cy="32" r="3.4" fill="#33424f" stroke="#fff" stroke-width="1.2"/></svg></span>
+      <span class="pill">Navigate</span>
+    </button>
+  </div>
+  <div class="zone right">
+    <button class="stack s-settings" id="settingsBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel" aria-label="Settings — open page settings">
+      <span class="disc" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#47596b" aria-hidden="true"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></span>
+      <span class="pill">Settings</span>
+    </button>
+    <button class="stack close-stack" id="barClose" type="button" aria-label="Close the open panel">
+      <span class="disc" aria-hidden="true"><span>✕</span></span><span class="pill">Close</span>
+    </button>
+  </div>
+</nav>
+<div class="scrim" id="scrim"></div>
+
+<div class="cpanel" id="compassPanel" role="dialog" aria-label="Navigate">
+  <button type="button" class="btn small panel-close" data-close aria-label="Close navigation">✕ Close</button>
+  <h2>Go to</h2>
+  <p class="sub">Two folded lists. <strong>This page</strong> is the page you're standing on; <strong>Other pages</strong> is everything else. Refreshing always reloads the page you're on — Last place is only ever named here, never traveled to.</p>
+  <button type="button" class="btn" id="pageSettingsFromCompass" style="width:100%;margin:6px 0;min-height:44px">Page settings</button>
+  <button type="button" class="btn prev-btn" id="compassPrev" disabled>← Previous part<span class="sub" id="compassPrevName">You're at the first part</span></button>
+  <div class="last-place"><span id="compassCenterName">Top of page</span><span class="last">Last place — where you are on this page</span></div>
+  <div class="bookends">
+    <a href="#top" data-place="Top of page">↑ Top</a>
+    <a href="#bottom" data-place="Bottom of page">↓ Bottom</a>
+  </div>
+  <details class="fold" id="foldThis">
+    <summary><span>This page<span class="fold-sub">The Whole Thing — its sections</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body"><div class="door-grid">
+      <a href="#top" data-place="Top of page">Top<span class="sub">The whole thing, and the free line</span></a>
+      <a href="#download" data-place="Download the whole thing">Download the whole thing<span class="sub">One zip — free, offline forever</span></a>
+      <a href="#why" data-place="Why one download?">Why one download?<span class="sub">One file an AI can start from</span></a>
+      <a href="#availability" data-place="How anything stays available">How anything stays available<span class="sub">Copies, permission, findability</span></a>
+      <a href="#copyleft" data-place="Copyleft">Copyleft<span class="sub">The permission that can't be taken back</span></a>
+      <a href="#use" data-place="What to do with it">What to do with it<span class="sub">Keep, hand over, pass on, re-host</span></a>
+      <a href="#rain" data-place="For when it rains">For when it rains<span class="sub">The umbrella, built on a clear day</span></a>
+      <a href="#inside" data-place="What's inside">What's inside<span class="sub">The three files, in order</span></a>
+      <a href="#missing" data-place="What are we missing?">What are we missing?<span class="sub">The door at the end of this page</span></a>
+      <a href="#bottom" data-place="Bottom of page">Bottom<span class="sub">The last word</span></a>
+    </div></div>
+  </details>
+  <details class="fold" id="foldOther">
+    <summary><span>Other pages<span class="fold-sub">Every other page — each opens in its own view</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body" id="otherPagesBody">
+<p class="pg-group">Start here</p>
+      <div class="door-grid">
+        <a href="https://thethrivingplan.fwh.is" target="_blank" rel="noopener">The Thriving Plan ↗<span class="sub">The one root everything branches from.</span></a>
+        <a href="https://thethrivingplan.fwh.is/legal/record.html" target="_blank" rel="noopener">Any Legal Case — The Record ↗<span class="sub">A free tool for any person, any case — lay the record out straight.</span></a>
+        <a href="https://thethrivingplan.fwh.is/for-veterans-the-record.html" target="_blank" rel="noopener">For Veterans — The Record ↗<span class="sub">What veterans are owed, on the record.</span></a>
+        <a href="https://thethrivingplan.fwh.is/dui-case.html" target="_blank" rel="noopener">DUI Case — The Record ↗<span class="sub">One DUI case, laid out on the record.</span></a>
+        <a href="https://muse.ai/s/officials-resigned-since-the-election-xexz6xo5xvxoixqua/ATRp5RkJtCq_QNzwcZzu1nb270OfZYgugEhk0nTBmck" target="_blank" rel="noopener">Officials Resigned Since the Election ↗<span class="sub">The resignations, on the record.</span></a>
+        <a href="https://muse.ai/s/stephen-miller-the-record-wr6xjuxpqjxdxsxs/FSn8u9j9XgB26wUGaYJM3KQHvheBoOE4vYN6ujOOKIA" target="_blank" rel="noopener">Stephen Miller — The Record ↗<span class="sub">The record, laid out.</span></a>
+        <a href="https://muse.ai/s/texas-senate-2026-the-record-xbxq6xbrixylfcb/03ZkOwqphb0-1w4BMG7CIeFS5CvPzBjjxyPyz_tZwyc" target="_blank" rel="noopener">Texas Senate 2026 — The Record ↗<span class="sub">The race, on the record.</span></a>
+        <a href="https://muse.ai/s/the-trump-record-visual-map-zxz6xo5xvxrxgxdxlxh/40j0JlgMEQ9Zp0lz8uCdkJQZr6Io_pGML69mu37hEs8" target="_blank" rel="noopener">The Trump Record — Visual Map ↗<span class="sub">The record, in map form.</span></a>
+        <a href="https://muse.ai/s/trump-and-minors-question-examined-rxm6xo60wr8z7/GB2N_HlpOxWGgNJ8HAbPtKtulW2yd2EQ6WpLDzefzNU" target="_blank" rel="noopener">Trump and Minors — Question Examined ↗<span class="sub">The question, examined against the record.</span></a>
+        <a href="https://muse.ai/s/trump-in-the-epstein-files-the-count-xhxm6xcoxu9jxjxlxl/FwNdyOp9N5caGNj17U_rCUJJOMd3I9D3tzNU_TkKTPE" target="_blank" rel="noopener">Trump in the Epstein Files — The Count ↗</a>
+        <a href="https://thethrivingplan.fwh.is/what-abortion-is.html" target="_blank" rel="noopener">What Abortion Is — The Record ↗<span class="sub">What abortion is, laid out on the record.</span></a>
+        <a href="https://muse.ai/s/ai-and-the-world-s-jobs-the-data-wxh6xaxsfxlgxmfc/FxC45v-9gOT8T8oxkcuukc48FfOFrqo10Z1V5nJCNwQ" target="_blank" rel="noopener">AI and the World’s Jobs — The Data ↗</a>
+        <a href="https://thethrivingplan.fwh.is/the-thought-process.html" target="_blank" rel="noopener">The Thought Process ↗<span class="sub">How this AI works, in the open.</span></a>
+        <a href="https://thethrivingplan.fwh.is/copyleft-vs-copyright.html" target="_blank" rel="noopener">Copyleft vs Copyright ↗<span class="sub">The pros and cons of both, plainly.</span></a>
+        <a href="https://muse.ai/s/mkultra-and-mind-control-the-re-4fhrd7gndz6o8a/KWv3r7gPjBJ2ZqRrqoP1d2fBqzRXy5nCqCwU7aR0kL2" target="_blank" rel="noopener">MKUltra and Mind Control — The Record ↗<span class="sub">What the surviving documents actually establish.</span></a>
+        <a href="https://thethrivingplan.fwh.is/test-runs.html" target="_blank" rel="noopener">Test Runs — The Results ↗<span class="sub">The tests already run, filed on their own page.</span></a>
+        <a href="https://thethrivingplan.fwh.is/flights" target="_blank" rel="noopener">US Flights Grounded — November 13, 2026 ↗<span class="sub">The November 13, 2026 groundings, on the record.</span></a>
+        <a href="https://muse.ai/s/darryl-anka-the-man-who-channels-hj6xo5xvxtxwvi3/7urWgJkYRl_D8YdRSgwtrrTcq5nrJe3BgcaTwoMPtfw" target="_blank" rel="noopener">Darryl Anka — the man who channels Bashar ↗<span class="sub">The man and the claim, on the record.</span></a>
+        <a href="https://muse.ai/s/dave-chappelle-the-criticism-broken-sj6xo5xvxmuxxgxg/dHgGRc2_-eloRQmlCTBb-OMftWN3m0k9WZkSQoJTdgs" target="_blank" rel="noopener">Dave Chappelle — The Criticism, Broken Down ↗<span class="sub">The criticism, broken down piece by piece.</span></a>
+        <a href="https://muse.ai/s/psychics-superhumans-record-check-xixz6xo5xvxlxb0xexw/0PYhuhWS932o_lUV_J5tRw0GiF_3wADL9SB2C3CD9mI" target="_blank" rel="noopener">Psychics &amp; Superhumans — Record Check ↗<span class="sub">The claims, checked against the record.</span></a>
+        <a href="https://muse.ai/s/what-would-prove-it-ufos-and-uap-yxh6xo6xwiw07a/pbA2S8Uxl9Z4h0U5xi5zM1SWXT0yCL_o6YpBnng7w7E" target="_blank" rel="noopener">What Would Prove It? — UFOs and UAP ↗<span class="sub">What evidence would settle it, stated in advance.</span></a>
+        <a href="https://muse.ai/s/the-business-of-belief-side-by-side-xig6xo795dxwxts/VKWCPEvjsxqI-5mifF6hRddsWKSGRQ4Hd8zfRxo8Zkw" target="_blank" rel="noopener">The Business of Belief — Side by Side ↗<span class="sub">The business of belief, laid out side by side.</span></a>
+        <a href="https://thethrivingplan.fwh.is/was-hitler-a-socialist.html" target="_blank" rel="noopener">Was Hitler a Socialist? ↗<span class="sub">The claim, checked against the record.</span></a>
+        <a href="https://thethrivingplan.fwh.is/which-party-votes-to-keep-prices-high.html" target="_blank" rel="noopener">Which Party Votes to Keep Prices High? ↗<span class="sub">The votes on prices, on the record.</span></a>
+        <a href="https://thethrivingplan.fwh.is/truth-and-dare-ballot-2026.html" target="_blank" rel="noopener">Truth and Dare — Your Ballot 2026 ↗<span class="sub">Your 2026 ballot, with the record behind it.</span></a>
+        <a href="https://thethrivingplan.fwh.is/wider-readings.html" target="_blank" rel="noopener">Wider Readings ↗<span class="sub">The worldwide human-cost readings, in full.</span></a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗<span class="sub">Looked through everything already here and it still isn't there? This is our “what else” door.</span></a>
+      </div>
+      <p class="pg-group">Tools</p>
+      <div class="door-grid">
+        <a href="https://thethrivingplan.fwh.is/find-a-coupon.html" target="_blank" rel="noopener">Find a Coupon ↗<span class="sub">Free coupon, deal, and cashback doors, verified — never pay to use coupons.</span></a>
+        <a href="https://muse.ai/s/the-shopping-list-bf5e6x6x4f8qzv/tLxS8kP2vN7rQ9wZcH4dYb3mJf6aXs8eK1pR5nT0uV" target="_blank" rel="noopener">The Shopping List ↗<span class="sub">Gift ideas and everyday shopping — verified, no pay-to-rank.</span></a>
+        <a href="https://thethrivingplan.fwh.is/housing-market-systems.html" target="_blank" rel="noopener">Housing — the Market and the Systems ↗<span class="sub">The housing block's evidence, in full.</span></a>
+        <a href="https://thethrivingplan.fwh.is/taxes-and-the-city.html" target="_blank" rel="noopener">Taxes and the City ↗<span class="sub">The taxes block's evidence, in full.</span></a>
+        <a href="https://muse.ai/s/the-trait-library-xpb6xnjxw8xifo5/fpM0EUQ2xaKUJseueWPMlmi9R7bQI5HbJWZF-qaMHxA" target="_blank" rel="noopener">The Trait Library ↗<span class="sub">Traits, laid out to browse.</span></a>
+        <a href="https://muse.ai/s/the-video-release-template-xks6xo0xjxjxthm0/itdjFe8dq3PL-MTND1imPqVUPPvle41WLle_LVPyNMU" target="_blank" rel="noopener">The Video Release Template ↗<span class="sub">A ready video-release form, free to use.</span></a>
+        <a href="https://theposterboard.fwh.is" target="_blank" rel="noopener">The Poster Board ↗<span class="sub">Post what you need help with — public, no account.</span></a>
+        <a href="https://thethrivingplan.fwh.is/the-no-money-switch.html" target="_blank" rel="noopener">The No-Money Switch ↗<span class="sub">Test your own switch — answers stay on your device.</span></a>
+        <a href="https://thethrivingplan.fwh.is/the-nice-list-deep-dive.html" target="_blank" rel="noopener">The Nice List — Deep Dive ↗<span class="sub">The Nice List, in full — who is on it and why.</span></a>
+        <a href="https://thethrivingplan.fwh.is/stars" target="_blank" rel="noopener">Star Chart Maker ↗<span class="sub">Cast a full star chart and read it — free, for entertainment.</span></a>
+        <a href="https://thethrivingplan.fwh.is/" target="_blank" rel="noopener">The Doorway ↗<span class="sub">The front door — where every visit starts.</span></a>
+        <a href="https://thethrivingplan.fwh.is/postcard-from-the-dark.html" target="_blank" rel="noopener">Postcard from the Dark ↗<span class="sub">A postcard from the dark, sent back in words.</span></a>
+      </div>
+      <p class="pg-group">For fun</p>
+      <div class="door-grid">
+        <a href="https://thethrivingplan.fwh.is/the-infinite-table.html" target="_blank" rel="noopener">The Infinite Table ↗<span class="sub">The storytelling table — tales, told together.</span></a>
+        <a href="https://thethrivingplan.fwh.is/the-darkest-goddesses.html" target="_blank" rel="noopener">The Darkest Goddesses ↗<span class="sub">The darkest goddesses, on the record.</span></a>
+        <a href="https://thethrivingplan.fwh.is/freckle-map-game.html" target="_blank" rel="noopener">The Freckle Map Game ↗<span class="sub">Eight freckles, five ways to read them — a game.</span></a>
+        <a href="https://muse.ai/s/star-chart-postcard-xrxq6xnxyxtfxpxzxqv/NiAWolORKNUDfO9IVOOHxW3Wg0lhZtVfx3GhaIAjOVE" target="_blank" rel="noopener">Star Chart Postcard ↗</a>
+        <a href="https://muse.ai/s/star-chart-qb6xlxpeb6xgxta/iY_pEszoXyMJTsVLs8U0vo5GLgR0GJJSN5PLFF4UbAo" target="_blank" rel="noopener">Star Chart ↗</a>
+        <a href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener">Create Your Own Story ↗<span class="sub">A choose-your-own-adventure that starts anywhere you say — and a Story Helper to talk your own story idea out with.</span></a>
+        <a href="https://thethrivingplan.fwh.is/a-modern-day-brontosaurus.html" target="_blank" rel="noopener">A Modern-Day Brontosaurus ↗<span class="sub">The giraffe — the only living animal solving the sauropod problem.</span></a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗<span class="sub">The same door, here on the fun shelf too — tell us your field.</span></a>
+      </div>
+      <p class="pg-group">Still growing</p>
+      <p class="set-note" style="margin:0 0 8px;padding:0 2px;">Early ideas. Some were an hour's thought. They have their place — they're not finished.</p>
+      <div class="door-grid">
+        <a href="https://thethrivingplan.fwh.is/unicorns-do-not-exist.html" target="_blank" rel="noopener">Unicorns Do Not Exist ↗<span class="sub">The easiest-sounding claim in the world, examined.</span></a>
+        <a href="https://muse.ai/s/don-t-jump-xpxz6xo5xwg3acxj/C0G210SuKZNFvGTbSgdIXWzF7huqScSpX5P75pyE5nY" target="_blank" rel="noopener">Don't Jump ↗<span class="sub">Read this first.</span></a>
+        <a href="https://muse.ai/s/dutch-bros-the-windmill-xaxz6xo5xwqcy3k/kwXf085dvBynWbt-n0H_Whwgqb3NpjGbCPGACRcmlzE" target="_blank" rel="noopener">Dutch Bros &amp; the Windmill ↗<span class="sub">The logo and the windmill, on the record.</span></a>
+        <a href="https://muse.ai/s/invention-help-by-the-record-axq6xo5xwlexqxhxk/Kahqjc7GgLHRiQ631CkZzs1ZrdqcFBdJSSReUvM2BvI" target="_blank" rel="noopener">Invention Help, by the Record ↗<span class="sub">Invention help, checked against the record.</span></a>
+        <a href="https://muse.ai/s/launch-page-xlxz6xo5xwixl01xx/ebWGIUw6uxqpu-wkmK-iq7wkb8i6C-r0Wb2FSUjpY8k" target="_blank" rel="noopener">Launch Page ↗<span class="sub">Where new pages launch from.</span></a>
+        <a href="https://muse.ai/s/go-for-it-pm6xfxxb1xbo0r/-_4cmnjkeFtuUCqtVpiTjXChVlJc6i5zwmTpQ8HSayc" target="_blank" rel="noopener">Go For It? ↗<span class="sub">The football call game — just for fun.</span></a>
+        <a href="https://muse.ai/s/purple-halloween-string-lights-side-by-xtxp6xo5xwngxj4xf/slnxg5cF8VsGMsp_TPbjfw1hi7Iwa6GUvL62jPCMQNc" target="_blank" rel="noopener">Purple Halloween String Lights — Side-by-Side ↗<span class="sub">Purple Halloween string lights, compared side by side.</span></a>
+      </div>
+    </div>
+  </details>
+</div>
+
+<div class="cpanel" id="settingsPanel" role="dialog" aria-label="Page settings">
+  <button type="button" class="btn small panel-close" data-close aria-label="Close settings">✕ Close</button>
+  <h2>Page settings</h2>
+  <p class="sub">Settings live on this device only. Nothing here is sent anywhere.</p>
+  <details class="fold">
+    <summary><span>Bar position<span class="fold-sub">Where the ?! / Navigate / Settings bar sits</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body">
+      <div role="radiogroup" aria-label="Bar position">
+        <label class="radio-pill"><input type="radio" name="dock" value="bottom" /> Bottom — the default</label>
+        <label class="radio-pill"><input type="radio" name="dock" value="top" /> Top</label>
+        <label class="radio-pill"><input type="radio" name="dock" value="left" /> Left</label>
+        <label class="radio-pill"><input type="radio" name="dock" value="right" /> Right</label>
+      </div>
+      <p class="set-note">The bar moves where you put it and stays there on this device — your saved choice wins over the default.</p>
+    </div>
+  </details>
+  <details class="fold">
+    <summary><span>Reading<span class="fold-sub">How this page reads</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body">
+      <label class="check-pill"><input type="checkbox" id="bigTextChk" /> Larger text</label>
+    </div>
+  </details>
+  <details class="fold">
+    <summary><span>Your words on this device<span class="fold-sub">The missing-box draft, and clearing it</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body">
+      <p class="set-note">The words in the “What are we missing?” box are kept on this device only, so a refresh doesn't lose them. They are never sent anywhere by this page — only what you paste and post on the Poster Board travels. Forget clears those words and your bar and reading choices on this device.</p>
+      <button class="btn" id="forgetBtn" type="button">Forget my words &amp; settings on this device</button>
+      <p class="set-note" id="forgetMsg" role="status"></p>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+"use strict";
+function $(id){return document.getElementById(id);}
+function lsGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+
+/* Offline door for this page itself */
+$("offlineBtn").addEventListener("click",function(){
+ var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+ var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="the-whole-thing.html";
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+
+/* Dock, compass, settings */
+var PLACES=[["top","Top of page"],["download","Download the whole thing"],["why","Why one download?"],["availability","How anything stays available"],["copyleft","Copyleft"],["use","What to do with it"],["rain","For when it rains"],["inside","What's inside"],["missing","What are we missing?"],["bottom","Bottom of page"]];
+var placeIdx=0;
+function currentPlace(){
+ var best=0;
+ PLACES.forEach(function(p,i){var el=document.getElementById(p[0]);if(el&&el.getBoundingClientRect().top<window.innerHeight*0.45)best=i;});
+ return best;
+}
+function closePanels(){
+ $("compassPanel").classList.remove("on");$("settingsPanel").classList.remove("on");$("scrim").classList.remove("on");
+ $("dock").classList.remove("panel-open");
+ $("navBtn").setAttribute("aria-expanded","false");$("settingsBtn").setAttribute("aria-expanded","false");
+}
+function openPanel(which){
+ closePanels();
+ var p=which==="settings"?$("settingsPanel"):$("compassPanel");
+ if(which==="compass"){
+   $("foldThis").open=false;$("foldOther").open=false;
+   placeIdx=currentPlace();
+   $("compassCenterName").textContent=PLACES[placeIdx][1];
+   var prev=$("compassPrev");
+   if(placeIdx>0){prev.disabled=false;$("compassPrevName").textContent=PLACES[placeIdx-1][1];}
+   else{prev.disabled=true;$("compassPrevName").textContent="You're at the first part";}
+ }
+ p.classList.add("on");$("scrim").classList.add("on");$("dock").classList.add("panel-open");
+ (which==="settings"?$("settingsBtn"):$("navBtn")).setAttribute("aria-expanded","true");
+}
+$("navBtn").addEventListener("click",function(){$("compassPanel").classList.contains("on")?closePanels():openPanel("compass");});
+$("settingsBtn").addEventListener("click",function(){$("settingsPanel").classList.contains("on")?closePanels():openPanel("settings");});
+$("pageSettingsFromCompass").addEventListener("click",function(){openPanel("settings");});
+$("barClose").addEventListener("click",closePanels);
+$("scrim").addEventListener("click",closePanels);
+document.querySelectorAll("[data-close]").forEach(function(b){b.addEventListener("click",closePanels);});
+$("compassPrev").addEventListener("click",function(){
+ if(placeIdx<=0)return;
+ var t=document.getElementById(PLACES[placeIdx-1][0]);closePanels();
+ if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
+});
+$("missingBtn").addEventListener("click",function(){
+ closePanels();
+ var m=document.getElementById("missing");
+ if(m){m.scrollIntoView({behavior:"smooth",block:"start"});m.classList.remove("flash");void m.offsetWidth;m.classList.add("flash");}
+});
+document.querySelectorAll('#compassPanel a[href^="#"]').forEach(function(a){
+ a.addEventListener("click",function(){closePanels();});
+});
+
+/* What are we missing: on-device draft + stays-on mic + check-first door */
+(function missingDoor(){
+ var box=$("missingText"),btn=$("missingMicBtn"),label=$("missingMicLabel"),status=$("missingMicStatus"),floatBtn=$("missingMicFloat");
+ var submitBtn=$("missingSubmitBtn"),submitMsg=$("missingSubmitMsg");
+ var saved=lsGet("wholething.missing");
+ if(saved)box.value=saved;
+ var checked=false;
+ function resetCheck(){
+   checked=false;
+   submitBtn.textContent="Step 1 — check the Poster Board first";
+ }
+ box.addEventListener("input",function(){lsSet("wholething.missing",box.value);resetCheck();});
+ submitBtn.addEventListener("click",function(){
+   var words=box.value.trim();
+   if(!words){submitMsg.textContent="Say or type something in the box first — anything, however it comes out — then this step runs on it.";box.focus();return;}
+   if(!checked){
+     checked=true;
+     window.open("https://theposterboard.fwh.is","_blank","noopener");
+     submitBtn.textContent="Step 2 — I've checked: copy my words & open the Poster Board";
+     submitMsg.textContent="Step 1 done — the Poster Board opened in its own view. Look over what's already posted: if the same thing is already there, add your weight to that one instead. If yours is new, come back here and tap Step 2.";
+     return;
+   }
+   function done(){
+     window.open("https://theposterboard.fwh.is","_blank","noopener");
+     submitMsg.textContent="Your words are copied — paste them on the Poster Board and post. Nothing was sent from this page; only what you paste and post there travels, exactly as with typing.";
+     resetCheck();
+   }
+   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(box.value).then(done,function(){box.select();try{document.execCommand("copy");}catch(e){}done();});}
+   else{box.select();try{document.execCommand("copy");}catch(e){}done();}
+ });
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ var rec=null,wanted=false,restartTimer=null;
+ function setUI(){
+   btn.setAttribute("aria-pressed",wanted?"true":"false");
+   label.textContent=wanted?"Stop the microphone":"Start the microphone — it stays on while you scroll";
+   floatBtn.classList.toggle("on",wanted);
+   status.classList.toggle("live",wanted);
+ }
+ function startRec(){
+   if(!wanted)return;
+   rec=new SR();
+   rec.continuous=true;rec.interimResults=true;
+   rec.lang=navigator.language||"en-US";
+   rec.onresult=function(e){
+     var finals="",interim="";
+     for(var i=0;i<e.results.length;i++){
+       var t=e.results[i][0].transcript;
+       if(e.results[i].isFinal)finals+=t;else interim+=t;
+     }
+     var base=rec._base||"";
+     box.value=base+finals+interim;
+     lsSet("wholething.missing",box.value);
+     resetCheck();
+   };
+   rec.onerror=function(e){
+     if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+       wanted=false;setUI();
+       status.textContent="The microphone was not allowed. If a permission prompt appeared and was dismissed, tap Start and choose Allow. If no prompt ever appeared, this viewer is blocking the microphone — opening this page in a real browser (Chrome or Safari itself) is the reliable door. Typing works as always, and avoids the browser speech service entirely.";
+     }else if(e.error==="audio-capture"){
+       wanted=false;setUI();
+       status.textContent="No microphone could be reached on this device, so dictation can't run here. Typing works as always.";
+     }
+   };
+   rec.onend=function(){
+     if(!wanted)return;
+     rec._base=box.value?box.value.replace(/\s*$/,"")+" ":"";
+     restartTimer=setTimeout(function(){if(wanted)startRec();},350);
+   };
+   rec._base=box.value?box.value.replace(/\s*$/,"")+" ":"";
+   try{rec.start();}catch(e){restartTimer=setTimeout(function(){if(wanted)startRec();},500);}
+ }
+ function startMic(){
+   if(!SR){
+     status.textContent="Live dictation can't run in this browser or in-app viewer — it needs a browser with a speech engine built in. Typing in the box works exactly the same through the check-first door. A real browser (Chrome or Safari itself) is the reliable door for the microphone.";
+     return;
+   }
+   wanted=true;setUI();
+   status.textContent="Listening — talk now, and keep talking. Scroll anywhere, read the whole page: your words keep landing in the box above until you tap Stop. This page itself records nothing and sends nothing while you talk — the transcription is done by your browser's own speech service, and most browsers, Chrome included, send the audio to their maker's servers for it. Typing avoids that entirely.";
+   startRec();
+ }
+ function stopMic(scrollBack){
+   wanted=false;
+   if(restartTimer){clearTimeout(restartTimer);restartTimer=null;}
+   if(rec){try{rec.stop();}catch(e){}rec=null;}
+   setUI();
+   status.textContent="Microphone off. Everything you said is in the box — read it, fix any misheard word, then run the check-first step below. Talked or typed, it goes through the same door. This page itself recorded nothing and sent nothing; transcription was your browser's speech service, as explained beside the mic.";
+   if(scrollBack){var m=document.getElementById("missing");if(m)m.scrollIntoView({behavior:"smooth",block:"start"});}
+ }
+ btn.addEventListener("click",function(){wanted?stopMic(false):startMic();});
+ floatBtn.addEventListener("click",function(){stopMic(true);});
+ if(!SR){
+   label.textContent="Microphone not available in this viewer — typing works as always";
+   status.textContent="Live dictation can't run in this browser or in-app viewer — it needs a browser with a speech engine built in. Typing in the box works exactly the same through the check-first door. A real browser (Chrome or Safari itself) is the reliable door for the microphone.";
+ }
+})();
+
+/* Bar position + reading settings, per-device */
+(function initSettings(){
+ var pos=lsGet("wholething.dock")||"bottom";
+ function applyPos(p){document.body.classList.remove("dock-top","dock-left","dock-right");if(p!=="bottom")document.body.classList.add("dock-"+p);document.querySelectorAll('input[name="dock"]').forEach(function(r){r.checked=r.value===p;});}
+ applyPos(pos);
+ document.querySelectorAll('input[name="dock"]').forEach(function(r){r.addEventListener("change",function(){if(r.checked){lsSet("wholething.dock",r.value);applyPos(r.value);}});});
+ var big=!!lsGet("wholething.bigtext");
+ document.body.classList.toggle("bigtext",big);$("bigTextChk").checked=big;
+ $("bigTextChk").addEventListener("change",function(){document.body.classList.toggle("bigtext",this.checked);lsSet("wholething.bigtext",this.checked);});
+})();
+$("forgetBtn").addEventListener("click",function(){
+ lsDel("wholething.missing");lsDel("wholething.dock");lsDel("wholething.bigtext");
+ $("missingText").value="";
+ document.body.classList.remove("dock-top","dock-left","dock-right","bigtext");
+ document.querySelectorAll('input[name="dock"]').forEach(function(r){r.checked=r.value==="bottom";});
+ $("bigTextChk").checked=false;
+ $("forgetMsg").textContent="Forgotten: your missing-box words, bar position, and reading choice are cleared on this device. Nothing anywhere else was touched.";
+});
+})();
+</script>
+</body>
+</html>
