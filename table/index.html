@@ -261,6 +261,20 @@ body[data-dock="top"] #micBar{bottom:calc(14px + env(safe-area-inset-bottom))}
 .vote-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px;background:var(--parchment)}
 .vote-box.kick{border:2px solid var(--bad)}
 .vote-box.nokick{border:2px solid var(--good)}
+/* Private messages */
+.msg-thread{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;background:var(--parchment)}
+.msg-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.msg-lines{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.msg-line{border-radius:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--line);max-width:88%;white-space:pre-wrap;word-break:break-word}
+.msg-line.mine{align-self:flex-end;background:var(--gold-soft);border-color:var(--gold)}
+.msg-line.theirs{align-self:flex-start}
+.msg-unread{display:inline-block;background:var(--accent);color:var(--accent-ink);border-radius:20px;padding:1px 9px;font-size:13px;font-weight:700}
+.msg-sendrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.msg-sendrow input[type=text]{flex:1;min-width:140px;margin-top:0}
+.ding-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px;background:var(--parchment)}
+.inbox-item{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px;background:var(--surface)}
+.inbox-item .inbox-text{white-space:pre-wrap;word-break:break-word;margin-top:4px}
+.standing-banner-note{font-weight:700}
 .vote-tally{font-family:Cinzel,serif;font-weight:800;font-size:18px;margin:6px 0}
 .vote-result{font-family:Cinzel,serif;font-weight:800}
 .vote-result.carried{color:var(--good)}
@@ -331,6 +345,26 @@ body[data-dock="top"] #micBar{bottom:calc(14px + env(safe-area-inset-bottom))}
         <div class="row"><button class="btn small" id="recentsClearBtn" type="button">Clear all recents</button></div>
         <p class="sub" id="recentsMsg" role="status" aria-live="polite"></p>
         <div id="recentsList"><p class="sub">No recent tablemates recorded on this device yet — they appear here after you share a table.</p></div>
+      </div>
+    </details>
+    <details class="fold" id="whosMsgFold">
+      <summary><span>Private messages<span class="fold-sub">Whispers at this table and friends who are around — between two devices only, never in the record</span></span><span class="msg-unread" id="msgUnread" style="display:none"></span><span aria-hidden="true">▾</span></summary>
+      <div class="fold-body">
+        <div id="msgPanelNote">
+          <p class="sub"><strong>How private messages work here — honestly.</strong> A whisper or a knock travels on a direct, encrypted connection between the two devices (WebRTC). No server holds it, and it is <strong>never written into the Tale, the Run, saves, or exports</strong> — it lives only in this page's memory, only while the page is open. Closing or reloading the page ends every thread.</p>
+          <p class="sub"><strong>A name on a knock is a claim, not a proof.</strong> Anyone can knock under any name. The registry mark and the conferred look appear here only where the code was actually checked — at a table, by that table's own proof. A doorbell knock whose own device says its code was checked is tagged <em>“code claimed on their device — not checked here.”</em></p>
+          <p class="sub"><strong>Doorbell addresses are derived from the folded name, by design</strong> — the same folding the registry uses — so a lookalike name computes the same doorbell. The code is what separates the owner from an imitator. And like a real passed note, the other person's own device can still keep or screenshot anything you send: private means the table and the record cannot see it, not that the receiver cannot keep it.</p>
+          <p class="sub"><strong>Messages cannot be left for someone who is not around yet.</strong> There is no mailbox and no message is queued: if a friend is not around, this panel says so, plainly. <strong>The one exception is the standing table:</strong> at a table its host has left standing, whispers and dings addressed to the host seat are kept in a host inbox on the host’s own device, for the host’s return — that inbox is the host device’s shelf, not a server mailbox, and it exists only while that device keeps the table standing.</p>
+          <p class="sub"><strong>Dings.</strong> A ding can only land while you have a table page open — no server holds dings. If someone isn't around, your ding waits on your device and goes out the moment they're around while you are too. Waiting dings live in an outbox on this device only — nothing about them goes anywhere until the moment one fires.</p>
+        </div>
+        <p class="sub" id="msgDoorbellNote" role="status" aria-live="polite"></p>
+        <p class="sub" id="msgSoloNote" style="display:none"><strong>You are playing solo.</strong> Private messages and dings need a live table or a friend who is around — solo play has nobody to whisper to or ding: the story engine's cast has no seats and no devices, and engine NPCs never send or receive whispers or dings.</p>
+        <div class="row" style="margin-top:8px"><button class="btn small gold" id="msgRefreshBtn" type="button">Check who's around</button></div>
+        <div id="dingLog" aria-live="polite"></div>
+        <div id="dingOutboxBox"></div>
+        <div id="inboxBox"></div>
+        <div id="standingGuestBox"></div>
+        <div id="msgThreads"><p class="sub">No private threads yet. At a live table, tap <strong>Whisper</strong> beside a seat under “At this table now” above; for a friend who is around, tap <strong>Message</strong> beside their name in Friends.</p></div>
       </div>
     </details>
     <div class="vote-box" id="whosVoteBox">
@@ -715,6 +749,14 @@ body[data-dock="top"] #micBar{bottom:calc(14px + env(safe-area-inset-bottom))}
       <p class="sub">One player, a whole party if you want one, and a table of NPCs the page runs. <strong>Honest label:</strong> the NPCs improvise from written banks inside this page — they are a story engine, not a thinking mind. No connection needed; the tale saves on this device.</p>
       <button class="btn primary" id="soloBtn" type="button">🎲 Play solo at this table</button>
     </div>
+    <div id="standingBox" style="display:none;margin-top:16px;border:1px dashed var(--gold);border-radius:10px;padding:12px 14px">
+      <h3>The standing table — leave it open while you’re away</h3>
+      <p class="sub">Leave this table standing and people with the table code can still come in, sit, talk, whisper the host seat, and ding it while you’re away. Your seat is marked <strong>Host — away</strong>: your characters leave the living scene under the Away Rule — tokens off the stage, cards locked, state preserved exactly as left — until you come back. Joins, the Tale, and votes keep working on this device while it stands.</p>
+      <p class="sub"><strong>The honest condition:</strong> This table lives only while this device stays on with this page open. If it sleeps or the page closes, the table closes. What’s already in the inbox stays on this device.</p>
+      <p class="sub">While the table stands, <strong>your readmission hand is away too</strong>: letting a kicked seat back in belongs to the Dungeon Master or host, and while you’re away the host’s hand can’t do it — the DM can still do it, if a different present seat holds the mantle.</p>
+      <p class="sub" id="standingStateLine" role="status" aria-live="polite"></p>
+      <div class="row" style="margin-top:8px"><button class="btn gold" id="standingToggleBtn" type="button">Leave this table standing</button></div>
+    </div>
 <details class="fold">
       <summary><span>More actions for your card &amp; this table<span class="fold-sub">Update your card, add another character, forget your card, or leave the table</span></span><span aria-hidden="true">▾</span></summary>
       <div class="fold-body">
@@ -962,6 +1004,7 @@ body[data-dock="top"] #micBar{bottom:calc(14px + env(safe-area-inset-bottom))}
       <button class="btn small" id="copyCodeBtn" type="button">Copy code</button></span>
     <span class="sub" id="roleText"></span>
   </div>
+  <div class="notice" id="standingBanner" style="display:none"><span class="standing-banner-note">This table is standing — the host is away.</span> You can sit, talk, whisper, and leave word for the host.</div>
   <div class="notice bad" id="closedNotice" style="display:none"><strong>The host has left — this table is closed.</strong> The tale below is yours to keep: use “Save the tale” to download it, then open a fresh table any time.</div>
   <div class="notice" id="resumeBanner" style="display:none">
     <strong>Welcome back — you have an autosaved game on this device.</strong>
@@ -1539,6 +1582,17 @@ body[data-dock="top"] #micBar{bottom:calc(14px + env(safe-area-inset-bottom))}
     </div>
   </details>
   <details class="fold">
+    <summary><span>Doorbells and dings<span class="fold-sub">Your doorbell switch, and the names muted on this device</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body">
+      <label class="check-pill"><input type="checkbox" id="dingDoorbellChk" /> Doorbell on</label>
+      <p class="set-note">With the doorbell <strong>off</strong>, this device does not register its doorbell: you can't be reached or dinged through the doorbell, and your waiting dings pause — they stay stored on this device, they are not lost. Ding taps on names that aren't seats at your table answer that your doorbell is off. Dings to people seated at your table still work while it is off — they ride the table connection, not the doorbell.</p>
+      <h3 style="margin-top:14px">Muted names</h3>
+      <p class="set-note">Mute a name from the Private messages panel — beside any landed ding, or in a doorbell thread's header.</p>
+      <div id="dingMuteList"><p class="sub">No names are muted on this device.</p></div>
+      <p class="set-note">Muted names can't ding you or knock — their tries are dropped without a sound. The list lives on this device only.</p>
+    </div>
+  </details>
+  <details class="fold">
     <summary><span>Your card &amp; this device<span class="fold-sub">What this device remembers, and clearing it</span></span><span aria-hidden="true">▾</span></summary>
     <div class="fold-body">
       <p class="set-note">Your character card, the Dungeon Master’s secret notes, a copy of the tale you witnessed, and the game’s autosave are kept on this device only. Forget clears the card, the notes, and the autosave; it does not touch anyone else’s device. Your Saves on the shelf are <em>not</em> cleared here — delete those one by one in Save &amp; go back, so nothing deliberate is ever wiped by a general clear.</p>
@@ -1589,6 +1643,7 @@ var S={
  rules:DEFAULT_RULES,
  pos:{}, /* charId -> {x,y} percentages */
  dm:null, hostSeat:null,
+ hostStanding:false, /* the standing table: host device stays open holding the table, host seat marked away */
  clock:{mode:"stop",running:false,startAt:0,accum:0,duration:60000,anyone:false,zeroFired:false},
  nameClaims:{}, /* folded name -> clientId : first claim inside this table is final for the run */
  voteRule:{threshold:"majority-eligible",kickNeedsOk:true},
@@ -1834,6 +1889,9 @@ function renderClaimUI(){
      var det=document.createElement("div");det.style.display="none";det.style.width="100%";det.innerHTML="";
      btn.addEventListener("click",function(){if(det.style.display==="none"){det.innerHTML=exactSpellingHTML(e.name);det.style.display="block";btn.textContent="Hide exact spelling";}else{det.style.display="none";btn.textContent="Exact spelling";}});
      row.appendChild(btn);row.appendChild(det);
+     if(mode!=="solo"&&!dingMyFolds()[foldName(e.name)]){
+       var dh=document.createElement("span");dingMakeHost(dh,e.name);row.appendChild(dh);
+     }
      rl.appendChild(row);
    });
    if(!BAKED_RETIRED.length){
@@ -2551,6 +2609,26 @@ function hostApply(ev){
    S.voteRule.kickNeedsOk=!!ev.kickNeedsOk;
    S.tale.push(taleEntry("system","","Voting rule set by the Dungeon Master / host: "+voteRuleLabel(S.voteRule.threshold)+" carries a vote; a kicked seat "+(S.voteRule.kickNeedsOk?"needs the DM/host to let them back before rejoining.":"may rejoin without being let back.")+" The default has EVOLVED: this applies only to votes called after this change — votes already open keep the rule as it stood when they were called. The future adapts; the present stands."));
    return true;
+  case "standing":
+   /* The standing table: host mode only, host seat only. Rides the normal
+      host event path, so it broadcasts in the snapshot and is recorded in
+      the Tale. The host seat is marked away with the seat's existing away
+      flag, so the Away Rule itself does all the scene work. */
+   if(mode!=="host")return false;
+   if(ev.clientId!==S.hostSeat)return false;
+   var hst=seatOf(S.hostSeat); if(!hst)return false;
+   if(ev.on){
+     if(S.hostStanding)return false;
+     S.hostStanding=true; hst.away=true; hst.voice=false;
+     S.chars.filter(function(c){return c.controller===S.hostSeat&&!c.npc;}).forEach(function(c){S.tale.push(taleEntry("system","",c.name+" is not here."));});
+     S.tale.push(taleEntry("system","","The table is left standing — the host is away (Host — away). The table stays open on the host’s device: visitors can sit, talk, whisper the host seat, and ding it, and word left for the host is kept in the host inbox on that device."));
+     return true;
+   }
+   if(!S.hostStanding)return false;
+   S.hostStanding=false; hst.away=false;
+   S.chars.filter(function(c){return c.controller===S.hostSeat&&!c.npc;}).forEach(function(c){S.tale.push(taleEntry("system","",c.name+" is here again."));});
+   S.tale.push(taleEntry("system","","The host is back — the table is no longer standing."));
+   return true;
   case "clockZero":
    if(ev.byHost){S.tale.push(taleEntry("system","","The timer ran out."));return true;}
    return false;
@@ -2580,7 +2658,7 @@ function renderSeats(){
    b.style.left=(50+Math.cos(ang)*38)+"%";b.style.top=(50+Math.sin(ang)*38)+"%";
    var main=S.chars.filter(function(c){return c.controller===st.clientId;})[0];
    var col=main?main.color:"#9a741f", av=main?main.avatar:"star", nm=main?main.name:st.label;
-   b.innerHTML='<span class="voice-on"></span><span class="face" style="background:'+esc(col)+'22;border-color:'+esc(col)+'">'+avatarSVG(av,col)+'</span><span class="nm">'+(main?charNameHTML(main,true):esc(nm))+'</span><span class="tags">'+(S.dm===st.clientId?"DM · ":"")+(S.hostSeat===st.clientId?"Host · ":"")+(st.away?"away":"here")+"</span>";
+   b.innerHTML='<span class="voice-on"></span><span class="face" style="background:'+esc(col)+'22;border-color:'+esc(col)+'">'+avatarSVG(av,col)+'</span><span class="nm">'+(main?charNameHTML(main,true):esc(nm))+'</span><span class="tags">'+(S.dm===st.clientId?"DM · ":"")+(S.hostSeat===st.clientId?(S.hostStanding?"Host — away":"Host · "+(st.away?"away":"here")):(st.away?"away":"here"))+"</span>";
    b.setAttribute("aria-label","Open the card of "+nm);
    b.addEventListener("click",function(){var c=S.chars.filter(function(x){return x.controller===st.clientId;})[0];if(c)openCard(c.id);});
    rt.appendChild(b);
@@ -3143,7 +3221,7 @@ $("createBtn").addEventListener("click",function(){
  if(!peer)return;
  peer.on("open",function(){
    mode="host";
-   S.hostSeat=clientId;S.dm=clientId;S.seats=[];S.chars=[];S.tale=[];S.chat=[];S.pos={};S.items=[];S.questParty=true;S.nameClaims={};S.votes=[];S.delegations=[];S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};
+   S.hostSeat=clientId;S.dm=clientId;S.seats=[];S.chars=[];S.tale=[];S.chat=[];S.pos={};S.items=[];S.questParty=true;S.nameClaims={};S.votes=[];S.delegations=[];S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};S.hostStanding=false;
    S.clock={mode:"stop",running:false,startAt:0,accum:0,duration:60000,anyone:false,zeroFired:false};
    var ch=readFormChar();myCharIds=[ch.id];actAsId=ch.id;
    S.seats.push({clientId:clientId,peerId:peer.id,label:ch.name,away:false,voice:false});
@@ -3153,27 +3231,7 @@ $("createBtn").addEventListener("click",function(){
    wirePeerCalls(peer);renderAll();saveTaleLocal();
    sitMsg("Your table is open. Read the code aloud or show your screen: friends type it under “Join a table”. You can play solo here while you wait.");
  });
- peer.on("connection",function(conn){
-   conns[conn.peer]=conn;
-   conn.on("data",function(raw){
-     var msg;try{msg=JSON.parse(raw);}catch(e){return;}
-     if(msg.t==="ev"){
-       var ev=msg.ev;
-       if(ev.type==="join"){var kSeat=seatOf(ev.clientId);if(kSeat&&kSeat.kicked&&(S.voteRule?S.voteRule.kickNeedsOk!==false:true)){try{conn.send(JSON.stringify({t:"sitRefused",msg:"Your seat at this table was ended by a vote to kick. The Dungeon Master or host must let you back before you can rejoin this session — the kick, its tally, and its whys stay in the record."}));}catch(e){}return;}var refusal=nameRefusalForJoin(ev);if(refusal){try{conn.send(JSON.stringify({t:"nameRefused",msg:refusal}));}catch(e){}return;}ev.peerId=conn.peer;hostCommit(ev);
-         /* reclaim: remap voice-era peerId on seat */
-         var st=seatOf(ev.clientId);if(st)st.peerId=conn.peer;
-         try{conn.send(snapshot());}catch(e){}
-         hostBroadcast();return;}
-       if(ev.type==="leave"){hostSeatAway(ev.clientId);return;}
-       dispatchHost(ev);
-     }
-   });
-   conn.on("close",function(){
-     delete conns[conn.peer];
-     var st=null;S.seats.forEach(function(x){if(x.peerId===conn.peer)st=x;});
-     if(st)hostSeatAway(st.clientId);
-   });
- });
+ peer.on("connection",function(conn){routeTableConnection(conn);});
  peer.on("error",function(err){
    if(err.type==="unavailable-id"){sitMsg("That table code was just taken — press Create again for a fresh one.");peer=null;mode=null;}
    else sitMsg("Connection trouble ("+err.type+"). The relay may be busy — try again in a moment.");
@@ -3190,6 +3248,7 @@ $("joinBtn").addEventListener("click",function(){
 function connectGuest(code,isRetry){
  peer=basePeer();
  if(!peer)return;
+ peer.on("connection",function(conn){routeTableConnection(conn);});
  peer.on("open",function(){
    wirePeerCalls(peer);
    hostConn=peer.connect("infinitetable-"+code.toLowerCase(),{reliable:true});
@@ -3206,7 +3265,7 @@ function connectGuest(code,isRetry){
      var msg;try{msg=JSON.parse(raw);}catch(e){return;}
      if(msg.t==="nameRefused"){sitMsg(msg.msg||"That name is claimed.");try{peer.destroy();}catch(e){}mode=null;renderConn();return;}
      if(msg.t==="sitRefused"){sitMsg(msg.msg||"You cannot sit at this table.");try{peer.destroy();}catch(e){}mode=null;renderConn();return;}
-     if(msg.t==="state"){S=msg.S;if(!S.items)S.items=[];if(!S.nameClaims)S.nameClaims={};if(!S.votes)S.votes=[];if(!S.delegations)S.delegations=[];if(!S.voteRule)S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};renderAll();saveTaleLocal();}
+     if(msg.t==="state"){S=msg.S;if(S.hostStanding===undefined)S.hostStanding=false;if(!S.items)S.items=[];if(!S.nameClaims)S.nameClaims={};if(!S.votes)S.votes=[];if(!S.delegations)S.delegations=[];if(!S.voteRule)S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};renderAll();saveTaleLocal();}
    });
    hostConn.on("close",function(){
      if(mode!=="guest")return;
@@ -3386,7 +3445,7 @@ $("soloBtn").addEventListener("click",function(){
  var gate=nameGate($("fName").value.trim()||"Nameless Wanderer");if(gate){sitMsg(gate);document.getElementById("claimed").scrollIntoView({behavior:"smooth",block:"start"});return;}
  saveMyCardFromForm();closedByHost=false;tableCode=null;
  mode="solo";
- S.hostSeat=clientId;S.dm=clientId;S.seats=[];S.chars=[];S.tale=[];S.chat=[];S.pos={};S.items=[];S.questParty=true;S.nameClaims={};S.votes=[];S.delegations=[];S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};
+ S.hostSeat=clientId;S.dm=clientId;S.seats=[];S.chars=[];S.tale=[];S.chat=[];S.pos={};S.items=[];S.questParty=true;S.nameClaims={};S.votes=[];S.delegations=[];S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};S.hostStanding=false;
  S.clock={mode:"stop",running:false,startAt:0,accum:0,duration:60000,anyone:true,zeroFired:false};
  var ch=readFormChar();myCharIds=[ch.id];actAsId=ch.id;
  S.seats.push({clientId:clientId,peerId:"solo",label:ch.name,away:false,voice:false});
@@ -3946,7 +4005,7 @@ function restoreGame(snap,sourceLabel){
  try{c=JSON.parse(JSON.stringify(snap.S));}catch(e){restoring=false;return false;}
  S=c;
  if(!S.items)S.items=[]; if(S.questParty===undefined)S.questParty=true; if(!S.nameClaims)S.nameClaims={}; if(!S.votes)S.votes=[]; if(!S.voteRule)S.voteRule={threshold:"majority-eligible",kickNeedsOk:true};
- if(!S.pos)S.pos={}; if(!S.chat)S.chat=[];
+ if(!S.pos)S.pos={}; if(!S.chat)S.chat=[]; S.hostStanding=false; /* a restored game is played on this device, host present \u2014 never standing */
  mode="solo"; closedByHost=false;
  tableCode=snap.tableCode||null;
  S.hostSeat=clientId; S.dm=clientId;
@@ -4361,6 +4420,967 @@ document.body.classList.toggle("big-text",bigText);$("bigTextChk").checked=bigTe
 $("bigTextChk").addEventListener("change",function(){document.body.classList.toggle("big-text",$("bigTextChk").checked);lsSet("infinitetable.bigText",$("bigTextChk").checked);});
 document.addEventListener("pointerdown",function(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();}catch(e){}},{once:true});
 
+/* ================= PRIVATE MESSAGES =================
+   Whispers at this table and knocks on the friends doorbell.
+   RECORD ISOLATION — a hard law of this section: thread state lives
+   ONLY in the msgThreads object below, in this page's memory. It is
+   never put into the shared table state, never written to any device
+   store, and never passed through any tale, save, or export path.
+   Closing or reloading the page ends every thread. A partner's
+   conferred look in a thread comes ONLY from this page's own proof
+   machinery for that seat's character — never from anything the
+   partner's device merely claims about itself. */
+var msgThreads={}; /* key -> thread. key: "seat:"+clientId | "friend:"+folded name | "inc:"+peerId (unresolved knock) */
+var msgFocusKey=null;
+var msgDbPeer=null, msgDbFold="", msgDbState="off"; /* off | starting | on | taken | unavailable */
+var msgReach={}; /* folded friend name -> "around" | "not" — memory only, never stored */
+var DING_OUTBOX_KEY="infinitetable.dingoutbox.v1", DING_MUTE_KEY="infinitetable.muted.v1", DING_DB_KEY="infinitetable.doorbell.v1";
+var dingUnread=0, dingLog=[], dingNotes={}, dingHosts={}, dingHostSeq=0; /* dingLog + notes: page memory only, like threads */
+
+function msgMyName(){
+ if(myCard&&myCard.name)return myCard.name;
+ var st=seatOf(clientId); if(st)return st.label;
+ return "A player at the table";
+}
+function msgFoldOpen(){var f=$("whosMsgFold");return !!(f&&f.open);}
+function msgOpenFold(){var f=$("whosMsgFold");if(f&&!f.open)f.open=true;}
+function msgEnsureThread(key,init){
+ var th=msgThreads[key];
+ if(!th){
+   th={key:key,kind:init.kind||"friend",name:init.name||"",fold:init.fold||"",seatId:init.seatId||null,peerId:init.peerId||null,conn:null,open:false,ended:false,pending:false,claimed:false,msgs:[],unread:0,note:"",draft:""};
+   msgThreads[key]=th;
+ }
+ return th;
+}
+function msgTotalUnread(){var n=0;for(var k in msgThreads)n+=msgThreads[k].unread||0;n+=(dingUnread||0);if(mode==="host")n+=inboxUnreadCount();return n;}
+function msgUpdateBadge(){
+ var b=$("msgUnread"); if(!b)return;
+ var n=msgTotalUnread();
+ b.textContent=n?(n+" unread"):"";
+ b.style.display=n?"inline-block":"none";
+}
+function msgUpdatePanelState(){
+ var dn=$("msgDoorbellNote");
+ if(dn){
+   var nm=(myCard&&myCard.name)||"";
+   if(msgDbState==="on")dn.textContent="Your doorbell is on under the name “"+nm+"” — while this page is open, friends who keep you in their list can see you are around and knock. It rings on this device only; closing the page turns it off.";
+   else if(msgDbState==="taken")dn.textContent="Your doorbell is already answered somewhere — possibly your own other tab or device, possibly an imitator who worked out the same address from your name. The code proof is what separates the owner from an imitator, and this panel only ever shows the conferred look where a code was actually checked.";
+   else if(msgDbState==="unavailable")dn.textContent="This device cannot work the doorbell: it has no secure hashing (crypto.subtle), so no doorbell address can be derived from your name. The doorbell stays off here — whispers at a live table still work.";
+   else if(msgDbState==="starting")dn.textContent="Your doorbell is being set up…";
+   else if(!dingDoorbellEnabled())dn.textContent="Your doorbell is off — you turned it off in Page settings, under “Doorbells and dings”. While it is off you can't be reached or dinged through the doorbell, and waiting dings pause on this device; dings to people seated at your table still work.";
+   else dn.textContent=nm?"Your doorbell is off right now.":"You have no name on your saved card yet, so your doorbell is off. Save a name on your card under “Take your seat” and, while this page is open, your doorbell rings under it.";
+ }
+ var sn=$("msgSoloNote"); if(sn)sn.style.display=(mode==="solo")?"block":"none";
+ msgUpdateBadge();
+}
+function msgPartnerNameHTML(th){
+ if(th.kind==="seat"){
+   var st=th.seatId?seatOf(th.seatId):null;
+   if(st){
+     var ch=null;
+     for(var i=0;i<S.chars.length;i++){if(S.chars[i].controller===st.clientId&&!S.chars[i].npc){ch=S.chars[i];break;}}
+     if(ch&&charProven(ch))return charNameHTML(ch); /* conferred ONLY by this table's own proof machinery */
+     return esc(st.label);
+   }
+   return esc(th.name||"Someone at the table");
+ }
+ var html=esc(th.name||"A friend");
+ if(th.claimed)html+=' <span class="match-tag">code claimed on their device — not checked here</span>';
+ return html;
+}
+function msgEndThread(th,note){
+ if(th.ended)return;
+ th.ended=true; th.open=false;
+ if(note)th.note=note;
+ if(th.conn){try{th.conn.close();}catch(e){}}
+}
+function msgHello(th,conn,m){
+ var nm=String(m.name||"").slice(0,120);
+ if(th.kind==="friend"){
+   th.claimed=!!m.proven; /* a claim about their device — noted, never conferred */
+   if(nm){
+     th.name=nm;
+     var f=foldName(nm);
+     if(f&&(th.pending||!th.fold)){delete msgThreads[th.key];th.key="friend:"+f;th.fold=f;th.pending=false;msgThreads[th.key]=th;}
+   }
+ }else if(th.kind==="seat"&&th.pending){
+   var st=null; S.seats.forEach(function(x){if(x.peerId===conn.peer)st=x;});
+   if(st){delete msgThreads[th.key];th.key="seat:"+st.clientId;th.seatId=st.clientId;th.name=st.label;th.pending=false;msgThreads[th.key]=th;}
+   else if(nm)th.name=nm;
+ }
+ msgRenderThreads();
+}
+function msgWireConn(th,conn,onOpen){
+ th.conn=conn; th.open=false;
+ var helloSent=false;
+ conn.on("open",function(){
+   if(th.conn!==conn)return;
+   th.open=true; th.ended=false;
+   if(!helloSent){
+     helloSent=true;
+     var nm=msgMyName();
+     try{conn.send(JSON.stringify({t:"tt-hello",name:nm,proven:claimProofFor(nm)!==null}));}catch(e){}
+   }
+   if(onOpen)onOpen();
+   if(th.pendingCollect){th.pendingCollect=false;standingSendCollect(th);}
+   msgRenderThreads();
+ });
+ conn.on("data",function(raw){
+   var m=null;
+   try{m=(typeof raw==="string")?JSON.parse(raw):raw;}catch(e){return;}
+   if(!m)return;
+   if(th.kind==="friend"&&(dingIsMuted(th.fold||"")||(m.name&&dingIsMuted(foldName(m.name)))))return; /* a muted name's knock: dropped without a sound */
+   if(m.t==="tt-hello"){msgHello(th,conn,m);return;}
+    if(m.t==="tt-inbox"){standingHandleInboxResponse(m);return;}
+    if(m.t==="tt-inbox-collect"){standingHandleCollectRequest(th,conn,m);return;}
+   if(m.t==="tt-msg"){
+     var txt=String(m.text==null?"":m.text).slice(0,2000);
+     if(!txt)return;
+     th.msgs.push({mine:false,text:txt});
+     if(mode==="host"&&th.kind==="seat")inboxCaptureWhisper(th,txt); /* host inbox: word left for the host seat is kept on this device */
+     if(!msgFoldOpen()||msgFocusKey!==th.key)th.unread++;
+     msgRenderThreads();
+   }
+ });
+ function dead(){
+   if(th.conn!==conn)return;
+   th.open=false;
+   if(th.kind==="seat"&&!th.ended){th.ended=true;th.note=th.note||"The private line closed.";}
+   msgRenderThreads();
+ }
+ conn.on("close",dead);
+ conn.on("error",dead);
+}
+function msgSend(th,inp){
+ var txt=(inp.value||"").trim(); if(!txt)return;
+ if(th.ended||!th.open||!th.conn){th.note="The line is not open — nothing was sent, and nothing is queued. There is no mailbox.";msgRenderThreads();return;}
+ txt=txt.slice(0,2000);
+ try{th.conn.send(JSON.stringify({t:"tt-msg",text:txt}));}
+ catch(e){th.note="The line would not carry it — nothing was sent.";msgRenderThreads();return;}
+ th.msgs.push({mine:true,text:txt});
+ th.draft="";
+ msgRenderThreads();
+}
+function msgRenderThreads(){
+ var box=$("msgThreads"); if(!box)return;
+ box.querySelectorAll(".msg-input").forEach(function(inp){
+   var th=msgThreads[inp.getAttribute("data-key")]; if(th)th.draft=inp.value;
+ });
+ var ae=document.activeElement;
+ var focusKey=(ae&&ae.classList&&ae.classList.contains("msg-input"))?ae.getAttribute("data-key"):null;
+ box.innerHTML="";
+ var keys=[];
+ for(var k in msgThreads){var t0=msgThreads[k]; if(!(t0.pending&&!t0.msgs.length))keys.push(k);}
+ if(!keys.length){
+   box.innerHTML='<p class="sub">No private threads yet. At a live table, tap <strong>Whisper</strong> beside a seat under “At this table now” above; for a friend who is around, tap <strong>Message</strong> beside their name in Friends.</p>';
+   msgUpdateBadge();
+   return;
+ }
+ keys.forEach(function(key){
+   var th=msgThreads[key];
+   var wrap=document.createElement("div"); wrap.className="msg-thread";
+   var status=th.ended?"Ended":(th.open?(th.kind==="seat"?"Whisper — at this table":"Doorbell — friend to friend"):"Not connected");
+   var head='<div class="msg-head"><strong>'+msgPartnerNameHTML(th)+'</strong><span class="sub">'+esc(status)+'</span>'+(th.unread?'<span class="msg-unread" data-thread-badge="1">'+th.unread+" unread</span>":"")+"</div>";
+   var lines='<div class="msg-lines">';
+   if(!th.msgs.length)lines+='<p class="sub">No messages yet in this thread.</p>';
+   th.msgs.forEach(function(m){lines+='<div class="msg-line '+(m.mine?"mine":"theirs")+'">'+esc(m.text)+"</div>";});
+   lines+="</div>";
+   wrap.innerHTML=head+lines+(th.note?'<p class="sub" style="margin-top:6px">'+esc(th.note)+"</p>":"");
+   if(th.kind==="friend"){
+     var hd=wrap.querySelector(".msg-head");
+     if(hd){
+       if(dingIsMuted(th.fold||foldName(th.name||""))){var msp=document.createElement("span");msp.className="sub";msp.textContent="muted on this device";hd.appendChild(msp);}
+       else{var dmb=document.createElement("button");dmb.type="button";dmb.className="btn small";dmb.textContent="Mute";(function(nm2){dmb.addEventListener("click",function(){dingMuteName(nm2);});})(th.name);hd.appendChild(dmb);}
+     }
+   }
+   if(!th.ended){
+     var row=document.createElement("div"); row.className="msg-sendrow";
+     var inp=document.createElement("input");
+     inp.type="text"; inp.className="msg-input"; inp.setAttribute("data-key",key); inp.maxLength=2000;
+     inp.placeholder=th.open?"Write a private note…":"The line is not open";
+     inp.value=th.draft||""; inp.disabled=!th.open;
+     inp.setAttribute("aria-label","Write a private message to "+(th.name||"this person"));
+     inp.addEventListener("focus",function(){
+       msgFocusKey=key;
+       if(th.unread){th.unread=0;var b=wrap.querySelector("[data-thread-badge]");if(b)b.style.display="none";msgUpdateBadge();}
+     });
+     inp.addEventListener("keydown",function(ev){if(ev.key==="Enter"){ev.preventDefault();msgSend(th,inp);}});
+     var btn=document.createElement("button");
+     btn.type="button"; btn.className="btn small gold"; btn.textContent="Send"; btn.disabled=!th.open;
+     btn.addEventListener("click",function(){msgSend(th,inp);});
+     row.appendChild(inp); row.appendChild(btn);
+     wrap.appendChild(row);
+   }else{
+     var end=document.createElement("p");
+     end.className="sub"; end.style.marginTop="6px";
+     end.textContent="This thread has ended. Private messages live only while the page is open — nothing here is kept in any record.";
+     wrap.appendChild(end);
+   }
+   box.appendChild(wrap);
+ });
+ msgUpdateBadge();
+ if(focusKey){
+   var ni=box.querySelector('.msg-input[data-key="'+focusKey+'"]');
+   if(ni){ni.focus(); try{ni.setSelectionRange(ni.value.length,ni.value.length);}catch(e){}}
+ }
+}
+/* A table thread ends when its seat goes away or is kicked, or when the
+   table session itself ends. Reconciled against the seats on every render. */
+function msgReconcile(){
+ var changed=false;
+ for(var k in msgThreads){
+   var th=msgThreads[k];
+   if(th.kind!=="seat"||th.ended)continue;
+   if(mode!=="host"&&mode!=="guest"){
+     msgEndThread(th,"The table session ended — this private line closed with it."); changed=true; continue;
+   }
+   if(th.seatId){
+     var st=seatOf(th.seatId);
+     var standingHostLine=!!(st&&st.away&&!st.kicked&&S.hostStanding&&th.seatId===S.hostSeat); /* standing: the line to the away host seat stays open — leaving word is the point */
+     if(!standingHostLine&&(!st||st.away||st.kicked)){
+       msgEndThread(th,(st&&st.kicked)?"Their seat was ended by the table — this private line closed with it.":"They are not here — this private line closed. If they return, a fresh Whisper starts a new thread.");
+       changed=true;
+     }
+   }
+ }
+ if(changed)msgRenderThreads();
+ msgUpdatePanelState();
+}
+var _renderAllMsg=renderAll;
+renderAll=function(){_renderAllMsg();msgReconcile();};
+
+/* ---------- Connection router for table peers ----------
+   Whisper connections are recognised FIRST, by their label or metadata,
+   and go to the whisper handler only. Everything else keeps the exact
+   host behaviour this page has always had; guests answer whispers only. */
+function msgIsWhisperConn(conn){
+ if(!conn)return false;
+ if(conn.label==="tt-whisper")return true;
+ var md=conn.metadata||{};
+ return md.tt==="seat";
+}
+function msgAttachSeatConn(conn){
+ var md=conn.metadata||{};
+ var st=null; S.seats.forEach(function(x){if(x.peerId===conn.peer)st=x;});
+ var th;
+ if(st){
+   th=msgEnsureThread("seat:"+st.clientId,{kind:"seat",name:st.label,fold:foldName(st.label),seatId:st.clientId,peerId:st.peerId});
+   if(th.ended){th.msgs=[];th.ended=false;th.unread=0;th.note="";th.draft="";}
+ }else{
+   th=msgEnsureThread("inc:"+conn.peer,{kind:"seat",name:md.name||"Someone at the table",fold:"",seatId:null,peerId:conn.peer});
+   th.pending=true;
+   if(md.name)th.name=md.name;
+ }
+ msgWireConn(th,conn);
+ msgRenderThreads();
+}
+function routeTableConnection(conn){
+ if(msgIsDingConn(conn)){msgAttachSeatDing(conn);return;}
+ if(msgIsWhisperConn(conn)){msgAttachSeatConn(conn);return;}
+ if(mode!=="host")return;
+ conns[conn.peer]=conn;
+ conn.on("data",function(raw){
+   var msg;try{msg=JSON.parse(raw);}catch(e){return;}
+   if(msg.t==="ev"){
+     var ev=msg.ev;
+     if(ev.type==="join"){var kSeat=seatOf(ev.clientId);if(kSeat&&kSeat.kicked&&(S.voteRule?S.voteRule.kickNeedsOk!==false:true)){try{conn.send(JSON.stringify({t:"sitRefused",msg:"Your seat at this table was ended by a vote to kick. The Dungeon Master or host must let you back before you can rejoin this session — the kick, its tally, and its whys stay in the record."}));}catch(e){}return;}var refusal=nameRefusalForJoin(ev);if(refusal){try{conn.send(JSON.stringify({t:"nameRefused",msg:refusal}));}catch(e){}return;}ev.peerId=conn.peer;hostCommit(ev);
+       /* reclaim: remap voice-era peerId on seat */
+       var st=seatOf(ev.clientId);if(st)st.peerId=conn.peer;
+       try{conn.send(snapshot());}catch(e){}
+       hostBroadcast();return;}
+     if(ev.type==="leave"){hostSeatAway(ev.clientId);return;}
+     dispatchHost(ev);
+   }
+ });
+ conn.on("close",function(){
+   delete conns[conn.peer];
+   var st=null;S.seats.forEach(function(x){if(x.peerId===conn.peer)st=x;});
+   if(st)hostSeatAway(st.clientId);
+ });
+}
+function msgOpenSeatThread(st){
+ if(mode==="solo"){msgOpenFold();msgUpdatePanelState();return;}
+ if((mode!=="host"&&mode!=="guest")||!peer||!st)return;
+ if(st.clientId===clientId||st.kicked||!st.peerId||st.peerId==="solo"||st.peerId==="local")return;
+  if(st.away&&!(S.hostStanding&&st.clientId===S.hostSeat))return; /* standing: the away host seat still takes whispers */
+ var key="seat:"+st.clientId;
+ var th=msgThreads[key];
+ if(th&&th.ended){delete msgThreads[key];th=null;}
+ if(!th)th=msgEnsureThread(key,{kind:"seat",name:st.label,fold:foldName(st.label),seatId:st.clientId,peerId:st.peerId});
+ th.name=st.label;
+ msgOpenFold();
+ if(th.conn&&th.open){msgRenderThreads();return;}
+ var myName=msgMyName();
+ var conn=null;
+ try{conn=peer.connect(st.peerId,{reliable:true,label:"tt-whisper",metadata:{tt:"seat",name:myName,proven:claimProofFor(myName)!==null}});}catch(e){}
+ if(!conn){th.note="The whisper line could not be opened.";msgRenderThreads();return;}
+ th.note="";
+ msgWireConn(th,conn);
+ msgRenderThreads();
+}
+
+/* ---------- The friends doorbell ----------
+   A second broker registration whose address is derived from the folded
+   saved name — the identical derivation any table page can run, so a
+   friend at any table knocks on the same doorbell. Derived, by design:
+   a lookalike name folds to the same address, and the code is what
+   separates the owner from an imitator. */
+function msgDoorbellSync(){
+ var name=(myCard&&myCard.name)?String(myCard.name):"";
+ var fold=name?foldName(name):"";
+ if(!dingDoorbellEnabled()){
+   if(msgDbPeer){try{msgDbPeer.destroy();}catch(e){}msgDbPeer=null;}
+   msgDbFold=fold; msgDbState="off"; msgUpdatePanelState();
+   return;
+ }
+ if(!fold){
+   if(msgDbPeer){try{msgDbPeer.destroy();}catch(e){}msgDbPeer=null;}
+   if(msgDbFold!==""||msgDbState!=="off"){msgDbFold="";msgDbState="off";msgUpdatePanelState();}
+   return;
+ }
+ if(fold===msgDbFold)return;
+ msgDbFold=fold; msgDbState="starting";
+ if(msgDbPeer){try{msgDbPeer.destroy();}catch(e){}msgDbPeer=null;}
+ msgUpdatePanelState();
+ sha256Hex("doorbell:"+fold).then(function(h){
+   if(msgDbFold!==fold)return; /* the saved name changed while hashing */
+   if(h==="unavailable"||!h||h.length<20){msgDbState="unavailable";msgUpdatePanelState();return;}
+   if(typeof Peer==="undefined"){msgDbState="unavailable";msgUpdatePanelState();return;}
+   var p=null;
+   try{p=new Peer("ttdb-"+h.slice(0,20));}catch(e){msgDbState="unavailable";msgUpdatePanelState();return;}
+   msgDbPeer=p;
+   p.on("open",function(){
+     if(msgDbPeer!==p)return;
+     msgDbState="on"; msgUpdatePanelState(); msgProbeFriends();
+   });
+   p.on("connection",function(conn){msgDoorbellConn(conn);});
+   p.on("error",function(err){
+     if(msgDbPeer!==p)return;
+     if(err&&err.type==="unavailable-id"){
+       msgDbState="taken"; msgDbPeer=null;
+       try{p.destroy();}catch(e){}
+       msgUpdatePanelState();
+     }
+     /* peer-unavailable and other probe noise: the probe timeout reads it as "not around" */
+   });
+   p.on("disconnected",function(){if(msgDbPeer===p){try{p.reconnect();}catch(e){}}});
+ });
+}
+function msgAttachOrphan(conn,kind){
+ var th=msgEnsureThread("inc:"+conn.peer,{kind:kind,name:"",fold:"",seatId:null,peerId:conn.peer});
+ th.pending=true;
+ msgWireConn(th,conn);
+}
+function msgFriendThread(name){
+ var fold=foldName(name||"");
+ if(!fold)return null;
+ return msgEnsureThread("friend:"+fold,{kind:"friend",name:name,fold:fold});
+}
+function msgDoorbellConn(conn){
+ var md=(conn&&conn.metadata)||{};
+ if(md.tt==="ding"){
+   conn.on("data",function(raw){
+     var m=null; try{m=(typeof raw==="string")?JSON.parse(raw):raw;}catch(e){return;}
+     if(m&&m.t==="tt-ding")dingReceive(m,"doorbell",conn);
+   });
+   return;
+ }
+ if(md.tt==="probe"){
+   /* a friend checking who is around: answer by opening, hold no thread */
+   conn.on("open",function(){try{conn.close();}catch(e){}});
+   return;
+ }
+ if(md.tt==="chat"){
+   if(dingIsMuted(foldName(md.name||""))){try{conn.close();}catch(e){}return;} /* muted: no thread opens, nothing shows */
+   var th=msgFriendThread(md.name||"");
+   if(!th){msgAttachOrphan(conn,"friend");return;}
+   th.claimed=!!md.proven; /* their device says its code checked out — a claim, tagged as such, never conferred here */
+   msgWireConn(th,conn);
+   msgRenderThreads();
+   return;
+ }
+ msgAttachOrphan(conn,"friend");
+}
+/* Reachability: probed one friend at a time, in memory only. */
+function msgFriendsList(){
+ var v=lsGet("infinitetable.friends.v1"); /* read-only: the Who's module's own on-device list */
+ return Array.isArray(v)?v:[];
+}
+function msgFireReach(){
+ try{window.dispatchEvent(new Event("itt-reach"));}
+ catch(e){try{var ev=document.createEvent("Event");ev.initEvent("itt-reach",true,false);window.dispatchEvent(ev);}catch(e2){}}
+}
+function msgProbeOne(fold){
+ return sha256Hex("doorbell:"+fold).then(function(h){
+   if(h==="unavailable"||!h||h.length<20||!msgDbPeer)return;
+   return new Promise(function(res){
+     var done=false, conn=null;
+     function fin(around){
+       if(done)return; done=true;
+       msgReach[fold]=around?"around":"not";
+       if(around)dingAutoFire(fold);
+       try{if(conn)conn.close();}catch(e){}
+       msgFireReach();
+       res();
+     }
+     try{conn=msgDbPeer.connect("ttdb-"+h.slice(0,20),{metadata:{tt:"probe"}});}catch(e){fin(false);return;}
+     if(!conn){fin(false);return;}
+     conn.on("open",function(){fin(true);});
+     conn.on("error",function(){fin(false);});
+     setTimeout(function(){fin(false);},2500);
+   });
+ });
+}
+function msgProbeFriends(){
+ if(!msgDbPeer||msgDbState!=="on")return;
+ var list=msgFriendsList().slice(), i=0;
+ var seenF={}; list.forEach(function(fr){seenF[foldName(fr.name||"")]=true;});
+ dingOutbox().forEach(function(e){if(e.fold&&!seenF[e.fold]){list.push({name:e.name});seenF[e.fold]=true;}});
+ function next(){
+   if(i>=list.length)return;
+   var fr=list[i++], fold=foldName(fr.name||"");
+   if(!fold){next();return;}
+   msgProbeOne(fold).then(function(){next();});
+ }
+ next();
+}
+function msgOpenFriendThread(name){
+ var fold=foldName(name||"");
+ if(!fold)return;
+ if(mode==="solo"){msgOpenFold();msgUpdatePanelState();msgRenderThreads();return;}
+ var key="friend:"+fold;
+ var th=msgThreads[key];
+ if(th&&th.ended){delete msgThreads[key];th=null;}
+ if(!th)th=msgEnsureThread(key,{kind:"friend",name:name,fold:fold});
+ th.name=name||th.name;
+ msgOpenFold();
+ if(th.conn&&th.open){msgRenderThreads();return;}
+ if(!msgDbPeer||msgDbState!=="on"){
+   th.note=(msgDbState==="taken")
+     ?"Your own doorbell is already answered somewhere, so this device cannot knock right now."
+     :"Your doorbell is not on, so this device cannot knock. Private messages between friends need your name saved on your card, so your own doorbell can ring — see the note above.";
+   msgRenderThreads();
+   return;
+ }
+ th.note="Knocking…";
+ msgRenderThreads();
+ sha256Hex("doorbell:"+fold).then(function(h){
+   if(h==="unavailable"||!h||h.length<20){th.note="This device cannot work out doorbells (no secure hashing here), so the knock cannot be sent.";msgRenderThreads();return;}
+   if(!msgDbPeer){th.note="Your doorbell went off — the knock cannot be sent.";msgRenderThreads();return;}
+   var myName=msgMyName();
+   var conn=null, opened=false;
+   try{conn=msgDbPeer.connect("ttdb-"+h.slice(0,20),{reliable:true,label:"tt-whisper",metadata:{tt:"chat",name:myName,proven:claimProofFor(myName)!==null}});}catch(e){}
+   if(!conn){th.note="The knock could not be sent.";msgRenderThreads();return;}
+   msgWireConn(th,conn,function(){opened=true;th.note="";msgRenderThreads();});
+   setTimeout(function(){
+     if(!opened&&th.conn===conn){
+       th.open=false;
+       th.note="They are not around right now — the knock found nobody home. Messages can't be left for later yet: there is no mailbox, by design.";
+       msgReach[fold]="not"; msgFireReach();
+       msgRenderThreads();
+     }
+   },3000);
+ });
+}
+
+/* ---------- THE DING ----------
+   A contentless nudge: {t:"tt-ding", name, proven, ts} and nothing else —
+   no text field, no words, a ding is just a ding. It travels only on a
+   direct tt-ding connection (a seat connection at this table, or a
+   doorbell connection) and is handled only in this section: never
+   relayed by the host, never written into the Tale, the Run, saves, or
+   exports. If the target is not around, the ding WAITS in an outbox on
+   this device only (infinitetable.dingoutbox.v1) and fires by itself
+   the moment a doorbell probe finds the target around while this page
+   is open. One waiting ding per name; it can be taken back. */
+function dingDoorbellEnabled(){var v=lsGet(DING_DB_KEY);return (v===null||v===undefined)?true:!!v;}
+function dingOutbox(){var v=lsGet(DING_OUTBOX_KEY);return Array.isArray(v)?v:[];}
+function dingSaveOutbox(l){lsSet(DING_OUTBOX_KEY,l);}
+function dingMutedList(){var v=lsGet(DING_MUTE_KEY);return Array.isArray(v)?v:[];}
+function dingIsMuted(fold){if(!fold)return false;return dingMutedList().some(function(e){return e.fold===fold;});}
+function dingWaiting(fold){return dingOutbox().some(function(e){return e.fold===fold;});}
+function dingMyFolds(){var st={};var cf=foldName((myCard&&myCard.name)||"");if(cf)st[cf]=true;var cl=myClaim();if(cl&&cl.fold)st[cl.fold]=true;var seat=seatOf(clientId);if(seat){var sf=foldName(seat.label);if(sf)st[sf]=true;}return st;}
+function dingSetNote(fold,msg){if(fold)dingNotes[fold]={msg:msg,ts:Date.now()};}
+function dingFireChange(){
+ dingPaintAll(); dingRenderOutbox();
+ try{window.dispatchEvent(new Event("itt-ding-change"));}
+ catch(e){try{var ev=document.createEvent("Event");ev.initEvent("itt-ding-change",true,false);window.dispatchEvent(ev);}catch(e2){}}
+}
+function dingQueue(fold,name){
+ if(dingWaiting(fold))return;
+ var l=dingOutbox(); l.push({fold:fold,name:name,ts:Date.now()}); dingSaveOutbox(l);
+}
+function dingTakeBack(fold){
+ dingSaveOutbox(dingOutbox().filter(function(e){return e.fold!==fold;}));
+ dingSetNote(fold,"Ding taken back — it will not go out.");
+ dingRenderOutbox(); dingFireChange();
+}
+function dingMuteName(name){
+ var fold=foldName(name||""); if(!fold||dingIsMuted(fold))return;
+ var l=dingMutedList(); l.push({fold:fold,name:String(name).slice(0,120)}); lsSet(DING_MUTE_KEY,l);
+ dingRenderMuteList(); dingRender(); msgRenderThreads();
+}
+function dingUnmute(fold){
+ lsSet(DING_MUTE_KEY,dingMutedList().filter(function(e){return e.fold!==fold;}));
+ dingRenderMuteList(); dingRender(); msgRenderThreads(); dingFireChange();
+}
+function dingRenderMuteList(){
+ var box=$("dingMuteList"); if(!box)return;
+ var chk=$("dingDoorbellChk"); if(chk)chk.checked=dingDoorbellEnabled();
+ var l=dingMutedList();
+ if(!l.length){box.innerHTML='<p class="sub">No names are muted on this device.</p>';return;}
+ box.innerHTML="";
+ l.forEach(function(e){
+   var row=document.createElement("div"); row.className="del-row";
+   row.innerHTML='<span style="flex:1;min-width:120px"><strong>'+esc(e.name)+'</strong> <span class="sub">muted on this device</span></span>';
+   var b=document.createElement("button"); b.type="button"; b.className="btn small"; b.textContent="Unmute";
+   b.addEventListener("click",function(){dingUnmute(e.fold);});
+   row.appendChild(b); box.appendChild(row);
+ });
+}
+function dingTimeStr(ts){try{return new Date(ts).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});}catch(e){return "";}}
+function dingRender(){
+ var box=$("dingLog"); if(!box)return;
+ box.innerHTML="";
+ dingLog.forEach(function(en){
+   var row=document.createElement("div"); row.className="ding-line";
+   if(en.type==="note"){
+     row.innerHTML='<span class="sub" style="flex:1;min-width:140px">'+esc(en.text)+"</span>";
+   }else{
+     row.innerHTML='<span style="flex:1;min-width:140px">'+en.html+" dinged you · "+esc(dingTimeStr(en.ts))+"</span>";
+     if(dingIsMuted(en.fold)){
+       var tg=document.createElement("span"); tg.className="sub"; tg.textContent="muted"; row.appendChild(tg);
+     }else{
+       var b=document.createElement("button"); b.type="button"; b.className="btn small"; b.textContent="Mute";
+       (function(nm){b.addEventListener("click",function(){dingMuteName(nm);});})(en.name);
+       row.appendChild(b);
+     }
+   }
+   box.appendChild(row);
+ });
+}
+function dingRenderOutbox(){
+ var box=$("dingOutboxBox"); if(!box)return;
+ var l=dingOutbox();
+ if(!l.length){box.innerHTML="";return;}
+ box.innerHTML="";
+ var h=document.createElement("p"); h.className="sub"; h.style.marginTop="10px";
+ h.innerHTML="<strong>Dings waiting to go out — on this device only.</strong> Each one fires by itself the moment its name is around while you have a table page open. Nothing here is held anywhere else.";
+ box.appendChild(h);
+ l.forEach(function(e){
+   var row=document.createElement("div"); row.className="ding-line";
+   row.innerHTML='<span style="flex:1;min-width:140px"><strong>'+esc(e.name)+'</strong> <span class="sub">ding waiting · queued '+esc(dingTimeStr(e.ts))+" on this device</span></span>";
+   var b=document.createElement("button"); b.type="button"; b.className="btn small"; b.textContent="Take back the ding";
+   b.addEventListener("click",function(){dingTakeBack(e.fold);});
+   row.appendChild(b); box.appendChild(row);
+ });
+}
+function dingReceive(m,via,conn){
+ var senderName=String(m.name||((conn&&conn.metadata&&conn.metadata.name)||"")).slice(0,120);
+ if(!senderName)return;
+ var fold=foldName(senderName); if(!fold)return;
+ if(dingIsMuted(fold))return; /* dropped without a sound: no entry, no buzz, no unread */
+ if(dingMyFolds()[fold])return;
+ var html="";
+ if(via==="seat"){
+   var st=null; if(conn)S.seats.forEach(function(x){if(x.peerId===conn.peer)st=x;});
+   var provenCh=null;
+   if(st){for(var i=0;i<S.chars.length;i++){var ch=S.chars[i];if(ch.controller===st.clientId&&!ch.npc&&charProven(ch)){provenCh=ch;break;}}}
+   html=provenCh?charNameHTML(provenCh):esc(senderName); /* conferred ONLY where this page itself verified the code */
+ }else{
+   html=esc(senderName)+(m.proven?' <span class="match-tag">code claimed on their device — not checked here</span>':"");
+ }
+ dingLog.push({type:"in",html:html,name:senderName,fold:fold,ts:m.ts||Date.now()});
+  if(mode==="host"&&via==="seat")inboxCaptureDing(senderName,!!provenCh,m.ts||Date.now()); /* host inbox: a ding for the host seat is kept on this device */
+ if(!msgFoldOpen())dingUnread++;
+ try{if(navigator.vibrate)navigator.vibrate(80);}catch(e){}
+ dingRender(); msgUpdateBadge();
+}
+function msgIsDingConn(conn){
+ if(!conn)return false;
+ if(conn.label==="tt-ding")return true;
+ var md=conn.metadata||{};
+ return md.tt==="ding";
+}
+function msgAttachSeatDing(conn){
+ conn.on("data",function(raw){
+   var m=null; try{m=(typeof raw==="string")?JSON.parse(raw):raw;}catch(e){return;}
+   if(m&&m.t==="tt-ding")dingReceive(m,"seat",conn);
+ });
+}
+function dingSendSeat(st,cb){
+ var myName=msgMyName(), conn=null, done=false;
+ function fin(ok){if(done)return;done=true;try{if(conn)conn.close();}catch(e){}cb(ok);}
+ if(!peer){cb(false);return;}
+ try{conn=peer.connect(st.peerId,{reliable:true,label:"tt-ding",metadata:{tt:"ding",name:myName,proven:claimProofFor(myName)!==null}});}catch(e){fin(false);return;}
+ if(!conn){fin(false);return;}
+ conn.on("open",function(){
+   try{conn.send(JSON.stringify({t:"tt-ding",name:myName,proven:claimProofFor(myName)!==null,ts:Date.now()}));}catch(e){fin(false);return;}
+   setTimeout(function(){fin(true);},250);
+ });
+ conn.on("error",function(){fin(false);});
+ setTimeout(function(){fin(false);},3000);
+}
+function dingSendDoorbell(fold,cb){
+ if(!msgDbPeer||msgDbState!=="on"){cb(false);return;}
+ sha256Hex("doorbell:"+fold).then(function(h){
+   if(h==="unavailable"||!h||h.length<20||!msgDbPeer){cb(false);return;}
+   var myName=msgMyName(), conn=null, done=false;
+   function fin(ok){if(done)return;done=true;try{if(conn)conn.close();}catch(e){}cb(ok);}
+   try{conn=msgDbPeer.connect("ttdb-"+h.slice(0,20),{reliable:true,label:"tt-ding",metadata:{tt:"ding",name:myName,proven:claimProofFor(myName)!==null}});}catch(e){fin(false);return;}
+   if(!conn){fin(false);return;}
+   conn.on("open",function(){
+     try{conn.send(JSON.stringify({t:"tt-ding",name:myName,proven:claimProofFor(myName)!==null,ts:Date.now()}));}catch(e){fin(false);return;}
+     setTimeout(function(){fin(true);},250);
+   });
+   conn.on("error",function(){fin(false);});
+   setTimeout(function(){fin(false);},3000);
+ });
+}
+function dingAutoFire(fold){
+ var entry=null; dingOutbox().forEach(function(e){if(e.fold===fold)entry=e;});
+ if(!entry)return;
+ if(!dingDoorbellEnabled())return; /* paused while the doorbell is off — the ding stays stored */
+ if(dingIsMuted(fold))return; /* a muted name is never dinged; the waiting ding stays put */
+ dingSendDoorbell(fold,function(ok){
+   if(!ok)return; /* the send failed — the ding stays waiting */
+   dingSaveOutbox(dingOutbox().filter(function(e){return e.fold!==fold;}));
+   dingLog.push({type:"note",text:"Your ding reached "+entry.name+"."});
+   dingSetNote(fold,"Your ding reached "+entry.name+".");
+   dingRender(); dingFireChange();
+ });
+}
+function dingTap(name){
+ var disp=String(name||"").slice(0,120), fold=foldName(disp);
+ if(!fold)return;
+ function note(m){dingSetNote(fold,m);dingPaintAll();}
+ if(dingMyFolds()[fold]){note("That's your own name — a ding needs somebody else.");return;}
+ if(mode==="solo"){note("Solo play has nobody to ding — the story engine's cast has no seats and no devices.");return;}
+ if(dingIsMuted(fold)){note(disp+" is muted on this device — unmute the name in Page settings (Doorbells and dings) to ding them.");return;}
+ if(dingWaiting(fold)){note("A ding is already waiting for "+disp);return;}
+ var st=null;
+ if(mode==="host"||mode==="guest"){S.seats.forEach(function(x){if(foldName(x.label)===fold&&x.clientId!==clientId&&(!x.away||(S.hostStanding&&x.clientId===S.hostSeat))&&!x.kicked&&x.peerId&&x.peerId!=="solo"&&x.peerId!=="local")st=x;});} /* standing: the away host seat still takes dings */
+ if(st){
+   note("Dinging "+disp+"…");
+   dingSendSeat(st,function(ok){
+     if(ok){note("You dinged "+disp+" — it landed just now.");}
+     else if(dingDoorbellEnabled()){dingQueue(fold,disp);note(disp+" didn't answer on the table line — your ding is now waiting on this device.");dingRenderOutbox();dingFireChange();}
+     else{note("The table line didn't carry it, and your doorbell is off — turn it on in Page settings to leave a waiting ding.");}
+   });
+   return;
+ }
+ if(!dingDoorbellEnabled()){note("Your doorbell is off — turn it on to ding people who aren't at your table.");return;}
+ if(msgReach[fold]==="around"){
+   note("Dinging "+disp+"…");
+   dingSendDoorbell(fold,function(ok){
+     if(ok){note("You dinged "+disp+" — it landed just now.");}
+     else{dingQueue(fold,disp);note(disp+" didn't answer — your ding is now waiting on this device.");dingRenderOutbox();dingFireChange();}
+   });
+   return;
+ }
+ dingQueue(fold,disp);
+ note(disp+" isn't around right now — your ding is waiting on this device and goes out the moment they're around while you are too.");
+ dingRenderOutbox(); dingFireChange();
+}
+function dingMakeHost(el,name){
+ if(!el)return;
+ var id=el.getAttribute("data-ding-host");
+ if(!id){id="dh"+(++dingHostSeq);el.setAttribute("data-ding-host",id);}
+ dingHosts[id]={el:el,name:name};
+ dingDecorate(el,name);
+}
+function dingPaintAll(){
+ for(var id in dingHosts){
+   var h=dingHosts[id];
+   if(!h.el||!document.body.contains(h.el)){delete dingHosts[id];continue;}
+   dingDecorate(h.el,h.name);
+ }
+}
+function dingDecorate(el,name){
+ var fold=foldName(name||""); if(!fold)return;
+ el.innerHTML="";
+ el.style.display="inline-flex"; el.style.flexWrap="wrap"; el.style.gap="6px"; el.style.alignItems="center";
+ if(dingWaiting(fold)){
+   var tg=document.createElement("span"); tg.className="match-tag folds"; tg.textContent="Ding waiting"; el.appendChild(tg);
+   var tb=document.createElement("button"); tb.type="button"; tb.className="btn small"; tb.textContent="Take back the ding";
+   tb.addEventListener("click",function(){dingTakeBack(fold);});
+   el.appendChild(tb);
+ }else{
+   var b=document.createElement("button"); b.type="button"; b.className="btn small"; b.textContent="Ding";
+   b.setAttribute("aria-label","Ding "+name);
+   b.addEventListener("click",function(){dingTap(name);});
+   el.appendChild(b);
+ }
+ var n=dingNotes[fold];
+ if(n&&Date.now()-n.ts<60000){
+   var ns=document.createElement("span"); ns.className="sub"; ns.setAttribute("role","status"); ns.textContent=n.msg; el.appendChild(ns);
+ }
+}
+/* Page settings wiring for the doorbell switch (the mute list renders itself above). */
+if($("dingDoorbellChk")){
+ $("dingDoorbellChk").checked=dingDoorbellEnabled();
+ $("dingDoorbellChk").addEventListener("change",function(){
+   lsSet(DING_DB_KEY,$("dingDoorbellChk").checked);
+   if($("dingDoorbellChk").checked)msgDbFold=""; /* force re-registration on the next sync */
+   msgDoorbellSync();
+   msgUpdatePanelState();
+ });
+}
+dingRenderMuteList();
+dingRender();
+dingRenderOutbox();
+
+
+/* ================= THE STANDING TABLE: HOST INBOX + PROVE-AND-COLLECT =================
+   The host inbox is the ONE persistence exception in this messaging layer,
+   fenced exactly like the Friends/Recents stores: its own on-device store
+   (infinitetable.hostinbox.v1), OUTSIDE S \u2014 never in the game
+   snapshot/autosave object, never in saveTaleLocal's payload, never in any
+   export (tale text, save file, tree-style codes). Only word addressed to
+   the host seat ON THE HOST DEVICE lands here: seat-channel whispers and
+   dings this device receives. Doorbell knocks never do, and traffic
+   between other people never reaches this device at all.
+   Prove-and-collect rides the direct tt-whisper line between the guest
+   and the host seat, discriminated like whispers (tt-inbox-collect out,
+   tt-inbox back): never through the host state relay, never into the Tale. */
+var HOSTINBOX_KEY="infinitetable.hostinbox.v1";
+var standingCollected=null; /* session-only on a guest device: {ts, items} \u2014 never stored */
+var standingCollectNote="";
+var inboxOpen=false, inboxSig="";
+var standingGuestSig="";
+function inboxItems(){var v=lsGet(HOSTINBOX_KEY);return Array.isArray(v)?v:[];}
+function inboxSave(l){lsSet(HOSTINBOX_KEY,l);}
+function inboxUnreadCount(){if(mode!=="host")return 0;return inboxItems().filter(function(it){return !it.read;}).length;}
+function inboxAdd(it){
+  it.id=uid("inbox"); if(it.read===undefined)it.read=false; if(it.collected===undefined)it.collected=null;
+  var l=inboxItems(); l.push(it); inboxSave(l); inboxSig=""; inboxRender(); msgUpdateBadge();
+}
+function inboxCaptureWhisper(th,text){
+  var st=th.seatId?seatOf(th.seatId):null;
+  var from=st?st.label:(th.name||"Someone at the table");
+  var proven=false;
+  if(st){for(var i=0;i<S.chars.length;i++){var ch=S.chars[i];if(ch.controller===st.clientId&&!ch.npc){proven=charProven(ch);break;}}}
+  inboxAdd({kind:"whisper",from:from,proven:!!proven,ts:Date.now(),text:String(text).slice(0,2000)});
+}
+function inboxCaptureDing(from,proven,ts){inboxAdd({kind:"ding",from:from,proven:!!proven,ts:ts||Date.now()});}
+function inboxNameHTML(it){
+  /* The messaging proof law, governed by the flag recorded when the word
+     arrived: the conferred look only where this page verified the code. */
+  if(it&&it.proven){var e=lookEntryFor(it.from);return styledName(it.from,e)+" "+claimBadge(false,e);}
+  return esc(it?it.from:"");
+}
+function inboxMarkAllRead(){
+  var l=inboxItems(),ch=false;
+  l.forEach(function(it){if(!it.read){it.read=true;ch=true;}});
+  if(ch)inboxSave(l);
+}
+function inboxDelete(id){
+  inboxSave(inboxItems().filter(function(it){return it.id!==id;}));
+  inboxSig=""; inboxRender(); msgUpdateBadge();
+}
+function inboxBuildRow(it){
+  var row=document.createElement("div"); row.className="inbox-item";
+  if(it.kind==="note"){
+    row.innerHTML='<span class="sub">'+esc(it.text||"a collection try failed")+" \u00b7 "+esc(fmtWhen(it.ts))+"</span>";
+  }else if(it.kind==="ding"){
+    row.innerHTML='<span><strong>'+inboxNameHTML(it)+'</strong> <span class="sub">dinged you \u00b7 '+esc(fmtWhen(it.ts))+"</span>"+(it.collected?' <span class="match-tag folds">collected \u00b7 '+esc(fmtWhen(it.collected))+"</span>":"")+"</span>";
+  }else{
+    row.innerHTML='<span><strong>'+inboxNameHTML(it)+'</strong> <span class="sub">'+esc(fmtWhen(it.ts))+"</span>"+(it.collected?' <span class="match-tag folds">collected \u00b7 '+esc(fmtWhen(it.collected))+"</span>":"")+'</span><div class="inbox-text">'+esc(it.text||"")+"</div>";
+    var fold=foldName(it.from||"");
+    var st=null; S.seats.forEach(function(x){if(foldName(x.label)===fold)st=x;});
+    var canSeat=!!(st&&st.clientId!==clientId&&!st.kicked&&(!st.away||(S.hostStanding&&st.clientId===S.hostSeat))&&st.peerId&&st.peerId!=="solo"&&st.peerId!=="local");
+    var act=document.createElement("div"); act.className="row"; act.style.marginTop="6px";
+    if(canSeat){
+      var rb=document.createElement("button"); rb.type="button"; rb.className="btn small gold"; rb.textContent="Reply";
+      (function(seat){rb.addEventListener("click",function(){msgOpenSeatThread(seat);});})(st);
+      act.appendChild(rb);
+    }else{
+      var nl=document.createElement("span"); nl.className="sub"; nl.textContent="They\u2019re not at the table now."; act.appendChild(nl);
+      if(fold&&msgReach[fold]==="around"){
+        var mb=document.createElement("button"); mb.type="button"; mb.className="btn small"; mb.textContent="Message";
+        (function(nm){mb.addEventListener("click",function(){msgOpenFriendThread(nm);});})(it.from);
+        act.appendChild(mb);
+      }
+    }
+    row.appendChild(act);
+  }
+  var db=document.createElement("button"); db.type="button"; db.className="btn small"; db.textContent="Delete";
+  db.addEventListener("click",function(){inboxDelete(it.id);});
+  row.appendChild(db);
+  return row;
+}
+function inboxRender(){
+  var box=$("inboxBox"); if(!box)return;
+  if(mode!=="host"){if(box.innerHTML)box.innerHTML="";inboxSig="";return;}
+  var items=inboxItems();
+  var sig=items.map(function(it){return it.id+":"+(it.read?1:0)+":"+(it.collected||0);}).join(",")+"|"+(inboxOpen?1:0);
+  if(sig===inboxSig)return; inboxSig=sig;
+  box.innerHTML="";
+  var det=document.createElement("details"); det.className="fold"; det.id="inboxFold"; det.open=inboxOpen;
+  var unread=inboxUnreadCount();
+  det.innerHTML='<summary><span>Inbox \u2014 word left for the host seat<span class="fold-sub">Kept on this device only \u2014 never in the Tale, saves, or exports</span></span>'+(unread?'<span class="msg-unread" id="inboxUnread">'+unread+" unread</span>":"")+'<span aria-hidden="true">\u25be</span></summary>';
+  var body=document.createElement("div"); body.className="fold-body";
+  if(!items.length){
+    body.innerHTML='<p class="sub">Nothing has been left for the host seat yet. Whispers and dings sent to the host seat at this table are kept here, on this device only, for the host\u2019s return.</p>';
+  }else{
+    items.slice().reverse().forEach(function(it){body.appendChild(inboxBuildRow(it));});
+    var cb=document.createElement("button"); cb.type="button"; cb.className="btn small"; cb.style.marginTop="10px"; cb.textContent="Clear the whole inbox";
+    cb.addEventListener("click",function(){if(armButton(cb,"inboxClear","Clear the whole inbox")){inboxSave([]);inboxSig="";inboxRender();msgUpdateBadge();}});
+    body.appendChild(cb);
+  }
+  det.appendChild(body);
+  det.addEventListener("toggle",function(){
+    inboxOpen=det.open;
+    if(det.open&&inboxUnreadCount()>0){inboxMarkAllRead();inboxSig="";inboxRender();msgUpdateBadge();}
+  });
+  box.appendChild(det);
+}
+/* ---------- Prove-and-collect ---------- */
+function standingHostClaimName(){
+  /* The host seat's claimed name: the name of the host seat's own character
+     that matches a Claimed Names registry entry. */
+  if(!S.hostSeat)return null;
+  var chs=S.chars.filter(function(c){return c.controller===S.hostSeat&&!c.npc;});
+  for(var i=0;i<chs.length;i++){var f=foldName(chs[i].name);var e=bakedEntry(f);if(e)return {name:chs[i].name,fold:f,entry:e};}
+  return null;
+}
+function standingStartCollect(){
+  var hn=standingHostClaimName(); if(!hn)return;
+  var st=seatOf(S.hostSeat);
+  if(!st){standingCollectNote="The host seat is not here to ask.";standingGuestSig="";standingGuestRender();return;}
+  standingCollectNote="Asking the host device\u2026";
+  standingGuestSig=""; standingGuestRender();
+  msgOpenSeatThread(st);
+  var th=msgThreads["seat:"+st.clientId];
+  if(th){if(th.open)standingSendCollect(th);else th.pendingCollect=true;}
+}
+function standingSendCollect(th){
+  var hn=standingHostClaimName(); if(!hn||!th.conn)return;
+  try{th.conn.send(JSON.stringify({t:"tt-inbox-collect",name:hn.name,proof:claimProofFor(hn.name)}));}catch(e){}
+}
+function standingHandleCollectRequest(th,conn,m){
+  if(mode!=="host")return; /* the gate lives on the host device only */
+  var hn=standingHostClaimName(); if(!hn)return;
+  if(foldName(m.name||"")!==hn.fold)return; /* not this inbox's name \u2014 not addressed here */
+  function reply(o){try{conn.send(JSON.stringify(o));}catch(e){}}
+  if(!hn.entry.fingerprint){
+    /* Locked claim: an impossible proof, not a failed one \u2014 nothing is
+       released and nothing is recorded. */
+    reply({t:"tt-inbox",ok:false,refusal:"This name has no code yet, so its inbox can only be read on the host device."});
+    return;
+  }
+  if(m.proof!==hn.entry.fingerprint){
+    inboxAdd({kind:"note",from:"",proven:false,ts:Date.now(),text:"a collection try failed"});
+    reply({t:"tt-inbox",ok:false,refusal:"That code does not open this name \u2014 nothing was released."});
+    return;
+  }
+  var items=inboxItems();
+  reply({t:"tt-inbox",ok:true,items:items});
+  /* Items STAY on the host device, marked collected \u2014 the host device
+     remains the shelf of record. Collecting never deletes. */
+  var now=Date.now(), l=inboxItems();
+  l.forEach(function(it){it.collected=now;});
+  inboxSave(l); inboxSig=""; inboxRender();
+}
+function standingHandleInboxResponse(m){
+  if(m.ok){
+    standingCollected={ts:Date.now(),items:Array.isArray(m.items)?m.items:[]};
+    standingCollectNote="Collected \u2014 the host device keeps its own copy, marked collected. This copy lives on this device only while the page is open.";
+  }else{
+    standingCollectNote=m.refusal||"The host device did not release the inbox.";
+  }
+  standingGuestSig=""; standingGuestRender(); msgOpenFold();
+}
+function standingGuestRender(){
+  var box=$("standingGuestBox"); if(!box)return;
+  var hn=(mode==="guest"&&S.hostStanding)?standingHostClaimName():null;
+  var canCollect=false;
+  if(hn)canCollect=myChars().some(function(c){return foldName(c.name)===hn.fold;});
+  var sig=(canCollect?hn.fold:"")+"|"+(standingCollected?standingCollected.ts:"")+"|"+standingCollectNote;
+  if(sig===standingGuestSig)return; standingGuestSig=sig;
+  box.innerHTML="";
+  if(canCollect){
+    var wrap=document.createElement("div"); wrap.className="msg-thread";
+    wrap.innerHTML='<div class="msg-head"><strong>Collect the host inbox</strong></div><p class="sub" style="margin-top:6px">The host seat\u2019s claimed name is <strong>'+esc(hn.name)+'</strong>. If that name is yours, your code can collect the inbox kept for it on the host device, onto this device. The host device keeps its own copy, marked collected \u2014 it stays the shelf of record.</p>';
+    var b=document.createElement("button"); b.type="button"; b.className="btn small gold"; b.id="standingCollectBtn"; b.textContent="Collect the host inbox";
+    b.addEventListener("click",standingStartCollect);
+    wrap.appendChild(b);
+    if(standingCollectNote){var n=document.createElement("p"); n.className="sub"; n.style.marginTop="6px"; n.setAttribute("role","status"); n.textContent=standingCollectNote; wrap.appendChild(n);}
+    box.appendChild(wrap);
+  }
+  if(standingCollected){
+    var cv=document.createElement("div"); cv.className="msg-thread";
+    cv.innerHTML='<div class="msg-head"><strong>Collected from the standing table \u00b7 '+esc(fmtWhen(standingCollected.ts))+'</strong></div>'+(standingCollected.items.length?"":'<p class="sub" style="margin-top:6px">The inbox was empty \u2014 nothing had been left for the host seat.</p>');
+    standingCollected.items.slice().reverse().forEach(function(it){
+      var row=document.createElement("div"); row.className="inbox-item";
+      if(it.kind==="note")row.innerHTML='<span class="sub">'+esc(it.text||"a collection try failed")+" \u00b7 "+esc(fmtWhen(it.ts))+"</span>";
+      else if(it.kind==="ding")row.innerHTML='<span><strong>'+inboxNameHTML(it)+'</strong> <span class="sub">dinged you \u00b7 '+esc(fmtWhen(it.ts))+"</span></span>";
+      else row.innerHTML='<span><strong>'+inboxNameHTML(it)+'</strong> <span class="sub">'+esc(fmtWhen(it.ts))+'</span></span><div class="inbox-text">'+esc(it.text||"")+"</div>";
+      cv.appendChild(row);
+    });
+    box.appendChild(cv);
+  }
+}
+/* ---------- Standing chrome: toggle, banner, per-render sync ---------- */
+function standingRender(){
+  var box=$("standingBox");
+  if(box){
+    box.style.display=(mode==="host")?"block":"none";
+    if(mode==="host"){
+      var line=$("standingStateLine"), btn=$("standingToggleBtn");
+      if(S.hostStanding){if(line)line.textContent="This table is standing now \u2014 your seat is marked Host \u2014 away, and the table stays joinable on this device. Tap \u201cI\u2019m back\u201d when you return.";if(btn)btn.textContent="I\u2019m back";}
+      else{if(line)line.textContent="This table is not standing \u2014 you are here at it.";if(btn)btn.textContent="Leave this table standing";}
+    }
+  }
+  var bn=$("standingBanner");
+  if(bn)bn.style.display=(mode==="guest"&&S.hostStanding)?"block":"none";
+  if(mode!=="guest"&&standingCollected){standingCollected=null;standingCollectNote="";standingGuestSig="";}
+  inboxRender();
+  standingGuestRender();
+}
+if($("standingToggleBtn"))$("standingToggleBtn").addEventListener("click",function(){
+  if(mode!=="host")return; /* a local host-device control: it works even while the host seat is marked away, because the standing event checks the host seat, not presence */
+  sendEvent({type:"standing",on:!S.hostStanding});
+});
+var _renderAllStanding=renderAll;
+renderAll=function(){_renderAllStanding();standingRender();};
+
+/* ---------- Panel wiring + the bridge for the Who's module ---------- */
+var msgFoldEl=$("whosMsgFold");
+if(msgFoldEl)msgFoldEl.addEventListener("toggle",function(){
+ if(msgFoldEl.open){
+   for(var k in msgThreads)msgThreads[k].unread=0;
+   dingUnread=0;
+   msgProbeFriends();
+   msgRenderThreads();
+   dingRender();
+ }
+});
+if($("msgRefreshBtn"))$("msgRefreshBtn").addEventListener("click",function(){
+ msgDoorbellSync();
+ msgProbeFriends();
+ msgUpdatePanelState();
+});
+window.__ittMsg={
+ available:function(){return mode==="host"||mode==="guest";},
+ openSeat:function(name){
+   var f=foldName(name||""); if(!f)return;
+   var st=null;
+   S.seats.forEach(function(x){if(foldName(x.label)===f)st=x;});
+   if(st)msgOpenSeatThread(st);
+ },
+ openFriend:function(name){msgOpenFriendThread(name);},
+ reach:function(fold){return msgReach[fold]||"";},
+ probe:function(){msgProbeFriends();}
+};
+window.__ittDing={
+ decorate:function(el,name){dingMakeHost(el,name);}
+};
+msgDoorbellSync();
+setInterval(msgDoorbellSync,3000);
+msgUpdatePanelState();
+msgRenderThreads();
+
 renderClaimUI();
 renderAll();
 })();
@@ -4456,9 +5476,21 @@ function renderWhosNow(){
  seats.forEach(function(s){
    var row=document.createElement("div");row.className="whos-now-row";
    var info=charInfoFor(s.name);
-   row.innerHTML='<span class="face" aria-hidden="true">'+esc(s.name.slice(0,1).toUpperCase())+'</span><span style="flex:1;min-width:140px"><strong>'+s.nameHTML+'</strong>'+(s.proven?' <span class="claim-badge">Claimed \u2014 locked</span>':"")+(s.dm?' <span class="dm-badge">Dungeon Master</span>':"")+(s.host?' <span class="host-badge">Host</span>':"")+(s.away?' <span class="away-badge">not here</span>':' <span class="sub">here</span>')+(info?'<br><span class="sub">'+esc(info)+'</span>':'<br><span class="sub">'+esc(s.tags)+'</span>')+'</span>';
+   row.innerHTML='<span class="face" aria-hidden="true">'+esc(s.name.slice(0,1).toUpperCase())+'</span><span style="flex:1;min-width:140px"><strong>'+s.nameHTML+'</strong>'+(s.proven?' <span class="claim-badge">Claimed \u2014 locked</span>':"")+(s.dm?' <span class="dm-badge">Dungeon Master</span>':"")+(s.host?' <span class="host-badge">Host</span>':"")+((s.host&&/Host \u2014 away/.test(s.tags))?' <span class="away-badge">Host \u2014 away</span>':(s.away?' <span class="away-badge">not here</span>':' <span class="sub">here</span>'))+(info?'<br><span class="sub">'+esc(info)+'</span>':'<br><span class="sub">'+esc(s.tags)+'</span>')+'</span>';
    if(!isFriend(s.name)){var b=document.createElement("button");b.type="button";b.className="btn small";b.textContent="Add as friend";b.addEventListener("click",function(){addFriend(s.name);renderFriends();renderWhosNowForce();runSearch();});row.appendChild(b);}
    else{var tag=document.createElement("span");tag.className="match-tag folds";tag.textContent="Friend \u00b7 at this table";row.appendChild(tag);}
+   var bridge=window.__ittMsg;
+   var myC=lsGet("infinitetable.card"); var myF=myC?foldName(myC.name||""):"";
+   var isSelf=myF&&foldName(s.name)===myF;
+   var standingHostSeat=!!(s.host&&/Host \u2014 away/.test(s.tags)); /* standing: the away host seat still takes whispers and dings \u2014 leaving word is the point */
+   if(bridge&&bridge.available&&bridge.available()&&!isSelf&&(!s.away||standingHostSeat)){
+     var wb=document.createElement("button");wb.type="button";wb.className="btn small";wb.textContent="Whisper";
+     wb.addEventListener("click",function(){try{bridge.openSeat(s.name);}catch(e){}var mf=document.getElementById("whosMsgFold");if(mf)mf.open=true;});
+     row.appendChild(wb);
+   }
+   if(window.__ittDing&&bridge&&bridge.available&&bridge.available()&&!isSelf&&(!s.away||standingHostSeat)){
+     var dh=document.createElement("span");window.__ittDing.decorate(dh,s.name);row.appendChild(dh);
+   }
    box.appendChild(row);
  });
  renderFriends();
@@ -4472,7 +5504,22 @@ function renderFriends(){
  list.forEach(function(fr){
    var row=document.createElement("div");row.className="friend-row";
    var at=seatFolds.indexOf(foldName(fr.name))>=0;
-   row.innerHTML='<span style="flex:1;min-width:140px"><strong>'+esc(fr.name)+'</strong>'+(at?' <span class="match-tag folds">at this table</span>':"")+'<br><span class="sub">Friend \u00b7 on this device only'+(fr.when?" \u00b7 added "+esc(fmtD(fr.when)):"")+'</span></span>';
+   var br=window.__ittMsg;
+   var reach=(br&&br.reach)?br.reach(foldName(fr.name)):"";
+   var reachHTML=reach==="around"?' <span class="match-tag folds">Around now</span>':(reach==="not"?' <span class="sub">\u00b7 Not around right now</span>':"");
+   row.innerHTML='<span style="flex:1;min-width:140px"><strong>'+esc(fr.name)+'</strong>'+(at?' <span class="match-tag folds">at this table</span>':"")+reachHTML+'<br><span class="sub">Friend \u00b7 on this device only'+(fr.when?" \u00b7 added "+esc(fmtD(fr.when)):"")+'</span></span>';
+   var ct=$("connText"); var soloNow=ct&&/^Playing solo/.test(ct.textContent||"");
+   if(br&&br.openFriend&&!soloNow){
+     var mb=document.createElement("button");mb.type="button";mb.className="btn small";mb.textContent="Message";
+     mb.addEventListener("click",function(){try{br.openFriend(fr.name);}catch(e){}var mf=document.getElementById("whosMsgFold");if(mf)mf.open=true;});
+     row.appendChild(mb);
+   }
+   var myC2=lsGet("infinitetable.card"); var myF2=myC2?foldName(myC2.name||""):"";
+   var myCl2=lsGet("infinitetable.claim");
+   var isSelfFr=(myF2&&foldName(fr.name)===myF2)||(myCl2&&myCl2.fold&&foldName(fr.name)===myCl2.fold);
+   if(window.__ittDing&&!soloNow&&!isSelfFr){
+     var dh2=document.createElement("span");window.__ittDing.decorate(dh2,fr.name);row.appendChild(dh2);
+   }
    var b=document.createElement("button");b.type="button";b.className="btn small";b.textContent="Forget";
    b.addEventListener("click",function(){lsSet(FKEY,friends().filter(function(x){return foldName(x.name)!==foldName(fr.name);}));renderFriends();renderWhosNowForce();runSearch();var m=$("friendsMsg");if(m)m.textContent="Forgotten: "+fr.name+" \u2014 removed from this device only.";});
    row.appendChild(b); box.appendChild(row);
@@ -4490,6 +5537,10 @@ function renderRecents(){
    b.addEventListener("click",function(){lsSet(RKEY,recents().filter(function(x){return !(foldName(x.name)===foldName(r.name)&&x.when===r.when);}));renderRecents();runSearch();var m=$("recentsMsg");if(m)m.textContent="Removed: "+r.name;});
    row.appendChild(b);
    if(!isFriend(r.name)){var fb=document.createElement("button");fb.type="button";fb.className="btn small";fb.textContent="Add as friend";fb.addEventListener("click",function(){addFriend(r.name);renderFriends();renderRecents();runSearch();});row.appendChild(fb);}
+   var ct2=$("connText"); var soloR=ct2&&/^Playing solo/.test(ct2.textContent||"");
+   var myC3=lsGet("infinitetable.card"); var myCl3=lsGet("infinitetable.claim");
+   var isSelfR=((myC3&&foldName(r.name)===foldName(myC3.name||""))||(myCl3&&myCl3.fold&&foldName(r.name)===myCl3.fold));
+   if(window.__ittDing&&!soloR&&!isSelfR){var dh3=document.createElement("span");window.__ittDing.decorate(dh3,r.name);row.appendChild(dh3);}
    box.appendChild(row);
  });
 }
@@ -4498,28 +5549,34 @@ function armClear(btn,label,fn){
  btn.dataset.armed="1";btn.textContent="Tap again to confirm \u2014 "+label;
  setTimeout(function(){delete btn.dataset.armed;btn.textContent=label;},5000);
 }
+var searchDingTargets=[];
 function runSearch(){
  var inp=$("whosSearch"), out=$("whosResults"); if(!inp||!out)return;
  var q=inp.value.trim();
  if(!q){out.innerHTML='<p class="sub">Start typing to search across this table, <a href="#claimed">Claimed Names \u2014 the registry</a>, your friends, and your recents.</p>';return;}
- var qf=foldName(q); var html="";
+ var qf=foldName(q); var html=""; searchDingTargets=[];
+ var brS=window.__ittMsg, availS=!!(brS&&brS.available&&brS.available());
+ var myCardS=lsGet("infinitetable.card"), myClaimS=lsGet("infinitetable.claim");
+ var selfS={}; if(myCardS&&foldName(myCardS.name||""))selfS[foldName(myCardS.name)]=true; if(myClaimS&&myClaimS.fold)selfS[myClaimS.fold]=true;
+ var ctS=$("connText"), soloS=ctS&&/^Playing solo/.test(ctS.textContent||"");
  var seats=readSeats().filter(function(s){return foldName(s.name).indexOf(qf)>=0||s.name.toLowerCase().indexOf(q.toLowerCase())>=0;});
  html+='<h4 style="margin:10px 0 4px;font-family:Cinzel,serif">At this table</h4>';
- html+=seats.length?seats.map(function(s){return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(s.name)+'</strong> <span class="sub">'+(s.away?"not here":"here")+(s.dm?" \u00b7 DM":"")+(s.host?" \u00b7 Host":"")+'</span></span></div>';}).join(""):'<p class="sub">No one at this table matches.</p>';
+ html+=seats.length?seats.map(function(s){var dg="";if(availS&&(!s.away||(s.host&&/Host \u2014 away/.test(s.tags)))&&!selfS[foldName(s.name)]){searchDingTargets.push(s.name);dg='<span data-ding-idx="'+(searchDingTargets.length-1)+'"></span>';}return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(s.name)+'</strong> <span class="sub">'+((s.host&&/Host \u2014 away/.test(s.tags))?"Host \u2014 away":(s.away?"not here":"here"))+(s.dm?" \u00b7 DM":"")+(s.host?" \u00b7 Host":"")+'</span></span>'+dg+'</div>';}).join(""):'<p class="sub">No one at this table matches.</p>';
  html+='<h4 style="margin:12px 0 4px;font-family:Cinzel,serif">Claimed Names \u2014 the registry</h4>';
  var reg=registryAll(); var regHits=[];
  reg.forEach(function(e){
    if(q===e.name)regHits.push({e:e,tag:'<span class="match-tag exact">exact</span>'});
    else if(qf&&qf===foldName(e.name))regHits.push({e:e,tag:'<span class="match-tag folds">folds-onto</span>'});
  });
- html+=regHits.length?regHits.map(function(h){return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(h.e.name)+'</strong> '+h.tag+' <span class="claim-badge">Claimed \u2014 locked</span><br><span class="sub">'+esc(h.e.label)+" \u00b7 "+esc(h.e.note)+' \u00b7 <a href="#claimed">Open the registry</a></span></span></div>';}).join(""):'<div class="whos-result-row"><span style="flex:1"><span class="match-tag">no match</span> <span class="sub">\u201c'+esc(q)+'\u201d is not a claimed name in the registry, and does not fold onto one.</span></span></div>';
+ html+=regHits.length?regHits.map(function(h){var dg="";if(!soloS&&!selfS[foldName(h.e.name)]){searchDingTargets.push(h.e.name);dg='<span data-ding-idx="'+(searchDingTargets.length-1)+'"></span>';}return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(h.e.name)+'</strong> '+h.tag+' <span class="claim-badge">Claimed \u2014 locked</span><br><span class="sub">'+esc(h.e.label)+" \u00b7 "+esc(h.e.note)+' \u00b7 <a href="#claimed">Open the registry</a></span></span>'+dg+'</div>';}).join(""):'<div class="whos-result-row"><span style="flex:1"><span class="match-tag">no match</span> <span class="sub">\u201c'+esc(q)+'\u201d is not a claimed name in the registry, and does not fold onto one.</span></span></div>';
  var fr=friends().filter(function(x){return foldName(x.name).indexOf(qf)>=0||x.name.toLowerCase().indexOf(q.toLowerCase())>=0;});
  html+='<h4 style="margin:12px 0 4px;font-family:Cinzel,serif">Friends (this device only)</h4>';
- html+=fr.length?fr.map(function(x){return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(x.name)+'</strong> <span class="sub">friend \u00b7 on this device only</span></span></div>';}).join(""):'<p class="sub">No friend matches.</p>';
+ html+=fr.length?fr.map(function(x){var dg="";if(!soloS&&!selfS[foldName(x.name)]){searchDingTargets.push(x.name);dg='<span data-ding-idx="'+(searchDingTargets.length-1)+'"></span>';}return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(x.name)+'</strong> <span class="sub">friend \u00b7 on this device only</span></span>'+dg+'</div>';}).join(""):'<p class="sub">No friend matches.</p>';
  var rc=recents().filter(function(x){return foldName(x.name).indexOf(qf)>=0||x.name.toLowerCase().indexOf(q.toLowerCase())>=0;});
  html+='<h4 style="margin:12px 0 4px;font-family:Cinzel,serif">Recently interacted with (this device only)</h4>';
- html+=rc.length?rc.map(function(x){return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(x.name)+'</strong> <span class="sub">'+esc(fmtD(x.when))+" \u00b7 "+esc(x.table||"This table")+'</span></span></div>';}).join(""):'<p class="sub">No recent matches.</p>';
+ html+=rc.length?rc.map(function(x){var dg="";if(!soloS&&!selfS[foldName(x.name)]){searchDingTargets.push(x.name);dg='<span data-ding-idx="'+(searchDingTargets.length-1)+'"></span>';}return '<div class="whos-result-row"><span style="flex:1"><strong>'+esc(x.name)+'</strong> <span class="sub">'+esc(fmtD(x.when))+" \u00b7 "+esc(x.table||"This table")+'</span></span>'+dg+'</div>';}).join(""):'<p class="sub">No recent matches.</p>';
  out.innerHTML=html;
+ if(window.__ittDing){out.querySelectorAll("[data-ding-idx]").forEach(function(ph){var t=searchDingTargets[parseInt(ph.getAttribute("data-ding-idx"),10)];if(t)window.__ittDing.decorate(ph,t);});}
 }
 if($("whosSearch"))$("whosSearch").addEventListener("input",runSearch);
 if($("friendAddBtn"))$("friendAddBtn").addEventListener("click",function(){
@@ -4531,6 +5588,13 @@ if($("friendAddBtn"))$("friendAddBtn").addEventListener("click",function(){
 });
 if($("friendsClearBtn"))$("friendsClearBtn").addEventListener("click",function(){var b=this;armClear(b,"Clear all friends",function(){lsDel(FKEY);renderFriends();renderWhosNowForce();runSearch();var m=$("friendsMsg");if(m)m.textContent="All friends cleared from this device.";});});
 if($("recentsClearBtn"))$("recentsClearBtn").addEventListener("click",function(){var b=this;armClear(b,"Clear all recents",function(){lsDel(RKEY);renderRecents();runSearch();var m=$("recentsMsg");if(m)m.textContent="All recents cleared from this device.";});});
+/* Private messages bridge: reachability changes re-render friends, and
+   opening the Friends fold asks the doorbell who is around. Every call
+   is guarded — the bridge may not exist if the main script failed. */
+window.addEventListener("itt-reach",function(){renderFriends();});
+window.addEventListener("itt-ding-change",function(){renderFriends();renderRecents();runSearch();renderWhosNowForce();});
+var friendsFoldEl=$("whosFriendsFold");
+if(friendsFoldEl)friendsFoldEl.addEventListener("toggle",function(){if(friendsFoldEl.open&&window.__ittMsg&&window.__ittMsg.probe){try{window.__ittMsg.probe();}catch(e){}}});
 /* Doors from Who's: open the checker fold when its door is used */
 document.querySelectorAll('a[href="#stringChecker"]').forEach(function(a){a.addEventListener("click",function(){var d=$("stringChecker");if(d)d.open=true;});});document.querySelectorAll('a[href="#claimFormAnchor"]').forEach(function(a){a.addEventListener("click",function(){var d=$("claimFormAnchor");if(d)d.open=true;});});
 renderWhosNow();renderFriends();renderRecents();
