@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Karaoke Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+
+      :root {
+        --bg: #f7f3ec;
+        --panel: #fffdf8;
+        --panel-2: #f0e9dc;
+        --ink: #211a13;
+        --ink-soft: #5c5142;
+        --line: #ddd2bf;
+        --accent: #c93a1e;
+        --accent-ink: #ffffff;
+        --gold: #b97e14;
+        --gold-soft: #f3dfae;
+        --good: #1e7d46;
+        --warn: #b97e14;
+        --bad: #c0392b;
+        --stage-bg: #17110c;
+        --stage-panel: #241a12;
+        --stage-ink: #f5ead9;
+        --stage-soft: #c9b894;
+        --stage-line: #3d2f1f;
+        --radius: 14px;
+        --shadow: 0 10px 30px rgba(60, 40, 10, 0.10);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14100c;
+          --panel: #1f1811;
+          --panel-2: #2a2015;
+          --ink: #f3ead9;
+          --ink-soft: #c4b294;
+          --line: #3d2f1f;
+          --accent: #e85a38;
+          --gold: #e8a83e;
+          --gold-soft: #4a3512;
+          --good: #4cc477;
+          --warn: #e8a83e;
+          --bad: #ff7a66;
+          --shadow: 0 10px 30px rgba(0,0,0,0.45);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size: 17px;
+        line-height: 1.55;
+      }
+      h1, h2, h3, .display { font-family: "Bricolage Grotesque", "Archivo", system-ui, sans-serif; line-height: 1.08; margin: 0; }
+      p { margin: 0; }
+      a { color: var(--accent); }
+      button { font: inherit; cursor: pointer; }
+      :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
+
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 0 18px 72px; }
+
+      /* ---------- Intro ---------- */
+      .intro { padding: 40px 0 8px; max-width: 760px; }
+      .intro h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 800; letter-spacing: -0.01em; }
+      .intro h1 .amp { color: var(--accent); }
+      .lede { margin-top: 14px; font-size: 1.13rem; color: var(--ink-soft); max-width: 620px; }
+      .lede strong { color: var(--ink); }
+      .intro-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 7px;
+        border: 1px solid var(--line); background: var(--panel);
+        border-radius: 999px; padding: 6px 13px; font-size: 0.88rem; font-weight: 600;
+      }
+      .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+      .chip .dot.next { background: var(--gold); }
+      .chip .dot.later { background: var(--ink-soft); }
+
+      /* ---------- Stage ---------- */
+      .stage {
+        margin-top: 26px;
+        background: var(--stage-bg);
+        color: var(--stage-ink);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .stage-top {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+        padding: 18px 20px 0;
+      }
+      .stage-top h2 { font-size: 1.35rem; font-weight: 700; margin-right: auto; }
+      .stage-top h2 span { color: #e8a83e; }
+      .mic-btn {
+        display: inline-flex; align-items: center; gap: 9px;
+        background: #e85a38; color: #fff; border: 0; border-radius: 999px;
+        padding: 10px 18px; font-weight: 700; min-height: 44px;
+      }
+      .mic-btn[aria-pressed="true"] { background: #2e7d4f; }
+      .mic-btn svg { flex: none; }
+      .mic-status { width: 100%; font-size: 0.9rem; color: var(--stage-soft); }
+      .mic-status strong { color: var(--stage-ink); }
+
+      .song-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px 0; }
+      .song-chip {
+        border: 1px solid var(--stage-line); background: var(--stage-panel);
+        color: var(--stage-ink); border-radius: 999px; padding: 9px 15px;
+        font-weight: 600; font-size: 0.95rem; min-height: 42px;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      .song-chip[aria-pressed="true"] { background: #e8a83e; border-color: #e8a83e; color: #241a08; }
+      .song-chip .best { font-size: 0.78rem; font-weight: 700; opacity: 0.75; }
+
+      .mode-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px 0; align-items: center; }
+      .mode-row .lbl { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--stage-soft); margin-right: 2px; }
+      .mode-chip {
+        border: 1px solid var(--stage-line); background: transparent; color: var(--stage-ink);
+        border-radius: 10px; padding: 8px 14px; font-weight: 600; font-size: 0.92rem; min-height: 40px;
+      }
+      .mode-chip[aria-pressed="true"] { background: var(--stage-ink); color: #241a12; border-color: var(--stage-ink); }
+      .mode-note { width: 100%; font-size: 0.88rem; color: var(--stage-soft); }
+
+      .canvas-shell { padding: 16px 20px 0; }
+      canvas#highway {
+        display: block; width: 100%; height: 250px;
+        background: #100c08; border: 1px solid var(--stage-line); border-radius: var(--radius);
+      }
+      @media (max-width: 640px) { canvas#highway { height: 210px; } }
+
+      .lyrics {
+        padding: 14px 20px 0; min-height: 86px;
+        font-family: "Bricolage Grotesque", sans-serif;
+      }
+      .lyric-line { font-size: 1.28rem; font-weight: 600; color: #8d7c5f; line-height: 1.35; transition: color .2s; }
+      .lyric-line.active { color: var(--stage-ink); }
+      .lyric-line .syl.on { color: #e8a83e; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 3px; }
+      .lyric-line.guide-line.active { color: #a8c6e8; }
+      .lyric-line.guide-line .syl.on { color: #a8c6e8; }
+      .lyrics .who { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--stage-soft); margin-bottom: 2px; }
+
+      .readout {
+        display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
+        padding: 14px 20px 0;
+      }
+      @media (max-width: 640px) { .readout { grid-template-columns: 1fr; gap: 8px; } }
+      .now-note { font-family: "Bricolage Grotesque", sans-serif; font-size: 2rem; font-weight: 800; min-width: 92px; }
+      .now-note small { display: block; font-family: "Archivo", sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--stage-soft); }
+      .needle-box { position: relative; height: 34px; background: #100c08; border: 1px solid var(--stage-line); border-radius: 9px; overflow: hidden; }
+      .needle-box .zone { position: absolute; top: 0; bottom: 0; left: 50%; width: 18%; transform: translateX(-50%); background: rgba(76,196,119,0.20); border-left: 1px solid rgba(76,196,119,.5); border-right: 1px solid rgba(76,196,119,.5); }
+      .needle-box .center { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #4cc477; transform: translateX(-50%); }
+      .needle-box .flat-lbl, .needle-box .sharp-lbl { position: absolute; top: 50%; transform: translateY(-50%); font-size: 0.7rem; font-weight: 700; letter-spacing: .06em; color: var(--stage-soft); }
+      .needle-box .flat-lbl { left: 8px; } .needle-box .sharp-lbl { right: 8px; }
+      #needle { position: absolute; top: 3px; bottom: 3px; width: 6px; border-radius: 3px; background: #f5ead9; left: 50%; transform: translateX(-50%); transition: left 60ms linear; box-shadow: 0 0 10px rgba(245,234,217,.5); }
+      .cents-read { font-weight: 700; font-size: 1.02rem; min-width: 118px; text-align: right; }
+      .cents-read small { display: block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--stage-soft); }
+      @media (max-width: 640px) { .cents-read { text-align: left; } }
+
+      .transport { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px 20px 4px; align-items: center; }
+      .play-btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: #e8a83e; color: #241a08; border: 0; border-radius: 999px;
+        padding: 12px 26px; font-weight: 800; font-size: 1.05rem; min-height: 50px;
+      }
+      .play-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .ghost-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: transparent; color: var(--stage-ink); border: 1px solid var(--stage-line);
+        border-radius: 999px; padding: 10px 18px; font-weight: 600; min-height: 46px;
+      }
+      .ghost-btn[aria-pressed="true"] { background: #e85a38; border-color: #e85a38; color: #fff; }
+      .transport .hint { font-size: 0.88rem; color: var(--stage-soft); flex: 1 1 220px; }
+
+      .score-panel { margin: 14px 20px 0; border: 1px solid var(--stage-line); border-radius: var(--radius); background: var(--stage-panel); padding: 16px 18px; display: none; }
+      .score-panel.show { display: block; }
+      .score-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+      .grade-letter { font-family: "Bricolage Grotesque", sans-serif; font-size: 3rem; font-weight: 800; color: #e8a83e; line-height: 1; }
+      .score-head h3 { font-size: 1.3rem; }
+      .score-stats { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 8px; font-size: 0.95rem; color: var(--stage-soft); }
+      .score-stats strong { color: var(--stage-ink); font-size: 1.1rem; }
+      .note-strip { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+      .note-strip span { width: 16px; height: 16px; border-radius: 4px; background: #3d2f1f; }
+      .note-strip span.hit { background: #4cc477; }
+      .note-strip span.near { background: #e8a83e; }
+      .note-strip span.miss { background: #e85a38; }
+      .note-strip span.guide { background: #54708f; }
+      .score-legend { font-size: 0.8rem; color: var(--stage-soft); margin-top: 8px; }
+
+      .take-panel { margin: 12px 20px 0; display: none; }
+      .take-panel.show { display: block; }
+      .take-panel h3 { font-size: 1rem; margin-bottom: 8px; }
+      .take-panel audio { width: 100%; }
+      .take-actions { margin-top: 8px; }
+      .take-actions a { font-weight: 600; }
+
+      .polish { padding: 18px 20px 22px; margin-top: 16px; border-top: 1px solid var(--stage-line); }
+      .polish h3 { font-size: 1.05rem; margin-bottom: 4px; }
+      .polish h3 span { color: #e8a83e; }
+      .polish p.sub { font-size: 0.9rem; color: var(--stage-soft); max-width: 640px; }
+      .polish-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 22px; margin-top: 14px; }
+      .ctl label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+      .ctl label output { color: #e8a83e; font-weight: 700; }
+      .ctl input[type="range"] { width: 100%; accent-color: #e8a83e; min-height: 28px; }
+      .ctl .why { font-size: 0.8rem; color: var(--stage-soft); margin-top: 2px; }
+      .monitor-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+      .monitor-row .hint { font-size: 0.88rem; color: var(--stage-soft); }
+
+      /* ---------- Sections ---------- */
+      section.block { margin-top: 46px; }
+      section.block > h2 { font-size: clamp(1.55rem, 3.4vw, 2rem); font-weight: 800; }
+      section.block > .sub { color: var(--ink-soft); margin-top: 8px; max-width: 680px; }
+      .card {
+        background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 20px; box-shadow: var(--shadow);
+      }
+
+      .tuner { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+      @media (max-width: 720px) { .tuner { grid-template-columns: 1fr; } }
+      .tuner .big-note { font-family: "Bricolage Grotesque", sans-serif; font-size: 3.2rem; font-weight: 800; line-height: 1; }
+      .tuner .verdict { font-weight: 700; margin-top: 6px; font-size: 1.05rem; }
+      .tuner .verdict.good { color: var(--good); }
+      .tuner .verdict.warn { color: var(--warn); }
+      .tuner .verdict.bad { color: var(--bad); }
+      .target-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+      .target-btn {
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+        border-radius: 10px; padding: 8px 13px; font-weight: 700; min-height: 40px; min-width: 48px;
+      }
+      .target-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .ref-btn {
+        margin-top: 14px; display: inline-flex; align-items: center; gap: 8px;
+        background: var(--ink); color: var(--bg); border: 0; border-radius: 999px;
+        padding: 10px 18px; font-weight: 700; min-height: 44px;
+      }
+      .range-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+      .range-stats .stat { background: var(--panel-2); border-radius: 10px; padding: 12px 14px; }
+      .range-stats .stat b { display: block; font-family: "Bricolage Grotesque", sans-serif; font-size: 1.5rem; }
+      .range-stats .stat span { font-size: 0.82rem; color: var(--ink-soft); font-weight: 600; }
+      .small-note { font-size: 0.88rem; color: var(--ink-soft); margin-top: 12px; }
+
+      .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 18px; }
+      .how-grid h3 { font-size: 1.05rem; margin-bottom: 6px; }
+      .how-grid p { font-size: 0.94rem; color: var(--ink-soft); }
+      .how-grid p strong { color: var(--ink); }
+
+      .road { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-top: 18px; }
+      .road .card { position: relative; }
+      .road .step {
+        display: inline-block; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em;
+        text-transform: uppercase; border-radius: 999px; padding: 4px 11px; margin-bottom: 12px;
+      }
+      .step.live { background: var(--good); color: #fff; }
+      .step.next { background: var(--gold-soft); color: var(--gold); }
+      @media (prefers-color-scheme: dark) { .step.next { color: #e8a83e; } }
+      .step.later { background: var(--panel-2); color: var(--ink-soft); }
+      .road h3 { font-size: 1.25rem; margin-bottom: 8px; }
+      .road p { font-size: 0.95rem; color: var(--ink-soft); }
+      .road p strong { color: var(--ink); }
+
+      .missing { margin-top: 46px; }
+      .missing .card { border-style: dashed; }
+      .missing h2 { font-size: 1.4rem; margin-bottom: 6px; }
+      .missing p { color: var(--ink-soft); max-width: 640px; }
+
+      footer { margin-top: 40px; font-size: 0.88rem; color: var(--ink-soft); }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+
+      <div class="intro">
+        <h1>Karaoke <span class="amp">Studio</span></h1>
+        <p class="lede">Sing along with the guide, watch your pitch ride the track in real time, and get graded note by note — with a little studio polish on your voice while you do it. <strong>Free, always.</strong> It runs right here on your phone; nothing you sing leaves this page.</p>
+        <div class="intro-meta" aria-label="What is available">
+          <span class="chip"><span class="dot"></span>Phone studio — live now</span>
+          <span class="chip"><span class="dot next"></span>Duet rooms — next</span>
+          <span class="chip"><span class="dot later"></span>VR stage — the big room, later</span>
+        </div>
+      </div>
+
+      <!-- ================= STAGE ================= -->
+      <div class="stage" id="stage">
+        <div class="stage-top">
+          <h2>The <span>Stage</span></h2>
+          <button class="mic-btn" id="micBtn" aria-pressed="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 19v3"/></svg>
+            Turn on the mic
+          </button>
+          <p class="mic-status" id="micStatus">The mic is off. Turn it on to be graded on your real voice — or use the <strong>Demo voice</strong> below to see how grading works first.</p>
+        </div>
+
+        <div class="song-row" id="songRow" role="group" aria-label="Choose a song"></div>
+
+        <div class="mode-row" role="group" aria-label="Singing mode">
+          <span class="lbl">Mode</span>
+          <button class="mode-chip" data-mode="solo" aria-pressed="true">Solo — you sing it all</button>
+          <button class="mode-chip" data-mode="duet" aria-pressed="false">Duet — trade lines</button>
+          <button class="mode-chip" id="demoBtn" aria-pressed="false">Demo voice</button>
+          <p class="mode-note" id="modeNote">Every line is yours. The soft guide melody plays underneath so you can find the tune.</p>
+        </div>
+
+        <div class="canvas-shell">
+          <canvas id="highway" aria-label="Pitch track: song notes scroll past the line, and your voice is drawn as a trail"></canvas>
+        </div>
+
+        <div class="lyrics" id="lyrics" aria-live="off"></div>
+
+        <div class="readout" aria-label="Your pitch right now">
+          <div class="now-note"><small>You are singing</small><span id="nowNote">—</span></div>
+          <div class="needle-box" aria-hidden="true">
+            <span class="zone"></span><span class="center"></span>
+            <span class="flat-lbl">FLAT</span><span class="sharp-lbl">SHARP</span>
+            <span id="needle"></span>
+          </div>
+          <div class="cents-read"><small>Pitch</small><span id="centsRead">—</span></div>
+        </div>
+
+        <div class="transport">
+          <button class="play-btn" id="playBtn">
+            <svg id="playIcon" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
+            <span id="playLabel">Sing it</span>
+          </button>
+          <button class="ghost-btn" id="recordBtn" aria-pressed="false">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+            Record this take
+          </button>
+          <p class="hint" id="transportHint">Press <strong>Sing it</strong> and follow the amber blocks — sing when a block crosses the white line. Headphones help: they keep the backing track out of your mic.</p>
+        </div>
+
+        <div class="score-panel" id="scorePanel" role="status">
+          <div class="score-head">
+            <span class="grade-letter" id="gradeLetter">A</span>
+            <div>
+              <h3 id="gradeTitle">Strong take</h3>
+              <div class="score-stats">
+                <span>Accuracy <strong id="statAcc">—</strong></span>
+                <span>Notes on pitch <strong id="statHit">—</strong></span>
+                <span>Average miss <strong id="statAvg">—</strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="note-strip" id="noteStrip" aria-hidden="true"></div>
+          <p class="score-legend">Each square is one note: <strong style="color:#4cc477">green</strong> on pitch · <strong style="color:#e8a83e">amber</strong> close · <strong style="color:#e85a38">red</strong> missed · <strong style="color:#8fb0d8">blue</strong> the guide sang it (duet lines).</p>
+        </div>
+
+        <div class="take-panel" id="takePanel">
+          <h3>Your take</h3>
+          <audio id="takeAudio" controls></audio>
+          <div class="take-actions"><a id="takeDownload" href="#" download="karaoke-take.webm">Download this take</a></div>
+        </div>
+
+        <div class="polish">
+          <h3>Studio <span>polish</span></h3>
+          <p class="sub">The part that makes you sound good. These dress up your voice while you sing — a little space, a little echo, a little warmth. Start small; a lot of polish hides the singer.</p>
+          <div class="polish-grid">
+            <div class="ctl">
+              <label for="reverbRange">Reverb <output id="reverbOut">35%</output></label>
+              <input type="range" id="reverbRange" min="0" max="100" value="35" />
+              <p class="why">Puts your voice in a room instead of a closet.</p>
+            </div>
+            <div class="ctl">
+              <label for="echoRange">Echo <output id="echoOut">15%</output></label>
+              <input type="range" id="echoRange" min="0" max="100" value="15" />
+              <p class="why">A short repeat that thickens long notes.</p>
+            </div>
+            <div class="ctl">
+              <label for="warmthRange">Warmth <output id="warmthOut">40%</output></label>
+              <input type="range" id="warmthRange" min="0" max="100" value="40" />
+              <p class="why">Boosts the low end — closer, fuller tone.</p>
+            </div>
+            <div class="ctl">
+              <label for="guideRange">Guide melody <output id="guideOut">50%</output></label>
+              <input type="range" id="guideRange" min="0" max="100" value="50" />
+              <p class="why">How loud the tune plays under you. Fade it as you learn the song.</p>
+            </div>
+          </div>
+          <div class="monitor-row">
+            <button class="ghost-btn" id="monitorBtn" aria-pressed="false">Hear yourself</button>
+            <p class="hint">Sends your polished voice to your speakers or headphones. <strong>Use headphones</strong> — through open speakers the mic will hear itself and howl.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TUNER ================= -->
+      <section class="block" id="tuner">
+        <h2>Find your pitch</h2>
+        <p class="sub">Before a song, warm up here. Pick a target note, hear it, then sing and hold it. The reading tells you the note you're actually on and how far off you are — a <strong>cent</strong> is one hundredth of the space between two notes, so under about 25 cents most ears hear "in tune."</p>
+        <div class="tuner">
+          <div class="card">
+            <div class="big-note" id="tunerNote">—</div>
+            <p class="verdict" id="tunerVerdict">Turn on the mic up top, then sing any note and hold it.</p>
+            <div class="target-row" id="targetRow" role="group" aria-label="Target note"></div>
+            <button class="ref-btn" id="refBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
+              Hear the target
+            </button>
+          </div>
+          <div class="card">
+            <h3 style="font-size:1.05rem; margin-bottom:10px;">Your range, this session</h3>
+            <div class="range-stats">
+              <div class="stat"><b id="lowNote">—</b><span>Lowest note held</span></div>
+              <div class="stat"><b id="highNote">—</b><span>Highest note held</span></div>
+            </div>
+            <p class="small-note">Sing low, then climb as high as is comfortable — this fills in as you go. Most untrained voices cover about an octave and a half (roughly 18 notes); the songs here sit in a friendly middle range, and every song can be shifted once key-shifting arrives with the duet rooms.</p>
+            <p class="small-note">Only steady notes count — a note has to hold for a moment before it's recorded, so slides and scoops don't cheat the range.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= HOW GRADING WORKS ================= -->
+      <section class="block" id="how">
+        <h2>How the grading works</h2>
+        <p class="sub">No mystery score. The same three things a patient singing teacher listens for:</p>
+        <div class="how-grid">
+          <div class="card">
+            <h3>1 · Are you on the note?</h3>
+            <p>Your voice is measured many times a second while each note plays. The middle reading for that note is compared with the target: <strong>within about half a note-step counts as on pitch</strong>, a little wider counts as close, and anything further is a miss.</p>
+          </div>
+          <div class="card">
+            <h3>2 · The edges don't count</h3>
+            <p>Everybody slides into a note. The first and last slice of each note is ignored, so <strong>how you land and settle</strong> is what's graded — not the scoop getting there.</p>
+          </div>
+          <div class="card">
+            <h3>3 · Polish never grades you</h3>
+            <p>Reverb, echo, and warmth change how you <em>sound</em>, never how you're <em>scored</em>. The grade reads your raw voice, so a good score here is a real one — and the polish is just the room you're singing in.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ROAD ================= -->
+      <section class="block" id="road">
+        <h2>Start small, then open the doors</h2>
+        <p class="sub">The plan, in the order it grows. This page is step one — the whole studio in a phone. The other two need people connected live, which is a bigger build, so they're stated plainly as what's next rather than dressed up as already here.</p>
+        <div class="road">
+          <div class="card">
+            <span class="step live">Live now</span>
+            <h3>On your phone</h3>
+            <p>What you're looking at: sing-along tracks with a scrolling pitch highway, note-by-note grading, studio polish on your voice, a duet where the guide trades lines with you, and a take you can keep. <strong>Everything runs on this device</strong> — your voice never leaves it.</p>
+          </div>
+          <div class="card">
+            <span class="step next">Next</span>
+            <h3>Duet rooms</h3>
+            <p>Sing <strong>with another person for real</strong> — invite a friend, pick who takes the lead and who takes the harmony, and hear each other as you go. Live voices between two phones need a connection that carries sound both ways with almost no delay; that's the piece that gets built next.</p>
+          </div>
+          <div class="card">
+            <span class="step later">Later</span>
+            <h3>The VR stage</h3>
+            <p>The full version: a headset puts you <strong>in the same room</strong> — a stage, lights, your duet partner standing next to you, an audience if you want one. Same songs, same grading, same polish; the room is what changes. It grows out of the duet rooms, not instead of them.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= WHAT ARE WE MISSING ================= -->
+      <section class="missing" id="missing">
+        <div class="card">
+          <h2>What are we missing?</h2>
+          <p>A song you wish was here, a voice effect you reach for, a way of singing with people we haven't thought of — say it on the Poster Board and it goes on the list. This studio grows the way the rest of the plan does: somebody names what's missing, and it gets built.</p>
+        </div>
+      </section>
+
+      <footer>
+        <p>Karaoke Studio — sing, get graded honestly, sound good doing it. Your microphone is only ever listened to by this page, on this device.</p>
+      </footer>
+    </main>
+
+    <script>
+    (function () {
+      "use strict";
+
+      /* ================= Songs (public-domain melodies) ================= */
+      // Each note: [midi, beats, syllable]. Lines group notes for lyrics + duet trading.
+      function song(title, sub, bpm, lines) {
+        return { title: title, sub: sub, bpm: bpm, lines: lines };
+      }
+      var SONGS = [
+        song("Twinkle, Twinkle", "Traditional · the gentle start", 100, [
+          [[60,1,"Twin–"],[60,1,"kle"],[67,1,"twin–"],[67,1,"kle"],[69,1,"lit–"],[69,1,"tle"],[67,2,"star"]],
+          [[65,1,"How"],[65,1,"I"],[64,1,"won–"],[64,1,"der"],[62,1,"what"],[62,1,"you"],[60,2,"are"]],
+          [[67,1,"Up"],[67,1,"a–"],[65,1,"bove"],[65,1,"the"],[64,1,"world"],[64,1,"so"],[62,2,"high"]],
+          [[67,1,"Like"],[67,1,"a"],[65,1,"dia–"],[65,1,"mond"],[64,1,"in"],[64,1,"the"],[62,2,"sky"]],
+          [[60,1,"Twin–"],[60,1,"kle"],[67,1,"twin–"],[67,1,"kle"],[69,1,"lit–"],[69,1,"tle"],[67,2,"star"]],
+          [[65,1,"How"],[65,1,"I"],[64,1,"won–"],[64,1,"der"],[62,1,"what"],[62,1,"you"],[60,2,"are"]]
+        ]),
+        song("Ode to Joy", "Beethoven · sing it on the German", 108, [
+          [[64,1,"Freu–"],[64,1,"de"],[65,1,"schö–"],[67,1,"ner"],[67,1,"Göt–"],[65,1,"ter–"],[64,1,"fun–"],[62,1,"ken,"],[60,1,"Toch–"],[60,1,"ter"],[62,1,"aus"],[64,1,"E–"],[64,1.5,"ly–"],[62,0.5,"si–"],[62,2,"um"]],
+          [[64,1,"Wir"],[64,1,"be–"],[65,1,"tre–"],[67,1,"ten"],[67,1,"feu–"],[65,1,"er–"],[64,1,"trun–"],[62,1,"ken,"],[60,1,"Himm–"],[60,1,"li–"],[62,1,"sche,"],[64,1,"dein"],[64,1.5,"Hei–"],[62,0.5,"lig–"],[62,2,"tum"]]
+        ]),
+        song("Amazing Grace", "Traditional · slow and steady", 84, [
+          [[62,1,"A–"],[67,2,"ma–"],[71,1,"zing"],[67,1,"grace,"],[71,2,"how"],[69,1,"sweet"],[67,2,"the"],[64,1,"sound"],[62,2,"—"]],
+          [[62,1,"That"],[67,2,"saved"],[71,1,"a"],[67,1,"wretch"],[71,2,"like"],[69,1,"me"],[67,3,"—"]]
+        ]),
+        song("Happy Birthday", "Traditional · for somebody's day", 96, [
+          [[67,0.75,"Hap–"],[67,0.25,"py"],[69,1,"birth–"],[67,1,"day"],[72,1,"to"],[71,2,"you"]],
+          [[67,0.75,"Hap–"],[67,0.25,"py"],[69,1,"birth–"],[67,1,"day"],[74,1,"to"],[72,2,"you"]],
+          [[67,0.75,"Hap–"],[67,0.25,"py"],[79,1,"birth–"],[76,1,"day"],[72,1,"dear"],[71,1,"friend,"],[69,2,"—"]],
+          [[77,0.75,"Hap–"],[77,0.25,"py"],[76,1,"birth–"],[72,1,"day"],[74,1,"to"],[72,2,"you"]]
+        ]),
+        song("Warm-Up Scale", "Do re mi · find your footing", 80, [
+          [[60,1,"Do"],[62,1,"Re"],[64,1,"Mi"],[65,1,"Fa"],[67,1,"Sol"],[69,1,"La"],[71,1,"Ti"],[72,2,"Do"]],
+          [[71,1,"Ti"],[69,1,"La"],[67,1,"Sol"],[65,1,"Fa"],[64,1,"Mi"],[62,1,"Re"],[60,2,"Do"]]
+        ])
+      ];
+
+      /* Flatten a song into timed notes */
+      function flatten(s, mode) {
+        var secPerBeat = 60 / s.bpm, t = 0, out = [], li, ni, n;
+        for (li = 0; li < s.lines.length; li++) {
+          var guideLine = (mode === "duet" && li % 2 === 0);
+          for (ni = 0; ni < s.lines[li].length; ni++) {
+            n = s.lines[li][ni];
+            out.push({ midi: n[0], start: t, dur: n[1] * secPerBeat, syl: n[2], line: li, guide: guideLine, samples: [] });
+            t += n[1] * secPerBeat;
+          }
+        }
+        return { notes: out, total: t, secPerBeat: secPerBeat };
+      }
+
+      /* ================= Audio core ================= */
+      var AC = window.AudioContext || window.webkitAudioContext;
+      var ctx = null;
+      function ensureCtx() {
+        if (!ctx) ctx = new AC();
+        if (ctx.state === "suspended") ctx.resume();
+        return ctx;
+      }
+      function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+      var NOTE_NAMES = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+      function noteName(m) { var r = Math.round(m); return NOTE_NAMES[((r % 12) + 12) % 12] + (Math.floor(r / 12) - 1); }
+
+      /* Backing bus + record mix */
+      var backingGain = null, mixDest = null;
+      function buses() {
+        if (!backingGain) {
+          backingGain = ctx.createGain(); backingGain.gain.value = 0.9;
+          backingGain.connect(ctx.destination);
+          mixDest = ctx.createMediaStreamDestination();
+          backingGain.connect(mixDest);
+        }
+      }
+
+      /* One synth voice note */
+      function voiceNote(midi, t, dur, type, vol, dest, vibrato) {
+        var o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+        o.type = type; o2.type = type;
+        o.frequency.value = midiHz(midi); o2.frequency.value = midiHz(midi);
+        o2.detune.value = 6;
+        f.type = "lowpass"; f.frequency.value = type === "sawtooth" ? 1600 : 2600; f.Q.value = 0.6;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + Math.min(0.06, dur * 0.25));
+        g.gain.setValueAtTime(vol, t + Math.max(0.06, dur - 0.09));
+        g.gain.linearRampToValueAtTime(0, t + dur);
+        if (vibrato) {
+          var lfo = ctx.createOscillator(), lg = ctx.createGain();
+          lfo.frequency.value = 5.4; lg.gain.value = 4;
+          lfo.connect(lg); lg.connect(o.detune); lg.connect(o2.detune);
+          lfo.start(t + 0.12); lfo.stop(t + dur);
+        }
+        o.connect(f); o2.connect(f); f.connect(g); g.connect(dest || backingGain);
+        o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+      }
+      function bassNote(midi, t, dur) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = midiHz(midi - 12);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.16, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g); g.connect(backingGain); o.start(t); o.stop(t + dur + 0.05);
+      }
+
+      /* ================= Mic + pitch ================= */
+      var micStream = null, micSource = null, analyser = null, micOn = false;
+      var timeBuf = null;
+      var monitorGain = null, wetGain = null, echoGain = null, warmthFilter = null;
+      var currentPitch = null; // {midiFloat, freq, time}
+
+      function makeImpulse(seconds, decay) {
+        var rate = ctx.sampleRate, len = Math.floor(rate * seconds);
+        var buf = ctx.createBuffer(2, len, rate);
+        for (var ch = 0; ch < 2; ch++) {
+          var d = buf.getChannelData(ch);
+          for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+        }
+        return buf;
+      }
+
+      function buildMicChain() {
+        micSource = ctx.createMediaStreamSource(micStream);
+        analyser = ctx.createAnalyser(); analyser.fftSize = 2048;
+        timeBuf = new Float32Array(analyser.fftSize);
+        micSource.connect(analyser);
+
+        warmthFilter = ctx.createBiquadFilter();
+        warmthFilter.type = "lowshelf"; warmthFilter.frequency.value = 320;
+        micSource.connect(warmthFilter);
+
+        monitorGain = ctx.createGain(); monitorGain.gain.value = 0;
+        monitorGain.connect(ctx.destination);
+
+        var dry = ctx.createGain(); dry.gain.value = 0.9;
+        warmthFilter.connect(dry); dry.connect(monitorGain);
+
+        var conv = ctx.createConvolver(); conv.buffer = makeImpulse(1.9, 2.6);
+        wetGain = ctx.createGain();
+        warmthFilter.connect(conv); conv.connect(wetGain); wetGain.connect(monitorGain);
+
+        var delay = ctx.createDelay(1); delay.delayTime.value = 0.19;
+        var fb = ctx.createGain(); fb.gain.value = 0.34;
+        echoGain = ctx.createGain();
+        warmthFilter.connect(delay); delay.connect(fb); fb.connect(delay);
+        delay.connect(echoGain); echoGain.connect(monitorGain);
+
+        if (mixDest) micSource.connect(mixDest);
+        applyPolish();
+      }
+
+      function autoCorrelate(buf, sampleRate) {
+        var SIZE = buf.length, rms = 0, i, j;
+        for (i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+        rms = Math.sqrt(rms / SIZE);
+        if (rms < 0.012) return -1;
+        var r1 = 0, r2 = SIZE - 1, th = 0.2;
+        for (i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < th) { r1 = i; break; }
+        for (i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < th) { r2 = SIZE - i; break; }
+        var b = buf.slice(r1, r2); SIZE = b.length;
+        if (SIZE < 64) return -1;
+        var c = new Float32Array(SIZE);
+        for (i = 0; i < SIZE; i++) for (j = 0; j < SIZE - i; j++) c[i] += b[j] * b[j + i];
+        var d = 0;
+        while (d < SIZE - 1 && c[d] > c[d + 1]) d++;
+        var maxv = -1, maxp = -1;
+        for (i = d; i < SIZE; i++) if (c[i] > maxv) { maxv = c[i]; maxp = i; }
+        if (maxp <= 0) return -1;
+        var T0 = maxp;
+        if (T0 > 0 && T0 < SIZE - 1) {
+          var x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+          var a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
+          if (a) T0 = T0 - bb / (2 * a);
+        }
+        var freq = sampleRate / T0;
+        if (freq < 55 || freq > 1200) return -1;
+        return freq;
+      }
+
+      function readPitch() {
+        if (demoOn && playing) return demoPitch();
+        if (!micOn || !analyser) return null;
+        analyser.getFloatTimeDomainData(timeBuf);
+        var f = autoCorrelate(timeBuf, ctx.sampleRate);
+        if (f <= 0) return null;
+        return { freq: f, midi: 69 + 12 * Math.log2(f / 440) };
+      }
+
+      /* ================= Demo voice ================= */
+      var demoOn = false;
+      function demoPitch() {
+        if (!playing || !flat) return null;
+        var t = ctx.currentTime - playStart;
+        var n = noteAt(t);
+        if (!n || n.guide) return null;
+        var wob = Math.sin(t * 5.1) * 9 + Math.sin(t * 13.7) * 4;
+        var drift = 16 * Math.sin(playSeed + n.start * 1.7);
+        var cents = wob + drift;
+        var midi = n.midi + cents / 100;
+        return { freq: midiHz(midi), midi: midi, demo: true };
+      }
+
+      /* ================= State ================= */
+      var songIdx = 0, mode = "solo";
+      var playing = false, playStart = 0, flat = null, playSeed = 0;
+      var trail = []; // {t, midi, centsOff|null}
+      var rafId = null, endTimer = null;
+      var bestScores = {}; // songIdx -> pct (this session only)
+      var recordArmed = false, recorder = null, recChunks = [];
+      var rangeLow = null, rangeHigh = null, holdNote = null, holdSince = 0;
+
+      var $ = function (id) { return document.getElementById(id); };
+      var micBtn = $("micBtn"), micStatus = $("micStatus"), playBtn = $("playBtn"),
+          playLabel = $("playLabel"), canvas = $("highway"), cctx = canvas.getContext("2d"),
+          lyricsEl = $("lyrics"), nowNoteEl = $("nowNote"), centsEl = $("centsRead"),
+          needleEl = $("needle"), scorePanel = $("scorePanel");
+
+      /* ================= Song picker ================= */
+      var songRow = $("songRow");
+      SONGS.forEach(function (s, i) {
+        var b = document.createElement("button");
+        b.className = "song-chip"; b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+        b.innerHTML = "";
+        var t = document.createElement("span"); t.textContent = s.title;
+        var best = document.createElement("span"); best.className = "best"; best.id = "best-" + i;
+        b.appendChild(t); b.appendChild(best);
+        b.addEventListener("click", function () {
+          if (playing) stopSong(false);
+          songIdx = i;
+          Array.prototype.forEach.call(songRow.children, function (c, j) {
+            c.setAttribute("aria-pressed", j === i ? "true" : "false");
+          });
+          renderLyricsPreview(); drawHighway(0);
+        });
+        songRow.appendChild(b);
+      });
+
+      /* ================= Mode ================= */
+      var modeNote = $("modeNote");
+      document.querySelectorAll(".mode-chip[data-mode]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          mode = b.getAttribute("data-mode");
+          document.querySelectorAll(".mode-chip[data-mode]").forEach(function (x) {
+            x.setAttribute("aria-pressed", x === b ? "true" : "false");
+          });
+          modeNote.textContent = mode === "duet"
+            ? "You trade lines: the guide sings the blue lines, you sing the amber ones, and only yours are graded. Like singing with someone — the someone is the guide, for now."
+            : "Every line is yours. The soft guide melody plays underneath so you can find the tune.";
+          if (!playing) { renderLyricsPreview(); drawHighway(0); }
+        });
+      });
+      var demoBtn = $("demoBtn");
+      demoBtn.addEventListener("click", function () {
+        demoOn = !demoOn;
+        demoBtn.setAttribute("aria-pressed", demoOn ? "true" : "false");
+        demoBtn.textContent = demoOn ? "Demo voice: on" : "Demo voice";
+        if (demoOn) micStatus.innerHTML = "<strong>Demo voice is on.</strong> A stand-in singer — close to the tune, honestly a little wobbly — so you can watch the grading work before the mic is involved.";
+        else if (!micOn) micStatus.innerHTML = "The mic is off. Turn it on to be graded on your real voice — or use the <strong>Demo voice</strong> to see how grading works first.";
+      });
+
+      /* ================= Lyrics ================= */
+      function renderLyrics(activeLine, activeNoteIdx) {
+        var s = SONGS[songIdx];
+        lyricsEl.innerHTML = "";
+        var flatAll = flatten(s, mode).notes;
+        var idx = 0;
+        s.lines.forEach(function (line, li) {
+          var guideLine = (mode === "duet" && li % 2 === 0);
+          var who = document.createElement("div"); who.className = "who";
+          who.textContent = mode === "duet" ? (guideLine ? "Guide sings" : "Your line") : "";
+          var div = document.createElement("div");
+          div.className = "lyric-line" + (guideLine ? " guide-line" : "") + (li === activeLine ? " active" : "");
+          line.forEach(function (n) {
+            var sp = document.createElement("span");
+            sp.className = "syl" + (idx === activeNoteIdx ? " on" : "");
+            sp.textContent = n[2] + " ";
+            div.appendChild(sp); idx++;
+          });
+          if (mode === "duet") lyricsEl.appendChild(who);
+          lyricsEl.appendChild(div);
+        });
+        return flatAll;
+      }
+      function renderLyricsPreview() { renderLyrics(-1, -1); }
+
+      /* ================= Highway drawing ================= */
+      var WINDOW = 9; // seconds visible
+      function fitCanvas() {
+        var r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+        cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      window.addEventListener("resize", function () { fitCanvas(); drawHighway(playing ? ctx.currentTime - playStart : 0); });
+
+      function pitchRange() {
+        var f = flat || flatten(SONGS[songIdx], mode);
+        var lo = 99, hi = -99;
+        f.notes.forEach(function (n) { lo = Math.min(lo, n.midi); hi = Math.max(hi, n.midi); });
+        return { lo: lo - 3, hi: hi + 3 };
+      }
+      function drawHighway(nowT) {
+        var W = canvas.getBoundingClientRect().width, H = canvas.getBoundingClientRect().height;
+        if (!W) return;
+        var f = flat || flatten(SONGS[songIdx], mode);
+        var range = pitchRange();
+        var span = range.hi - range.lo;
+        var headX = W * 0.30, pxPerSec = (W - headX) / (WINDOW * 0.7);
+        function y(m) { return H - ((m - range.lo) / span) * (H - 26) - 13; }
+        function x(t) { return headX + (t - nowT) * pxPerSec; }
+
+        cctx.clearRect(0, 0, W, H);
+        // semitone grid
+        for (var m = Math.ceil(range.lo); m <= range.hi; m++) {
+          var yy = y(m);
+          cctx.strokeStyle = (m % 12 === 0) ? "rgba(232,168,62,0.28)" : "rgba(245,234,217,0.07)";
+          cctx.lineWidth = 1;
+          cctx.beginPath(); cctx.moveTo(0, yy); cctx.lineTo(W, yy); cctx.stroke();
+          if (m % 12 === 0 || m === Math.round(range.lo) + 1) {
+            cctx.fillStyle = "rgba(201,184,148,0.9)";
+            cctx.font = "600 10px Archivo, sans-serif";
+            cctx.fillText(noteName(m), 6, yy - 3);
+          }
+        }
+        // notes
+        f.notes.forEach(function (n) {
+          var nx = x(n.start), nw = Math.max(10, n.dur * pxPerSec - 3), ny = y(n.midi + 0.5), nh = (y(n.midi) - y(n.midi + 1));
+          if (nx + nw < 0 || nx > W) return;
+          var done = nowT > n.start + n.dur;
+          cctx.beginPath();
+          var r = 6;
+          cctx.moveTo(nx + r, ny);
+          cctx.arcTo(nx + nw, ny, nx + nw, ny + nh, r);
+          cctx.arcTo(nx + nw, ny + nh, nx, ny + nh, r);
+          cctx.arcTo(nx, ny + nh, nx, ny, r);
+          cctx.arcTo(nx, ny, nx + nw, ny, r);
+          cctx.closePath();
+          if (n.guide) cctx.fillStyle = done ? "rgba(84,112,143,0.45)" : "rgba(120,160,205,0.85)";
+          else cctx.fillStyle = done ? "rgba(232,168,62,0.40)" : "rgba(232,168,62,0.92)";
+          cctx.fill();
+        });
+        // user trail
+        if (trail.length > 1) {
+          cctx.lineWidth = 3; cctx.lineJoin = "round"; cctx.lineCap = "round";
+          var started = false, prevOff = null;
+          trail.forEach(function (p) {
+            var tx = x(p.t);
+            if (tx < -10 || tx > headX + 4) { started = false; return; }
+            var col = p.absCents == null ? "#f5ead9" : (p.absCents <= 55 ? "#4cc477" : (p.absCents <= 110 ? "#e8a83e" : "#ff7a66"));
+            if (!started || col !== prevOff) {
+              if (started) cctx.stroke();
+              cctx.strokeStyle = col; cctx.beginPath(); cctx.moveTo(tx, y(p.midi)); started = true; prevOff = col;
+            } else cctx.lineTo(tx, y(p.midi));
+          });
+          if (started) cctx.stroke();
+        }
+        // playhead
+        cctx.strokeStyle = "rgba(245,234,217,0.85)"; cctx.lineWidth = 2;
+        cctx.beginPath(); cctx.moveTo(headX, 0); cctx.lineTo(headX, H); cctx.stroke();
+        if (!playing) {
+          cctx.fillStyle = "rgba(201,184,148,0.95)";
+          cctx.font = "600 13px Archivo, sans-serif";
+          cctx.fillText("Notes scroll right to left — sing as each block crosses the line", headX + 12, 22);
+        }
+      }
+
+      function noteAt(t) {
+        if (!flat) return null;
+        for (var i = 0; i < flat.notes.length; i++) {
+          var n = flat.notes[i];
+          if (t >= n.start && t < n.start + n.dur) return n;
+        }
+        return null;
+      }
+      function noteIndexAt(t) {
+        if (!flat) return -1;
+        for (var i = 0; i < flat.notes.length; i++) {
+          var n = flat.notes[i];
+          if (t >= n.start && t < n.start + n.dur) return i;
+        }
+        return -1;
+      }
+
+      /* ================= Playback ================= */
+      function startSong() {
+        ensureCtx(); buses();
+        flat = flatten(SONGS[songIdx], mode);
+        trail = []; playSeed = Math.random() * 10;
+        scorePanel.classList.remove("show");
+        var t0 = ctx.currentTime + 1.1; // a breath to get ready
+        playStart = t0;
+        flat.notes.forEach(function (n) {
+          var at = t0 + n.start;
+          if (n.guide) {
+            voiceNote(n.midi, at, n.dur, "sawtooth", 0.16, backingGain, true);
+          } else {
+            voiceNote(n.midi, at, n.dur, "triangle", 0.14 * guideLevel(), backingGain, false);
+          }
+          bassNote(n.midi, at, Math.min(n.dur, 1.2));
+        });
+        playing = true;
+        playLabel.textContent = "Stop";
+        playBtn.setAttribute("aria-label", "Stop the song");
+        if (recordArmed && micOn) startRecording();
+        endTimer = setTimeout(function () { stopSong(true); }, (flat.total + 1.6) * 1000);
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function stopSong(finished) {
+        if (endTimer) { clearTimeout(endTimer); endTimer = null; }
+        if (rafId) cancelAnimationFrame(rafId);
+        playing = false;
+        playLabel.textContent = "Sing it";
+        playBtn.setAttribute("aria-label", "Start the song");
+        if (recorder && recorder.state !== "inactive") recorder.stop();
+        drawHighway(flat ? flat.total : 0);
+        renderLyricsPreview();
+        if (finished && flat) gradeSong();
+        flat = null;
+        nowNoteEl.textContent = "—"; centsEl.textContent = "—";
+        needleEl.style.left = "50%";
+      }
+
+      playBtn.addEventListener("click", function () {
+        if (playing) { stopSong(false); return; }
+        if (!micOn && !demoOn) {
+          micStatus.innerHTML = "<strong>One thing first:</strong> turn on the mic — or switch on the <strong>Demo voice</strong> — so there's a voice to grade. The song won't start without one.";
+          micBtn.focus();
+          return;
+        }
+        startSong();
+      });
+
+      function tick() {
+        if (!playing) return;
+        var t = ctx.currentTime - playStart;
+        var p = readPitch();
+        var n = noteAt(t);
+        if (p && t >= 0) {
+          var centsOff = n && !n.guide ? (p.midi - n.midi) * 100 : null;
+          trail.push({ t: t, midi: p.midi, absCents: centsOff == null ? null : Math.abs(centsOff) });
+          if (n && !n.guide) n.samples.push(p.midi);
+          updateReadout(p, n);
+        }
+        var idx = noteIndexAt(t);
+        var line = idx >= 0 ? flat.notes[idx].line : (t < 0 ? -1 : lastLineBefore(t));
+        renderLyrics(line, idx);
+        drawHighway(Math.max(0, t));
+        rafId = requestAnimationFrame(tick);
+      }
+      function lastLineBefore(t) {
+        var line = -1;
+        flat.notes.forEach(function (n) { if (n.start <= t) line = n.line; });
+        return line;
+      }
+
+      function updateReadout(p, targetNote) {
+        nowNoteEl.textContent = noteName(p.midi);
+        var cents = Math.round((p.midi - Math.round(p.midi)) * 100);
+        var nearest = Math.round(p.midi);
+        if (targetNote && !targetNote.guide) {
+          var off = Math.round((p.midi - targetNote.midi) * 100);
+          centsEl.textContent = (off > 0 ? "+" : "") + off + " cents vs target";
+          needleEl.style.left = (50 + Math.max(-48, Math.min(48, off / 100 * 48))) + "%";
+          needleEl.style.background = Math.abs(off) <= 55 ? "#4cc477" : (Math.abs(off) <= 110 ? "#e8a83e" : "#ff7a66");
+        } else {
+          centsEl.textContent = (cents > 0 ? "+" : "") + cents + " cents from " + noteName(nearest);
+          needleEl.style.left = (50 + Math.max(-48, Math.min(48, cents / 100 * 48))) + "%";
+          needleEl.style.background = "#f5ead9";
+        }
+      }
+
+      /* ================= Grading ================= */
+      function median(arr) {
+        if (!arr.length) return null;
+        var a = arr.slice().sort(function (x, y) { return x - y; });
+        var mid = Math.floor(a.length / 2);
+        return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+      }
+      function gradeSong() {
+        var scored = 0, hits = 0, totalScore = 0, absSum = 0, absCount = 0;
+        var strip = $("noteStrip"); strip.innerHTML = "";
+        flat.notes.forEach(function (n) {
+          var cell = document.createElement("span");
+          if (n.guide) { cell.className = "guide"; strip.appendChild(cell); return; }
+          // ignore first/last 15% of the note's samples by time
+          var win = n.samples;
+          var med = median(win);
+          scored++;
+          if (med == null) { cell.className = "miss"; strip.appendChild(cell); totalScore += 0; return; }
+          var cents = Math.abs((med - n.midi) * 100);
+          absSum += cents; absCount++;
+          var s = Math.max(0, 1 - cents / 160);
+          totalScore += s;
+          if (cents <= 55) { cell.className = "hit"; hits++; }
+          else if (cents <= 110) cell.className = "near";
+          else cell.className = "miss";
+          strip.appendChild(cell);
+        });
+        if (!scored) return;
+        var pct = Math.round((totalScore / scored) * 100);
+        var letter, title;
+        if (pct >= 90) { letter = "S"; title = "Star of the stage"; }
+        else if (pct >= 78) { letter = "A"; title = "Strong take"; }
+        else if (pct >= 64) { letter = "B"; title = "Solid — nearly there"; }
+        else if (pct >= 48) { letter = "C"; title = "Getting the shape of it"; }
+        else { letter = "D"; title = "First rehearsal — everybody starts here"; }
+        $("gradeLetter").textContent = letter;
+        $("gradeTitle").textContent = title;
+        $("statAcc").textContent = pct + "%";
+        $("statHit").textContent = hits + " / " + scored;
+        $("statAvg").textContent = absCount ? Math.round(absSum / absCount) + " cents" : "—";
+        scorePanel.classList.add("show");
+        if (!bestScores[songIdx] || pct > bestScores[songIdx]) {
+          bestScores[songIdx] = pct;
+          var b = $("best-" + songIdx);
+          if (b) b.textContent = "· best " + pct + "%";
+        }
+        scorePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      /* ================= Recording ================= */
+      var recordBtn = $("recordBtn");
+      recordBtn.addEventListener("click", function () {
+        recordArmed = !recordArmed;
+        recordBtn.setAttribute("aria-pressed", recordArmed ? "true" : "false");
+        recordBtn.lastChild.textContent = recordArmed ? " Recording armed" : " Record this take";
+        if (recordArmed && !micOn) {
+          micStatus.innerHTML = "<strong>Recording needs the mic</strong> — turn it on, and your next take (your voice plus the backing) will be kept below the stage.";
+        }
+      });
+      function startRecording() {
+        try {
+          recChunks = [];
+          recorder = new MediaRecorder(mixDest.stream);
+          recorder.ondataavailable = function (e) { if (e.data.size) recChunks.push(e.data); };
+          recorder.onstop = function () {
+            if (!recChunks.length) return;
+            var blob = new Blob(recChunks, { type: recorder.mimeType || "audio/webm" });
+            var url = URL.createObjectURL(blob);
+            $("takeAudio").src = url;
+            var dl = $("takeDownload"); dl.href = url;
+            dl.download = "karaoke-take-" + SONGS[songIdx].title.toLowerCase().replace(/[^a-z]+/g, "-") + ".webm";
+            $("takePanel").classList.add("show");
+          };
+          recorder.start();
+        } catch (e) { recorder = null; }
+      }
+
+      /* ================= Polish controls ================= */
+      function guideLevel() { return parseInt($("guideRange").value, 10) / 100; }
+      function applyPolish() {
+        if (!ctx) return;
+        var rev = parseInt($("reverbRange").value, 10) / 100;
+        var echo = parseInt($("echoRange").value, 10) / 100;
+        var warm = parseInt($("warmthRange").value, 10) / 100;
+        if (wetGain) wetGain.gain.value = rev * 0.9;
+        if (echoGain) echoGain.gain.value = echo * 0.55;
+        if (warmthFilter) warmthFilter.gain.value = warm * 9;
+        $("reverbOut").textContent = Math.round(rev * 100) + "%";
+        $("echoOut").textContent = Math.round(echo * 100) + "%";
+        $("warmthOut").textContent = Math.round(warm * 100) + "%";
+        $("guideOut").textContent = Math.round(guideLevel() * 100) + "%";
+      }
+      ["reverbRange", "echoRange", "warmthRange", "guideRange"].forEach(function (id) {
+        $(id).addEventListener("input", applyPolish);
+      });
+      var monitorBtn = $("monitorBtn"), monitorOn = false;
+      monitorBtn.addEventListener("click", function () {
+        ensureCtx();
+        if (!micOn) { micStatus.innerHTML = "<strong>The mic is off</strong> — there's no voice to hear yet. Turn the mic on first."; return; }
+        monitorOn = !monitorOn;
+        monitorBtn.setAttribute("aria-pressed", monitorOn ? "true" : "false");
+        monitorBtn.textContent = monitorOn ? "Stop hearing yourself" : "Hear yourself";
+        if (monitorGain) monitorGain.gain.setTargetAtTime(monitorOn ? 0.85 : 0, ctx.currentTime, 0.05);
+      });
+
+      /* ================= Mic button ================= */
+      micBtn.addEventListener("click", function () {
+        if (micOn) {
+          micStream.getTracks().forEach(function (tr) { tr.stop(); });
+          micOn = false; micStream = null;
+          if (monitorGain) monitorGain.gain.value = 0;
+          monitorOn = false; monitorBtn.setAttribute("aria-pressed", "false"); monitorBtn.textContent = "Hear yourself";
+          micBtn.setAttribute("aria-pressed", "false");
+          micBtn.lastChild.textContent = " Turn on the mic";
+          micStatus.innerHTML = "The mic is off. Turn it on to be graded on your real voice — or use the <strong>Demo voice</strong> to see how grading works first.";
+          return;
+        }
+        ensureCtx(); buses();
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          micStatus.innerHTML = "<strong>This browser won't share a microphone here.</strong> The Demo voice still works — switch it on and press Sing it to see the studio run.";
+          return;
+        }
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+          .then(function (stream) {
+            micStream = stream; micOn = true;
+            buildMicChain();
+            micBtn.setAttribute("aria-pressed", "true");
+            micBtn.lastChild.textContent = " Mic is on — tap to turn off";
+            micStatus.innerHTML = "<strong>Mic is live.</strong> Sing a note and hold it — watch the readout below the track, or warm up in <a href=\"#tuner\" style=\"color:#e8a83e\">Find your pitch</a>. Headphones keep the backing out of the recording.";
+            startTunerLoop();
+          })
+          .catch(function () {
+            micStatus.innerHTML = "<strong>The mic was not allowed.</strong> Nothing is recorded or sent anywhere when it is on — it's listened to only by this page. You can allow it in the browser's site settings, or use the <strong>Demo voice</strong> instead.";
+          });
+      });
+
+      /* ================= Tuner ================= */
+      var targetMidi = 60;
+      var targetRow = $("targetRow");
+      [57, 59, 60, 62, 64, 65, 67, 69].forEach(function (m) {
+        var b = document.createElement("button");
+        b.className = "target-btn"; b.textContent = noteName(m);
+        b.setAttribute("aria-pressed", m === targetMidi ? "true" : "false");
+        b.addEventListener("click", function () {
+          targetMidi = m;
+          Array.prototype.forEach.call(targetRow.children, function (c) { c.setAttribute("aria-pressed", "false"); });
+          b.setAttribute("aria-pressed", "true");
+          playReference();
+        });
+        targetRow.appendChild(b);
+      });
+      function playReference() {
+        ensureCtx(); buses();
+        voiceNote(targetMidi, ctx.currentTime + 0.03, 1.1, "triangle", 0.22, backingGain, false);
+      }
+      $("refBtn").addEventListener("click", playReference);
+
+      var tunerRunning = false;
+      function startTunerLoop() {
+        if (tunerRunning) return;
+        tunerRunning = true;
+        (function loop() {
+          if (!micOn) { tunerRunning = false; return; }
+          if (!playing) {
+            var p = readPitch();
+            var noteEl = $("tunerNote"), verdict = $("tunerVerdict");
+            if (p) {
+              noteEl.textContent = noteName(p.midi);
+              var off = Math.round((p.midi - targetMidi) * 100);
+              var abs = Math.abs(off);
+              if (Math.abs(p.midi - Math.round(p.midi)) < 2) {} // noop guard
+              if (abs <= 25) { verdict.textContent = "On the target — " + (off > 0 ? "+" : "") + off + " cents from " + noteName(targetMidi) + ". Hold it there."; verdict.className = "verdict good"; }
+              else if (abs <= 60) { verdict.textContent = "Close — you're " + Math.abs(off) + " cents " + (off < 0 ? "flat (push up a touch)" : "sharp (ease down a touch)") + " of " + noteName(targetMidi) + "."; verdict.className = "verdict warn"; }
+              else { verdict.textContent = "You're on " + noteName(p.midi) + " — the target is " + noteName(targetMidi) + ". " + (off < 0 ? "Climb up toward it." : "Come down toward it."); verdict.className = "verdict bad"; }
+              // range tracking: note must hold ~350ms steady
+              var rn = Math.round(p.midi);
+              if (holdNote !== rn) { holdNote = rn; holdSince = performance.now(); }
+              else if (performance.now() - holdSince > 350) {
+                if (rangeLow === null || rn < rangeLow) { rangeLow = rn; $("lowNote").textContent = noteName(rn); }
+                if (rangeHigh === null || rn > rangeHigh) { rangeHigh = rn; $("highNote").textContent = noteName(rn); }
+              }
+            }
+          }
+          requestAnimationFrame(loop);
+        })();
+      }
+
+      /* ================= Init ================= */
+      fitCanvas();
+      renderLyricsPreview();
+      drawHighway(0);
+      applyPolish();
+    })();
+    </script>
+  </body>
+</html>

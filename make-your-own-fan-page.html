@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Make Your Own Fan Page</title>
+<style>
+  :root{
+    --bg:#f7f3ec; --surface:#fffdf8; --surface2:#efe8db; --ink:#221d16; --ink2:#5c5344;
+    --line:#d8cfbc; --accent:#9c3a1e; --accent-ink:#ffffff; --accent-soft:#f3ddd2;
+    --good:#2e5d3a; --warn-bg:#fdf3d7; --warn-line:#d9b84a;
+    --shadow:0 2px 10px rgba(34,29,22,.10);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#171512; --surface:#211e19; --surface2:#2a2620; --ink:#f0e9dc; --ink2:#b8ad99;
+      --line:#453e31; --accent:#e07a4e; --accent-ink:#1d130c; --accent-soft:#3d2a20;
+      --good:#8fc79b; --warn-bg:#38300f; --warn-line:#8a7422;
+      --shadow:0 2px 10px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:17px; line-height:1.55;
+    padding-bottom:118px;
+  }
+  body.bigtext{font-size:19px}
+  main{max-width:760px; margin:0 auto; padding:16px 16px 8px}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif; line-height:1.2; margin:0}
+  h1{font-size:2rem; margin:10px 0 6px}
+  h2{font-size:1.35rem; margin:0 0 6px}
+  h3{font-size:1.08rem; margin:0 0 4px}
+  p{margin:0 0 10px}
+  .small{font-size:.88rem; color:var(--ink2)}
+  a{color:var(--accent); text-underline-offset:2px}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]),textarea{font:inherit}
+  button,[role="button"],select,summary{min-height:44px}
+  input:not([type="checkbox"],[type="radio"]),textarea,select{
+    width:100%; min-height:44px; padding:10px 12px; border:1.5px solid var(--line);
+    border-radius:10px; background:var(--surface); color:var(--ink);
+  }
+  textarea{min-height:96px; resize:vertical}
+  input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+  label.flabel{display:block; font-weight:700; margin:16px 0 4px}
+  .prompt{font-size:.92rem; color:var(--ink2); margin:0 0 6px}
+
+  /* Free banner */
+  .freebar{
+    background:var(--accent); color:var(--accent-ink); border-radius:var(--radius);
+    padding:14px 16px; box-shadow:var(--shadow);
+  }
+  .freebar .big{font-family:Georgia,serif; font-size:1.5rem; font-weight:700; letter-spacing:.01em}
+  .freebar p{margin:4px 0 10px}
+  .freebar button{
+    background:var(--accent-ink); color:var(--accent); border:0; border-radius:999px;
+    padding:10px 18px; font-weight:700; cursor:pointer; min-height:44px;
+  }
+  .lede{font-size:1.06rem; margin-top:14px}
+  .examples{color:var(--ink2)}
+
+  section.card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 16px; margin:18px 0; box-shadow:var(--shadow);
+  }
+  .stepnum{
+    display:inline-block; background:var(--accent-soft); color:var(--accent);
+    font-weight:800; border-radius:999px; padding:2px 12px; font-size:.85rem; margin-bottom:8px;
+  }
+  .doors{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+  .door{
+    display:inline-flex; align-items:center; min-height:44px; padding:8px 14px;
+    border:1.5px solid var(--accent); border-radius:999px; color:var(--accent);
+    text-decoration:none; font-weight:700; background:var(--surface);
+  }
+  .door:active{background:var(--accent-soft)}
+
+  /* theme swatches */
+  .themes{display:flex; flex-wrap:wrap; gap:10px; margin-top:6px}
+  .theme-opt{position:relative}
+  .theme-opt input{position:absolute; opacity:0; inset:0; cursor:pointer}
+  .swatch{
+    display:flex; align-items:center; gap:8px; min-height:44px; padding:8px 14px 8px 10px;
+    border:2px solid var(--line); border-radius:999px; background:var(--surface); cursor:pointer; font-weight:600;
+  }
+  .swatch .dot{width:22px; height:22px; border-radius:50%; border:2px solid rgba(0,0,0,.18); flex:none}
+  .theme-opt input:checked + .swatch{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
+  .theme-opt input:focus-visible + .swatch{outline:3px solid var(--accent); outline-offset:2px}
+
+  /* toggle rows: checkbox inside label, big target */
+  .toggle{
+    display:flex; gap:12px; align-items:flex-start; padding:12px; margin-top:14px;
+    border:1.5px solid var(--line); border-radius:12px; cursor:pointer; min-height:44px;
+  }
+  .toggle input{width:26px; height:26px; margin-top:2px; flex:none; accent-color:var(--accent)}
+  .toggle b{display:block}
+  .toggle span{font-size:.92rem; color:var(--ink2)}
+
+  .doorrow{display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:10px}
+  @media (min-width:560px){ .doorrow{grid-template-columns:1fr 1.4fr auto} }
+  .doorrow button{align-self:end}
+  .btn{
+    border:0; border-radius:999px; padding:10px 20px; font-weight:700; cursor:pointer; min-height:48px;
+  }
+  .btn-primary{background:var(--accent); color:var(--accent-ink); font-size:1.05rem; width:100%}
+  @media (min-width:560px){ .btn-primary{width:auto} }
+  .btn-ghost{background:var(--surface); color:var(--accent); border:1.5px solid var(--accent)}
+  .btn-quiet{background:var(--surface2); color:var(--ink); border:1px solid var(--line)}
+  .actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+  .status{font-size:.9rem; color:var(--ink2); margin-top:8px; min-height:1.3em}
+  .status.ok{color:var(--good); font-weight:600}
+
+  /* preview */
+  .preview-wrap{border:2px dashed var(--line); border-radius:var(--radius); padding:10px; background:var(--surface2)}
+  .pv{border-radius:10px; padding:20px 18px; background:var(--pv-bg,#fdf6ee); color:var(--pv-ink,#2b1a12); font-size:.97rem}
+  .pv h2{color:var(--pv-accent,#a63d21); font-size:1.6rem}
+  .pv h3{color:var(--pv-accent,#a63d21); margin-top:16px; font-size:1.12rem}
+  .pv .tagline{font-size:1.05rem; margin-top:2px}
+  .pv .byline{color:var(--pv-ink); opacity:.75; font-size:.9rem}
+  .pv .empty{opacity:.55; font-style:italic}
+  .pv a{color:var(--pv-accent)}
+  .pv .gatebadge{
+    display:inline-block; border:2px solid var(--pv-accent); color:var(--pv-accent);
+    border-radius:8px; padding:2px 10px; font-weight:800; margin-bottom:8px;
+  }
+  .pv footer{margin-top:20px; border-top:1px solid rgba(0,0,0,.15); padding-top:10px; font-size:.82rem; opacity:.85}
+  .pv ul{margin:4px 0 8px; padding-left:20px}
+  .pv p{white-space:pre-wrap}
+
+  .plainbox{background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:12px; padding:12px 14px; margin-top:12px}
+  .plainbox p:last-child{margin-bottom:0}
+
+  details.fold{border:1px solid var(--line); border-radius:12px; margin-top:12px; background:var(--surface)}
+  details.fold summary{padding:10px 14px; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; min-height:48px}
+  details.fold summary::-webkit-details-marker{display:none}
+  details.fold summary::after{content:"▾"; margin-left:auto; color:var(--ink2)}
+  details.fold[open ] summary::after{content:"▴"}
+  details.fold .foldbody{padding:4px 14px 14px}
+
+  footer.pagefoot{max-width:760px; margin:0 auto; padding:8px 16px 0; color:var(--ink2); font-size:.9rem}
+
+  /* dock bar */
+  .dock{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    background:var(--surface); border-top:1.5px solid var(--line);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    display:flex; align-items:flex-end; justify-content:space-between; gap:6px;
+    box-shadow:0 -3px 14px rgba(0,0,0,.10);
+  }
+  .stack{display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:0; cursor:pointer; padding:2px; color:var(--ink); min-width:76px}
+  .stack .disc{
+    width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:var(--accent); color:var(--accent-ink); font-weight:900; font-size:1.15rem; flex:none;
+  }
+  .stack .disc svg{width:24px; height:24px}
+  .stack .pill{
+    background:var(--surface2); border:1px solid var(--line); border-radius:999px;
+    padding:3px 10px; font-size:.78rem; font-weight:700; line-height:1.25; text-align:center;
+  }
+  .dock .pagesettings{
+    align-self:center; background:var(--surface2); border:1px solid var(--line); color:var(--ink);
+    border-radius:999px; padding:8px 12px; font-weight:700; font-size:.85rem; cursor:pointer; min-height:44px;
+  }
+
+  /* sheets */
+  .sheet{
+    position:fixed; inset:0; z-index:50; display:none;
+  }
+  .sheet.open{display:block}
+  .sheet .scrim{position:absolute; inset:0; background:rgba(10,8,5,.55)}
+  .sheet .panel{
+    position:absolute; left:0; right:0; bottom:0; max-height:82vh; overflow-y:auto;
+    background:var(--surface); border-radius:18px 18px 0 0; padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+    max-width:760px; margin:0 auto;
+  }
+  .sheet h2{margin-bottom:4px}
+  .closerow{display:flex; justify-content:flex-end; margin-bottom:4px}
+  .navlist{list-style:none; margin:6px 0; padding:0}
+  .navlist li{margin:4px 0}
+  .navlist a{
+    display:flex; align-items:center; min-height:44px; padding:8px 12px; border-radius:10px;
+    background:var(--surface2); color:var(--ink); text-decoration:none; font-weight:600;
+  }
+  .grouphead{font-weight:800; margin:14px 0 2px; font-size:.95rem}
+  .groupsub{font-size:.85rem; color:var(--ink2); margin:0 0 4px}
+  .bookends{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .bookends a{
+    display:inline-flex; align-items:center; min-height:44px; padding:8px 14px; border-radius:999px;
+    border:1.5px solid var(--line); color:var(--ink); text-decoration:none; font-weight:700;
+  }
+  .flash{animation:flash 1.6s ease}
+  @keyframes flash{0%,60%{box-shadow:0 0 0 4px var(--accent)}100%{box-shadow:var(--shadow)}}
+  @media (prefers-reduced-motion: reduce){ .flash{animation:none} }
+</style>
+</head>
+<body id="top">
+
+<main>
+  <!-- FREE, first and unmissable -->
+  <div class="freebar" role="region" aria-label="Free, always free">
+    <div class="big">FREE — always free.</div>
+    <p>No account. No ads. Nothing to buy, ever. Build a fan page about the thing you love, download it, and it's yours.</p>
+    <button type="button" id="offlineBtn">Available offline — save this builder to your device</button>
+  </div>
+
+  <h1>Make your own fan page</h1>
+  <p class="lede">Fan groups live scattered all over the internet, on other people's platforms, under other people's rules. This is the other way: <strong>your own page, about your own thing, that you own outright.</strong></p>
+  <p class="examples">Disc golf. Blackjack and cards. Pottery. LARPing (live action role-playing). A band, a book series, a bakers' obsession — if you're a fan of it, it fits here.</p>
+  <p class="examples">Adult topics are allowed too — adult books, adult gatherings, whatever your thing honestly is. If it's for grown-ups, you set the <strong>Adults only</strong> switch below and your page opens with a plain 18+ gate. The gate is yours to set; nobody here decides your topic for you.</p>
+
+  <!-- STEP 1 -->
+  <section class="card" id="step1">
+    <span class="stepnum">Step 1 of 2</span>
+    <h2><label for="thing">What's your main thing?</label></h2>
+    <p class="prompt">One thing. The thing you'd talk about for an hour without being asked twice.</p>
+    <input id="thing" type="text" placeholder="e.g. disc golf, pottery, LARPing, blackjack…" autocomplete="off" />
+    <div id="doorsBox" hidden>
+      <h3 style="margin-top:16px">Find out more — starter doors</h3>
+      <p class="prompt">These are <strong>doors, not answers</strong>: they open searches for your topic out on the open web. What you find there is yours to check and choose from — this template never makes up facts about your topic. You know your thing; these just save you typing the searches.</p>
+      <div class="doors">
+        <a class="door" id="doorWiki" href="#" target="_blank" rel="noopener">Wikipedia — look it up ↗</a>
+        <a class="door" id="doorWeb" href="#" target="_blank" rel="noopener">Search the open web ↗</a>
+        <a class="door" id="doorVideo" href="#" target="_blank" rel="noopener">Watch people do it (video search) ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card" id="step2">
+    <span class="stepnum">Step 2 of 2</span>
+    <h2>Fill in your page</h2>
+    <p class="prompt">Every box has a plain prompt telling you what belongs there. Leave a box empty and that section simply won't appear on your page. Your words only — nothing is written for you.</p>
+
+    <label class="flabel" for="ptitle">Page title</label>
+    <input id="ptitle" type="text" placeholder="Defaults to your thing" autocomplete="off" />
+
+    <label class="flabel" for="tagline">What it is — one line</label>
+    <p class="prompt">If a stranger asked “what is that, exactly?” — your one-line answer.</p>
+    <input id="tagline" type="text" placeholder="e.g. Throwing discs at baskets in the park — golf, but friendlier." autocomplete="off" />
+
+    <label class="flabel" for="byline">Made by (optional)</label>
+    <p class="prompt">Your name, a nickname, or your group's name. Leave blank to stay anonymous.</p>
+    <input id="byline" type="text" placeholder="e.g. The Tuesday Night Crew" autocomplete="off" />
+
+    <label class="flabel" for="secStart">Start here</label>
+    <p class="prompt">For brand-new people. What is it, why is it fun, and what's the very first step a beginner should take?</p>
+    <textarea id="secStart" placeholder="New here? Start with…"></textarea>
+
+    <label class="flabel" for="secGood">The good stuff</label>
+    <p class="prompt">The best of it — the books, videos, makers, moments, or work you point fellow fans to first. Your favorites, in your words.</p>
+    <textarea id="secGood" placeholder="The things every fan should know about…"></textarea>
+
+    <label class="flabel" for="secGear">Gear &amp; real costs</label>
+    <p class="prompt">What does it actually take and cost to get into this? Honest prices, including the free ways in. Nothing here is ranked by who paid — there are no sponsors on your page.</p>
+    <textarea id="secGear" placeholder="You can start for free by… A basic setup runs about…"></textarea>
+
+    <label class="flabel">Community doors</label>
+    <p class="prompt">Links <em>you</em> add: your group chat, a forum, a club page, a social account — the places your people already gather. Label is what visitors see; address is the full web address (starting https://).</p>
+    <div id="doorRows"></div>
+    <button type="button" class="btn btn-quiet" id="addDoorBtn">+ Add another door</button>
+
+    <label class="flabel" for="secEvents">Events</label>
+    <p class="prompt">Meetups, tournaments, conventions, regular nights — what happens, where, and when. Only list what you know is real.</p>
+    <textarea id="secEvents" placeholder="Every Saturday, 10am, at…"></textarea>
+
+    <label class="flabel" for="secMissing">What are we missing?</label>
+    <p class="prompt">Every page built on this template carries this section. It invites your visitors to say what's missing, what's wrong, and what's needed. Write your own welcome for it, or leave the standard words in.</p>
+    <textarea id="secMissing"></textarea>
+
+    <h3 style="margin-top:22px">Pick your page's colors</h3>
+    <p class="prompt">The layout stays the template — clean and readable on a phone. The colors are yours to pick. Five quiet themes:</p>
+    <div class="themes" id="themes" role="radiogroup" aria-label="Page color theme"></div>
+
+    <label class="toggle" for="adultToggle">
+      <input type="checkbox" id="adultToggle" />
+      <span style="color:var(--ink)"><b>Adults only (18+)</b>
+      <span>Turn this on if your topic is for adults. Your downloaded page will then open with a plain gate face — “Adults only — tap to confirm you're 18 or older” — before anyone sees the content. Adult topics are allowed here; this switch is yours to set, and it's the honest way to fly that flag.</span></span>
+    </label>
+
+    <div class="plainbox">
+      <p><strong>Your work in progress is saved on this device only</strong> — in this browser, on this phone or computer, so you can close the page and pick up where you left off. It is not uploaded anywhere and we never see it.</p>
+      <p class="status" id="saveStatus" aria-live="polite"></p>
+      <div class="actions">
+        <button type="button" class="btn btn-quiet" id="forgetBtn">Forget my saved work</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREVIEW -->
+  <section class="card" id="previewSection">
+    <h2>Your page, live as you type</h2>
+    <p class="prompt">This is exactly what your downloaded page will look like — your words, your colors.</p>
+    <div class="preview-wrap"><div class="pv" id="pv"></div></div>
+  </section>
+
+  <!-- GET YOUR PAGE -->
+  <section class="card" id="getPage">
+    <h2>Take your page with you</h2>
+    <p>When it reads the way you want it, download it. You get <strong>one single file</strong> — your whole fan page in one piece — made right here in your browser.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="downloadBtn">Download your page</button>
+      <button type="button" class="btn btn-ghost" id="copyBtn">Copy a text version</button>
+    </div>
+    <p class="status" id="getStatus" aria-live="polite"></p>
+    <div class="plainbox">
+      <p><strong>Plainly:</strong> nothing is uploaded or sent anywhere when you download — the file is built on your device, from your words. Your page is <strong>yours</strong>. It does not join our catalog and it is never hosted by us. Share it wherever you like: send the file to friends, put it on any free web host, post the text version anywhere text goes.</p>
+      <p>Your page carries one small line at the bottom — “Made with the free fan page template — free, always free” — with a door back to this builder, so the next fan can make theirs. The template is copyleft (CC BY-SA 4.0 — free to share and remix, credit kept, same freedom passed on).</p>
+    </div>
+  </section>
+
+  <!-- WHAT ARE WE MISSING (this page's own) -->
+  <section class="card" id="missing">
+    <h2>What are we missing?</h2>
+    <p>Every page in this house carries this door, and this builder practices what it hands out. What's missing here? What's wrong? What tool do you actually need that this template doesn't give you yet?</p>
+    <p>Say it on the house board — public, free, no account needed. Ideas that land there become new pages and new tools.</p>
+    <div class="doors">
+      <a class="door" href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? — the board ↗</a>
+    </div>
+  </section>
+</main>
+
+<footer class="pagefoot">
+  <p>Make Your Own Fan Page — a free tool. Free, always free. Template and page text shared under CC BY-SA 4.0 (copyleft: share it, remix it, keep it free).</p>
+</footer>
+
+<!-- DOCK BAR -->
+<nav class="dock" aria-label="Page dock">
+  <button type="button" class="stack" id="dockMissing" aria-label="What are we missing">
+    <span class="disc" aria-hidden="true">?!</span>
+    <span class="pill">What are we missing</span>
+  </button>
+  <button type="button" class="pagesettings" id="dockPageSettings">Page settings</button>
+  <button type="button" class="stack" id="dockCompass" aria-label="Navigate">
+    <span class="disc" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" stroke="none"/></svg></span>
+    <span class="pill">Navigate</span>
+  </button>
+  <button type="button" class="stack" id="dockSettings" aria-label="Settings">
+    <span class="disc" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+    <span class="pill">Settings</span>
+  </button>
+</nav>
+
+<!-- COMPASS SHEET (navigation only) -->
+<div class="sheet" id="compassSheet" role="dialog" aria-modal="true" aria-label="Navigate">
+  <div class="scrim" data-close></div>
+  <div class="panel">
+    <div class="closerow">
+      <button type="button" class="stack" data-close aria-label="Close">
+        <span class="disc" aria-hidden="true">✕</span><span class="pill">Close</span>
+      </button>
+    </div>
+    <h2>Go to</h2>
+    <details class="fold">
+      <summary>This page</summary>
+      <div class="foldbody">
+        <ul class="navlist">
+          <li><a href="#step1" data-close>Step 1 — What's your main thing?</a></li>
+          <li><a href="#step2" data-close>Step 2 — Fill in your page</a></li>
+          <li><a href="#previewSection" data-close>Live preview</a></li>
+          <li><a href="#getPage" data-close>Download your page</a></li>
+          <li><a href="#missing" data-close>What are we missing?</a></li>
+        </ul>
+      </div>
+    </details>
+    <details class="fold">
+      <summary>Other pages</summary>
+      <div class="foldbody">
+        <p class="grouphead">The record</p>
+        <p class="groupsub">The serious pages — the plan and the public record.</p>
+        <ul class="navlist">
+          <li><a href="https://muse.ai/s/the-thriving-plan-rxy6xav4xoxrcxsx0/WpKA_ptlnL7ueuq3Iffvs3-1vB5f_2IBpvYzVa8je5U" target="_blank" rel="noopener">The Thriving Plan ↗</a></li>
+          <li><a href="https://muse.ai/s/any-legal-case-the-record-qs6xc8xpohxpxmo/3Mz7y6LxZlpRvFjKrNn0KOpzMW44OTcYbNm-VJ4EkrU" target="_blank" rel="noopener">Any Legal Case — The Record ↗</a></li>
+          <li><a href="https://muse.ai/s/for-veterans-the-record-oxo6xngxukc6xjxq/BOv0BT4nUtGxtU-el4ZeVb4HzV2KBjA6lRzgl5Uxw3E" target="_blank" rel="noopener">For Veterans — The Record ↗</a></li>
+          <li><a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a></li>
+        </ul>
+        <p class="grouphead">Tools</p>
+        <p class="groupsub">Free tools, this one included in spirit — you're standing in it.</p>
+        <ul class="navlist">
+          <li><a href="https://muse.ai/s/find-a-coupon-zw6xmmiwxaxuxqxj/9ACVz7AOHsuhrsVlWpVI8WphmRihoR0-T8OS_Q2uexM" target="_blank" rel="noopener">Find a Coupon ↗</a></li>
+          <li><a href="https://muse.ai/s/star-chart-maker-xfxi6xlxpenvxwg7/yMERZbnMzvhWD39rGjTwzGG7b7SedJLQPauU1vWeQts" target="_blank" rel="noopener">Star Chart Maker ↗</a></li>
+          <li><a href="https://muse.ai/s/the-holiday-shopping-list-pxh6xo5xlxcxt7wf/anxj7SscFUa8JcMrZ7VDua2hEu5IH7v0wEfp5M2Eto0" target="_blank" rel="noopener">The Holiday Shopping List ↗</a></li>
+          <li><a href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener">Create Your Own Story ↗</a></li>
+        </ul>
+        <p class="grouphead">For fun</p>
+        <ul class="navlist">
+          <li><a href="https://muse.ai/s/star-chart-postcard-xrxq6xnxyxtfxpxzxqv/NiAWolORKNUDfO9IVOOHxW3Wg0lhZtVfx3GhaIAjOVE" target="_blank" rel="noopener">Star Chart Postcard ↗</a></li>
+          <li><a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a></li>
+        </ul>
+        <p class="grouphead">Still growing</p>
+        <p class="groupsub">Early ideas. Some were an hour's thought. They have their place — they're not finished.</p>
+        <ul class="navlist">
+          <li><a href="https://muse.ai/s/dutch-bros-the-windmill-xaxz6xo5xwqcy3k/kwXf085dvBynWbt-n0H_Whwgqb3NpjGbCPGACRcmlzE" target="_blank" rel="noopener">Dutch Bros &amp; the Windmill ↗</a></li>
+          <li><a href="https://muse.ai/s/purple-halloween-string-lights-side-by-xtxp6xo5xwngxj4xf/slnxg5cF8VsGMsp_TPbjfw1hi7Iwa6GUvL62jPCMQNc" target="_blank" rel="noopener">Purple Halloween String Lights ↗</a></li>
+          <li><a href="https://muse.ai/s/go-for-it-pm6xfxxb1xbo0r/-_4cmnjkeFtuUCqtVpiTjXChVlJc6i5zwmTpQ8HSayc" target="_blank" rel="noopener">Go For It? ↗</a></li>
+          <li><a href="https://muse.ai/s/launch-page-xlxz6xo5xwixl01xx/ebWGIUw6uxqpu-wkmK-iq7wkb8i6C-r0Wb2FSUjpY8k" target="_blank" rel="noopener">Launch Page ↗</a></li>
+          <li><a href="https://muse.ai/s/don-t-jump-xpxz6xo5xwg3acxj/C0G210SuKZNFvGTbSgdIXWzF7huqScSpX5P75pyE5nY" target="_blank" rel="noopener">Don't Jump ↗</a></li>
+          <li><a href="https://thethrivingplan.fwh.is/unicorns-do-not-exist.html" target="_blank" rel="noopener">Unicorns Do Not Exist ↗</a></li>
+          <li><a href="https://muse.ai/s/invention-help-by-the-record-axq6xo5xwlexqxhxk/Kahqjc7GgLHRiQ631CkZzs1ZrdqcFBdJSSReUvM2BvI" target="_blank" rel="noopener">Invention Help, by the Record ↗</a></li>
+        </ul>
+      </div>
+    </details>
+    <div class="bookends">
+      <a href="#top" data-close>↑ Top of this page</a>
+      <a href="#missing" data-close>↓ Bottom — What are we missing?</a>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS SHEET (layered: faces, controls one tap down) -->
+<div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-label="Page settings">
+  <div class="scrim" data-close></div>
+  <div class="panel">
+    <div class="closerow">
+      <button type="button" class="stack" data-close aria-label="Close">
+        <span class="disc" aria-hidden="true">✕</span><span class="pill">Close</span>
+      </button>
+    </div>
+    <h2>Page settings</h2>
+    <p class="small">Settings for this builder page only. Your fan page's own settings — its colors and its Adults only gate — live in Step 2, where you build it.</p>
+    <details class="fold">
+      <summary>Reading</summary>
+      <div class="foldbody">
+        <label class="toggle" for="bigTextToggle" style="margin-top:6px">
+          <input type="checkbox" id="bigTextToggle" />
+          <span style="color:var(--ink)"><b>Larger text</b>
+          <span>Makes the words on this page a step bigger.</span></span>
+        </label>
+        <p class="small" style="margin-top:10px">Light or dark follows your device's own setting automatically.</p>
+      </div>
+    </details>
+    <details class="fold">
+      <summary>Your saved draft</summary>
+      <div class="foldbody">
+        <p class="small">Your work in progress is saved on this device only, in this browser. Nothing is uploaded, ever.</p>
+        <p class="status" id="saveStatus2"></p>
+        <div class="actions">
+          <button type="button" class="btn btn-quiet" id="forgetBtn2">Forget my saved work</button>
+        </div>
+      </div>
+    </details>
+    <details class="fold">
+      <summary>About this page</summary>
+      <div class="foldbody">
+        <p class="small">Make Your Own Fan Page — a free tool, always free, no account, no ads. Pages you make with it are yours: never hosted here, never added to our catalog. Template shared under CC BY-SA 4.0.</p>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var LS_KEY = "fanpage-builder-draft-v1";
+  var DEFAULT_MISSING = "This page is a fan page, made by a fan. If something's missing, something's wrong, or there's a piece of this world that belongs here — say so wherever this page's people gather, and help it grow.";
+
+  var THEMES = [
+    {id:"rust",   name:"Rust & cream",  accent:"#a63d21", bg:"#fdf6ee", ink:"#2b1a12", dot:"#a63d21"},
+    {id:"forest", name:"Forest",        accent:"#2e5d3a", bg:"#f1f6ee", ink:"#1c2a1e", dot:"#2e5d3a"},
+    {id:"ocean",  name:"Deep water",    accent:"#1f5673", bg:"#edf4f7", ink:"#14242e", dot:"#1f5673"},
+    {id:"gold",   name:"Honey gold",    accent:"#8a5f10", bg:"#faf5e6", ink:"#2c2210", dot:"#c99a2e"},
+    {id:"berry",  name:"Berry",         accent:"#7c2d4e", bg:"#faf0f3", ink:"#2a1620", dot:"#7c2d4e"}
+  ];
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function themeById(id){
+    for (var i=0;i<THEMES.length;i++) if (THEMES[i].id===id) return THEMES[i];
+    return THEMES[0];
+  }
+
+  var state = {
+    thing:"", title:"", tagline:"", byline:"",
+    secStart:"", secGood:"", secGear:"", secEvents:"", secMissing:DEFAULT_MISSING,
+    doors:[{label:"",url:""},{label:"",url:""}],
+    theme:"rust", adult:false
+  };
+
+  /* ---- theme swatches ---- */
+  var themesBox = $("themes");
+  THEMES.forEach(function(t){
+    var wrap = document.createElement("label");
+    wrap.className = "theme-opt";
+    wrap.innerHTML = '<input type="radio" name="theme" value="'+t.id+'" />' +
+      '<span class="swatch"><span class="dot" style="background:'+t.dot+'"></span>'+esc(t.name)+'</span>';
+    themesBox.appendChild(wrap);
+  });
+
+  /* ---- community door rows ---- */
+  var doorRows = $("doorRows");
+  function renderDoorRows(){
+    doorRows.innerHTML = "";
+    state.doors.forEach(function(d, i){
+      var row = document.createElement("div");
+      row.className = "doorrow";
+      row.innerHTML =
+        '<input type="text" data-door="label" data-i="'+i+'" placeholder="Label — e.g. Our Discord" value="'+esc(d.label)+'" autocomplete="off" />' +
+        '<input type="url" data-door="url" data-i="'+i+'" placeholder="https://…" value="'+esc(d.url)+'" autocomplete="off" />' +
+        '<button type="button" class="btn btn-quiet" data-remove="'+i+'" aria-label="Remove this door">Remove</button>';
+      doorRows.appendChild(row);
+    });
+    var inputs = doorRows.querySelectorAll("input");
+    for (var k=0;k<inputs.length;k++){
+      inputs[k].addEventListener("input", function(){
+        var i = +this.getAttribute("data-i");
+        state.doors[i][this.getAttribute("data-door")] = this.value;
+        update();
+      });
+    }
+    var btns = doorRows.querySelectorAll("[data-remove]");
+    for (var j=0;j<btns.length;j++){
+      btns[j].addEventListener("click", function(){
+        var i = +this.getAttribute("data-remove");
+        state.doors.splice(i,1);
+        if (!state.doors.length) state.doors.push({label:"",url:""});
+        renderDoorRows(); update();
+      });
+    }
+  }
+  $("addDoorBtn").addEventListener("click", function(){
+    if (state.doors.length >= 10) return;
+    state.doors.push({label:"",url:""});
+    renderDoorRows();
+  });
+
+  /* ---- field bindings ---- */
+  var FIELDS = ["thing","ptitle","tagline","byline","secStart","secGood","secGear","secEvents","secMissing"];
+  var STATEKEY = {thing:"thing", ptitle:"title", tagline:"tagline", byline:"byline", secStart:"secStart", secGood:"secGood", secGear:"secGear", secEvents:"secEvents", secMissing:"secMissing"};
+  FIELDS.forEach(function(id){
+    $(id).addEventListener("input", function(){
+      state[STATEKEY[id]] = this.value;
+      update();
+    });
+  });
+  themesBox.addEventListener("change", function(e){
+    if (e.target && e.target.name === "theme"){ state.theme = e.target.value; update(); }
+  });
+  $("adultToggle").addEventListener("change", function(){ state.adult = this.checked; update(); });
+
+  /* ---- starter doors ---- */
+  function updateDoors(){
+    var t = state.thing.trim();
+    $("doorsBox").hidden = !t;
+    if (!t) return;
+    var q = encodeURIComponent(t);
+    $("doorWiki").href = "https://en.wikipedia.org/w/index.php?search=" + q;
+    $("doorWeb").href = "https://duckduckgo.com/?q=" + q;
+    $("doorVideo").href = "https://www.youtube.com/results?search_query=" + q;
+  }
+
+  /* ---- preview ---- */
+  function para(text, fallback){
+    if (text && text.trim()) return "<p>" + esc(text.trim()) + "</p>";
+    return '<p class="empty">' + esc(fallback) + "</p>";
+  }
+  function renderPreview(){
+    var t = themeById(state.theme);
+    var pv = $("pv");
+    pv.style.setProperty("--pv-bg", t.bg);
+    pv.style.setProperty("--pv-ink", t.ink);
+    pv.style.setProperty("--pv-accent", t.accent);
+    var title = state.title.trim() || state.thing.trim() || "Your fan page";
+    var html = "";
+    if (state.adult) html += '<span class="gatebadge">18+ · Adults only</span>';
+    html += "<h2>" + esc(title) + "</h2>";
+    if (state.tagline.trim()) html += '<p class="tagline">' + esc(state.tagline.trim()) + "</p>";
+    if (state.byline.trim()) html += '<p class="byline">Made by ' + esc(state.byline.trim()) + "</p>";
+    html += "<h3>Start here</h3>" + para(state.secStart, "What a brand-new person needs first…");
+    html += "<h3>The good stuff</h3>" + para(state.secGood, "Your favorites, the best of it…");
+    html += "<h3>Gear &amp; real costs</h3>" + para(state.secGear, "What it honestly takes and costs…");
+    var realDoors = state.doors.filter(function(d){ return d.label.trim() && d.url.trim(); });
+    html += "<h3>Community doors</h3>";
+    if (realDoors.length){
+      html += "<ul>" + realDoors.map(function(d){
+        return '<li><a href="' + esc(d.url.trim()) + '" target="_blank" rel="noopener">' + esc(d.label.trim()) + " ↗</a></li>";
+      }).join("") + "</ul>";
+    } else {
+      html += '<p class="empty">Links to where your people gather…</p>';
+    }
+    html += "<h3>Events</h3>" + para(state.secEvents, "Meetups, nights, gatherings…");
+    html += "<h3>What are we missing?</h3>" + para(state.secMissing, DEFAULT_MISSING);
+    html += '<footer>Made with the free fan page template — free, always free. Shared under CC BY-SA 4.0.</footer>';
+    pv.innerHTML = html;
+  }
+
+  /* ---- save / restore (this device only) ---- */
+  var saveTimer = null;
+  function setSaveStatus(msg, ok){
+    ["saveStatus","saveStatus2"].forEach(function(id){
+      var el = $(id); if (!el) return;
+      el.textContent = msg; el.className = "status" + (ok ? " ok" : "");
+    });
+  }
+  function save(){
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      setSaveStatus("Saved on this device — " + new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) + ".", true);
+    } catch(e){
+      setSaveStatus("This browser isn't allowing on-device saving, so your work lives in this tab only.", false);
+    }
+  }
+  function scheduleSave(){
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 500);
+  }
+  function forget(){
+    try { localStorage.removeItem(LS_KEY); } catch(e){}
+    state = { thing:"", title:"", tagline:"", byline:"", secStart:"", secGood:"", secGear:"", secEvents:"", secMissing:DEFAULT_MISSING,
+      doors:[{label:"",url:""},{label:"",url:""}], theme:"rust", adult:false };
+    syncForm(); update(false);
+    setSaveStatus("Forgotten. Your saved work on this device is cleared and the form is blank.", true);
+    $("getStatus").textContent = "";
+  }
+  $("forgetBtn").addEventListener("click", forget);
+  $("forgetBtn2").addEventListener("click", forget);
+
+  function syncForm(){
+    $("thing").value = state.thing; $("ptitle").value = state.title;
+    $("tagline").value = state.tagline; $("byline").value = state.byline;
+    $("secStart").value = state.secStart; $("secGood").value = state.secGood;
+    $("secGear").value = state.secGear; $("secEvents").value = state.secEvents;
+    $("secMissing").value = state.secMissing;
+    $("adultToggle").checked = !!state.adult;
+    var radios = themesBox.querySelectorAll("input[name=theme]");
+    for (var i=0;i<radios.length;i++) radios[i].checked = (radios[i].value === state.theme);
+    renderDoorRows();
+  }
+  function restore(){
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return false;
+      var d = JSON.parse(raw);
+      if (!d || typeof d !== "object") return false;
+      ["thing","title","tagline","byline","secStart","secGood","secGear","secEvents","secMissing","theme"].forEach(function(k){
+        if (typeof d[k] === "string") state[k] = d[k];
+      });
+      state.adult = !!d.adult;
+      if (Array.isArray(d.doors) && d.doors.length) state.doors = d.doors.slice(0,10);
+      return true;
+    } catch(e){ return false; }
+  }
+
+  function update(saveIt){
+    updateDoors();
+    renderPreview();
+    if (saveIt !== false) scheduleSave();
+  }
+
+  /* ---- export: the maker's own page ---- */
+  function sectionHtml(heading, text){
+    if (!text || !text.trim()) return "";
+    return "<h2>" + esc(heading) + "</h2><p>" + esc(text.trim()) + "</p>";
+  }
+  function buildExport(){
+    var t = themeById(state.theme);
+    var title = state.title.trim() || state.thing.trim() || "My fan page";
+    var realDoors = state.doors.filter(function(d){ return d.label.trim() && d.url.trim(); });
+    var doorsHtml = "";
+    if (realDoors.length){
+      doorsHtml = "<h2>Community doors</h2><ul>" + realDoors.map(function(d){
+        return '<li><a href="' + esc(d.url.trim()) + '">' + esc(d.label.trim()) + "</a></li>";
+      }).join("") + "</ul>";
+    }
+    var gate = "";
+    if (state.adult){
+      gate =
+      '<div id="gate" style="position:fixed;inset:0;background:' + t.bg + ';color:' + t.ink + ';display:flex;align-items:center;justify-content:center;padding:20px;z-index:10">' +
+        '<div style="max-width:420px;text-align:center">' +
+          '<p style="font-size:2rem;font-weight:800;border:3px solid ' + t.accent + ';color:' + t.accent + ';border-radius:12px;padding:6px 14px;display:inline-block">18+</p>' +
+          '<h1 style="font-family:Georgia,serif">Adults only</h1>' +
+          '<p>This fan page is about an adults-only topic. Tap below to confirm you are 18 or older and want to come in.</p>' +
+          '<button id="gateBtn" style="background:' + t.accent + ';color:#fff;border:0;border-radius:999px;padding:14px 28px;font-size:1.05rem;font-weight:700;cursor:pointer;min-height:48px">I am 18 or older — enter</button>' +
+        '</div></div>' +
+      '<script>document.getElementById("gateBtn").addEventListener("click",function(){document.getElementById("gate").style.display="none";});<\/script>';
+    }
+    var doc =
+'<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8" />\n' +
+'<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+'<title>' + esc(title) + '</title>\n' +
+'<style>\n' +
+'body{margin:0;background:' + t.bg + ';color:' + t.ink + ';font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;line-height:1.6;font-size:17px}\n' +
+'main{max-width:680px;margin:0 auto;padding:28px 18px 40px}\n' +
+'h1{font-family:Georgia,serif;color:' + t.accent + ';font-size:2.1rem;line-height:1.2;margin:0 0 6px}\n' +
+'h2{font-family:Georgia,serif;color:' + t.accent + ';font-size:1.3rem;margin:26px 0 6px}\n' +
+'p{white-space:pre-wrap;margin:0 0 10px}\n' +
+'.tagline{font-size:1.1rem}\n.byline{opacity:.75;font-size:.92rem}\n' +
+'a{color:' + t.accent + '}\n' +
+'footer{margin-top:36px;border-top:1px solid rgba(0,0,0,.18);padding-top:12px;font-size:.85rem;opacity:.85}\n' +
+'</style>\n</head>\n<body>\n' + gate + '\n<main>\n' +
+'<h1>' + esc(title) + '</h1>\n' +
+(state.tagline.trim() ? '<p class="tagline">' + esc(state.tagline.trim()) + '</p>\n' : '') +
+(state.byline.trim() ? '<p class="byline">Made by ' + esc(state.byline.trim()) + '</p>\n' : '') +
+sectionHtml("Start here", state.secStart) + "\n" +
+sectionHtml("The good stuff", state.secGood) + "\n" +
+sectionHtml("Gear & real costs", state.secGear) + "\n" +
+doorsHtml + "\n" +
+sectionHtml("Events", state.secEvents) + "\n" +
+sectionHtml("What are we missing?", state.secMissing) + "\n" +
+'<footer><p>Made with the free fan page template — free, always free. Make your own: open the Make Your Own Fan Page builder in the Muse app.</p>' +
+'<p>Shared under CC BY-SA 4.0 — free to share and remix, credit kept, same freedom passed on.</p></footer>\n' +
+'</main>\n</body>\n</html>';
+    return {doc: doc, title: title};
+  }
+  function buildText(){
+    var title = state.title.trim() || state.thing.trim() || "My fan page";
+    var lines = [title.toUpperCase()];
+    if (state.adult) lines.push("[Adults only — 18+]");
+    if (state.tagline.trim()) lines.push(state.tagline.trim());
+    if (state.byline.trim()) lines.push("Made by " + state.byline.trim());
+    function sec(name, text){ if (text && text.trim()){ lines.push("", name.toUpperCase(), text.trim()); } }
+    sec("Start here", state.secStart);
+    sec("The good stuff", state.secGood);
+    sec("Gear & real costs", state.secGear);
+    var realDoors = state.doors.filter(function(d){ return d.label.trim() && d.url.trim(); });
+    if (realDoors.length){
+      lines.push("", "COMMUNITY DOORS");
+      realDoors.forEach(function(d){ lines.push("- " + d.label.trim() + ": " + d.url.trim()); });
+    }
+    sec("Events", state.secEvents);
+    sec("What are we missing?", state.secMissing);
+    lines.push("", "—", "Made with the free fan page template — free, always free. Shared under CC BY-SA 4.0.");
+    return lines.join("\n");
+  }
+
+  $("downloadBtn").addEventListener("click", function(){
+    var out = buildExport();
+    var blob = new Blob([out.doc], {type:"text/html"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = out.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60) || "my-fan-page";
+    a.download += ".html";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    $("getStatus").textContent = "Your page downloaded as one file: " + a.download + ". It's yours — share it wherever you like.";
+    $("getStatus").className = "status ok";
+  });
+  $("copyBtn").addEventListener("click", function(){
+    var text = buildText();
+    function done(){ $("getStatus").textContent = "Text version copied — paste it anywhere text goes."; $("getStatus").className = "status ok"; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); }
+      catch(e){ $("getStatus").textContent = "Copy didn't work in this browser — the Download button will always work."; }
+      ta.remove();
+    }
+  });
+
+  /* ---- offline door: save this builder itself ---- */
+  $("offlineBtn").addEventListener("click", function(){
+    var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:"text/html"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "make-your-own-fan-page-builder.html";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  });
+
+  /* ---- dock & sheets ---- */
+  function openSheet(id){ $(id).classList.add("open"); }
+  function closeSheets(){
+    var sheets = document.querySelectorAll(".sheet.open");
+    for (var i=0;i<sheets.length;i++) sheets[i].classList.remove("open");
+  }
+  $("dockCompass").addEventListener("click", function(){
+    var folds = $("compassSheet").querySelectorAll("details.fold");
+    for (var i=0;i<folds.length;i++) folds[i].removeAttribute("open");
+    openSheet("compassSheet");
+  });
+  $("dockSettings").addEventListener("click", function(){ openSheet("settingsSheet"); });
+  $("dockPageSettings").addEventListener("click", function(){ openSheet("settingsSheet"); });
+  $("dockMissing").addEventListener("click", function(){
+    closeSheets();
+    var el = $("missing");
+    el.scrollIntoView({behavior:"smooth", block:"start"});
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  });
+  document.addEventListener("click", function(e){
+    var c = e.target.closest ? e.target.closest("[data-close]") : null;
+    if (c) closeSheets();
+  });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeSheets(); });
+
+  $("bigTextToggle").addEventListener("change", function(){
+    document.body.classList.toggle("bigtext", this.checked);
+  });
+
+  /* ---- init ---- */
+  var had = restore();
+  syncForm();
+  update(false);
+  if (had && (state.thing || state.title)) setSaveStatus("Welcome back — your saved work on this device is restored, right where you left it.", true);
+  else setSaveStatus("Nothing saved yet. Start typing and your work saves itself here, on this device.", false);
+})();
+</script>
+</body>
+</html>
