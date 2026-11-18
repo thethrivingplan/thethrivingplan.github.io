@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Four in a Row</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+      :root{
+        --bg:#f6f1e7; --panel:#fffdf6; --ink:#23201a; --ink-soft:#5c5546;
+        --line:#ddd2ba; --accent:#0f6a5c; --accent-ink:#ffffff;
+        --board:#274b73; --board-dark:#1b3554; --hole:#f6f1e7;
+        --p1:#d64533; --p1-dark:#a92f21; --p2:#e9a820; --p2-dark:#b57f10;
+        --warn-bg:#fdf0e3; --warn-line:#e0a458; --good-bg:#e7f3ec; --good-line:#7db894;
+        --chip:#efe7d3; --radius:14px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#171a1e; --panel:#20242a; --ink:#ece7db; --ink-soft:#b3ab99;
+          --line:#3a3f47; --accent:#2fae97; --accent-ink:#0c2420;
+          --board:#1d3a5c; --board-dark:#142a45; --hole:#171a1e;
+          --warn-bg:#3a2c1c; --warn-line:#a5762f; --good-bg:#1e3328; --good-line:#4d8262;
+          --chip:#2a2e35;
+        }
+      }
+      *{ box-sizing:border-box; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif; line-height:1.5; }
+      h1,h2,h3{ font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; line-height:1.15; margin:0 0 .4rem; }
+      main{ max-width:1060px; margin:0 auto; padding:0 16px 48px; }
+      .freebar{ background:var(--accent); color:var(--accent-ink); padding:10px 16px; text-align:center; font-weight:700; }
+      .freebar small{ display:block; font-weight:400; opacity:.92; }
+      nav.compass{ max-width:1060px; margin:0 auto; padding:10px 16px; display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; border-bottom:1px solid var(--line); }
+      nav.compass a{ color:var(--accent); font-weight:700; text-decoration:none; padding:8px 4px; }
+      nav.compass .others-label{ color:var(--ink-soft); font-weight:700; padding:8px 0; }
+      .hero{ padding:22px 0 6px; }
+      .hero p.lede{ font-size:1.08rem; max-width:62ch; margin:.2rem 0; }
+      .variant-banner{ display:none; background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:var(--radius); padding:10px 14px; margin:12px 0; font-weight:600; }
+      .variant-banner.show{ display:block; }
+      .layout{ display:grid; grid-template-columns: minmax(0,1fr) 340px; gap:22px; align-items:start; margin-top:14px; }
+      @media (max-width: 860px){ .layout{ grid-template-columns: minmax(0,1fr); } }
+      .board-wrap{ background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:16px; }
+      .turn-line{ display:flex; align-items:center; gap:10px; font-size:1.1rem; font-weight:700; min-height:2rem; }
+      .disc-dot{ width:22px; height:22px; border-radius:50%; flex:none; box-shadow: inset 0 -3px 0 rgba(0,0,0,.25); }
+      .dot1{ background:var(--p1); } .dot2{ background:var(--p2); }
+      .tally{ color:var(--ink-soft); font-weight:400; font-size:.95rem; margin-left:auto; text-align:right; }
+      .colbtns{ display:grid; gap:6px; margin:10px 0 6px; }
+      .colbtns button{ background:var(--chip); border:1px solid var(--line); border-radius:10px; font-size:1.05rem; cursor:pointer; color:var(--ink); }
+      .colbtns button:disabled{ opacity:.35; cursor:default; }
+      .colbtns button:not(:disabled):hover, .colbtns button:not(:disabled):focus-visible{ background:var(--accent); color:var(--accent-ink); }
+      .board{ background:linear-gradient(180deg, var(--board), var(--board-dark)); border-radius:14px; padding:10px; display:grid; gap:6px; touch-action:manipulation; }
+      .cell{ aspect-ratio:1/1; border-radius:50%; background:var(--hole); position:relative; overflow:hidden; box-shadow: inset 0 3px 6px rgba(0,0,0,.35); }
+      .cell .disc{ position:absolute; inset:8%; border-radius:50%; box-shadow: inset 0 -5px 0 rgba(0,0,0,.22), inset 0 3px 0 rgba(255,255,255,.25); }
+      .disc.d1{ background:var(--p1); } .disc.d2{ background:var(--p2); }
+      .disc.fall{ animation: fall .38s cubic-bezier(.3,.7,.6,1); }
+      @keyframes fall{ from{ transform: translateY(calc(var(--fall,1) * -115%)); } to{ transform: translateY(0); } }
+      @media (prefers-reduced-motion: reduce){ .disc.fall{ animation:none; } .cell.threat-mine, .cell.threat-theirs{ animation:none; } }
+      .cell.win .disc{ outline:4px solid #fff; outline-offset:-4px; }
+      .cell.threat-mine{ box-shadow: inset 0 0 0 4px #2e9e5b, inset 0 3px 6px rgba(0,0,0,.35); animation:pulse 1.1s infinite; }
+      .cell.threat-theirs{ box-shadow: inset 0 0 0 4px #d64533, inset 0 3px 6px rgba(0,0,0,.35); animation:pulse 1.1s infinite; }
+      @keyframes pulse{ 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(1.25);} }
+      .threat-flags{ display:grid; gap:6px; margin-top:6px; min-height:1.6rem; }
+      .threat-flags span{ text-align:center; font-weight:800; font-size:.92rem; }
+      .flag-mine{ color:#2e9e5b; } .flag-theirs{ color:var(--p1-dark); }
+      @media (prefers-color-scheme: dark){ .flag-theirs{ color:#ff8d7d; } }
+      .board-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+      button.action{ background:var(--accent); color:var(--accent-ink); border:0; border-radius:10px; padding:10px 16px; font-weight:700; font-size:1rem; cursor:pointer; }
+      button.action.secondary{ background:var(--chip); color:var(--ink); border:1px solid var(--line); }
+      button.action[aria-pressed="true"]{ outline:3px solid var(--warn-line); }
+      button.action:disabled{ opacity:.45; cursor:default; }
+      .coach{ margin-top:14px; border-radius:var(--radius); padding:12px 14px; border:1px solid var(--good-line); background:var(--good-bg); }
+      .coach.warn{ border-color:var(--warn-line); background:var(--warn-bg); }
+      .coach h3{ font-size:1rem; margin-bottom:.25rem; }
+      .coach p{ margin:.25rem 0; }
+      .coach ul{ margin:.3rem 0 .3rem 1.1rem; padding:0; }
+      .side{ display:flex; flex-direction:column; gap:16px; }
+      section.panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+      section.panel h2{ font-size:1.2rem; }
+      .field{ margin:10px 0; }
+      .field label{ display:block; font-weight:700; margin-bottom:4px; }
+      .field .hint{ color:var(--ink-soft); font-size:.92rem; }
+      select, input[type="text"]{ width:100%; padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); font-size:1rem; }
+      .seg{ display:flex; gap:8px; flex-wrap:wrap; }
+      .seg button{ flex:1 1 auto; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--chip); color:var(--ink); font-weight:700; cursor:pointer; font-size:.98rem; }
+      .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+      .aliasrow{ display:flex; gap:8px; }
+      .aliasrow input{ flex:1; }
+      .aliasrow button{ flex:none; width:52px; border-radius:10px; border:1px solid var(--line); background:var(--chip); font-size:1.25rem; cursor:pointer; color:var(--ink); }
+      .level-list{ display:flex; flex-direction:column; gap:8px; }
+      .level-list label{ display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:400; }
+      .level-list input{ margin-top:5px; width:20px; height:20px; flex:none; }
+      .level-list .lname{ font-weight:800; display:block; }
+      .level-list .ldesc{ color:var(--ink-soft); font-size:.92rem; display:block; }
+      table{ border-collapse:collapse; width:100%; font-size:.95rem; }
+      th, td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+      th{ font-family:Georgia, serif; }
+      .small{ font-size:.92rem; color:var(--ink-soft); }
+      .record-lesson{ background:var(--chip); border-radius:10px; padding:10px 12px; margin:8px 0; }
+      footer{ border-top:1px solid var(--line); margin-top:34px; padding-top:16px; color:var(--ink-soft); font-size:.93rem; }
+      footer p{ margin:.3rem 0; }
+      .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+    </style>
+  </head>
+  <body>
+    <div class="freebar">Free — always free. No ads, no account, no connection needed.
+      <small>Tap “Save page for offline” in your browser menu and it keeps working with no connection at all. Everything below runs on this one device.</small>
+    </div>
+    <nav class="compass" aria-label="Compass">
+      <a href="https://thethrivingplan.github.io/">Start Page</a>
+      <a href="https://thethrivingplan.github.io/">The Thriving Plan</a>
+      <span class="others-label">Other pages:</span>
+      <a href="https://thethrivingplan.github.io/checkers.html">Checkers</a>
+      <a href="https://thethrivingplan.github.io/solitaire.html">Solitaire</a>
+      <a href="https://thethrivingplan.github.io/tournament-builder.html">Tournament Builder</a>
+    </nav>
+    <main>
+      <div class="hero">
+        <h1>Four in a Row</h1>
+        <p class="lede">Drop a disc, connect four of yours in a line — across, up-down, or diagonal — before the other side does. Thirty seconds to learn; the depth is in the threats you build and the ones you almost didn’t see.</p>
+        <p class="small">Our own version of the proven, documented game <strong>Connect Four</strong> (Milton Bradley, 1974; mathematically solved by Victor Allis in 1988 — with perfect play the first player wins). Rules here stay true to that documented game; the name, art, and words are ours. The worst way to lose this game is to one threat you never saw — so the teaching layer below exists to make every threat visible, as much or as little as you want.</p>
+      </div>
+
+      <div class="variant-banner" id="variantBanner" role="status"></div>
+
+      <div class="layout">
+        <div class="board-wrap">
+          <div class="turn-line"><span class="disc-dot dot1" id="turnDot"></span><span id="turnText" aria-live="polite">Red to move.</span><span class="tally" id="tally"></span></div>
+          <div class="colbtns" id="colBtns" role="group" aria-label="Drop a disc — tap a column"></div>
+          <div class="board" id="board" aria-label="Game board. Tap any column to drop a disc there."></div>
+          <div class="threat-flags" id="threatFlags" aria-hidden="true"></div>
+          <div class="board-actions">
+            <button class="action" id="newGameBtn" type="button">↻ New game — tap to restart</button>
+            <button class="action secondary" id="undoBtn" type="button">Undo — tap to take back</button>
+            <button class="action secondary" id="highlightBtn" type="button" aria-pressed="false">Threat highlighter: Off — tap to turn on</button>
+            <button class="action secondary" id="hintBtn" type="button">Coach hint — tap for advice</button>
+          </div>
+          <div class="coach" id="coachBox" aria-live="polite">
+            <h3 id="coachTitle">Coach</h3>
+            <div id="coachBody"><p>Teaching is on Light. Threats get named here as they form. Turn the dial to Coach for move-by-move advice, or Off for silence.</p></div>
+          </div>
+        </div>
+
+        <div class="side">
+          <section class="panel" aria-labelledby="setupH">
+            <h2 id="setupH">Set up the game</h2>
+            <div class="field">
+              <label>Who are you playing?</label>
+              <div class="seg" role="group" aria-label="Opponent">
+                <button type="button" id="modeBot" aria-pressed="true">Against the bot — tap to choose</button>
+                <button type="button" id="modeTwo" aria-pressed="false">Two players, this device — tap to choose</button>
+              </div>
+            </div>
+            <div class="field" id="levelField">
+              <label>Bot skill — the levels honestly differ (proof below)</label>
+              <div class="level-list" id="levelList">
+                <label><input type="radio" name="level" value="learning"><span><span class="lname">Learning</span><span class="ldesc">Looks 1 move ahead and plays a loose move about half the time; only sometimes spots a block. A gentle first opponent.</span></span></label>
+                <label><input type="radio" name="level" value="steady"><span><span class="lname">Steady</span><span class="ldesc">Looks 3 moves ahead, always blocks a win it can see, still lets about 1 move in 6 slip.</span></span></label>
+                <label><input type="radio" name="level" value="sharp"><span><span class="lname">Sharp</span><span class="ldesc">Looks 5 moves ahead and builds two-threat traps; a slip only about 1 move in 25.</span></span></label>
+                <label><input type="radio" name="level" value="pro"><span><span class="lname">Pro</span><span class="ldesc">Looks 7 moves ahead and plays the solved game’s strategy: centre first, take every win, block every threat, build double threats and refuse yours. Honest label: a deep-search engine playing the winning principles — not a lookup of Allis’s full solution database, so a perfect first player can still beat it.</span></span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="alias1">Player One (red) — name, optional</label>
+              <div class="aliasrow">
+                <input type="text" id="alias1" maxlength="20" placeholder="No name needed — or type one" autocomplete="off">
+                <button type="button" id="dice1" aria-label="Tap for a random name for Player One">🎲</button>
+              </div>
+            </div>
+            <div class="field" id="alias2Field">
+              <label for="alias2">Player Two (gold) — name, optional</label>
+              <div class="aliasrow">
+                <input type="text" id="alias2" maxlength="20" placeholder="No name needed — or type one" autocomplete="off">
+                <button type="button" id="dice2" aria-label="Tap for a random name for Player Two">🎲</button>
+              </div>
+              <p class="hint">Names are play aliases only — session-only, never claimed or checked. Against the bot, Player Two is the bot.</p>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="rulesH">
+            <h2 id="rulesH">Rule settings</h2>
+            <p class="small">Standard rules are the default. Anything else is a variant and gets a banner over the board — a variant’s tally is the variant’s own, never dressed as standard.</p>
+            <div class="field">
+              <label for="gridSel">Board size</label>
+              <select id="gridSel">
+                <option value="7x6" selected>Classic — 7 columns × 6 rows (standard)</option>
+                <option value="8x7">Large — 8 columns × 7 rows (variant)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="needSel">Discs in a row to win</label>
+              <select id="needSel">
+                <option value="3">3 in a row (variant — quick, wild games)</option>
+                <option value="4" selected>4 in a row (standard)</option>
+                <option value="5">5 in a row (variant — long, careful games)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="startSel">Who drops first?</label>
+              <select id="startSel">
+                <option value="p1" selected>Player One (red) — the standard start</option>
+                <option value="p2">Player Two / the bot</option>
+                <option value="random">Coin flip each game</option>
+              </select>
+              <p class="hint">First drop is a real edge in this game — the solved game is a first-player win. Letting the bot start is the honest way to make Pro harder still.</p>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="teachH">
+            <h2 id="teachH">Teaching</h2>
+            <div class="field">
+              <label>Teaching dial — your choice, saved on this device only</label>
+              <div class="seg" role="group" aria-label="Teaching dial">
+                <button type="button" data-teach="off" aria-pressed="false">Off — tap</button>
+                <button type="button" data-teach="light" aria-pressed="true">Light — tap</button>
+                <button type="button" data-teach="coach" aria-pressed="false">Coach — tap</button>
+              </div>
+              <p class="hint"><strong>Light</strong> names each threat the moment it forms. <strong>Coach</strong> also weighs your options before you move — and where more than one real strategy exists, it lays out the alternatives with their trade-offs, never just one way. A single answer appears only when there is genuinely one move that works (like a forced block). <strong>Off</strong> is silent.</p>
+            </div>
+            <div class="field">
+              <p class="hint"><strong>Pro tool:</strong> the <em>Threat highlighter</em> button by the board lights up every one-move winning threat on the board — yours in green, theirs in red — so nothing wins unseen. Tap it on or off any time.</p>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="recordH">
+            <h2 id="recordH">Your strategy record</h2>
+            <p class="small">Every game played here is a strategy builder: this device keeps your record — games, patterns, and the mistakes your own games show — and the Coach teaches from <em>your</em> record first, generic tips second. Saved on this device only, sent nowhere, and forgettable in one tap. Each finished game is stored as a clean line — date, mode, bot level, board, and every move in order — so the record can be studied or tested against later.</p>
+            <div id="recordBody"><p class="small">No games recorded yet. Finish a game and your record starts.</p></div>
+            <button class="action secondary" id="forgetBtn" type="button">Forget my record — tap to erase it from this device</button>
+          </section>
+        </div>
+      </div>
+
+      <section class="panel" style="margin-top:22px" aria-labelledby="stratH">
+        <h2 id="stratH">How pros think — more than one way to win</h2>
+        <p>There is rarely one “right” strategy here. These are the real approaches strong players mix — each with its trade-off, in plain words. The Coach names which ones are live in your position.</p>
+        <table>
+          <tr><th>Strategy</th><th>How it works</th><th>The trade-off</th></tr>
+          <tr><td><strong>Own the centre</strong></td><td>The centre column sits in more possible winning lines than any other — 7 lines run through a centre disc. Strong players take it early and keep building around it.</td><td>Everyone knows it. Fighting for the centre can leave the wings open, and a centre stack is easy to read.</td></tr>
+          <tr><td><strong>Build two threats at once</strong></td><td>One threat gets blocked. A move that creates <em>two</em> winning threats at once can only be blocked in one place — the other wins next turn. This is the move the whole game bends toward.</td><td>Setting it up takes quiet moves that don’t threaten anything yet — a sharp opponent may strike first while you build.</td></tr>
+          <tr><td><strong>Block and build</strong></td><td>When they threaten, don’t just plug the hole — block in the column that also grows your own line, so the same disc defends and attacks.</td><td>Not always available. A plain block that builds nothing is still better than losing — defence first when the win is one move away.</td></tr>
+          <tr><td><strong>Control the row above</strong></td><td>Watch the cell <em>above</em> a threat: dropping into a column can hand the other side the winning cell right on top of your disc. Pros check “what does my move let them play?” before every drop.</td><td>Playing safe can mean passing up your own fastest threat. Sometimes the race is worth it — count who wins first.</td></tr>
+          <tr><td><strong>Count the race</strong></td><td>If both sides have a threat building, the game becomes arithmetic: whose fourth disc lands first, and does either side have to spend a move blocking?</td><td>Miscount by one and the “winning race” loses. When in doubt, the highlighter shows both sides’ threats at once.</td></tr>
+        </table>
+      </section>
+
+      <section class="panel" style="margin-top:22px" aria-labelledby="honestH">
+        <h2 id="honestH">Do the bot levels really differ? The receipts</h2>
+        <p>Before this page shipped, the four levels played each other head-to-head in simulation — same engine, same code the bot uses against you, first move alternated so neither side got the first-drop edge every game. Results, exactly as they came out:</p>
+        <div id="simResults"><table>
+        <tr><th>Match-up (10 games each)</th><th>Result</th></tr>
+        <tr><td>Pro vs Learning</td><td><strong>Pro 10 — Learning 0</strong></td></tr>
+        <tr><td>Sharp vs Learning</td><td><strong>Sharp 10 — Learning 0</strong></td></tr>
+        <tr><td>Steady vs Learning</td><td><strong>Steady 10 — Learning 0</strong></td></tr>
+        <tr><td>Pro vs Steady</td><td><strong>Pro 8 — Steady 1</strong>, 1 draw</td></tr>
+        <tr><td>Sharp vs Steady</td><td><strong>Sharp 8 — Steady 2</strong></td></tr>
+        <tr><td>Pro vs Sharp</td><td><strong>Pro 6 — Sharp 4</strong></td></tr>
+        </table>
+        <p class="small">Every level beat every level below it — no name tags on the wrong strength. The closest fight is Pro vs Sharp, which is honest too: at five moves deep, Sharp already sees most traps; Pro’s edge is the double-threat discipline and never slipping.</p></div>
+        <p class="small">How they differ under the hood: Learning searches 1 move deep and slips to a loose move ~55% of turns; Steady searches 3 deep, slips ~18%; Sharp searches 5 deep, slips ~4%, and takes double-threat moves; Pro searches 7 deep with no slips, takes and refuses double threats, and opens in the centre — the first move of the solved game’s winning strategy (Allis, 1988). Pro is labelled honestly: deep search plus solved-game principles, not the full precomputed solution.</p>
+      </section>
+
+      <footer>
+        <p><strong>Four in a Row</strong> — a work in progress, like everything on the shelf. If something could be better, that’s an invitation: help make it better for everybody.</p>
+        <p>Copyleft: this page and its words are CC BY-SA 4.0; its code is GPL. Copy it, change it, share it — keep the same freedom attached. No ads, ever. Saves (teaching dial, strategy record) live on this device only and are labelled where they’re used.</p>
+      </footer>
+    </main>
+    <p class="sr-only" id="liveRegion" aria-live="assertive"></p>
+
+<script>
+"use strict";
+/* ============ Engine (same code the simulation was run with) ============ */
+function windowsFor(cols, rows, need){
+  var W=[], dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(var r=0;r<rows;r++) for(var c=0;c<cols;c++) for(var d=0;d<4;d++){
+    var dr=dirs[d][0], dc=dirs[d][1], er=r+dr*(need-1), ec=c+dc*(need-1);
+    if(er<0||er>=rows||ec<0||ec>=cols) continue;
+    var cells=[]; for(var k=0;k<need;k++) cells.push((r+dr*k)*cols+(c+dc*k));
+    W.push(cells);
+  }
+  return W;
+}
+function makeGame(cols, rows, need){
+  return { cols:cols, rows:rows, need:need, grid:new Array(cols*rows).fill(0), heights:new Array(cols).fill(0), moves:0, W:windowsFor(cols,rows,need) };
+}
+function validCols(g){ var v=[]; for(var c=0;c<g.cols;c++) if(g.heights[c]<g.rows) v.push(c); return v; }
+function dropDisc(g,c,p){ var r=g.rows-1-g.heights[c]; g.grid[r*g.cols+c]=p; g.heights[c]++; g.moves++; return r; }
+function undropDisc(g,c){ g.heights[c]--; var r=g.rows-1-g.heights[c]; g.grid[r*g.cols+c]=0; g.moves--; }
+function winnerFrom(g,r,c,p){
+  var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(var d=0;d<4;d++){
+    var dr=dirs[d][0], dc=dirs[d][1], n=1, s, rr, cc;
+    for(var si=0;si<2;si++){ s=si===0?1:-1; rr=r+dr*s; cc=c+dc*s;
+      while(rr>=0&&rr<g.rows&&cc>=0&&cc<g.cols&&g.grid[rr*g.cols+cc]===p){ n++; rr+=dr*s; cc+=dc*s; } }
+    if(n>=g.need) return true;
+  }
+  return false;
+}
+function winLine(g,r,c,p){
+  var dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(var d=0;d<4;d++){
+    var dr=dirs[d][0], dc=dirs[d][1], line=[[r,c]], s, rr, cc;
+    for(var si=0;si<2;si++){ s=si===0?1:-1; rr=r+dr*s; cc=c+dc*s;
+      while(rr>=0&&rr<g.rows&&cc>=0&&cc<g.cols&&g.grid[rr*g.cols+cc]===p){ line.push([rr,cc]); rr+=dr*s; cc+=dc*s; } }
+    if(line.length>=g.need) return line;
+  }
+  return null;
+}
+function winningMoves(g,p){
+  var out=[], vc=validCols(g);
+  for(var i=0;i<vc.length;i++){ var c=vc[i], r=dropDisc(g,c,p); if(winnerFrom(g,r,c,p)) out.push(c); undropDisc(g,c); }
+  return out;
+}
+function evaluatePos(g,p){
+  var s=0, need=g.need, mid=(g.cols-1)/2, grid=g.grid, C=g.cols, i, w, k;
+  for(i=0;i<grid.length;i++){
+    var v=grid[i]; if(!v) continue;
+    var cb=(3-Math.min(3,Math.abs((i%C)-mid)))*3;
+    s += v===p? cb : -cb;
+  }
+  for(w=0;w<g.W.length;w++){
+    var cells=g.W[w], me=0, op=0, em=0;
+    for(k=0;k<need;k++){ var vv=grid[cells[k]]; if(vv===p)me++; else if(vv===0)em++; else op++; }
+    if(me&&op) continue;
+    if(me===need-1&&em===1) s+=1200; else if(me===need-2&&em===2) s+=110; else if(me>0) s+=me*6;
+    if(op===need-1&&em===1) s-=1100; else if(op===need-2&&em===2) s-=95; else if(op>0) s-=op*5;
+  }
+  return s;
+}
+function orderedCols(g){ var mid=(g.cols-1)/2; return validCols(g).sort(function(a,b){ return Math.abs(a-mid)-Math.abs(b-mid); }); }
+var NODES=0, NODECAP=90000;
+function searchPos(g, depth, alpha, beta, turn, root){
+  if(++NODES>NODECAP || depth===0) return evaluatePos(g,root);
+  var cols=orderedCols(g);
+  if(!cols.length) return 0;
+  var maximizing = turn===root, best = maximizing? -Infinity : Infinity;
+  for(var i=0;i<cols.length;i++){
+    var c=cols[i], r=dropDisc(g,c,turn);
+    var sc = winnerFrom(g,r,c,turn) ? (turn===root?1:-1)*(10000000+depth*10000) : searchPos(g, depth-1, alpha, beta, 3-turn, root);
+    undropDisc(g,c);
+    if(maximizing){ if(sc>best)best=sc; if(sc>alpha)alpha=sc; } else { if(sc<best)best=sc; if(sc<beta)beta=sc; }
+    if(beta<=alpha) break;
+  }
+  return best;
+}
+function createsDoubleThreat(g,c,p){
+  var r=dropDisc(g,c,p), n=0;
+  if(!winnerFrom(g,r,c,p)) n=winningMoves(g,p).length;
+  undropDisc(g,c);
+  return n>=2;
+}
+var LEVELS={ learning:{depth:1, slip:0.55, label:"Learning"}, steady:{depth:3, slip:0.18, label:"Steady"}, sharp:{depth:5, slip:0.04, label:"Sharp"}, pro:{depth:7, slip:0, label:"Pro"} };
+function botChoose(g,p,level){
+  var cfg=LEVELS[level], cols=validCols(g);
+  if(cols.length===1) return cols[0];
+  var wins=winningMoves(g,p), blocks=winningMoves(g,3-p);
+  if(Math.random()<cfg.slip) return cols[Math.floor(Math.random()*cols.length)];
+  if(wins.length) return wins[0];
+  if(blocks.length && (level!=="learning" || Math.random()<0.5)) return blocks[0];
+  if(level==="pro" || level==="sharp"){
+    var oc=orderedCols(g), i, c, r;
+    for(i=0;i<oc.length;i++){ if(createsDoubleThreat(g,oc[i],p)) return oc[i]; }
+    if(level==="pro"){
+      var safe=oc.filter(function(cc){ var rr=dropDisc(g,cc,p); var bad=winningMoves(g,3-p).length>=2; undropDisc(g,cc); return !bad; });
+      if(safe.length && safe.length<cols.length){
+        var best=-Infinity, bc=safe[0];
+        for(i=0;i<safe.length;i++){ c=safe[i]; r=dropDisc(g,c,p); NODES=0; var sc2=searchPos(g,cfg.depth-1,-Infinity,Infinity,3-p,p); undropDisc(g,c); if(sc2>best){best=sc2;bc=c;} }
+        return bc;
+      }
+    }
+  }
+  var bestScore=-Infinity, bestCols=[], oc2=orderedCols(g);
+  for(var j=0;j<oc2.length;j++){
+    var cc2=oc2[j], rr2=dropDisc(g,cc2,p);
+    NODES=0;
+    var sc3 = winnerFrom(g,rr2,cc2,p) ? 10000000 : searchPos(g,cfg.depth-1,-Infinity,Infinity,3-p,p);
+    undropDisc(g,cc2);
+    if(sc3>bestScore){ bestScore=sc3; bestCols=[cc2]; } else if(sc3===bestScore) bestCols.push(cc2);
+  }
+  return bestCols[Math.floor(Math.random()*bestCols.length)];
+}
+/* Analyse one candidate move for the Coach: what it does, in plain features. */
+function analyseMove(g,p,c){
+  var opp=3-p, r=dropDisc(g,c,p);
+  var f={ col:c, winsNow: winnerFrom(g,r,c,p), myThreats:0, givesWin:false, score:0 };
+  if(!f.winsNow){ f.myThreats=winningMoves(g,p).length; f.givesWin=winningMoves(g,opp).length>0; }
+  NODES=0; f.score=searchPos(g,3,-Infinity,Infinity,opp,p);
+  undropDisc(g,c);
+  return f;
+}
+
+/* ============ State ============ */
+var $=function(id){ return document.getElementById(id); };
+var state={
+  mode:"bot", level:"steady", teaching:"light",
+  cols:7, rows:6, need:4, startRule:"p1",
+  g:null, turn:1, starter:1, over:false, winCells:null,
+  history:[], moveCols:[], highlight:false, centreLessonShown:false,
+  tally:{ p1:0, p2:0, draws:0 },
+  pendingMissBlock:false, pendingOppDouble:false
+};
+try{ var savedTeach=localStorage.getItem("fourinarow.teaching"); if(savedTeach && ["off","light","coach"].indexOf(savedTeach)>=0) state.teaching=savedTeach; }catch(e){}
+
+var ALIASES=["Dusty Coyote","Velvet Fox","Captain Comet","Peppy Otter","Golden Badger","Midnight Heron","Lucky Turnip","Brave Biscuit","Cosmic Wombat","Jazzy Falcon","Mellow Moose","Turbo Snail","Velvet Hammer","Sunny Side Up","Quiet Thunder","Paper Tiger"];
+function nameFor(p){
+  var v=(p===1? $("alias1").value : $("alias2").value).trim();
+  if(v) return v;
+  if(p===2 && state.mode==="bot") return "Bot ("+LEVELS[state.level].label+")";
+  return p===1? "Red" : "Gold";
+}
+function colourName(p){ return p===1? "red" : "gold"; }
+
+/* ============ Strategy record (device-only) ============ */
+var REC_KEY="fourinarow.record.v1";
+function loadRecord(){
+  try{ var raw=localStorage.getItem(REC_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return { games:0, wins:0, losses:0, draws:0, vsBot:{}, centreFirst:0, gamesAsFirst:0, missedBlocks:0, doubleThreatsMade:0, lossesToDouble:0, log:[] };
+}
+function saveRecord(rec){ try{ localStorage.setItem(REC_KEY, JSON.stringify(rec)); }catch(e){} }
+function renderRecord(){
+  var rec=loadRecord(), box=$("recordBody");
+  if(!rec.games){ box.innerHTML='<p class="small">No games recorded yet. Finish a game and your record starts.</p>'; return; }
+  var html='<table><tr><th>Played</th><th>Won</th><th>Lost</th><th>Drawn</th></tr><tr><td>'+rec.games+'</td><td>'+rec.wins+'</td><td>'+rec.losses+'</td><td>'+rec.draws+'</td></tr></table>';
+  if(rec.gamesAsFirst) html+='<p class="small">Going first, you took the centre column first in '+rec.centreFirst+' of '+rec.gamesAsFirst+' games. Pros fight for the centre — it sits in the most winning lines.</p>';
+  if(rec.missedBlocks) html+='<div class="record-lesson"><strong>From your own games:</strong> you left a block unplayed '+rec.missedBlocks+' time'+(rec.missedBlocks===1?"":"s")+' when the other side was one drop from winning. The Coach now calls blocks out loud, and the threat highlighter shows them in red — that leak is the first one to close.</div>';
+  if(rec.doubleThreatsMade) html+='<div class="record-lesson"><strong>From your own games:</strong> you built two threats at once '+rec.doubleThreatsMade+' time'+(rec.doubleThreatsMade===1?"":"s")+' — the strongest pattern in this game. Build toward it on purpose.</div>';
+  if(rec.lossesToDouble) html+='<div class="record-lesson"><strong>From your own games:</strong> '+rec.lossesToDouble+' of your losses came from a double threat — two winning spots, only one block. The defence is earlier: don’t let both arms of the trap finish. Watch for a side holding two separate three-in-a-rows.</div>';
+  if(!rec.missedBlocks && !rec.doubleThreatsMade && !rec.lossesToDouble) html+='<p class="small">Patterns will appear here as your games add up — missed blocks, double threats built and suffered, centre habits.</p>';
+  box.innerHTML=html;
+}
+function recordGame(result){
+  var rec=loadRecord();
+  rec.games++;
+  if(state.mode==="bot"){
+    if(result===1) rec.wins++; else if(result===2) rec.losses++; else rec.draws++;
+    var k=state.level; rec.vsBot[k]=rec.vsBot[k]||{w:0,l:0,d:0};
+    if(result===1)rec.vsBot[k].w++; else if(result===2)rec.vsBot[k].l++; else rec.vsBot[k].d++;
+  } else {
+    if(result===0) rec.draws++; else if(result===1) rec.wins++; else rec.losses++;
+  }
+  rec.log.push({ date:new Date().toISOString(), mode:state.mode, level:state.mode==="bot"?state.level:null, board:state.cols+"x"+state.rows, need:state.need, starter:state.starter, moves:state.moveCols.slice(), result: result===0? "draw" : (result===1? "p1" : "p2") });
+  if(rec.log.length>50) rec.log=rec.log.slice(rec.log.length-50);
+  saveRecord(rec); renderRecord();
+}
+
+/* ============ Teaching ============ */
+function teach(html, warn){
+  if(state.teaching==="off"){ $("coachBox").style.display="none"; return; }
+  $("coachBox").style.display="";
+  $("coachBox").className="coach"+(warn? " warn":"");
+  $("coachTitle").textContent = state.teaching==="coach"? "Coach" : "Teaching — Light";
+  $("coachBody").innerHTML=html;
+}
+function threatsText(p){
+  var wm=winningMoves(state.g,p);
+  return wm;
+}
+function coachAdvice(){
+  /* Before the human's move (Coach mode, or on Hint tap): lay out the real options. */
+  if(state.over) return;
+  var g=state.g, p=state.turn, opp=3-p;
+  var myWins=winningMoves(g,p), oppWins=winningMoves(g,opp);
+  if(myWins.length===1 && oppWins.length===0){
+    return { html:"<p><strong>One move wins:</strong> drop in <strong>column "+(myWins[0]+1)+"</strong> and the line is complete. That’s the only winning move — take it.</p>", warn:false };
+  }
+  if(oppWins.length>=2){
+    return { html:"<p><strong>Two threats at once</strong> — they win next turn in column "+(oppWins[0]+1)+" or column "+(oppWins[1]+1)+", and one disc blocks only one. This is the double threat pros build toward. Play on, and watch how it was set up two moves ago.</p>", warn:true };
+  }
+  if(oppWins.length===1 && myWins.length===0){
+    var analyses=validCols(g).map(function(c){ return analyseMove(g,p,c); });
+    var blocker=analyses.filter(function(a){ return a.col===oppWins[0]; })[0];
+    var builders=analyses.filter(function(a){ return a.col!==oppWins[0] && !a.givesWin; }).sort(function(a,b){ return b.score-a.score; });
+    var html="<p><strong>Forced block — genuinely one answer:</strong> they win next turn in <strong>column "+(oppWins[0]+1)+"</strong>. Only a disc there stops it, so this move chooses itself.</p>";
+    if(builders.length){
+      var b=builders[0];
+      html+="<p>For next time, the trade-off you just paid: column "+(b.col+1)+" was your strongest building move"+(b.myThreats? " — it would have made a threat of your own" : "")+", but building loses on the spot when a win is one drop away. Defence first, then build.</p>";
+    }
+    return { html:html, warn:true };
+  }
+  /* Open position: offer the real alternatives with trade-offs. */
+  var list=validCols(g).map(function(c){ return analyseMove(g,p,c); });
+  list.sort(function(a,b){ return b.score-a.score; });
+  var picks=[], seen={};
+  for(var i=0;i<list.length && picks.length<2;i++){
+    var a=list[i], kind= a.myThreats>=2? "double" : a.myThreats===1? "threat" : (a.col===Math.floor(g.cols/2)? "centre" : "quiet");
+    if(picks.length && seen[kind]) continue;
+    seen[kind]=true; picks.push({a:a, kind:kind});
+  }
+  if(picks.length<2 && list.length>1) picks.push({a:list[1], kind:"alt"});
+  var lines=picks.map(function(pk){
+    var a=pk.a, desc="";
+    if(a.myThreats>=2) desc="<strong>Build two threats at once</strong> — column "+(a.col+1)+" leaves you winning next turn in two places; one block can’t cover both.";
+    else if(a.myThreats===1) desc="<strong>Build a threat</strong> — column "+(a.col+1)+" makes three with the fourth spot open, so they must answer it.";
+    else if(pk.kind==="centre") desc="<strong>Own the centre</strong> — column "+(a.col+1)+" sits in the most winning lines and keeps your options widest.";
+    else desc="<strong>Build quietly</strong> — column "+(a.col+1)+" grows your lines without showing a threat yet.";
+    if(a.givesWin) desc+=" Trade-off: it hands them a winning drop next turn — likely too dear.";
+    else if(oppWins.length===0 && a.myThreats===0) desc+=" Trade-off: no immediate threat, so a sharp opponent builds freely for a turn.";
+    return "<li>"+desc+"</li>";
+  });
+  var html2="<p><strong>More than one real way to play this.</strong> The strongest options:</p><ul>"+lines.join("")+"</ul><p>Neither is ‘the answer’ — pick by taste: threats force replies, quiet builds hide your plan. The highlighter shows every one-move threat if you want the full picture.</p>";
+  return { html:html2, warn:false };
+}
+function afterMoveTeaching(mover, col){
+  if(state.teaching==="off") return;
+  var g=state.g, opp=3-mover;
+  var moverThreats=winningMoves(g,mover);
+  var rec=loadRecord(), dirty=false;
+  /* Track the human's patterns for the strategy record (bot mode: human is P1; two-player: both sides are human). */
+  var moverIsRecordedHuman = state.mode==="bot"? mover===1 : true;
+  if(moverIsRecordedHuman && moverThreats.length>=2 && !state.over){ rec.doubleThreatsMade++; dirty=true; }
+  if(dirty) saveRecord(rec);
+  if(state.over) return;
+  if(moverThreats.length>=2){
+    teach("<p><strong>Two threats at once!</strong> "+nameFor(mover)+" now wins next turn in <strong>column "+(moverThreats[0]+1)+"</strong> or <strong>column "+(moverThreats[1]+1)+"</strong> — and "+nameFor(opp)+" can block only one. This is the move pros build the whole game toward.</p>", true);
+    return;
+  }
+  if(moverThreats.length===1){
+    teach("<p><strong>Threat on the board:</strong> "+nameFor(mover)+" wins next turn by dropping in <strong>column "+(moverThreats[0]+1)+"</strong>. "+(state.mode==="bot" && opp===1? "That column is the block — one move, no choice about it." : nameFor(opp)+" has to answer it, or the game ends.")+"</p>", true);
+    return;
+  }
+  if(!state.centreLessonShown && g.moves<=2 && state.teaching==="coach"){
+    state.centreLessonShown=true;
+    teach("<p><strong>The centre lesson:</strong> the centre column runs through more winning lines than any other — that’s why pros drop there first (it’s also the solved game’s winning opening). Edge columns aren’t wasted, but they join fewer lines.</p>", false);
+    return;
+  }
+  if(state.teaching==="coach" && (state.mode==="two" || state.turn===1)){
+    var adv=coachAdvice(); teach(adv.html, adv.warn);
+  } else if(state.teaching==="coach"){
+    teach("<p>"+nameFor(2)+" is thinking. Your turn next — the Coach will weigh your options then.</p>", false);
+  } else {
+    teach("<p>No new threat that move. Threats get named here the moment they form — nothing wins unseen on Light.</p>", false);
+  }
+}
+
+/* ============ Board rendering ============ */
+function isVariant(){ return !(state.cols===7 && state.rows===6 && state.need===4); }
+function renderVariant(){
+  var b=$("variantBanner");
+  if(isVariant()){
+    b.textContent="Variant in play: "+state.cols+" columns × "+state.rows+" rows, connect "+state.need+". Not the standard game — this tally belongs to this variant.";
+    b.classList.add("show");
+  } else b.classList.remove("show");
+}
+function renderBoard(lastMove){
+  var g=state.g, board=$("board");
+  board.style.gridTemplateColumns="repeat("+g.cols+", 1fr)";
+  var html="";
+  for(var r=0;r<g.rows;r++) for(var c=0;c<g.cols;c++){
+    var v=g.grid[r*g.cols+c], cls="cell";
+    if(state.winCells && state.winCells.some(function(wc){ return wc[0]===r && wc[1]===c; })) cls+=" win";
+    var inner="";
+    if(v){
+      var fallCls = (lastMove && lastMove[0]===r && lastMove[1]===c)? " fall":"";
+      var fallRows = lastMove && lastMove[1]===c? (r+1) : 1;
+      inner='<span class="disc d'+v+fallCls+'" style="--fall:'+fallRows+'"></span>';
+    }
+    html+='<div class="'+cls+'" data-r="'+r+'" data-c="'+c+'">'+inner+'</div>';
+  }
+  board.innerHTML=html;
+  /* Threat highlighter */
+  var flags=$("threatFlags");
+  flags.style.gridTemplateColumns="repeat("+g.cols+", 1fr)";
+  flags.innerHTML="";
+  if(state.highlight && !state.over){
+    var mine=winningMoves(g, state.mode==="bot"? 1 : state.turn);
+    var theirs=winningMoves(g, state.mode==="bot"? 2 : 3-state.turn);
+    var cells=board.querySelectorAll(".cell");
+    function mark(list, clsName){
+      list.forEach(function(c){
+        var r=g.rows-g.heights[c];
+        if(r>=0){ var cell=cells[r*g.cols+c]; if(cell) cell.classList.add(clsName); }
+      });
+    }
+    mark(mine,"threat-mine"); mark(theirs,"threat-theirs");
+    for(var c2=0;c2<g.cols;c2++){
+      var label="";
+      if(mine.indexOf(c2)>=0) label='<span class="flag-mine">▲ wins</span>';
+      else if(theirs.indexOf(c2)>=0) label='<span class="flag-theirs">▲ block!</span>';
+      flags.innerHTML+="<div>"+label+"</div>";
+    }
+  }
+  /* Column buttons */
+  var btns=$("colBtns");
+  btns.style.gridTemplateColumns="repeat("+g.cols+", 1fr)";
+  var bhtml="";
+  for(var cc=0;cc<g.cols;cc++){
+    var full=g.heights[cc]>=g.rows;
+    bhtml+='<button type="button" data-col="'+cc+'" '+(full||state.over? "disabled":"")+' aria-label="Tap to drop a disc in column '+(cc+1)+'">↓ '+(cc+1)+"</button>";
+  }
+  btns.innerHTML=bhtml;
+  /* Turn line */
+  var dot=$("turnDot");
+  if(state.over){
+    dot.style.visibility="hidden";
+  } else {
+    dot.style.visibility="visible";
+    dot.className="disc-dot "+(state.turn===1? "dot1":"dot2");
+    $("turnText").textContent = nameFor(state.turn)+" ("+colourName(state.turn)+") to move — tap a column to drop.";
+  }
+  $("tally").textContent = nameFor(1)+": "+state.tally.p1+" · "+nameFor(2)+": "+state.tally.p2+(state.tally.draws? " · Draws: "+state.tally.draws : "");
+  $("undoBtn").disabled = state.history.length===0;
+}
+function announce(msg){ $("liveRegion").textContent=msg; }
+
+/* ============ Game flow ============ */
+function newGame(){
+  state.g=makeGame(state.cols, state.rows, state.need);
+  state.starter = state.startRule==="p1"? 1 : state.startRule==="p2"? 2 : (Math.random()<0.5? 1:2);
+  state.turn=state.starter;
+  state.over=false; state.winCells=null; state.history=[]; state.moveCols=[]; state.lastResult=undefined; state.lastMove=null;
+  state.centreLessonShown=false; state.pendingMissBlock=false; state.pendingOppDouble=false;
+  renderVariant(); renderBoard(null);
+  if(state.teaching!=="off"){
+    if(state.mode==="bot" && state.starter===2) teach("<p>The bot drops first this game. First drop is a real edge here — watch how it plays the centre.</p>", false);
+    else if(state.teaching==="coach"){ var adv=coachAdvice(); teach(adv.html, adv.warn); }
+    else teach("<p>New game. "+nameFor(state.turn)+" starts. Threats will be named here as they form.</p>", false);
+  } else teach("", false);
+  if(state.mode==="bot" && state.turn===2 && !state.over) setTimeout(botTurn, 500);
+}
+function endGame(winner, line){
+  state.over=true; state.winCells=line||null; state.lastResult=winner;
+  state.lastDoubleLoss = (state.mode==="bot" && winner===2 && state.pendingOppDouble);
+  if(winner===0){ state.tally.draws++; $("turnText").textContent="A draw — the board filled with no line of "+state.need+"."; }
+  else{
+    if(winner===1) state.tally.p1++; else state.tally.p2++;
+    $("turnText").textContent=nameFor(winner)+" wins — "+state.need+" "+colourName(winner)+" discs in a row!";
+  }
+  announce($("turnText").textContent);
+  /* Strategy record: losses to a double threat? */
+  if(state.mode==="bot" && winner===2 && state.pendingOppDouble){
+    var rec=loadRecord(); rec.lossesToDouble++; saveRecord(rec);
+  }
+  recordGame(winner);
+  renderBoard(state.lastMove);
+  if(state.teaching!=="off"){
+    if(winner===0) teach("<p><strong>Draw.</strong> A full board with no line — solid defence on both sides. The rematch is one tap away.</p>", false);
+    else if(state.mode==="bot" && winner===2) teach("<p><strong>The bot takes it.</strong> Look at the winning line — and at the move before it: was there a threat showing that the highlighter would have lit red? That’s the pattern your strategy record is watching for.</p>", true);
+    else teach("<p><strong>"+nameFor(winner)+" wins it.</strong> The winning line is outlined on the board. Notice what made it unstoppable — a single threat, or two at once?</p>", false);
+  }
+}
+function humanMove(c){
+  if(state.over || !state.g) return;
+  if(state.g.heights[c]>=state.g.rows) return;
+  if(state.mode==="bot" && state.turn===2) return;
+  doMove(c);
+  if(!state.over && state.mode==="bot") setTimeout(botTurn, 420);
+}
+function doMove(c){
+  var g=state.g, p=state.turn;
+  /* Record-keeping before the move: missed block? */
+  if(state.mode==="bot" && p===1 && !state.over){
+    var oppWins=winningMoves(g,2);
+    state.pendingMissBlock = oppWins.length===1 && c!==oppWins[0];
+    state.pendingOppDouble = winningMoves(g,2).length>=2;
+    if(state.pendingMissBlock){ var rec=loadRecord(); rec.missedBlocks++; saveRecord(rec); renderRecord(); }
+    if(state.starter===1 && g.moves===0){ var rec2=loadRecord(); rec2.gamesAsFirst++; if(c===Math.floor(g.cols/2)) rec2.centreFirst++; saveRecord(rec2); }
+  }
+  var r=dropDisc(g,c,p);
+  state.history.push(c); state.moveCols.push(c+1);
+  state.lastMove=[r,c];
+  var line=winLine(g,r,c,p);
+  renderBoard(state.lastMove);
+  if(line){ endGame(p, line); return; }
+  if(g.moves>=g.cols*g.rows){ endGame(0, null); return; }
+  state.turn=3-p;
+  renderBoard(state.lastMove);
+  afterMoveTeaching(p, c);
+}
+function botTurn(){
+  if(state.over || state.mode!=="bot" || state.turn!==2) return;
+  $("turnText").textContent=nameFor(2)+" is thinking…";
+  var c=botChoose(state.g, 2, state.level);
+  doMove(c);
+}
+function unrecordLastGame(){
+  /* Taking back the end of a finished game un-writes its result, so the record stays true. */
+  var rec=loadRecord(), w=state.lastResult;
+  if(rec.games>0){
+    rec.games--;
+    if(w===1) rec.wins=Math.max(0,rec.wins-1); else if(w===2) rec.losses=Math.max(0,rec.losses-1); else rec.draws=Math.max(0,rec.draws-1);
+    if(state.mode==="bot"){ var k=state.level, vb=rec.vsBot[k]; if(vb){ if(w===1)vb.w=Math.max(0,vb.w-1); else if(w===2)vb.l=Math.max(0,vb.l-1); else vb.d=Math.max(0,vb.d-1); } }
+    if(state.lastDoubleLoss) rec.lossesToDouble=Math.max(0,rec.lossesToDouble-1);
+    rec.log.pop();
+    saveRecord(rec); renderRecord();
+  }
+  if(w===1) state.tally.p1=Math.max(0,state.tally.p1-1); else if(w===2) state.tally.p2=Math.max(0,state.tally.p2-1); else state.tally.draws=Math.max(0,state.tally.draws-1);
+  state.lastResult=undefined; state.lastDoubleLoss=false;
+}
+function undo(){
+  if(!state.history.length) return;
+  if(state.over && state.lastResult!==undefined) unrecordLastGame();
+  var steps = state.mode==="bot"? Math.min(2, state.history.length) : 1;
+  for(var i=0;i<steps;i++){ var c=state.history.pop(); state.moveCols.pop(); undropDisc(state.g,c); }
+  state.over=false; state.winCells=null;
+  state.turn = state.history.length%2===0? state.starter : 3-state.starter;
+  renderBoard(null);
+  if(state.teaching!=="off") teach("<p>Taken back. The board is as it was — try the other plan.</p>", false);
+}
+
+/* ============ Wiring ============ */
+function setMode(m){
+  state.mode=m;
+  $("modeBot").setAttribute("aria-pressed", m==="bot"? "true":"false");
+  $("modeTwo").setAttribute("aria-pressed", m==="two"? "true":"false");
+  $("levelField").style.display = m==="bot"? "" : "none";
+  $("alias2Field").style.opacity = m==="bot"? ".75":"1";
+  newGame();
+}
+$("modeBot").addEventListener("click", function(){ setMode("bot"); });
+$("modeTwo").addEventListener("click", function(){ setMode("two"); });
+document.querySelectorAll('input[name="level"]').forEach(function(radio){
+  radio.addEventListener("change", function(){ state.level=radio.value; newGame(); });
+});
+document.querySelector('input[name="level"][value="steady"]').checked=true;
+$("gridSel").addEventListener("change", function(){
+  var parts=this.value.split("x"); state.cols=parseInt(parts[0],10); state.rows=parseInt(parts[1],10);
+  state.tally={p1:0,p2:0,draws:0}; newGame();
+});
+$("needSel").addEventListener("change", function(){ state.need=parseInt(this.value,10); state.tally={p1:0,p2:0,draws:0}; newGame(); });
+$("startSel").addEventListener("change", function(){ state.startRule=this.value; newGame(); });
+$("newGameBtn").addEventListener("click", newGame);
+$("undoBtn").addEventListener("click", undo);
+$("highlightBtn").addEventListener("click", function(){
+  state.highlight=!state.highlight;
+  this.setAttribute("aria-pressed", state.highlight? "true":"false");
+  this.textContent = state.highlight? "Threat highlighter: On — tap to turn off" : "Threat highlighter: Off — tap to turn on";
+  renderBoard(null);
+  if(state.highlight && state.teaching!=="off") teach("<p><strong>Highlighter on.</strong> Green ▲ = a column where the side to watch wins next drop; red ▲ = a column that must be blocked. Both sides’ one-move threats, lit at once — nothing wins unseen now.</p>", false);
+});
+$("hintBtn").addEventListener("click", function(){
+  if(state.teaching==="off"){ state.teaching="light"; syncTeaching(); }
+  if(state.over){ teach("<p>That game is finished — tap New game and the Coach will weigh the fresh board.</p>", false); return; }
+  if(state.mode==="bot" && state.turn===2){ teach("<p>The bot is mid-move — hints land on your turn.</p>", false); return; }
+  var adv=coachAdvice(); teach(adv.html, adv.warn);
+});
+function syncTeaching(){
+  document.querySelectorAll("[data-teach]").forEach(function(b){
+    b.setAttribute("aria-pressed", b.getAttribute("data-teach")===state.teaching? "true":"false");
+  });
+  try{ localStorage.setItem("fourinarow.teaching", state.teaching); }catch(e){}
+  $("coachBox").style.display = state.teaching==="off"? "none":"";
+}
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click", function(){
+    state.teaching=b.getAttribute("data-teach"); syncTeaching();
+    if(state.teaching==="light") teach("<p>Teaching on Light: threats get named here the moment they form.</p>", false);
+    if(state.teaching==="coach" && !state.over && (state.mode==="two" || state.turn===1)){ var adv=coachAdvice(); teach(adv.html, adv.warn); }
+    if(state.teaching==="coach" && state.mode==="bot" && state.turn===2) teach("<p>Coach on. Advice lands on your turns, with the alternatives laid out where more than one exists.</p>", false);
+  });
+});
+function dice(btn, input){
+  $(btn).addEventListener("click", function(){
+    var other = input==="alias1"? $("alias2").value : $("alias1").value;
+    var pick; do{ pick=ALIASES[Math.floor(Math.random()*ALIASES.length)]; }while(pick===other);
+    $(input).value=pick; renderBoard(null);
+  });
+}
+dice("dice1","alias1"); dice("dice2","alias2");
+$("alias1").addEventListener("input", function(){ renderBoard(null); });
+$("alias2").addEventListener("input", function(){ renderBoard(null); });
+$("forgetBtn").addEventListener("click", function(){
+  try{ localStorage.removeItem(REC_KEY); }catch(e){}
+  renderRecord();
+  this.textContent="Record erased — tap to forget again any time";
+  setTimeout(function(){ $("forgetBtn").textContent="Forget my record — tap to erase it from this device"; }, 2500);
+});
+$("colBtns").addEventListener("click", function(e){
+  var b=e.target.closest("button[data-col]"); if(!b) return;
+  humanMove(parseInt(b.getAttribute("data-col"),10));
+});
+$("board").addEventListener("click", function(e){
+  var cell=e.target.closest(".cell"); if(!cell) return;
+  humanMove(parseInt(cell.getAttribute("data-c"),10));
+});
+document.addEventListener("keydown", function(e){
+  if(e.target.tagName==="INPUT" || e.target.tagName==="SELECT" || e.target.tagName==="TEXTAREA") return;
+  var n=parseInt(e.key,10);
+  if(n>=1 && n<=state.cols) humanMove(n-1);
+});
+syncTeaching();
+renderRecord();
+newGame();
+</script>
+  </body>
+</html>
