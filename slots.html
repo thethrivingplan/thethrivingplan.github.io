@@ -1,0 +1,1148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Slots</title>
+    <style>
+      :root{
+        --bg:#edf0ea; --surface:#ffffff; --surface2:#f4f6f1; --ink:#1b2420; --ink-soft:#43534a;
+        --line:#c9d2c6; --felt:#14532d; --felt-deep:#0d3d21; --brass:#a8741a; --brass-bright:#c98f1f;
+        --reel-bg:#fffdf4; --reel-ink:#22271f; --win:#b7791f; --win-bg:#fdf3d7;
+        --good:#166534; --banner-bg:#14532d; --banner-ink:#f5f9f3;
+        --shadow:0 2px 10px rgba(20,40,25,.12);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0f1411; --surface:#1a211c; --surface2:#212a23; --ink:#edf2ec; --ink-soft:#aebbb0;
+          --line:#39463c; --felt:#0e3a20; --felt-deep:#092a17; --brass:#d9a441; --brass-bright:#e7b958;
+          --reel-bg:#f7f1dc; --reel-ink:#22271f; --win:#e7b958; --win-bg:#3a2f10;
+          --good:#7fce9b; --banner-bg:#0e3a20; --banner-ink:#eef6ee;
+          --shadow:0 2px 12px rgba(0,0,0,.45);
+        }
+      }
+      *{box-sizing:border-box}
+      body{margin:0;background:var(--bg);color:var(--ink);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        line-height:1.5;-webkit-text-size-adjust:100%}
+      button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.75rem}
+      button{font:inherit;cursor:pointer;border-radius:10px;border:1.5px solid var(--line);
+        background:var(--surface);color:var(--ink);padding:.5rem .9rem}
+      button:active{transform:translateY(1px)}
+      button:disabled{opacity:.45;cursor:default;transform:none}
+      select,input[type="text"]{font:inherit;padding:.45rem .6rem;border-radius:10px;border:1.5px solid var(--line);
+        background:var(--surface);color:var(--ink)}
+      .wrap{max-width:880px;margin:0 auto;padding:0 14px 40px}
+      h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2}
+      h1{font-size:2rem;margin:.4rem 0 .2rem}
+      h2{font-size:1.35rem;margin:0 0 .4rem}
+      h3{font-size:1.08rem;margin:.9rem 0 .3rem}
+      p{margin:.45rem 0}
+      .small{font-size:.9rem;color:var(--ink-soft)}
+      /* Unmissable top banner */
+      .free-banner{background:var(--banner-bg);color:var(--banner-ink);padding:.65rem 14px;text-align:center;
+        font-weight:700;font-size:1.02rem}
+      .free-banner .sub{display:block;font-weight:400;font-size:.88rem;opacity:.92}
+      .intro{color:var(--ink-soft);max-width:65ch}
+      /* Bank bar */
+      .bank{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:14px 0}
+      .bank .cell{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+        padding:.55rem .8rem;box-shadow:var(--shadow)}
+      .bank .label{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)}
+      .bank .value{font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums}
+      .bank .grow{flex:1 1 180px}
+      .refill-btn{background:var(--brass-bright);border-color:var(--brass);color:#221a05;font-weight:800}
+      .stats{display:flex;flex-wrap:wrap;gap:6px 18px;background:var(--surface2);border:1px solid var(--line);
+        border-radius:12px;padding:.5rem .8rem;font-size:.92rem;font-variant-numeric:tabular-nums}
+      /* Machine tabs */
+      .tabs{display:flex;gap:8px;margin:16px 0 10px;flex-wrap:wrap}
+      .tabs button{flex:1 1 150px;font-weight:700;font-size:1.02rem;padding:.7rem}
+      .tabs button[aria-selected="true"]{background:var(--felt);color:#f2f7f0;border-color:var(--felt-deep)}
+      /* Cabinet */
+      .cabinet{background:linear-gradient(180deg,var(--felt),var(--felt-deep));border-radius:18px;
+        padding:16px 14px 18px;box-shadow:var(--shadow);color:#eef5ec}
+      .cabinet h2{color:#fff}
+      .variant-banner{background:#f5c542;color:#241a02;border-radius:10px;padding:.5rem .8rem;font-weight:700;
+        margin:0 0 10px;font-size:.95rem}
+      .reel-row{display:flex;gap:10px;align-items:stretch}
+      .reels{display:flex;gap:8px;flex:1;justify-content:center}
+      .reel{background:var(--reel-bg);color:var(--reel-ink);border-radius:12px;flex:1;max-width:150px;
+        min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        box-shadow:inset 0 0 0 3px rgba(0,0,0,.08);padding:6px 2px}
+      .reel .glyph{font-size:2.7rem;line-height:1.05;font-weight:800}
+      .reel .rname{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:#5a6152}
+      .reel.stopped{box-shadow:inset 0 0 0 3px var(--brass)}
+      .lever{flex:0 0 54px;display:flex;flex-direction:column;align-items:center;gap:6px}
+      .lever button{width:54px;min-height:104px;border-radius:27px;background:var(--surface2);font-size:.72rem;
+        font-weight:700;line-height:1.25;padding:.4rem .2rem}
+      .lever .knob{width:26px;height:26px;border-radius:50%;background:#c0392b;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+      .lever.pulled button{transform:translateY(6px)}
+      /* Lines grid */
+      .grid5{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);grid-auto-flow:column;gap:6px;flex:1}
+      .cell5{background:var(--reel-bg);color:var(--reel-ink);border-radius:9px;min-height:64px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 1px;
+        box-shadow:inset 0 0 0 2px rgba(0,0,0,.07)}
+      .cell5 .glyph{font-size:1.65rem;line-height:1.05;font-weight:800}
+      .cell5 .rname{font-size:.58rem;letter-spacing:.04em;text-transform:uppercase;color:#5a6152}
+      .cell5.win{box-shadow:inset 0 0 0 3px var(--win);background:var(--win-bg)}
+      .glyph.bar{font-size:1.15rem;letter-spacing:.08em;background:#22271f;color:#f7f1dc;border-radius:5px;padding:.15em .35em}
+      .glyph.seven{color:#b3282d}
+      .glyph.dia{color:#1d6fb8}
+      /* Controls on the face */
+      .face-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:end}
+      .ctl{display:flex;flex-direction:column;gap:3px}
+      .ctl label{font-size:.8rem;font-weight:700;color:#dcead8}
+      .ctl select{min-width:104px}
+      .spin-btn{flex:1 1 200px;min-height:64px;font-size:1.45rem;font-weight:900;letter-spacing:.03em;
+        background:var(--brass-bright);border:2px solid #7c5410;color:#221a05;border-radius:14px}
+      .spin-btn small{display:block;font-size:.78rem;font-weight:600;letter-spacing:0}
+      .result{min-height:3.2em;background:rgba(0,0,0,.28);border-radius:10px;padding:.55rem .8rem;margin-top:12px;
+        font-size:1rem}
+      .result .big{font-size:1.2rem;font-weight:800;color:#ffd968}
+      /* Panels below the cabinet */
+      .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+        margin-top:14px;box-shadow:var(--shadow)}
+      .honesty .payback-big{font-size:2rem;font-weight:900;font-variant-numeric:tabular-nums}
+      .honesty-grid{display:flex;flex-wrap:wrap;gap:8px 26px;margin:.4rem 0}
+      .honesty-grid div{min-width:150px}
+      .honesty-grid .k{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft)}
+      .honesty-grid .v{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums}
+      table.pay{border-collapse:collapse;width:100%;font-size:.95rem;font-variant-numeric:tabular-nums}
+      table.pay th,table.pay td{padding:.38rem .5rem;text-align:left;border-bottom:1px solid var(--line)}
+      table.pay th{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft)}
+      table.pay td.num,table.pay th.num{text-align:right}
+      .truth{background:var(--surface2);border:1px dashed var(--brass);border-radius:12px;padding:.6rem .9rem;margin-top:12px}
+      .coach-cost{background:var(--win-bg);border:1.5px solid var(--win);border-radius:12px;padding:.65rem .9rem;margin-top:12px}
+      details.panel summary{cursor:pointer;font-weight:800;font-size:1.05rem;min-height:2.75rem;display:flex;align-items:center}
+      .seg{display:flex;flex-wrap:wrap;gap:6px}
+      .seg button{flex:1 1 auto;font-weight:700}
+      .seg button[aria-pressed="true"]{background:var(--felt);color:#f2f7f0;border-color:var(--felt-deep)}
+      .setrow{margin:.8rem 0}
+      .setrow .k{font-weight:700;margin-bottom:.25rem}
+      .log{font-size:.92rem;max-height:180px;overflow:auto;margin:.3rem 0;padding-left:1.1rem}
+      .log li{margin:.15rem 0}
+      nav.compass{margin-top:26px;border-top:2px solid var(--line);padding-top:12px}
+      nav.compass ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px}
+      nav.compass a{color:var(--brass);font-weight:700;display:inline-block;padding:.4rem 0;min-height:2rem}
+      .hidden{display:none !important}
+      @media (max-width:560px){
+        .reel{min-height:88px}.reel .glyph{font-size:2.1rem}
+        .cell5{min-height:54px}.cell5 .glyph{font-size:1.3rem}.cell5 .rname{display:none}
+        h1{font-size:1.7rem}
+      }
+      @media (prefers-reduced-motion: reduce){
+        button:active{transform:none}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="free-banner">
+      FREE — always free. PLAY CHIPS ONLY: nothing real is wagered, won, or lost here.
+      <span class="sub">No ads, no account, no connection needed — the whole game runs on this device. Save this page and it plays offline.</span>
+    </div>
+    <div class="wrap">
+      <h1>Slots</h1>
+      <p class="intro">Two honest machines. Every stop is drawn fresh from the printed weights — the machine has no memory and no mood. The full paytable and the machine's real payback are printed on the face, before you spin, in plain words. Over a long run the machine keeps its edge; that's stated up front, not hidden.</p>
+
+      <div class="bank" aria-label="Your chip bank">
+        <div class="cell"><div class="label">Play chips</div><div class="value" id="balance">1,000</div></div>
+        <div class="cell grow">
+          <div class="label"><label for="alias">Play name — optional, this visit only</label></div>
+          <input type="text" id="alias" placeholder="No name needed — tap to add one if you like" autocomplete="off" style="width:100%" />
+        </div>
+        <div class="cell hidden" id="refillCell">
+          <div class="label">Out of chips?</div>
+          <button class="refill-btn" id="refillBtn" type="button">Tap for a free refill to 1,000</button>
+        </div>
+      </div>
+      <div class="stats" id="sessionStats" aria-live="polite">This visit: 0 spins · 0 wagered · 0 returned</div>
+
+      <div class="tabs" role="tablist" aria-label="Choose a machine">
+        <button role="tab" id="tabClassic" aria-selected="true" type="button">Tap for the Classic 3-Reel</button>
+        <button role="tab" id="tabLines" aria-selected="false" type="button">Tap for the Lines 5-Reel</button>
+      </div>
+
+      <!-- ============ CLASSIC 3-REEL ============ -->
+      <section id="machineClassic" aria-label="Classic three reel slot machine">
+        <div class="cabinet">
+          <h2>Classic 3-Reel</h2>
+          <p class="variant-banner hidden" id="classicBanner"></p>
+          <div class="reel-row">
+            <div class="reels" id="classicReels"></div>
+            <div class="lever" id="classicLever">
+              <div class="knob" aria-hidden="true"></div>
+              <button type="button" id="leverBtn">Pull the lever — tap to spin</button>
+            </div>
+          </div>
+          <div class="face-controls">
+            <div class="ctl">
+              <label for="classicBet">Bet per spin (chips)</label>
+              <select id="classicBet">
+                <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+                <option value="5">5</option><option value="10">10</option><option value="25">25</option>
+              </select>
+            </div>
+            <div class="ctl">
+              <label for="classicVariant">Machine style</label>
+              <select id="classicVariant">
+                <option value="steady" selected>Steady (standard)</option>
+                <option value="longshot">Long Shot (variant)</option>
+              </select>
+            </div>
+            <button class="spin-btn" id="classicSpin" type="button">SPIN<small>Tap to spin the reels</small></button>
+          </div>
+          <div class="result" id="classicResult" aria-live="polite">Three of a kind pays — the paytable below is the whole story. Set your bet and tap Spin.</div>
+        </div>
+
+        <div class="panel honesty" aria-label="The honest math for the Classic 3-Reel">
+          <h3 style="margin-top:0">The honest math — read it before you spin</h3>
+          <div class="honesty-grid">
+            <div><div class="k">Real payback (worked out from the weights)</div><div class="v" id="classicTheory">—</div></div>
+            <div><div class="k">Payback in a computer test</div><div class="v" id="classicSim">checking…</div></div>
+            <div><div class="k">House edge (what the machine keeps)</div><div class="v" id="classicEdge">—</div></div>
+            <div><div class="k">Spins that win something (test)</div><div class="v" id="classicHit">—</div></div>
+          </div>
+          <p id="classicPlain"></p>
+          <p class="small">The test figure comes from this page actually playing the machine against itself, using the exact weights below — no hand-picked numbers. <button type="button" id="classicResim">Tap to run the test again</button></p>
+        </div>
+
+        <div class="truth hidden" id="classicTruth"></div>
+        <div class="coach-cost hidden" id="classicCoach"></div>
+
+        <div class="panel">
+          <h3 style="margin-top:0">Paytable — Classic 3-Reel <span class="small">(pays per 1 chip bet; bigger bets scale in proportion)</span></h3>
+          <div id="classicPaytable"></div>
+          <p class="small">Each reel is drawn from these weights: imagine a strip of <span id="classicStops"></span> stops, shared out as shown. Three matching symbols on the line is the only win.</p>
+        </div>
+      </section>
+
+      <!-- ============ LINES 5-REEL ============ -->
+      <section id="machineLines" class="hidden" aria-label="Five reel lines slot machine">
+        <div class="cabinet">
+          <h2>Lines 5-Reel</h2>
+          <p class="variant-banner hidden" id="linesBanner"></p>
+          <div class="reel-row">
+            <div class="grid5" id="linesGrid"></div>
+          </div>
+          <div class="face-controls">
+            <div class="ctl">
+              <label for="linesCount">Paylines in play</label>
+              <select id="linesCount">
+                <option value="1">1 line</option><option value="3">3 lines</option>
+                <option value="5" selected>5 lines</option><option value="9">9 lines</option>
+              </select>
+            </div>
+            <div class="ctl">
+              <label for="linesBet">Bet per line (chips)</label>
+              <select id="linesBet">
+                <option value="1" selected>1</option><option value="2">2</option>
+                <option value="5">5</option><option value="10">10</option>
+              </select>
+            </div>
+            <div class="ctl">
+              <label for="linesVariant">Machine style</label>
+              <select id="linesVariant">
+                <option value="steady" selected>Steady (standard)</option>
+                <option value="heavy">Jackpot Heavy (variant)</option>
+              </select>
+            </div>
+            <button class="spin-btn" id="linesSpin" type="button">SPIN<small>Tap to spin — total bet <span id="linesTotalBet">5</span> chips</small></button>
+          </div>
+          <div class="result" id="linesResult" aria-live="polite">Wins pay left to right on each line in play, starting at the first reel. Set your lines and bet, then tap Spin.</div>
+          <p class="small" style="color:#dcead8" id="linesDiagram"></p>
+        </div>
+
+        <div class="panel honesty" aria-label="The honest math for the Lines 5-Reel">
+          <h3 style="margin-top:0">The honest math — read it before you spin</h3>
+          <div class="honesty-grid">
+            <div><div class="k">Real payback (worked out from the weights)</div><div class="v" id="linesTheory">—</div></div>
+            <div><div class="k">Payback in a computer test</div><div class="v" id="linesSim">checking…</div></div>
+            <div><div class="k">House edge (what the machine keeps)</div><div class="v" id="linesEdge">—</div></div>
+            <div><div class="k">Spins that win something (test)</div><div class="v" id="linesHit">—</div></div>
+          </div>
+          <p id="linesPlain"></p>
+          <p class="small">The test figure comes from this page actually playing the machine against itself, using the exact weights below and the lines you have in play. <button type="button" id="linesResim">Tap to run the test again</button></p>
+        </div>
+
+        <div class="truth hidden" id="linesTruth"></div>
+        <div class="coach-cost hidden" id="linesCoach"></div>
+
+        <div class="panel">
+          <h3 style="margin-top:0">Paytable — Lines 5-Reel <span class="small">(per 1 chip bet on that line; pays run left to right from reel 1)</span></h3>
+          <div id="linesPaytable"></div>
+          <p class="small">Every square on the grid is drawn fresh from these weights — a strip of <span id="linesStops"></span> stops per square. Only the longest run of one symbol from the left pays on each line.</p>
+        </div>
+      </section>
+
+      <!-- ============ YOUR RECORD ============ -->
+      <div class="panel" id="recordPanel">
+        <h3 style="margin-top:0">Your record — your strategy builder</h3>
+        <p class="small">Every game you play here teaches from your own numbers, not generic tips alone. This record lives on this device only, is never sent anywhere, and can be forgotten in one tap.</p>
+        <div class="honesty-grid" id="recordGrid">
+          <div><div class="k">Spins, all time on this device</div><div class="v" id="recSpins">0</div></div>
+          <div><div class="k">Wagered / returned</div><div class="v" id="recWagered">0 / 0</div></div>
+          <div><div class="k">Your real return so far</div><div class="v" id="recReturn">—</div></div>
+          <div><div class="k">What the edge has actually cost you</div><div class="v" id="recCost">0 chips</div></div>
+          <div><div class="k">Biggest single win</div><div class="v" id="recBiggest">0</div></div>
+          <div><div class="k">Average bet</div><div class="v" id="recAvgBet">—</div></div>
+        </div>
+        <p id="recLesson">Play a while and this panel will hold your own numbers up against the printed payback — the lessons below are drawn from your record, and they update as it grows.</p>
+        <p class="small" id="recSplit"></p>
+        <p class="small">Underneath the totals, every single spin is kept in a clean, consistent shape — machine, style and speed in play, bet, lines, the symbols that landed, the win, and your balance after — because this record is the raw material for testing betting systems and session strategies on play chips later, at scale, graded honestly. It keeps your most recent 2,000 spins on this device.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <button type="button" id="exportJsonBtn">Tap to download your record (JSON)</button>
+          <button type="button" id="exportCsvBtn">Tap to download your record (CSV)</button>
+          <button type="button" id="forgetBtn">Tap to forget this record (chips and settings stay)</button>
+        </div>
+        <p class="small" id="exportNote"></p>
+      </div>
+
+      <!-- ============ DOCUMENTED MACHINES ============ -->
+      <div class="panel">
+        <h3 style="margin-top:0">Modelled on proven, documented machines</h3>
+        <p>These are not invented games dressed as classics. The Classic 3-Reel follows the documented design of the mechanical and electronic three-reel machines that filled casinos for a century: a strip of stops on each reel, three of a kind on one line, and a paytable fixed to the strips. The Lines 5-Reel follows the documented video-slot design: each square drawn from weighted "virtual reels" — the weighting system patented by Inge Telnaes in the 1980s and used across the industry since — with wins paid left to right along set paylines.</p>
+        <p>The one deliberate difference: on the casino floor those weights are sealed inside the cabinet and the payback is whatever the operator ordered. Here the strips are printed on the face, the payback is worked out from them in the open, and the page tests itself against its own math. Same kind of machine — with the cabinet door left open.</p>
+      </div>
+
+      <!-- ============ PROS PANEL ============ -->
+      <details class="panel hidden" id="prosPanel">
+        <summary>What the pros know — tap to open: how to read any slot machine</summary>
+        <p><strong>Read the payback first.</strong> Payback (also called RTP) is the share of all money played that a machine returns over a very long run. 91% payback means that for every 100 put in across thousands of players and millions of spins, about 91 comes back out as wins — spread unevenly, so most individual players get less and a few get much more. If a machine won't tell you its payback, that silence is information too.</p>
+        <p><strong>The house edge is just the rest of the same number.</strong> 100 minus the payback. A 91% machine has a 9% edge. The edge is not a fee taken per spin; it is the tilt in the weights and the paytable, and it only becomes visible over many spins — which is exactly why short sessions feel like anything could happen, and long ones drift toward the printed number.</p>
+        <p><strong>Volatility is how the payback is delivered.</strong> Two machines can share a payback and feel nothing alike. A steady machine pays small wins often. A long-shot machine pays rarely and big. Neither is "better" — the total tilt is the same — but the long-shot ride will eat a small stack of chips whole, most visits, on its way to the rare big night. Match the volatility to the size of your stack and the length of your visit.</p>
+        <p><strong>Jackpots price the small wins.</strong> A 5,000-chip top prize is not free money the machine found somewhere. It is paid for by trimming the everyday wins in the same paytable — compare the two styles on this page: the Long Shot's cherries pay 8 where the Steady machine pays 15, and that difference is what funds the 5,000. When a machine advertises a giant jackpot, look at what its small wins shrank to.</p>
+        <p><strong>Bet size changes the speed, never the percentage.</strong> The edge is a percentage of everything wagered. Betting ten times as much does not change your odds per chip — it just rents the same tilt ten times faster, wins and losses alike.</p>
+        <p><strong>No machine is ever "due."</strong> Each spin is drawn fresh from the same weights. A machine that has not paid in an hour has exactly the same chance on the next spin as one that just paid. "Hot," "cold," and "due" are stories people tell about randomness, not facts about the machine.</p>
+        <p><strong>So how do pros actually treat slots?</strong> As paid entertainment with a known price: the edge, times the bet, times the speed of play. They pick the payback they are willing to rent, set the session budget as the ticket price before the first spin, and treat any win as the show going well — never as a system working. Slots are negative-expectation by design: over enough spins, the machine keeps its edge share. Nobody beats that math. The honest skill is reading it before it reads your wallet. On this page the chips are play chips, so the lesson is free — that is the point of the page.</p>
+        <h4>Ways to play — the real choices, and what each one costs</h4>
+        <p>There is more than one honest way to play, and they genuinely differ — in how long your stack lasts, how the ride feels, and how the wins and losses arrange themselves. What none of them can do is change the edge; that part is not a strategy, it is a fact, and it is stated as one at the end. Pick by trade-off, not by superstition.</p>
+        <p><strong>Bet sizing — three real approaches.</strong>
+          <em>Small and steady:</em> bet the minimum and let the session run long. Trade-off: the edge rents your stack at the slowest possible rate — a 1-chip Classic bet at a standard pace costs about 34 play chips an hour on average — but every win shrinks in proportion, jackpots included.
+          <em>Big bets, short session:</em> bet large and accept a brief, swingy ride. Trade-off: exactly the same percentage edge, rented far faster — a 25-chip Classic bet at the same pace costs about 860 play chips an hour on average — with the same chance per chip of the big hit, just reached sooner, one way or the other.
+          <em>Changing the bet as you go</em> (raising after wins, chasing after losses): the machine does not know and cannot care — each spin is drawn fresh, so a changing bet changes only which spins carry the big stakes, never the percentage. It is a way of arranging excitement, not a way of moving the math; chasing losses is the one version with a real extra cost, because it reliably extends sessions past the budget you set when you were calm.</p>
+        <p><strong>Line selection on the 5-Reel — two real approaches.</strong>
+          <em>All lines, small bet per line:</em> every spin has the most chances to pay something, and you never watch a winning run land on a line you did not cover. Trade-off: your total bet per spin is the lines times the line bet, so the edge rents the full amount every spin.
+          <em>Few lines, bigger bet per line:</em> the same payback percentage on the lines you do cover, and a smaller total wager per spin, so a stack lasts through more spins. Trade-off: runs that land on uncovered lines pay nothing — on this machine each line is an independent copy of the same tilt, so fewer lines means fewer, larger chances rather than worse ones.
+          Note what does <em>not</em> differ: the percentage. Lines change how the bet is spread, never what the machine keeps.</p>
+        <p><strong>Session strategy — three real approaches.</strong>
+          <em>Fixed ticket:</em> decide the session's price in advance (say 200 chips), play until it is spent or you choose to stop, and treat anything left as a good night. This is the approach the pros above actually use; its honest cost is simply the edge on whatever you end up wagering.
+          <em>Stop-win and stop-loss limits:</em> leave when you are up a set amount or down a set amount. Honest trade-off: limits reshape your sessions — more small, controlled losses and more locked-in small wins, fewer disaster nights and fewer miracle ones — but they do not change the expected total, because no stopping rule can change what each spin is worth.
+          <em>Volatility matching:</em> pick the machine style that fits your stack — Steady for a long, even ride; Long Shot or Jackpot Heavy only with a stack that can survive the droughts. On this page the styles share the same symbol weights, so wins arrive just as often; what changes is their size — the Long Shot pays its cherries 8 instead of 15 so that its top prize can stand at 5,000. The trade-off is written in the paytable, in the open.</p>
+        <p><strong>The one non-negotiable, stated as fact, not strategy:</strong> every approach above pays the same edge percentage on every chip wagered. Strategy chooses the shape of the ride — its length, its swings, its price per hour. It never chooses the direction of the math. Anyone selling a system that claims otherwise is selling the story, not the truth.</p>
+      </details>
+
+      <!-- ============ BETTING SYSTEMS: STORIES + TEST BENCH ============ -->
+      <div class="panel" id="systemsPanel">
+        <h3 style="margin-top:0">Betting systems — their stories, tested on this machine</h3>
+        <p>Every famous betting system was built for even-money games — red or black, a coin flip with a small tilt. Their stories are documented; their promises are not. Below, each system gets its story, and then gets run against this page's Classic machine, exactly as documented, so you can see where it worked, where it died, and at what rate. A spin counts as a "win" for the system when it pays back more than the bet — on a three-reel machine that happens about 1 spin in 27, which is itself the first lesson.</p>
+        <p><strong>The Martingale</strong> — double your bet after every loss, so the first win recovers everything plus one unit. Documented in 18th-century France; the word later became a term of art in probability theory through Paul Lévy's work in the 1930s. Where it works: most short sessions, most of the time — it ends a little ahead with suspicious reliability. Where it dies: the one long losing streak, where the required bet doubles past the table's maximum or past your stack. Casinos print maximum bets precisely because the Martingale exists; the ceiling is the countermeasure, and it is documented as such.</p>
+        <p><strong>The D'Alembert</strong> — raise your bet by one unit after a loss, lower it by one after a win. Named for Jean le Rond d'Alembert (1717–1783), the French mathematician whose "law of equilibrium" — the belief that a run of losses makes a win due — the system is built on. The belief is documented, and documented as a fallacy: the wheel and the reels owe nobody a balancing win. The climb is gentler than the Martingale's, so the death is slower. It is the same death.</p>
+        <p><strong>The Fibonacci</strong> — bets climb the Fibonacci sequence (1, 1, 2, 3, 5, 8, 13…) after losses and step back two after a win. A staple of gambling manuals for even-money games for over a century. It climbs slower than the Martingale and recovers slower too — a middle path between the two, with the same destination, because the destination is set by the edge, not the staircase.</p>
+        <p><strong>Oscar's Grind</strong> — bet the same after a loss, raise by one after a win, aiming to grind out exactly one unit per cycle, then restart. Documented in Allan Wilson's <em>The Casino Gambler's Guide</em> (1965), named for a player Wilson called Oscar. It is the most patient of the progressions and the fiddliest to keep books for, so it is carried here as a story rather than a bench entry — what it shares with the others, patience cannot change: the edge is charged on every chip wagered, and grinding wagers a great many chips.</p>
+        <p><strong>Flat betting</strong> — the same bet, every spin. No inventor, no story to sell, nothing to buy. It is the control every system above has to beat, and the documented habit of professional players in the games where a player edge can actually exist. In a game where it cannot — this one — flat betting is simply the slowest, most predictable way to pay the printed price.</p>
+        <h4>The test bench</h4>
+        <p class="small">Each system plays 300 sessions against the Classic 3-Reel on its standard style. Every session starts with a 200-chip stack, a 1-chip base bet, up to 100 spins, and a 64-chip bet ceiling standing in for a casino's table maximum. A session "busts" when the system calls for a bet the stack cannot cover. Same machine, same weights, same draw as the one you play — nothing is tuned to make a point.</p>
+        <button type="button" id="benchBtn">Tap to run the test — 300 sessions per system</button>
+        <div id="benchResults" style="margin-top:.6rem">
+          <p class="small">No test run yet. Tap the button and the results will stand here, whatever they say.</p>
+        </div>
+        <h4>What's the best option?</h4>
+        <p>Answered from the whole evidence base, with the evidence shown:</p>
+        <p><strong>Documented:</strong> no betting system changes a game's expectation — that is not an opinion, it is the settled mathematics every one of these systems' own historians record. Systems rearrange wins and losses; they do not repeal the edge.</p>
+        <p><strong>Simulated:</strong> <span id="bestSim">run the test bench above and this line will quote its numbers.</span></p>
+        <p><strong>Your own record:</strong> <span id="bestRecord">your record panel above holds your real return against the printed payback — as it grows, it becomes the third witness.</span></p>
+        <p><strong>The verdict the evidence supports:</strong> if the goal is the longest, steadiest session for your chips, bet small and flat on the machine style whose ride you enjoy, with the session's price decided before the first spin. If the goal is a shot at a rare big win, the Long Shot and Jackpot Heavy styles are the honest way to buy it — their trimmed small wins and giant top prizes are printed in the open, and no staking staircase improves the shot. What the evidence does not support, on any shelf, is a system that turns this machine's edge into your edge. Anyone selling one is selling the story, not the record.</p>
+      </div>
+
+      <!-- ============ SETTINGS ============ -->
+      <details class="panel" id="settingsPanel">
+        <summary>Rule settings — tap to open (standard rules are the default)</summary>
+        <div class="setrow">
+          <div class="k">Teaching — how much of the machine's truth rides beside your play</div>
+          <div class="seg" role="group" aria-label="Teaching level">
+            <button type="button" id="teachOff">Off — tap to choose</button>
+            <button type="button" id="teachLight">Light — tap to choose</button>
+            <button type="button" id="teachCoach">Coach — tap to choose</button>
+          </div>
+          <p class="small">Off: nothing beyond the paytable and payback printed on the machine. Light: a plain-words truth line under the machine, and the "What the pros know" panel. Coach: Light, plus the expected cost of your current bet worked out per spin and per hour of play. Teaching never blocks a spin.</p>
+        </div>
+        <div class="setrow">
+          <div class="k">Reel speed</div>
+          <div class="seg" role="group" aria-label="Reel speed">
+            <button type="button" data-speed="slow">Leisurely — tap to choose</button>
+            <button type="button" data-speed="standard">Standard — tap to choose</button>
+            <button type="button" data-speed="turbo">Turbo — tap to choose</button>
+          </div>
+          <p class="small">Speed changes only how fast the reels stop. It never changes the draw, the weights, or the payback — a faster machine just reaches the long run sooner.</p>
+        </div>
+        <div class="setrow">
+          <div class="k">Sound</div>
+          <div class="seg" role="group" aria-label="Sound">
+            <button type="button" id="soundOn">On — tap to choose</button>
+            <button type="button" id="soundOff">Off — tap to choose</button>
+          </div>
+        </div>
+        <div class="setrow">
+          <div class="k">Machine styles in play</div>
+          <p class="small" id="variantSummary">Both machines are on their standard style. A non-standard style is announced on the machine's face while it is in play, and its own payback is printed beside it — a variant's results are the variant's, never dressed as standard.</p>
+        </div>
+        <div class="setrow">
+          <div class="k">Your record on this device</div>
+          <p class="small">Your chip balance and these settings are saved on this device only — nothing is sent anywhere, and there is no account. Play-name is never saved; it lasts for this visit only.</p>
+          <button type="button" id="resetBtn">Tap to reset chips to 1,000 and clear the session record</button>
+        </div>
+      </details>
+
+      <div class="panel">
+        <h3 style="margin-top:0">Recent spins</h3>
+        <ul class="log" id="spinLog"><li>Nothing spun yet this visit.</li></ul>
+      </div>
+
+      <nav class="compass" aria-label="Other pages">
+        <h3 style="margin-top:0">Other pages</h3>
+        <ul>
+          <li><a href="https://thethrivingplan.github.io/">Start Page</a></li>
+          <li><a href="https://thethrivingplan.github.io/">The Thriving Plan</a></li>
+          <li><a href="https://thethrivingplan.github.io/solitaire.html">Solitaire</a></li>
+          <li><a href="https://thethrivingplan.github.io/checkers.html">Checkers</a></li>
+          <li><a href="https://thethrivingplan.github.io/tournament-builder.html">Tournament Builder</a></li>
+        </ul>
+        <p class="small">Free, always free, no ads — ever. Copyleft: CC BY-SA 4.0.</p>
+      </nav>
+    </div>
+
+    <script>
+    (function(){
+      "use strict";
+      /* ---------- Symbol sets ---------- */
+      var CLASSIC_SYMBOLS = [
+        {id:"cherry", glyph:"🍒", name:"Cherry", cls:""},
+        {id:"lemon", glyph:"🍋", name:"Lemon", cls:""},
+        {id:"orange", glyph:"🍊", name:"Orange", cls:""},
+        {id:"bell", glyph:"🔔", name:"Bell", cls:""},
+        {id:"bar", glyph:"BAR", name:"Bar", cls:"bar"},
+        {id:"seven", glyph:"7", name:"Seven", cls:"seven"},
+        {id:"diamond", glyph:"◆", name:"Diamond", cls:"dia"}
+      ];
+      var LINES_SYMBOLS = [
+        {id:"cherry", glyph:"🍒", name:"Cherry", cls:""},
+        {id:"lemon", glyph:"🍋", name:"Lemon", cls:""},
+        {id:"grape", glyph:"🍇", name:"Grape", cls:""},
+        {id:"orange", glyph:"🍊", name:"Orange", cls:""},
+        {id:"bell", glyph:"🔔", name:"Bell", cls:""},
+        {id:"star", glyph:"★", name:"Star", cls:""},
+        {id:"diamond", glyph:"◆", name:"Diamond", cls:"dia"},
+        {id:"seven", glyph:"7", name:"Seven", cls:"seven"}
+      ];
+      /* ---------- Machine definitions: weights + pays ARE the machine ---------- */
+      var CLASSIC_CONFIGS = {
+        steady: {
+          label:"Steady (standard)",
+          weights:{cherry:8, lemon:7, orange:6, bell:5, bar:3, seven:2, diamond:1},
+          pays:{cherry:15, lemon:20, orange:25, bell:50, bar:80, seven:150, diamond:400}
+        },
+        longshot: {
+          label:"Long Shot (variant)",
+          weights:{cherry:8, lemon:7, orange:6, bell:5, bar:3, seven:2, diamond:1},
+          pays:{cherry:8, lemon:12, orange:15, bell:50, bar:150, seven:400, diamond:5000}
+        }
+      };
+      var LINES_CONFIGS = {
+        steady: {
+          label:"Steady (standard)",
+          weights:{cherry:10, lemon:9, grape:8, orange:7, bell:5, star:3, diamond:2, seven:1},
+          pays:{cherry:[15,40,120], lemon:[15,50,150], grape:[20,60,200], orange:[25,75,250],
+                bell:[40,120,400], star:[50,200,600], diamond:[75,250,1000], seven:[120,500,2500]}
+        },
+        heavy: {
+          label:"Jackpot Heavy (variant)",
+          weights:{cherry:10, lemon:9, grape:8, orange:7, bell:5, star:3, diamond:2, seven:1},
+          pays:{cherry:[10,25,80], lemon:[10,30,100], grape:[12,40,120], orange:[15,50,180],
+                bell:[60,200,600], star:[300,800,2000], diamond:[1400,3000,8000], seven:[3000,8000,25000]}
+        }
+      };
+      /* Payline patterns: row (0 top, 1 middle, 2 bottom) for each of the 5 reels */
+      var PAYLINES = [
+        [1,1,1,1,1], [0,0,0,0,0], [2,2,2,2,2], [0,1,2,1,0], [2,1,0,1,2],
+        [0,0,1,0,0], [2,2,1,2,2], [1,0,0,0,1], [1,2,2,2,1]
+      ];
+      var PAYLINE_NAMES = ["middle row","top row","bottom row","the V","the hill","top dip","bottom dip","top corners","bottom corners"];
+      var SPEEDS = { slow:{ms:1500, perHour:240, label:"Leisurely"}, standard:{ms:950, perHour:400, label:"Standard"}, turbo:{ms:450, perHour:600, label:"Turbo"} };
+
+      /* ---------- Honest random draw ---------- */
+      function randInt(max){
+        if (window.crypto && crypto.getRandomValues){
+          var a = new Uint32Array(1); crypto.getRandomValues(a);
+          return a[0] % max;
+        }
+        return Math.floor(Math.random()*max);
+      }
+      function drawSymbol(symbols, weights){
+        var total = 0, i, s;
+        for (i=0;i<symbols.length;i++) total += weights[symbols[i].id];
+        var r = randInt(total);
+        for (i=0;i<symbols.length;i++){
+          s = symbols[i]; r -= weights[s.id];
+          if (r < 0) return s;
+        }
+        return symbols[symbols.length-1];
+      }
+      function symById(symbols, id){
+        for (var i=0;i<symbols.length;i++) if (symbols[i].id===id) return symbols[i];
+        return symbols[0];
+      }
+      /* ---------- Exact theoretical payback, from the same weights ---------- */
+      function classicTheory(cfg){
+        var total=0, rtp=0, i, s, p;
+        for (i=0;i<CLASSIC_SYMBOLS.length;i++) total += cfg.weights[CLASSIC_SYMBOLS[i].id];
+        for (i=0;i<CLASSIC_SYMBOLS.length;i++){
+          s = CLASSIC_SYMBOLS[i]; p = cfg.weights[s.id]/total;
+          rtp += p*p*p * cfg.pays[s.id];
+        }
+        return rtp;
+      }
+      function linesTheory(cfg){
+        var total=0, rtp=0, i, s, p;
+        for (i=0;i<LINES_SYMBOLS.length;i++) total += cfg.weights[LINES_SYMBOLS[i].id];
+        for (i=0;i<LINES_SYMBOLS.length;i++){
+          s = LINES_SYMBOLS[i]; p = cfg.weights[s.id]/total;
+          var pay = cfg.pays[s.id];
+          rtp += p*p*p*(1-p)*pay[0] + p*p*p*p*(1-p)*pay[1] + p*p*p*p*p*pay[2];
+        }
+        return rtp;
+      }
+      /* ---------- Evaluation (shared by play and by the self-test) ---------- */
+      function evalClassic(ids, cfg, bet){
+        if (ids[0]===ids[1] && ids[1]===ids[2]) return cfg.pays[ids[0]] * bet;
+        return 0;
+      }
+      function evalLines(grid, cfg, lineCount, betPerLine){
+        /* grid[reel][row] = symbol id. Returns {total, wins:[{line,count,id,pay,cells}]} */
+        var total=0, wins=[], li, reel;
+        for (li=0; li<lineCount; li++){
+          var pat = PAYLINES[li];
+          var first = grid[0][pat[0]], count=1;
+          for (reel=1; reel<5; reel++){
+            if (grid[reel][pat[reel]]===first) count++; else break;
+          }
+          if (count>=3){
+            var pay = cfg.pays[first][count-3] * betPerLine;
+            total += pay;
+            var cells=[];
+            for (reel=0; reel<count; reel++) cells.push(reel*3 + pat[reel]);
+            wins.push({line:li, count:count, id:first, pay:pay, cells:cells});
+          }
+        }
+        return {total:total, wins:wins};
+      }
+      function drawLinesGrid(cfg){
+        var grid=[], reel, row;
+        for (reel=0; reel<5; reel++){
+          grid.push([]);
+          for (row=0; row<3; row++) grid[reel].push(drawSymbol(LINES_SYMBOLS, cfg.weights).id);
+        }
+        return grid;
+      }
+      /* ---------- Simulation: the page plays itself and reports ---------- */
+      function simulateClassic(cfg, n){
+        var wagered=0, returned=0, hits=0, i, ids;
+        for (i=0;i<n;i++){
+          ids=[drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id, drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id, drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id];
+          var w = evalClassic(ids, cfg, 1);
+          wagered += 1; returned += w; if (w>0) hits++;
+        }
+        return {rtp: returned/wagered, hit: hits/n, n:n};
+      }
+      function simulateLines(cfg, lineCount, n){
+        var wagered=0, returned=0, hits=0, i;
+        for (i=0;i<n;i++){
+          var res = evalLines(drawLinesGrid(cfg), cfg, lineCount, 1);
+          wagered += lineCount; returned += res.total; if (res.total>0) hits++;
+        }
+        return {rtp: returned/wagered, hit: hits/n, n:n};
+      }
+
+      /* ---------- State (device-only save, guarded) ---------- */
+      var store = {
+        get:function(k){ try { var v = localStorage.getItem("slots:"+k); return v===null?null:JSON.parse(v); } catch(e){ return null; } },
+        set:function(k,v){ try { localStorage.setItem("slots:"+k, JSON.stringify(v)); } catch(e){} }
+      };
+      var state = {
+        balance: store.get("balance"),
+        speed: store.get("speed") || "standard",
+        sound: store.get("sound") !== false,
+        teaching: store.get("teaching") || "light",
+        classicVariant: store.get("classicVariant") || "steady",
+        linesVariant: store.get("linesVariant") || "steady"
+      };
+      if (typeof state.balance !== "number" || state.balance < 0) state.balance = 1000;
+      if (!SPEEDS[state.speed]) state.speed = "standard";
+      var session = { spins:0, wagered:0, returned:0 };
+      var spinning = false;
+      /* ---------- The player's own record: aggregates + per-spin intake ---------- */
+      function blankRecord(){
+        return { spins:0, wagered:0, returned:0, biggest:0,
+          classic:{spins:0, wagered:0, returned:0}, lines:{spins:0, wagered:0, returned:0} };
+      }
+      var record = store.get("record");
+      if (!record || typeof record.spins !== "number" || !record.classic || !record.lines) record = blankRecord();
+      var spinIntake = store.get("spinIntake");
+      if (!Array.isArray(spinIntake)) spinIntake = [];
+      var MAX_INTAKE = 2000;
+      function saveRecord(){ store.set("record", record); store.set("spinIntake", spinIntake); }
+      function intake(entry){
+        entry.spin = spinIntake.length ? (spinIntake[spinIntake.length-1].spin + 1) : record.spins + 1;
+        entry.time = new Date().toISOString();
+        spinIntake.push(entry);
+        while (spinIntake.length > MAX_INTAKE) spinIntake.shift();
+      }
+
+      /* ---------- Sound (tiny, honest beeps) ---------- */
+      var audioCtx = null;
+      function beep(freq, dur, delay){
+        if (!state.sound) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          var t = audioCtx.currentTime + (delay||0);
+          var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+          o.frequency.value = freq; o.type="sine";
+          g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(t); o.stop(t+dur);
+        } catch(e){}
+      }
+      function winSound(big){
+        beep(660,.12,0); beep(880,.12,.1); beep(990,.18,.2);
+        if (big){ beep(1320,.22,.34); beep(1760,.3,.5); }
+      }
+
+      /* ---------- DOM helpers ---------- */
+      function $(id){ return document.getElementById(id); }
+      function fmt(n){ return Math.round(n).toLocaleString("en-US"); }
+      function pct(x){ return (x*100).toFixed(1) + "%"; }
+      function glyphHTML(sym){
+        return '<span class="glyph '+sym.cls+'">'+sym.glyph+'</span><span class="rname">'+sym.name+'</span>';
+      }
+
+      /* ---------- Build reel faces ---------- */
+      var classicReelEls = [];
+      (function(){
+        var host = $("classicReels"), i, d;
+        for (i=0;i<3;i++){
+          d = document.createElement("div"); d.className="reel"; d.innerHTML = glyphHTML(CLASSIC_SYMBOLS[i]);
+          host.appendChild(d); classicReelEls.push(d);
+        }
+        var grid = $("linesGrid");
+        for (i=0;i<15;i++){
+          d = document.createElement("div"); d.className="cell5"; d.innerHTML = glyphHTML(LINES_SYMBOLS[i % LINES_SYMBOLS.length]);
+          grid.appendChild(d);
+        }
+      })();
+      var linesCellEls = $("linesGrid").children;
+
+      /* ---------- Paytables, rendered from the live configs ---------- */
+      function renderClassicPaytable(){
+        var cfg = CLASSIC_CONFIGS[state.classicVariant], total=0, i, s;
+        for (i=0;i<CLASSIC_SYMBOLS.length;i++) total += cfg.weights[CLASSIC_SYMBOLS[i].id];
+        var h = '<table class="pay"><tr><th>Three of a kind</th><th class="num">Pays</th><th class="num">Stops on each reel</th></tr>';
+        for (i=0;i<CLASSIC_SYMBOLS.length;i++){
+          s = CLASSIC_SYMBOLS[i];
+          h += '<tr><td>'+s.glyph+' '+s.name+'</td><td class="num">'+fmt(cfg.pays[s.id])+'</td><td class="num">'+cfg.weights[s.id]+' of '+total+'</td></tr>';
+        }
+        $("classicPaytable").innerHTML = h + "</table>";
+        $("classicStops").textContent = total;
+      }
+      function renderLinesPaytable(){
+        var cfg = LINES_CONFIGS[state.linesVariant], total=0, i, s;
+        for (i=0;i<LINES_SYMBOLS.length;i++) total += cfg.weights[LINES_SYMBOLS[i].id];
+        var h = '<table class="pay"><tr><th>Symbol</th><th class="num">3 in a row</th><th class="num">4 in a row</th><th class="num">5 in a row</th><th class="num">Weight</th></tr>';
+        for (i=0;i<LINES_SYMBOLS.length;i++){
+          s = LINES_SYMBOLS[i]; var p = cfg.pays[s.id];
+          h += '<tr><td>'+s.glyph+' '+s.name+'</td><td class="num">'+fmt(p[0])+'</td><td class="num">'+fmt(p[1])+'</td><td class="num">'+fmt(p[2])+'</td><td class="num">'+cfg.weights[s.id]+' of '+total+'</td></tr>';
+        }
+        $("linesPaytable").innerHTML = h + "</table>";
+        $("linesStops").textContent = total;
+      }
+
+      /* ---------- Honesty boxes + teaching ---------- */
+      function classicBet(){ return parseInt($("classicBet").value,10); }
+      function linesBetPerLine(){ return parseInt($("linesBet").value,10); }
+      function linesCount(){ return parseInt($("linesCount").value,10); }
+      function linesTotalBet(){ return linesBetPerLine() * linesCount(); }
+
+      function renderClassicHonesty(sim){
+        var cfg = CLASSIC_CONFIGS[state.classicVariant], rtp = classicTheory(cfg);
+        $("classicTheory").textContent = pct(rtp);
+        $("classicEdge").textContent = pct(1-rtp);
+        if (sim){
+          $("classicSim").textContent = pct(sim.rtp);
+          $("classicHit").textContent = "about 1 in " + (sim.hit>0 ? Math.round(1/sim.hit) : "—");
+          $("classicSim").title = "From " + fmt(sim.n) + " test spins";
+        }
+        $("classicPlain").textContent = "In plain words: for every 100 play chips fed into this machine over a long run, about " +
+          Math.round(rtp*100) + " come back out as wins and about " + Math.round((1-rtp)*100) +
+          " stay with the machine. That is the whole business model, printed on the face. Any single visit can land far from these numbers — the long run is made of thousands of spins.";
+        renderTeaching();
+      }
+      function renderLinesHonesty(sim){
+        var cfg = LINES_CONFIGS[state.linesVariant], rtp = linesTheory(cfg);
+        $("linesTheory").textContent = pct(rtp);
+        $("linesEdge").textContent = pct(1-rtp);
+        if (sim){
+          $("linesSim").textContent = pct(sim.rtp);
+          $("linesHit").textContent = "about 1 in " + (sim.hit>0 ? Math.round(1/sim.hit) : "—");
+          $("linesSim").title = "From " + fmt(sim.n) + " test spins";
+        }
+        $("linesPlain").textContent = "In plain words: for every 100 play chips fed into this machine over a long run, about " +
+          Math.round(rtp*100) + " come back out as wins and about " + Math.round((1-rtp)*100) +
+          " stay with the machine. More lines in play does not change the percentage — it spreads the same tilt across more chances per spin.";
+        renderTeaching();
+      }
+      function runClassicSim(){
+        $("classicSim").textContent = "checking…";
+        setTimeout(function(){
+          renderClassicHonesty(simulateClassic(CLASSIC_CONFIGS[state.classicVariant], 300000));
+        }, 30);
+      }
+      function runLinesSim(){
+        $("linesSim").textContent = "checking…";
+        setTimeout(function(){
+          renderLinesHonesty(simulateLines(LINES_CONFIGS[state.linesVariant], linesCount(), 100000));
+        }, 30);
+      }
+
+      function renderTeaching(){
+        var mode = state.teaching;
+        $("prosPanel").classList.toggle("hidden", mode === "off");
+        $("systemsPanel").classList.toggle("hidden", mode === "off");
+        var showTruth = mode !== "off", showCoach = mode === "coach";
+        var cRtp = classicTheory(CLASSIC_CONFIGS[state.classicVariant]);
+        var lRtp = linesTheory(LINES_CONFIGS[state.linesVariant]);
+        var who = $("alias").value.trim();
+        var nameBit = who ? esc(who) + ", " : "";
+        if (showTruth){
+          $("classicTruth").innerHTML = "<strong>The truth, in one line:</strong> " + nameBit +
+            "this machine returns about " + Math.round(cRtp*100) + " of every 100 chips over the long run. " +
+            sessionLine("Classic");
+          $("linesTruth").innerHTML = "<strong>The truth, in one line:</strong> " + nameBit +
+            "this machine returns about " + Math.round(lRtp*100) + " of every 100 chips over the long run. " +
+            sessionLine("Lines");
+        }
+        $("classicTruth").classList.toggle("hidden", !showTruth);
+        $("linesTruth").classList.toggle("hidden", !showTruth);
+        if (showCoach){
+          var sp = SPEEDS[state.speed];
+          var cBet = classicBet(), lBet = linesTotalBet();
+          var cCost = cBet * (1-cRtp), lCost = lBet * (1-lRtp);
+          $("classicCoach").innerHTML = "<strong>Coach — the price of the lights:</strong> at a " + fmt(cBet) +
+            "-chip bet, this machine's edge costs about <strong>" + cCost.toFixed(2) + " play chips per spin</strong> on average, win or lose. " +
+            "At a " + sp.label.toLowerCase() + " pace (about " + sp.perHour + " spins an hour, counting pauses), that is about <strong>" +
+            fmt(cCost * sp.perHour) + " play chips an hour</strong>. That hourly figure is the honest price of the entertainment — the wins are the show, the edge is the ticket.";
+          $("linesCoach").innerHTML = "<strong>Coach — the price of the lights:</strong> at " + linesCount() + " lines × " + linesBetPerLine() +
+            " chips (" + fmt(lBet) + " a spin), this machine's edge costs about <strong>" + lCost.toFixed(2) + " play chips per spin</strong> on average, win or lose. " +
+            "At a " + sp.label.toLowerCase() + " pace (about " + sp.perHour + " spins an hour, counting pauses), that is about <strong>" +
+            fmt(lCost * sp.perHour) + " play chips an hour</strong>. More lines or a bigger bet does not change the percentage — it just pays the same ticket price faster.";
+        }
+        $("classicCoach").classList.toggle("hidden", !showCoach);
+        $("linesCoach").classList.toggle("hidden", !showCoach);
+        $("teachOff").setAttribute("aria-pressed", mode==="off" ? "true":"false");
+        $("teachLight").setAttribute("aria-pressed", mode==="light" ? "true":"false");
+        $("teachCoach").setAttribute("aria-pressed", mode==="coach" ? "true":"false");
+      }
+      function sessionLine(which){
+        if (session.spins === 0) return "You have not spun yet this visit, so there is no short run to compare — spin a while and this line will hold your own numbers up against the machine's.";
+        var r = session.wagered > 0 ? Math.round(session.returned/session.wagered*100) : 0;
+        return "This visit you have put in " + fmt(session.wagered) + " chips and gotten back " + fmt(session.returned) +
+          " (" + r + "% so far). Short runs swing wide of the long-run number — that swing is normal randomness, not a sign the machine is hot, cold, or due.";
+      }
+
+      /* ---------- Bank + stats ---------- */
+      function renderBank(){
+        $("balance").textContent = fmt(state.balance);
+        var minBet = Math.min(classicBet(), linesTotalBet());
+        $("refillCell").classList.toggle("hidden", !(state.balance < minBet));
+        $("sessionStats").textContent = "This visit: " + session.spins + " spins · " + fmt(session.wagered) +
+          " wagered · " + fmt(session.returned) + " returned" +
+          (session.wagered>0 ? " (" + Math.round(session.returned/session.wagered*100) + "% back so far)" : "");
+        $("linesTotalBet").textContent = fmt(linesTotalBet());
+      }
+      function saveBalance(){ store.set("balance", state.balance); }
+      function renderRecord(){
+        $("recSpins").textContent = fmt(record.spins);
+        $("recWagered").textContent = fmt(record.wagered) + " / " + fmt(record.returned);
+        var cost = record.wagered - record.returned;
+        $("recCost").textContent = fmt(cost) + (cost === 1 ? " chip" : " chips") + (cost < 0 ? " (you are ahead — the edge has cost you nothing yet)" : "");
+        $("recBiggest").textContent = fmt(record.biggest);
+        if (record.spins > 0 && record.wagered > 0){
+          $("recReturn").textContent = (record.returned/record.wagered*100).toFixed(1) + "%";
+          $("recAvgBet").textContent = (record.wagered/record.spins).toFixed(1) + " chips";
+        } else { $("recReturn").textContent = "—"; $("recAvgBet").textContent = "—"; }
+        var c = record.classic, l = record.lines;
+        $("recSplit").textContent =
+          "Classic 3-Reel: " + fmt(c.spins) + " spins, " + fmt(c.wagered) + " wagered, " + fmt(c.returned) + " returned. · " +
+          "Lines 5-Reel: " + fmt(l.spins) + " spins, " + fmt(l.wagered) + " wagered, " + fmt(l.returned) + " returned.";
+        var lesson;
+        if (record.spins === 0){
+          lesson = "Play a while and this panel will hold your own numbers up against the printed payback — the lessons are drawn from your record, and they update as it grows.";
+        } else if (record.spins < 100){
+          lesson = "Your record is young: " + fmt(record.spins) + " spins is far too few for your return to mean anything — the printed payback is a thousands-of-spins number, and your " +
+            (record.wagered>0 ? (record.returned/record.wagered*100).toFixed(1) : "0") + "% so far is weather, not climate. Keep playing and watch it drift.";
+        } else {
+          var r = record.returned/record.wagered*100;
+          if (cost < 0) lesson = "Across " + fmt(record.spins) + " spins you are ahead by " + fmt(-cost) + " chips — running at " + r.toFixed(1) + "% against printed paybacks of 88–91%. That is the swing doing its work, and it is genuinely yours; it also changes nothing about the next spin, which is drawn from the same weights as the first.";
+          else lesson = "Across " + fmt(record.spins) + " spins the edge has cost you " + fmt(cost) + " play chips — about " + (cost/record.spins).toFixed(2) + " per spin at your average bet of " + (record.wagered/record.spins).toFixed(1) +
+            ". Compare your real return of " + r.toFixed(1) + "% with the printed paybacks (Classic 91.4% standard, Lines 89.2% standard): the longer your record runs, the closer those numbers move toward each other. That drift, visible in your own record, is the whole lesson of this page.";
+        }
+        $("recLesson").textContent = lesson;
+        if (record.spins >= 100){
+          $("bestRecord").textContent = "across your " + fmt(record.spins) + " recorded spins you have wagered " + fmt(record.wagered) +
+            " and gotten back " + fmt(record.returned) + " — a real return of " + (record.returned/record.wagered*100).toFixed(1) +
+            "% against printed paybacks of 88–91%, at an actual cost of " + fmt(record.wagered - record.returned) +
+            " play chips. Your own numbers are drifting the way the printed math says they should; that is your record confirming the other two shelves.";
+        } else if (record.spins > 0){
+          $("bestRecord").textContent = "you have " + fmt(record.spins) + " spins on record so far — too few to judge by yet. Past a few hundred spins your real return starts to testify; the record panel above keeps it.";
+        }
+      }
+      /* ---------- The test bench: documented systems vs. this machine ---------- */
+      function runBench(){
+        var cfg = CLASSIC_CONFIGS.steady;
+        var SESSIONS = 300, SPINS = 100, START = 200, BASE = 1, CAP = 64;
+        var FIB = [1,1,2,3,5,8,13,21,34,55,89];
+        var systems = [
+          { name:"Flat betting", init:function(){ return {}; }, bet:function(s){ return BASE; }, after:function(s,profit){} },
+          { name:"Martingale", init:function(){ return {cur:BASE}; }, bet:function(s){ return s.cur; },
+            after:function(s,profit){ s.cur = profit ? BASE : Math.min(CAP*2, s.cur*2); } },
+          { name:"D'Alembert", init:function(){ return {cur:BASE}; }, bet:function(s){ return s.cur; },
+            after:function(s,profit){ s.cur = profit ? Math.max(BASE, s.cur-1) : s.cur+1; } },
+          { name:"Fibonacci", init:function(){ return {i:0}; }, bet:function(s){ return FIB[Math.min(s.i, FIB.length-1)]; },
+            after:function(s,profit){ s.i = profit ? Math.max(0, s.i-2) : s.i+1; } }
+        ];
+        var out = [];
+        for (var si=0; si<systems.length; si++){
+          var sys = systems[si], ahead=0, busts=0, finalSum=0, wagerSum=0;
+          for (var sess=0; sess<SESSIONS; sess++){
+            var stack = START, st = sys.init(), busted = false, wagered = 0;
+            for (var spin=0; spin<SPINS; spin++){
+              var bet = Math.min(sys.bet(st), CAP);
+              if (bet > stack){ busted = true; break; }
+              var ids = [drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id, drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id, drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id];
+              var win = evalClassic(ids, cfg, bet);
+              stack += win - bet; wagered += bet;
+              sys.after(st, win > bet);
+              if (stack <= 0){ busted = true; break; }
+            }
+            if (busted) busts++;
+            if (stack > START) ahead++;
+            finalSum += Math.max(stack, 0); wagerSum += wagered;
+          }
+          out.push({ name:sys.name, ahead:ahead/SESSIONS, busts:busts/SESSIONS,
+            avgFinal:finalSum/SESSIONS, avgWagered:wagerSum/SESSIONS });
+        }
+        var h = '<table class="pay"><tr><th>System</th><th class="num">Sessions ending ahead</th><th class="num">Sessions busted</th><th class="num">Average stack after (of 200)</th><th class="num">Average wagered per session</th></tr>';
+        for (var i=0;i<out.length;i++){
+          var r = out[i];
+          h += "<tr><td>" + r.name + '</td><td class="num">' + Math.round(r.ahead*100) + '%</td><td class="num">' +
+            Math.round(r.busts*100) + '%</td><td class="num">' + r.avgFinal.toFixed(0) + '</td><td class="num">' + fmt(r.avgWagered) + "</td></tr>";
+        }
+        h += "</table>";
+        var flat = out[0], worst = out[1];
+        for (var j=2;j<out.length;j++) if (out[j].busts > worst.busts) worst = out[j];
+        var verdict = "Flat betting ended ahead in " + Math.round(flat.ahead*100) + "% of sessions, busted in " + Math.round(flat.busts*100) +
+          "%, and wagered about " + fmt(flat.avgWagered) + " chips a session doing it. The progressions wagered up to " +
+          fmt(Math.max(out[1].avgWagered, out[2].avgWagered, out[3].avgWagered)) + " chips a session — and since the edge is charged on every chip wagered, they paid more for the same machine, and busted in up to " +
+          Math.round(worst.busts*100) + "% of sessions (" + worst.name + ") where flat betting simply played on. That is where the systems died on this machine, and at what rate.";
+        $("benchResults").innerHTML = h + "<p>" + verdict + "</p>";
+        var maxWagered = Math.max(out[1].avgWagered, out[2].avgWagered, out[3].avgWagered);
+        $("bestSim").textContent = "on this machine's own weights, flat betting busted in " + Math.round(flat.busts*100) +
+          "% of 300 test sessions while the progression systems busted in " + Math.round(out[1].busts*100) + "% (Martingale), " +
+          Math.round(out[2].busts*100) + "% (D'Alembert), and " + Math.round(out[3].busts*100) +
+          "% (Fibonacci) — and the progressions wagered up to about " + Math.round(maxWagered/flat.avgWagered) +
+          " times as many chips as flat betting over the same sessions, paying the edge on every one. A progression's rare surviving sessions can end high, carried by one big hit — that is the lottery ticket inside the system, and the bust rate printed beside it is the ticket's price.";
+      }
+      function logSpin(text){
+        var ul = $("spinLog");
+        if (ul.children.length === 1 && ul.children[0].textContent.indexOf("Nothing spun") === 0) ul.innerHTML = "";
+        var li = document.createElement("li"); li.textContent = text;
+        ul.insertBefore(li, ul.firstChild);
+        while (ul.children.length > 12) ul.removeChild(ul.lastChild);
+      }
+      function who(){
+        var a = $("alias").value.trim();
+        return a ? a : "Player";
+      }
+      function esc(s){
+        return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+      }
+
+      /* ---------- Variant banners ---------- */
+      function renderVariants(){
+        var cb = $("classicBanner"), lb = $("linesBanner");
+        if (state.classicVariant === "longshot"){
+          cb.textContent = "Variant in play: Long Shot — same weights, small wins trimmed, top prize raised to 5,000. Its payback is printed below and is this variant's own.";
+          cb.classList.remove("hidden");
+        } else cb.classList.add("hidden");
+        if (state.linesVariant === "heavy"){
+          lb.textContent = "Variant in play: Jackpot Heavy — small wins trimmed, top-symbol wins raised sharply (a Diamond run starts at 1,400). Its payback is printed below and is this variant's own.";
+          lb.classList.remove("hidden");
+        } else lb.classList.add("hidden");
+        var parts = [];
+        parts.push("Classic 3-Reel: " + CLASSIC_CONFIGS[state.classicVariant].label);
+        parts.push("Lines 5-Reel: " + LINES_CONFIGS[state.linesVariant].label);
+        $("variantSummary").textContent = parts.join(" · ") + ". A non-standard style is announced on the machine's face while it is in play, and its own payback is printed beside it — a variant's results are the variant's, never dressed as standard.";
+        $("classicVariant").value = state.classicVariant;
+        $("linesVariant").value = state.linesVariant;
+      }
+
+      /* ---------- Spinning ---------- */
+      function setReelClassic(i, sym, stopped){
+        classicReelEls[i].innerHTML = glyphHTML(sym);
+        classicReelEls[i].classList.toggle("stopped", !!stopped);
+      }
+      function spinClassic(){
+        if (spinning) return;
+        var bet = classicBet(), cfg = CLASSIC_CONFIGS[state.classicVariant];
+        if (state.balance < bet){
+          $("classicResult").innerHTML = "Not enough chips for a " + fmt(bet) + "-chip bet — tap the free refill in your bank above. Refills are always free; nothing real is ever at stake.";
+          renderBank(); return;
+        }
+        spinning = true;
+        $("classicSpin").disabled = true; $("leverBtn").disabled = true;
+        state.balance -= bet; session.spins++; session.wagered += bet; saveBalance(); renderBank();
+        $("classicResult").textContent = "Spinning…";
+        var finalIds = [drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id, drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id, drawSymbol(CLASSIC_SYMBOLS,cfg.weights).id];
+        var totalMs = SPEEDS[state.speed].ms;
+        var timers = [], i;
+        for (i=0;i<3;i++){
+          (function(idx){
+            classicReelEls[idx].classList.remove("stopped");
+            var iv = setInterval(function(){ setReelClassic(idx, CLASSIC_SYMBOLS[randInt(CLASSIC_SYMBOLS.length)], false); }, 70);
+            var to = setTimeout(function(){
+              clearInterval(iv);
+              setReelClassic(idx, symById(CLASSIC_SYMBOLS, finalIds[idx]), true);
+              beep(440 + idx*80, .07, 0);
+              if (idx === 2) finishClassic(finalIds, cfg, bet);
+            }, totalMs * (0.45 + idx*0.27));
+            timers.push(iv); timers.push(to);
+          })(i);
+        }
+      }
+      function finishClassic(ids, cfg, bet){
+        var win = evalClassic(ids, cfg, bet);
+        state.balance += win; session.returned += win; saveBalance();
+        record.spins++; record.wagered += bet; record.returned += win;
+        if (win > record.biggest) record.biggest = win;
+        record.classic.spins++; record.classic.wagered += bet; record.classic.returned += win;
+        intake({ machine:"classic", style:state.classicVariant, speed:state.speed,
+          bet:bet, lines:null, betPerLine:null, symbols:ids.slice(), win:win, net:win-bet, balanceAfter:state.balance });
+        saveRecord(); renderRecord();
+        var names = ids.map(function(id){ return symById(CLASSIC_SYMBOLS,id).name; }).join(" · ");
+        if (win > 0){
+          winSound(win >= bet*50);
+          $("classicResult").innerHTML = "<span class='big'>" + esc(who()) + " — three " + names.split(" · ")[0] + "s! Won " + fmt(win) + " play chips.</span> Bet " + fmt(bet) + ", balance " + fmt(state.balance) + ".";
+          logSpin("Classic: " + names + " — won " + fmt(win) + " on a " + fmt(bet) + " bet.");
+        } else {
+          $("classicResult").innerHTML = names + " — no match, no win. Bet " + fmt(bet) + " kept by the machine, exactly as the printed edge says it will be, on average. Balance " + fmt(state.balance) + ".";
+          logSpin("Classic: " + names + " — no win on a " + fmt(bet) + " bet.");
+        }
+        spinning = false;
+        $("classicSpin").disabled = false; $("leverBtn").disabled = false;
+        renderBank(); renderTeaching();
+      }
+
+      function setCellLines(idx, sym){
+        linesCellEls[idx].innerHTML = glyphHTML(sym);
+        linesCellEls[idx].classList.remove("win");
+      }
+      function spinLines(){
+        if (spinning) return;
+        var cfg = LINES_CONFIGS[state.linesVariant], lc = linesCount(), bpl = linesBetPerLine(), bet = linesTotalBet();
+        if (state.balance < bet){
+          $("linesResult").innerHTML = "Not enough chips for a " + fmt(bet) + "-chip spin (" + lc + " lines × " + bpl + ") — tap the free refill in your bank above. Refills are always free; nothing real is ever at stake.";
+          renderBank(); return;
+        }
+        spinning = true;
+        $("linesSpin").disabled = true;
+        state.balance -= bet; session.spins++; session.wagered += bet; saveBalance(); renderBank();
+        $("linesResult").textContent = "Spinning…";
+        var finalGrid = drawLinesGrid(cfg);
+        var totalMs = SPEEDS[state.speed].ms;
+        var colTimers = [], reel, row;
+        for (reel=0; reel<5; reel++){
+          (function(col){
+            var iv = setInterval(function(){
+              for (var r=0;r<3;r++) setCellLines(col*3 + r, LINES_SYMBOLS[randInt(LINES_SYMBOLS.length)]);
+            }, 70);
+            var to = setTimeout(function(){
+              clearInterval(iv);
+              for (var r=0;r<3;r++){
+                linesCellEls[col*3 + r].innerHTML = glyphHTML(symById(LINES_SYMBOLS, finalGrid[col][r]));
+              }
+              beep(400 + col*60, .07, 0);
+              if (col === 4) finishLines(finalGrid, cfg, lc, bpl, bet);
+            }, totalMs * (0.35 + col*0.16));
+            colTimers.push(iv); colTimers.push(to);
+          })(reel);
+        }
+      }
+      function finishLines(grid, cfg, lc, bpl, bet){
+        var res = evalLines(grid, cfg, lc, bpl);
+        state.balance += res.total; session.returned += res.total; saveBalance();
+        record.spins++; record.wagered += bet; record.returned += res.total;
+        if (res.total > record.biggest) record.biggest = res.total;
+        record.lines.spins++; record.lines.wagered += bet; record.lines.returned += res.total;
+        var flat = [];
+        for (var fr=0; fr<5; fr++) for (var fo=0; fo<3; fo++) flat.push(grid[fr][fo]);
+        intake({ machine:"lines", style:state.linesVariant, speed:state.speed,
+          bet:bet, lines:lc, betPerLine:bpl, symbols:flat,
+          winningLines:res.wins.map(function(w){ return {line:w.line+1, count:w.count, symbol:w.id, pay:w.pay}; }),
+          win:res.total, net:res.total-bet, balanceAfter:state.balance });
+        saveRecord(); renderRecord();
+        var i, c;
+        for (i=0;i<res.wins.length;i++){
+          for (c=0;c<res.wins[i].cells.length;c++) linesCellEls[res.wins[i].cells[c]].classList.add("win");
+        }
+        if (res.total > 0){
+          winSound(res.total >= bet*20);
+          var parts = res.wins.map(function(w){
+            return "Line " + (w.line+1) + " (" + PAYLINE_NAMES[w.line] + "): " + w.count + " × " + symById(LINES_SYMBOLS,w.id).name + " pays " + fmt(w.pay);
+          });
+          $("linesResult").innerHTML = "<span class='big'>" + esc(who()) + " won " + fmt(res.total) + " play chips.</span> " + parts.join(" · ") + ". Bet " + fmt(bet) + ", balance " + fmt(state.balance) + ".";
+          logSpin("Lines: won " + fmt(res.total) + " on a " + fmt(bet) + " bet (" + res.wins.length + " winning line" + (res.wins.length>1?"s":"") + ").");
+        } else {
+          $("linesResult").innerHTML = "No line paid this spin. Bet " + fmt(bet) + " kept by the machine — the printed edge at work, one spin at a time. Balance " + fmt(state.balance) + ".";
+          logSpin("Lines: no win on a " + fmt(bet) + " bet (" + lc + " lines × " + bpl + ").");
+        }
+        spinning = false;
+        $("linesSpin").disabled = false;
+        renderBank(); renderTeaching();
+      }
+
+      /* ---------- Wiring ---------- */
+      $("classicSpin").addEventListener("click", spinClassic);
+      $("leverBtn").addEventListener("click", function(){
+        $("classicLever").classList.add("pulled");
+        setTimeout(function(){ $("classicLever").classList.remove("pulled"); }, 350);
+        spinClassic();
+      });
+      $("linesSpin").addEventListener("click", spinLines);
+      $("tabClassic").addEventListener("click", function(){
+        $("machineClassic").classList.remove("hidden"); $("machineLines").classList.add("hidden");
+        $("tabClassic").setAttribute("aria-selected","true"); $("tabLines").setAttribute("aria-selected","false");
+      });
+      $("tabLines").addEventListener("click", function(){
+        $("machineLines").classList.remove("hidden"); $("machineClassic").classList.add("hidden");
+        $("tabLines").setAttribute("aria-selected","true"); $("tabClassic").setAttribute("aria-selected","false");
+      });
+      $("classicBet").addEventListener("change", function(){ renderBank(); renderTeaching(); });
+      $("linesBet").addEventListener("change", function(){ renderBank(); renderTeaching(); });
+      $("linesCount").addEventListener("change", function(){
+        renderBank(); renderTeaching(); renderLinesDiagram(); runLinesSim();
+      });
+      $("classicVariant").addEventListener("change", function(){
+        state.classicVariant = this.value; store.set("classicVariant", state.classicVariant);
+        renderVariants(); renderClassicPaytable(); renderClassicHonesty(null); runClassicSim(); renderTeaching();
+      });
+      $("linesVariant").addEventListener("change", function(){
+        state.linesVariant = this.value; store.set("linesVariant", state.linesVariant);
+        renderVariants(); renderLinesPaytable(); renderLinesHonesty(null); runLinesSim(); renderTeaching();
+      });
+      $("benchBtn").addEventListener("click", function(){
+        $("benchResults").innerHTML = '<p class="small">Running 1,200 sessions against the machine…</p>';
+        setTimeout(runBench, 30);
+      });
+      $("classicResim").addEventListener("click", runClassicSim);
+      $("linesResim").addEventListener("click", runLinesSim);
+      $("refillBtn").addEventListener("click", function(){
+        state.balance = 1000; saveBalance(); renderBank();
+        logSpin("Free refill — back to 1,000 play chips.");
+      });
+      $("resetBtn").addEventListener("click", function(){
+        state.balance = 1000; session = {spins:0, wagered:0, returned:0};
+        saveBalance(); renderBank(); renderTeaching();
+        $("spinLog").innerHTML = "<li>Record reset — fresh 1,000 play chips.</li>";
+      });
+      $("alias").addEventListener("input", renderTeaching);
+      $("forgetBtn").addEventListener("click", function(){
+        record = blankRecord(); spinIntake = []; saveRecord(); renderRecord();
+        $("exportNote").textContent = "Record forgotten — totals and every stored spin are gone from this device.";
+        logSpin("Device record forgotten by the player.");
+      });
+      function download(name, text, type){
+        try {
+          var blob = new Blob([text], {type:type});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url; a.download = name;
+          document.body.appendChild(a); a.click();
+          document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+          $("exportNote").textContent = "Downloaded " + name + " — " + fmt(spinIntake.length) + " spins, exactly as recorded on this device.";
+        } catch(e){
+          $("exportNote").textContent = "Download did not work in this browser — your record is still saved on this device.";
+        }
+      }
+      $("exportJsonBtn").addEventListener("click", function(){
+        var payload = {
+          game:"slots", exportedAt:new Date().toISOString(),
+          note:"Play chips only — nothing real was wagered. Paybacks: classic steady/longshot and lines steady/jackpot-heavy are computed from the weights and paytables printed on the page.",
+          totals:record, spins:spinIntake
+        };
+        download("slots-record.json", JSON.stringify(payload, null, 2), "application/json");
+      });
+      $("exportCsvBtn").addEventListener("click", function(){
+        var rows = ["spin,time,machine,style,speed,bet,lines,betPerLine,symbols,win,net,balanceAfter"];
+        for (var i=0;i<spinIntake.length;i++){
+          var s = spinIntake[i];
+          rows.push([s.spin, s.time, s.machine, s.style, s.speed, s.bet,
+            s.lines===null?"":s.lines, s.betPerLine===null?"":s.betPerLine,
+            '"' + s.symbols.join(" ") + '"', s.win, s.net, s.balanceAfter].join(","));
+        }
+        download("slots-record.csv", rows.join("\n"), "text/csv");
+      });
+      function setTeaching(m){
+        state.teaching = m; store.set("teaching", m); renderTeaching();
+      }
+      $("teachOff").addEventListener("click", function(){ setTeaching("off"); });
+      $("teachLight").addEventListener("click", function(){ setTeaching("light"); });
+      $("teachCoach").addEventListener("click", function(){ setTeaching("coach"); });
+      var speedBtns = document.querySelectorAll("[data-speed]");
+      function renderSpeed(){
+        for (var i=0;i<speedBtns.length;i++)
+          speedBtns[i].setAttribute("aria-pressed", speedBtns[i].getAttribute("data-speed")===state.speed ? "true":"false");
+        $("soundOn").setAttribute("aria-pressed", state.sound ? "true":"false");
+        $("soundOff").setAttribute("aria-pressed", state.sound ? "false":"true");
+      }
+      for (var si=0; si<speedBtns.length; si++){
+        speedBtns[si].addEventListener("click", function(){
+          state.speed = this.getAttribute("data-speed"); store.set("speed", state.speed);
+          renderSpeed(); renderTeaching();
+        });
+      }
+      $("soundOn").addEventListener("click", function(){ state.sound = true; store.set("sound", true); renderSpeed(); });
+      $("soundOff").addEventListener("click", function(){ state.sound = false; store.set("sound", false); renderSpeed(); });
+      document.addEventListener("keydown", function(e){
+        if (e.code === "Space" && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){
+          e.preventDefault();
+          if (!$("machineClassic").classList.contains("hidden")) spinClassic(); else spinLines();
+        }
+      });
+
+      function renderLinesDiagram(){
+        var lc = linesCount(), names = [];
+        for (var i=0;i<lc;i++) names.push("Line " + (i+1) + ": " + PAYLINE_NAMES[i]);
+        $("linesDiagram").textContent = "Lines in play — " + names.join(" · ") + ". A line pays for a run of one symbol starting at reel 1, following its path across the grid.";
+      }
+
+      /* ---------- First paint ---------- */
+      renderVariants();
+      renderClassicPaytable(); renderLinesPaytable();
+      renderClassicHonesty(null); renderLinesHonesty(null);
+      renderBank(); renderSpeed(); renderLinesDiagram(); renderTeaching(); renderRecord();
+      runClassicSim(); runLinesSim();
+    })();
+    </script>
+  </body>
+</html>
