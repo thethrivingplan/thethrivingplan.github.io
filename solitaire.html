@@ -49,6 +49,10 @@
       .hintbox{ min-height:2.6em; border-left:4px solid var(--hint); background:var(--panel);
         border-radius:0 10px 10px 0; padding:8px 13px; margin:10px 0; font-size:.98rem; }
       .hintbox:empty{ display:none; }
+      .teachbox{ border-left:4px solid var(--accent); background:var(--panel);
+        border-radius:0 10px 10px 0; padding:8px 13px; margin:10px 0; font-size:.98rem; }
+      .teachbox:empty{ display:none; }
+      .teachbox .tlabel{ font-weight:700; }
       .winbox{ display:none; border:2px solid var(--gold); background:var(--panel); border-radius:12px;
         padding:16px; margin:12px 0; text-align:center; }
       .winbox.show{ display:block; }
@@ -136,11 +140,13 @@
         <span class="stat">Moves <b id="stMoves">0</b></span>
         <span class="stat">Time <b id="stTime">0:00</b></span>
         <span class="stat">Score <b id="stScore">0</b></span>
+        <span class="stat">Teaching <b id="stTeach">Light</b></span>
         <span class="stat" id="stStock"></span>
       </div>
 
       <div class="variant-banner" id="variantBanner" role="status"></div>
       <div class="hintbox" id="hintBox" aria-live="polite"></div>
+      <div class="teachbox" id="teachBox" aria-live="polite"></div>
 
       <div class="winbox" id="winBox">
         <h2>🎉 You win!</h2>
@@ -184,8 +190,24 @@
         </ul>
       </details>
 
+      <details class="panel">
+        <summary>How strong players think — tap to open</summary>
+        <p style="margin:.3em 0 .5em;">Solitaire is luck and choices mixed. You can’t change the cards you’re dealt, but these habits —
+          the ones strong players lean on — make the most of the choices you do get. All in plain words:</p>
+        <ul>
+          <li><b>Turn over face-down cards first.</b> A hidden card can’t help you and might be exactly the card you need. When you have a choice of moves, pick the one that turns a face-down card over. The longest column usually hides the most cards, so working there first often opens the game up fastest.</li>
+          <li><b>An empty column is only as good as the King that fills it.</b> Only a King can start a new column, so before you clear a column out, check that a King is showing somewhere, ready to move in. Emptying a column with no King ready just leaves a gap you can’t use.</li>
+          <li><b>Free buried Kings.</b> A King sitting under other cards is stuck — it can’t start a column until the cards on top of it move. Moving those cards off it, when you safely can, gives you a King ready for the next empty column.</li>
+          <li><b>Don’t cover a card that’s ready to go home.</b> If the top card of a column can already move to its home pile, send it home before you build on top of it. Covering it means digging it out again later.</li>
+          <li><b>Think twice before breaking up a run you already built.</b> Splitting a run — a set of cards you’ve stacked in the right order — to move part of it somewhere else rarely gains anything unless it turns over a face-down card. If it doesn’t reveal anything new, it usually just shuffles the same cards around.</li>
+          <li><b>Small cards can go home early; bigger ones, wait a little.</b> Aces and 2s are always safe to send home — nothing ever needs to sit on them. A bigger card, though, might still be needed as a landing spot for the card one below it in the other colour, so strong players check before sending it home.</li>
+          <li><b>Work the stock steadily.</b> When no moves show, go through the stock pile rather than staring at the same cards. New cards are new chances — and in Draw Three, remember which cards are buried under the top one, because playing the top card brings the next one up.</li>
+        </ul>
+        <p>The <b>Hint</b> button puts these ideas to work on your actual game — at Light and Coach it tells you the <i>why</i> behind each suggestion, not just the move.</p>
+      </details>
+
       <details class="panel" id="settingsPanel">
-        <summary>Page settings — rules, your record, saved game — tap to open</summary>
+        <summary>Page settings — rules, teaching, your record, saved game — tap to open</summary>
 
         <fieldset>
           <legend>Rules for your next game</legend>
@@ -203,6 +225,20 @@
             <span>Limited — 3 redeals <span class="d">Variant. After the waste has been turned back 3 times, the stock stays empty.</span></span></label>
           <button class="btn primary" id="btnApplyRules">Start a new game with these rules<span class="gest">Tap to deal</span></button>
           <span class="stat" id="rulesNow"></span>
+        </fieldset>
+
+        <fieldset>
+          <legend>Teaching — how much the game teaches as you play</legend>
+          <p style="margin:.2em 0 .4em;">This game can teach while you play — the same ideas strong players use, in plain words.
+            How much is entirely your choice, it takes effect the moment you pick it, and it is saved on this device only.
+            Teaching never blocks a move: every card you can legally move, you can move, at every setting.</p>
+          <label class="choice"><input type="radio" name="teachRule" value="off" />
+            <span>Off <span class="d">No teaching notes at all. The Hint button still works when you tap it — asking is your act — it just names the move, with no lesson attached.</span></span></label>
+          <label class="choice"><input type="radio" name="teachRule" value="light" />
+            <span>Light <span class="d">The friendly default. Every hint comes with its why in plain words — why that move, why now — so you learn the thinking while you play. Nothing is said about your own moves.</span></span></label>
+          <label class="choice"><input type="radio" name="teachRule" value="coach" />
+            <span>Coach <span class="d">Everything in Light, plus a gentle note after a move that works against you — covering a card that was ready to go home, breaking up a run you’d built for no gain, or emptying a column with no King ready. The note always comes after the move, never instead of it, and the move always stands unless you undo it yourself.</span></span></label>
+          <span class="stat" id="teachNow"></span>
         </fieldset>
 
         <fieldset>
@@ -236,12 +272,18 @@ function isRed(s){ return s===1||s===2; }
 function cname(c){ return RANKS[c.r-1]+SUITS[c.s]; }
 
 var LS_SAVE="klondike.save.v1", LS_SET="klondike.settings.v1", LS_STATS="klondike.stats.v1";
-var settings={draw:1, redeals:"unlimited"};
-try{ var sv=JSON.parse(localStorage.getItem(LS_SET)||"null"); if(sv&&(sv.draw===1||sv.draw===3)&&(sv.redeals==="unlimited"||sv.redeals==="limited")) settings=sv; }catch(e){}
+var settings={draw:1, redeals:"unlimited", teach:"light"};
+try{ var sv=JSON.parse(localStorage.getItem(LS_SET)||"null");
+  if(sv&&(sv.draw===1||sv.draw===3)&&(sv.redeals==="unlimited"||sv.redeals==="limited"))
+    settings={draw:sv.draw, redeals:sv.redeals, teach:(sv.teach==="off"||sv.teach==="light"||sv.teach==="coach")?sv.teach:"light"};
+}catch(e){}
+function saveSettingsPref(){ try{ localStorage.setItem(LS_SET, JSON.stringify(settings)); }catch(e){} }
+function teachLevel(){ return settings.teach||"light"; }
+function teachName(){ var t=teachLevel(); return t==="off"?"Off":(t==="coach"?"Coach":"Light"); }
 var stats={standard:{played:0,won:0}, variant:{played:0,won:0}};
 try{ var st=JSON.parse(localStorage.getItem(LS_STATS)||"null"); if(st&&st.standard&&st.variant) stats=st; }catch(e){}
 
-var S=null, history=[], selected=null, hintHL=null, timerId=null;
+var S=null, history=[], selected=null, hintHL=null, timerId=null, pendingCoach="";
 
 function isStandard(st){ return st.draw===1 && st.redeals==="unlimited"; }
 function catOf(st){ return isStandard(st)?"standard":"variant"; }
@@ -261,9 +303,9 @@ function newGame(st){
      moves:0,score:0,seconds:0,started:false,won:false,passes:0,settings:{draw:st.draw,redeals:st.redeals}};
   for(var c=0;c<7;c++) for(var k=0;k<=c;k++){ var card=deck.pop(); card.up=(k===c); S.tableau[c].push(card); }
   while(deck.length) S.stock.push(deck.pop());
-  history=[]; selected=null; hintHL=null;
+  history=[]; selected=null; hintHL=null; pendingCoach="";
   stats[catOf(S.settings)].played++; saveStats();
-  setHint("");
+  setHint(""); setTeach("");
   render(); saveGame();
 }
 
@@ -311,6 +353,49 @@ function removeStack(sel){
     if(tp && !tp.up){ tp.up=true; S.score+=5; } }
   return cards;
 }
+/* ---------- coach: spot a move that works against the player (checked BEFORE the move, said AFTER it) ---------- */
+function kingReadyAfter(sel){
+  // is a King face-up and free to move into an empty column, once this move is made?
+  if(S.waste.length && topOf(S.waste).r===13 && sel.kind!=="waste") return true;
+  for(var t=0;t<7;t++){
+    var col=S.tableau[t]; if(!col.length) continue;
+    for(var i=0;i<col.length;i++){
+      if(!col[i].up) continue;
+      if(col[i].r!==13 || i!==0) continue; // only a King at the bottom of its column can lift into an empty one
+      if(sel.kind==="tableau" && sel.i===t && sel.idx===0) continue; // the King being moved away doesn't count
+      return true;
+    }
+  }
+  return false;
+}
+function coachNoteFor(sel, dest){
+  if(teachLevel()!=="coach") return "";
+  var stack=getStack(sel); if(!stack.length) return "";
+  var lead=stack[0];
+  var flips = sel.kind==="tableau" && sel.idx>0 && !S.tableau[sel.i][sel.idx-1].up;
+  if(dest.kind==="tableau"){
+    var dCol=S.tableau[dest.i], dTop=topOf(dCol);
+    // 1) covering a card that was ready to go home
+    if(dTop && dTop.up && canFoundation(dTop, dTop.s))
+      return "Coach: that covered the "+cname(dTop)+", which was ready to go home to its pile. Covering a card that’s ready to go home means digging it out again later — strong players send it home first, then build. Your move stands, of course; Undo is there if you want it back.";
+    // 2) breaking up a run already built, for no reveal
+    if(sel.kind==="tableau" && sel.idx>0 && !flips){
+      var below=S.tableau[sel.i][sel.idx-1];
+      if(below.up && isRed(below.s)!==isRed(lead.s) && below.r===lead.r+1)
+        return "Coach: that split a run you’d already built — the "+cname(lead)+" was sitting happily on the "+cname(below)+". Breaking up a built run is worth it when it turns over a face-down card; this one didn’t, so the same cards are just parked somewhere new. Watch for a reveal before splitting a run. Undo can put it back if you like.";
+    }
+    // 3) emptying a column with no King ready to fill it
+    if(sel.kind==="tableau" && sel.idx===0 && stack.length===S.tableau[sel.i].length && !kingReadyAfter(sel))
+      return "Coach: that emptied column "+(sel.i+1)+", and there’s no King showing anywhere ready to fill it — only a King can start a column. An empty column with no King ready just sits there unused. Next time, check a King is free before clearing a column out. The move stands; Undo is there if you want it.";
+  }
+  // 4) sending a mid-size card home while the other colour still needs it as a landing spot
+  if(dest.kind==="foundation" && lead.r>=3){
+    var oppMin=13; for(var f=0;f<4;f++){ if(isRed(f)!==isRed(lead.s)) oppMin=Math.min(oppMin, S.foundations[f].length); }
+    if(oppMin<lead.r-2)
+      return "Coach: the "+cname(lead)+" is home safe — but cards one step below it in the other colour may still need it as a landing spot down here, and those home piles aren’t as far along yet. Aces and 2s can always go home; bigger cards, strong players glance at the other colour’s piles first. It’s done now, and Undo can bring it back if you’d rather keep it in play.";
+  }
+  return "";
+}
 function tryMove(sel, dest){
   var stack=getStack(sel); if(!stack.length) return false;
   var lead=stack[0];
@@ -322,6 +407,7 @@ function tryMove(sel, dest){
     if(sel.kind==="tableau" && sel.i===dest.i) return false;
     if(!canTableau(lead, dest.i)) return false;
   } else return false;
+  pendingCoach=coachNoteFor(sel, dest);
   pushHistory();
   var cards=removeStack(sel);
   if(dest.kind==="foundation"){ S.foundations[dest.i].push(cards[0]);
@@ -336,6 +422,7 @@ function tryMove(sel, dest){
 function afterMove(){
   S.moves++; S.started=true; selected=null; hintHL=null;
   checkWin(); render(); saveGame();
+  if(pendingCoach){ setTeach(pendingCoach); pendingCoach=""; }
 }
 function checkWin(){
   var n=0, i; for(i=0;i<4;i++) n+=S.foundations[i].length;
@@ -347,20 +434,20 @@ function drawStock(){
     pushHistory();
     var n=Math.min(S.settings.draw, S.stock.length);
     for(var i=0;i<n;i++){ var c=S.stock.pop(); c.up=true; S.waste.push(c); }
-    S.moves++; S.started=true; selected=null; hintHL=null; render(); saveGame();
+    S.moves++; S.started=true; selected=null; hintHL=null; setTeach(""); render(); saveGame();
   } else if(S.waste.length){
     if(S.settings.redeals==="limited" && S.passes>=3){ setHint("No redeals left — the limited rule allows 3, and they’re used up. The stock stays empty for this game."); return; }
     pushHistory();
     S.passes++;
     while(S.waste.length){ var c2=S.waste.pop(); c2.up=false; S.stock.push(c2); }
-    S.moves++; selected=null; hintHL=null; render(); saveGame();
+    S.moves++; selected=null; hintHL=null; setTeach(""); render(); saveGame();
   } else setHint("The stock and waste are both empty — nothing left to deal.");
 }
 function undo(){
   if(!history.length){ setHint("Nothing to undo — you’re at the deal."); return; }
   var d=JSON.parse(history.pop());
   var keepSettings=S.settings; S=d; S.settings=keepSettings.settings?keepSettings.settings:d.settings;
-  selected=null; hintHL=null; setHint("Undone. One move back.");
+  selected=null; hintHL=null; pendingCoach=""; setTeach(""); setHint("Undone. One move back.");
   render(); saveGame();
 }
 
@@ -418,19 +505,51 @@ function descMove(st, card, destText){
   var what = stack.length>1 ? ("the run starting with "+cname(card)+" ("+stack.length+" cards)") : ("the "+cname(card));
   return "Move "+what+" from "+srcName(st)+" onto "+destText+".";
 }
+function longestColLen(except){
+  var best=0; for(var t=0;t<7;t++){ if(t===except) continue; best=Math.max(best, S.tableau[t].length); } return best;
+}
+function whyForMove(m){
+  // the why behind a suggested move, in plain words — the habits strong players use
+  var sel=m.sel, dest=m.dest, lead=getStack(sel)[0];
+  if(!lead) return "";
+  if(flipsCard(sel)){
+    var colLen=S.tableau[sel.i].length;
+    var longest = colLen>=longestColLen(sel.i);
+    return "Why: it turns over a face-down card in column "+(sel.i+1)+" — a hidden card can’t help you until it’s showing, so moves that reveal one come first."+
+      (longest?" That’s also your longest column, and the longest columns usually hide the most cards — working there first opens the game up fastest.":"");
+  }
+  if(dest.kind==="foundation"){
+    if(lead.r<=2) return "Why: Aces and 2s are always safe to send home — no card ever needs to land on them down here, so home is where they belong.";
+    var oppMin=13; for(var f=0;f<4;f++){ if(isRed(f)!==isRed(lead.s)) oppMin=Math.min(oppMin, S.foundations[f].length); }
+    if(oppMin>=lead.r-2) return "Why: it’s safe to send home — the other colour’s home piles have nearly caught up, so no card still down here needs the "+cname(lead)+" as a landing spot.";
+    return "Why: it makes progress home. One caution strong players keep: a card sent home can’t be a landing spot any more, so with bigger cards they check the other colour’s piles first — here, the rest of the position makes this the best move going.";
+  }
+  if(dest.kind==="tableau" && !S.tableau[dest.i].length){
+    // into an empty column
+    if(sel.kind==="tableau" && sel.idx===0 && getStack(sel).length===S.tableau[sel.i].length)
+      return "Why: it frees the buried King in column "+(sel.i+1)+" — a King under other cards is stuck, and a free King is what an empty column is for.";
+    return "Why: a King is the only card that can start a column, so an empty column plus a King ready to move is a real gain — a fresh column means more room to build.";
+  }
+  if(sel.kind==="waste") return "Why: it puts the waste card to work. The waste pile only ever shows its top card, so playing it clears the way to whatever is underneath.";
+  if(sel.kind==="foundation") return "Why: sometimes a card has to come back down from home to unstick a build. It costs a little score, but a freed run is worth more.";
+  // plain tableau build: prefer the longer pile, keep options open
+  var dLen=S.tableau[dest.i].length;
+  if(dLen>=longestColLen(dest.i)) return "Why: of the places this fits, it builds on the longer pile first — long piles are where cards get buried, and stacking there keeps your shorter piles free as landing spots for other cards.";
+  return "Why: it keeps the build growing in the right order — down, alternating colours — and every card stacked in order is a card closer to going home.";
+}
 function doHint(){
   if(S.won){ setHint("This game is won — every card is home. Deal a new game whenever you’re ready."); return; }
+  var teach = teachLevel()!=="off";
   var moves=allMoves();
   if(moves.length){
     var m=moves[0];
     hintHL={sel:m.sel, dest:m.dest};
-    var extra = flipsCard(m.sel) ? " That also turns over a face-down card." : "";
-    setHint("Hint: "+m.desc+extra);
+    setHint("Hint: "+m.desc+(teach? " "+whyForMove(m) : ""));
     render(); return;
   }
-  if(S.stock.length){ hintHL=null; setHint("Hint: no card moves right now — tap the stock pile to deal "+(S.settings.draw===1?"a card":"up to three cards")+" and look again."); render(); return; }
+  if(S.stock.length){ hintHL=null; setHint("Hint: no card moves right now — tap the stock pile to deal "+(S.settings.draw===1?"a card":"up to three cards")+" and look again."+(teach?" Why: new cards are new chances — when nothing on the table moves, the stock is the only way the game can change.":"")); render(); return; }
   if(S.waste.length && (S.settings.redeals==="unlimited" || S.passes<3)){
-    hintHL=null; setHint("Hint: no card moves right now — tap the empty stock slot to turn the waste pile back over and go through it again."); render(); return;
+    hintHL=null; setHint("Hint: no card moves right now — tap the empty stock slot to turn the waste pile back over and go through it again."+(teach?" Why: cards you couldn’t use on the last pass may fit now that the table has changed.":"")); render(); return;
   }
   hintHL=null;
   setHint("I see no moves left, and the stock is finished — this game looks blocked. Undo to try a different line, or deal a new game. (I only suggest moves that are really legal; there are none I can find.)");
@@ -456,13 +575,14 @@ function autoHome(){
     }
     if(!did) break;
   }
-  if(movedAny){ S.moves++; S.started=true; selected=null; hintHL=null; checkWin(); setHint(S.won?"":"Sent every card that fits a home pile. Nice and tidy."); render(); saveGame(); }
+  if(movedAny){ S.moves++; S.started=true; selected=null; hintHL=null; pendingCoach=""; setTeach(""); checkWin(); setHint(S.won?"":"Sent every card that fits a home pile. Nice and tidy."); render(); saveGame(); }
   else setHint("No card can go home just yet — a card only fits its own suit’s pile, one rank above the card already there.");
 }
 
 /* ---------- rendering ---------- */
 var $=function(id){ return document.getElementById(id); };
 function setHint(t){ $("hintBox").textContent=t; }
+function setTeach(t){ var b=$("teachBox"); if(b) b.textContent=t; }
 function fmtTime(s){ return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
 
 function cardEl(card, opts){
@@ -560,6 +680,8 @@ function render(){
     vb.innerHTML="<b>Variant in play:</b> "+rulesText(S.settings)+". This game counts in your variant record, kept separate from the standard record.";
   } else vb.classList.remove("show");
   $("rulesNow").textContent="This game: "+rulesText(S.settings)+(std?" (standard)":" (variant)");
+  $("stTeach").textContent=teachName();
+  var tn=$("teachNow"); if(tn) tn.textContent="Teaching now: "+teachName()+(teachLevel()==="off"?" — no teaching notes; Hint still works when tapped.":teachLevel()==="coach"?" — hints explain their why, and a coach note may follow a move that works against you.":" — hints explain their why; nothing is said about your own moves.");
   $("winBox").classList.toggle("show", S.won);
   if(S.won) $("winText").textContent="All four home piles are complete — Ace to King, every suit. "+
     S.moves+" moves, "+fmtTime(S.seconds)+", score "+S.score+". This win is in your "+catOf(S.settings)+" record.";
@@ -671,13 +793,27 @@ $("btnAuto").addEventListener("click", autoHome);
 $("btnApplyRules").addEventListener("click", function(){
   var d=document.querySelector('input[name="drawRule"]:checked');
   var r=document.querySelector('input[name="redealRule"]:checked');
-  settings={draw:parseInt(d.value,10), redeals:r.value};
-  try{ localStorage.setItem(LS_SET, JSON.stringify(settings)); }catch(e){}
+  settings={draw:parseInt(d.value,10), redeals:r.value, teach:teachLevel()};
+  saveSettingsPref();
   newGame(settings);
   setHint("New game with your rules: "+rulesText(settings)+(isStandard(settings)?" — the standard game.":" — a variant, and the game will keep saying so while you play."));
   document.getElementById("settingsPanel").open=false;
   window.scrollTo({top:0, behavior:"smooth"});
 });
+var teachRadios=document.querySelectorAll('input[name="teachRule"]');
+for(var ti=0; ti<teachRadios.length; ti++){
+  teachRadios[ti].addEventListener("change", function(ev){
+    settings.teach=ev.target.value;
+    saveSettingsPref();
+    if(teachLevel()!=="coach") setTeach("");
+    setHint(teachLevel()==="off"
+      ? "Teaching is off. No teaching notes — and the Hint button still works whenever you tap it."
+      : "Teaching: "+teachName()+". "+(teachLevel()==="coach"
+        ? "Hints will explain their why, and after a move that works against you, a gentle coach note will say what happened and what to watch for. It never blocks a move."
+        : "Hints will explain their why in plain words as you ask for them. Nothing will be said about your own moves."));
+    render();
+  });
+}
 $("btnForget").addEventListener("click", function(){
   try{ localStorage.removeItem(LS_SAVE); localStorage.removeItem(LS_STATS); }catch(e){}
   stats={standard:{played:0,won:0}, variant:{played:0,won:0}};
@@ -694,7 +830,8 @@ window.addEventListener("resize", function(){ render(); });
 (function init(){
   var dEl=document.querySelector('input[name="drawRule"][value="'+settings.draw+'"]');
   var rEl=document.querySelector('input[name="redealRule"][value="'+settings.redeals+'"]');
-  if(dEl) dEl.checked=true; if(rEl) rEl.checked=true;
+  var tEl=document.querySelector('input[name="teachRule"][value="'+teachLevel()+'"]');
+  if(dEl) dEl.checked=true; if(rEl) rEl.checked=true; if(tEl) tEl.checked=true;
   if(!restore()) newGame(settings);
   else { render(); setHint("Welcome back — your game in progress was saved on this device, right where you left it."); }
 })();
