@@ -138,6 +138,26 @@
   .named-add .row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; align-items:center; }
   .named-add-status{ font-size:.9rem; color:var(--teal); font-weight:700; min-height:1.4em; margin-top:8px; }
 
+  /* ---------- Say it right here ---------- */
+  .say-box{ background:var(--surface); border:2px solid var(--ink); border-radius:18px; padding:20px; }
+  .say-box h2{ font-size:1.6rem; margin-bottom:8px; }
+  .say-intro{ color:var(--ink-soft); max-width:62ch; }
+  .say-intro strong{ color:var(--ink); }
+  form.say-form{ margin-top:16px; display:grid; gap:16px; }
+  .say-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .say-status{ font-size:.98rem; font-weight:700; color:var(--teal); min-height:1.5em; }
+  .say-status.fail{ color:var(--accent); }
+  .say-status a{ color:var(--teal); }
+  @media (max-width:640px){
+    header.hero{ padding-top:16px; }
+    .hero .core{ margin-top:8px; }
+    .hero-fold{ margin-top:10px; }
+    section#say-here{ padding-top:10px; }
+    .say-box{ padding:16px; }
+    .say-box h2{ font-size:1.45rem; }
+    form.say-form{ margin-top:12px; gap:12px; }
+  }
+
   /* ---------- The door / intake ---------- */
   .door{ background:var(--surface); border:2px solid var(--ink); border-radius:18px; padding:20px; }
   .door > summary{ cursor:pointer; list-style:none; }
@@ -354,6 +374,27 @@
     </details>
   </header>
 
+  <section id="say-here" aria-labelledby="sayHereHeading">
+    <div class="say-box">
+      <h2 id="sayHereHeading">Say it right here</h2>
+      <p class="say-intro">Type it here and it comes straight to us — <strong>we read every one</strong>. A field that fits the same safety rules as the board joins the shared list below and gets posted to the Poster Board for everybody to see. <strong>You never have to go to the board yourself.</strong></p>
+      <form class="say-form" id="sayForm">
+        <div class="fld">
+          <label for="sayField">Field</label>
+          <input type="text" id="sayField" autocomplete="off" placeholder="e.g. Home health care" />
+        </div>
+        <div class="fld">
+          <label for="sayBroken">What's broken</label>
+          <textarea id="sayBroken" placeholder="What's broken, and how do you know?"></textarea>
+        </div>
+        <div class="say-row">
+          <button class="btn primary" type="submit" id="saySendBtn">Tap to send</button>
+        </div>
+        <p class="say-status" id="sayStatus" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
   <section id="idea" data-part>
     <div class="sec-head"><span class="no">First</span><h2>What this page is</h2></div>
     <p class="face-line">A door for fields we can't see. <strong>You name the field and what's broken — we take it from there.</strong></p>
@@ -438,6 +479,7 @@
       <h3>Bowling</h3>
       <p><strong>What's broken:</strong> It doesn't exist yet.</p>
       <p style="font-size:.88rem; color:var(--muted); margin-top:8px">Named via The Poster Board · November 18, 2026</p>
+      <a class="go" href="bowling.html" target="_blank" rel="noopener">Play Bowling</a>
     </article>
       </div>
     </details>
@@ -1007,6 +1049,62 @@
     });
   }
   renderNamed();
+
+  /* ---------- Say it right here: send straight to the team inbox ---------- */
+  function addNamedDirect(field, broken){
+    var list=loadNamed();
+    var dupe=list.some(function(x){ return (x.field||"").trim().toLowerCase()===field.toLowerCase() && (x.broken||"").trim().toLowerCase()===broken.toLowerCase(); });
+    if(dupe){ renderNamed(); return true; }
+    var entry={ id: Date.now()+"-"+Math.random().toString(36).slice(2,8), field:field, broken:broken, hits:"", fix:"", name:"", ts: Date.now() };
+    list.push(entry); saveNamed(list); renderNamed();
+    return true;
+  }
+  var sayForm=$("sayForm"), sayStatus=$("sayStatus"), saySendBtn=$("saySendBtn");
+  if(sayForm){
+    sayForm.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var field=($("sayField").value||"").trim();
+      var broken=($("sayBroken").value||"").trim();
+      sayStatus.classList.remove("fail");
+      if(!field || !broken){
+        sayStatus.classList.add("fail");
+        sayStatus.textContent="Add your field and what's broken first — both boxes — then tap to send.";
+        return;
+      }
+      saySendBtn.disabled=true;
+      saySendBtn.textContent="Sending…";
+      sayStatus.textContent="Sending…";
+      fetch("https://formsubmit.co/ajax/thethrivingplan@gmail.com", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Accept":"application/json" },
+        body: JSON.stringify({
+          _subject:"WHAT ARE WE MISSING — a field to take on",
+          "Field": field,
+          "What's broken": broken
+        })
+      }).then(function(res){
+        if(!res.ok) throw new Error("send failed");
+        return res.json().catch(function(){ return {}; });
+      }).then(function(){
+        addNamedDirect(field, broken);
+        sayStatus.classList.remove("fail");
+        sayStatus.textContent="Received — it's with us now. It's also on your list below, under \u201CFields you've named.\u201D";
+        $("sayField").value="";
+        $("sayBroken").value="";
+      }).catch(function(){
+        sayStatus.classList.add("fail");
+        sayStatus.innerHTML="";
+        sayStatus.appendChild(document.createTextNode("That didn't go through — nothing was sent. You can save it in \u201CFields you've named\u201D below, or post it on "));
+        var a=document.createElement("a");
+        a.href="https://theposterboard.fwh.is"; a.target="_blank"; a.rel="noopener"; a.textContent="the Poster Board ↗";
+        sayStatus.appendChild(a);
+        sayStatus.appendChild(document.createTextNode("."));
+      }).finally(function(){
+        saySendBtn.disabled=false;
+        saySendBtn.textContent="Tap to send";
+      });
+    });
+  }
 
   /* ---------- Copy draft ---------- */
   function draftText(){
