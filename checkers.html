@@ -112,6 +112,20 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
 .scorechips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .chip{border:1.5px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px}
 .chip .mini{vertical-align:-5px;margin-right:5px}
+/* Teaching note */
+.teachnote{border:1.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 9%, var(--card));border-radius:14px;padding:12px 14px;margin-top:12px;font-size:15px}
+.teachnote .tlabel{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+/* Mini boards in the "How pros think" panel */
+.miniboard{display:grid;grid-template-columns:repeat(8,1fr);width:176px;max-width:60vw;border-radius:8px;overflow:hidden;border:1.5px solid var(--line);flex:none}
+.mb-sq{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+.mb-sq.l{background:var(--sq-light)}.mb-sq.d{background:var(--sq-dark)}
+.mb-sq.hl{box-shadow:inset 0 0 0 3px var(--accent)}
+.mb-pc{width:78%;height:78%;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fbbf24;font-size:11px;line-height:1;box-shadow:inset 0 -2px 3px rgba(0,0,0,.35)}
+.mb-pc.blk{background:var(--piece-blk)}.mb-pc.red{background:var(--piece-red)}
+.proitem{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0}
+.proitem .protext{flex:1;min-width:220px}
+.proitem h4{margin:0 0 4px;font-size:16px}
+.proitem p{margin:0}
 </style>
 </head>
 <body>
@@ -125,6 +139,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
       <span class="pill">Works offline once loaded</span>
       <span class="pill"><strong>vs Bot</strong> — Learning to Pro</span>
       <span class="pill"><strong>No name needed</strong> — Player 1 &amp; Player 2 play fine</span>
+      <span class="pill"><strong>Teaching built in</strong> — Off · Light · Coach, your choice</span>
     </div>
     <div class="btnrow">
       <button class="btn" id="offlineBtn" type="button">Download a copy for offline play — tap to download</button>
@@ -141,6 +156,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
       <div class="boardframe">
         <div class="board" id="board" role="grid" aria-label="Checkers board. Tap one of your pieces, then tap a highlighted square to move it. You can also drag a piece to its square."></div>
       </div>
+      <div id="teachNote" class="teachnote hidden" role="status"></div>
       <p class="small" style="margin:10px 2px 0"><strong>How to move:</strong> tap your piece, then tap a glowing square — or drag the piece there. Mouse works the same way. If a jump is glowing red, a capture is forced and you must take it (in standard rules). After a jump, if the same piece can jump again, it must keep going.</p>
       <div class="scorechips" id="scoreChips"></div>
       <div class="tray"><span>Black has captured:</span><span class="cap" id="capByBlack"></span></div>
@@ -148,7 +164,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
       <div class="btnrow">
         <button class="btn" id="newGameBtn" type="button">New game — tap to start over</button>
         <button class="btn secondary" id="undoBtn" type="button">Undo — tap to take a move back</button>
-        <button class="btn secondary" id="hintBtn" type="button">Hint — tap for the strongest move</button>
+        <button class="btn secondary" id="hintBtn" type="button">Hint — tap for the ways to play from here</button>
       </div>
       <div class="btnrow">
         <button class="btn secondary" id="flipBtn" type="button">Flip board — tap to flip</button>
@@ -157,6 +173,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
         <button class="btn secondary" id="resignBtn" type="button">Resign — tap to give up</button>
       </div>
       <div id="actionMsg" class="status hidden" style="margin-top:12px"></div>
+      <div id="hintBox" class="teachnote hidden"></div>
       <details id="movesFold">
         <summary>Moves so far &amp; the deep layer — tap to open</summary>
         <p class="small">Every move in plain notation: a dash is a quiet move, an × is a jump. A move with several × is one turn — a multiple jump. Nothing here is removed; it is just one tap down.</p>
@@ -259,6 +276,14 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
             <button class="segbtn" type="button" data-val="on">Auto-flip for two players — on · tap to choose</button>
           </div>
           <p class="small">Rule changes start a fresh game with the new rules, so a game is never half one rule set and half another.</p>
+
+          <label>Teaching — how much the game teaches as you play</label>
+          <div class="seg" id="teachingSeg">
+            <button class="segbtn" type="button" data-teach="off">Off — never teach · tap to choose</button>
+            <button class="segbtn sel" type="button" data-teach="light">Light — a note on the big moments · tap to choose</button>
+            <button class="segbtn" type="button" data-teach="coach">Coach — a note after most moves · tap to choose</button>
+          </div>
+          <p class="small">Teaching notes appear under the board, tied to the move just played — a jump explained, a trade read honestly, the king race named when it starts, a piece left hanging pointed out after it happens. They never block play and never play the game for you (the Hint button is the door for that). Where more than one real way to play exists, the notes and the Hint lay the alternatives side by side with what each costs and buys — a single way is named only when there is genuinely one option. Changing the teaching level applies at once and never restarts your game. Saved on this device only, like everything else here.</p>
         </details>
 
         <details>
@@ -268,7 +293,7 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
           <p><strong>Jumping:</strong> jump diagonally over a next-door enemy piece onto the empty square just beyond it, and that piece is captured. In standard rules a jump is <strong>forced</strong> — if you can jump, you must. If the same piece can jump again after landing, it must keep jumping in the same turn: double and triple jumps are one move.</p>
           <p><strong>Kings:</strong> a piece that reaches the far row is crowned — it gets a crown and from then on moves and jumps both forward and backward.</p>
           <p><strong>Draws:</strong> tap <strong>Call it a draw</strong> to offer one. Against the bot, it accepts when it is not ahead. A game also ends drawn after 80 half-moves with no capture and no ordinary piece moving — only kings shuffling cannot drag a game out forever.</p>
-          <p><strong>Undo &amp; Hint:</strong> Undo takes back the last move (against the bot, yours and the bot's, so it is your turn again). Hint shows the strongest move the Pro search can find, whoever you are playing.</p>
+          <p><strong>Undo &amp; Hint:</strong> Undo takes back the last move (against the bot, yours and the bot's, so it is your turn again). Hint lays out the real ways to play from here — the search's top pick and the genuine alternatives, each with what it costs and buys. It names a single move only when there is genuinely one legal move.</p>
         </details>
 
         <details>
@@ -276,6 +301,43 @@ footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
           <p>The four levels are built differently, not just named differently. <strong>Learning</strong> searches 1 move ahead and takes a random legal move about 4 times in 10. <strong>Steady</strong> searches 3 ahead and slips about 1 time in 10. <strong>Sharp</strong> searches 5 ahead with no random moves. <strong>Pro</strong> searches 7 ahead with move ordering and the full evaluation — material, crowning, advancement, centre control and mobility — and no random moves ever.</p>
           <p>That gap is real by construction: a bot that can only see one move ahead cannot defend a piece that is attacked in two, and the Pro search sees the whole exchange. If a level ever played the same as another, that would be a bug, not a feature — the depths and slip rates printed here are the exact numbers the code uses.</p>
           <p>The bot thinks on this device only. No connection, no account, nothing leaves the page.</p>
+        </details>
+
+        <details>
+          <summary>How pros think — tap to open</summary>
+          <p class="small">Four ideas checkers players actually train on, in plain words. The little boards are real positions, set up the way the text describes. The teaching notes under the board point at these ideas when they show up in your game.</p>
+
+          <div class="proitem">
+            <div class="miniboard" data-mini="centre" role="img" aria-label="Small board: the eight centre squares are outlined, with a black piece and a red piece standing in the middle."></div>
+            <div class="protext">
+              <h4>1 · Control the centre</h4>
+              <p>The outlined squares are the centre. A piece standing there can move or jump toward either side of the board; a piece on the edge has half as many moves and can be trapped against the wall. Pros build toward the middle first, trade away enemy pieces that sit there, and only use the edges to slip past. The other school plays it patient — hold the back rows, guard your crowning squares, and let the other side overreach: you give up the middle, and in return your home squares can never be rushed. Neither school is the one way; pros pick between them from the position in front of them.</p>
+            </div>
+          </div>
+
+          <div class="proitem">
+            <div class="miniboard" data-mini="trade" role="img" aria-label="Small board: Black has four pieces to Red's three, and a black piece is about to jump a red piece, with the landing square outlined."></div>
+            <div class="protext">
+              <h4>2 · Force trades when you're ahead</h4>
+              <p>Every swap shrinks the board. Here Black is a piece up (four against three) and the jump starts a one-for-one trade — after it, Black is still a piece up, but with fewer pieces left for Red to catch up with. The side behind runs out of pieces and chances first. So: ahead, offer swaps and make the other side take them. Behind, refuse swaps, keep your pieces on, and hunt for jumps that change the count.</p>
+            </div>
+          </div>
+
+          <div class="proitem">
+            <div class="miniboard" data-mini="opposition" role="img" aria-label="Small board: a red king and a black king face each other on one diagonal with a single empty square outlined between them."></div>
+            <div class="protext">
+              <h4>3 · The opposition</h4>
+              <p>When two kings stare at each other down a diagonal with one empty square between them — the outlined square here — whoever has to move must step aside and give ground, and the other king walks in behind. Holding that stare so the <em>other</em> side has to break it is called having the opposition. It is how a lone king wins ground it could never take by force, so pros count whose move it is before stepping into the stare-down.</p>
+            </div>
+          </div>
+
+          <div class="proitem">
+            <div class="miniboard" data-mini="endgame" role="img" aria-label="Small board: one black king in the bottom corner area herding two red pieces, which are outlined, toward the corner."></div>
+            <div class="protext">
+              <h4>4 · King endgames</h4>
+              <p>Once kings are out, the game changes: ordinary pieces become targets, because a king hunts in both directions. One king against two loose pieces — like this corner position — is often a win for the king: it herds them toward a corner, where they have the fewest escapes, and picks them off one at a time. Pros defending here keep their pieces guarding each other and their own king close; pros attacking keep their king between the enemy king and the pieces it wants to save.</p>
+            </div>
+          </div>
         </details>
 
         <details>
@@ -499,19 +561,165 @@ function chooseBotMove(b,side,settings,levelKey){
   }
   return bestMoves[Math.floor(Math.random()*bestMoves.length)];
 }
-function bestHintMove(b,side,settings){
+function scoredMoves(b,side,settings){
   nodes=0;
   var moves=fullMoves(b,side,settings);
-  if(!moves.length)return null;
-  var best=-Infinity, bestM=moves[0], alpha=-Infinity, beta=Infinity;
+  var out=[];
   moves.sort(function(a,z){return (z.caps.length*10+(z.crowned?5:0))-(a.caps.length*10+(a.crowned?5:0));});
+  var alpha=-Infinity, beta=Infinity;
   for(var k=0;k<moves.length;k++){
     var sc=-negamax(moves[k].after,opp(side),settings,5,-beta,-alpha,1);
-    if(sc>best){best=sc;bestM=moves[k];}
+    out.push({move:moves[k],score:sc});
     if(sc>alpha)alpha=sc;
   }
-  return bestM;
+  out.sort(function(a,z){return z.score-a.score;});
+  return out;
 }
+function pickHintOptions(b,side,settings){
+  // The real ways from here: the search's top pick plus the genuine alternatives —
+  // a different kind of move (capture vs quiet), then a different piece's move.
+  // A single option comes back only when there is genuinely one legal move.
+  var scored=scoredMoves(b,side,settings);
+  if(!scored.length)return {options:[],only:false};
+  if(scored.length===1)return {options:scored,only:true};
+  var picks=[scored[0]];
+  var bestIsCap=scored[0].move.caps.length>0;
+  var otherKind=null;
+  for(var i=0;i<scored.length;i++){if((scored[i].move.caps.length>0)!==bestIsCap){otherKind=scored[i];break;}}
+  if(otherKind)picks.push(otherKind);
+  for(var j=0;j<scored.length&&picks.length<3;j++){
+    var s=scored[j];
+    if(picks.indexOf(s)>=0)continue;
+    var diffStart=true;
+    picks.forEach(function(p){if(p.move.path[0]===s.move.path[0])diffStart=false;});
+    if(diffStart)picks.push(s);
+  }
+  for(var k=0;k<scored.length&&picks.length<3;k++){if(picks.indexOf(scored[k])<0)picks.push(scored[k]);}
+  picks.sort(function(a,z){return z.score-a.score;});
+  return {options:picks,only:false};
+}
+function hintWhy(o,before,side,bestScore){
+  var mv=o.move, after=mv.after, dest=mv.path[mv.path.length-1], parts=[];
+  if(mv.caps.length){
+    var taken=mv.caps.map(function(ci){return isKing(before[ci])?"a king":"a man";});
+    parts.push(mv.caps.length>1?("takes "+mv.caps.length+" pieces ("+taken.join(", ")+") in one turn"):("takes "+taken[0]));
+  }
+  if(mv.crowned)parts.push("crowns — and a king is worth about three ordinary pieces");
+  var foeCaps=fullMoves(after,opp(side),settings).filter(function(m){return m.caps.length>0;});
+  var recap=foeCaps.some(function(m){return m.caps[0]===dest;});
+  var takenLater=!recap&&foeCaps.some(function(m){return m.caps.indexOf(dest)>=0;});
+  if(recap)parts.push("the piece you land can be taken straight back, so count it as a swap, not a steal");
+  else if(takenLater)parts.push("the piece you land can be jumped further along a chain — it is not safe where it stops");
+  if(!mv.caps.length){
+    var dp=rc(dest);
+    if(dp[0]>=3&&dp[0]<=4&&dp[1]>=2&&dp[1]<=5)parts.push("builds on the centre squares — nothing taken, but the strongest ground on the board");
+    else parts.push("a quiet build — nothing taken and nothing risked outright");
+  }
+  var gap=bestScore-o.score;
+  parts.push(gap<=0.001?"the search's top pick":gap<=25?"the search rates it level with the top pick":gap<=90?"the search rates it a shade below the top pick":"the search rates it well below the top pick — a real cost, taken only for a reason");
+  return parts.join("; ")+".";
+}
+function hideHint(){var hb=$("hintBox");if(hb){hb.classList.add("hidden");hb.innerHTML="";}}
+
+/* ============ Teaching layer (Off / Light / Coach) ============
+   Notes are built AFTER a move lands, from the real position — never before,
+   and they describe what happened rather than playing the next move. */
+var kingRaceNoted=false;
+function pieceVal(v){return isKing(v)?3:1;}
+function matTotal(b,s){var t=0;for(var i=0;i<64;i++)if(sideOf(b[i])===s)t+=pieceVal(b[i]);return t;}
+function buildTeachNote(move,mover,before,after,nextMoves){
+  if(!ui.teaching||ui.teaching==="off"||!move)return null;
+  var coach=ui.teaching==="coach";
+  var foe=opp(mover), dest=move.path[move.path.length-1];
+  var who=displayName(mover), foeName=displayName(foe);
+  var tag=who+" "+moveNotation(move)+": ";
+  var moverMoves=fullMoves(before,mover,settings);
+  var otherJumps=moverMoves.filter(function(m){return m.caps.length>0&&m.path.join(",")!==move.path.join(",");});
+  // Multiple jump — the chain itself is the lesson.
+  if(move.caps.length>=2){
+    var mj=tag+"a "+(move.caps.length===2?"double":move.caps.length===3?"triple":move.caps.length+"-piece")+" jump. One turn can take several pieces when each landing square lines up another jump — and in standard rules the piece must keep going while jumps remain. Pros set these up by offering a piece that starts the chain on squares they choose.";
+    if(otherJumps.length){
+      var alt=otherJumps[0];
+      mj+=" There was another jump on the board — "+moveNotation(alt)+", taking "+(alt.caps.length===1?"one piece":alt.caps.length+" pieces")+". Pros lay the jumps side by side before choosing: the longer chain is not always the better one, because where the piece stops matters as much as what it took.";
+    }
+    return mj;
+  }
+  // Crowning.
+  if(move.crowned){
+    return tag+"that piece reached the far row and is crowned. A king moves and jumps both ways, so it is worth about three ordinary pieces — most games turn on who crowns first, and on stopping the other side's runner before it gets there.";
+  }
+  // The king race, named once, when it starts.
+  if(!kingRaceNoted){
+    var raceSide=function(s){
+      for(var i=0;i<64;i++){var v=after[i];
+        if(sideOf(v)===s&&isMan(v)){var p=rc(i);var prog=s==="B"?(7-p[0]):p[0];if(prog>=5)return true;}
+      }
+      return false;
+    };
+    if(raceSide("B")&&raceSide("R")){
+      kingRaceNoted=true;
+      return "The king race is on: both sides have a piece one or two squares from the far row. From here the game is a footrace — every move that does not crown, block, or capture is a step lost. Pros play a race two ways. Race: run straight for the crown — the fastest route, but it leaves their runner a free run too. Block: spend a move stepping into their runner's path or guarding its crowning square — it costs you a move, and can cost them the whole race. Count how many moves each runner needs; the shorter count races, the longer count blocks.";
+    }
+  }
+  var foeCaps=nextMoves.filter(function(m){return m.caps.length>0;});
+  // Trade read: the piece that just jumped can be taken straight back.
+  if(move.caps.length===1&&foeCaps.some(function(m){return m.caps[0]===dest;})){
+    var gained=pieceVal(before[move.caps[0]]);
+    var lost=pieceVal(after[dest]);
+    var net=gained-lost;
+    var aheadBefore=matTotal(before,mover)-matTotal(before,foe);
+    var read;
+    if(net>0)read="On the swap, "+who+" comes out ahead — the piece taken was worth more than the one that can be taken back.";
+    else if(net<0)read="On the swap, "+foeName+" comes out ahead — the piece that can be taken back is worth more than the one just taken, so this trade costs "+who+".";
+    else if(aheadBefore>0)read="One for one is an even swap of pieces — and even swaps favour "+who+", who was already ahead: with fewer pieces on the board, the side behind has fewer chances to catch up. That is why pros force trades when they are ahead.";
+    else if(aheadBefore<0)read="One for one is an even swap of pieces — and even swaps favour "+foeName+", who was already ahead: the side behind runs out of pieces first. When you are behind, keep pieces on the board and make the game complicated; when you are ahead, swap.";
+    else read="One for one, with the count level: an even swap that favours nobody. It just makes the board simpler — fewer pieces, fewer surprises.";
+    var tradeText=tag+"a jump, and a trade is on — the piece that landed on "+sqName(dest)+" can be taken straight back. "+read;
+    var foeOtherJumps=foeCaps.filter(function(m){return m.caps[0]!==dest;});
+    if(foeOtherJumps.length){
+      var oj=foeOtherJumps[0];
+      tradeText+=" "+foeName+" also has another jump — "+moveNotation(oj)+" — which takes "+(isKing(after[oj.caps[0]])?"a king":"a man")+". Taking back settles this swap now; the other jump removes a different piece and leaves this one standing. Pros pick between them by which pieces they want left on the board, not by habit.";
+    }else if(settings.forcedCapture==="off"){
+      tradeText+=" With captures optional in this game, "+foeName+" could also decline the swap and move quietly — keeping every piece on the board, at the price of staying down the piece just taken.";
+    }
+    return tradeText;
+  }
+  // Hanging piece: a capture exists after which the jumper cannot be taken back.
+  var hangSq=-1;
+  for(var fi=0;fi<foeCaps.length;fi++){
+    var fm=foeCaps[fi];
+    var landSq=fm.path[fm.path.length-1];
+    var replies=fullMoves(fm.after,mover,settings);
+    var canRecap=replies.some(function(m){return m.caps.indexOf(landSq)>=0;});
+    if(!canRecap){hangSq=fm.caps[0];if(fm.caps[0]===dest)break;}
+  }
+  if(hangSq>=0){
+    return tag+"that leaves the "+colourWord(mover).toLowerCase()+" piece on "+sqName(hangSq)+" hanging — it can be jumped, and the piece that takes it lands where nothing can take it back. A free piece. Before any move, pros ask one question: after this, what of mine can be taken for nothing? Two habits stop it happening: advance in pairs, so each piece is guarded by the one behind it — slower, but nothing is given away free; or run pieces along the edge, where they can only be attacked from one side — safer, though edge pieces have fewer moves and less say in the centre.";
+  }
+  // Forced reply: the other side has exactly one legal move.
+  if(nextMoves.length===1){
+    return "After "+who+" played "+moveNotation(move)+", "+foeName+" has exactly one legal move — no choice at all. Forcing replies like this is how pros steer a game: when the other side can only answer, you are the one choosing where the game goes.";
+  }
+  if(!coach)return null;
+  // Coach only: a single jump, explained.
+  if(move.caps.length===1){
+    var sj=tag+"a jump — the piece it hopped over comes off the board."+(settings.forcedCapture==="on"?" In standard rules that was not a choice: if a jump exists, it must be taken, so pros count the forced jumps before they count anything else.":"");
+    if(otherJumps.length)sj+=" The other jump, "+moveNotation(otherJumps[0])+", was also on — pros compare both before taking either, because what each one leaves behind differs.";
+    return sj;
+  }
+  // Coach only: a quiet move into the centre.
+  var dp=rc(dest);
+  if(move.caps.length===0&&dp[0]>=3&&dp[0]<=4&&dp[1]>=2&&dp[1]<=5){
+    return tag+"into the centre. Centre pieces watch both sides of the board and can jump either way, so pros fight for the middle squares early — a piece on the edge has about half the moves of a piece in the centre. The other school plays the opposite way: hold pieces back on the home rows to guard the crowning squares and let the other side come to you — safer against runners, but it hands the centre over. Pros choose between the two from the position, not from habit.";
+  }
+  return null;
+}
+function showTeach(text){
+  var el=$("teachNote"); if(!el)return;
+  el.classList.remove("hidden");
+  el.innerHTML='<div class="tlabel">'+(ui.teaching==="coach"?"Coach note — teaching set to Coach":"Teaching note — teaching set to Light")+'</div><div>'+escapeHtml(text)+'</div>';
+}
+function hideTeach(){var el=$("teachNote");if(el){el.classList.add("hidden");el.innerHTML="";}}
 
 /* ============ Notation ============ */
 var FILES="abcdefgh";
@@ -524,7 +732,7 @@ function moveNotation(m){
 /* ============ Game state, settings, device-only save ============ */
 var SET_KEY="checkers-settings-v1", SAVE_KEY="checkers-save-v1";
 var settings={forcedCapture:"on", firstMove:"B", kingStyle:"step", maxCapture:"off", showMoves:"on", coords:"on", autoFlip:"off"};
-var ui={mode:"bot", level:"steady", humanSide:"B", sound:true};
+var ui={mode:"bot", level:"steady", humanSide:"B", sound:true, teaching:"light"};
 try{
   var savedSettings=JSON.parse(localStorage.getItem(SET_KEY)||"null");
   if(savedSettings){for(var sk in settings)if(savedSettings[sk])settings[sk]=savedSettings[sk];
@@ -688,6 +896,11 @@ function finishTurn(move,wasCapture){
     G.over=true;
     G.result="Draw — 80 half-moves with no capture and no ordinary piece moving.";
   }
+  if(!G.over&&snap){
+    var tnote=buildTeachNote(move,mover,snap.board,G.board,nextMoves);
+    if(tnote)showTeach(tnote);
+  }
+  hideHint();
   if(settings.autoFlip==="on"&&G.mode==="local"&&!G.over)G.flipped=!G.flipped;
   persistGame();
   render();
@@ -897,6 +1110,7 @@ function newGame(){
   var names={B:($("nameBlack").value||"").trim().slice(0,20), R:($("nameRed").value||"").trim().slice(0,20)};
   G=freshGame(); G.names=names;
   lastMoveSquares=[]; hintSquares=[]; busy=false;
+  hideTeach(); hideHint(); kingRaceNoted=false;
   try{localStorage.removeItem(SAVE_KEY);}catch(e){}
   beginHumanTurn();
   setMsg("",false);
@@ -923,18 +1137,39 @@ $("undoBtn").addEventListener("click",function(){
   G.board=target.board.slice(); G.turn=target.turn; G.log=target.log.slice(); G.halfClock=target.halfClock;
   G.over=false; G.result="";
   chainCandidates=null; chainPath=null; selected=-1; lastMoveSquares=[];
+  hideTeach(); hideHint(); kingRaceNoted=false;
   beginHumanTurn(); setMsg("Move taken back. Your turn.",false);
   persistGame(); render();
 });
 $("hintBtn").addEventListener("click",function(){
   if(!G||G.over||busy||isBotTurn())return;
   if(!turnMoves)beginHumanTurn();
-  setMsg("Thinking of a hint…",false);
+  setMsg("Thinking of the ways from here…",false);
   setTimeout(function(){
-    var mv=bestHintMove(G.board,G.turn,settings);
-    if(!mv){setMsg("No legal move to hint at.",false);return;}
-    hintSquares=mv.path.slice(); selected=mv.path[0];
-    setMsg("Hint: "+displayName(G.turn)+" — play "+moveNotation(mv)+(mv.caps.length?" (a jump"+(mv.caps.length>1?" chain of "+mv.caps.length:"")+").":"."),false);
+    var res=pickHintOptions(G.board,G.turn,settings);
+    var box=$("hintBox");
+    if(!res.options.length){hideHint();setMsg("No legal move to hint at.",false);return;}
+    var bestScore=res.options[0].score;
+    var html='<div class="tlabel">Hint — '+(res.only?"the one way from here":"the ways from here")+'</div>';
+    if(res.only){
+      html+='<p style="margin:6px 0">There is exactly one legal move in this position, so there is no choice to offer: <strong>'+escapeHtml(moveNotation(res.options[0].move))+'</strong> — '+escapeHtml(hintWhy(res.options[0],G.board,G.turn,bestScore))+'</p>';
+    }else{
+      html+='<p class="small" style="margin:6px 0">More than one real way to play this. Here they are in the search\'s order, each with what it costs and buys — the choice stays yours.</p>';
+      res.options.forEach(function(o,idx){
+        html+='<p style="margin:8px 0"><strong>'+(idx+1)+'. '+escapeHtml(moveNotation(o.move))+'</strong> — '+escapeHtml(hintWhy(o,G.board,G.turn,bestScore))+'<br><button class="btn secondary small" type="button" data-hint-opt="'+idx+'">Show '+(idx+1)+' on the board — tap</button></p>';
+      });
+    }
+    box.innerHTML=html;
+    box.classList.remove("hidden");
+    hintSquares=res.options[0].move.path.slice(); selected=res.options[0].move.path[0];
+    box.querySelectorAll("[data-hint-opt]").forEach(function(btn){
+      btn.addEventListener("click",function(){
+        var o=res.options[parseInt(btn.getAttribute("data-hint-opt"),10)];
+        if(!o)return;
+        hintSquares=o.move.path.slice(); selected=o.move.path[0]; render();
+      });
+    });
+    setMsg(res.only?"Hint ready — the only legal move is listed below and lit in gold.":"Hint ready — the ways from here are listed below, and the top pick is lit in gold.",false);
     render();
   },30);
 });
@@ -1027,9 +1262,18 @@ document.querySelectorAll("[data-setting]").forEach(function(seg){
       // Rule change => fresh game under the new rules, keeping names.
       var names=G?G.names:{B:"",R:""};
       G=freshGame(); G.names=names;
-      lastMoveSquares=[]; beginHumanTurn(); persistGame(); render(); maybeBot();
+      lastMoveSquares=[]; hideTeach(); kingRaceNoted=false; beginHumanTurn(); persistGame(); render(); maybeBot();
       setMsg(isStandard()?"Back to standard rules — a fresh standard game is on the board.":"Variant rules on — a fresh variant game is on the board. The banner above the board names the variant.",false);
     });
+  });
+});
+document.querySelectorAll("#teachingSeg .segbtn").forEach(function(b){
+  b.addEventListener("click",function(){
+    ui.teaching=b.getAttribute("data-teach");
+    document.querySelectorAll("#teachingSeg .segbtn").forEach(function(x){x.classList.toggle("sel",x===b);});
+    persistSettings();
+    if(ui.teaching==="off"){hideTeach(); setMsg("Teaching is off — the game will not teach. Your game on the board is untouched.",false);}
+    else setMsg("Teaching is set to "+(ui.teaching==="coach"?"Coach — a note after most moves":"Light — a note on the big moments")+". It starts with the next move played; your game is untouched.",false);
   });
 });
 function syncControlsFromState(){
@@ -1043,13 +1287,14 @@ function syncControlsFromState(){
     var key=seg.getAttribute("data-setting");
     seg.querySelectorAll(".segbtn").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-val")===settings[key]);});
   });
+  document.querySelectorAll("#teachingSeg .segbtn").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-teach")===ui.teaching);});
   $("soundBtn").textContent="Sound: "+(ui.sound?"on":"off")+" — tap to change";
 }
 
 /* ============ Hold-to-explain (house gesture law, light touch) ============ */
 [["newGameBtn","Starts a fresh game with the choices on the right. Your saved game is replaced."],
  ["undoBtn","Takes back the last move. Against the bot it takes back two half-moves, so it is your turn again."],
- ["hintBtn","Runs the strongest search this page has and lights up the move it picks, in gold."],
+ ["hintBtn","Runs the strongest search this page has and lays out the real ways to play from here — usually more than one, each with what it costs and buys — lighting the top pick up in gold. It names a single move only when there is genuinely one legal move."],
  ["flipBtn","Turns the board around, so the other colour is at the bottom. Nothing else changes."],
  ["drawBtn","Offers a draw. In two-player play on this device, tapping it agrees the draw for both sides. The bot accepts only when it is not ahead."],
  ["resignBtn","The side to move gives up, and the other side wins."]].forEach(function(pair){
@@ -1059,8 +1304,34 @@ function syncControlsFromState(){
   ["pointerup","pointerleave","pointercancel"].forEach(function(evt){el.addEventListener(evt,function(){if(timer){clearTimeout(timer);timer=null;}});});
 });
 
+/* ============ Mini boards for the "How pros think" panel ============ */
+var MINI={
+  centre:{hl:[26,27,28,29,34,35,36,37],pieces:{28:"B",35:"R"}},
+  trade:{hl:[19,28],pieces:{37:"B",44:"B",51:"B",53:"B",28:"R",21:"R",12:"R"}},
+  opposition:{hl:[28],pieces:{21:"RK",37:"BK"}},
+  endgame:{hl:[46,53],pieces:{62:"BK",53:"R",46:"R"}}
+};
+function renderMinis(){
+  document.querySelectorAll("[data-mini]").forEach(function(el){
+    var spec=MINI[el.getAttribute("data-mini")]; if(!spec)return;
+    var hl={}; (spec.hl||[]).forEach(function(i){hl[i]=true;});
+    var html="";
+    for(var i=0;i<64;i++){
+      var p=rc(i), dark=(p[0]+p[1])%2===1;
+      var piece=spec.pieces[i], inner="";
+      if(piece){
+        var king=piece.length>1;
+        inner='<span class="mb-pc '+(piece[0]==="B"?"blk":"red")+'">'+(king?"♛":"")+'</span>';
+      }
+      html+='<span class="mb-sq '+(dark?"d":"l")+(hl[i]?" hl":"")+'">'+inner+'</span>';
+    }
+    el.innerHTML=html;
+  });
+}
+
 /* ============ Boot: restore a saved game from this device, or start fresh ============ */
 function boot(){
+  renderMinis();
   syncControlsFromState();
   var restored=false;
   try{
