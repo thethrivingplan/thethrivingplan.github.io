@@ -156,6 +156,19 @@
   .stats-line b{font-weight:900}
   .howto p,.howto li{font-size:.97rem}
   .howto ul{margin:6px 0;padding-left:20px}
+  .teach-note{display:none;border-radius:12px;padding:11px 14px;margin:12px 0 0;font-weight:600;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff}
+  .teach-note.show{display:block}
+  .teach-note b{color:#ffe98a}
+  .chart-scroll{margin:10px 0}
+  table.chart{border-collapse:collapse;width:100%;table-layout:fixed;font-size:.74rem}
+  table.chart th,table.chart td{border:1px solid var(--line);padding:4px 1px;text-align:center;font-weight:700}
+  table.chart th{background:var(--bg);font-weight:800}
+  table.chart td.hl{background:var(--gold);color:var(--gold-ink)}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.9rem;font-weight:600;margin:8px 0}
+  .count-live{display:flex;flex-wrap:wrap;gap:8px 20px;background:var(--bg);border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;font-weight:700;margin:10px 0}
+  .count-live b{font-weight:900}
   footer{color:var(--muted);font-size:.88rem;text-align:center;margin-top:22px}
   footer p{margin:4px 0}
   .kbd-hint{text-align:center;color:#cfe6d4;font-size:.82rem;margin-top:8px}
@@ -235,6 +248,8 @@
 
     <div class="message" id="message" role="status">Place your bet — tap chips below, then tap Deal.</div>
 
+    <div class="teach-note" id="teachNote" role="status"></div>
+
     <div id="playerHands"></div>
 
     <div class="controls" id="betControls">
@@ -297,10 +312,74 @@
     </div>
   </details>
 
+  <details class="panel" id="strategyPanel">
+    <summary>🎓 Basic strategy chart — the pro tool, in plain words <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <div class="howto">
+      <p><strong>What this is:</strong> basic strategy is the chart professional players memorize before anything else. For every hand you can be dealt, against every card the dealer can show, thousands of simulated hands point to one play that loses the least (or wins the most) over time. It doesn’t guess the next card and it can’t promise a win — it just makes each decision the strongest one the maths allows.</p>
+      <p id="chartContext" style="font-weight:700"></p>
+      <div class="chart-legend">
+        <span><b>H</b> = Hit — take another card</span>
+        <span><b>S</b> = Stand — keep your hand</span>
+        <span><b>D</b> = Double — double the bet, take exactly one card (if doubling isn’t allowed on that hand, hit instead — except soft 18, where you stand)</span>
+        <span><b>P</b> = Split the pair into two hands</span>
+        <span><b>R</b> = Surrender — fold and get half your bet back (if surrender isn’t offered, play the hand out as the note under the chart says)</span>
+      </div>
+      <h3 style="margin:12px 0 4px">Your hard hands — no ace counted as 11</h3>
+      <div class="chart-scroll"><table class="chart" id="chartHard" aria-label="Basic strategy for hard hands"></table></div>
+      <h3 style="margin:12px 0 4px">Your soft hands — an ace counted as 11</h3>
+      <div class="chart-scroll"><table class="chart" id="chartSoft" aria-label="Basic strategy for soft hands"></table></div>
+      <h3 style="margin:12px 0 4px">Your pairs — two cards of the same value</h3>
+      <div class="chart-scroll"><table class="chart" id="chartPairs" aria-label="Basic strategy for pairs"></table></div>
+      <p id="chartNotes" style="color:var(--muted)"></p>
+      <h3 style="margin:14px 0 4px">Where the book is a close call — more than one honest way</h3>
+      <p>Basic strategy above is the settled core, and the Coach teaches it as such. But a handful of spots are genuine judgment calls where documented schools honestly differ. There, the Coach names both ways with the trade-off instead of dressing one up as the only way:</p>
+      <ul>
+        <li><strong>Hard 16 against 9, 10, or ace — the closest call in the game.</strong> Book: hit, or surrender where offered. Other school: stand and refuse the bust card. Standing can never bust, but the dealer makes a hand so often that it loses a little more over time. Counters lean toward standing when the cards left are rich in big cards. The gap is small either way.</li>
+        <li><strong>Hard 12 against a 2 or 3.</strong> Book: hit. Other school: stand and hope for a dealer bust. The dealer busts less often showing 2 or 3 than showing 4–6 — which is why the book stands at 4 and hits at 2.</li>
+        <li><strong>Soft 18 against 9, 10, or ace.</strong> Book: hit — a soft hand cannot bust. Other school: stand on the 18 you have. Hitting can improve it or turn it into a worse hard hand; standing protects it but loses to most of those dealer finishes as it stands.</li>
+        <li><strong>11 against an ace.</strong> The schools genuinely split, and the answer flips with the soft-17 rule: double where the dealer hits soft 17, hit where the dealer stands. Tiny gap either way.</li>
+        <li><strong>A pair of 9s against a 7.</strong> Book: stand on 18. Other school: split and press for two strong starts — bigger wins when it works, two bets lost when it doesn’t.</li>
+        <li><strong>Even money on your own blackjack.</strong> Book: refuse it — 3-to-2 over time beats a guaranteed 1-to-1. The honest trade-off: certainty now versus a better average over hundreds of hands. Plain insurance (without your own blackjack) has no such defence — there is only one honest answer there: skip it.</li>
+      </ul>
+      <p>Everywhere else on the chart there is genuinely only one honest answer, and the Coach says just that one. Where a spot above comes up at the table, the Coach names the alternative in the moment, tied to your actual hand.</p>
+      <p style="color:var(--muted)">Two things the chart never changes, whatever the settings: never take insurance as a strategy (it is a separate side bet, not a play on your hand), and a pair of 5s is never split — it plays as a hard 10: double against 2–9, hit against 10 and ace, exactly as the hard-hands chart plays 10.</p>
+    </div>
+  </details>
+
+  <details class="panel" id="countingPanel">
+    <summary>🃏 Counting, explained — how it works, honestly labelled <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <div class="howto">
+      <p><strong>First, the honest label:</strong> this panel teaches how card counting works in real casinos, as knowledge. The live count below tracks this page’s own table so you can watch the idea move — but read “This table, plainly” before drawing any conclusions from it.</p>
+      <p><strong>What counting is:</strong> counters don’t memorize every card. They keep one running number in their head, called the <em>running count</em>, using the most common system (called Hi-Lo):</p>
+      <ul>
+        <li>Every low card that comes out — 2, 3, 4, 5, 6 — counts as <strong>+1</strong>.</li>
+        <li>7, 8, and 9 count as <strong>0</strong> — ignore them.</li>
+        <li>Every high card — 10, jack, queen, king, ace — counts as <strong>−1</strong>.</li>
+      </ul>
+      <p><strong>Why it shifts the edge:</strong> the count is really a picture of what is <em>left</em> in the shoe. Lots of low cards gone (a high count) means the cards remaining are rich in 10s and aces. That helps the player, for two plain reasons: blackjack — which pays extra — comes up more often, and the dealer, who must keep hitting stiff hands like 12 to 16, busts more often when big cards are left. A low or negative count means the shoe is rich in small cards, which helps the dealer instead: the dealer’s stiff hands get saved by little cards, and blackjacks get rarer.</p>
+      <p><strong>The true count:</strong> a running count of +6 means more early in a big shoe than late in it, so counters divide the running count by how many decks are roughly left. That result is the <em>true count</em> — the number they actually judge by. In a real casino, a counter bets small while the count is low and bigger when the true count climbs, because that is when the maths tilts their way. It is a small tilt, earned over many hours, not a way to win any given hand — and casinos are free to shuffle early, use many decks, or ask counters to leave, which is why most real tables are hard to beat even for experts.</p>
+      <div class="count-live" aria-live="polite">
+        <span>Running count at this table: <b id="rcVal">0</b></span>
+        <span>True count (about): <b id="tcVal">0</b></span>
+        <span>Cards you’ve seen: <b id="seenVal">0</b></span>
+      </div>
+      <p><strong>This table, plainly:</strong> <span id="countShoeLine">—</span> This is a play-chips game on one device — nothing real is at stake, no real casino is involved, and the shoe reshuffles long before it could ever run deep the way a counter would need. So the count here is a teaching picture only: it shows you the real method, on a table that could never be beaten with it.</p>
+    </div>
+  </details>
+
   <details class="panel" id="settingsPanel">
     <summary>⚙️ Rule settings — change how this table plays <span class="gesture">Tap to open · Tap again to close</span></summary>
     <p style="margin:4px 0 10px;color:var(--muted)">Standard rules are the default and are marked as such. Change any dial and the table says so, right on the felt, while that rule is in play — a variant’s results are the variant’s, never dressed as standard. Settings are saved on this device only and apply from the next hand.</p>
     <div class="settings-grid">
+      <div class="setting">
+        <h3>Teaching — how much this table teaches as you play</h3>
+        <p>Your choice, saved on this device only. Teaching never blocks a play and never slows the deal — it speaks after your decision, in one line. The strategy chart and the counting panel above stay available at every level.</p>
+        <div class="seg" id="segTeaching">
+          <button type="button" data-val="off">Off — the game never teaches</button>
+          <button type="button" data-val="light">Light — a note only when you leave basic strategy</button>
+          <button type="button" data-val="coach">Coach — a line after every decision</button>
+        </div>
+      </div>
       <div class="setting">
         <h3>Dealer on soft 17</h3>
         <p>Soft 17 is ace + 6. Standard: the dealer stands. Variant: the dealer hits, which helps the house a little.</p>
@@ -359,6 +438,16 @@
   <details class="panel">
     <summary>🏆 Your record on this device <span class="gesture">Tap to open · Tap again to close</span></summary>
     <div class="stats-line" id="statsLine"></div>
+    <h3 style="margin:14px 0 4px">Your strategy record — built from your own games</h3>
+    <p>Every hand you play is written down here in one clean, consistent shape — your cards, the dealer’s card, your bet, every play you made, what basic strategy said first, the outcome, and the chip flow (wagered, returned, net). That intake is the point: it is what the Coach reads to teach from <em>your</em> game instead of generic tips, and the same record is the bench for test runs — bankroll rules and betting systems graded honestly against hands that actually happened, on play chips. Saved on this device only, labelled as such, and forgettable below.</p>
+    <div class="stats-line" id="strategySummary"></div>
+    <div id="departureList" style="margin-top:8px"></div>
+    <p style="color:var(--muted);font-size:.9rem">The record keeps your most recent 1,000 hands on this device. Downloading makes a copy as a file — JSON keeps every field; CSV opens in a spreadsheet. Nothing is sent anywhere either way.</p>
+    <div class="seg" style="margin:8px 0">
+      <button type="button" id="exportJsonBtn">Download my record — JSON<span style="display:block;font-weight:600;font-size:.82rem">Tap to save the full structured record</span></button>
+      <button type="button" id="exportCsvBtn">Download my record — CSV<span style="display:block;font-weight:600;font-size:.82rem">Tap to save it as a spreadsheet file</span></button>
+    </div>
+    <button class="big-btn plain" id="forgetRecordBtn" type="button" style="max-width:none;margin-top:8px" data-explain="Erases only the strategy record — every logged hand and every counted departure — from this device. Your chip stack, settings, and win/loss totals stay as they are.">Forget my strategy record — tap to erase every logged hand</button>
     <p style="color:var(--muted);font-size:.9rem">Your chip stack, settings, alias, and this record are saved on this device only — nothing is sent anywhere, there is no account, and clearing your browser data clears them.</p>
     <button class="big-btn plain" id="resetAllBtn" type="button" style="max-width:none;margin-top:8px" data-explain="Starts you completely fresh: 1,000 play chips, an empty record, and standard rules. Your alias is cleared too.">Start fresh — tap to reset chips, record, and rules</button>
   </details>
@@ -378,13 +467,15 @@
   var STANDARD = { soft17:"stand", decks:6, payout:"3:2", das:"yes", surrender:"yes", insurance:"yes" };
 
   function defaultState(){
-    return { balance:1000, settings:Object.assign({}, STANDARD), alias:"",
-      stats:{ hands:0, won:0, lost:0, pushed:0, blackjacks:0, doubles:0, splits:0 } };
+    return { balance:1000, settings:Object.assign({}, STANDARD), alias:"", teaching:"light",
+      stats:{ hands:0, won:0, lost:0, pushed:0, blackjacks:0, doubles:0, splits:0 },
+      handLog:[], departures:{}, nextHandId:1, roundNo:0 };
   }
   var saved = defaultState();
   try{
     var raw = localStorage.getItem(STORE_KEY);
-    if(raw){ var p = JSON.parse(raw); if(p && typeof p.balance==="number"){ saved = Object.assign(defaultState(), p); saved.settings = Object.assign({}, STANDARD, p.settings||{}); saved.stats = Object.assign(defaultState().stats, p.stats||{}); } }
+    if(raw){ var p = JSON.parse(raw); if(p && typeof p.balance==="number"){ saved = Object.assign(defaultState(), p); saved.settings = Object.assign({}, STANDARD, p.settings||{}); saved.stats = Object.assign(defaultState().stats, p.stats||{}); if(!Array.isArray(saved.handLog)) saved.handLog=[]; if(!saved.departures || typeof saved.departures!=="object") saved.departures={}; if(typeof saved.nextHandId!=="number") saved.nextHandId=saved.handLog.length+1; if(typeof saved.roundNo!=="number") saved.roundNo=0; } }
+  if(["off","light","coach"].indexOf(saved.teaching)<0) saved.teaching = "light";
   }catch(e){}
   var S = saved;
 
@@ -393,7 +484,16 @@
 
   // ---- Shoe ----
   var shoe = [], shoeSize = 0;
+  // ---- Counting (teaching tracker: only cards actually seen are counted) ----
+  var runningCount = 0, cardsSeen = 0, holeCounted = true;
+  function countCard(card){
+    var v = cardVal(card.rank);
+    if(v>=2 && v<=6) runningCount++;
+    else if(v===10 || v===11) runningCount--;
+    cardsSeen++;
+  }
   function buildShoe(){
+    runningCount = 0; cardsSeen = 0; holeCounted = true;
     shoe = [];
     for(var d=0; d<S.settings.decks; d++)
       for(var s=0; s<4; s++)
@@ -415,6 +515,225 @@
   }
   function isBlackjack(hand){ return hand.cards.length===2 && handValue(hand.cards).total===21 && !hand.fromSplit; }
 
+  // ---- Basic strategy engine (the same engine draws the chart and coaches) ----
+  // dealerUp: 2-10, or 11 for an ace. opts: {canDouble, canSplit, canSurrender}
+  function dealerWord(up){ return up===11 ? "an ace" : "a " + up; }
+  function weakWhy(up){ return "the dealer shows " + dealerWord(up) + ", a weak card — the dealer has to hit hands like 12 to 16 and busts with them often"; }
+  function strongWhy(up){ return "the dealer shows " + dealerWord(up) + ", a strong card — the dealer will usually finish with a made hand"; }
+  function spotLabel(hand, dealerUp){
+    var hv = handValue(hand.cards);
+    var up = dealerUp===11 ? "A" : String(dealerUp);
+    var isP = hand.cards.length===2 && cardVal(hand.cards[0].rank)===cardVal(hand.cards[1].rank);
+    if(isP) return "Pair " + hand.cards[0].rank + "+" + hand.cards[1].rank + " vs " + up;
+    return (hv.soft ? "Soft " : "Hard ") + hv.total + " vs " + up;
+  }
+  // Genuine close calls: spots where documented schools honestly differ.
+  // Returns null where basic strategy is the only honest answer.
+  function alternativeFor(hand, dealerUp, bookAction){
+    var hv = handValue(hand.cards); var total=hv.total, soft=hv.soft;
+    var isP = hand.cards.length===2 && cardVal(hand.cards[0].rank)===cardVal(hand.cards[1].rank);
+    var pairVal = isP ? cardVal(hand.cards[0].rank) : 0;
+    if(isP && pairVal===9 && dealerUp===7) return { action:"Split", text:"Another honest school splits 9s even against a 7, pressing for two strong starts. Trade-off: it turns one solid 18 into two hands that each need help, so it wins bigger when it works and loses two bets when it doesn't. The book stands because 18 already beats most 7-up finishes." };
+    if(!soft && !isP && total===16 && dealerUp>=9) return { action:"Stand", text:"Another honest school stands on 16 here and refuses to take the bust card. Trade-off: standing can never bust, but the dealer finishes with a made hand so often that standing loses a little more over time than hitting (or surrendering, where offered). Counters also stand more when the cards left are rich in big cards, because hitting is then even likelier to bust. This is the closest call in the game — the gap between the plays is small either way." };
+    if(!soft && !isP && total===15 && dealerUp===10) return { action:"Stand", text:"Another honest school stands on 15 against a 10 for the same reason as 16: no bust risk. Trade-off: it gives up the only way 15 can improve, and over many hands it costs a little more than hitting or surrendering. A real judgment call, not a settled one." };
+    if(!soft && !isP && total===12 && (dealerUp===2||dealerUp===3)) return { action:"Stand", text:"Another honest school stands on 12 against a 2 or 3, betting on a dealer bust. Trade-off: standing never busts you, but the dealer busts less often showing 2 or 3 than showing 4, 5, or 6 — which is exactly why the book switches to standing at 4. Close enough that plenty of strong players play it the cautious way." };
+    if(soft && total===18 && dealerUp>=9) return { action:"Stand", text:"Another honest school stands on soft 18 here and takes its chances against the dealer's likely 19 or 20. Trade-off: standing protects the hand you have; hitting can improve it but can also turn it into a hard hand that's worse. The book hits because soft 18 loses to those dealer finishes as it stands, and a soft hand cannot bust by hitting." };
+    if(!soft && total===11 && dealerUp===11) return { action:(bookAction==="Hit" ? "Double" : "Hit"), text:"This one genuinely splits the schools. Doubling 11 against an ace wins more when it lands but gives up the second card if the first is small; hitting keeps that second chance. Which play is ahead flips with the dealer's soft-17 rule — at a hit-soft-17 table the book doubles, at a stand-soft-17 table it hits — and the gap is tiny either way." };
+    if(soft && total===17 && (dealerUp===2)) return { action:"Double", text:"A few schools double soft 17 even against a 2, pressing a hand that cannot bust. Trade-off: the extra bet only just fails to pay for itself against a 2 in the full maths, so the book just hits — but this is a judgment call, not a blunder either way." };
+    return null;
+  }
+  function recommend(hand, dealerUp, opts){
+    var hv = handValue(hand.cards);
+    var total = hv.total, soft = hv.soft;
+    var h17 = S.settings.soft17==="hit";
+    var isPair = hand.cards.length===2 && cardVal(hand.cards[0].rank)===cardVal(hand.cards[1].rank);
+    var pairVal = isPair ? cardVal(hand.cards[0].rank) : 0;
+    var weak = dealerUp>=2 && dealerUp<=6;
+    var spot = spotLabel(hand, dealerUp);
+    function fin(action, why){ var alt = alternativeFor(hand, dealerUp, action); return { action:action, why:why, spot:spot, alt:alt }; }
+    function dbl(why){ if(opts.canDouble) return fin("Double", why); return fin(soft && total>=18 ? "Stand" : "Hit", why + " (Doubling isn't open on this hand, so basic strategy plays the next-best card decision.)"); }
+
+    // Pairs first
+    if(isPair && opts.canSplit){
+      if(pairVal===11) return fin("Split", "two aces are two chances to start with 11 — far stronger than one soft 12, which can barely improve");
+      if(pairVal===8) return fin("Split", "16 played as one hand is the weakest spot in the game — two hands each starting on 8 do better than that one 16");
+      if(pairVal===10) return fin("Stand", "20 is already one of the best hands there is — splitting it trades a near-winner for two uncertain hands");
+      if(pairVal===5){
+        if(dealerUp<=9) return dbl("a pair of 5s is really a hard 10 in disguise — doubling 10 against " + dealerWord(dealerUp) + " wins the extra bet often, and splitting 5s is never the play");
+        return fin("Hit", "a pair of 5s is really a hard 10 in disguise — against " + dealerWord(dealerUp) + " you hit rather than double, because doubling into that strong card loses the extra bet too often, and splitting 5s is never the play");
+      }
+      if(pairVal===4){
+        if((dealerUp===5||dealerUp===6) && S.settings.das==="yes") return fin("Split", weakWhy(dealerUp) + ", and since you may double after a split here, each new hand can grow if it catches a good card");
+        return fin("Hit", "8 played as one hand can only improve by hitting — splitting 4s only pays against the weakest dealer cards when doubling after a split is allowed");
+      }
+      if(pairVal===2 || pairVal===3){
+        if(dealerUp>=2 && dealerUp<=7) return fin("Split", weakWhy(dealerUp) + " — two small starting hands press that weakness better than one soft-ish total");
+        return fin("Hit", strongWhy(dealerUp) + " — keep the hand together and try to improve it rather than paying for two hands against strength");
+      }
+      if(pairVal===6){
+        if(dealerUp>=2 && dealerUp<=6) return fin("Split", weakWhy(dealerUp) + " — and 12 as one hand is a hand you can only stand on and hope, so two hands starting on 6 are the better bet");
+        return fin("Hit", strongWhy(dealerUp) + " — play the 12 as one hand and take a card rather than funding two hands against strength");
+      }
+      if(pairVal===7){
+        if(dealerUp>=2 && dealerUp<=7) return fin("Split", "against " + dealerWord(dealerUp) + " two hands starting on 7 beat one 14, a total that loses to most dealer finishes");
+        return fin("Hit", strongWhy(dealerUp) + " — one 14 taking a card is cheaper than two hands against that card");
+      }
+      if(pairVal===9){
+        if(dealerUp===7 || dealerUp===10 || dealerUp===11) return fin("Stand", "18 stands well even against " + dealerWord(dealerUp) + " — splitting here would break up a made hand against the dealer's strongest cards");
+        return fin("Split", "against " + dealerWord(dealerUp) + ", two hands starting on 9 press harder than one 18 — each can become 19, 20, or 21");
+      }
+    }
+    if(isPair && !opts.canSplit){
+      // Play the total as a normal hand below.
+      if(pairVal===11) return fin("Hit", "soft 12 can't bust by hitting — an ace plus a low card is a free chance to improve");
+    }
+
+    // Surrender (late surrender, hard hands only)
+    if(opts.canSurrender && !soft && !isPair){
+      if(total===16 && dealerUp>=9) return fin("Surrender", "hard 16 against " + dealerWord(dealerUp) + " loses roughly three times out of four — getting half your bet back beats those odds");
+      if(total===15 && dealerUp===10) return fin("Surrender", "hard 15 against a 10 loses far more often than it wins — half your bet back is the better half of that deal");
+      if(total===15 && dealerUp===11 && h17) return fin("Surrender", "because this dealer hits soft 17, hard 15 against an ace loses even more often — half your bet back beats playing it out");
+      if(total===17 && dealerUp===11 && h17) return fin("Surrender", "because this dealer hits soft 17, even hard 17 against an ace loses often enough that half your bet back is the stronger play");
+    }
+
+    // Soft hands
+    if(soft){
+      if(total<=14) return dealerUp===5||dealerUp===6 ? dbl("soft " + total + " can never bust by taking a card, and " + weakWhy(dealerUp) + " — doubling puts more money on a hand that can only get better") : fin("Hit", "soft " + total + " can never bust by taking a card — hitting is a free chance to improve");
+      if(total===15||total===16) return dealerUp>=4&&dealerUp<=6 ? dbl("soft " + total + " can never bust by taking a card, and " + weakWhy(dealerUp) + " — doubling presses that weakness with no bust risk") : fin("Hit", "soft " + total + " can never bust by taking a card — hitting is a free chance to improve");
+      if(total===17) return dealerUp>=3&&dealerUp<=6 ? dbl(weakWhy(dealerUp) + ", and soft 17 can never bust by taking a card — doubling presses the dealer's weakness risk-free") : fin("Hit", "soft 17 loses to every dealer hand of 18 or more and can never bust by hitting — standing just hopes, hitting can improve it");
+      if(total===18){
+        if(dealerUp>=3&&dealerUp<=6) return dbl(weakWhy(dealerUp) + " — soft 18 wins often enough here that doubling earns more than standing");
+        if(dealerUp===2 && h17) return dbl("because this dealer hits soft 17, the dealer's hands finish stronger, so soft 18 against a 2 is worth pressing with a double");
+        if(dealerUp===2||dealerUp===7||dealerUp===8) return fin("Stand", "soft 18 already beats every dealer finish of 17 or less and pushes 18 — against " + dealerWord(dealerUp) + " that is worth more standing than the risk of hitting");
+        return fin("Hit", strongWhy(dealerUp) + " — soft 18 loses to those finishes as it stands, and hitting can never bust a soft hand");
+      }
+      if(total===19){
+        if(dealerUp===6 && h17) return dbl("because this dealer hits soft 17, soft 19 against a 6 wins often enough that doubling earns more than standing");
+        return fin("Stand", "soft 19 beats everything except 20 and 21 — stand and collect against most dealer finishes");
+      }
+      return fin("Stand", total + " is a made hand — stand");
+    }
+
+    // Hard hands
+    if(total<=8) return fin("Hit", "a hand of " + total + " can never bust by taking a card — hitting is a free chance to improve");
+    if(total===9) return dealerUp>=3&&dealerUp<=6 ? dbl(weakWhy(dealerUp) + ", and 9 catches a 10-value card often enough to land on 19 — you're more likely to win the extra bet than lose it") : fin("Hit", "9 isn't strong enough to double against " + dealerWord(dealerUp) + ", and it can never bust by hitting — take the card without the extra bet");
+    if(total===10) return dealerUp<=9 ? dbl("10 is one of the best doubling hands — any 10-value card makes 20 — and " + (weak ? weakWhy(dealerUp) : "the dealer showing " + dealerUp + " still finishes behind a likely 20 often enough") + ", so you're more likely to win the extra bet than lose it") : fin("Hit", strongWhy(dealerUp) + " — doubling into that card risks the extra bet too often, so just take the card");
+    if(total===11){
+      if(dealerUp===11 && !h17) return fin("Hit", "11 is a great hand, but against an ace at a table where the dealer stands on soft 17, hitting wins slightly more than doubling — you keep the chance to take a second card if the first is small");
+      return dbl("11 is the best doubling hand in the game — the most likely next card makes 21 or 20 — and you're more likely to win the extra bet than lose it" + (dealerUp===6 ? ", especially with the dealer showing a weak 6" : ""));
+    }
+    if(total===12) return dealerUp>=4&&dealerUp<=6 ? fin("Stand", weakWhy(dealerUp) + " — 12 only busts on a 10-value card, but standing lets the dealer's weak card do the work") : fin("Hit", "against " + dealerWord(dealerUp) + " the dealer will usually make a hand, so 12 has to try to improve even though a 10-value card busts it");
+    if(total>=13 && total<=16){
+      if(weak) return fin("Stand", weakWhy(dealerUp) + " — hands like " + total + " bust on many cards, so standing and letting the dealer risk busting is the stronger play");
+      return fin("Hit", strongWhy(dealerUp) + " — " + total + " loses to most of those finishes, so it has to take the bust risk and try to improve");
+    }
+    return fin("Stand", total + " is a made hand — only 21, or a higher dealer total, beats it, and hitting risks busting a hand that is already strong");
+  }
+
+  // ---- Strategy record intake (device-only; feeds the Coach and test runs) ----
+  function ordinal(n){ if(n===1) return "first"; if(n===2) return "second"; if(n===3) return "third"; return n + "th"; }
+  function departureKey(spot, book, chosen){ return spot + " — book: " + book + ", you: " + chosen; }
+  // Records the decision on the hand itself (always, whatever the teaching dial).
+  // Returns personal-record context for this exact departure, before this hand.
+  function trackDecision(hand, rec, chosen){
+    if(!hand) return null;
+    if(!hand.actions) hand.actions=[];
+    hand.actions.push(chosen);
+    if(hand.bookFirst) return null; // only the first decision defines the spot
+    hand.bookFirst = rec.action; hand.spotFirst = rec.spot; hand.chosenFirst = chosen;
+    hand.followedBook = (rec.action===chosen);
+    if(hand.followedBook) return null;
+    var key = departureKey(rec.spot, rec.action, chosen);
+    hand.departureKey = key;
+    var prior = S.departures[key] || { count:0, net:0, wagered:0 };
+    return { key:key, countBefore:prior.count, netBefore:prior.net, wageredBefore:prior.wagered, isAltSchool: !!(rec.alt && rec.alt.action===chosen) };
+  }
+  function finalizeHandLog(h, outcome, returned){
+    if(h._logged) return; h._logged = true;
+    var wagered = h.bet;
+    var net = returned - wagered;
+    var dv = handValue(dealer);
+    var entry = {
+      n: S.nextHandId++, round: curRound ? curRound.no : S.roundNo,
+      time: new Date().toISOString(),
+      playerCards: h.cards.map(function(c){ return c.rank + c.suit; }).join(" "),
+      playerTotal: handValue(h.cards).total, soft: handValue(h.cards).soft,
+      dealerUp: dealer.length ? (dealer[0].rank + dealer[0].suit) : "",
+      dealerCards: dealer.map(function(c){ return c.rank + c.suit; }).join(" "),
+      dealerTotal: dv.total,
+      spot: h.spotFirst || spotLabel({ cards:h.cards.slice(0,2) }, dealer.length ? cardVal(dealer[0].rank) : 10),
+      betStart: h.betStart || h.bet, betFinal: h.bet,
+      actions: (h.actions||[]).join(","),
+      bookFirst: h.bookFirst || "", chosenFirst: h.chosenFirst || "",
+      followedBook: h.bookFirst ? !!h.followedBook : null,
+      departure: h.departureKey || null,
+      outcome: outcome, wagered: wagered, returned: returned, net: net,
+      insuranceBet: curRound ? curRound.insuranceBet : 0,
+      stackAfter: S.balance,
+      runningCount: runningCount,
+      rules: Object.assign({}, S.settings)
+    };
+    S.handLog.push(entry);
+    if(S.handLog.length>1000) S.handLog.splice(0, S.handLog.length-1000);
+    if(h.departureKey){
+      var d = S.departures[h.departureKey] || { count:0, net:0, wagered:0 };
+      d.count++; d.net += net; d.wagered += wagered;
+      S.departures[h.departureKey] = d;
+    }
+  }
+
+  // ---- Teaching note (never blocks play; written after the decision) ----
+  var teachNoteEl = null;
+  function clearTeach(){ if(teachNoteEl){ teachNoteEl.textContent=""; teachNoteEl.className="teach-note"; } }
+  function noteDecision(rec, chosen, hand){
+    var personal = trackDecision(hand, rec, chosen);
+    if(S.teaching==="off" || !teachNoteEl) return;
+    var match = rec.action===chosen;
+    var showAlt = !!rec.alt && (S.teaching==="coach" || !match);
+    var showPersonal = !!personal && personal.countBefore>=1 && !match;
+    if(S.teaching==="light" && match && !showAlt) { clearTeach(); return; }
+    if(S.teaching==="light" && match && showAlt){
+      teachNoteEl.innerHTML = "";
+      var bl=document.createElement("b"); bl.textContent = "Coach — you played the book (" + rec.action + "), and this spot has more than one honest way: ";
+      teachNoteEl.appendChild(bl);
+      teachNoteEl.appendChild(document.createTextNode(rec.alt.text));
+      teachNoteEl.className="teach-note show"; return;
+    }
+    teachNoteEl.innerHTML = "";
+    if(S.teaching==="coach"){
+      var b=document.createElement("b"); b.textContent = match ? "Coach — you played the book: " : "Coach — basic strategy called for " + rec.action + ": ";
+      teachNoteEl.appendChild(b);
+      teachNoteEl.appendChild(document.createTextNode(match ? rec.action + " — " + rec.why + "." : rec.why + ". You chose " + chosen + " — your call stands; this is the book's reasoning, not a score."));
+    } else {
+      var b2=document.createElement("b"); b2.textContent = personal && personal.isAltSchool ? "A real choice — you played the other school here: " : "Worth knowing — basic strategy would " + rec.action.toLowerCase() + " here: ";
+      teachNoteEl.appendChild(b2);
+      teachNoteEl.appendChild(document.createTextNode(rec.why + ". Your call stands — this is information, never a scolding."));
+    }
+    if(showAlt){
+      var ba=document.createElement("b"); ba.textContent = " More than one honest way: ";
+      teachNoteEl.appendChild(ba);
+      teachNoteEl.appendChild(document.createTextNode(rec.alt.text));
+    }
+    if(showPersonal){
+      var times = personal.countBefore + 1;
+      var bp=document.createElement("b"); bp.textContent = " From your own record: ";
+      teachNoteEl.appendChild(bp);
+      var costTxt = personal.netBefore<0 ? "those earlier hands cost " + fmt(-personal.netBefore) + " play chips in total on " + fmt(personal.wageredBefore) + " wagered" : (personal.netBefore>0 ? "those earlier hands happened to finish " + fmt(personal.netBefore) + " chips ahead — short runs can flatter any play; the book's edge shows over hundreds of hands" : "those earlier hands broke even overall");
+      teachNoteEl.appendChild(document.createTextNode("this is the " + ordinal(times) + " time in your record you've made this same departure (" + rec.spot + " — " + chosen.toLowerCase() + " instead of " + rec.action.toLowerCase() + "); " + costTxt + ". Your full record is below, and it is yours to download or forget."));
+    }
+    teachNoteEl.className="teach-note show";
+  }
+  function noteInsurance(took){
+    if(curRound) curRound.insuranceTook = took;
+    if(S.teaching==="off" || !teachNoteEl) return;
+    if(S.teaching==="light" && !took){ clearTeach(); return; }
+    teachNoteEl.innerHTML = "";
+    var b=document.createElement("b"); b.textContent = took ? "Worth knowing — basic strategy skips insurance: " : "Coach — basic strategy skips insurance, and so did you: ";
+    teachNoteEl.appendChild(b);
+    teachNoteEl.appendChild(document.createTextNode("insurance is a side bet that the dealer's face-down card is a 10 — it pays 2 to 1 but the odds of that card being a 10 are worse than 2 to 1, so it loses money over time even though it feels safe. More than one honest way: the one exception players argue about is “even money” when you hold blackjack yourself — taking a guaranteed 1-to-1 instead of risking a push for 3-to-2. The maths still favours refusing it, but the trade-off is real: certainty now versus a better average over time. Everywhere else, there is only one honest answer — skip it."));
+    teachNoteEl.className="teach-note show";
+  }
+
   // ---- Game state ----
   var phase = "betting"; // betting | insurance | player | settled
   var pendingBet = 0, lastBet = 0;
@@ -422,6 +741,7 @@
   var hands = []; // {cards, bet, done, busted, doubled, fromSplit, splitAce, acted, result, resultText}
   var active = 0;
   var insuranceBet = 0, insuranceOffered = false;
+  var curRound = null; // {no, insuranceBet, insuranceTook} — intake context for the hand log
 
   // ---- DOM ----
   function el(id){ return document.getElementById(id); }
@@ -431,6 +751,7 @@
       betControls=el("betControls"), playControls=el("playControls"), againControls=el("againControls"),
       insuranceRow=el("insuranceRow"), refillBox=el("refillBox"), variantBanner=el("variantBanner"),
       explainBox=el("explainBox"), shoeLine=el("shoeLine"), shoeVal=el("shoeVal");
+  teachNoteEl = el("teachNote");
 
   function cardEl(card, faceDown){
     var d = document.createElement("div");
@@ -461,6 +782,17 @@
     betVal.textContent = fmt(tableBet);
     shoeVal.textContent = shoe.length + " cards in shoe";
     shoeLine.textContent = "Shoe: " + shoe.length + " of " + shoeSize + " cards left · The shoe is reshuffled when it runs low — the count resets, honestly and in the open.";
+
+    // Counting panel (teaching tracker)
+    var rcEl=el("rcVal"), tcEl=el("tcVal"), seenEl=el("seenVal"), csl=el("countShoeLine");
+    if(rcEl){
+      rcEl.textContent = (runningCount>0 ? "+" : "") + runningCount;
+      var decksLeft = Math.max(shoe.length/52, 0.25);
+      var tc = runningCount / decksLeft;
+      tcEl.textContent = (tc>0 ? "+" : "") + (Math.round(tc*10)/10);
+      seenEl.textContent = cardsSeen;
+    }
+    if(csl) csl.textContent = "this table deals from a " + S.settings.decks + "-deck shoe and reshuffles as soon as fewer than 15 cards remain, so the shoe never runs deep and the count resets often, in the open.";
 
     var st=S.settings;
     rulesLine.textContent = (st.soft17==="stand" ? "Dealer hits until 17 and stands on all 17s" : "Dealer hits until 17, and hits soft 17 too (variant)")
@@ -542,6 +874,8 @@
     var sl = el("statsLine");
     var stt=S.stats;
     sl.innerHTML = "<span>Hands played: <b>"+stt.hands+"</b></span><span>Won: <b>"+stt.won+"</b></span><span>Lost: <b>"+stt.lost+"</b></span><span>Pushed: <b>"+stt.pushed+"</b></span><span>Blackjacks: <b>"+stt.blackjacks+"</b></span><span>Doubles: <b>"+stt.doubles+"</b></span><span>Splits: <b>"+stt.splits+"</b></span>";
+    if(typeof renderStrategy==="function") renderStrategy();
+    if(typeof renderChart==="function") renderChart();
   }
 
   function setMessage(t){ messageEl.textContent = t; }
@@ -556,8 +890,12 @@
   el("clearBetBtn").addEventListener("click", function(){ pendingBet=0; render(); setMessage("Bet cleared. Tap chips to bet, then tap Deal."); });
 
   function newHand(bet){
-    hands = [{ cards:[draw(), draw()], bet:bet, done:false, busted:false, doubled:false, fromSplit:false, splitAce:false, acted:false, result:"", resultText:"" }];
+    clearTeach();
+    S.roundNo++;
+    curRound = { no:S.roundNo, insuranceBet:0, insuranceTook:false };
+    hands = [{ cards:[draw(), draw()], bet:bet, betStart:bet, actions:[], done:false, busted:false, doubled:false, fromSplit:false, splitAce:false, acted:false, result:"", resultText:"" }];
     dealer = [draw(), draw()];
+    countCard(hands[0].cards[0]); countCard(hands[0].cards[1]); countCard(dealer[0]); holeCounted = false;
     active = 0; insuranceBet = 0; insuranceOffered=false;
     lastBet = bet;
     // Dealer shows ace + insurance on?
@@ -591,11 +929,12 @@
   el("insuranceBtn").addEventListener("click", function(){
     var cost = Math.floor(hands[0].bet/2);
     if(S.balance < cost) cost = S.balance;
-    insuranceBet = cost; S.balance -= cost; persist();
+    insuranceBet = cost; if(curRound) curRound.insuranceBet = cost; S.balance -= cost; persist();
     phase="player"; render();
     startPlayerPhaseAfterInsurance();
+    noteInsurance(true);
   });
-  el("noInsuranceBtn").addEventListener("click", function(){ phase="player"; render(); startPlayerPhaseAfterInsurance(); });
+  el("noInsuranceBtn").addEventListener("click", function(){ phase="player"; render(); startPlayerPhaseAfterInsurance(); noteInsurance(false); });
   function startPlayerPhaseAfterInsurance(){
     var dBJ = handValue(dealer).total===21;
     if(dBJ){ settleAll(true); return; }
@@ -622,44 +961,58 @@
     else if(v.total===21){ setMessage("21 — that hand stands."); advance(); }
     else render();
   }
+  function recFor(h){
+    var canD = !h.acted && h.cards.length===2 && !h.splitAce && S.balance>=h.bet && (h.fromSplit ? S.settings.das==="yes" : true);
+    var pair = h.cards.length===2 && cardVal(h.cards[0].rank)===cardVal(h.cards[1].rank);
+    var canSp = !h.acted && pair && hands.length<4 && S.balance>=h.bet && !h.splitAce;
+    var canSu = !h.acted && h.cards.length===2 && !h.fromSplit && S.settings.surrender==="yes";
+    return recommend(h, cardVal(dealer[0].rank), { canDouble:canD, canSplit:canSp, canSurrender:canSu });
+  }
   el("hitBtn").addEventListener("click", function(){
     if(phase!=="player") return;
     var h=hands[active]; if(!h || h.done) return;
-    h.acted=true; h.cards.push(draw()); render(); afterDraw();
+    var rec = recFor(h);
+    h.acted=true; var c=draw(); h.cards.push(c); countCard(c); noteDecision(rec, "Hit", h); render(); afterDraw();
   });
-  el("standBtn").addEventListener("click", function(){ if(phase!=="player") return; advance(); });
+  el("standBtn").addEventListener("click", function(){ if(phase!=="player") return; var h=hands[active]; if(!h || h.done) return; var rec = recFor(h); noteDecision(rec, "Stand", h); advance(); });
   el("doubleBtn").addEventListener("click", function(){
     var h=hands[active]; if(!h || h.acted || S.balance<h.bet) return;
+    var rec = recFor(h);
     S.balance -= h.bet; h.bet *= 2; h.doubled=true; h.acted=true; S.stats.doubles++;
-    h.cards.push(draw()); persist();
+    var dc=draw(); h.cards.push(dc); countCard(dc); persist();
     var v=handValue(h.cards);
     if(v.total>21) h.busted=true;
     setMessage(v.total>21 ? "Doubled and bust — " + v.total + "." : "Doubled — one card, " + v.total + ". That hand stands.");
+    noteDecision(rec, "Double", h);
     render(); advance();
   });
   el("splitBtn").addEventListener("click", function(){
     var h=hands[active]; if(!h || h.acted || hands.length>=4 || S.balance<h.bet) return;
     if(!(h.cards.length===2 && cardVal(h.cards[0].rank)===cardVal(h.cards[1].rank))) return;
+    var recS = recFor(h);
     S.balance -= h.bet; S.stats.splits++;
     var isAces = h.cards[0].rank==="A";
     var second = h.cards.pop();
-    var nh = { cards:[second], bet:h.bet, done:false, busted:false, doubled:false, fromSplit:true, splitAce:isAces, acted:false, result:"", resultText:"" };
+    var nh = { cards:[second], bet:h.bet, betStart:h.betStart || h.bet, actions:[], done:false, busted:false, doubled:false, fromSplit:true, splitAce:isAces, acted:false, result:"", resultText:"" };
     h.fromSplit = true; h.splitAce = isAces;
-    h.cards.push(draw());
-    nh.cards.push(draw());
+    var sc1=draw(); h.cards.push(sc1); countCard(sc1);
+    var sc2=draw(); nh.cards.push(sc2); countCard(sc2);
     hands.splice(active+1, 0, nh);
     persist();
-    if(isAces){ h.done=true; nh.done=true; setMessage("Aces split — one card each, and both hands stand, by the rules. A 21 here is a strong hand, but it is not blackjack."); render(); advance(); return; }
+    if(isAces){ h.done=true; nh.done=true; setMessage("Aces split — one card each, and both hands stand, by the rules. A 21 here is a strong hand, but it is not blackjack."); noteDecision(recS, "Split", h); render(); advance(); return; }
+    noteDecision(recS, "Split", h);
     setMessage("Split into two hands. Play hand " + (active+1) + " first: " + handValue(h.cards).total + ".");
     render();
     if(handValue(h.cards).total===21) advance();
   });
   el("surrenderBtn").addEventListener("click", function(){
     var h=hands[active]; if(!h || h.acted || h.fromSplit) return;
+    var rec = recFor(h);
     var back = Math.floor(h.bet/2);
     S.balance += back;
     h.result="lose"; h.resultText="Surrendered — " + fmt(back) + " back";
     S.stats.hands++; S.stats.lost++;
+    noteDecision(rec, "Surrender", h);
     persist(); advance();
   });
 
@@ -667,16 +1020,18 @@
   function dealerPlay(){
     phase="dealer"; render();
     var anyLive = hands.some(function(h){ return !h.busted && !h.result; });
+    if(!holeCounted && dealer.length>1){ countCard(dealer[1]); holeCounted = true; }
     if(anyLive){
       var dv = handValue(dealer);
       while(dv.total < 17 || (dv.total===17 && dv.soft && S.settings.soft17==="hit")){
-        dealer.push(draw()); dv = handValue(dealer);
+        var dc2=draw(); dealer.push(dc2); countCard(dc2); dv = handValue(dealer);
       }
     }
     settleAll(false);
   }
 
   function settleAll(early){
+    if(!holeCounted && dealer.length>1){ countCard(dealer[1]); holeCounted = true; }
     phase="settled";
     var dv = handValue(dealer);
     var dBJ = dealer.length===2 && dv.total===21;
@@ -686,23 +1041,25 @@
       if(dBJ){ var pay = insuranceBet*3; S.balance += pay; notes.push("Insurance pays 2 to 1 — " + fmt(pay) + " back on your " + fmt(insuranceBet) + " insurance bet."); }
     } else if(insuranceBet < 0){ insuranceBet = 0; }
     hands.forEach(function(h){
-      if(h.result) return; // surrendered already
+      if(h.result){ finalizeHandLog(h, "surrender", Math.floor(h.bet/2)); return; } // surrendered already
       var hv = handValue(h.cards);
       var pBJ = isBlackjack(h);
       S.stats.hands++;
-      if(h.busted){ h.result="lose"; h.resultText="Bust — bet lost"; S.stats.lost++; }
+      var returned = 0, outcome = "lose";
+      if(h.busted){ h.result="lose"; h.resultText="Bust — bet lost"; S.stats.lost++; outcome="bust"; returned=0; }
       else if(pBJ && !dBJ){
         var mult = S.settings.payout==="3:2" ? 1.5 : 1.2;
         var credit = h.bet + Math.floor(h.bet*mult);
-        S.balance += credit; h.result="win"; h.resultText="Blackjack! Pays " + S.settings.payout + " — " + fmt(credit) + " back";
+        S.balance += credit; returned=credit; outcome="blackjack"; h.result="win"; h.resultText="Blackjack! Pays " + S.settings.payout + " — " + fmt(credit) + " back";
         S.stats.won++; S.stats.blackjacks++;
       }
-      else if(dBJ && !pBJ){ h.result="lose"; h.resultText="Dealer has blackjack — bet lost"; S.stats.lost++; }
-      else if(pBJ && dBJ){ S.balance += h.bet; h.result=""; h.resultText="Both blackjack — push, bet back"; S.stats.pushed++; }
-      else if(dv.total>21){ S.balance += h.bet*2; h.result="win"; h.resultText="Dealer busts — you win " + fmt(h.bet); S.stats.won++; }
-      else if(hv.total > dv.total){ S.balance += h.bet*2; h.result="win"; h.resultText="You win — " + hv.total + " beats " + dv.total + ", " + fmt(h.bet) + " won"; S.stats.won++; }
-      else if(hv.total < dv.total){ h.result="lose"; h.resultText="Dealer wins — " + dv.total + " beats " + hv.total; S.stats.lost++; }
-      else { S.balance += h.bet; h.result=""; h.resultText="Push — " + hv.total + " ties, bet back"; S.stats.pushed++; }
+      else if(dBJ && !pBJ){ h.result="lose"; h.resultText="Dealer has blackjack — bet lost"; S.stats.lost++; outcome="lose"; returned=0; }
+      else if(pBJ && dBJ){ S.balance += h.bet; returned=h.bet; outcome="push"; h.result=""; h.resultText="Both blackjack — push, bet back"; S.stats.pushed++; }
+      else if(dv.total>21){ S.balance += h.bet*2; returned=h.bet*2; outcome="win"; h.result="win"; h.resultText="Dealer busts — you win " + fmt(h.bet); S.stats.won++; }
+      else if(hv.total > dv.total){ S.balance += h.bet*2; returned=h.bet*2; outcome="win"; h.result="win"; h.resultText="You win — " + hv.total + " beats " + dv.total + ", " + fmt(h.bet) + " won"; S.stats.won++; }
+      else if(hv.total < dv.total){ h.result="lose"; h.resultText="Dealer wins — " + dv.total + " beats " + hv.total; S.stats.lost++; outcome="lose"; returned=0; }
+      else { S.balance += h.bet; returned=h.bet; outcome="push"; h.result=""; h.resultText="Push — " + hv.total + " ties, bet back"; S.stats.pushed++; }
+      finalizeHandLog(h, outcome, returned);
     });
     persist();
     var summary;
@@ -718,7 +1075,7 @@
   }
 
   el("againBtn").addEventListener("click", function(){
-    hands=[]; dealer=[]; phase="betting"; pendingBet=0; insuranceBet=0;
+    hands=[]; dealer=[]; phase="betting"; pendingBet=0; insuranceBet=0; clearTeach();
     setMessage("Place your bet — tap chips below, then tap Deal."); render();
   });
   el("rebetBtn").addEventListener("click", function(){
@@ -775,7 +1132,7 @@
     render(); setMessage("Standard rules restored: dealer stands on all 17s, six decks, blackjack pays 3 to 2.");
   });
   el("resetAllBtn").addEventListener("click", function(){
-    S = defaultState(); persist(); buildShoe();
+    S = defaultState(); persist(); buildShoe(); chartKey=""; if(typeof paintTeaching==="function") paintTeaching(); clearTeach();
     hands=[]; dealer=[]; phase="betting"; pendingBet=0; insuranceBet=0; aliasInput.value="";
     el("stackLabel").textContent="Your chip stack";
     ["segSoft17","segDecks","segPayout","segDas","segSurrender","segInsurance"].forEach(function(id){
@@ -784,6 +1141,133 @@
     });
     setMessage("Fresh start: 1,000 play chips, standard rules, empty record. Place your bet — tap chips, then tap Deal.");
     render();
+  });
+
+  // ---- Basic strategy chart (drawn by the same engine that coaches) ----
+  var chartKey = "";
+  function chartCode(rec){ return { Hit:"H", Stand:"S", Double:"D", Split:"P", Surrender:"R" }[rec.action] || "?"; }
+  function buildChartTable(tableEl, rows){
+    tableEl.innerHTML = "";
+    var ups = [2,3,4,5,6,7,8,9,10,11];
+    var head = document.createElement("tr");
+    var corner = document.createElement("th"); corner.textContent = "You \\ Dealer"; head.appendChild(corner);
+    ups.forEach(function(u){ var th=document.createElement("th"); th.textContent = u===11 ? "A" : String(u); head.appendChild(th); });
+    tableEl.appendChild(head);
+    rows.forEach(function(row){
+      var tr=document.createElement("tr");
+      var rh=document.createElement("th"); rh.textContent=row.label; tr.appendChild(rh);
+      ups.forEach(function(u){
+        var td=document.createElement("td");
+        var code = chartCode(row.rec(u));
+        td.textContent = code;
+        if(row.hl && row.hl(u, code)) td.className="hl";
+        tr.appendChild(td);
+      });
+      tableEl.appendChild(tr);
+    });
+  }
+  function fakeHand(cards, fromSplit){ return { cards:cards, fromSplit:!!fromSplit }; }
+  function C(rank){ return { rank:rank, suit:"♠", red:false }; }
+  function renderChart(){
+    var key = [S.settings.soft17, S.settings.das, S.settings.surrender, S.settings.payout].join("|");
+    if(key===chartKey) return; chartKey = key;
+    var opts = { canDouble:true, canSplit:true, canSurrender:S.settings.surrender==="yes" };
+    var h17 = S.settings.soft17==="hit";
+    // Hard rows: totals built from non-pair cards
+    var hardCards = { 8:[C("5"),C("3")], 9:[C("5"),C("4")], 10:[C("6"),C("4")], 11:[C("6"),C("5")], 12:[C("7"),C("5")], 13:[C("8"),C("5")], 14:[C("9"),C("5")], 15:[C("9"),C("6")], 16:[C("9"),C("7")], 17:[C("9"),C("8")] };
+    var hardRows = [8,9,10,11,12,13,14,15,16,17].map(function(t){
+      return { label: t===8 ? "8 or less" : (t===17 ? "17 or more" : String(t)),
+        rec:function(u){ return recommend(fakeHand(hardCards[t]), u, opts); },
+        hl:function(u, code){ return h17 && ((t===11 && u===11 && code==="D") || ((t===15||t===17) && u===11 && code==="R")); } };
+    });
+    buildChartTable(el("chartHard"), hardRows);
+    var softRows = [2,3,4,5,6,7,8,9].map(function(k){
+      var label = "Ace + " + k;
+      return { label:label,
+        rec:function(u){ return recommend(fakeHand([C("A"), C(String(k))]), u, opts); },
+        hl:function(u, code){ return h17 && ((k===7 && u===2 && code==="D") || (k===8 && u===6 && code==="D")); } };
+    });
+    buildChartTable(el("chartSoft"), softRows);
+    var pairRanks = ["2","3","4","5","6","7","8","9","10","A"];
+    var pairRows = pairRanks.map(function(r){
+      return { label: r + " + " + r,
+        rec:function(u){ return recommend(fakeHand([C(r), C(r)]), u, opts); },
+        hl:function(){ return false; } };
+    });
+    buildChartTable(el("chartPairs"), pairRows);
+    el("chartContext").textContent = "This chart is drawn for the exact rules at your table right now: dealer " + (h17 ? "HITS soft 17 (variant)" : "stands on all 17s (standard)") + " · blackjack pays " + S.settings.payout + " · double after split " + (S.settings.das==="yes" ? "allowed" : "not allowed") + " · surrender " + (S.settings.surrender==="yes" ? "offered" : "not offered") + ". Change a rule in Rule settings below and this chart redraws itself to match." + (h17 ? " Gold cells are the plays that change because this dealer hits soft 17." : "");
+    el("chartNotes").textContent = "About the settings: the dealer's soft-17 rule genuinely changes a few plays (they are the gold cells when that variant is on). The blackjack payout — " + S.settings.payout + " right now — changes what a blackjack pays, not which play is right, so it never changes a cell. " + (S.settings.surrender==="yes" ? "Where the chart shows R, surrender is offered at this table, so it is a real choice." : "Surrender is switched off at this table right now, so the chart plays those hands out instead of folding them.");
+  }
+
+  // ---- Teaching dial ----
+  function paintTeaching(){
+    el("segTeaching").querySelectorAll("button").forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-val")===S.teaching));
+    });
+  }
+  el("segTeaching").querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click", function(){
+      S.teaching = b.getAttribute("data-val"); persist(); paintTeaching();
+      if(S.teaching==="off") clearTeach();
+      setMessage(S.teaching==="off" ? "Teaching is off — this table will never teach. The chart and counting panels stay below if you ever want them." : (S.teaching==="coach" ? "Coach is on — after every decision you'll get one line: what basic strategy called for, and why, in plain words." : "Light teaching is on — you'll only hear from the coach when a play leaves basic strategy, and only as information."));
+    });
+  });
+  paintTeaching();
+
+  // ---- Strategy record: summary, export, forget ----
+  function renderStrategy(){
+    var sumEl = el("strategySummary"), listEl = el("departureList");
+    if(!sumEl || !listEl) return;
+    var log = S.handLog, decided = 0, followed = 0, netAll = 0;
+    log.forEach(function(e){ netAll += e.net; if(e.followedBook!==null && e.followedBook!==undefined){ decided++; if(e.followedBook) followed++; } });
+    var depKeys = Object.keys(S.departures).sort(function(a,b){ return S.departures[b].count - S.departures[a].count; });
+    var depHands = 0, depNet = 0;
+    depKeys.forEach(function(k){ depHands += S.departures[k].count; depNet += S.departures[k].net; });
+    if(!log.length){
+      sumEl.innerHTML = "<span>No hands in your strategy record yet — play a hand and it will be written here, field by field.</span>";
+      listEl.innerHTML = ""; return;
+    }
+    sumEl.innerHTML = "<span>Hands recorded: <b>"+log.length+"</b></span>"
+      + "<span>Net chips across them: <b>"+(netAll>0?"+":"")+fmt(netAll)+"</b></span>"
+      + (decided ? "<span>First decisions matching the book: <b>"+followed+" of "+decided+" ("+Math.round(followed/decided*100)+"%)</b></span>" : "")
+      + (depHands ? "<span>Hands that left the book: <b>"+depHands+"</b>, net <b>"+(depNet>0?"+":"")+fmt(depNet)+"</b> chips on them — that is where your chips actually leak, in your own numbers</span>" : "<span>No departures from the book recorded yet</span>");
+    if(!depKeys.length){ listEl.innerHTML = ""; return; }
+    var html = "<p style=\"font-weight:700;margin:6px 0 4px\">Departures you repeat — most frequent first:</p><ul style=\"margin:4px 0;padding-left:20px\">";
+    depKeys.slice(0,5).forEach(function(k){
+      var d = S.departures[k];
+      html += "<li><strong>" + k.replace(/</g,"&lt;") + "</strong> — " + d.count + (d.count===1?" time":" times") + ", net " + (d.net>0?"+":"") + fmt(d.net) + " chips on " + fmt(d.wagered) + " wagered.</li>";
+    });
+    html += "</ul>";
+    listEl.innerHTML = html;
+  }
+  function downloadFile(name, text, type){
+    try{
+      var blob = new Blob([text], {type:type});
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(blob); a.download=name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    }catch(e){}
+  }
+  var exJ = el("exportJsonBtn");
+  if(exJ) exJ.addEventListener("click", function(){
+    var payload = { game:"blackjack", exportedAt:new Date().toISOString(), note:"Play chips only. Device-only record, downloaded by the player. Fields per hand: cards, dealer up/final, spot, betStart/betFinal, actions, bookFirst/chosenFirst, followedBook, departure, outcome, wagered/returned/net, insuranceBet, stackAfter, runningCount, rules snapshot.", hands:S.handLog, departures:S.departures };
+    downloadFile("blackjack-strategy-record.json", JSON.stringify(payload, null, 2), "application/json");
+    setMessage(S.handLog.length ? "Your strategy record is downloaded — " + S.handLog.length + " hands, every field, as JSON." : "Your record is empty, so the download holds the empty record — play some hands and download again.");
+  });
+  var exC = el("exportCsvBtn");
+  if(exC) exC.addEventListener("click", function(){
+    var cols = ["n","round","time","playerCards","playerTotal","soft","dealerUp","dealerCards","dealerTotal","spot","betStart","betFinal","actions","bookFirst","chosenFirst","followedBook","departure","outcome","wagered","returned","net","insuranceBet","stackAfter","runningCount"];
+    function cell(v){ if(v===null||v===undefined) return ""; var s=String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+    var lines = [cols.join(",")];
+    S.handLog.forEach(function(e){ lines.push(cols.map(function(c){ return cell(e[c]); }).join(",")); });
+    downloadFile("blackjack-strategy-record.csv", lines.join("\n"), "text/csv");
+    setMessage(S.handLog.length ? "Your strategy record is downloaded as CSV — one row per hand, ready for a spreadsheet or a test run." : "Your record is empty, so the CSV holds just its headings — play some hands and download again.");
+  });
+  var fg = el("forgetRecordBtn");
+  if(fg) fg.addEventListener("click", function(){
+    S.handLog = []; S.departures = {}; S.nextHandId = 1; persist(); render();
+    setMessage("Strategy record forgotten — every logged hand is erased from this device. Your chips and settings are untouched, and new hands start a fresh record.");
   });
 
   // ---- Hold / hover to explain ----
