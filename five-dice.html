@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Five Dice</title>
+<style>
+  :root{
+    --bg:#e9efe6; --bg2:#dfe8da; --card:#fbfdf9; --card2:#f1f5ec;
+    --ink:#1d2a1e; --ink-soft:#43543f; --line:#b9c8b2;
+    --accent:#b45309; --accent-ink:#ffffff;
+    --felt:#14532d; --felt-ink:#eaf5ec;
+    --die:#ffffff; --die-edge:#94a38c; --pip:#22301f;
+    --held:#f59e0b; --good:#166534; --warn:#b45309; --bad:#b91c1c;
+    --btn:#14532d; --btn-ink:#ffffff;
+    --shadow:0 2px 10px rgba(20,50,25,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1511; --bg2:#131b15; --card:#1a231c; --card2:#212c23;
+      --ink:#e6eee4; --ink-soft:#a9bda6; --line:#3a4a3c;
+      --accent:#f59e0b; --accent-ink:#1a1206;
+      --felt:#0d3520; --felt-ink:#eaf5ec;
+      --die:#f4f6f0; --die-edge:#5c6f5c; --pip:#22301f;
+      --held:#f59e0b; --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
+      --btn:#1d6a3c; --btn-ink:#ffffff;
+      --shadow:0 2px 10px rgba(0,0,0,.5);
+    }
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.45;}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0;}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem;}
+  button{font:inherit;cursor:pointer;border-radius:.55rem;border:1px solid var(--line);
+    background:var(--card2);color:var(--ink);padding:.45rem .8rem;}
+  button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{
+    outline:3px solid var(--held);outline-offset:2px;}
+  a{color:var(--good);}
+  .wrap{max-width:62rem;margin:0 auto;padding:0 .9rem 3rem;}
+  /* top strip */
+  .freebar{background:var(--felt);color:var(--felt-ink);padding:.55rem .9rem;font-size:.95rem;}
+  .freebar .wrap{padding-bottom:0;}
+  .freebar strong{font-size:1.02rem;}
+  nav.compass{background:var(--bg2);border-bottom:1px solid var(--line);font-size:.92rem;}
+  nav.compass .wrap{padding-top:.4rem;padding-bottom:.4rem;display:flex;flex-wrap:wrap;gap:.2rem .9rem;align-items:baseline;}
+  nav.compass a{display:inline-flex;align-items:center;min-height:2rem;text-decoration:none;font-weight:600;}
+  nav.compass .sep{color:var(--ink-soft);}
+  header.hero{padding:1.1rem 0 .4rem;}
+  header.hero h1{font-size:2.3rem;letter-spacing:.01em;}
+  header.hero p.lede{font-size:1.06rem;max-width:44rem;margin:.45rem 0 0;}
+  .docline{color:var(--ink-soft);font-size:.93rem;max-width:44rem;margin:.4rem 0 0;}
+  .variant-banner{display:none;border:2px solid var(--warn);color:var(--ink);
+    background:var(--card);border-radius:.6rem;padding:.55rem .8rem;margin:.8rem 0 0;font-weight:600;}
+  .variant-banner.show{display:block;}
+  section.panel{background:var(--card);border:1px solid var(--line);border-radius:.8rem;
+    box-shadow:var(--shadow);padding:1rem;margin-top:1rem;}
+  section.panel h2{font-size:1.3rem;margin-bottom:.5rem;}
+  section.panel h3{font-size:1.05rem;margin:.8rem 0 .3rem;}
+  .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:end;}
+  .field{display:flex;flex-direction:column;gap:.25rem;min-width:9rem;flex:1 1 9rem;}
+  .field label{font-weight:600;font-size:.92rem;}
+  .field .hint{font-size:.82rem;color:var(--ink-soft);}
+  select,input[type="text"]{font:inherit;padding:.45rem .55rem;border-radius:.5rem;border:1px solid var(--line);
+    background:var(--card);color:var(--ink);width:100%;}
+  .seg{display:flex;flex-wrap:wrap;gap:.4rem;}
+  .seg button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn);font-weight:700;}
+  .primary{background:var(--btn);color:var(--btn-ink);border-color:var(--btn);font-weight:700;}
+  .big{font-size:1.12rem;padding:.7rem 1.2rem;}
+  .gesture{font-size:.82rem;color:var(--ink-soft);margin-top:.3rem;}
+  /* game area */
+  .turnbar{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:baseline;justify-content:space-between;}
+  .turnbar .who{font-family:Georgia,serif;font-size:1.35rem;font-weight:700;}
+  .turnbar .rolls{font-weight:600;}
+  .tray{background:var(--felt);border-radius:.8rem;padding:1rem .7rem .8rem;margin-top:.7rem;
+    display:flex;flex-direction:column;align-items:center;gap:.7rem;box-shadow:var(--shadow);}
+  .dice{display:flex;gap:.55rem;flex-wrap:wrap;justify-content:center;}
+  .die{width:4.1rem;height:4.1rem;border-radius:.85rem;background:var(--die);border:3px solid var(--die-edge);
+    position:relative;padding:0;box-shadow:0 3px 6px rgba(0,0,0,.35);touch-action:manipulation;}
+  .die .pip{position:absolute;width:.82rem;height:.82rem;border-radius:50%;background:var(--pip);transform:translate(-50%,-50%);}
+  .die.held{border-color:var(--held);transform:translateY(.45rem);box-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .die.held::after{content:"HELD";position:absolute;left:50%;bottom:-1.35rem;transform:translateX(-50%);
+    font-size:.62rem;font-weight:800;letter-spacing:.08em;color:var(--felt-ink);}
+  .die.rolling{animation:shake .32s linear infinite;}
+  @keyframes shake{0%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-3px)}100%{transform:rotate(-5deg)}}
+  @media (prefers-reduced-motion: reduce){.die.rolling{animation:none;}}
+  .tray .gesture{color:var(--felt-ink);opacity:.85;text-align:center;margin:0;}
+  .rollrow{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;align-items:center;}
+  #rollBtn{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:1.15rem;font-weight:800;padding:.7rem 1.4rem;}
+  #rollBtn:disabled{opacity:.45;cursor:not-allowed;}
+  .coach{border-left:none;background:var(--card2);border:1px solid var(--line);border-radius:.6rem;
+    padding:.7rem .85rem;margin-top:.8rem;font-size:.97rem;}
+  .coach:empty{display:none;}
+  .coach .strat{margin:.45rem 0;padding:.5rem .6rem;background:var(--card);border:1px solid var(--line);border-radius:.5rem;}
+  .coach .strat b.t{display:block;font-size:1rem;}
+  .coach .trade{color:var(--ink-soft);font-size:.9rem;}
+  .coach .fromrec{font-size:.9rem;color:var(--ink-soft);border-top:1px dashed var(--line);margin-top:.5rem;padding-top:.45rem;}
+  /* scorecard */
+  .cardwrap{overflow-x:auto;margin-top:.6rem;}
+  table.card{border-collapse:collapse;width:100%;min-width:30rem;}
+  table.card th,table.card td{border:1px solid var(--line);padding:.32rem .45rem;text-align:center;font-size:.95rem;}
+  table.card th.box,table.card td.box{text-align:left;font-weight:600;min-width:9.5rem;}
+  table.card td.box .what{display:block;font-weight:400;font-size:.78rem;color:var(--ink-soft);}
+  table.card thead th{background:var(--card2);font-family:Georgia,serif;}
+  table.card thead th.now{background:var(--held);color:#1a1206;}
+  table.card tr.subtotal td{background:var(--card2);font-weight:700;}
+  table.card tr.grand td{background:var(--felt);color:var(--felt-ink);font-weight:800;font-size:1.05rem;}
+  td.cell button{width:100%;min-height:2.4rem;font-weight:700;font-size:1rem;background:transparent;border:1px dashed var(--ink-soft);}
+  td.cell button:hover{background:var(--card2);}
+  td.cell .pv{display:block;font-size:.72rem;font-weight:600;color:var(--ink-soft);}
+  td.filled{font-weight:700;}
+  td.zero{color:var(--bad);font-weight:700;}
+  td.flash{animation:flash 1s ease;}
+  @keyframes flash{0%{background:var(--held)}100%{background:transparent}}
+  .handoff{display:none;background:var(--felt);color:var(--felt-ink);border-radius:.8rem;
+    padding:1.2rem;text-align:center;margin-top:1rem;box-shadow:var(--shadow);}
+  .handoff.show{display:block;}
+  .handoff .big-name{font-family:Georgia,serif;font-size:1.6rem;font-weight:700;margin:.3rem 0 .7rem;}
+  .endbox{display:none;background:var(--card);border:2px solid var(--good);border-radius:.8rem;padding:1rem;margin-top:1rem;}
+  .endbox.show{display:block;}
+  details.panel-like{margin-top:1rem;background:var(--card);border:1px solid var(--line);border-radius:.8rem;box-shadow:var(--shadow);padding:.4rem 1rem 1rem;}
+  details.panel-like summary{font-family:Georgia,serif;font-size:1.2rem;font-weight:700;cursor:pointer;padding:.6rem 0;display:flex;align-items:center;min-height:2.75rem;}
+  table.odds,table.sim{border-collapse:collapse;width:100%;margin:.5rem 0;}
+  table.odds th,table.odds td,table.sim th,table.sim td{border:1px solid var(--line);padding:.35rem .5rem;text-align:left;font-size:.93rem;}
+  table.odds th,table.sim th{background:var(--card2);}
+  .small{font-size:.88rem;color:var(--ink-soft);}
+  .record-stats{display:flex;flex-wrap:wrap;gap:.6rem;margin:.5rem 0;}
+  .record-stats .stat{background:var(--card2);border:1px solid var(--line);border-radius:.55rem;padding:.45rem .7rem;min-width:6.5rem;}
+  .record-stats .stat b{display:block;font-size:1.2rem;font-family:Georgia,serif;}
+  footer{margin-top:1.6rem;font-size:.9rem;color:var(--ink-soft);}
+  footer .copyleft{border-top:1px solid var(--line);padding-top:.7rem;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  @media (max-width:34rem){
+    .die{width:3.4rem;height:3.4rem;}
+    .die .pip{width:.68rem;height:.68rem;}
+    header.hero h1{font-size:1.9rem;}
+    table.card{min-width:26rem;}
+    .field{flex:1 1 100%;min-width:0;}
+    table.odds th,table.odds td,table.sim th,table.sim td{padding:.28rem .32rem;font-size:.82rem;}
+    table.card{table-layout:fixed;min-width:0;}
+    table.card th,table.card td{padding:.28rem .3rem;font-size:.86rem;overflow-wrap:break-word;}
+    table.card th.box,table.card td.box{min-width:0;width:40%;}
+    table.card td.box .what{font-size:.7rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="freebar"><div class="wrap" style="padding-top:0;">
+  <strong>Free — always free.</strong> No ads, no account, no connection needed.
+  <span>To keep it offline: open your browser menu and choose <em>Save page</em> or <em>Add to Home screen</em> — the whole game lives in this one page and plays with no signal at all.</span>
+</div></div>
+
+<nav class="compass" aria-label="Compass">
+  <div class="wrap">
+    <a href="https://thethrivingplan.github.io/">Start Page</a><span class="sep" aria-hidden="true">·</span>
+    <a href="https://thethrivingplan.github.io/">The Thriving Plan</a><span class="sep" aria-hidden="true">·</span>
+    <span>Other pages:</span>
+    <a href="https://thethrivingplan.github.io/bowling.html">Bowling</a>
+    <a href="https://thethrivingplan.github.io/chess.html">Chess</a>
+    <a href="https://thethrivingplan.github.io/checkers.html">Checkers</a>
+    <a href="https://thethrivingplan.github.io/solitaire.html">Solitaire</a>
+    <a href="https://thethrivingplan.github.io/blackjack.html">Blackjack</a>
+    <a href="https://thethrivingplan.github.io/poker.html">Poker</a>
+    <a href="https://thethrivingplan.github.io/slots.html">Slots</a>
+    <a href="https://thethrivingplan.github.io/block-party.html">Block Party</a>
+    <a href="https://thethrivingplan.github.io/tournament-builder.html">Tournament Builder</a>
+  </div>
+</nav>
+
+<div class="wrap">
+<header class="hero">
+  <h1>Five Dice</h1>
+  <p class="lede">Five dice, three rolls a turn, thirteen boxes to fill. Hold the dice that help you, roll the rest, and push your luck — then write the hand into the box it earns most in. Highest total wins.</p>
+  <p class="docline">Built on <strong>Yacht</strong>, the proven five-dice scorecard game documented in game books since the 1930s and sold commercially from 1956 onward. The rules here stay true to that documented game; the name, the card text, and every word on this page are our own.</p>
+  <div class="variant-banner" id="variantBanner" role="status"></div>
+</header>
+
+<!-- SETUP -->
+<section class="panel" id="setupPanel" aria-labelledby="setupH">
+  <h2 id="setupH">Set up the game</h2>
+  <div class="row">
+    <div class="field">
+      <label for="modeSel">Who is playing?</label>
+      <select id="modeSel">
+        <option value="solo">Just me — against my own best</option>
+        <option value="bot" selected>Me against the bot</option>
+        <option value="pass">Pass-and-play — 2 to 4 people, one device</option>
+      </select>
+      <span class="hint">Tap to choose. No name is ever required.</span>
+    </div>
+    <div class="field" id="botField">
+      <label for="botSel">Bot skill</label>
+      <select id="botSel">
+        <option value="learning">Learning — plays like a beginner</option>
+        <option value="steady" selected>Steady — solid club play</option>
+        <option value="sharp">Sharp — rarely wastes a box</option>
+        <option value="pro">Pro — counts the odds on every roll</option>
+      </select>
+      <span class="hint">The levels really differ — the measured averages are printed under “How strong is the bot, honestly?” below.</span>
+    </div>
+    <div class="field" id="countField" style="display:none">
+      <label for="countSel">How many people?</label>
+      <select id="countSel">
+        <option value="2">2 people</option>
+        <option value="3">3 people</option>
+        <option value="4">4 people</option>
+      </select>
+      <span class="hint">Tap to choose.</span>
+    </div>
+  </div>
+  <div class="row" id="nameRow" style="margin-top:.7rem"></div>
+  <p class="gesture">Names are optional session aliases — they live only for this game, are never checked or saved, and “Player 1” plays fine. Tap <em>Random name</em> if you want the dice to pick one.</p>
+
+  <h3>Teaching</h3>
+  <div class="seg" role="group" aria-label="Teaching level">
+    <button type="button" id="teachOff" aria-pressed="false">Off — just the game</button>
+    <button type="button" id="teachLight" aria-pressed="true">Light — a hint when it matters</button>
+    <button type="button" id="teachCoach" aria-pressed="false">Coach — odds and options on every turn</button>
+  </div>
+  <p class="gesture">Tap to choose how much teaching you want. Saved on this device only.</p>
+
+  <h3>Rule settings</h3>
+  <div class="row">
+    <div class="field">
+      <label for="bonusNeedSel">Upper bonus — points needed</label>
+      <select id="bonusNeedSel">
+        <option value="63" selected>63 — the standard</option>
+        <option value="70">70 — a harder climb</option>
+        <option value="84">84 — four of every face</option>
+      </select>
+      <span class="hint">Add up Ones through Sixes to reach it.</span>
+    </div>
+    <div class="field">
+      <label for="bonusValSel">Upper bonus — points it pays</label>
+      <select id="bonusValSel">
+        <option value="25">25 points</option>
+        <option value="35" selected>35 points — the standard</option>
+        <option value="50">50 points</option>
+      </select>
+      <span class="hint">Paid once, when the upper half reaches the target.</span>
+    </div>
+    <div class="field">
+      <label for="extraFiveSel">Extra Five of a Kind</label>
+      <select id="extraFiveSel">
+        <option value="on" selected>On — +100 each, the standard</option>
+        <option value="off">Off — no extra bonus</option>
+      </select>
+      <span class="hint">After the Five of a Kind box holds 50, each new five-of-a-kind pays +100 and can fill Full House or a Straight at full value.</span>
+    </div>
+  </div>
+  <p class="gesture">Standard rules are the default. Change any dial and the game says so, plainly, in a banner over the table — a variant’s scores are the variant’s, never dressed as standard. Settings are saved on this device only.</p>
+
+  <div class="row" style="margin-top:.8rem">
+    <button type="button" class="primary big" id="startBtn">Start the game — tap to begin</button>
+  </div>
+</section>
+
+<!-- GAME -->
+<section class="panel" id="gamePanel" style="display:none" aria-labelledby="gameH">
+  <h2 id="gameH" class="sr">The game</h2>
+  <div class="turnbar">
+    <span class="who" id="whoTurn">Your turn</span>
+    <span class="rolls" id="rollInfo">Roll 1 of 3</span>
+    <span class="rolls" id="turnInfo">Turn 1 of 13</span>
+  </div>
+  <div class="tray">
+    <div class="dice" id="diceRow" role="group" aria-label="Your dice"></div>
+    <div class="rollrow">
+      <button type="button" id="rollBtn">Tap to roll</button>
+      <button type="button" id="holdAllBtn">Hold all — tap</button>
+      <button type="button" id="letGoBtn">Let all go — tap</button>
+    </div>
+    <p class="gesture">Tap a die to hold it; tap it again to let it go. Held dice stay; the rest roll again. After your last roll — or whenever you are ready — tap an open box on the card to score the hand.</p>
+  </div>
+  <div class="coach" id="coachBox" aria-live="polite"></div>
+
+  <div class="handoff" id="handoffBox">
+    <div>Pass the device to</div>
+    <div class="big-name" id="handoffName">Player 2</div>
+    <button type="button" class="primary big" id="handoffBtn">I’m ready — tap to take your turn</button>
+  </div>
+
+  <div class="cardwrap">
+    <table class="card" id="scoreTable" aria-label="Scorecard"></table>
+  </div>
+  <p class="gesture">Tap an open box in your column to score this hand there. A box can be filled only once — a zero is a real score, and sometimes the right one.</p>
+
+  <div class="endbox" id="endBox" role="status"></div>
+
+  <div class="row" style="margin-top:.9rem">
+    <button type="button" id="newGameBtn">New game — tap</button>
+    <button type="button" id="backSetupBtn">Change setup — tap</button>
+  </div>
+</section>
+
+<!-- PRO TOOL: ODDS -->
+<details class="panel-like" id="oddsDetails">
+  <summary>Tap to open — the odds table (the pro tool)</summary>
+  <p>The chances behind the common chases, worked out exactly from the dice — the same numbers the Coach uses. “Per roll” means one roll of the dice you are throwing; with two rolls left the chance grows, and the Coach does that maths for your actual hand.</p>
+  <table class="odds">
+    <tr><th>The chase</th><th>What you need</th><th>Chance per roll</th><th>In plain words</th></tr>
+    <tr><td>Finish a Large Straight, open at both ends</td><td>Hold 2-3-4-5, throw 1 die, need a 1 or a 6</td><td>2 in 6</td><td>About 1 in 3</td></tr>
+    <tr><td>Finish a Large Straight, one end only</td><td>Hold 1-2-3-4, throw 1 die, need a 5</td><td>1 in 6</td><td>About 1 in 6</td></tr>
+    <tr><td>Make a Full House from two pairs</td><td>Hold both pairs, throw 1 die, need either pair’s face</td><td>2 in 6</td><td>About 1 in 3</td></tr>
+    <tr><td>Make Five of a Kind from Four of a Kind</td><td>Hold four alike, throw 1 die, need the fifth</td><td>1 in 6</td><td>About 1 in 6</td></tr>
+    <tr><td>Make Five of a Kind from Three of a Kind</td><td>Hold three alike, throw 2 dice, need both to match</td><td>1 in 36</td><td>About 1 in 36 — a long shot</td></tr>
+    <tr><td>Make Four of a Kind from Three of a Kind</td><td>Hold three alike, throw 2 dice, need at least one match</td><td>11 in 36</td><td>About 1 in 3</td></tr>
+    <tr><td>Improve Three of a Kind to a Full House</td><td>Hold three alike, throw 2 dice, need any pair</td><td>5 in 36</td><td>About 1 in 7</td></tr>
+    <tr><td>Five of a Kind on a single roll of all five dice</td><td>All five alike, out of the blue</td><td>6 in 7,776</td><td>About 1 in 1,296</td></tr>
+    <tr><td>A Large Straight on a single roll</td><td>1-2-3-4-5 or 2-3-4-5-6</td><td>240 in 7,776</td><td>About 1 in 32</td></tr>
+  </table>
+  <p class="small">Two honest notes. First, an open-ended straight draw (two faces finish it) is worth twice a one-ended draw — that is why pros break up a weak pair to hold four to a straight. Second, the upper bonus is the quiet giant: three of every face up top adds to exactly 63, so “three of a kind in the upper half” is the pace to protect.</p>
+</details>
+
+<!-- BOT HONESTY -->
+<details class="panel-like" id="botDetails">
+  <summary>Tap to open — how strong is the bot, honestly?</summary>
+  <p>The four levels are not name tags. Each level plays by a different method, and before this page shipped, each one played <strong>400 full games against itself</strong> in simulation, using the exact code the bot uses here. These are the measured results:</p>
+  <table class="sim">
+    <tr><th>Level</th><th>How it plays</th><th>Average score</th><th>Middle game</th><th>Range seen</th></tr>
+    <tr><td><strong>Learning</strong></td><td>Keeps dice almost at random and often fills a box blind</td><td>≈ 77</td><td>75</td><td>21 – 142</td></tr>
+    <tr><td><strong>Steady</strong></td><td>Keeps pairs and straight draws, fills greedily, slips now and then</td><td>≈ 156</td><td>154</td><td>62 – 300</td></tr>
+    <tr><td><strong>Sharp</strong></td><td>Counts the odds on its holds, but still makes a human slip about one turn in six</td><td>≈ 188</td><td>186</td><td>94 – 323</td></tr>
+    <tr><td><strong>Pro</strong></td><td>Counts the odds on every hold and every box, every turn, no slips</td><td>≈ 214</td><td>208</td><td>111 – 330</td></tr>
+  </table>
+  <p class="small">Averages over 400 simulated games per level, standard rules. Dice are dice: a Learning bot can still roll a monster game and a Pro can still be buried — the range column is the honest part. For scale, a strong human game is roughly 200–250.</p>
+</details>
+
+<!-- STRATEGY RECORD -->
+<details class="panel-like" id="recordDetails">
+  <summary>Tap to open — your strategy record</summary>
+  <p>Every game you finish here is written into your own strategy record — your totals, your boxes, the patterns your own play shows. The Coach reads it and teaches from <em>your</em> games, not generic tips alone. The record is kept in a clean, consistent form (date, every box, upper total, bonus or not) so it can be studied game by game.</p>
+  <p class="small"><strong>Saved on this device only.</strong> Nothing is sent anywhere, there is no account, and the Forget button below wipes it in one tap.</p>
+  <div id="recordBody"><p class="small">No finished games yet. Play a game and your record starts.</p></div>
+  <div class="row" style="margin-top:.6rem">
+    <button type="button" id="forgetBtn">Forget my record — tap to wipe it</button>
+  </div>
+</details>
+
+<!-- HOW TO PLAY -->
+<details class="panel-like">
+  <summary>Tap to open — how to play, in full</summary>
+  <h3>The turn</h3>
+  <p>Roll all five dice. Then, up to two more times: hold the dice you like (tap them) and roll the rest. When you stop — or after the third roll — you must write the hand into one open box on your card. Each box fills once. Thirteen turns fill the card.</p>
+  <h3>The upper half — Ones to Sixes</h3>
+  <p>Each box scores the sum of the dice showing that face. Ones count the 1s, Sixes count the 6s. If the six boxes together reach the bonus target (63 on standard rules — exactly three of every face), the bonus is added once.</p>
+  <h3>The lower half</h3>
+  <p><strong>Three of a Kind</strong> — three alike: score all five dice. <strong>Four of a Kind</strong> — four alike: score all five dice. <strong>Full House</strong> — three alike plus a pair: 25. <strong>Small Straight</strong> — four in a run (like 2-3-4-5): 30. <strong>Large Straight</strong> — five in a run: 40. <strong>Five of a Kind</strong> — all five alike: 50. <strong>Chance</strong> — anything at all: score all five dice. A hand that doesn’t make a box scores zero in it — choosing which box takes the zero is half the game.</p>
+  <h3>Extra Five of a Kind (standard rule, can be switched off in settings)</h3>
+  <p>Once your Five of a Kind box holds 50, every further five-of-a-kind pays +100, and that hand may fill the Full House, Small Straight, or Large Straight box at full value, or any other open box by its normal count.</p>
+  <h3>Winning</h3>
+  <p>When every card is full, the highest grand total wins. Solo, your score is measured against your own best on this device.</p>
+</details>
+
+<footer>
+  <p class="copyleft">Copyleft — this page and its words are <strong>CC BY-SA 4.0</strong>; its code is <strong>GPL</strong>. Copy it, learn from it, build on it, and pass the same freedom on. The name <em>The Thriving Plan</em> is not part of the grant. No ads — ever. This is a work in progress: if something here could be better for everybody, the Start Page’s “What are we missing?” door is where to say it.</p>
+  <p>Five Dice — an original page built on Yacht, the documented five-dice game. One device, no connection, nothing sent anywhere; settings, teaching choice, best score, and strategy record are saved on this device only.</p>
+</footer>
+</div>
+
+<script>
+"use strict";
+/* ============ scoring (the documented Yacht game) ============ */
+var CATS=[
+ {id:'ones',name:'Ones',what:'Add up all the 1s',upper:true},
+ {id:'twos',name:'Twos',what:'Add up all the 2s',upper:true},
+ {id:'threes',name:'Threes',what:'Add up all the 3s',upper:true},
+ {id:'fours',name:'Fours',what:'Add up all the 4s',upper:true},
+ {id:'fives',name:'Fives',what:'Add up all the 5s',upper:true},
+ {id:'sixes',name:'Sixes',what:'Add up all the 6s',upper:true},
+ {id:'threeKind',name:'Three of a Kind',what:'Three alike — add up all five dice'},
+ {id:'fourKind',name:'Four of a Kind',what:'Four alike — add up all five dice'},
+ {id:'fullHouse',name:'Full House',what:'Three alike + a pair — 25 points'},
+ {id:'smallStraight',name:'Small Straight',what:'Four in a run — 30 points'},
+ {id:'largeStraight',name:'Large Straight',what:'Five in a run — 40 points'},
+ {id:'fiveKind',name:'Five of a Kind',what:'All five alike — 50 points'},
+ {id:'chance',name:'Chance',what:'Anything — add up all five dice'}
+];
+var CATIDX={}; CATS.forEach(function(c,i){CATIDX[c.id]=i;});
+function countsOf(d){var c=[0,0,0,0,0,0,0];for(var i=0;i<d.length;i++)c[d[i]]++;return c;}
+function sumOf(d){var s=0;for(var i=0;i<d.length;i++)s+=d[i];return s;}
+function scoreDice(d,catId,joker){
+  var c=countsOf(d),s=sumOf(d),ui=CATIDX[catId];
+  if(ui<6)return c[ui+1]*(ui+1);
+  var mx=Math.max(c[1],c[2],c[3],c[4],c[5],c[6]);
+  var isFive=(mx===5);
+  switch(catId){
+    case 'threeKind':return mx>=3?s:0;
+    case 'fourKind':return mx>=4?s:0;
+    case 'fullHouse':{
+      var v=[];for(var f=1;f<=6;f++)if(c[f]>0)v.push(c[f]);v.sort();
+      if(v.join()=='2,3')return 25;
+      if(isFive&&joker)return 25;
+      return 0;}
+    case 'smallStraight':{
+      if(isFive&&joker)return 30;
+      var set={};d.forEach(function(x){set[x]=1;});
+      var seqs=[[1,2,3,4],[2,3,4,5],[3,4,5,6]];
+      for(var i=0;i<seqs.length;i++){var q=seqs[i],ok=true;for(var j=0;j<4;j++)if(!set[q[j]])ok=false;if(ok)return 30;}
+      return 0;}
+    case 'largeStraight':{
+      if(isFive&&joker)return 40;
+      var set2={};d.forEach(function(x){set2[x]=1;});
+      var seqs2=[[1,2,3,4,5],[2,3,4,5,6]];
+      for(var i2=0;i2<seqs2.length;i2++){var q2=seqs2[i2],ok2=true;for(var j2=0;j2<5;j2++)if(!set2[q2[j2]])ok2=false;if(ok2)return 40;}
+      return 0;}
+    case 'fiveKind':return isFive?50:0;
+    case 'chance':return s;
+  }
+  return 0;
+}
+/* distinct multisets of n dice with weights — exact odds, fast */
+function buildCombos(n){
+  var out=[],cur=[];
+  (function rec(start,left){
+    if(left===0){out.push(cur.slice());return;}
+    for(var f=start;f<=6;f++){cur.push(f);rec(f,left-1);cur.pop();}
+  })(1,n);
+  return out.map(function(m){
+    var cc=countsOf(m),w=1,rem=n;
+    for(var f=1;f<=6;f++){var k=cc[f],bin=1;for(var i=0;i<k;i++)bin=bin*(rem-i)/(i+1);w*=bin;rem-=k;}
+    return {m:m,w:w};
+  });
+}
+var COMBOS={};for(var cn=0;cn<=5;cn++)COMBOS[cn]=buildCombos(cn);
+/* value of a finished hand for a bot/coach: best open box, with upper-bonus pressure */
+function bestBoxValue(d,open,upper,need,joker){
+  var c=countsOf(d),best=-1;
+  for(var i=0;i<open.length;i++){
+    var cat=open[i],v=scoreDice(d,cat,joker),ui=CATIDX[cat];
+    if(ui<6){if(c[ui+1]>=3)v+=4;else if(upper<need&&c[ui+1]>=2)v+=1.5;}
+    if(v>best)best=v;
+  }
+  return best;
+}
+function evOfHold(dice,mask,open,upper,need,joker){
+  var kept=[],n=0,i;
+  for(i=0;i<5;i++){if((mask>>i)&1)kept.push(dice[i]);else n++;}
+  if(n===0)return bestBoxValue(dice,open,upper,need,joker);
+  var acc=0,tot=0,list=COMBOS[n];
+  for(var k=0;k<list.length;k++){var d2=kept.concat(list[k].m);acc+=list[k].w*bestBoxValue(d2,open,upper,need,joker);tot+=list[k].w;}
+  return acc/tot;
+}
+/* exact chance that rerolling the unheld dice (one roll) reaches `target` points or more in catId */
+function chanceToReach(dice,mask,catId,target,joker){
+  var kept=[],n=0,i;
+  for(i=0;i<5;i++){if((mask>>i)&1)kept.push(dice[i]);else n++;}
+  if(n===0)return scoreDice(dice,catId,joker)>=target?1:0;
+  var hit=0,tot=0,list=COMBOS[n];
+  for(var k=0;k<list.length;k++){var d2=kept.concat(list[k].m);tot+=list[k].w;if(scoreDice(d2,catId,joker)>=target)hit+=list[k].w;}
+  return hit/tot;
+}
+function plainOdds(p){
+  if(p<=0)return 'no chance from here';
+  if(p>=0.999)return 'a certainty';
+  var oneIn=1/p;
+  if(oneIn<1.6)return 'better than even odds';
+  if(oneIn<2.5)return 'about 1 in 2';
+  if(oneIn<3.5)return 'about 1 in 3';
+  if(oneIn<4.5)return 'about 1 in 4';
+  if(oneIn<5.5)return 'about 1 in 5';
+  if(oneIn<7)return 'about 1 in 6';
+  if(oneIn<9)return 'about 1 in 8';
+  if(oneIn<12)return 'about 1 in 10';
+  if(oneIn<20)return 'about 1 in 15';
+  if(oneIn<40)return 'about 1 in 36 — a long shot';
+  return 'a real long shot (about 1 in '+Math.round(oneIn)+')';
+}
+function withRolls(p,rolls){
+  if(rolls<=1)return p;
+  return 1-Math.pow(1-p,rolls);
+}
+
+/* ============ device-only storage ============ */
+var PREF_KEY='fivedice.prefs.v1', REC_KEY='fivedice.record.v1', BEST_KEY='fivedice.best.v1';
+function loadJSON(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
+function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+var prefs=loadJSON(PREF_KEY,{teaching:'light',bonusNeed:63,bonusVal:35,extraFive:true,mode:'bot',bot:'steady'});
+if(!prefs.teaching)prefs.teaching='light';
+var record=loadJSON(REC_KEY,{games:[]});
+var bestSolo=loadJSON(BEST_KEY,{score:0});
+
+/* ============ state ============ */
+var G=null;
+function el(id){return document.getElementById(id);}
+function rollDie(){return 1+Math.floor(Math.random()*6);}
+var ADJ=['Dusty','Lucky','Sunny','Velvet','Copper','Mellow','Brave','Quiet','Golden','Rusty'];
+var ANIMAL=['Coyote','Fox','Badger','Heron','Otter','Mole','Raven','Bison','Lynx','Newt'];
+function randomAlias(){return ADJ[Math.floor(Math.random()*ADJ.length)]+' '+ANIMAL[Math.floor(Math.random()*ANIMAL.length)];}
+
+function settings(){
+  return {need:parseInt(el('bonusNeedSel').value,10),val:parseInt(el('bonusValSel').value,10),
+          extraFive:el('extraFiveSel').value==='on'};
+}
+function updateVariantBanner(){
+  var s=settings(),parts=[];
+  if(s.need!==63)parts.push('upper bonus needs '+s.need+' instead of the standard 63');
+  if(s.val!==35)parts.push('upper bonus pays '+s.val+' instead of the standard 35');
+  if(!s.extraFive)parts.push('the extra Five of a Kind +100 is off');
+  var b=el('variantBanner');
+  if(parts.length){b.textContent='Variant in play: '+parts.join('; ')+'. Scores in this game are this variant’s scores — not standard scores.';b.classList.add('show');}
+  else{b.textContent='';b.classList.remove('show');}
+}
+
+/* ============ setup UI ============ */
+function nameFields(){
+  var mode=el('modeSel').value,row=el('nameRow');
+  el('botField').style.display=(mode==='bot')?'':'none';
+  el('countField').style.display=(mode==='pass')?'':'none';
+  row.innerHTML='';
+  var n = mode==='solo'?1 : mode==='bot'?1 : parseInt(el('countSel').value,10);
+  for(var i=0;i<n;i++){
+    var f=document.createElement('div');f.className='field';
+    var lab=document.createElement('label');lab.textContent=(mode==='pass'?('Player '+(i+1)+' — name (optional)'):('Your name (optional)'));
+    lab.setAttribute('for','name'+i);
+    var inp=document.createElement('input');inp.type='text';inp.id='name'+i;inp.maxLength=18;
+    inp.placeholder='Player '+(i+1);inp.autocomplete='off';
+    var rb=document.createElement('button');rb.type='button';rb.textContent='Random name — tap';
+    (function(inpEl){rb.addEventListener('click',function(){inpEl.value=randomAlias();});})(inp);
+    f.appendChild(lab);f.appendChild(inp);f.appendChild(rb);row.appendChild(f);
+  }
+  if(mode==='bot'){
+    var f2=document.createElement('div');f2.className='field';
+    f2.innerHTML='<label>The bot</label><p class="hint" style="margin:0">The bot plays as “Bot” at the level you picked. It rolls the same dice, under the same rules, in the open.</p>';
+    row.appendChild(f2);
+  }
+}
+function setTeaching(t){
+  prefs.teaching=t;saveJSON(PREF_KEY,prefs);
+  el('teachOff').setAttribute('aria-pressed',t==='off'?'true':'false');
+  el('teachLight').setAttribute('aria-pressed',t==='light'?'true':'false');
+  el('teachCoach').setAttribute('aria-pressed',t==='coach'?'true':'false');
+  renderCoach();
+}
+el('teachOff').addEventListener('click',function(){setTeaching('off');});
+el('teachLight').addEventListener('click',function(){setTeaching('light');});
+el('teachCoach').addEventListener('click',function(){setTeaching('coach');});
+el('modeSel').addEventListener('change',function(){prefs.mode=el('modeSel').value;saveJSON(PREF_KEY,prefs);nameFields();});
+el('countSel').addEventListener('change',nameFields);
+el('botSel').addEventListener('change',function(){prefs.bot=el('botSel').value;saveJSON(PREF_KEY,prefs);});
+['bonusNeedSel','bonusValSel','extraFiveSel'].forEach(function(id){
+  el(id).addEventListener('change',function(){
+    var s=settings();prefs.bonusNeed=s.need;prefs.bonusVal=s.val;prefs.extraFive=s.extraFive;saveJSON(PREF_KEY,prefs);
+    updateVariantBanner();
+  });
+});
+
+/* ============ game construction ============ */
+function newPlayer(name,isBot,level){
+  return {name:name,isBot:!!isBot,level:level||null,card:{},bonusFives:0,order:[]};
+}
+function startGame(){
+  var mode=el('modeSel').value,s=settings();
+  var players=[];
+  if(mode==='solo'){
+    players.push(newPlayer(el('name0').value.trim()||'Player 1',false));
+  }else if(mode==='bot'){
+    players.push(newPlayer(el('name0').value.trim()||'Player 1',false));
+    players.push(newPlayer('Bot ('+el('botSel').selectedOptions[0].textContent.split(' — ')[0]+')',true,el('botSel').value));
+  }else{
+    var n=parseInt(el('countSel').value,10);
+    for(var i=0;i<n;i++)players.push(newPlayer((el('name'+i).value.trim()||('Player '+(i+1))),false));
+  }
+  G={players:players,cur:0,turn:1,settings:s,dice:[1,2,3,4,5],held:[false,false,false,false,false],
+     rollsUsed:0,rolled:false,over:false,busy:false,startedAt:new Date().toISOString()};
+  el('setupPanel').style.display='none';
+  el('gamePanel').style.display='';
+  el('endBox').classList.remove('show');el('endBox').innerHTML='';
+  buildTable();renderAll();
+  beginTurn(false);
+}
+function openCats(p){return CATS.filter(function(c){return !(c.id in p.card);}).map(function(c){return c.id;});}
+function upperSum(p){var s=0;for(var i=0;i<6;i++){var id=CATS[i].id;if(id in p.card)s+=p.card[id];}return s;}
+function lowerSum(p){var s=0;for(var i=6;i<13;i++){var id=CATS[i].id;if(id in p.card)s+=p.card[id];}return s;}
+function bonusFor(p){return upperSum(p)>=G.settings.need?G.settings.val:0;}
+function totalOf(p){return upperSum(p)+bonusFor(p)+lowerSum(p)+(G.settings.extraFive?p.bonusFives*100:0);}
+function isJoker(p){return G.settings.extraFive && p.card['fiveKind']===50 && countsOf(G.dice)[G.dice[0]]===5 && G.dice.every(function(x){return x===G.dice[0];});}
+
+/* ============ rendering ============ */
+var PIPS={1:[[50,50]],2:[[28,28],[72,72]],3:[[26,26],[50,50],[74,74]],4:[[28,28],[72,28],[28,72],[72,72]],
+ 5:[[26,26],[74,26],[50,50],[26,74],[74,74]],6:[[28,24],[72,24],[28,50],[72,50],[28,76],[72,76]]};
+function renderDice(){
+  var row=el('diceRow');row.innerHTML='';
+  G.dice.forEach(function(v,i){
+    var b=document.createElement('button');b.type='button';b.className='die'+(G.held[i]?' held':'');
+    b.setAttribute('aria-label','Die showing '+v+(G.held[i]?', held':', not held')+'. Tap to '+(G.held[i]?'let it go':'hold it')+'.');
+    PIPS[v].forEach(function(pt){var s=document.createElement('span');s.className='pip';s.style.left=pt[0]+'%';s.style.top=pt[1]+'%';b.appendChild(s);});
+    b.addEventListener('click',function(){toggleHold(i);});
+    row.appendChild(b);
+  });
+}
+function buildTable(){
+  var t=el('scoreTable');var html='<thead><tr><th class="box" scope="col">Box</th>';
+  G.players.forEach(function(p,i){html+='<th scope="col" data-col="'+i+'">'+escapeHtml(p.name)+'</th>';});
+  html+='</tr></thead><tbody>';
+  CATS.forEach(function(c,ci){
+    html+='<tr><td class="box" scope="row">'+c.name+'<span class="what">'+c.what+'</span></td>';
+    G.players.forEach(function(p,pi){html+='<td class="cell" data-cat="'+c.id+'" data-player="'+pi+'"></td>';});
+    html+='</tr>';
+    if(ci===5){
+      html+='<tr class="subtotal"><td class="box">Upper total</td>';G.players.forEach(function(){html+='<td data-sum="upper"></td>';});html+='</tr>';
+      html+='<tr class="subtotal"><td class="box">Upper bonus</td>';G.players.forEach(function(){html+='<td data-sum="bonus"></td>';});html+='</tr>';
+    }
+  });
+  html+='<tr class="subtotal"><td class="box">Extra Five of a Kind (+100 each)</td>';G.players.forEach(function(){html+='<td data-sum="fives"></td>';});html+='</tr>';
+  html+='<tr class="grand"><td class="box">Grand total</td>';G.players.forEach(function(){html+='<td data-sum="grand"></td>';});html+='</tr>';
+  html+='</tbody>';t.innerHTML=html;
+  t.querySelectorAll('td.cell').forEach(function(td){
+    td.addEventListener('click',function(){
+      tryScore(parseInt(td.getAttribute('data-player'),10),td.getAttribute('data-cat'));
+    });
+  });
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
+function renderCard(flashCat,flashPlayer){
+  var t=el('scoreTable');
+  t.querySelectorAll('thead th').forEach(function(th){
+    var col=th.getAttribute('data-col');
+    if(col!==null)th.className=(parseInt(col,10)===G.cur&&!G.over)?'now':'';
+  });
+  t.querySelectorAll('td.cell').forEach(function(td){
+    var pi=parseInt(td.getAttribute('data-player'),10),cat=td.getAttribute('data-cat');
+    var p=G.players[pi];
+    td.classList.remove('filled','zero','flash');
+    if(cat in p.card){
+      var v=p.card[cat];
+      td.innerHTML=v;
+      td.className='cell filled'+(v===0?' zero':'');
+      if(cat===flashCat&&pi===flashPlayer)td.classList.add('flash');
+    }else if(pi===G.cur&&G.rolled&&!G.over&&!G.busy&&!p.isBot){
+      var pv=scoreDice(G.dice,cat,isJoker(p));
+      if(prefs.teaching==='off'){
+        td.innerHTML='<button type="button" aria-label="Score this hand in '+CATS[CATIDX[cat]].name+'. Tap to score.">Score here<span class="pv">tap to fill this box</span></button>';
+      }else{
+        td.innerHTML='<button type="button" aria-label="Score this hand in '+CATS[CATIDX[cat]].name+' for '+pv+' points. Tap to score.">'+pv+(prefs.teaching==='coach'?'<span class="pv">points if you score now</span>':'<span class="pv">tap to score here</span>')+'</button>';
+      }
+    }else{
+      td.innerHTML='<span class="small">—</span>';
+    }
+  });
+  t.querySelectorAll('[data-sum="upper"]').forEach(function(td,i){td.textContent=upperSum(G.players[i]);});
+  t.querySelectorAll('[data-sum="bonus"]').forEach(function(td,i){var p=G.players[i];td.textContent=(CATS.slice(0,6).every(function(c){return c.id in p.card;}))?(bonusFor(p)>0?('+'+bonusFor(p)):0):(upperSum(p)+' of '+G.settings.need);});
+  t.querySelectorAll('[data-sum="fives"]').forEach(function(td,i){td.textContent=G.settings.extraFive?(G.players[i].bonusFives+' × 100 = '+(G.players[i].bonusFives*100)):'off';});
+  t.querySelectorAll('[data-sum="grand"]').forEach(function(td,i){td.textContent=totalOf(G.players[i]);});
+}
+function renderAll(){
+  if(!G)return;
+  var p=G.players[G.cur];
+  el('whoTurn').textContent=G.over?'Game over':(p.isBot?p.name+' is playing':(p.name+'’s turn'));
+  el('rollInfo').textContent=G.over?'':(G.rolled?('Roll '+(G.rollsUsed)+' of 3'+(G.rollsUsed>=3?' — no rolls left':'')):'Not rolled yet');
+  el('turnInfo').textContent='Turn '+Math.min(G.turn,13)+' of 13';
+  el('rollBtn').disabled=!G||G.over||G.busy||p.isBot||G.rollsUsed>=3;
+  el('rollBtn').textContent=G.rollsUsed===0?'Tap to roll':(G.rollsUsed>=3?'No rolls left':'Tap to roll again — '+(3-G.rollsUsed)+' left');
+  el('holdAllBtn').disabled=el('letGoBtn').disabled=!G.rolled||G.over||G.busy||p.isBot;
+  renderDice();renderCard();renderCoach();
+}
+
+/* ============ coach ============ */
+function recordInsights(p){
+  /* patterns from the human player's own finished games */
+  var gs=record.games;if(gs.length<3)return null;
+  var out={};
+  var bonusHit=gs.filter(function(g){return g.bonus;}).length;
+  out.bonusRate=bonusHit/gs.length;
+  var scratch={};CATS.forEach(function(c){scratch[c.id]=0;});
+  gs.forEach(function(g){CATS.forEach(function(c){if(g.card[c.id]===0)scratch[c.id]++;});});
+  var worst=null,wn=0;CATS.forEach(function(c){if(scratch[c.id]>wn){wn=scratch[c.id];worst=c;}});
+  out.worstScratch=worst;out.worstScratchN=wn;out.n=gs.length;
+  var chanceEarly=gs.filter(function(g){return g.order.indexOf('chance')>=0&&g.order.indexOf('chance')<5;}).length;
+  out.chanceEarlyRate=chanceEarly/gs.length;
+  return out;
+}
+function coachStrategies(p){
+  /* returns array of {title, body, trade} — multiple real lines where they exist */
+  var open=openCats(p),joker=isJoker(p),strats=[];
+  var scored=open.map(function(id){return {id:id,v:scoreDice(G.dice,id,joker)};});
+  scored.sort(function(a,b){return b.v-a.v;});
+  var best=scored[0];
+  var rollsLeft=3-G.rollsUsed;
+  /* Line 1: bank it now */
+  strats.push({t:'Bank it now — '+CATS[CATIDX[best.id]].name+' for '+best.v,
+    b:'Write this hand into '+CATS[CATIDX[best.id]].name+' and take the '+best.v+' points for certain.',
+    trade:'Trade-off: the turn ends. If you roll on, this exact hand is gone — the dice owe you nothing.'});
+  if(rollsLeft>0){
+    /* Line 2: the best chase by expected value */
+    var bestMask=31,bestEv=-1,m;
+    for(m=0;m<32;m++){var ev=evOfHold(G.dice,m,open,upperSum(p),G.settings.need,joker);if(ev>bestEv){bestEv=ev;bestMask=m;}}
+    if(bestMask!==31){
+      var keptVals=[],thrown=0;
+      G.dice.forEach(function(v,i){if((bestMask>>i)&1)keptVals.push(v);else thrown++;});
+      /* what is the chase aiming at? best target category for that hold */
+      var tgt=null,tgtP=0;
+      open.forEach(function(id){
+        var cur=scoreDice(G.dice,id,joker);
+        var target=id==='fullHouse'?25:id==='smallStraight'?30:id==='largeStraight'?40:id==='fiveKind'?50:Math.max(cur+1,1);
+        var pr=chanceToReach(G.dice,bestMask,id,target,joker);
+        if(pr>tgtP){tgtP=pr;tgt=id;}
+      });
+      var pAll=withRolls(tgtP,rollsLeft);
+      strats.push({t:'Roll on — hold '+keptVals.join(', ')+' and throw '+thrown+' '+(thrown===1?'die':'dice'),
+        b:'You are chasing '+CATS[CATIDX[tgt]].name+': '+plainOdds(pAll)+' to get there with '+rollsLeft+' '+(rollsLeft===1?'roll':'rolls')+' left. On average this hold is worth about '+bestEv.toFixed(1)+' points by the end of the turn — the strongest line the odds can see.',
+        trade:'Trade-off: variance. The average is higher than banking, but plenty of single turns land below '+best.v+' — sometimes on zero.'});
+    }
+    /* Line 3: protect the upper bonus, when it is live and not already the bank line */
+    var upperOpen=open.filter(function(id){return CATIDX[id]<6;});
+    if(upperOpen.length&&upperSum(p)<G.settings.need){
+      var upBest=null,upV=-1;
+      upperOpen.forEach(function(id){var v=scoreDice(G.dice,id,joker);if(v>upV){upV=v;upBest=id;}});
+      var pace=G.settings.need-upperSum(p);
+      if(upBest&&best.id!==upBest){
+        strats.push({t:'Protect the bonus — '+CATS[CATIDX[upBest]].name+' for '+upV,
+          b:'You still need '+pace+' upper points for the +'+G.settings.val+' bonus, with '+upperOpen.length+' upper '+(upperOpen.length===1?'box':'boxes')+' open. Three of a face is the pace that gets there.',
+          trade:'Trade-off: fewer points right now ('+upV+' instead of '+best.v+') to keep the bonus — worth +'+G.settings.val+' — alive. Late in the game, if the bonus is out of reach, this line dies and the other two take over.'});
+      }
+    }
+    /* Line 4: the sacrifice line — where to put a zero, when the hand is weak */
+    if(best.v<=8){
+      var sac=open.indexOf('fiveKind')>=0?'fiveKind':(open.indexOf('largeStraight')>=0?'largeStraight':(open.indexOf('ones')>=0?'ones':open[open.length-1]));
+      if(sac!==best.id||best.v===0){
+        strats.push({t:'Think about the sacrifice — '+CATS[CATIDX[sac]].name,
+          b:'This hand is weak everywhere. Every card needs one zero eventually; spending it on a box you are least likely to fill well ('+CATS[CATIDX[sac]].name+') keeps your live boxes alive.',
+          trade:'Trade-off: a deliberate zero hurts now and protects later. Only take it if the chases above look worse than the box you would burn.'});
+      }
+    }
+  }
+  return strats;
+}
+function renderCoach(){
+  var box=el('coachBox');
+  if(!G||G.over||prefs.teaching==='off'||!G.rolled){box.innerHTML='';return;}
+  var p=G.players[G.cur];
+  if(p.isBot){box.innerHTML='';return;}
+  if(prefs.teaching==='light'){
+    var open=openCats(p),joker=isJoker(p),best=null,bv=-1;
+    open.forEach(function(id){var v=scoreDice(G.dice,id,joker);if(v>bv){bv=v;best=id;}});
+    var rollsLeft=3-G.rollsUsed,hint='';
+    if(rollsLeft>0){
+      var bestMask=31,bestEv=-1,m;
+      for(m=0;m<32;m++){var ev=evOfHold(G.dice,m,open,upperSum(p),G.settings.need,joker);if(ev>bestEv){bestEv=ev;bestMask=m;}}
+      if(bestMask!==31&&bestEv>bv+1.5){
+        var kept=[];G.dice.forEach(function(v,i){if((bestMask>>i)&1)kept.push(v);});
+        hint='Hint: holding '+kept.join(', ')+' and rolling on averages about '+bestEv.toFixed(1)+' points — more than the '+bv+' you could bank now in '+CATS[CATIDX[best]].name+'. Switch Teaching to Coach for the odds and the other lines.';
+      }else{
+        hint='Hint: '+CATS[CATIDX[best]].name+' for '+bv+' is a strong bank here — rolling on does not average better. Switch Teaching to Coach to see every line.';
+      }
+    }else{
+      hint='Hint: no rolls left. '+CATS[CATIDX[best]].name+' scores '+bv+' — the best home for this hand. Coach mode shows the thinking before you get here.';
+    }
+    box.innerHTML='<div>'+hint+'</div>';
+    return;
+  }
+  /* Coach */
+  var strats=coachStrategies(p);
+  var html='<strong>Coach — your options, honestly laid out:</strong>';
+  if(openCats(p).length===1){
+    html+='<div class="strat"><b class="t">Only one box is open — this is the single line</b><div>Every other box is filled, so there is no real choice left: this hand goes in '+CATS[CATIDX[openCats(p)[0]]].name+'. When there is genuinely one option, the Coach says so instead of inventing alternatives.</div></div>';
+  }else{
+    strats.forEach(function(s){
+      html+='<div class="strat"><b class="t">'+s.t+'</b><div>'+s.b+'</div><div class="trade">'+s.trade+'</div></div>';
+    });
+  }
+  var ins=recordInsights(p);
+  if(ins){
+    var bits=[];
+    if(ins.bonusRate<0.5)bits.push('your record ('+ins.n+' games): you have landed the upper bonus in only '+Math.round(ins.bonusRate*100)+'% of your games — the bonus line above deserves a longer look than usual');
+    else if(ins.bonusRate>=0.5)bits.push('your record ('+ins.n+' games): you land the upper bonus '+Math.round(ins.bonusRate*100)+'% of the time — your bonus judgement is a strength');
+    if(ins.worstScratch&&ins.worstScratchN>=Math.ceil(ins.n/2))bits.push('the box you scratch most is '+ins.worstScratch.name+' (zero in '+ins.worstScratchN+' of '+ins.n+' games) — if it comes up in a sacrifice, that matches your history; if you keep it open late, plan for it earlier');
+    if(ins.chanceEarlyRate>=0.5)bits.push('you spend Chance in the first five turns in '+Math.round(ins.chanceEarlyRate*100)+'% of your games — a late Chance is the classic safety net for a failed chase, so notice when you give it up early');
+    if(bits.length)html+='<div class="fromrec">From your own strategy record: '+bits.join('; ')+'.</div>';
+  }
+  box.innerHTML=html;
+}
+
+/* ============ turn flow ============ */
+function toggleHold(i){
+  if(!G||G.busy||G.over)return;
+  var p=G.players[G.cur];
+  if(p.isBot||!G.rolled||G.rollsUsed>=3)return;
+  G.held[i]=!G.held[i];renderAll();
+}
+el('holdAllBtn').addEventListener('click',function(){if(G&&G.rolled){G.held=[true,true,true,true,true];renderAll();}});
+el('letGoBtn').addEventListener('click',function(){if(G&&G.rolled){G.held=[false,false,false,false,false];renderAll();}});
+el('rollBtn').addEventListener('click',function(){humanRoll();});
+function animateRoll(done){
+  var diceEls=el('diceRow').children;
+  for(var i=0;i<diceEls.length;i++)if(!G.held[i])diceEls[i].classList.add('rolling');
+  var ticks=0;
+  var iv=setInterval(function(){
+    ticks++;
+    for(var i=0;i<5;i++)if(!G.held[i])G.dice[i]=rollDie();
+    renderDice();
+    var els=el('diceRow').children;
+    for(var j=0;j<els.length;j++)if(!G.held[j])els[j].classList.add('rolling');
+    if(ticks>=5){clearInterval(iv);done();}
+  },70);
+}
+function humanRoll(){
+  if(!G||G.busy||G.over||G.rollsUsed>=3)return;
+  var p=G.players[G.cur];if(p.isBot)return;
+  G.busy=true;renderAll();
+  animateRoll(function(){
+    G.rollsUsed++;G.rolled=true;G.busy=false;
+    checkExtraFive(p);
+    renderAll();
+  });
+}
+function checkExtraFive(p){
+  if(!G.settings.extraFive||G.fiveCountedTurn)return;
+  var c=countsOf(G.dice);
+  if(Math.max(c[1],c[2],c[3],c[4],c[5],c[6])===5&&p.card['fiveKind']===50){
+    p.bonusFives++;G.fiveCountedTurn=true;
+  }
+}
+function tryScore(pi,cat){
+  if(!G||G.busy||G.over||!G.rolled)return;
+  if(pi!==G.cur)return;
+  var p=G.players[pi];
+  if(p.isBot)return;
+  if(cat in p.card)return;
+  doScore(p,cat);
+}
+function doScore(p,cat){
+  p.card[cat]=scoreDice(G.dice,cat,isJoker(p));
+  p.order.push(cat);
+  var pi=G.players.indexOf(p);
+  renderCard(cat,pi);
+  setTimeout(function(){advance();},450);
+}
+function advance(){
+  if(G.players.every(function(pl){return openCats(pl).length===0;})){endGame();return;}
+  G.cur=(G.cur+1)%G.players.length;
+  if(G.cur===0)G.turn++;
+  beginTurn(true);
+}
+function beginTurn(passed){
+  var p=G.players[G.cur];
+  G.dice=[1,2,3,4,5];G.held=[false,false,false,false,false];G.rollsUsed=0;G.rolled=false;G.busy=false;G.fiveCountedTurn=false;
+  renderAll();
+  if(p.isBot){G.busy=true;renderAll();setTimeout(botTurn,700);return;}
+  var humanCount=G.players.filter(function(x){return !x.isBot;}).length;
+  if(passed&&humanCount>1&&G.players.length>1){
+    el('handoffName').textContent=p.name;
+    el('handoffBox').classList.add('show');
+    G.busy=true;renderAll();
+    el('handoffBox').classList.add('show');
+  }
+}
+el('handoffBtn').addEventListener('click',function(){
+  el('handoffBox').classList.remove('show');
+  if(G){G.busy=false;renderAll();}
+});
+
+/* ============ bot ============ */
+function botChooseMask(p,open){
+  var level=p.level,joker=isJoker(p);
+  if(level==='pro'||level==='sharp'){
+    var bestEv=-1,bestMask=31,m;
+    for(m=0;m<32;m++){var ev=evOfHold(G.dice,m,open,upperSum(p),G.settings.need,joker);if(ev>bestEv){bestEv=ev;bestMask=m;}}
+    if(level==='sharp'&&Math.random()<0.18)bestMask=Math.floor(Math.random()*32);
+    return bestMask;
+  }
+  if(level==='steady'){
+    if(Math.random()<0.15)return Math.floor(Math.random()*32);
+    var cc=countsOf(G.dice),mf=1,f;
+    for(f=2;f<=6;f++)if(cc[f]>cc[mf])mf=f;
+    var mask=0;G.dice.forEach(function(v,i){if(v===mf)mask|=(1<<i);});
+    var set=[];G.dice.forEach(function(v){if(set.indexOf(v)<0)set.push(v);});set.sort();
+    if(set.length>=4&&cc[mf]<3){
+      var seqs=[[1,2,3,4],[2,3,4,5],[3,4,5,6]];
+      for(var si=0;si<seqs.length;si++){var q=seqs[si];
+        if(q.every(function(x){return set.indexOf(x)>=0;})){
+          mask=0;var used={};
+          G.dice.forEach(function(v,i){if(q.indexOf(v)>=0&&!used[v]){used[v]=1;mask|=(1<<i);}});
+          break;}
+      }
+    }
+    return mask;
+  }
+  /* learning */
+  var lm=0;G.dice.forEach(function(v,i){if(Math.random()<0.35)lm|=(1<<i);});
+  return lm;
+}
+function botChooseBox(p,open){
+  var level=p.level,joker=isJoker(p);
+  if(level==='learning'){
+    if(Math.random()<0.55)return open[Math.floor(Math.random()*open.length)];
+    var bv=-1,pick=open[0];
+    open.forEach(function(id){var v=scoreDice(G.dice,id,joker);if(v>bv){bv=v;pick=id;}});
+    return pick;
+  }
+  if(level==='steady'){
+    var bv2=-1e9,pick2=open[0];
+    open.forEach(function(id){var v=scoreDice(G.dice,id,joker);var ui=CATIDX[id];
+      if(ui<6&&countsOf(G.dice)[ui+1]>=3)v+=3;
+      if(Math.random()<0.12)v-=8;
+      if(v>bv2){bv2=v;pick2=id;}});
+    return pick2;
+  }
+  var bv3=-1e9,pick3=open[0],cc=countsOf(G.dice);
+  open.forEach(function(id){var v=scoreDice(G.dice,id,joker);var ui=CATIDX[id];
+    if(ui<6){if(cc[ui+1]>=3)v+=4;else if(upperSum(p)<G.settings.need&&cc[ui+1]>=2)v+=1.5;}
+    if(v>bv3){bv3=v;pick3=id;}});
+  if(level==='sharp'&&Math.random()<0.10){
+    var zeros=open.filter(function(id){return scoreDice(G.dice,id,joker)===0;});
+    if(zeros.length&&Math.random()<0.5)pick3=zeros[Math.floor(Math.random()*zeros.length)];
+  }
+  return pick3;
+}
+function botTurn(){
+  var p=G.players[G.cur];
+  if(!p.isBot||G.over)return;
+  G.busy=true;
+  function step(){
+    if(G.rollsUsed>=3){finish();}
+    else{
+      animateRoll(function(){
+        G.rollsUsed++;G.rolled=true;checkExtraFive(p);renderAll();
+        var open=openCats(p);
+        var mask=botChooseMask(p,open);
+        if(mask===31||G.rollsUsed>=3){setTimeout(finish,500);return;}
+        G.held=[false,false,false,false,false];
+        for(var i=0;i<5;i++)if((mask>>i)&1)G.held[i]=true;
+        renderAll();
+        setTimeout(step,650);
+      });
+    }
+  }
+  function finish(){
+    var open=openCats(p);
+    var pick=botChooseBox(p,open);
+    G.busy=false;
+    doScore(p,pick);
+  }
+  step();
+}
+
+/* ============ end of game + strategy record ============ */
+function endGame(){
+  G.over=true;G.busy=false;renderAll();
+  var box=el('endBox');
+  var ranked=G.players.slice().sort(function(a,b){return totalOf(b)-totalOf(a);});
+  var lines=ranked.map(function(p,i){return '<div>'+(i+1)+'. <strong>'+escapeHtml(p.name)+'</strong> — '+totalOf(p)+' points (upper '+upperSum(p)+(bonusFor(p)?' + bonus '+bonusFor(p):' — no upper bonus')+', lower '+lowerSum(p)+(G.settings.extraFive&&p.bonusFives?', plus '+(p.bonusFives*100)+' in extra Fives':'')+')</div>';}).join('');
+  var head;
+  if(G.players.length===1){
+    var t=totalOf(G.players[0]);
+    if(t>bestSolo.score){bestSolo={score:t,when:new Date().toISOString()};saveJSON(BEST_KEY,bestSolo);
+      head='<h3 style="font-size:1.4rem">Game over — '+t+' points. A new best on this device!</h3>';}
+    else head='<h3 style="font-size:1.4rem">Game over — '+t+' points.</h3><p>Your best on this device stands at '+bestSolo.score+'.</p>';
+  }else{
+    head='<h3 style="font-size:1.4rem">'+escapeHtml(ranked[0].name)+' wins with '+totalOf(ranked[0])+' points.</h3>';
+  }
+  box.innerHTML=head+lines+'<p class="small">This game has been written into the strategy record below — yours, on this device only.</p>';
+  box.classList.add('show');
+  /* write every human player's game into the record (solo/pass: all humans; vs bot: the human) */
+  G.players.forEach(function(p){
+    if(p.isBot)return;
+    record.games.push({date:new Date().toISOString(),total:totalOf(p),upper:upperSum(p),
+      bonus:bonusFor(p)>0,card:Object.assign({},p.card),order:p.order.slice(),
+      settings:{need:G.settings.need,val:G.settings.val,extraFive:G.settings.extraFive}});
+  });
+  if(record.games.length>200)record.games=record.games.slice(-200);
+  saveJSON(REC_KEY,record);
+  renderRecord();
+}
+el('newGameBtn').addEventListener('click',function(){
+  el('gamePanel').style.display='none';el('setupPanel').style.display='';
+  el('handoffBox').classList.remove('show');
+});
+el('backSetupBtn').addEventListener('click',function(){
+  el('gamePanel').style.display='none';el('setupPanel').style.display='';
+  el('handoffBox').classList.remove('show');
+});
+el('startBtn').addEventListener('click',startGame);
+
+/* ============ strategy record UI ============ */
+function renderRecord(){
+  var body=el('recordBody'),gs=record.games;
+  if(!gs.length){body.innerHTML='<p class="small">No finished games yet. Play a game and your record starts.</p>';return;}
+  var totals=gs.map(function(g){return g.total;});
+  var avg=totals.reduce(function(a,b){return a+b;},0)/gs.length;
+  var best=Math.max.apply(null,totals);
+  var bonusRate=gs.filter(function(g){return g.bonus;}).length/gs.length;
+  var scratch={};CATS.forEach(function(c){scratch[c.id]=0;});
+  var boxAvg={};CATS.forEach(function(c){boxAvg[c.id]=[];});
+  gs.forEach(function(g){CATS.forEach(function(c){if(c.id in g.card){boxAvg[c.id].push(g.card[c.id]);if(g.card[c.id]===0)scratch[c.id]++;}});});
+  var worst=null,wn=-1;CATS.forEach(function(c){if(scratch[c.id]>wn){wn=scratch[c.id];worst=c;}});
+  var lessons=[];
+  lessons.push('Upper bonus landed in '+Math.round(bonusRate*100)+'% of your games. '+(bonusRate<0.5?'That is the record’s loudest lesson: three of a face up top is the pace — 63 points of upper boxes is the bonus line on standard rules.':'Your bonus game is sound — protect it.'));
+  if(worst&&wn>0)lessons.push('Your most-scratched box is '+worst.name+' — zero in '+wn+' of '+gs.length+' games. Either chase it earlier, while rolls are cheap, or keep spending your forced zeros there on purpose; the mistake is drifting into it late.');
+  var chAvg=boxAvg['chance'].length?boxAvg['chance'].reduce(function(a,b){return a+b;},0)/boxAvg['chance'].length:0;
+  if(boxAvg['chance'].length>=3)lessons.push('Your Chance box averages '+chAvg.toFixed(1)+'. Chance spent late on a failed chase usually beats Chance spent early on a mediocre hand — compare your early-Chance games with your late ones.');
+  var fiveHits=gs.filter(function(g){return g.card['fiveKind']===50;}).length;
+  lessons.push('Five of a Kind landed in '+fiveHits+' of '+gs.length+' games. It is a lottery ticket, not a plan: the odds table above shows a three-alike start finishes only about 1 time in 36 per roll.');
+  body.innerHTML=
+    '<div class="record-stats">'+
+    '<div class="stat"><b>'+gs.length+'</b>games recorded</div>'+
+    '<div class="stat"><b>'+avg.toFixed(0)+'</b>your average</div>'+
+    '<div class="stat"><b>'+best+'</b>your best</div>'+
+    '<div class="stat"><b>'+Math.round(bonusRate*100)+'%</b>upper-bonus rate</div>'+
+    '</div>'+
+    '<h3>What your record teaches</h3><ul>'+lessons.map(function(l){return '<li>'+l+'</li>';}).join('')+'</ul>'+
+    '<p class="small">Most recent game: '+totals[totals.length-1]+' points. The record holds up to your last 200 games, on this device only.</p>';
+}
+el('forgetBtn').addEventListener('click',function(){
+  record={games:[]};saveJSON(REC_KEY,record);
+  bestSolo={score:0};saveJSON(BEST_KEY,bestSolo);
+  renderRecord();
+  el('recordBody').innerHTML='<p class="small">Forgotten. The record is wiped from this device — games, patterns, and best score alike.</p>';
+});
+
+/* ============ init ============ */
+(function init(){
+  el('modeSel').value=prefs.mode||'bot';
+  el('botSel').value=prefs.bot||'steady';
+  el('bonusNeedSel').value=String(prefs.bonusNeed||63);
+  el('bonusValSel').value=String(prefs.bonusVal||35);
+  el('extraFiveSel').value=prefs.extraFive===false?'off':'on';
+  setTeaching(prefs.teaching||'light');
+  nameFields();updateVariantBanner();renderRecord();
+})();
+</script>
+</body>
+</html>
