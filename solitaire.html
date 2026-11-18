@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Solitaire — Klondike</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#e9ede6; --ink:#1c2420; --muted:#4c5a52;
+        --table:#17603a; --table-edge:#0e4527; --panel:#ffffff; --panel-line:#c9d2c6;
+        --accent:#b45309; --accent-ink:#ffffff;
+        --gold:#d97706; --hint:#0e7490;
+        --card:#fffdf7; --card-ink:#20242a; --red:#b3261e; --back:#274690; --back2:#1d3570;
+        --slot:rgba(255,255,255,.14); --slot-line:rgba(255,255,255,.45);
+        --shadow:0 1px 3px rgba(10,30,18,.35);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0f1411; --ink:#e7ece7; --muted:#a7b5ab;
+          --table:#14532d; --table-edge:#0a3520; --panel:#1a211c; --panel-line:#33413a;
+          --accent:#d97706; --slot:rgba(255,255,255,.10); --slot-line:rgba(255,255,255,.35);
+          --shadow:0 1px 3px rgba(0,0,0,.6);
+        }
+      }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif; line-height:1.45; }
+      .wrap{ max-width:1020px; margin:0 auto; padding:14px 14px 40px; }
+      h1{ font-family:Georgia, "Iowan Old Style", "Times New Roman", serif; font-size:1.9rem; margin:.35em 0 .1em; letter-spacing:.01em; }
+      .sub{ color:var(--muted); margin:0 0 10px; }
+      .freebar{ background:var(--table-edge); color:#f2f7f2; border-radius:10px; padding:10px 14px;
+        font-weight:700; display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; }
+      .freebar .small{ font-weight:500; font-size:.9rem; opacity:.92; }
+      .bar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+      .btn{ appearance:none; border:1px solid var(--panel-line); background:var(--panel); color:var(--ink);
+        border-radius:9px; padding:8px 13px; font:inherit; font-size:.95rem; cursor:pointer; box-shadow:var(--shadow); }
+      .btn:hover{ border-color:var(--accent); }
+      .btn:disabled{ opacity:.45; cursor:default; }
+      .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700; }
+      .btn .gest{ display:block; font-size:.74rem; font-weight:500; opacity:.75; }
+      .stat{ font-variant-numeric:tabular-nums; color:var(--muted); font-size:.95rem; }
+      .stat b{ color:var(--ink); }
+      .variant-banner{ display:none; border:2px solid var(--gold); background:var(--panel); border-radius:10px;
+        padding:9px 13px; margin:10px 0; font-size:.95rem; }
+      .variant-banner.show{ display:block; }
+      .hintbox{ min-height:2.6em; border-left:4px solid var(--hint); background:var(--panel);
+        border-radius:0 10px 10px 0; padding:8px 13px; margin:10px 0; font-size:.98rem; }
+      .hintbox:empty{ display:none; }
+      .winbox{ display:none; border:2px solid var(--gold); background:var(--panel); border-radius:12px;
+        padding:16px; margin:12px 0; text-align:center; }
+      .winbox.show{ display:block; }
+      .winbox h2{ font-family:Georgia, serif; margin:.1em 0 .3em; font-size:1.6rem; }
+      /* ---------- the table ---------- */
+      .table{ background:var(--table); border:6px solid var(--table-edge); border-radius:18px;
+        padding:14px 12px 18px; --cw:min(118px, calc((100vw - 76px)/7)); }
+      @media (min-width:1060px){ .table{ --cw:118px; } }
+      .row{ display:grid; grid-template-columns:repeat(7, 1fr); gap:10px; }
+      .row.top{ margin-bottom:16px; }
+      .pile{ position:relative; min-height:calc(var(--cw)*1.4); border-radius:8px; }
+      .slot{ position:absolute; inset:0 auto auto 0; width:var(--cw); height:calc(var(--cw)*1.4);
+        border:2px dashed var(--slot-line); border-radius:8px; background:var(--slot);
+        display:flex; align-items:center; justify-content:center; text-align:center;
+        color:#eef5ee; font-size:calc(var(--cw)*.17); padding:4px; cursor:pointer; }
+      .slot.solid{ border-style:solid; }
+      .card{ position:absolute; width:var(--cw); height:calc(var(--cw)*1.4); border-radius:8px;
+        background:var(--card); color:var(--card-ink); border:1px solid #9aa39b; box-shadow:var(--shadow);
+        font:inherit; padding:0; cursor:pointer; text-align:left; }
+      .card.red{ color:var(--red); }
+      .card .corner{ position:absolute; top:3px; left:5px; font-weight:700; font-size:calc(var(--cw)*.24); line-height:1.05; text-align:center; }
+      .card .corner .s{ display:block; font-size:calc(var(--cw)*.22); }
+      .card .pip{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:calc(var(--cw)*.52); }
+      .card .corner.br{ top:auto; left:auto; bottom:3px; right:5px; transform:rotate(180deg); }
+      .card.down{ background:repeating-linear-gradient(45deg, var(--back) 0 7px, var(--back2) 7px 14px);
+        border-color:#16295a; cursor:default; }
+      .card.down::after{ content:""; position:absolute; inset:5px; border:1.5px solid rgba(255,255,255,.55); border-radius:5px; }
+      .card.selected{ outline:3.5px solid var(--gold); outline-offset:1px; transform:translateY(-7px); z-index:60 !important; }
+      .card.hintsrc{ outline:3.5px solid var(--hint); outline-offset:1px; }
+      .pile.hintdst .slot{ outline:3.5px solid var(--hint); outline-offset:1px; }
+      .pile.hintdst .card:last-child{ outline:3.5px solid var(--hint); outline-offset:1px; }
+      .card.dragging{ opacity:.35; }
+      .draglayer{ position:fixed; z-index:200; pointer-events:none; width:var(--cw); }
+      .draglayer .card{ box-shadow:0 10px 24px rgba(0,0,0,.45); }
+      .stockcount{ position:absolute; left:3px; right:3px; bottom:3px; font-size:calc(var(--cw)*.15); line-height:1.15;
+        text-align:center; color:#eef5ee; text-shadow:0 1px 2px rgba(0,0,0,.7); z-index:5; pointer-events:none; }
+      .howto{ font-size:.86rem; color:#eef5ee; margin:10px 2px 0; }
+      /* ---------- panels ---------- */
+      details.panel{ background:var(--panel); border:1px solid var(--panel-line); border-radius:12px; margin:14px 0; padding:4px 16px 14px; }
+      details.panel summary{ cursor:pointer; font-weight:700; padding:10px 0 4px; font-size:1.02rem; }
+      details.panel p, details.panel li{ font-size:.96rem; }
+      fieldset{ border:1px solid var(--panel-line); border-radius:10px; margin:12px 0; padding:10px 14px 12px; }
+      legend{ font-weight:700; padding:0 6px; }
+      label.choice{ display:flex; gap:9px; align-items:flex-start; padding:8px 6px; cursor:pointer; border-radius:8px; }
+      label.choice:hover{ background:var(--bg); }
+      label.choice input{ margin-top:4px; width:19px; height:19px; flex:none; }
+      label.choice .d{ display:block; font-size:.88rem; color:var(--muted); }
+      .aliasrow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0 2px; }
+      .aliasrow input[type="text"]{ font:inherit; padding:8px 11px; border-radius:9px; border:1px solid var(--panel-line);
+        background:var(--panel); color:var(--ink); min-width:200px; flex:1 1 200px; max-width:340px; }
+      nav.compass{ background:var(--panel); border:1px solid var(--panel-line); border-radius:12px; padding:14px 16px; margin:14px 0; }
+      nav.compass h2{ font-size:1rem; margin:0 0 8px; }
+      nav.compass ul{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+      nav.compass a{ display:inline-block; padding:9px 14px; border:1px solid var(--panel-line); border-radius:9px;
+        color:var(--ink); text-decoration:none; }
+      nav.compass a:hover{ border-color:var(--accent); }
+      footer{ color:var(--muted); font-size:.88rem; margin-top:18px; }
+      @media (prefers-reduced-motion: no-preference){
+        .winbox.show{ animation:pop .35s ease-out; }
+        @keyframes pop{ from{ transform:scale(.96); opacity:.4; } to{ transform:scale(1); opacity:1; } }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="freebar">
+        <span>Free — always free.</span>
+        <span class="small">No ads, ever · No account · Works offline once this page has loaded — it runs entirely on this device.</span>
+      </div>
+
+      <h1>Solitaire</h1>
+      <p class="sub">Klondike — the classic game. Build each suit from Ace up to King on the four home piles.
+        <span id="playingAs"></span></p>
+
+      <div class="aliasrow">
+        <label for="alias" style="font-weight:600;">Play as <span style="font-weight:400;color:var(--muted);">(optional — a name for this visit only, never required, gone when you leave)</span></label>
+        <input type="text" id="alias" maxlength="24" placeholder="Leave blank to just play" autocomplete="off" />
+      </div>
+
+      <div class="bar" role="group" aria-label="Game controls">
+        <button class="btn primary" id="btnNew">New game<span class="gest">Tap to shuffle &amp; deal</span></button>
+        <button class="btn" id="btnUndo">Undo<span class="gest">Tap to take back the last move</span></button>
+        <button class="btn" id="btnHint">Hint<span class="gest">Tap and I’ll suggest a real move</span></button>
+        <button class="btn" id="btnAuto">Send cards home<span class="gest">Tap to auto-move every card that fits a home pile</span></button>
+        <span class="stat">Moves <b id="stMoves">0</b></span>
+        <span class="stat">Time <b id="stTime">0:00</b></span>
+        <span class="stat">Score <b id="stScore">0</b></span>
+        <span class="stat" id="stStock"></span>
+      </div>
+
+      <div class="variant-banner" id="variantBanner" role="status"></div>
+      <div class="hintbox" id="hintBox" aria-live="polite"></div>
+
+      <div class="winbox" id="winBox">
+        <h2>🎉 You win!</h2>
+        <p id="winText">All four home piles are complete — Ace to King, every suit.</p>
+        <button class="btn primary" id="btnWinNew">Deal a new game<span class="gest">Tap to play again</span></button>
+      </div>
+
+      <div class="table" id="table" aria-label="Solitaire table">
+        <div class="row top">
+          <div class="pile" id="stockPile" data-pile="stock"></div>
+          <div class="pile" id="wastePile" data-pile="waste"></div>
+          <div></div>
+          <div class="pile" data-pile="foundation" data-idx="0"></div>
+          <div class="pile" data-pile="foundation" data-idx="1"></div>
+          <div class="pile" data-pile="foundation" data-idx="2"></div>
+          <div class="pile" data-pile="foundation" data-idx="3"></div>
+        </div>
+        <div class="row" id="tabRow">
+          <div class="pile tab" data-pile="tableau" data-idx="0"></div>
+          <div class="pile tab" data-pile="tableau" data-idx="1"></div>
+          <div class="pile tab" data-pile="tableau" data-idx="2"></div>
+          <div class="pile tab" data-pile="tableau" data-idx="3"></div>
+          <div class="pile tab" data-pile="tableau" data-idx="4"></div>
+          <div class="pile tab" data-pile="tableau" data-idx="5"></div>
+          <div class="pile tab" data-pile="tableau" data-idx="6"></div>
+        </div>
+        <p class="howto"><b>How to move cards:</b> tap a card, then tap where it goes — or drag it there. Mouse works the same.
+          <b>Double-tap</b> a card that can go home and it flies to its home pile. Tap the face-down stock pile to deal.</p>
+      </div>
+
+      <details class="panel">
+        <summary>How to play — tap to open</summary>
+        <ul>
+          <li><b>Goal:</b> move all 52 cards to the four home piles (top right), one pile per suit, in order Ace, 2, 3 … King.</li>
+          <li><b>Columns:</b> build downward in alternating colours — a red 7 goes on a black 8, and so on. Only a King (or a run starting with a King) can fill an empty column.</li>
+          <li><b>Moving runs:</b> any face-up run that is already in correct downward alternating order moves together — tap or drag its bottom card.</li>
+          <li><b>Stock:</b> tap the face-down pile (top left) to deal onto the waste pile. Only the top waste card can be played. When the stock runs out, tap it again to turn the waste pile back over — if your redeal rule allows.</li>
+          <li><b>Turning cards:</b> when you clear the face-up cards off a column, its top face-down card turns over automatically.</li>
+          <li><b>Undo</b> takes back one move at a time, as far back as the deal. <b>Hint</b> looks at the real position and suggests the best legal move it can find — and says plainly when it sees none.</li>
+          <li><b>Stuck?</b> If no moves remain and the stock is finished, the game is blocked — Undo to try a different line, or deal a new game.</li>
+        </ul>
+      </details>
+
+      <details class="panel" id="settingsPanel">
+        <summary>Page settings — rules, your record, saved game — tap to open</summary>
+
+        <fieldset>
+          <legend>Rules for your next game</legend>
+          <p style="margin:.2em 0 .4em;">Standard Klondike is the default. Change a rule and the game says so, out loud, while you play —
+            and a variant’s record is kept separate from the standard record, never mixed in.</p>
+          <p style="font-weight:700;margin:.7em 0 .1em;">Cards dealt from the stock</p>
+          <label class="choice"><input type="radio" name="drawRule" value="1" />
+            <span>Draw one <span class="d">Standard. One card at a time — the friendliest game.</span></span></label>
+          <label class="choice"><input type="radio" name="drawRule" value="3" />
+            <span>Draw three <span class="d">Variant. Three cards at a time; only the top one can be played. The harder classic game.</span></span></label>
+          <p style="font-weight:700;margin:.7em 0 .1em;">Turning the waste pile back over (redeals)</p>
+          <label class="choice"><input type="radio" name="redealRule" value="unlimited" />
+            <span>Unlimited redeals <span class="d">Standard. Go through the stock as many times as you like.</span></span></label>
+          <label class="choice"><input type="radio" name="redealRule" value="limited" />
+            <span>Limited — 3 redeals <span class="d">Variant. After the waste has been turned back 3 times, the stock stays empty.</span></span></label>
+          <button class="btn primary" id="btnApplyRules">Start a new game with these rules<span class="gest">Tap to deal</span></button>
+          <span class="stat" id="rulesNow"></span>
+        </fieldset>
+
+        <fieldset>
+          <legend>Your record — on this device only</legend>
+          <p id="statsText" style="margin:.2em 0;"></p>
+          <p style="margin:.2em 0;">Your game in progress and these numbers are saved on this device only — nothing is sent anywhere, and there is no account.
+            Leave mid-game and your cards will be right here when you come back.</p>
+          <button class="btn" id="btnForget">Forget my saved game &amp; record<span class="gest">Tap to wipe both from this device</span></button>
+        </fieldset>
+      </details>
+
+      <nav class="compass" aria-label="Other pages">
+        <h2>Other pages</h2>
+        <ul>
+          <li><a href="https://thethrivingplan.github.io/">Start Page ↗</a></li>
+          <li><a href="https://thethrivingplan.github.io/">The Thriving Plan ↗</a></li>
+        </ul>
+      </nav>
+
+      <footer>
+        <p>Klondike solitaire, whole and uncut — full rules, a hint helper that only suggests moves that are really there,
+          and undo all the way back to the deal. Copyleft — free to copy and share (CC BY-SA 4.0).</p>
+      </footer>
+    </div>
+
+<script>
+(function(){
+"use strict";
+var SUITS=["♠","♥","♦","♣"], RANKS=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+function isRed(s){ return s===1||s===2; }
+function cname(c){ return RANKS[c.r-1]+SUITS[c.s]; }
+
+var LS_SAVE="klondike.save.v1", LS_SET="klondike.settings.v1", LS_STATS="klondike.stats.v1";
+var settings={draw:1, redeals:"unlimited"};
+try{ var sv=JSON.parse(localStorage.getItem(LS_SET)||"null"); if(sv&&(sv.draw===1||sv.draw===3)&&(sv.redeals==="unlimited"||sv.redeals==="limited")) settings=sv; }catch(e){}
+var stats={standard:{played:0,won:0}, variant:{played:0,won:0}};
+try{ var st=JSON.parse(localStorage.getItem(LS_STATS)||"null"); if(st&&st.standard&&st.variant) stats=st; }catch(e){}
+
+var S=null, history=[], selected=null, hintHL=null, timerId=null;
+
+function isStandard(st){ return st.draw===1 && st.redeals==="unlimited"; }
+function catOf(st){ return isStandard(st)?"standard":"variant"; }
+function rulesText(st){ return "Draw "+(st.draw===1?"one":"three")+" · "+(st.redeals==="unlimited"?"Unlimited redeals":"Limited redeals (3 max)"); }
+
+function snapshot(){ return JSON.stringify({stock:S.stock,waste:S.waste,foundations:S.foundations,tableau:S.tableau,
+  moves:S.moves,score:S.score,seconds:S.seconds,started:S.started,won:S.won,passes:S.passes,settings:S.settings}); }
+function pushHistory(){ history.push(snapshot()); if(history.length>300) history.shift(); }
+function saveGame(){ try{ localStorage.setItem(LS_SAVE, snapshot()); }catch(e){} }
+function saveStats(){ try{ localStorage.setItem(LS_STATS, JSON.stringify(stats)); }catch(e){} }
+
+function newGame(st){
+  var deck=[], s, r;
+  for(s=0;s<4;s++) for(r=1;r<=13;r++) deck.push({s:s,r:r,up:false});
+  for(var i=deck.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={stock:[],waste:[],foundations:[[],[],[],[]],tableau:[[],[],[],[],[],[],[]],
+     moves:0,score:0,seconds:0,started:false,won:false,passes:0,settings:{draw:st.draw,redeals:st.redeals}};
+  for(var c=0;c<7;c++) for(var k=0;k<=c;k++){ var card=deck.pop(); card.up=(k===c); S.tableau[c].push(card); }
+  while(deck.length) S.stock.push(deck.pop());
+  history=[]; selected=null; hintHL=null;
+  stats[catOf(S.settings)].played++; saveStats();
+  setHint("");
+  render(); saveGame();
+}
+
+function restore(){
+  try{ var raw=localStorage.getItem(LS_SAVE); if(!raw) return false;
+    var d=JSON.parse(raw); if(!d||!d.tableau||!d.foundations) return false;
+    S=d; history=[]; selected=null; hintHL=null; return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- move legality ---------- */
+function topOf(p){ return p.length?p[p.length-1]:null; }
+function canFoundation(card, f){
+  var pile=S.foundations[f]; if(card.s!==f) return false;
+  if(!pile.length) return card.r===1;
+  return topOf(pile).r===card.r-1;
+}
+function canTableau(card, t){
+  var pile=S.tableau[t];
+  if(!pile.length) return card.r===13;
+  var tp=topOf(pile); return tp.up && isRed(tp.s)!==isRed(card.s) && tp.r===card.r+1;
+}
+function movableFrom(src){
+  // returns list of {pile/index info} describing stacks that can be picked up
+  var out=[];
+  if(src.kind==="waste" && S.waste.length) out.push({kind:"waste", idx:S.waste.length-1, count:1});
+  if(src.kind==="foundation"){ var p=S.foundations[src.i]; if(p.length) out.push({kind:"foundation", i:src.i, idx:p.length-1, count:1}); }
+  if(src.kind==="tableau"){ var tb=S.tableau[src.i];
+    for(var i=0;i<tb.length;i++) if(tb[i].up) out.push({kind:"tableau", i:src.i, idx:i, count:tb.length-i});
+  }
+  return out;
+}
+function getStack(sel){
+  if(sel.kind==="waste") return [topOf(S.waste)];
+  if(sel.kind==="foundation") return [topOf(S.foundations[sel.i])];
+  return S.tableau[sel.i].slice(sel.idx);
+}
+function removeStack(sel){
+  var cards;
+  if(sel.kind==="waste"){ cards=[S.waste.pop()]; }
+  else if(sel.kind==="foundation"){ cards=[S.foundations[sel.i].pop()]; }
+  else { cards=S.tableau[sel.i].splice(sel.idx); }
+  // flip newly exposed tableau card
+  if(sel.kind==="tableau"){ var p=S.tableau[sel.i], tp=topOf(p);
+    if(tp && !tp.up){ tp.up=true; S.score+=5; } }
+  return cards;
+}
+function tryMove(sel, dest){
+  var stack=getStack(sel); if(!stack.length) return false;
+  var lead=stack[0];
+  if(dest.kind==="foundation"){
+    if(stack.length!==1) return false;
+    if(sel.kind==="foundation" && sel.i===dest.i) return false;
+    if(!canFoundation(lead, dest.i)) return false;
+  } else if(dest.kind==="tableau"){
+    if(sel.kind==="tableau" && sel.i===dest.i) return false;
+    if(!canTableau(lead, dest.i)) return false;
+  } else return false;
+  pushHistory();
+  var cards=removeStack(sel);
+  if(dest.kind==="foundation"){ S.foundations[dest.i].push(cards[0]);
+    S.score += (sel.kind==="waste") ? 10 : 10;
+  } else { for(var i=0;i<cards.length;i++) S.tableau[dest.i].push(cards[i]);
+    if(sel.kind==="waste") S.score+=5;
+    if(sel.kind==="foundation") S.score=Math.max(0,S.score-15);
+  }
+  afterMove();
+  return true;
+}
+function afterMove(){
+  S.moves++; S.started=true; selected=null; hintHL=null;
+  checkWin(); render(); saveGame();
+}
+function checkWin(){
+  var n=0, i; for(i=0;i<4;i++) n+=S.foundations[i].length;
+  if(n===52 && !S.won){ S.won=true; stats[catOf(S.settings)].won++; saveStats(); }
+}
+function drawStock(){
+  if(S.won) return;
+  if(S.stock.length){
+    pushHistory();
+    var n=Math.min(S.settings.draw, S.stock.length);
+    for(var i=0;i<n;i++){ var c=S.stock.pop(); c.up=true; S.waste.push(c); }
+    S.moves++; S.started=true; selected=null; hintHL=null; render(); saveGame();
+  } else if(S.waste.length){
+    if(S.settings.redeals==="limited" && S.passes>=3){ setHint("No redeals left — the limited rule allows 3, and they’re used up. The stock stays empty for this game."); return; }
+    pushHistory();
+    S.passes++;
+    while(S.waste.length){ var c2=S.waste.pop(); c2.up=false; S.stock.push(c2); }
+    S.moves++; selected=null; hintHL=null; render(); saveGame();
+  } else setHint("The stock and waste are both empty — nothing left to deal.");
+}
+function undo(){
+  if(!history.length){ setHint("Nothing to undo — you’re at the deal."); return; }
+  var d=JSON.parse(history.pop());
+  var keepSettings=S.settings; S=d; S.settings=keepSettings.settings?keepSettings.settings:d.settings;
+  selected=null; hintHL=null; setHint("Undone. One move back.");
+  render(); saveGame();
+}
+
+/* ---------- hint engine ---------- */
+function allMoves(){
+  var moves=[], i, j, stacks, st, lead;
+  var sources=[{kind:"waste"}];
+  for(i=0;i<7;i++) sources.push({kind:"tableau", i:i});
+  for(i=0;i<4;i++) sources.push({kind:"foundation", i:i});
+  for(var si=0; si<sources.length; si++){
+    stacks=movableFrom(sources[si]);
+    for(var k=0;k<stacks.length;k++){
+      st=stacks[k]; lead=getStack(st)[0]; if(!lead) continue;
+      // to foundation
+      if(st.count===1){ for(j=0;j<4;j++){ if(canFoundation(lead,j) && !(st.kind==="foundation"&&st.i===j))
+        moves.push({sel:st, dest:{kind:"foundation", i:j}, pri:priFoundation(st, lead), desc:descMove(st, lead, "the "+SUITS[j]+" home pile")}); } }
+      // to tableau
+      for(j=0;j<7;j++){ if(st.kind==="tableau"&&st.i===j) continue;
+        if(!canTableau(lead,j)) continue;
+        var destEmpty=!S.tableau[j].length;
+        if(destEmpty && st.kind==="tableau" && st.idx===0) continue; // moving a full column to an empty column changes nothing
+        moves.push({sel:st, dest:{kind:"tableau", i:j}, pri:priTableau(st, lead, j, destEmpty), desc:descMove(st, lead, destEmpty?"the empty column":"the "+cname(topOf(S.tableau[j]))+" in column "+(j+1))});
+      }
+    }
+  }
+  moves.sort(function(a,b){ return b.pri-a.pri; });
+  return moves;
+}
+function flipsCard(st){ return st.kind==="tableau" && st.idx>0 && !S.tableau[st.i][st.idx-1].up; }
+function priFoundation(st, card){
+  var p=40;
+  if(flipsCard(st)) p+=60;
+  if(st.kind==="waste") p+=15;
+  // "safe" foundation moves: both opposite-colour foundations are within one rank
+  var oppMin=13; for(var f=0;f<4;f++){ if(isRed(f)!==isRed(card.s)) oppMin=Math.min(oppMin, S.foundations[f].length); }
+  if(card.r<=2 || oppMin>=card.r-2) p+=20; else p-=25;
+  return p;
+}
+function priTableau(st, card, dest, destEmpty){
+  var p=30;
+  if(flipsCard(st)) p+=60;
+  if(st.kind==="waste") p+=12;
+  if(st.kind==="foundation") p-=10;
+  if(destEmpty) p+= (st.count>1? 8 : -5);
+  p+= st.count; // longer runs moved = more uncovered
+  return p;
+}
+function srcName(st){
+  if(st.kind==="waste") return "the waste pile";
+  if(st.kind==="foundation") return "the "+SUITS[st.i]+" home pile";
+  return "column "+(st.i+1);
+}
+function descMove(st, card, destText){
+  var stack=getStack(st);
+  var what = stack.length>1 ? ("the run starting with "+cname(card)+" ("+stack.length+" cards)") : ("the "+cname(card));
+  return "Move "+what+" from "+srcName(st)+" onto "+destText+".";
+}
+function doHint(){
+  if(S.won){ setHint("This game is won — every card is home. Deal a new game whenever you’re ready."); return; }
+  var moves=allMoves();
+  if(moves.length){
+    var m=moves[0];
+    hintHL={sel:m.sel, dest:m.dest};
+    var extra = flipsCard(m.sel) ? " That also turns over a face-down card." : "";
+    setHint("Hint: "+m.desc+extra);
+    render(); return;
+  }
+  if(S.stock.length){ hintHL=null; setHint("Hint: no card moves right now — tap the stock pile to deal "+(S.settings.draw===1?"a card":"up to three cards")+" and look again."); render(); return; }
+  if(S.waste.length && (S.settings.redeals==="unlimited" || S.passes<3)){
+    hintHL=null; setHint("Hint: no card moves right now — tap the empty stock slot to turn the waste pile back over and go through it again."); render(); return;
+  }
+  hintHL=null;
+  setHint("I see no moves left, and the stock is finished — this game looks blocked. Undo to try a different line, or deal a new game. (I only suggest moves that are really legal; there are none I can find.)");
+  render();
+}
+function autoHome(){
+  if(S.won) return;
+  var movedAny=false, guard=0, first=true;
+  while(guard++<60){
+    var sources=[{kind:"waste"}]; for(var i=0;i<7;i++) sources.push({kind:"tableau", i:i});
+    var did=false;
+    for(var si=0; si<sources.length && !did; si++){
+      var stacks=movableFrom(sources[si]);
+      for(var k=0;k<stacks.length;k++){ var st=stacks[k]; if(st.count!==1) continue;
+        var lead=getStack(st)[0]; if(!lead) continue;
+        for(var f=0;f<4;f++){ if(canFoundation(lead,f)){
+          if(first){ pushHistory(); first=false; }
+          var cards=removeStack(st); S.foundations[f].push(cards[0]); S.score+=10;
+          movedAny=true; did=true; break;
+        } }
+        if(did) break;
+      }
+    }
+    if(!did) break;
+  }
+  if(movedAny){ S.moves++; S.started=true; selected=null; hintHL=null; checkWin(); setHint(S.won?"":"Sent every card that fits a home pile. Nice and tidy."); render(); saveGame(); }
+  else setHint("No card can go home just yet — a card only fits its own suit’s pile, one rank above the card already there.");
+}
+
+/* ---------- rendering ---------- */
+var $=function(id){ return document.getElementById(id); };
+function setHint(t){ $("hintBox").textContent=t; }
+function fmtTime(s){ return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+
+function cardEl(card, opts){
+  var b=document.createElement("button");
+  b.type="button";
+  b.className="card"+(isRed(card.s)?" red":"")+(opts.cls?" "+opts.cls:"");
+  b.style.top=opts.top+"px"; b.style.left=(opts.left||0)+"px"; b.style.zIndex=opts.z;
+  b.setAttribute("aria-label", cname(card)+(opts.where? " — "+opts.where:""));
+  b.dataset.kind=opts.sel.kind; if(opts.sel.i!==undefined) b.dataset.i=opts.sel.i;
+  if(opts.sel.idx!==undefined) b.dataset.idx=opts.sel.idx;
+  b.innerHTML='<span class="corner">'+RANKS[card.r-1]+'<span class="s">'+SUITS[card.s]+'</span></span>'+
+    '<span class="pip">'+SUITS[card.s]+'</span>'+
+    '<span class="corner br">'+RANKS[card.r-1]+'<span class="s">'+SUITS[card.s]+'</span></span>';
+  return b;
+}
+function downEl(top, z){
+  var d=document.createElement("div");
+  d.className="card down"; d.style.top=top+"px"; d.style.zIndex=z;
+  d.setAttribute("aria-hidden","true");
+  return d;
+}
+function slotEl(text, solid){
+  var d=document.createElement("div");
+  d.className="slot"+(solid?" solid":""); d.textContent=text;
+  return d;
+}
+function isSel(kind, i, idx){
+  return selected && selected.kind===kind && selected.i===i && selected.idx===idx;
+}
+function isHintSrc(kind, i, idx){
+  return hintHL && hintHL.sel.kind===kind && hintHL.sel.i===i && hintHL.sel.idx===idx;
+}
+function cw(){ var t=$("table"); return Math.min(118, (t.clientWidth-24-60)/7); }
+
+function render(){
+  var W=cw(), H=W*1.4, offD=Math.round(W*0.20), offU=Math.round(W*0.30);
+  /* stock */
+  var sp=$("stockPile"); sp.innerHTML=""; sp.style.minHeight=H+"px";
+  if(S.stock.length){
+    sp.appendChild(downEl(0,1));
+    var cnt=document.createElement("span"); cnt.className="stockcount"; cnt.textContent=S.stock.length+" left · tap to deal";
+    sp.appendChild(cnt);
+  } else {
+    var canRecycle = S.waste.length && (S.settings.redeals==="unlimited" || S.passes<3);
+    sp.appendChild(slotEl(S.waste.length ? (canRecycle? "↺ Tap to turn the waste pile back over" : "No redeals left") : "Stock empty", false));
+  }
+  /* waste (fan the top three) */
+  var wp=$("wastePile"); wp.innerHTML=""; wp.style.minHeight=H+"px";
+  if(!S.waste.length) wp.appendChild(slotEl("Waste", false));
+  var start=Math.max(0, S.waste.length-3);
+  for(var wi=start; wi<S.waste.length; wi++){
+    var wc=S.waste[wi], isTop=wi===S.waste.length-1;
+    wp.appendChild(cardEl(wc, {top:0, left:(wi-start)*Math.round(W*0.16), z:wi,
+      sel:{kind:"waste"}, cls:(isSel("waste")&&isTop?"selected":"")+(isHintSrc("waste")&&isTop?" hintsrc":""),
+      where:"waste pile"+(isTop?"":" (covered)")}));
+  }
+  /* foundations */
+  var fPiles=document.querySelectorAll('[data-pile="foundation"]');
+  for(var f=0; f<4; f++){
+    var fp=fPiles[f]; fp.innerHTML=""; fp.style.minHeight=H+"px";
+    fp.classList.toggle("hintdst", !!(hintHL && hintHL.dest.kind==="foundation" && hintHL.dest.i===f));
+    var pile=S.foundations[f];
+    if(!pile.length) fp.appendChild(slotEl(SUITS[f], true));
+    else fp.appendChild(cardEl(topOf(pile), {top:0, z:1, sel:{kind:"foundation", i:f},
+      cls:(isSel("foundation",f)?"selected":""), where:SUITS[f]+" home pile"}));
+  }
+  /* tableau */
+  var tPiles=document.querySelectorAll('[data-pile="tableau"]');
+  for(var t=0; t<7; t++){
+    var tp=tPiles[t]; tp.innerHTML="";
+    tp.classList.toggle("hintdst", !!(hintHL && hintHL.dest.kind==="tableau" && hintHL.dest.i===t));
+    var col=S.tableau[t];
+    if(!col.length){ tp.appendChild(slotEl("King", false)); tp.style.minHeight=H+"px"; continue; }
+    var y=0;
+    for(var ci=0; ci<col.length; ci++){
+      var c=col[ci];
+      if(!c.up){ tp.appendChild(downEl(y, ci)); }
+      else {
+        tp.appendChild(cardEl(c, {top:y, z:ci, sel:{kind:"tableau", i:t, idx:ci},
+          cls:(isSel("tableau",t,ci)?"selected":"")+(isHintSrc("tableau",t,ci)?" hintsrc":""),
+          where:"column "+(t+1)}));
+      }
+      y += c.up? offU : offD;
+    }
+    tp.style.minHeight=(y - (col[col.length-1].up? offU:offD) + H)+"px";
+  }
+  /* status */
+  $("stMoves").textContent=S.moves;
+  $("stTime").textContent=fmtTime(S.seconds);
+  $("stScore").textContent=S.score;
+  $("stStock").innerHTML="Stock <b>"+S.stock.length+"</b> · Redeals used <b>"+S.passes+"</b>"+(S.settings.redeals==="limited"?" of 3":"");
+  $("btnUndo").disabled=!history.length;
+  var std=isStandard(S.settings), vb=$("variantBanner");
+  if(!std){ vb.classList.add("show");
+    vb.innerHTML="<b>Variant in play:</b> "+rulesText(S.settings)+". This game counts in your variant record, kept separate from the standard record.";
+  } else vb.classList.remove("show");
+  $("rulesNow").textContent="This game: "+rulesText(S.settings)+(std?" (standard)":" (variant)");
+  $("winBox").classList.toggle("show", S.won);
+  if(S.won) $("winText").textContent="All four home piles are complete — Ace to King, every suit. "+
+    S.moves+" moves, "+fmtTime(S.seconds)+", score "+S.score+". This win is in your "+catOf(S.settings)+" record.";
+  renderStats();
+  if(timerId){ clearInterval(timerId); timerId=null; }
+  if(S.started && !S.won){ timerId=setInterval(function(){ S.seconds++; $("stTime").textContent=fmtTime(S.seconds); if(S.seconds%5===0) saveGame(); }, 1000); }
+}
+function renderStats(){
+  $("statsText").innerHTML=
+    "Standard game (draw one, unlimited redeals): <b>"+stats.standard.played+"</b> played · <b>"+stats.standard.won+"</b> won<br/>"+
+    "Variant games (any changed rule): <b>"+stats.variant.played+"</b> played · <b>"+stats.variant.won+"</b> won";
+}
+
+/* ---------- tap-to-select / tap-to-place ---------- */
+function selFromEl(el){
+  var kind=el.dataset.kind, i=el.dataset.i!==undefined?parseInt(el.dataset.i,10):undefined,
+      idx=el.dataset.idx!==undefined?parseInt(el.dataset.idx,10):undefined;
+  if(kind==="waste") return {kind:"waste", idx:S.waste.length-1, count:1};
+  if(kind==="foundation") return {kind:"foundation", i:i, idx:S.foundations[i].length-1, count:1};
+  var col=S.tableau[i]; if(idx===undefined||!col[idx]||!col[idx].up) return null;
+  return {kind:"tableau", i:i, idx:idx, count:col.length-idx};
+}
+function pileFromEl(el){
+  var p=el.closest("[data-pile]"); if(!p) return null;
+  var kind=p.dataset.pile;
+  if(kind==="foundation") return {kind:"foundation", i:parseInt(p.dataset.idx,10)};
+  if(kind==="tableau") return {kind:"tableau", i:parseInt(p.dataset.idx,10)};
+  if(kind==="waste") return {kind:"waste"};
+  if(kind==="stock") return {kind:"stock"};
+  return null;
+}
+function handleTap(target){
+  var pileEl=target.closest("[data-pile]"); if(!pileEl) return;
+  var pile=pileFromEl(target);
+  if(pile.kind==="stock"){ selected=null; drawStock(); return; }
+  var cardBtn=target.closest(".card:not(.down)");
+  if(selected){
+    // tapping a card in a different pile, or a pile slot, = destination
+    var dest=null;
+    if(cardBtn){ var cs=selFromEl(cardBtn);
+      if(cs && !(cs.kind===selected.kind && cs.i===selected.i)){ dest={kind:cs.kind, i:cs.i}; }
+    }
+    if(!dest && (pile.kind==="foundation"||pile.kind==="tableau")) dest=pile;
+    if(dest && !(dest.kind==="waste")){
+      if(tryMove(selected, dest)){ setHint(""); return; }
+      // failed: fall through to reselect the tapped card if possible
+      if(cardBtn){ var ns=selFromEl(cardBtn); if(ns){ selected=ns; hintHL=null; render(); return; } }
+      selected=null; render(); return;
+    }
+    if(cardBtn){ var ns2=selFromEl(cardBtn); selected=ns2; hintHL=null; render(); return; }
+    selected=null; render(); return;
+  }
+  if(cardBtn){ var s=selFromEl(cardBtn); if(s){ selected=s; hintHL=null; render(); } }
+}
+var suppressClick=false;
+$("table").addEventListener("click", function(ev){ if(suppressClick){ suppressClick=false; return; } handleTap(ev.target); });
+$("table").addEventListener("dblclick", function(ev){
+  var cardBtn=ev.target.closest(".card:not(.down)"); if(!cardBtn) return;
+  var s=selFromEl(cardBtn); if(!s) return;
+  var stack=getStack(s); if(stack.length!==1) { setHint("Only a single top card can fly home — that’s a run of "+stack.length+"."); return; }
+  for(var f=0;f<4;f++){ if(canFoundation(stack[0], f)){ selected=null; if(tryMove(s,{kind:"foundation",i:f})) setHint(cname(stack[0])+" sent home."); return; } }
+  setHint("The "+cname(stack[0])+" can’t go home yet — its suit’s pile needs the "+(stack[0].r>1?RANKS[stack[0].r-2]:"Ace")+" first.");
+});
+
+/* ---------- drag (pointer) ---------- */
+var drag=null;
+$("table").addEventListener("pointerdown", function(ev){
+  var cardBtn=ev.target.closest(".card:not(.down)"); if(!cardBtn) return;
+  var s=selFromEl(cardBtn); if(!s) return;
+  drag={sel:s, x0:ev.clientX, y0:ev.clientY, active:false, layer:null, srcEl:cardBtn};
+});
+window.addEventListener("pointermove", function(ev){
+  if(!drag) return;
+  if(!drag.active){
+    if(Math.hypot(ev.clientX-drag.x0, ev.clientY-drag.y0)<9) return;
+    drag.active=true; suppressClick=true;
+    var stack=getStack(drag.sel), W=cw(), offU=Math.round(W*0.30);
+    var layer=document.createElement("div"); layer.className="draglayer";
+    layer.style.setProperty("--cw", W+"px");
+    for(var i=0;i<stack.length;i++){
+      var cl=cardEl(stack[i], {top:i*offU, z:i, sel:{kind:"waste"}, where:""});
+      cl.style.position="absolute"; layer.appendChild(cl);
+    }
+    layer.style.left=(drag.x0-W/2)+"px"; layer.style.top=(drag.y0-20)+"px";
+    document.body.appendChild(layer); drag.layer=layer;
+    drag.srcEl.classList.add("dragging");
+  }
+  drag.layer.style.left=(ev.clientX-cw()/2)+"px"; drag.layer.style.top=(ev.clientY-20)+"px";
+});
+window.addEventListener("pointerup", function(ev){
+  if(!drag) return;
+  var d=drag; drag=null;
+  if(!d.active) return;
+  d.layer.remove(); d.srcEl.classList.remove("dragging");
+  var under=document.elementFromPoint(ev.clientX, ev.clientY);
+  var dest=under? pileFromEl(under):null;
+  if(dest && (dest.kind==="foundation"||dest.kind==="tableau")){
+    if(tryMove(d.sel, dest)){ setHint(""); return; }
+  }
+  render();
+});
+
+/* ---------- controls ---------- */
+$("btnNew").addEventListener("click", function(){ newGame(settings); setHint("Fresh game dealt — "+rulesText(S.settings)+". Tap the stock to start, or move any card that fits."); });
+$("btnWinNew").addEventListener("click", function(){ newGame(settings); });
+$("btnUndo").addEventListener("click", undo);
+$("btnHint").addEventListener("click", doHint);
+$("btnAuto").addEventListener("click", autoHome);
+$("btnApplyRules").addEventListener("click", function(){
+  var d=document.querySelector('input[name="drawRule"]:checked');
+  var r=document.querySelector('input[name="redealRule"]:checked');
+  settings={draw:parseInt(d.value,10), redeals:r.value};
+  try{ localStorage.setItem(LS_SET, JSON.stringify(settings)); }catch(e){}
+  newGame(settings);
+  setHint("New game with your rules: "+rulesText(settings)+(isStandard(settings)?" — the standard game.":" — a variant, and the game will keep saying so while you play."));
+  document.getElementById("settingsPanel").open=false;
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+$("btnForget").addEventListener("click", function(){
+  try{ localStorage.removeItem(LS_SAVE); localStorage.removeItem(LS_STATS); }catch(e){}
+  stats={standard:{played:0,won:0}, variant:{played:0,won:0}};
+  newGame(settings);
+  setHint("Forgotten — saved game and record wiped from this device. A fresh game is dealt.");
+});
+$("alias").addEventListener("input", function(ev){
+  var v=ev.target.value.trim();
+  $("playingAs").textContent = v? ("Playing as "+v+" — for this visit only.") : "";
+});
+window.addEventListener("resize", function(){ render(); });
+
+/* ---------- init ---------- */
+(function init(){
+  var dEl=document.querySelector('input[name="drawRule"][value="'+settings.draw+'"]');
+  var rEl=document.querySelector('input[name="redealRule"][value="'+settings.redeals+'"]');
+  if(dEl) dEl.checked=true; if(rEl) rEl.checked=true;
+  if(!restore()) newGame(settings);
+  else { render(); setHint("Welcome back — your game in progress was saved on this device, right where you left it."); }
+})();
+})();
+</script>
+</body>
+</html>
