@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Tournament Builder</title>
+<style>
+  :root{
+    --bg:#f4f2ec;
+    --surface:#fffdf7;
+    --surface2:#ece8db;
+    --ink:#1c2430;
+    --ink-soft:#4a5568;
+    --line:#c9c2ae;
+    --line-strong:#8a8268;
+    --accent:#b34700;       /* burnt orange */
+    --accent-ink:#ffffff;
+    --green:#1d6b4f;
+    --green-soft:#dcebe2;
+    --gold:#8a6d00;
+    --gold-soft:#f3e9c3;
+    --red:#9c2b1e;
+    --code-bg:#1c2430;
+    --code-ink:#ffd98a;
+    --shadow:0 1px 3px rgba(28,36,48,.14), 0 6px 18px rgba(28,36,48,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14181f;
+      --surface:#1e242e;
+      --surface2:#262d39;
+      --ink:#eef0e9;
+      --ink-soft:#aeb6c2;
+      --line:#3d4655;
+      --line-strong:#6b7688;
+      --accent:#e0681c;
+      --accent-ink:#ffffff;
+      --green:#4cc08d;
+      --green-soft:#1e3a2f;
+      --gold:#e3c34f;
+      --gold-soft:#3a3319;
+      --red:#e07a6a;
+      --code-bg:#0b0e13;
+      --code-ink:#ffd98a;
+      --shadow:0 1px 3px rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px;line-height:1.5;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.15;margin:0}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{cursor:pointer;font:inherit}
+  a{color:var(--accent)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+
+  /* ---------- free banner ---------- */
+  .freebar{
+    background:var(--green);color:#fff;text-align:center;
+    padding:10px 14px;font-weight:700;letter-spacing:.02em;font-size:15px;
+  }
+  .freebar span{font-weight:400;opacity:.92}
+  @media (prefers-color-scheme: dark){.freebar{background:#17573f}}
+
+  /* ---------- compass ---------- */
+  .compass{
+    display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
+    padding:12px 2px 0;font-size:14px;color:var(--ink-soft);
+  }
+  .compass strong{color:var(--ink);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+  .compass a{color:var(--ink);text-decoration:none;border-bottom:2px solid var(--line);padding:6px 2px;display:inline-block}
+  .compass a:hover{border-color:var(--accent)}
+
+  /* ---------- hero ---------- */
+  .hero{padding:26px 0 8px}
+  .hero h1{font-size:clamp(34px,7vw,54px);letter-spacing:-.01em}
+  .hero p.lede{font-size:18px;color:var(--ink-soft);max-width:640px;margin:10px 0 0}
+  .hero .device-note{
+    margin-top:14px;display:inline-block;background:var(--surface2);
+    border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:14px;
+  }
+
+  /* ---------- sections / cards ---------- */
+  section.block{margin-top:34px}
+  section.block > h2{font-size:26px;margin-bottom:4px}
+  section.block > .sub{color:var(--ink-soft);margin:0 0 14px;max-width:680px}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);padding:18px;
+  }
+  .card + .card{margin-top:14px}
+  label.f{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+  label.f:first-child{margin-top:0}
+  .hint{font-size:13.5px;color:var(--ink-soft);margin:4px 0 0}
+  input[type="text"],select{
+    width:100%;padding:9px 11px;font:inherit;color:var(--ink);
+    background:var(--surface);border:1.5px solid var(--line-strong);border-radius:7px;
+  }
+  input[type="text"]:focus,select:focus{outline:3px solid var(--gold-soft);border-color:var(--accent)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:560px){.row2{grid-template-columns:1fr}}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border-radius:8px;border:1.5px solid var(--line-strong);
+    background:var(--surface);color:var(--ink);
+    padding:9px 16px;font-weight:700;font-size:15px;text-decoration:none;
+    min-height:44px;
+  }
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn.green{background:var(--green);border-color:var(--green);color:#fff}
+  @media (prefers-color-scheme: dark){.btn.green{color:#0d1512}}
+  .btn.small{min-height:38px;padding:6px 12px;font-size:14px}
+  .btn.danger{color:var(--red);border-color:var(--red)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btnrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+
+  /* ---------- player entry ---------- */
+  .player-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .player-row .seed{
+    flex:0 0 34px;height:34px;border-radius:50%;background:var(--surface2);
+    border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:14px;
+  }
+  .player-row input{flex:1}
+  .player-row .rm{
+    flex:0 0 44px;width:44px;padding:0;font-size:18px;line-height:1;
+  }
+  .countline{font-size:14px;color:var(--ink-soft);margin-top:10px}
+  .countline.bad{color:var(--red);font-weight:700}
+  .err{
+    display:none;background:#fbe9e5;border:1.5px solid var(--red);color:#7c1d12;
+    border-radius:8px;padding:10px 12px;margin-top:14px;font-weight:600;
+  }
+  @media (prefers-color-scheme: dark){.err{background:#3a1d18;color:#ffb4a3}}
+  .err.show{display:block}
+
+  /* ---------- saved list ---------- */
+  .saved-item{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+    border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--surface);
+  }
+  .saved-item + .saved-item{margin-top:10px}
+  .saved-item .meta{font-size:13.5px;color:var(--ink-soft)}
+  .saved-item .tname{font-weight:800;font-size:16px}
+  .empty{color:var(--ink-soft);font-style:italic}
+
+  /* ---------- tournament header ---------- */
+  .t-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .t-head h3{font-size:24px;margin-right:auto}
+  .badge{
+    display:inline-block;font-size:12.5px;font-weight:800;letter-spacing:.04em;
+    border-radius:999px;padding:4px 11px;border:1.5px solid var(--line-strong);
+    background:var(--surface2);color:var(--ink);text-transform:uppercase;
+  }
+  .badge.gold{background:var(--gold-soft);border-color:var(--gold);color:var(--ink)}
+  .badge.green{background:var(--green-soft);border-color:var(--green);color:var(--ink)}
+  .champion{
+    margin-top:14px;background:var(--gold-soft);border:2px solid var(--gold);
+    border-radius:10px;padding:16px;text-align:center;
+  }
+  .champion .big{font-family:Georgia,serif;font-size:28px;font-weight:700}
+  .champion p{margin:4px 0 0;color:var(--ink-soft)}
+
+  /* ---------- bracket ---------- */
+  .rounds{display:grid;gap:18px;margin-top:16px}
+  @media (min-width:820px){
+    .rounds{grid-auto-flow:column;grid-auto-columns:1fr;align-items:start}
+  }
+  .round h4{
+    margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft);
+  }
+  .match{
+    background:var(--surface);border:1.5px solid var(--line);border-radius:9px;
+    padding:12px;margin-bottom:12px;box-shadow:var(--shadow);
+  }
+  .match.decided{border-color:var(--green)}
+  .match.bye{border-style:dashed;box-shadow:none;background:var(--surface2)}
+  .match .m-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .match .m-label{font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+  .code{
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:700;
+    background:var(--code-bg);color:var(--code-ink);border-radius:5px;padding:3px 8px;font-size:14px;letter-spacing:.08em;
+  }
+  .slot{
+    display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+    border:1.5px solid var(--line);background:var(--surface);color:var(--ink);
+    border-radius:7px;padding:9px 11px;margin-top:7px;font-size:15.5px;min-height:46px;
+  }
+  .slot .nm{flex:1;font-weight:600;overflow-wrap:anywhere}
+  .slot .sd{font-size:12px;color:var(--ink-soft);font-weight:700}
+  .slot.winner{border-color:var(--green);background:var(--green-soft)}
+  .slot.winner .nm{font-weight:800}
+  .slot.loser{opacity:.55}
+  .slot.tbd{font-style:italic;color:var(--ink-soft);cursor:default}
+  button.slot:not(.tbd):hover{border-color:var(--accent)}
+  .slot .winmark{font-weight:800;color:var(--green);font-size:13px;white-space:nowrap}
+  .slot .tapcue{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+  .m-note{font-size:13px;color:var(--ink-soft);margin-top:8px}
+  .m-note .corrected{color:var(--red);font-weight:700}
+  .m-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+  .linkbtn{
+    background:none;border:none;color:var(--accent);font-weight:700;font-size:13.5px;
+    padding:8px 6px;text-decoration:underline;min-height:36px;
+  }
+
+  /* ---------- standings ---------- */
+  table.stand{width:100%;border-collapse:collapse;margin-top:6px}
+  table.stand th,table.stand td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--line)}
+  table.stand th{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+  table.stand td.num,table.stand th.num{text-align:center}
+  table.stand tr.leader td{font-weight:800;background:var(--green-soft)}
+
+  /* ---------- join ---------- */
+  .join-flex{display:flex;gap:10px;flex-wrap:wrap}
+  .join-flex input{flex:1 1 180px;text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;letter-spacing:.14em}
+  .join-result{margin-top:14px}
+  .join-result .card{border-color:var(--green)}
+
+  /* ---------- record log ---------- */
+  .log{list-style:none;margin:10px 0 0;padding:0;font-size:14px}
+  .log li{padding:7px 0;border-bottom:1px dashed var(--line)}
+  .log li:last-child{border-bottom:none}
+  .log .when{color:var(--ink-soft);font-size:12.5px;display:block}
+
+  details.deep{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:4px 18px 14px}
+  details.deep summary{font-weight:800;padding:12px 0;cursor:pointer;min-height:44px}
+  details.deep p,details.deep li{color:var(--ink-soft);font-size:15px}
+  details.deep li{margin-top:5px}
+
+  footer{margin-top:44px;border-top:2px solid var(--line);padding-top:16px;font-size:14px;color:var(--ink-soft)}
+  footer p{margin:6px 0}
+</style>
+</head>
+<body>
+
+<div class="freebar">FREE — always free. <span>No ads, no account, no sign-up. Works offline once it has loaded — everything below runs on this one device.</span></div>
+
+<div class="wrap">
+
+  <nav class="compass" aria-label="Other pages">
+    <strong>Other pages</strong>
+    <a href="../start-page/">Start Page</a>
+    <a href="../the-thriving-plan/">The Thriving Plan</a>
+    <a href="../bowling/">Bowling</a>
+    <a href="../chess/">Chess</a>
+    <a href="../checkers/">Checkers</a>
+    <a href="../solitaire/">Solitaire</a>
+    <a href="../blackjack/">Blackjack</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Tournament Builder</h1>
+    <p class="lede">Name it, pick a game from the shelf, pick a shape, write in the players — and get a real bracket with a table for every match. Play it out by tapping who won. That is the whole job, and this page does all of it.</p>
+    <p class="device-note"><strong>Where it lives:</strong> the bracket lives on the host's device only — this device, this browser. There is no live sync between devices and no account holding it. Bring this device back and the tournament is right where you left it.</p>
+  </header>
+
+  <!-- ================= BUILD ================= -->
+  <section class="block" id="build">
+    <h2>Build a tournament</h2>
+    <p class="sub">Players are just names for tonight — a session name or an alias is all anyone ever needs here. Nobody needs a claimed table name, and nobody needs an account.</p>
+
+    <div class="card">
+      <label class="f" for="tName">Tournament name</label>
+      <input type="text" id="tName" placeholder="e.g. Friday Night Chess at the Plaza" maxlength="60" autocomplete="off" />
+
+      <div class="row2">
+        <div>
+          <label class="f" for="tGame">Game — pick from the shelf</label>
+          <select id="tGame">
+            <option value="bowling">Bowling</option>
+            <option value="chess">Chess</option>
+            <option value="checkers">Checkers</option>
+            <option value="solitaire">Solitaire</option>
+            <option value="blackjack">Blackjack</option>
+          </select>
+          <p class="hint" id="gameHow">A match is one full game. Highest score wins the match.</p>
+        </div>
+        <div>
+          <label class="f" for="tFormat">Format — pick the shape</label>
+          <select id="tFormat">
+            <option value="elim">Single elimination — lose once and you're out</option>
+            <option value="rr">Round robin — everybody plays everybody</option>
+          </select>
+          <p class="hint" id="formatHow">One loss ends a run. The last player standing is champion. If the player count isn't a power of two (2, 4, 8, or 16), the top seeds get a bye in round one — shown honestly on the bracket, never hidden.</p>
+        </div>
+      </div>
+
+      <label class="f">Players — 2 to 16</label>
+      <p class="hint">The order below is the seeding: player 1 is the top seed. Not sure of a name? Tap “Give me an alias” and take the one it offers — an alias is a full player here, same as any name.</p>
+      <div id="playerList"></div>
+      <p class="countline" id="countLine"></p>
+      <div class="btnrow">
+        <button type="button" class="btn small" id="addPlayer">Add a player — tap to add</button>
+        <button type="button" class="btn small" id="aliasBtn">Give me an alias — tap for a random name</button>
+        <button type="button" class="btn small" id="shuffleBtn">Shuffle the seeds — tap to shuffle</button>
+      </div>
+      <p class="hint" id="seedNote">Seeding so far: <strong>the order entered</strong>. If you shuffle, the bracket will say so — seeding is always labelled, never quiet.</p>
+
+      <div class="err" id="formErr" role="alert"></div>
+      <div class="btnrow">
+        <button type="button" class="btn primary" id="buildBtn" style="font-size:17px;padding:12px 22px">Build the bracket — tap to build</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= JOIN ================= -->
+  <section class="block" id="join">
+    <h2>Join a table</h2>
+    <p class="sub">Every match sits at its own table with a short code, printed right on the match. Type the code here and this page seats you at that match. All you need is the code — and the alias you're playing under in that tournament.</p>
+    <div class="card">
+      <label class="f" for="joinCode">Table code</label>
+      <div class="join-flex">
+        <input type="text" id="joinCode" placeholder="e.g. K7QX" maxlength="6" autocomplete="off" autocapitalize="characters" />
+        <button type="button" class="btn green" id="joinBtn" style="min-height:48px">Join a table — tap to join</button>
+      </div>
+      <div class="join-result" id="joinResult"></div>
+    </div>
+  </section>
+
+  <!-- ================= ACTIVE ================= -->
+  <section class="block" id="activeSection" hidden>
+    <h2>The tournament</h2>
+    <p class="sub">When a match is played, tap the winner's name on the match — tap to record the win. The bracket moves them on by itself. A result is never quietly rewritten: fix one and the record says it was corrected, out loud.</p>
+    <div id="activeArea"></div>
+  </section>
+
+  <!-- ================= SAVED ================= -->
+  <section class="block" id="saved">
+    <h2>Tournaments on this device</h2>
+    <p class="sub">Saved on this device only, in this browser — nothing is sent anywhere. Re-open one and carry on where you stopped. Clearing the browser's site data clears these too.</p>
+    <div id="savedList"></div>
+  </section>
+
+  <!-- ================= DEPTH ================= -->
+  <details class="deep">
+    <summary>How the bracket works — tap to open</summary>
+    <p><strong>Seeding.</strong> The order players are entered is the seeding, unless you tap shuffle — and the bracket is labelled with whichever one was used. Seed 1 meets the lowest seed, seed 2 the next lowest, the way real brackets have always been drawn.</p>
+    <p><strong>Byes, honestly.</strong> Single elimination needs 2, 4, 8, or 16 players to fill cleanly. With any other count, the top seeds sit out round one on a bye — the bracket shows the bye as a bye, with the player already through. Nobody is quietly dropped and no fake opponent is invented.</p>
+    <p><strong>Tables and codes.</strong> Every playable match gets its own table code. The code is how a player finds their match with the Join a table door above. Bowling tables carry the code into the game itself, because Bowling's rooms already speak table codes; for the other games, the code seats you here and the game is one tap away.</p>
+    <p><strong>Round robin.</strong> Everybody plays everybody once. The standings count wins; when every match is in, the player on top is champion. If two or more finish level at the top, the page says so plainly — settle it with a playoff match of your own and record it as a new tournament, rather than the page pretending a tie isn't a tie.</p>
+    <p><strong>Corrections.</strong> Tap the other name on a finished match and the page asks you to confirm before it changes anything. A confirmed change is written into the record as a correction, with the old result still visible in the log. If a later match has already been played off the old result, the page won't let the correction through until that later match is cleared — the record never contradicts itself.</p>
+    <p><strong>Solitaire and Blackjack matches.</strong> Both are played head-to-head here: Solitaire as the same deal raced side by side (first clear, or fewest moves, wins — agree it before you start), Blackjack as a set number of hands with the bigger chip stack taking the match. The bracket only needs a winner; how you settle it at the table is yours.</p>
+  </details>
+
+  <footer>
+    <p><strong>Tournament Builder</strong> — part of the house games shelf, beside Bowling, Chess, Checkers, Solitaire, and Blackjack.</p>
+    <p>Free, always free. No ads, ever. No account, no connection needed, nothing leaves this device. Copyleft — CC BY-SA 4.0; build on it and pass it on under the same freedom.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- data ---------------- */
+  var GAME_INFO = {
+    bowling:   { label:"Bowling",   slug:"bowling",   rooms:true,  how:"A match is one full game. Highest score wins the match." },
+    chess:     { label:"Chess",     slug:"chess",     rooms:false, how:"A match is one full game. Checkmate, resignation, or an agreed result decides it — if it's a draw, play a decider and record that winner." },
+    checkers:  { label:"Checkers",  slug:"checkers",  rooms:false, how:"A match is one full game. Capture or block every opposing piece to win it." },
+    solitaire: { label:"Solitaire", slug:"solitaire", rooms:false, how:"A match is the same deal raced side by side. Agree before you start: first to clear it wins, or fewest moves wins." },
+    blackjack: { label:"Blackjack", slug:"blackjack", rooms:false, how:"A match is a set of hands you agree on first — say twenty. The bigger chip stack at the end wins the match. Play chips only; nothing real is ever wagered." }
+  };
+  var FORMAT_HOW = {
+    elim: "One loss ends a run. The last player standing is champion. If the player count isn't a power of two (2, 4, 8, or 16), the top seeds get a bye in round one — shown honestly on the bracket, never hidden.",
+    rr:   "Everybody plays everybody once, in rounds. Wins stack up in the standings, and the player on top when the last match is in is champion."
+  };
+  var ALIAS_A = ["Velvet","Turbo","Midnight","Copper","Lucky","Silent","Rapid","Golden","Iron","Cosmic","Dusty","Electric","Mellow","Scarlet","Patient","Rowdy","Amber","Hollow","Vivid","Gentle"];
+  var ALIAS_B = ["Fox","Otter","Comet","Badger","Falcon","Walrus","Coyote","Heron","Moose","Lynx","Raven","Bison","Ocelot","Marlin","Vole","Jackal","Panda","Stoat","Tapir","Wombat"];
+  var CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+  var LS_KEY = "tournament-builder-v1";
+  var store = loadStore();
+
+  function loadStore(){
+    try{
+      var raw = localStorage.getItem(LS_KEY);
+      if(raw){ var p = JSON.parse(raw); if(p && Array.isArray(p.tournaments)) return p; }
+    }catch(e){}
+    return { tournaments:[], activeId:null };
+  }
+  function saveStore(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); }catch(e){}
+  }
+  function uid(){ return "t" + Date.now().toString(36) + Math.floor(Math.random()*9999).toString(36); }
+  function nowStr(){ return new Date().toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); }
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function newCode(used){
+    var c, tries=0;
+    do{
+      c = "";
+      for(var i=0;i<4;i++) c += CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];
+      tries++;
+    }while(used[c] && tries<60);
+    used[c] = true;
+    return c;
+  }
+  function randomAlias(taken){
+    for(var i=0;i<40;i++){
+      var a = ALIAS_A[Math.floor(Math.random()*ALIAS_A.length)] + " " + ALIAS_B[Math.floor(Math.random()*ALIAS_B.length)];
+      if(Math.random()<0.3) a += " " + (2+Math.floor(Math.random()*98));
+      if(!taken || taken.indexOf(a.toLowerCase())<0) return a;
+    }
+    return "Player " + Math.floor(Math.random()*900+100);
+  }
+
+  /* ---------------- player entry form ---------------- */
+  var playerList = document.getElementById("playerList");
+  var countLine  = document.getElementById("countLine");
+  var seedNote   = document.getElementById("seedNote");
+  var formErr    = document.getElementById("formErr");
+  var seedMode   = "entered"; // or "shuffled"
+
+  function playerInputs(){ return Array.prototype.slice.call(playerList.querySelectorAll("input")); }
+  function currentNames(){
+    return playerInputs().map(function(i){ return i.value.trim(); });
+  }
+  function refreshForm(){
+    var inputs = playerInputs();
+    inputs.forEach(function(inp, idx){
+      var row = inp.parentNode;
+      row.querySelector(".seed").textContent = idx+1;
+      row.querySelector(".rm").disabled = inputs.length<=2;
+    });
+    var n = inputs.length;
+    var entered = currentNames().filter(function(s){ return s.length>0; }).length;
+    countLine.textContent = entered===0
+      ? "0 players entered — add at least 2 names or aliases to build. (" + n + " rows ready, up to 16.)"
+      : entered + " player" + (entered===1?"":"s") + " entered of " + n + " rows (16 max) — " +
+        (entered<2 ? "you need at least 2 entered to build." : "tap Build when the list is right.");
+    countLine.className = "countline" + (entered<2 ? " bad" : "");
+    document.getElementById("addPlayer").disabled = n>=16;
+  }
+  function addPlayerRow(name){
+    if(playerInputs().length>=16) return;
+    var row = document.createElement("div");
+    row.className = "player-row";
+    row.innerHTML = '<span class="seed"></span>' +
+      '<input type="text" maxlength="28" autocomplete="off" placeholder="Player name or alias" />' +
+      '<button type="button" class="btn small rm" aria-label="Remove this player" title="Remove — tap to remove">&times;</button>';
+    row.querySelector("input").value = name || "";
+    row.querySelector(".rm").addEventListener("click", function(){
+      row.parentNode.removeChild(row);
+      seedMode = "entered"; updateSeedNote();
+      refreshForm();
+    });
+    playerList.appendChild(row);
+    refreshForm();
+  }
+  function updateSeedNote(){
+    seedNote.innerHTML = seedMode==="shuffled"
+      ? 'Seeding so far: <strong>shuffled</strong> — the order below is the shuffled draw, and the bracket will be labelled “Shuffled draw”.'
+      : 'Seeding so far: <strong>the order entered</strong>. If you shuffle, the bracket will say so — seeding is always labelled, never quiet.';
+  }
+  addPlayerRow(""); addPlayerRow(""); addPlayerRow(""); addPlayerRow("");
+  refreshForm();
+
+  document.getElementById("addPlayer").addEventListener("click", function(){
+    addPlayerRow("");
+    var ins = playerInputs(); ins[ins.length-1].focus();
+  });
+  document.getElementById("aliasBtn").addEventListener("click", function(){
+    var taken = currentNames().map(function(s){return s.toLowerCase();});
+    var alias = randomAlias(taken);
+    var ins = playerInputs();
+    for(var i=0;i<ins.length;i++){ if(!ins[i].value.trim()){ ins[i].value = alias; ins[i].focus(); return; } }
+    if(ins.length<16){ addPlayerRow(alias); }
+  });
+  document.getElementById("shuffleBtn").addEventListener("click", function(){
+    var names = currentNames();
+    for(var i=names.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t = names[i]; names[i]=names[j]; names[j]=t;
+    }
+    playerInputs().forEach(function(inp, idx){ inp.value = names[idx]; });
+    seedMode = "shuffled"; updateSeedNote();
+  });
+
+  var gameSel = document.getElementById("tGame");
+  var fmtSel  = document.getElementById("tFormat");
+  gameSel.addEventListener("change", function(){
+    document.getElementById("gameHow").textContent = GAME_INFO[gameSel.value].how;
+  });
+  fmtSel.addEventListener("change", function(){
+    document.getElementById("formatHow").textContent = FORMAT_HOW[fmtSel.value];
+  });
+
+  /* ---------------- bracket construction ---------------- */
+  function seedOrder(size){
+    // standard bracket seeding permutation
+    var order = [1,2];
+    while(order.length < size){
+      var next = [], sum = order.length*2 + 1;
+      for(var i=0;i<order.length;i++){ next.push(order[i]); next.push(sum - order[i]); }
+      order = next;
+    }
+    return order;
+  }
+  function nextPow2(n){ var p=2; while(p<n) p*=2; return p; }
+
+  function buildElim(players){
+    var n = players.length, size = nextPow2(n), used = {};
+    var order = seedOrder(size); // seed numbers per bracket slot
+    var roundsCount = Math.round(Math.log(size)/Math.log(2));
+    var rounds = [];
+    // round 0 from slot pairs
+    var r0 = [];
+    for(var i=0;i<size;i+=2){
+      var s1 = order[i], s2 = order[i+1];
+      var p1 = s1<=n ? {name:players[s1-1], seed:s1} : null;
+      var p2 = s2<=n ? {name:players[s2-1], seed:s2} : null;
+      var m = { id:uid(), p1:p1, p2:p2, winner:null, code:null, bye:false, corrected:false, history:[] };
+      if(p1 && !p2){ m.bye = true; m.winner = p1; }
+      if(p2 && !p1){ m.bye = true; m.winner = p2; }
+      if(!m.bye) m.code = newCode(used);
+      r0.push(m);
+    }
+    rounds.push(r0);
+    for(var r=1;r<roundsCount;r++){
+      var rm = [], count = size/Math.pow(2,r+1);
+      for(var k=0;k<count;k++){
+        rm.push({ id:uid(), p1:null, p2:null, winner:null, code:newCode(used), bye:false, corrected:false, history:[] });
+      }
+      rounds.push(rm);
+    }
+    // push bye winners (and any pre-set) into round 1
+    if(roundsCount>1){
+      r0.forEach(function(m, idx){
+        if(m.winner) placeWinner(rounds, 0, idx, m.winner);
+      });
+    }
+    return rounds;
+  }
+  function placeWinner(rounds, r, idx, player){
+    var nxt = rounds[r+1]; if(!nxt) return;
+    var target = nxt[Math.floor(idx/2)];
+    if(idx%2===0) target.p1 = player; else target.p2 = player;
+  }
+  function removeWinner(rounds, r, idx){
+    var nxt = rounds[r+1]; if(!nxt) return;
+    var target = nxt[Math.floor(idx/2)];
+    if(idx%2===0) target.p1 = null; else target.p2 = null;
+  }
+
+  function buildRR(players){
+    // circle method rounds; with an odd count one player rests each round (shown, not hidden)
+    var used = {};
+    var arr = players.map(function(name, i){ return {name:name, seed:i+1}; });
+    if(arr.length%2===1) arr.push(null);
+    var m = arr.length, rounds = [];
+    var ring = arr.slice();
+    for(var r=0;r<m-1;r++){
+      var rm = [];
+      for(var i=0;i<m/2;i++){
+        var a = ring[i], b = ring[m-1-i];
+        if(a && b){
+          rm.push({ id:uid(), p1:a, p2:b, winner:null, code:newCode(used), bye:false, corrected:false, history:[] });
+        } else {
+          var who = a || b;
+          rm.push({ id:uid(), p1:who, p2:null, winner:null, code:null, bye:true, rest:true, corrected:false, history:[] });
+        }
+      }
+      rounds.push(rm);
+      ring.splice(1, 0, ring.pop());
+    }
+    return rounds;
+  }
+
+  function showErr(msg){
+    formErr.textContent = msg;
+    formErr.classList.add("show");
+    formErr.scrollIntoView({behavior:"smooth", block:"center"});
+  }
+  function hideErr(){ formErr.classList.remove("show"); }
+
+  document.getElementById("buildBtn").addEventListener("click", function(){
+    hideErr();
+    var names = currentNames().filter(function(s){ return s.length>0; });
+    var all = currentNames();
+    if(all.some(function(s){ return !s; }) && names.length!==all.length){
+      // empty rows are simply ignored only if enough names remain; be plain about it
+    }
+    if(names.length<2){ showErr("A tournament needs at least 2 players with names. Fill in two rows — or tap “Give me an alias” and take what's offered."); return; }
+    if(names.length>16){ showErr("Sixteen players is the most one bracket here holds. Take a few names off the list."); return; }
+    var seen = {}, dup = null;
+    names.forEach(function(s){ var k=s.toLowerCase(); if(seen[k]) dup=s; seen[k]=true; });
+    if(dup){ showErr("“" + dup + "” is on the list twice. Two players can't share one name in a bracket — give one of them an alias."); return; }
+
+    var game = gameSel.value, format = fmtSel.value;
+    var t = {
+      id: uid(),
+      name: document.getElementById("tName").value.trim() || (GAME_INFO[game].label + " Tournament"),
+      game: game, format: format,
+      seeding: seedMode,
+      players: names.slice(),
+      created: nowStr(),
+      log: [{ when: nowStr(), text: "Tournament built — " + GAME_INFO[game].label + ", " +
+              (format==="elim" ? "single elimination" : "round robin") + ", " + names.length +
+              " players, seeding: " + (seedMode==="shuffled" ? "shuffled draw" : "order entered") + "." }]
+    };
+    t.rounds = format==="elim" ? buildElim(names) : buildRR(names);
+    store.tournaments.unshift(t);
+    store.activeId = t.id;
+    saveStore();
+    renderAll();
+    document.getElementById("activeSection").scrollIntoView({behavior:"smooth"});
+  });
+
+  /* ---------------- tournament helpers ---------------- */
+  function getActive(){
+    for(var i=0;i<store.tournaments.length;i++) if(store.tournaments[i].id===store.activeId) return store.tournaments[i];
+    return null;
+  }
+  function findMatch(t, matchId){
+    for(var r=0;r<t.rounds.length;r++)
+      for(var i=0;i<t.rounds[r].length;i++)
+        if(t.rounds[r][i].id===matchId) return { match:t.rounds[r][i], round:r, index:i };
+    return null;
+  }
+  function allMatches(t){
+    var out = [];
+    t.rounds.forEach(function(rm){ rm.forEach(function(m){ out.push(m); }); });
+    return out;
+  }
+  function championOf(t){
+    if(t.format==="elim"){
+      var finalRound = t.rounds[t.rounds.length-1];
+      return finalRound[0].winner || null;
+    }
+    var ms = allMatches(t).filter(function(m){ return !m.bye; });
+    var done = ms.every(function(m){ return !!m.winner; });
+    if(!done) return null;
+    var st = standings(t);
+    if(st.length && (st.length===1 || st[0].wins>st[1].wins)) return { name:st[0].name, seed:st[0].seed };
+    return null;
+  }
+  function isTiedTop(t){
+    if(t.format!=="rr") return false;
+    var ms = allMatches(t).filter(function(m){ return !m.bye; });
+    if(!ms.every(function(m){ return !!m.winner; })) return false;
+    var st = standings(t);
+    return st.length>1 && st[0].wins===st[1].wins;
+  }
+  function standings(t){
+    var map = {};
+    t.players.forEach(function(name, i){ map[name] = { name:name, seed:i+1, wins:0, losses:0, played:0 }; });
+    allMatches(t).forEach(function(m){
+      if(m.bye || !m.winner) return;
+      var loser = (m.winner.name===m.p1.name) ? m.p2 : m.p1;
+      map[m.winner.name].wins++; map[m.winner.name].played++;
+      if(loser && map[loser.name]){ map[loser.name].losses++; map[loser.name].played++; }
+    });
+    return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){
+      return b.wins - a.wins || a.losses - b.losses || a.seed - b.seed;
+    });
+  }
+  function roundName(t, r, total){
+    if(t.format==="rr") return "Round " + (r+1);
+    var left = total - r;
+    if(left===1) return "Final";
+    if(left===2) return "Semifinals";
+    if(left===3) return "Quarterfinals";
+    return "Round of " + Math.pow(2, left);
+  }
+
+  /* ---------------- result recording ---------------- */
+  var pendingCorrection = null; // {tId, matchId, name}
+
+  function setWinner(t, found, player){
+    var m = found.match;
+    if(m.bye) return;
+    if(m.winner && m.winner.name===player.name) return;
+
+    if(m.winner){
+      // correction path — confirm first, and never contradict a played later match
+      if(t.format==="elim"){
+        var nxt = t.rounds[found.round+1];
+        if(nxt){
+          var down = nxt[Math.floor(found.index/2)];
+          if(down.winner){
+            window.__notice = "That correction is held: the next match (" +
+              (down.p1?down.p1.name:"?") + " vs " + (down.p2?down.p2.name:"?") +
+              ") has already been played off this result. Clear that match's result first, then correct this one — the record never contradicts itself.";
+            renderAll(); return;
+          }
+        }
+      }
+      if(!pendingCorrection || pendingCorrection.matchId!==m.id || pendingCorrection.name!==player.name){
+        pendingCorrection = { tId:t.id, matchId:m.id, name:player.name };
+        window.__notice = "Tap “" + player.name + "” once more to confirm the correction. The old result stays in the record, marked as corrected — it is never quietly rewritten.";
+        renderAll(); return;
+      }
+      // confirmed correction
+      var old = m.winner;
+      if(t.format==="elim" && found.round < t.rounds.length-1) removeWinner(t.rounds, found.round, found.index);
+      m.winner = player; m.corrected = true;
+      m.history.push("Corrected " + nowStr() + ": was " + old.name + ", now " + player.name + ".");
+      t.log.push({ when: nowStr(), text: "CORRECTION — " + matchLabel(t, found) + ": result changed from " + old.name + " to " + player.name + ". The original result is kept in this record." });
+      if(t.format==="elim" && found.round < t.rounds.length-1) placeWinner(t.rounds, found.round, found.index, player);
+      pendingCorrection = null; window.__notice = null;
+    } else {
+      m.winner = player;
+      t.log.push({ when: nowStr(), text: matchLabel(t, found) + " — " + player.name + " won (Table " + (m.code||"—") + ")." });
+      if(t.format==="elim" && found.round < t.rounds.length-1) placeWinner(t.rounds, found.round, found.index, player);
+    }
+    var ch = championOf(t);
+    if(ch){
+      var already = t.log.some(function(e){ return e.text.indexOf("CHAMPION")===0; });
+      if(!already) t.log.push({ when: nowStr(), text: "CHAMPION — " + ch.name + " wins " + t.name + "." });
+    }
+    saveStore(); renderAll();
+  }
+  function clearResult(t, found){
+    var m = found.match;
+    if(!m.winner || m.bye) return;
+    if(t.format==="elim"){
+      var nxt = t.rounds[found.round+1];
+      if(nxt){
+        var down = nxt[Math.floor(found.index/2)];
+        if(down.winner){
+          window.__notice = "Clear the later match first — this result feeds into it, and the record never contradicts itself.";
+          renderAll(); return;
+        }
+        removeWinner(t.rounds, found.round, found.index);
+      }
+    }
+    t.log.push({ when: nowStr(), text: "Result cleared — " + matchLabel(t, found) + " (was: " + m.winner.name + " won). Clearing is written here too; nothing vanishes silently." });
+    m.winner = null; m.corrected = false;
+    saveStore(); renderAll();
+  }
+  function matchLabel(t, found){
+    var m = found.match;
+    return roundName(t, found.round, t.rounds.length) + ": " +
+      (m.p1?m.p1.name:"?") + " vs " + (m.p2?m.p2.name:"?");
+  }
+
+  /* ---------------- rendering ---------------- */
+  var activeSection = document.getElementById("activeSection");
+  var activeArea = document.getElementById("activeArea");
+  var savedList = document.getElementById("savedList");
+
+  function slotHTML(t, m, player, slotKey){
+    if(!player) return '<div class="slot tbd"><span class="nm">Waiting on an earlier match…</span></div>';
+    var decided = !!m.winner;
+    var isWin = decided && m.winner.name===player.name;
+    var cls = "slot" + (decided ? (isWin ? " winner" : " loser") : "");
+    var tail = "";
+    if(isWin) tail = '<span class="winmark">Won ✓</span>';
+    else if(!decided) tail = '<span class="tapcue">Tap if ' + esc(player.name.split(" ")[0]) + ' won</span>';
+    return '<button type="button" class="' + cls + '" data-act="win" data-match="' + m.id + '" data-name="' + esc(player.name) + '">' +
+      '<span class="sd">#' + player.seed + '</span><span class="nm">' + esc(player.name) + '</span>' + tail + '</button>';
+  }
+  function matchHTML(t, m, r, idx){
+    var label = roundName(t, r, t.rounds.length) + " · Match " + (idx+1);
+    if(m.bye){
+      if(m.rest){
+        return '<div class="match bye"><div class="m-top"><span class="m-label">' + label + '</span></div>' +
+          '<div class="slot tbd"><span class="nm">' + esc(m.p1.name) + ' rests this round</span></div>' +
+          '<p class="m-note">Odd player count — one player rests each round, in turn. Shown here, never hidden.</p></div>';
+      }
+      return '<div class="match bye"><div class="m-top"><span class="m-label">' + label + '</span><span class="badge">Bye</span></div>' +
+        '<div class="slot winner"><span class="sd">#' + m.winner.seed + '</span><span class="nm">' + esc(m.winner.name) + '</span><span class="winmark">Through ✓</span></div>' +
+        '<p class="m-note">Bye — no match to play. The top seeds take the byes when the count isn\'t a power of two; that\'s the honest draw, printed as a bye.</p></div>';
+    }
+    var html = '<div class="match' + (m.winner ? " decided" : "") + '">' +
+      '<div class="m-top"><span class="m-label">' + label + '</span>' +
+      '<span class="code" title="Table code">TABLE ' + m.code + '</span></div>';
+    html += slotHTML(t, m, m.p1, "p1");
+    html += slotHTML(t, m, m.p2, "p2");
+    if(m.winner){
+      html += '<p class="m-note">' + esc(m.winner.name) + ' won this match.' +
+        (m.corrected ? ' <span class="corrected">This result was corrected — the original is kept in the record below.</span>' : '') + '</p>';
+      html += '<div class="m-actions"><button type="button" class="linkbtn" data-act="clear" data-match="' + m.id + '">Clear this result — tap to clear</button></div>';
+    } else if(m.p1 && m.p2){
+      html += '<p class="m-note">Play it at Table ' + m.code + ', then tap the winner\'s name above.</p>';
+    }
+    return html + '</div>';
+  }
+
+  function renderActive(){
+    var t = getActive();
+    if(!t){ activeSection.hidden = true; activeArea.innerHTML = ""; return; }
+    activeSection.hidden = false;
+    var g = GAME_INFO[t.game];
+    var ch = championOf(t);
+    var tied = isTiedTop(t);
+    var html = '<div class="card">';
+    html += '<div class="t-head"><h3>' + esc(t.name) + '</h3>' +
+      '<span class="badge">' + g.label + '</span>' +
+      '<span class="badge">' + (t.format==="elim" ? "Single elimination" : "Round robin") + '</span>' +
+      '<span class="badge">Seeding: ' + (t.seeding==="shuffled" ? "Shuffled draw" : "Order entered") + '</span>' +
+      '<span class="badge green">Saved on this device</span></div>';
+    html += '<p class="hint" style="margin-top:8px">Built ' + esc(t.created) + ' · ' + t.players.length + ' players · ' + esc(g.how) + '</p>';
+
+    if(window.__notice){
+      html += '<div class="err show" style="display:block">' + esc(window.__notice) + '</div>';
+    }
+    if(ch){
+      html += '<div class="champion"><div class="big">🏆 ' + esc(ch.name) + '</div>' +
+        '<p>Champion of ' + esc(t.name) + ' — every match on the way is in the record below.</p></div>';
+    } else if(tied){
+      html += '<div class="champion"><div class="big">Level at the top</div>' +
+        '<p>Two or more players finished tied on wins. That\'s a tie, printed as a tie — settle it with a playoff match and record it as its own tournament.</p></div>';
+    }
+    html += '</div>';
+
+    if(t.format==="rr"){
+      var st = standings(t);
+      html += '<div class="card"><h3 style="font-size:20px">Standings</h3><table class="stand"><thead><tr>' +
+        '<th>Player</th><th class="num">Won</th><th class="num">Lost</th><th class="num">Played</th></tr></thead><tbody>';
+      st.forEach(function(s, i){
+        html += '<tr' + (i===0 && s.wins>0 ? ' class="leader"' : '') + '><td>#' + s.seed + ' ' + esc(s.name) + '</td>' +
+          '<td class="num">' + s.wins + '</td><td class="num">' + s.losses + '</td><td class="num">' + s.played + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="rounds">';
+    t.rounds.forEach(function(rm, r){
+      html += '<div class="round"><h4>' + roundName(t, r, t.rounds.length) + '</h4>';
+      rm.forEach(function(m, idx){ html += matchHTML(t, m, r, idx); });
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="card"><h3 style="font-size:20px">The record — as it happened</h3>' +
+      '<p class="hint">Every result, correction, and clearing is written here in order. Nothing is silently rewritten.</p><ul class="log">';
+    t.log.slice().reverse().forEach(function(e){
+      html += '<li><span class="when">' + esc(e.when) + '</span>' + esc(e.text) + '</li>';
+    });
+    html += '</ul><div class="btnrow">' +
+      '<button type="button" class="btn small" data-act="close">Close this tournament — tap to close</button>' +
+      '<button type="button" class="btn small danger" data-act="delete" data-id="' + t.id + '">Delete it from this device — tap to delete</button>' +
+      '</div></div>';
+
+    activeArea.innerHTML = html;
+  }
+
+  function renderSaved(){
+    if(!store.tournaments.length){
+      savedList.innerHTML = '<p class="empty">No tournaments yet on this device. Build one above and it will be waiting here next time you open this page on this device.</p>';
+      return;
+    }
+    savedList.innerHTML = store.tournaments.map(function(t){
+      var ch = championOf(t);
+      var done = allMatches(t).filter(function(m){ return !m.bye && m.winner; }).length;
+      var total = allMatches(t).filter(function(m){ return !m.bye; }).length;
+      return '<div class="saved-item"><div><div class="tname">' + esc(t.name) + '</div>' +
+        '<div class="meta">' + GAME_INFO[t.game].label + ' · ' + (t.format==="elim" ? "Single elimination" : "Round robin") +
+        ' · ' + t.players.length + ' players · ' + done + ' of ' + total + ' matches played' +
+        (ch ? ' · Champion: ' + esc(ch.name) : '') + ' · Built ' + esc(t.created) + '</div></div>' +
+        '<div class="btnrow" style="margin-top:0">' +
+        '<button type="button" class="btn small green" data-act="open" data-id="' + t.id + '">Open — tap to open</button>' +
+        '<button type="button" class="btn small danger" data-act="delete" data-id="' + t.id + '">Delete — tap to delete</button>' +
+        '</div></div>';
+    }).join("");
+  }
+
+  function renderAll(){ renderActive(); renderSaved(); }
+
+  document.addEventListener("click", function(ev){
+    var el = ev.target.closest("[data-act]");
+    if(!el) return;
+    var act = el.getAttribute("data-act");
+    if(act==="win"){
+      var t = getActive(); if(!t) return;
+      var found = findMatch(t, el.getAttribute("data-match")); if(!found) return;
+      var name = el.getAttribute("data-name");
+      var player = (found.match.p1 && found.match.p1.name===name) ? found.match.p1 : found.match.p2;
+      if(player) setWinner(t, found, player);
+    }
+    else if(act==="clear"){
+      var t2 = getActive(); if(!t2) return;
+      var f2 = findMatch(t2, el.getAttribute("data-match")); if(f2) clearResult(t2, f2);
+    }
+    else if(act==="open"){
+      store.activeId = el.getAttribute("data-id");
+      window.__notice = null; pendingCorrection = null;
+      saveStore(); renderAll();
+      document.getElementById("activeSection").scrollIntoView({behavior:"smooth"});
+    }
+    else if(act==="close"){
+      store.activeId = null; saveStore(); renderAll();
+      document.getElementById("saved").scrollIntoView({behavior:"smooth"});
+    }
+    else if(act==="delete"){
+      var id = el.getAttribute("data-id");
+      store.tournaments = store.tournaments.filter(function(x){ return x.id!==id; });
+      if(store.activeId===id) store.activeId = null;
+      saveStore(); renderAll();
+    }
+  });
+
+  /* ---------------- join a table ---------------- */
+  var joinResult = document.getElementById("joinResult");
+  document.getElementById("joinBtn").addEventListener("click", function(){
+    var code = document.getElementById("joinCode").value.trim().toUpperCase();
+    if(!code){
+      joinResult.innerHTML = '<div class="card"><p style="margin:0"><strong>Type a table code first.</strong> It\'s printed on every match — four letters and numbers, like K7QX.</p></div>';
+      return;
+    }
+    var hit = null, hitT = null, hitR = -1;
+    store.tournaments.forEach(function(t){
+      t.rounds.forEach(function(rm, r){
+        rm.forEach(function(m){ if(m.code===code){ hit=m; hitT=t; hitR=r; } });
+      });
+    });
+    if(!hit){
+      joinResult.innerHTML = '<div class="card"><p style="margin:0"><strong>No table with code ' + esc(code) + ' on this device.</strong> ' +
+        'Table codes live with the tournament on the host\'s device — check the code on the match, and make sure you\'re on the host\'s device. There is no live sync between devices in this build, and the page won\'t pretend there is.</p></div>';
+      return;
+    }
+    var g = GAME_INFO[hitT.game];
+    var status = hit.winner
+      ? '<strong>Already played:</strong> ' + esc(hit.winner.name) + ' won this match.'
+      : '<strong>Waiting to be played.</strong> When it\'s done, the winner is tapped in on the bracket.';
+    var gameHref = "../" + g.slug + "/?table=" + encodeURIComponent(hit.code);
+    var doorNote = g.rooms
+      ? 'Bowling\'s rooms speak table codes, so this door carries your code straight into the game.'
+      : 'This door opens the game; your table code above is what seats you in the tournament here.';
+    joinResult.innerHTML = '<div class="card">' +
+      '<p style="margin:0 0 4px"><span class="code">TABLE ' + esc(hit.code) + '</span></p>' +
+      '<h3 style="font-size:21px;margin:6px 0">' + esc(hit.p1.name) + ' vs ' + esc(hit.p2.name) + '</h3>' +
+      '<p style="margin:4px 0">' + esc(hitT.name) + ' · ' + g.label + ' · ' + roundName(hitT, hitR, hitT.rounds.length) + '</p>' +
+      '<p style="margin:4px 0">' + status + '</p>' +
+      '<p style="margin:4px 0" class="hint">' + doorNote + ' No name is needed beyond the alias you\'re playing under in this tournament.</p>' +
+      '<div class="btnrow"><a class="btn primary" href="' + gameHref + '">Open ' + g.label + ' — tap to open the game</a>' +
+      '<button type="button" class="btn" data-act="open" data-id="' + hitT.id + '">See the bracket — tap to open</button></div></div>';
+  });
+  document.getElementById("joinCode").addEventListener("keydown", function(ev){
+    if(ev.key==="Enter"){ ev.preventDefault(); document.getElementById("joinBtn").click(); }
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
