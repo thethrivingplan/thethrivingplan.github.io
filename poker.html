@@ -1,0 +1,2184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Poker</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+  * { box-sizing: border-box; }
+  :root{
+    --bg:#f4f1ea; --panel:#fffdf7; --ink:#1d2419; --muted:#5c6656; --line:#d8d2c2;
+    --accent:#7a1f1f; --accent2:#14532d; --gold:#b8860b; --felt:#1e6b3a; --felt2:#14532d;
+    --rail:#5b3a1e; --bad:#b3261e; --good:#146c2e; --shadow:0 2px 10px rgba(30,30,10,.10);
+    --cardbg:#ffffff; --cardink:#191919;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141711; --panel:#1e221b; --ink:#eceadf; --muted:#a9b09e; --line:#3a4034;
+      --accent:#e08a7e; --accent2:#7fc98f; --gold:#d9a83c; --bad:#ff9d94; --good:#8fd694;
+      --shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; }
+  .sans{ font-family:ui-sans-system,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap{ max-width:1060px; margin:0 auto; padding:0 16px 48px; }
+
+  .free-banner{ background:var(--accent2); color:#f2f7ee; text-align:center; padding:14px 16px 12px; }
+  .free-banner .big{ display:block; font-weight:800; font-size:1.15rem; letter-spacing:.02em; }
+  .free-banner .small{ display:block; font-size:.95rem; margin-top:3px; }
+  .offline-btn{ margin-top:10px; background:#f2f7ee; color:#14532d; border:0; border-radius:999px;
+    padding:10px 18px; font-weight:700; cursor:pointer; font-family:inherit; font-size:.95rem; }
+
+  header.page-head h1{ font-size:2.6rem; margin:22px 0 6px; line-height:1.05; }
+  header.page-head p.lede{ font-size:1.08rem; margin:0 0 12px; max-width:66ch; }
+  .playchips{ border:2px solid var(--gold); border-radius:12px; padding:12px 16px; background:var(--panel);
+    font-weight:800; font-size:1.05rem; }
+  .playchips span{ font-weight:500; color:var(--muted); display:block; font-size:.94rem; margin-top:2px; }
+
+  details.panel{ background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:6px 16px 12px; margin:14px 0; box-shadow:var(--shadow); }
+  details.panel summary{ cursor:pointer; font-weight:800; padding:10px 0; min-height:44px;
+    display:flex; align-items:center; gap:8px; list-style:none; }
+  details.panel summary::-webkit-details-marker{ display:none; }
+  details.panel:not([open]) > *:not(summary){ display:none !important; }
+  details.panel summary .gesture{ margin-left:auto; font-weight:600; font-size:.82rem; color:var(--muted); text-align:right; }
+  .compass-list{ list-style:none; margin:4px 0 8px; padding:0; display:grid; gap:6px; }
+  .compass-list a,.compass-list .item{ display:flex; justify-content:space-between; gap:10px;
+    padding:10px 12px; border:1px solid var(--line); border-radius:10px; color:var(--ink);
+    text-decoration:none; min-height:44px; align-items:center; background:var(--bg); font-weight:700; }
+  .compass-list .note{ color:var(--muted); font-size:.85rem; font-weight:500; }
+
+  section.card{ background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin:16px 0; box-shadow:var(--shadow); }
+  section.card h2{ margin:2px 0 8px; font-size:1.45rem; }
+  section.card h3{ margin:16px 0 6px; font-size:1.1rem; }
+  p{ line-height:1.5; }
+  .muted{ color:var(--muted); }
+  .small{ font-size:.9rem; }
+  label{ font-weight:700; display:block; margin:10px 0 4px; }
+  input[type="text"], input[type="number"], select{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+    background:var(--bg); color:var(--ink); font:inherit; font-size:1rem; }
+  input[type="range"]{ width:100%; min-height:2.25rem; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }
+  @media (max-width:640px){ .grid2{ grid-template-columns:1fr; } }
+  .btnrow{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .btn{ border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:12px;
+    padding:10px 16px; font:inherit; font-weight:700; cursor:pointer; min-height:48px; }
+  .btn .what{ display:block; font-size:.78rem; font-weight:600; color:var(--muted); }
+  .btn.go{ background:var(--accent2); border-color:var(--accent2); color:#f2f7ee; }
+  .btn.go .what{ color:#cfe6d4; }
+  .btn.primary{ background:var(--gold); border-color:var(--gold); color:#1d1a05; }
+  .btn.primary .what{ color:#4d3f06; }
+  .btn.danger{ background:var(--accent); border-color:var(--accent); color:#fdf3f2; }
+  .btn.danger .what{ color:#f3c6c1; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .refuse{ color:var(--bad); font-weight:700; margin-top:8px; min-height:1.2em; }
+  .okmsg{ color:var(--good); font-weight:700; margin-top:8px; }
+  .dice{ min-width:48px; font-size:1.2rem; }
+  .inline{ display:flex; gap:8px; align-items:flex-end; }
+  .inline > div{ flex:1; }
+  .seatrow{ display:grid; grid-template-columns:86px 1fr; gap:10px; align-items:end;
+    padding:8px 0; border-top:1px dashed var(--line); }
+  .seatrow .seatname{ font-weight:800; padding-bottom:10px; }
+  .codebox{ font-family:ui-monospace,Menlo,monospace; font-size:2rem; letter-spacing:.3em;
+    text-align:center; border:2px dashed var(--gold); border-radius:12px; padding:10px; margin:10px 0;
+    text-transform:uppercase; }
+  .limits-print{ border:1px solid var(--gold); background:var(--bg); border-radius:10px; padding:10px 14px; }
+  .limits-print b{ color:var(--accent); }
+
+  /* ------- The table ------- */
+  #tableSection{ display:none; }
+  .variant-banner{ display:none; border:2px solid var(--accent); color:var(--accent);
+    border-radius:10px; padding:9px 14px; font-weight:800; margin:10px 0; background:var(--panel); }
+  .variant-banner.on{ display:block; }
+  .table-limits{ font-size:.95rem; margin:6px 0 10px; }
+  .felt-wrap{ position:relative; }
+  .felt{ position:relative; width:100%; aspect-ratio:16/10; max-height:560px; min-height:340px;
+    background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt2) 78%);
+    border:14px solid var(--rail); border-radius:47% / 50%;
+    box-shadow:inset 0 0 60px rgba(0,0,0,.35), var(--shadow); overflow:hidden; }
+  @media (max-width:640px){ .felt{ aspect-ratio:4/4.6; border-width:10px; border-radius:44% / 40%; } }
+  .center-board{ position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    text-align:center; width:92%; }
+  .board-cards{ display:flex; gap:6px; justify-content:center; min-height:64px; }
+  .pot-line{ color:#fdf6d8; font-weight:800; margin-top:8px; font-size:1.02rem;
+    text-shadow:0 1px 3px rgba(0,0,0,.5); }
+  .sidepots{ color:#e8efdc; font-size:.82rem; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .stage-line{ color:#ffe9a8; font-size:.85rem; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .seat{ position:absolute; width:118px; transform:translate(-50%,-50%); text-align:center; z-index:2; }
+  @media (max-width:640px){
+    .seat{ width:84px; }
+    .seat .who{ font-size:.74rem; }
+    .center-board{ width:62%; top:45%; }
+    .pot-line{ font-size:.94rem; }
+  }
+  .seat .who{ background:rgba(12,26,16,.88); color:#f0f4e6; border-radius:10px; padding:5px 6px;
+    font-size:.8rem; line-height:1.25; border:1px solid rgba(255,255,255,.25); }
+  .seat .who .nm{ font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .seat .who .chips{ color:#ffe9a8; font-weight:700; }
+  .seat .who .lvl{ color:#bcd6a5; font-size:.72rem; }
+  .seat.turn .who{ border-color:var(--gold); box-shadow:0 0 0 2px var(--gold), 0 0 16px rgba(217,168,60,.7); }
+  .seat.folded{ opacity:.45; }
+  .seat.winner .who{ border-color:#ffe9a8; box-shadow:0 0 0 2px #ffe9a8, 0 0 18px rgba(255,233,168,.8); }
+  .seat .hole{ display:flex; gap:4px; justify-content:center; margin-bottom:4px; min-height:52px; }
+  .seat .betbubble{ display:inline-block; margin-top:4px; background:#fdf6d8; color:#4d3f06;
+    border-radius:999px; padding:1px 9px; font-weight:800; font-size:.78rem; }
+  .seat .dealerbtn{ display:inline-block; background:#fdfdfd; color:#111; border-radius:50%;
+    width:20px; height:20px; line-height:20px; font-size:.72rem; font-weight:900; margin-left:4px;
+    border:1px solid #999; vertical-align:1px; }
+  .pcard{ width:40px; height:56px; background:var(--cardbg); color:var(--cardink); border-radius:6px;
+    border:1px solid #b9b9b9; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-weight:800; line-height:1; box-shadow:0 1px 4px rgba(0,0,0,.3); flex:none; }
+  .pcard .r{ font-size:1rem; } .pcard .s{ font-size:1.05rem; }
+  .pcard.red{ color:#c0271b; }
+  .pcard.back{ background:repeating-linear-gradient(45deg,#7a1f1f 0 6px,#5f1616 6px 12px);
+    border-color:#3d0d0d; }
+  .pcard.empty{ background:rgba(255,255,255,.12); border:1px dashed rgba(255,255,255,.4); box-shadow:none; }
+  .board-cards .pcard{ width:46px; height:64px; }
+  .board-cards .pcard .r{ font-size:1.12rem; } .board-cards .pcard .s{ font-size:1.2rem; }
+  @media (max-width:640px){
+    .pcard{ width:32px; height:46px; } .pcard .r{ font-size:.85rem; } .pcard .s{ font-size:.9rem; }
+    .board-cards .pcard{ width:36px; height:52px; }
+    .seat .hole{ min-height:46px; }
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .pcard.dealt{ animation:deal .18s ease-out; }
+    @keyframes deal{ from{ transform:translateY(-6px); opacity:.4; } to{ transform:none; opacity:1; } }
+  }
+  .msg-line{ min-height:1.5em; font-weight:700; margin:12px 0 4px; font-size:1.05rem; }
+  .action-panel{ display:none; border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--bg); }
+  .action-panel.on{ display:block; }
+  .raise-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-top:10px; }
+  .raise-row .amt{ flex:1 1 150px; }
+  .logbox{ max-height:180px; overflow:auto; border:1px solid var(--line); border-radius:10px;
+    padding:8px 12px; background:var(--bg); font-size:.9rem; }
+  .logbox div{ padding:2px 0; border-bottom:1px dotted var(--line); }
+  .logbox div:last-child{ border-bottom:0; }
+  table.results{ border-collapse:collapse; width:100%; margin-top:10px; }
+  table.results th, table.results td{ border:1px solid var(--line); padding:7px 10px; text-align:left; }
+  table.results th{ background:var(--bg); }
+  .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); max-width:min(92vw,520px);
+    background:#20241d; color:#f2f2e8; padding:12px 16px; border-radius:12px; font-size:.95rem;
+    box-shadow:0 6px 24px rgba(0,0,0,.4); display:none; z-index:50; }
+  .toast.on{ display:block; }
+  .ranklist{ columns:2; column-gap:28px; margin:6px 0; padding-left:20px; }
+  @media (max-width:640px){ .ranklist{ columns:1; } }
+  .ranklist li{ margin:3px 0; break-inside:avoid; }
+  footer{ color:var(--muted); font-size:.9rem; text-align:center; padding:10px 16px 30px; }
+  .kbd-hint{ text-align:center; color:var(--muted); font-size:.82rem; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<div class="free-banner">
+  <span class="big">FREE — always free. No ads, ever. No account.</span>
+  <span class="small">Play chips only — nothing real is wagered, won, or lost. Ever.</span>
+  <div><button class="offline-btn" id="offlineBtn" type="button">Save this game for offline — tap to download your copy</button></div>
+</div>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <h1>Poker</h1>
+    <p class="lede">Texas Hold’em, full and honest — blinds, four betting rounds, all-ins with side pots settled properly, real hand rankings, and a showdown that shows its work. Simple on the surface: set up a table, or join one with a code. Underneath: the whole game. And it is the documented game itself — <strong>Texas Hold’em</strong>, the game written down in the standard rulebooks (Robert’s Rules of Poker, the card-room standard) and played at the World Series of Poker for over fifty years — not a house invention with the name taped on.</p>
+    <div class="playchips">🃏 Play chips only
+      <span>Chips on this page are just for play. No real money is bet, won, or lost, and chips can’t be bought, sold, or cashed out. The limits on a table limit play chips — nothing else exists here to limit.</span>
+    </div>
+  </header>
+
+  <details class="panel" id="compass">
+    <summary>🧭 Compass — where to go next <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p style="margin:4px 0 8px;color:var(--muted)">Other pages, in order:</p>
+    <ul class="compass-list">
+      <li><a href="https://thethrivingplan.github.io/" target="_blank" rel="noopener">Start Page <span class="note">Opens in its own view ↗</span></a></li>
+      <li><span class="item">The Thriving Plan <span class="note">Reach it from the Start Page</span></span></li>
+      <li><span class="item">Bowling · Blackjack · Checkers · Chess · Solitaire <span class="note">The rest of the games shelf — reach them from the Start Page</span></span></li>
+      <li><span class="item">What Are We Missing? <span class="note">Tell us what this page needs — from the Start Page</span></span></li>
+    </ul>
+  </details>
+
+  <section class="card" id="teachSettings">
+    <h2>Teaching — how much help you want</h2>
+    <p>The games on this shelf teach as you play, the way pros learn: in the moment, tied to the hand in front of you, in plain words. How much is <strong>your</strong> dial — it lives on your copy of this page, saved on this device only, and it never blocks a move or peeks at anyone’s hidden cards.</p>
+    <label for="teachSel">Teaching level</label>
+    <select id="teachSel">
+      <option value="off">Off — no teaching, just the game</option>
+      <option value="light" selected>Light — an occasional honest note after a hand</option>
+      <option value="coach">Coach — the odds ride beside every decision, plus the notes</option>
+    </select>
+    <p class="small muted">Coach shows the price of a call against your rough chances, and names the pro ideas when they actually matter — position, starting hands, what a big bet usually means. The deeper tools (a starting-hands chart, a pot-odds explainer worked from your own last hand) are in “The pro tools” below the table, one tap down.</p>
+  </section>
+
+  <!-- ============ SET UP A TABLE ============ -->
+  <section class="card" id="setupSection">
+    <h2>Set up a table</h2>
+    <p>The person who sets up the table sets its <strong>limits</strong> — and the limits are the whole point. They are printed on the table for everybody before anyone sits down, and they bind in play: a buy-in or a bet past the table’s limits is refused, in plain words. The buy-in <em>maximum</em> is the anti-ruin cap — nobody can buy in huge and bully the table.</p>
+
+    <label for="aliasInput">Your name at the table — an alias is fine, no name is required</label>
+    <div class="inline">
+      <div><input type="text" id="aliasInput" maxlength="18" placeholder="Player 1" autocomplete="off"></div>
+      <button class="btn dice" id="aliasDice" type="button" aria-label="Roll a random alias" data-explain="Rolls a random session alias — a made-up name that lasts only for this visit. It is never registered, never checked, and never has to be your real name or your claimed name anywhere.">🎲</button>
+    </div>
+    <p class="small muted">Alias freedom, in full: play as Player 1, as a dice-rolled alias, or as any name you type. Nothing is claimed or checked. The record follows the person, not the name — a different name is never an eraser.</p>
+
+    <h3>The limits — this table’s settings</h3>
+    <label for="modeSel">Table type</label>
+    <select id="modeSel">
+      <option value="cash" selected>Cash table — fixed blinds, buy in between the minimum and the cap, rebuys as set below (the standard game)</option>
+      <option value="tournament">Tournament — everyone starts with the same stack, blinds rise on a schedule, no rebuys: when you’re out, you’re out</option>
+    </select>
+    <div id="tourneyFields" style="display:none">
+      <div class="grid2">
+        <div>
+          <label for="startStackInput">Starting stack — the same for every seat (play chips)</label>
+          <input type="number" id="startStackInput" min="100" max="100000" step="50" value="1500">
+        </div>
+        <div>
+          <label for="levelMinSel">Blind levels — how often the blinds go up</label>
+          <select id="levelMinSel">
+            <option value="2">Every 2 minutes — a fast turbo</option>
+            <option value="3" selected>Every 3 minutes</option>
+            <option value="5">Every 5 minutes</option>
+            <option value="10">Every 10 minutes — a slow, deep game</option>
+          </select>
+        </div>
+      </div>
+      <div class="limits-print" id="schedulePreview" style="margin-top:10px"></div>
+      <p class="small muted">In a tournament there is no buy-in range and no cap to set — the equal stack <em>is</em> the limit. Nobody can buy more chips than anyone else, ever, and nobody buys back in. The last player with chips wins.</p>
+    </div>
+    <div class="grid2">
+      <div>
+        <label for="structureSel">Betting structure</label>
+        <select id="structureSel">
+          <option value="nolimit" selected>No-limit — bet any amount up to your stack (the standard game)</option>
+          <option value="potlimit">Pot-limit — the biggest raise is the size of the pot</option>
+          <option value="limit">Limit — bets and raises are one fixed step at a time</option>
+        </select>
+      </div>
+      <div>
+        <label for="seatsSel">Seats at the table</label>
+        <select id="seatsSel">
+          <option value="2">2 seats — heads-up</option>
+          <option value="3">3 seats</option>
+          <option value="4" selected>4 seats</option>
+          <option value="5">5 seats</option>
+          <option value="6">6 seats</option>
+        </select>
+      </div>
+      <div>
+        <label for="sbInput">Small blind (play chips)</label>
+        <input type="number" id="sbInput" min="1" max="500" step="1" value="10">
+      </div>
+      <div>
+        <label for="bbInput">Big blind (play chips)</label>
+        <input type="number" id="bbInput" min="2" max="1000" step="1" value="20">
+      </div>
+      <div id="cashBuyMin">
+        <label for="buyMinInput">Buy-in minimum (play chips)</label>
+        <input type="number" id="buyMinInput" min="20" max="100000" step="10" value="200">
+      </div>
+      <div id="cashBuyMax">
+        <label for="buyMaxInput">Buy-in maximum — the anti-ruin cap (play chips)</label>
+        <input type="number" id="buyMaxInput" min="40" max="200000" step="10" value="2000">
+      </div>
+      <div id="cashBuyIn">
+        <label for="buyInInput">Your buy-in (play chips)</label>
+        <input type="number" id="buyInInput" min="20" max="200000" step="10" value="1000">
+      </div>
+      <div id="cashRebuy">
+        <label for="rebuySel">Rebuys — buying back in after you lose your stack</label>
+        <select id="rebuySel">
+          <option value="on" selected>On — a busted player may buy in again, up to the cap</option>
+          <option value="off">Off — when your stack is gone, you are out</option>
+        </select>
+      </div>
+    </div>
+    <p class="small muted" id="standardNote">Standard table: no-limit, blinds 10/20, buy-in 200–2,000, rebuys on. Change any of these and the table says so, plainly, while that setting is in play — a variant’s results are the variant’s, never dressed as standard.</p>
+
+    <h3>Who fills the other seats?</h3>
+    <p class="small muted">Each seat can be a bot (pick its skill — the levels honestly differ; the proof is in “How the bots differ” below), a person on this device (pass-and-play), or an open seat for someone joining online with the table code.</p>
+    <div id="seatRows"></div>
+
+    <div class="refuse" id="setupRefuse" role="alert"></div>
+    <div class="btnrow">
+      <button class="btn go" id="playLocalBtn" type="button" data-explain="Starts this table right here on this device: you, plus the bots and pass-and-play players you picked. Works fully offline, no connection needed.">Play at this table<span class="what">Tap to sit down on this device</span></button>
+      <button class="btn primary" id="hostOnlineBtn" type="button" data-explain="Opens this table online and gives you a short table code. Anyone with the code can join from their own device and take an open seat. The game is held on your device — if you leave, the table closes. Connections are peer-to-peer: no server of ours, no account.">Open this table online<span class="what">Tap to get a table code</span></button>
+    </div>
+    <div id="hostCodeBox" style="display:none">
+      <p style="margin-bottom:2px"><strong>Your table is open.</strong> Give this code to anyone who should sit down:</p>
+      <div class="codebox" id="hostCode">·····</div>
+      <p class="small muted" id="hostStatus">Waiting for players to join… You can start playing against the bots while you wait — open seats can be taken when someone joins between hands.</p>
+    </div>
+  </section>
+
+  <!-- ============ JOIN A TABLE ============ -->
+  <section class="card" id="joinSection">
+    <h2>Join a table</h2>
+    <p>Type the table code. Before you sit, the table’s limits are shown to you in full — the same limits the host set, printed plainly. If your buy-in is outside them, the table will refuse it and say why.</p>
+    <div class="grid2">
+      <div>
+        <label for="joinCode">Table code</label>
+        <input type="text" id="joinCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:.2em" autocomplete="off">
+      </div>
+      <div>
+        <label for="joinAlias">Your name at the table — optional</label>
+        <div class="inline">
+          <div><input type="text" id="joinAlias" maxlength="18" placeholder="Player" autocomplete="off"></div>
+          <button class="btn dice" id="joinDice" type="button" aria-label="Roll a random alias">🎲</button>
+        </div>
+      </div>
+    </div>
+    <div id="joinLimits" style="display:none">
+      <h3>This table’s limits — read them before you sit</h3>
+      <div class="limits-print" id="joinLimitsText"></div>
+      <label for="joinBuyIn">Your buy-in (play chips)</label>
+      <input type="number" id="joinBuyIn" step="10" value="1000">
+    </div>
+    <div class="refuse" id="joinRefuse" role="alert"></div>
+    <div class="okmsg" id="joinOk"></div>
+    <div class="btnrow">
+      <button class="btn go" id="joinBtn" type="button" data-explain="Connects to the table with this code, peer-to-peer. First the table shows you its limits; then you pick a buy-in inside them and take your seat. No account, no name required.">Join with this code<span class="what">Tap to connect</span></button>
+      <button class="btn primary" id="sitBtn" type="button" style="display:none" data-explain="Takes your seat at this table with the buy-in you picked. The host’s table checks it against the limits printed above before it seats you.">Take your seat<span class="what">Tap to sit down</span></button>
+    </div>
+    <p class="small muted">How online tables work, in plain words: connections are peer-to-peer (PeerJS free broker) — no account, no sign-up, nothing stored anywhere. The host’s device holds the game and deals the cards; your device sends your choices to the host. If a connection can’t be made, this page says so plainly — and playing on one device always works.</p>
+  </section>
+
+  <!-- ============ THE TABLE ============ -->
+  <section class="card" id="tableSection">
+    <h2 id="tableTitle">Your table</h2>
+    <div class="table-limits limits-print" id="tableLimits"></div>
+    <div class="table-limits limits-print" id="tourneyLine" style="display:none"></div>
+    <div class="variant-banner" id="variantBanner"></div>
+    <div class="felt-wrap">
+      <div class="felt" id="felt">
+        <div class="center-board">
+          <div class="stage-line" id="stageLine">Waiting</div>
+          <div class="board-cards" id="boardCards"></div>
+          <div class="pot-line" id="potLine">Pot: 0</div>
+          <div class="sidepots" id="sidePots"></div>
+        </div>
+        <div id="seatLayer"></div>
+      </div>
+    </div>
+    <div class="msg-line" id="msgLine" role="status">Set up a table above to begin.</div>
+    <div id="teachNote" class="limits-print" style="display:none;margin:8px 0"></div>
+
+    <div class="action-panel" id="actionPanel">
+      <div id="coachBox" style="display:none;border:1px solid var(--gold);border-radius:10px;padding:9px 12px;margin-bottom:10px;background:var(--panel)"></div>
+      <div class="btnrow" style="margin-top:0">
+        <button class="btn danger" id="foldBtn" type="button" data-explain="Fold: give up this hand. You lose the chips you have already put in this hand, and you are out until the next hand.">Fold<span class="what">Tap to give up this hand</span></button>
+        <button class="btn primary" id="checkCallBtn" type="button" data-explain="Check if nobody has bet (costs nothing, keeps you in), or Call — match the current bet to stay in the hand.">Check<span class="what">Tap to act</span></button>
+        <button class="btn go" id="raiseBtn" type="button" data-explain="Raise: increase the bet to the amount in the box. The box only allows amounts this table’s limits permit — the minimum raise, the pot-limit cap, or your whole stack for all-in.">Raise<span class="what">Tap to raise to the amount below</span></button>
+        <button class="btn" id="allInBtn" type="button" data-explain="All-in: bet every chip you have left. If other players still have chips, a side pot is made so you can only win the part of the pot you could cover — settled exactly, chip for chip.">All-in<span class="what">Tap to bet your whole stack</span></button>
+      </div>
+      <div class="raise-row">
+        <div class="amt">
+          <label for="raiseInput">Raise to (total bet this round, play chips)</label>
+          <input type="number" id="raiseInput" step="10">
+        </div>
+        <button class="btn" id="raiseMinBtn" type="button">Minimum<span class="what">Tap to set the smallest legal raise</span></button>
+        <button class="btn" id="raisePotBtn" type="button">Pot<span class="what">Tap to set a pot-sized raise</span></button>
+        <button class="btn" id="raiseMaxBtn" type="button">Maximum<span class="what">Tap to set the biggest raise this table allows</span></button>
+      </div>
+      <input type="range" id="raiseSlider" aria-label="Raise amount slider">
+      <div class="refuse" id="actRefuse" role="alert"></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn go" id="dealBtn" type="button" data-explain="Deals the next hand. The dealer button moves one seat, blinds are posted, and everyone with chips gets two cards.">Deal the next hand<span class="what">Tap to deal</span></button>
+      <button class="btn primary" id="rebuyBtn" type="button" style="display:none" data-explain="Buys you back in for the buy-in you chose when you sat down — never more than this table’s maximum. Only here when rebuys are on and your stack is gone.">Rebuy<span class="what">Tap to buy back in, up to the cap</span></button>
+      <button class="btn" id="leaveBtn" type="button" data-explain="Leaves this table and takes you back to setup. If you are hosting an online table, leaving closes the table for everyone.">Leave table<span class="what">Tap to stand up</span></button>
+    </div>
+    <p class="kbd-hint">Keyboard: F fold · C check/call · A all-in. Hold any button (or hover with a mouse) to hear what it does.</p>
+    <h3>What happened — the hand so far</h3>
+    <div class="logbox" id="logBox" tabindex="0" aria-label="Hand history"></div>
+    <p class="small muted">Your alias, this table’s settings, and your saved stack live on this device only — nothing is sent anywhere, there is no account, and clearing your browser data clears them. Online, the host’s device holds the running game; nothing is kept after the table closes.</p>
+  </section>
+
+  <!-- ============ BOTS ============ -->
+  <details class="panel" id="botsPanel">
+    <summary>🤖 How the bots differ — and the proof <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p>Four skill levels, in plain words. The levels are not labels stuck on the same player — each level reads the hand differently:</p>
+    <ul>
+      <li><strong>Learning</strong> — guesses its chances from a quick look (about 40 sample runouts), misreads them by a lot, calls too easily, and plays a plainly wrong move about 1 time in 5. It is learning; it leaks chips.</li>
+      <li><strong>Steady</strong> — checks about 150 runouts, misreads a little, calls about right against the pot odds, and slips about 1 time in 14.</li>
+      <li><strong>Sharp</strong> — checks about 600 runouts, reads them closely, raises for value, bluffs now and then, and slips about 1 time in 50.</li>
+      <li><strong>Pro</strong> — checks about 2,500 runouts, barely misreads at all, prices every call against the pot, sizes raises to the pot, bluffs on a schedule, and almost never slips (about 1 time in 250).</li>
+    </ul>
+    <p><strong>The honesty check:</strong> don’t take the labels’ word for it. Tap the button and this page deals real hands — one bot of each level at the same table, same blinds, stacks reset every hand — and prints what each level actually won. If the levels didn’t separate, the numbers would say so.</p>
+    <div class="btnrow">
+      <button class="btn go" id="simBtn" type="button" data-explain="Deals 200 real hands between one bot of each level at 10/20 blinds and prints each level’s winnings. Takes a few seconds — the bots think faster here than at the table so the check stays quick.">Run the check — 200 hands<span class="what">Tap to deal the proof</span></button>
+    </div>
+    <div id="simStatus" class="small muted" style="margin-top:8px"></div>
+    <div id="simResults"></div>
+  </details>
+
+  <details class="panel" id="toolsPanel">
+    <summary>🎓 The pro tools — starting hands &amp; pot odds <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <h3>Starting hands, in plain words</h3>
+    <p>Before the flop, your two cards are all you have. Pros sort them into rough groups and play the top groups from anywhere, the middle groups more carefully, and the bottom group almost never:</p>
+    <ul>
+      <li><strong>The top:</strong> big pairs (aces, kings, queens, jacks) and ace-king. Raise with these — they win more than their share.</li>
+      <li><strong>Strong:</strong> medium pairs (tens down to sevens), ace-queen, ace-jack, king-queen. Worth a raise in good position, a call in bad.</li>
+      <li><strong>Playable:</strong> small pairs, ace with a smaller card of the same suit, and two cards in a row of the same suit (like 8♠ 7♠). Cheap to see a flop with; easy to fold when it misses.</li>
+      <li><strong>The trap zone:</strong> two unrelated middling cards (like king-nine, or jack-seven of different suits). They make second-best hands — the kind that call and lose. Pros fold most of these, most of the time.</li>
+      <li><strong>Position changes everything:</strong> the later you act, the more you know. The same playable hand is a raise on the button (acting last) and a fold from the first seat. Acting last is the single biggest edge in the game — you decide with everyone else’s choices already on the table.</li>
+    </ul>
+    <h3>More than one way to play — and what each costs</h3>
+    <p>There is rarely one “correct” style. Pros choose between real alternatives, and each choice buys something and gives something up:</p>
+    <ul>
+      <li><strong>Tight vs loose:</strong> tight players enter few pots with strong hands — fewer disasters, fewer chances, and a predictable image others exploit. Loose players enter many pots — more chances to win big pots, more time spent holding the second-best hand. Most pros sit between, tighter early, looser when acting last.</li>
+      <li><strong>Aggressive vs passive:</strong> betting and raising can win two ways (best hand, or everyone folds); calling can only win one way (best hand). That’s the case for aggression. Its cost: bigger swings, and expensive mistakes. Passive play keeps pots small and cheap — and lets other people set the price of your hand.</li>
+      <li><strong>Value bet vs bluff:</strong> a value bet wants a call from a worse hand; a bluff wants a fold from a better one. The same bet size can be either — what matters is what the other player holds and how often they do each. A bet that is neither (called only by better hands, folding only worse ones) is the one real mistake in this family.</li>
+      <li><strong>Fast-play vs slow-play:</strong> betting your strong hand right away protects it and builds the pot; checking it (trapping) invites bluffs and keeps weaker hands in — at the risk of free cards overtaking you. On draw-heavy boards pros lean fast; on dry boards, trapping costs less.</li>
+    </ul>
+    <p class="small muted">The coach beside your decisions follows the same rule: it shows the alternatives and their trade-offs, and names a single way only when the math genuinely leaves one option.</p>
+    <h3>Pot odds — the price of a call</h3>
+    <p>Every call is a purchase: you pay the call for a chance at the pot. The math pros use is one fraction — <strong>what you must pay ÷ (the pot + what you must pay)</strong> — and it tells you how often you need to win for the call to break even. If your hand wins more often than that, the price is right; if less, you’re paying too much for the chance.</p>
+    <div class="limits-print" id="lastExample"><b>A worked example will appear here from your own last decision</b> — the first time you call or fold against a bet, this box does the math on that real moment: what it cost, what was in the pot, and how often you needed to win. Until then: a 20-chip call into a 80-chip pot needs 20 ÷ 100 = 1 win in 5 to break even.</div>
+    <p class="small muted">A rough shortcut pros use for draws: with one card to come, each card that completes your hand (“out”) is worth about 2% — a flush draw has 9 outs, about 18%, roughly 1 time in 5.5. Compare that to the price and the decision mostly makes itself.</p>
+  </details>
+
+  <details class="panel" id="storiesPanel">
+    <summary>♠ Documented strategies — the stories and their records <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p>Strategies here don’t arrive as bare tips. Each one below is a documented way of playing this documented game, carried with its story: who used it, where it worked, where it didn’t. Judge them by their records — that’s what they’re for.</p>
+
+    <h3>1. Tight and patient — play few hands, play them hard</h3>
+    <p><strong>The story:</strong> Dan Harrington built a tournament career on it — won the World Series of Poker Main Event in 1995 and reached the final table again in 2003 and 2004, in far bigger fields — and wrote it down in <em>Harrington on Hold’em</em> (2004), still a standard text. Phil Hellmuth’s version (“only play premium hands”) carried him to a record 17 WSOP bracelets.</p>
+    <p><strong>Where it worked:</strong> everywhere patience is possible — big fields, deep stacks, cash games. Most hands are losers; declining them is free.</p>
+    <p><strong>Where it didn’t:</strong> Harrington himself documented the failure mode — in tournaments the rising blinds eat a waiting player alive. His answer (the “M” system: track how many rounds your stack survives) is a strategy for <em>when to stop being tight</em>. On this page’s tournament tables you can watch that exact pressure arrive on the blind schedule.</p>
+
+    <h3>2. Relentless aggression — bet and raise, make them decide</h3>
+    <p><strong>The story:</strong> Doyle Brunson codified it in <em>Super/System</em> (1978), the first great strategy book by a champion, after winning the Main Event back-to-back in 1976 and 1977. Stu Ungar played it at its purest and won the Main Event three times — 1980, 1981, and 1997 — a record of wins at the table nobody has matched.</p>
+    <p><strong>Where it worked:</strong> against players who fold too much — which, in their eras, was nearly everybody. Aggression wins pots no showdown ever sees.</p>
+    <p><strong>Where it didn’t:</strong> against players who call everything. A bluff that never gets a fold is just a donation — the documented counter-adjustment is to stop bluffing callers and value-bet them instead. The bots on this page include loose callers (that’s the Learning level’s honest leak), so you can test both sides of this on play chips.</p>
+
+    <h3>3. The math first — price every decision</h3>
+    <p><strong>The story:</strong> David Sklansky’s <em>The Theory of Poker</em> (1987) stated the “fundamental theorem”: you gain whenever opponents play differently than they would with perfect information — and its working tool is pot odds, the same math the coach beside your decisions uses.</p>
+    <p><strong>Where it worked:</strong> as a floor under everything else, in every era, at every level. A call priced wrong is wrong no matter who makes it.</p>
+    <p><strong>Where it didn’t:</strong> math alone doesn’t tell you what a specific player’s bet means, or when they’re bluffing — Sklansky’s own later work layers opponent-reading on top. Odds are the floor, not the ceiling.</p>
+
+    <h3>4. The amateur’s run — a story about variance, honestly told</h3>
+    <p><strong>The story:</strong> in 2003 Chris Moneymaker, an accountant who won his seat through a small online satellite (reported at under a hundred dollars), won the Main Event and bluffed Sammy Farha off a famous hand on the way. Poker boomed worldwide on the story.</p>
+    <p><strong>What it proves and doesn’t:</strong> it proves a short run can crown anyone — which is exactly why one tournament is not a track record. The strategies above earned their standing over thousands of documented hands and decades. Treat every story here, this one included, as evidence with a sample size attached.</p>
+
+    <h3>5. The solver era — equilibrium, computed</h3>
+    <p><strong>The story:</strong> from about 2015, software “solvers” (PioSOLVER was the first widely used) computed game-theory-optimal play — balanced ranges, mixed bluffs — and the top of the game reorganised around their output.</p>
+    <p><strong>Where it worked:</strong> elite heads-up and high-stakes play, where opponents are strong enough that being unexploitable is the whole game.</p>
+    <p><strong>Where it didn’t pay:</strong> against beginners. If an opponent calls too much and folds too little, the documented professional view is that simple exploitative play — value-bet more, bluff less — earns more than equilibrium does. Knowing <em>which game you’re in</em> is itself the strategy.</p>
+
+    <h3>So — what’s the best option?</h3>
+    <p>Answered from the whole evidence base, not asserted:</p>
+    <ul>
+      <li><strong>Documented:</strong> the literature’s consensus baseline for a learner is tight-aggressive — few hands, played firmly, in position, with every call priced. It is the common core of stories 1–3 above.</li>
+      <li><strong>Simulated, on this page:</strong> the bot honesty check deals that exact experiment — the loose, over-calling profile (Learning) bleeds chips to the tight, odds-priced profile (Pro) over hundreds of hands. Run it and read the numbers yourself.</li>
+      <li><strong>Your own record:</strong> the strategy record below grades <em>your</em> version of the question — how many hands you play, how you call versus raise, what your showdowns say. The best option for the table in front of you is the documented baseline, adjusted by what your record shows you actually do.</li>
+    </ul>
+    <p class="small muted">One honest caveat the stories all agree on: “best” depends on the table. Against callers, bluff less and value-bet more; against folders, the reverse. Any page that names one way for every table is selling something. This one isn’t selling anything.</p>
+  </details>
+
+  <details class="panel" id="recordPanel">
+    <summary>📈 Your strategy record — your games, your patterns <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p>Every game you play here is also a strategy builder: this page keeps <strong>your own record</strong> — your hands, your habits, and the patterns your own play shows — and the teaching draws from it, not from generic tips alone. Every hand is written down in one clean, consistent shape — the table’s limits, your cards, every action and its size, the pot, the outcome, the chip flow — so the record can later feed strategy test runs: bankroll rules and betting systems tested on play chips against your real record, graded honestly. It lives on this device only, is never sent anywhere, and you can forget it in one tap.</p>
+    <div id="recordBody"></div>
+    <div class="btnrow">
+      <button class="btn go" id="exportRecordBtn" type="button" data-explain="Downloads your strategy record as a structured file (JSON): the totals, the patterns, and every recorded hand in the same clean shape. It is made on this device, from this device’s copy — nothing is uploaded anywhere.">Download my record<span class="what">Tap to save the structured file</span></button>
+      <button class="btn" id="forgetRecordBtn" type="button" data-explain="Clears your whole strategy record from this device — every count and pattern. The game itself is untouched. There is no copy anywhere else to clear; it only ever lived here.">Forget my record<span class="what">Tap to clear it from this device</span></button>
+    </div>
+  </details>
+
+  <!-- ============ RULES ============ -->
+  <details class="panel" id="rulesPanel">
+    <summary>📖 The rules, in plain words <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <h3>The documented game</h3>
+    <p>This page plays <strong>Texas Hold’em</strong> by its documented rules — the most played poker game in the world, written down in Robert’s Rules of Poker (the rulebook card rooms settle arguments with) and in the Tournament Directors Association rules, and played at the World Series of Poker since the 1970s. The dealing order, the blinds, the betting rounds, the hand rankings, and the side-pot settlement here all follow that documented game. Where this page adds anything of its own — table limits, bot opponents, teaching — it says so, and it never changes the game underneath.</p>
+    <h3>Texas Hold’em in one breath</h3>
+    <p>Everyone gets two cards only they can see. Five shared cards come out in the middle — three (the flop), one (the turn), one (the river) — with a round of betting after each. Your hand is the best five cards out of your two plus the five shared. Last player standing, or best hand at the showdown, takes the pot.</p>
+    <h3>Blinds and the button</h3>
+    <p>The dealer button moves one seat each hand. The two players after it post forced bets — the small blind and the big blind — so there is always something to play for. Heads-up (two players), the button posts the small blind and acts first before the flop.</p>
+    <h3>All-ins and side pots</h3>
+    <p>If you bet your last chip, you can only win the part of the pot you could cover. The rest becomes a side pot for the players who covered it. This page builds the side pots exactly — each pot goes to the best hand among the players who paid into it, split evenly on a tie, with any odd chip going to the winner closest after the button.</p>
+    <h3>The three betting structures</h3>
+    <ul>
+      <li><strong>No-limit</strong> (standard): raise anything from the minimum raise up to your whole stack.</li>
+      <li><strong>Pot-limit</strong>: the biggest raise makes the pot grow by at most its own size — the cap is the pot after your call.</li>
+      <li><strong>Limit</strong>: every bet and raise is one fixed step — one big blind before the flop and on the flop, two big blinds on the turn and river — and a round allows at most four bets total (a bet and three raises).</li>
+    </ul>
+    <h3>Hand rankings — strongest first</h3>
+    <ol class="ranklist">
+      <li><strong>Royal flush</strong> — A K Q J 10, all one suit</li>
+      <li><strong>Straight flush</strong> — five in a row, one suit</li>
+      <li><strong>Four of a kind</strong></li>
+      <li><strong>Full house</strong> — three of a kind plus a pair</li>
+      <li><strong>Flush</strong> — five of one suit, not in a row</li>
+      <li><strong>Straight</strong> — five in a row, mixed suits</li>
+      <li><strong>Three of a kind</strong></li>
+      <li><strong>Two pair</strong></li>
+      <li><strong>One pair</strong></li>
+      <li><strong>High card</strong> — none of the above</li>
+    </ol>
+    <p class="small muted">Suits never break a tie — equal hands split the pot. An ace can be low for a straight (5 4 3 2 A, the “wheel”).</p>
+  </details>
+
+</div>
+
+<footer>Free forever · No ads · Copyleft — share it, improve it, pass it on. Online tables are peer-to-peer: no server of ours holds your game.</footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ================= helpers ================= */
+function el(id){ return document.getElementById(id); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function fmt(n){ return Math.round(n).toLocaleString("en-US"); }
+var SUITS = ["♠","♥","♦","♣"];
+var RANKS = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+function cardName(c){ return RANKS[c.r-2] + SUITS[c.s]; }
+function cardHTML(c, dealt){
+  if(!c) return '<div class="pcard empty"></div>';
+  var red = (c.s===1||c.s===2) ? " red" : "";
+  return '<div class="pcard'+red+(dealt?' dealt':'')+'"><span class="r">'+RANKS[c.r-2]+'</span><span class="s">'+SUITS[c.s]+'</span></div>';
+}
+function backHTML(){ return '<div class="pcard back"></div>'; }
+
+/* ================= persistence (this device only) ================= */
+var STORE_KEY = "poker-v1";
+var saved = {};
+try{ saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; }catch(e){ saved = {}; }
+function persist(){
+  try{
+    saved.alias = el("aliasInput").value.trim();
+    saved.settings = readSettingsForm();
+    saved.teaching = TEACHING;
+    saved.record = REC;
+    if(G && mySeat()>=0 && G.players[mySeat()]) saved.stack = G.players[mySeat()].chips + G.players[mySeat()].bet;
+    localStorage.setItem(STORE_KEY, JSON.stringify(saved));
+  }catch(e){}
+}
+
+/* ================= hand evaluation ================= */
+function eval5(cs){
+  var rs = cs.map(function(c){return c.r;}).sort(function(a,b){return b-a;});
+  var flush = cs.every(function(c){return c.s===cs[0].s;});
+  var uniq = []; rs.forEach(function(r){ if(uniq.indexOf(r)<0) uniq.push(r); });
+  var straight = 0, sHigh = 0;
+  if(uniq.length===5){
+    if(uniq[0]-uniq[4]===4){ straight=1; sHigh=uniq[0]; }
+    else if(uniq[0]===14 && uniq[1]===5){ straight=1; sHigh=5; }
+  }
+  var counts = {}; rs.forEach(function(r){ counts[r]=(counts[r]||0)+1; });
+  var groups = Object.keys(counts).map(function(r){ return [counts[r], +r]; })
+    .sort(function(a,b){ return b[0]-a[0] || b[1]-a[1]; });
+  if(straight && flush) return [8, sHigh];
+  if(groups[0][0]===4) return [7, groups[0][1], groups[1][1]];
+  if(groups[0][0]===3 && groups[1][0]===2) return [6, groups[0][1], groups[1][1]];
+  if(flush) return [5].concat(rs);
+  if(straight) return [4, sHigh];
+  if(groups[0][0]===3) return [3, groups[0][1]].concat(groups.slice(1).map(function(g){return g[1];}).sort(function(a,b){return b-a;}));
+  if(groups[0][0]===2 && groups[1][0]===2){
+    var pairs = groups.slice(0,2).map(function(g){return g[1];}).sort(function(a,b){return b-a;});
+    return [2].concat(pairs).concat([groups[2][1]]);
+  }
+  if(groups[0][0]===2) return [1, groups[0][1]].concat(groups.slice(1).map(function(g){return g[1];}).sort(function(a,b){return b-a;}));
+  return [0].concat(rs);
+}
+function cmpScore(a,b){
+  var n = Math.max(a.length,b.length);
+  for(var i=0;i<n;i++){ var d=(a[i]||0)-(b[i]||0); if(d) return d; }
+  return 0;
+}
+function eval7(cs){
+  var best=null;
+  for(var a=0;a<3;a++)for(var b=a+1;b<4;b++)for(var c=b+1;c<5;c++)for(var d=c+1;d<6;d++)for(var e=d+1;e<7;e++){
+    var s = eval5([cs[a],cs[b],cs[c],cs[d],cs[e]]);
+    if(!best || cmpScore(s,best)>0) best=s;
+  }
+  return best;
+}
+var CATNAMES = ["High card","One pair","Two pair","Three of a kind","a Straight","a Flush","a Full house","Four of a kind","a Straight flush"];
+function handName(score, cs){
+  var cat = score[0];
+  if(cat===8 && score[1]===14) return "a Royal flush";
+  if(cat===1) return "a Pair of " + RANKS[score[1]-2] + "s";
+  if(cat===2) return "Two pair, " + RANKS[score[1]-2] + "s and " + RANKS[score[2]-2] + "s";
+  if(cat===3) return "Three of a kind, " + RANKS[score[1]-2] + "s";
+  if(cat===6) return "a Full house, " + RANKS[score[1]-2] + "s over " + RANKS[score[2]-2] + "s";
+  if(cat===7) return "Four of a kind, " + RANKS[score[1]-2] + "s";
+  return CATNAMES[cat];
+}
+
+/* ================= deck ================= */
+function newDeck(){
+  var d=[];
+  for(var s=0;s<4;s++) for(var r=2;r<=14;r++) d.push({r:r,s:s});
+  for(var i=d.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=d[i]; d[i]=d[j]; d[j]=t; }
+  return d;
+}
+
+/* ================= table settings ================= */
+var STANDARD = { structure:"nolimit", sb:10, bb:20, buyMin:200, buyMax:2000, rebuys:true };
+function settingsAreStandard(s){
+  if(s.mode==="tournament") return false;
+  return s.structure===STANDARD.structure && s.sb===STANDARD.sb && s.bb===STANDARD.bb &&
+         s.buyMin===STANDARD.buyMin && s.buyMax===STANDARD.buyMax && s.rebuys===STANDARD.rebuys;
+}
+function structureName(s){ return s==="nolimit" ? "No-limit" : s==="potlimit" ? "Pot-limit" : "Limit"; }
+function buildSchedule(sb, bb, startStack){
+  var levels = [{ sb:sb, bb:bb }];
+  var cur = bb;
+  while(levels.length < 15 && cur < startStack){
+    var next = cur * 1.5;
+    next = next < 100 ? Math.round(next/5)*5 : next < 500 ? Math.round(next/25)*25 : Math.round(next/50)*50;
+    if(next <= cur) next = cur + 10;
+    cur = next;
+    levels.push({ sb: Math.max(1, Math.round(cur/2/5)*5 || Math.round(cur/2)), bb: cur });
+  }
+  return levels;
+}
+function limitsText(s){
+  if(s.mode==="tournament"){
+    return "<b>Tournament</b> · Everyone starts with <b>"+fmt(s.startStack)+"</b> play chips — the same stack in every seat · " +
+      "Blinds start <b>"+fmt(s.sb)+" / "+fmt(s.bb)+"</b> and rise every <b>"+s.levelMinutes+" minutes</b> · " +
+      "<b>No rebuys</b> — when your chips are gone, you are out";
+  }
+  return "<b>"+structureName(s.structure)+"</b> · Blinds <b>"+fmt(s.sb)+" / "+fmt(s.bb)+"</b> · " +
+    "Buy-in <b>"+fmt(s.buyMin)+" – "+fmt(s.buyMax)+"</b> play chips (the maximum is the cap — nobody sits with more) · " +
+    "Rebuys <b>"+(s.rebuys?"on":"off")+"</b>";
+}
+function variantText(s){
+  var diffs=[];
+  if(s.mode==="tournament") diffs.push("Tournament (standard is a cash table): equal stacks of "+fmt(s.startStack)+", blinds start "+fmt(s.sb)+"/"+fmt(s.bb)+" and rise every "+s.levelMinutes+" minutes, no rebuys");
+  if(s.structure!==STANDARD.structure) diffs.push(structureName(s.structure)+" betting (standard is No-limit)");
+  if(s.sb!==STANDARD.sb||s.bb!==STANDARD.bb) diffs.push("blinds "+fmt(s.sb)+"/"+fmt(s.bb)+" (standard is 10/20)");
+  if(s.mode!=="tournament" && (s.buyMin!==STANDARD.buyMin||s.buyMax!==STANDARD.buyMax)) diffs.push("buy-in "+fmt(s.buyMin)+"–"+fmt(s.buyMax)+" (standard is 200–2,000)");
+  if(s.mode!=="tournament" && s.rebuys!==STANDARD.rebuys) diffs.push("rebuys off (standard is on)");
+  return diffs;
+}
+
+/* ================= game state ================= */
+var G = null;          // the game (host / local device holds it)
+var net = { role:null, peer:null, conns:{}, code:null, mySeat:-1, guestSettings:null, hostConn:null };
+var view = null;       // snapshot this device renders (== G snapshot for host/local)
+
+function mySeat(){
+  if(net.role==="guest") return net.mySeat;
+  return 0; // local/host: you are seat 0
+}
+function makePlayer(name, kind, level){
+  return { name:name, kind:kind, level:level||null, chips:0, bet:0, total:0,
+           folded:true, allIn:false, cards:[], acted:false, raiseLocked:false, connected:true, sittingOut:true, lastWin:0 };
+}
+function newGame(settings, players){
+  return { settings:settings, players:players, deck:[], board:[], stage:"idle",
+    button:-1, actor:-1, currentBet:0, lastRaiseInc:settings.bb, raiseCount:0,
+    handNo:0, log:[], winners:[], reveal:false, dealing:false, tourney:null, champion:-1 };
+}
+function curSB(){ if(!G) return 10; return (G.settings.mode==="tournament" && G.tourney) ? G.tourney.schedule[G.tourney.level].sb : G.settings.sb; }
+function curBB(){ if(!G) return 20; return (G.settings.mode==="tournament" && G.tourney) ? G.tourney.schedule[G.tourney.level].bb : G.settings.bb; }
+function tourneyLevelNow(){
+  if(!G.tourney) return 0;
+  var ms = G.settings.levelMinutes * 60000;
+  return Math.min(G.tourney.schedule.length-1, Math.floor((Date.now() - G.tourney.start) / ms));
+}
+function potTotal(){ return G.players.reduce(function(a,p){ return a+p.total; }, 0); }
+function activePlayers(){ return G.players.map(function(p,i){return i;}).filter(function(i){ var p=G.players[i]; return !p.folded && !p.sittingOut; }); }
+function playersInHand(){ return G.players.map(function(p,i){return i;}).filter(function(i){ return !G.players[i].sittingOut; }); }
+function canActCount(){ return activePlayers().filter(function(i){ return !G.players[i].allIn; }).length; }
+function log(msg){
+  G.log.push(msg); if(G.log.length>60) G.log.shift();
+}
+
+/* ---- chip movement ---- */
+function commit(p, amt){
+  amt = Math.min(amt, p.chips);
+  p.chips -= amt; p.bet += amt; p.total += amt;
+  if(p.chips===0) p.allIn = true;
+  return amt;
+}
+
+/* ---- betting rules ---- */
+function limitStep(){
+  return (G.stage==="turn"||G.stage==="river") ? curBB()*2 : curBB();
+}
+function legalFor(i){
+  var p = G.players[i], s = G.settings;
+  var callAmt = Math.max(0, G.currentBet - p.bet);
+  var out = { callAmt: Math.min(callAmt, p.chips), canCheck: callAmt===0,
+              minRaiseTo: null, maxRaiseTo: null };
+  if(p.folded || p.allIn || p.chips<=0) return out;
+  if(p.chips <= callAmt) return out; // can only call all-in or fold
+  if(s.structure==="limit"){
+    if(G.raiseCount >= 4) return out;
+    var to = G.currentBet + limitStep();
+    if(p.bet + p.chips >= to && !p.raiseLocked) out.minRaiseTo = out.maxRaiseTo = to;
+    return out;
+  }
+  var minTo = (G.currentBet===0) ? curBB() : G.currentBet + G.lastRaiseInc;
+  if(p.raiseLocked){
+    // short all-in raise happened: already-acted players may only call or fold
+    return out;
+  }
+  var maxTo;
+  if(s.structure==="potlimit"){
+    var potAfterCall = potTotal() + callAmt;
+    maxTo = G.currentBet + potAfterCall;
+  } else {
+    maxTo = p.bet + p.chips;
+  }
+  maxTo = Math.min(maxTo, p.bet + p.chips);
+  if(maxTo > G.currentBet){
+    out.maxRaiseTo = maxTo;
+    out.minRaiseTo = Math.min(minTo, maxTo);
+  }
+  return out;
+}
+
+/* ================= hand flow (host-side engine) ================= */
+function startHand(){
+  var s = G.settings;
+  if(s.mode==="tournament" && G.tourney){
+    var newLvl = tourneyLevelNow();
+    if(newLvl > G.tourney.level){
+      G.tourney.level = newLvl;
+      log("⏱ The blinds are up — level "+(newLvl+1)+" of "+G.tourney.schedule.length+": blinds are now "+fmt(curSB())+"/"+fmt(curBB())+".");
+    }
+    var alive = G.players.map(function(p,i){return i;}).filter(function(i){
+      var p=G.players[i]; return !p.sittingOut && p.chips>0 && p.kind!=="open";
+    });
+    if(alive.length===1 && G.handNo>0){
+      G.champion = alive[0]; G.stage = "idle"; G.actor = -1;
+      log("🏆 "+G.players[alive[0]].name+" wins the tournament — the last player with chips, out of a field where everyone started with "+fmt(s.startStack)+".");
+      setMsg("🏆 "+G.players[alive[0]].name+" wins the tournament!");
+      afterChange(); return;
+    }
+  }
+  var seated = G.players.map(function(p,i){return i;}).filter(function(i){
+    var p=G.players[i]; return p.connected && (p.chips >= curBB() || (p.kind!=="bot" && p.chips>0));
+  });
+  // bots with too few chips rebuy or sit out
+  G.players.forEach(function(p,i){
+    if(p.sittingOut) return;
+    if(p.chips < curBB()){
+      if(s.rebuys && s.mode!=="tournament" && p.kind==="bot"){ p.chips = p.rebuyTo; log(p.name+" rebought to "+fmt(p.chips)+" (rebuys are on, capped at "+fmt(s.buyMax)+")."); }
+      else if(p.chips<=0){ p.sittingOut = true; }
+    }
+  });
+  var inGame = G.players.map(function(p,i){return i;}).filter(function(i){ return !G.players[i].sittingOut && G.players[i].chips>0 && G.players[i].connected; });
+  if(inGame.length < 2){
+    G.stage = "idle"; G.actor = -1;
+    setMsg("Not enough players with chips to deal. " + (s.rebuys ? "Rebuy, or wait for someone to join." : "Rebuys are off at this table — the game is over for busted players."));
+    afterChange(); return;
+  }
+  G.deck = newDeck(); G.board = []; G.handNo++; G.reveal = false; G.winners = [];
+  G.players.forEach(function(p){ p.bet=0; p.total=0; p.cards=[]; p.allIn=false; p.acted=false; p.raiseLocked=false; p.lastWin=0;
+    p.folded = p.sittingOut || p.chips<=0 || !p.connected; });
+  // move button
+  var n = G.players.length, tries=0;
+  do { G.button = (G.button+1)%n; tries++; } while((G.players[G.button].folded) && tries<=n);
+  var inHand = playersInHand().filter(function(i){ return !G.players[i].folded; });
+  // deal two rounds
+  for(var round=0; round<2; round++)
+    inHand.forEach(function(i){ G.players[i].cards.push(G.deck.pop()); });
+  // blinds
+  var sbIdx, bbIdx;
+  if(inHand.length===2){ sbIdx = G.button; bbIdx = nextInHand(G.button); }
+  else { sbIdx = nextInHand(G.button); bbIdx = nextInHand(sbIdx); }
+  G.stage = "preflop"; G.raiseCount = 1; G.lastRaiseInc = curBB();
+  commit(G.players[sbIdx], Math.min(curSB(), G.players[sbIdx].chips));
+  commit(G.players[bbIdx], Math.min(curBB(), G.players[bbIdx].chips));
+  G.currentBet = G.players[bbIdx].bet;
+  log("— Hand #"+G.handNo+": "+G.players[G.button].name+" has the button. Blinds "+fmt(curSB())+"/"+fmt(curBB())+".");
+  // first actor: heads-up button acts first preflop; else seat after BB
+  G.actor = (inHand.length===2) ? sbIdx : nextInHand(bbIdx);
+  skipToActor();
+  setMsg("Hand #"+G.handNo+" — " + G.players[G.actor].name + " to act.");
+  afterChange();
+  driveBots();
+}
+function nextInHand(from){
+  var n = G.players.length;
+  for(var k=1;k<=n;k++){ var i=(from+k)%n; if(!G.players[i].folded) return i; }
+  return from;
+}
+function skipToActor(){
+  var guard=0;
+  while(G.actor>=0 && guard++<20){
+    var p = G.players[G.actor];
+    if(!p.folded && !p.allIn) return;
+    if(roundComplete()){ finishRound(); return; }
+    G.actor = nextInHand(G.actor);
+  }
+}
+function roundComplete(){
+  var act = activePlayers();
+  if(act.length<=1) return true;
+  return act.every(function(i){ var p=G.players[i]; return p.allIn || (p.acted && p.bet===G.currentBet); });
+}
+function applyAction(i, action, raiseTo){
+  var p = G.players[i];
+  if(G.actor!==i || p.folded) return false;
+  var legal = legalFor(i);
+  if(action==="fold"){
+    p.folded = true; p.acted = true;
+    log(p.name+" folded.");
+  } else if(action==="check"){
+    if(!legal.canCheck){ refuse("You can’t check — there’s a bet of "+fmt(G.currentBet)+" to match. Call "+fmt(legal.callAmt)+" or fold."); return false; }
+    p.acted = true; log(p.name+" checked.");
+  } else if(action==="call"){
+    if(legal.canCheck){ p.acted=true; log(p.name+" checked."); }
+    else { var c = commit(p, legal.callAmt); p.acted = true; log(p.name+" called "+fmt(c)+(p.allIn?" — all-in.":".")); }
+  } else if(action==="raise"){
+    if(legal.minRaiseTo===null){ refuse("A raise isn’t allowed here under this table’s limits."); return false; }
+    raiseTo = Math.round(raiseTo);
+    if(raiseTo < legal.minRaiseTo || raiseTo > legal.maxRaiseTo){
+      refuse("That raise is outside this table’s limits — here you may raise to between "+fmt(legal.minRaiseTo)+" and "+fmt(legal.maxRaiseTo)+". The limits bind; that’s what they’re for.");
+      return false;
+    }
+    var prevBet = G.currentBet;
+    var inc = raiseTo - prevBet;
+    var fullRaise = inc >= G.lastRaiseInc || prevBet===0;
+    var add = raiseTo - p.bet;
+    commit(p, add);
+    G.currentBet = raiseTo; G.raiseCount++;
+    if(fullRaise) G.lastRaiseInc = inc;
+    G.players.forEach(function(q,j){
+      if(j!==i && !q.folded && !q.allIn){
+        if(fullRaise){ q.acted=false; q.raiseLocked=false; }
+        else if(q.acted){ q.raiseLocked = true; } // short all-in raise doesn't reopen
+      }
+    });
+    p.acted = true;
+    log(p.name+(prevBet===0 ? " bet " : " raised to ")+fmt(raiseTo)+(p.allIn?" — all-in.":"."));
+  } else if(action==="allin"){
+    if(p.chips<=0) return false;
+    var to = p.bet + p.chips;
+    if(to <= G.currentBet){ // all-in call (or less)
+      var c2 = commit(p, p.chips); p.acted = true;
+      log(p.name+" called all-in for "+fmt(c2)+".");
+    } else {
+      return applyAction(i, "raise", to);
+    }
+  }
+  advance();
+  return true;
+}
+function advance(){
+  if(activePlayers().length===1){ settleUncontested(); return; }
+  if(roundComplete()){ finishRound(); return; }
+  G.actor = nextInHand(G.actor);
+  skipToActor();
+  if(G.stage!=="showdown" && G.actor>=0){
+    setMsg(G.players[G.actor].name + " to act.");
+  }
+  afterChange();
+  driveBots();
+}
+function finishRound(){
+  G.players.forEach(function(p){ p.bet=0; p.acted=false; p.raiseLocked=false; });
+  G.currentBet = 0; G.raiseCount = 0; G.lastRaiseInc = curBB();
+  if(activePlayers().length===1){ settleUncontested(); return; }
+  var stages = ["preflop","flop","turn","river"];
+  var idx = stages.indexOf(G.stage);
+  if(idx===3){ showdown(); return; }
+  // deal next street
+  G.deck.pop(); // burn
+  if(G.stage==="preflop"){ G.board.push(G.deck.pop(), G.deck.pop(), G.deck.pop()); G.stage="flop"; }
+  else if(G.stage==="flop"){ G.board.push(G.deck.pop()); G.stage="turn"; }
+  else if(G.stage==="turn"){ G.board.push(G.deck.pop()); G.stage="river"; }
+  log("The "+G.stage+" is out: "+G.board.map(cardName).join(" ")+".");
+  if(canActCount()<=1){
+    // nobody (or one player) can bet — run it out
+    setTimeout(function(){ finishRound(); afterChange(); }, 650);
+    G.actor = -1; afterChange(); return;
+  }
+  G.actor = nextInHand(G.button);
+  skipToActor();
+  setMsg(G.players[G.actor].name + " to act.");
+  afterChange();
+  driveBots();
+}
+function buildPots(){
+  var contrib = G.players.map(function(p,i){ return {i:i, amt:p.total, folded:p.folded}; })
+    .filter(function(c){ return c.amt>0; });
+  var pots = [];
+  while(contrib.some(function(c){ return c.amt>0; })){
+    var level = Math.min.apply(null, contrib.filter(function(c){return c.amt>0;}).map(function(c){return c.amt;}));
+    var amount = 0, eligible = [];
+    contrib.forEach(function(c){
+      var take = Math.min(c.amt, level);
+      amount += take; c.amt -= take;
+      if(!c.folded) eligible.push(c.i);
+    });
+    if(amount>0) pots.push({ amount:amount, eligible:eligible });
+  }
+  // merge pots with identical eligibility (keeps display tidy)
+  var merged = [];
+  pots.forEach(function(pot){
+    var key = pot.eligible.slice().sort().join(",");
+    var found = merged.filter(function(m){ return m.key===key; })[0];
+    if(found) found.amount += pot.amount; else merged.push({ key:key, amount:pot.amount, eligible:pot.eligible });
+  });
+  return merged;
+}
+function settleUncontested(){
+  var winIdx = activePlayers()[0];
+  var pot = potTotal();
+  G.players[winIdx].chips += pot;
+  G.players[winIdx].lastWin = pot;
+  G.winners = [winIdx];
+  G.stage = "handEnd"; G.actor = -1;
+  log(G.players[winIdx].name+" took the pot of "+fmt(pot)+" — everyone else folded.");
+  setMsg(G.players[winIdx].name+" wins "+fmt(pot)+".");
+  endHandCleanup();
+}
+function showdown(){
+  G.stage = "showdown"; G.actor = -1; G.reveal = true;
+  var pots = buildPots();
+  var scores = {};
+  activePlayers().forEach(function(i){ scores[i] = eval7(G.players[i].cards.concat(G.board)); });
+  var winMsgs = [];
+  pots.forEach(function(pot){
+    var best = null;
+    pot.eligible.forEach(function(i){ if(!best || cmpScore(scores[i], best)>0) best = scores[i]; });
+    var winners = pot.eligible.filter(function(i){ return cmpScore(scores[i], best)===0; });
+    // order winners starting just after the button, for the odd chip
+    winners.sort(function(a,b){
+      var da = (a - G.button + G.players.length) % G.players.length;
+      var db = (b - G.button + G.players.length) % G.players.length;
+      return da - db;
+    });
+    var share = Math.floor(pot.amount / winners.length);
+    var odd = pot.amount - share*winners.length;
+    winners.forEach(function(w, k){
+      var get = share + (k===0 ? odd : 0);
+      G.players[w].chips += get; G.players[w].lastWin += get;
+      if(G.winners.indexOf(w)<0) G.winners.push(w);
+    });
+    winMsgs.push(winners.map(function(w){ return G.players[w].name; }).join(" and ") +
+      " won "+fmt(pot.amount)+(pots.length>1?" (side pot)":"")+" with "+handName(best)+".");
+  });
+  activePlayers().forEach(function(i){
+    log(G.players[i].name+" showed "+G.players[i].cards.map(cardName).join(" ")+" — "+handName(scores[i])+".");
+  });
+  winMsgs.forEach(log);
+  setMsg(winMsgs.join(" "));
+  endHandCleanup();
+}
+function endHandCleanup(){
+  G.players.forEach(function(p){
+    if(G.settings.mode==="tournament" && p.chips<=0 && !p.sittingOut && p.kind!=="open"){
+      p.sittingOut = true;
+      log(p.name+" is out of the tournament — no rebuys. "+(G.champion>=0?"":"The remaining players play on."));
+    }
+    p.bet = 0;
+  });
+  afterChange();
+  persist();
+  // auto-deal next hand if this is a live table and enough players remain
+  if(net.role!=="guest"){
+    setTimeout(function(){
+      if(!G || G.stage==="idle") return;
+      if(G.stage==="showdown" || G.stage==="handEnd"){
+        var ready = G.players.filter(function(p){ return p.connected && !p.sittingOut && (p.chips>=curBB() || (G.settings.rebuys && G.settings.mode!=="tournament" && p.kind==="bot")); }).length;
+        if(ready>=2 && el("tableSection").style.display!=="none") startHand();
+        else { G.stage="idle"; afterChange(); }
+      }
+    }, 5200);
+  }
+}
+
+/* ================= bots ================= */
+var LEVELS = {
+  Learning: { samples:40,   noise:0.16,  mistake:0.20,  callMargin:-0.12, raiseThresh:0.88, bluff:0.01 },
+  Steady:   { samples:150,  noise:0.07,  mistake:0.07,  callMargin:-0.02, raiseThresh:0.72, bluff:0.03 },
+  Sharp:    { samples:600,  noise:0.025, mistake:0.02,  callMargin:0.01,  raiseThresh:0.62, bluff:0.07 },
+  Pro:      { samples:2500, noise:0.006, mistake:0.004, callMargin:0.02,  raiseThresh:0.55, bluff:0.11 }
+};
+function equityMC(hole, board, numOpp, samples){
+  var known = hole.concat(board);
+  var pool = [];
+  for(var s=0;s<4;s++) for(var r=2;r<=14;r++){
+    var c={r:r,s:s};
+    if(!known.some(function(k){ return k.r===c.r && k.s===c.s; })) pool.push(c);
+  }
+  var win=0, tie=0;
+  for(var t=0;t<samples;t++){
+    // shuffle a copy of indices
+    var idx = pool.map(function(_,i){return i;});
+    for(var i=idx.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var tmp=idx[i]; idx[i]=idx[j]; idx[j]=tmp; }
+    var need = numOpp*2 + (5-board.length);
+    if(idx.length < need) break;
+    var drawn = idx.slice(0,need).map(function(i){ return pool[i]; });
+    var fullBoard = board.slice();
+    var k = numOpp*2;
+    while(fullBoard.length<5) fullBoard.push(drawn[k++]);
+    var mine = eval7(hole.concat(fullBoard));
+    var best = 1;
+    for(var o=0;o<numOpp;o++){
+      var theirs = eval7([drawn[o*2], drawn[o*2+1]].concat(fullBoard));
+      var cmp = cmpScore(mine, theirs);
+      if(cmp<0){ best=-1; break; }
+      if(cmp===0) best=0;
+    }
+    if(best===1) win++; else if(best===0) tie++;
+  }
+  return (win + tie*0.5) / Math.max(1,samples);
+}
+function botDecide(i, simScale){
+  var p = G.players[i];
+  var cfg = LEVELS[p.level] || LEVELS.Steady;
+  var legal = legalFor(i);
+  var opps = activePlayers().length - 1;
+  var samples = Math.max(15, Math.round(cfg.samples * (simScale||1)));
+  var eq = equityMC(p.cards, G.board, Math.max(1,opps), samples);
+  eq += (Math.random()*2-1) * cfg.noise;
+  eq = clamp(eq, 0, 1);
+  var pot = potTotal();
+  var callAmt = legal.callAmt;
+  var potOdds = callAmt>0 ? callAmt/(pot+callAmt) : 0;
+
+  function doRaise(frac){
+    if(legal.minRaiseTo===null) return null;
+    var target;
+    if(G.settings.structure==="limit") target = legal.minRaiseTo;
+    else {
+      var potAfter = pot + callAmt;
+      target = G.currentBet + Math.round(potAfter * frac);
+      target = clamp(target, legal.minRaiseTo, legal.maxRaiseTo);
+    }
+    return { action:"raise", amt: target };
+  }
+  // plain mistakes
+  if(Math.random() < cfg.mistake){
+    var opts = [];
+    if(legal.canCheck) opts.push({action:"check"});
+    if(callAmt>0) opts.push({action:"call"});
+    opts.push({action:"fold"});
+    if(legal.minRaiseTo!==null) opts.push({action:"raise", amt:legal.minRaiseTo});
+    if(legal.canCheck) opts = opts.filter(function(o){ return o.action!=="fold"; });
+    return opts[Math.floor(Math.random()*opts.length)];
+  }
+  if(callAmt===0){
+    if(eq > cfg.raiseThresh){ var r1 = doRaise(0.5 + Math.random()*0.6); if(r1) return r1; }
+    if(eq < 0.32 && Math.random() < cfg.bluff){ var r2 = doRaise(0.6); if(r2) return r2; }
+    return { action:"check" };
+  }
+  // facing a bet
+  if(eq > cfg.raiseThresh + 0.10){ var r3 = doRaise(0.5 + Math.random()*0.5); if(r3) return r3; }
+  if(eq > potOdds + cfg.callMargin) return { action:"call" };
+  if(eq < 0.25 && Math.random() < cfg.bluff && legal.minRaiseTo!==null){ var r4 = doRaise(0.75); if(r4) return r4; }
+  return { action:"fold" };
+}
+var botTimer = null;
+function driveBots(){
+  if(net.role==="guest") return;
+  if(botTimer){ clearTimeout(botTimer); botTimer=null; }
+  if(!G || G.actor<0) return;
+  var p = G.players[G.actor];
+  if(!p || p.kind!=="bot" || p.folded) return;
+  var idx = G.actor;
+  botTimer = setTimeout(function(){
+    if(!G || G.actor!==idx) return;
+    var d = botDecide(idx, 1);
+    if(d) applyAction(idx, d.action, d.amt);
+  }, 750 + Math.random()*900);
+}
+
+/* ================= snapshots & rendering ================= */
+function snapshot(forSeat){
+  var s = G.settings;
+  return {
+    settings: s, stage: G.stage, board: G.board, handNo: G.handNo,
+    tourney: (s.mode==="tournament" && G.tourney) ? (function(){
+      var lvl = tourneyLevelNow(), sch = G.tourney.schedule;
+      return { level: lvl+1, levels: sch.length, sb: sch[lvl].sb, bb: sch[lvl].bb,
+        endsAt: lvl >= sch.length-1 ? null : G.tourney.start + (lvl+1)*s.levelMinutes*60000,
+        startStack: s.startStack, levelMinutes: s.levelMinutes, champion: G.champion };
+    })() : null,
+    pot: potTotal(), pots: (G.stage==="showdown"||G.stage==="handEnd") ? [] : buildPots().map(function(p){return p.amount;}),
+    actor: G.actor, button: G.button, reveal: G.reveal, winners: G.winners.slice(),
+    log: G.log.slice(-14),
+    players: G.players.map(function(p,i){
+      var showCards = (i===forSeat && p.cards.length) || (G.reveal && !p.folded && p.cards.length);
+      return { name:p.name, kind:p.kind, level:p.level, chips:p.chips, bet:p.bet, total:p.total,
+        folded:p.folded, allIn:p.allIn, sittingOut:p.sittingOut, connected:p.connected,
+        lastWin:p.lastWin, cards: showCards ? p.cards : (p.cards.length? "hidden" : []) };
+    })
+  };
+}
+function afterChange(){
+  if(!G) return;
+  view = snapshot(mySeat());
+  render();
+  if(net.role==="host"){
+    Object.keys(net.conns).forEach(function(k){
+      var rec = net.conns[k];
+      try{ rec.conn.send({ t:"state", view: snapshot(rec.seat) }); }catch(e){}
+    });
+  }
+  persist();
+}
+var currentMsg = "";
+function setMsg(m){ currentMsg = m; var e = el("msgLine"); if(e) e.textContent = m; }
+function refuse(m){ var e = el("actRefuse"); if(e){ e.textContent = m; } setMsg(m); }
+
+function render(){
+  if(!view) return;
+  var v = view, s = v.settings;
+  el("tableSection").style.display = "block";
+  el("tableLimits").innerHTML = "This table’s limits: " + limitsText(s) + ".";
+  var tl = el("tourneyLine");
+  if(v.tourney){
+    tl.style.display = "block";
+    tl.innerHTML = "🏆 <b>Tournament</b> — Level <b>" + v.tourney.level + " of " + v.tourney.levels + "</b> · Blinds now <b>" + fmt(v.tourney.sb) + " / " + fmt(v.tourney.bb) + "</b> · " +
+      (v.tourney.endsAt ? 'Blinds go up in <b id="tourneyCountdown">–</b>' : "<b>Final level</b> — the blinds stay here") +
+      " · Everyone started with <b>" + fmt(v.tourney.startStack) + "</b> · No rebuys" +
+      (v.tourney.champion>=0 ? " · 🏆 <b>" + escapeHtml(v.players[v.tourney.champion].name) + " wins the tournament!</b>" : "");
+  } else { tl.style.display = "none"; }
+  var diffs = variantText(s);
+  var vb = el("variantBanner");
+  if(diffs.length){ vb.className = "variant-banner on"; vb.textContent = "⚠ Non-standard table — set by whoever set it up, printed here for everybody: " + diffs.join(" · ") + "."; }
+  else { vb.className = "variant-banner"; vb.textContent = ""; }
+  el("stageLine").textContent =
+    v.stage==="idle" ? "Waiting to deal" :
+    v.stage==="preflop" ? "Preflop — before the flop" :
+    v.stage==="flop" ? "The flop" : v.stage==="turn" ? "The turn" :
+    v.stage==="river" ? "The river" : v.stage==="showdown" ? "Showdown" : "Hand over";
+  var bc = el("boardCards");
+  bc.innerHTML = "";
+  for(var b=0;b<5;b++) bc.innerHTML += v.board[b] ? cardHTML(v.board[b], true) : '<div class="pcard empty"></div>';
+  el("potLine").textContent = "Pot: " + fmt(v.pot) + " play chips";
+  el("sidePots").textContent = (v.pots && v.pots.length>1) ? "Pots: " + v.pots.map(fmt).join(" + ") + " (main + side — each settled separately)" : "";
+  // seats
+  var layer = el("seatLayer"); layer.innerHTML = "";
+  var n = v.players.length, mine = mySeat();
+  var mob = window.innerWidth < 640;
+  var rx = mob ? 33 : 40, ry = mob ? 34 : 37;
+  v.players.forEach(function(p, i){
+    var pos = (i - mine + n) % n;
+    var ang = Math.PI/2 + pos * (2*Math.PI/n);
+    var x = 50 + rx*Math.cos(ang), y = 50 + ry*Math.sin(ang);
+    var d = document.createElement("div");
+    d.className = "seat" + (v.actor===i ? " turn" : "") + (p.folded && !p.sittingOut ? " folded" : "") + (v.winners.indexOf(i)>=0 ? " winner" : "");
+    d.style.left = x + "%"; d.style.top = y + "%";
+    var hole = "";
+    if(p.cards==="hidden") hole = backHTML() + backHTML();
+    else if(p.cards && p.cards.length) hole = p.cards.map(function(c){ return cardHTML(c); }).join("");
+    var who = '<div class="nm">' + escapeHtml(p.name) + (v.button===i ? '<span class="dealerbtn" title="Dealer button">D</span>' : "") + '</div>' +
+      '<div class="chips">' + (p.sittingOut ? "sitting out" : fmt(p.chips) + " chips") + '</div>' +
+      (p.level ? '<div class="lvl">Bot · ' + p.level + '</div>' : '') +
+      (p.kind==="remote" ? '<div class="lvl">Online player</div>' : '') +
+      (p.allIn && !p.folded ? '<div class="lvl">ALL-IN</div>' : '') +
+      (p.lastWin>0 && (v.stage==="showdown"||v.stage==="handEnd") ? '<div class="lvl">won '+fmt(p.lastWin)+'</div>' : '');
+    d.innerHTML = '<div class="hole">' + hole + '</div><div class="who">' + who + '</div>' +
+      (p.bet>0 ? '<span class="betbubble">bet ' + fmt(p.bet) + '</span>' : '');
+    layer.appendChild(d);
+  });
+  el("logBox").innerHTML = v.log.map(function(l){ return "<div>" + escapeHtml(l) + "</div>"; }).join("");
+  el("logBox").scrollTop = el("logBox").scrollHeight;
+  // teaching tracker: remember the street on which the viewer folded
+  var meT = v.players[mine];
+  if(track.handNo !== v.handNo){ track.handNo = v.handNo; track.foldStage = null; }
+  if(meT && meT.folded && !track.foldStage && v.stage!=="showdown" && v.stage!=="handEnd" && v.stage!=="idle") track.foldStage = v.stage;
+  recordObserve(v);
+  postHandNote(v);
+  renderActions();
+  // deal / rebuy buttons
+  var me = v.players[mine];
+  el("dealBtn").style.display = (net.role!=="guest" && (v.stage==="idle")) ? "" : "none";
+  el("rebuyBtn").style.display = (me && me.chips < curBB() && s.rebuys && s.mode!=="tournament" && v.stage==="idle") ? "" : "none";
+  if(net.role==="host") el("tableTitle").textContent = "Your table — code " + (net.code||"");
+  else if(net.role==="guest") el("tableTitle").textContent = "Table " + (net.code||"") + " — you are a guest; the host’s device holds the game";
+  else el("tableTitle").textContent = "Your table — on this device";
+}
+function escapeHtml(t){
+  return String(t).replace(/[&<>"']/g, function(ch){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]; });
+}
+function myLegal(){
+  if(!view || view.actor !== mySeat()) return null;
+  // recompute from live G when local/host; guests get legal from view via approximation stored on snapshot
+  if(net.role==="guest") return guestLegal;
+  return legalFor(mySeat());
+}
+var guestLegal = null;
+function renderActions(){
+  var panel = el("actionPanel");
+  var mine = mySeat();
+  var myTurn = view && view.actor===mine && view.stage!=="showdown" && view.stage!=="handEnd" && view.stage!=="idle";
+  var me = view ? view.players[mine] : null;
+  if(net.role!=="guest"){
+    // pass-and-play: it's a local human's turn (not necessarily seat 0)
+    var actorP = view ? view.players[view.actor] : null;
+    myTurn = !!(view && actorP && actorP.kind==="local" && view.stage!=="idle" && view.stage!=="showdown" && view.stage!=="handEnd");
+    if(myTurn) me = actorP;
+  }
+  if(!myTurn || !me || me.folded){ panel.className = "action-panel"; return; }
+  panel.className = "action-panel on";
+  var cb = el("coachBox");
+  if(TEACHING==="coach"){
+    var ch = coachHTML(view, view.actor);
+    if(ch){ cb.style.display = "block"; cb.innerHTML = ch; } else cb.style.display = "none";
+  } else cb.style.display = "none";
+  var legal = (net.role==="guest") ? guestLegal : legalFor(view.actor);
+  if(!legal) { panel.className="action-panel"; return; }
+  var cc = el("checkCallBtn");
+  if(legal.canCheck){ cc.innerHTML = 'Check<span class="what">Tap to stay in for free</span>'; }
+  else { cc.innerHTML = 'Call ' + fmt(legal.callAmt) + '<span class="what">Tap to match the bet and stay in</span>'; }
+  var rb = el("raiseBtn"), inp = el("raiseInput"), sl = el("raiseSlider");
+  if(legal.minRaiseTo===null){
+    rb.disabled = true; inp.disabled = true; sl.disabled = true;
+    rb.innerHTML = 'Raise<span class="what">Not available under these limits right now</span>';
+  } else {
+    rb.disabled = false; inp.disabled = false; sl.disabled = false;
+    rb.innerHTML = 'Raise<span class="what">Tap to raise to the amount below</span>';
+    inp.min = legal.minRaiseTo; inp.max = legal.maxRaiseTo; inp.step = 1;
+    if(!inp.value || +inp.value < legal.minRaiseTo || +inp.value > legal.maxRaiseTo) inp.value = legal.minRaiseTo;
+    sl.min = legal.minRaiseTo; sl.max = legal.maxRaiseTo; sl.value = inp.value; sl.step = 1;
+  }
+  el("allInBtn").disabled = !(me.chips > 0);
+  el("raisePotBtn").style.display = (view.settings.structure==="limit") ? "none" : "";
+  el("actRefuse").textContent = "";
+}
+
+/* ================= acting ================= */
+function actFromUI(action, amt){
+  el("actRefuse").textContent = "";
+  // strategy record intake: the device owner's own actions, in a clean shape
+  (function(){
+    var stage = view ? view.stage : null, actor = view ? view.actor : -1;
+    if(actor===mySeat() && stage){
+      var recAmt = null;
+      if(action==="raise") recAmt = amt;
+      else if(action==="call"){
+        var meR = view.players[actor];
+        var cbR = Math.max.apply(null, view.players.map(function(p){ return p.bet; }).concat([0]));
+        recAmt = Math.max(0, cbR - meR.bet);
+      }
+      else if(action==="allin"){ var meA = view.players[actor]; recAmt = meA ? meA.chips + meA.bet : null; }
+      recordMyAction(stage, action, recAmt);
+    }
+  })();
+  if(TEACHING!=="off"){
+    if(net.role==="guest"){ if(view && view.actor===mySeat()) recordDecisionExample(view.actor, action); }
+    else if(G) recordDecisionExample(G.actor, action);
+  }
+  if(net.role==="guest"){
+    if(!net.hostConn) return;
+    net.hostConn.send({ t:"act", action:action, amt:amt });
+    return;
+  }
+  var i = G.actor;
+  var before = G ? G.stage : null;
+  var ok = applyAction(i, action, amt);
+  if(ok===false){ renderActions(); }
+}
+el("foldBtn").addEventListener("click", function(){ actFromUI("fold"); });
+el("checkCallBtn").addEventListener("click", function(){
+  var legal = (net.role==="guest") ? guestLegal : legalFor(G.actor);
+  actFromUI(legal && legal.canCheck ? "check" : "call");
+});
+el("raiseBtn").addEventListener("click", function(){ actFromUI("raise", +el("raiseInput").value); });
+el("allInBtn").addEventListener("click", function(){ actFromUI("allin"); });
+el("raiseInput").addEventListener("input", function(){ el("raiseSlider").value = el("raiseInput").value; });
+el("raiseSlider").addEventListener("input", function(){ el("raiseInput").value = el("raiseSlider").value; });
+el("raiseMinBtn").addEventListener("click", function(){
+  var legal = (net.role==="guest") ? guestLegal : legalFor(G.actor);
+  if(legal && legal.minRaiseTo!==null){ el("raiseInput").value = legal.minRaiseTo; el("raiseSlider").value = legal.minRaiseTo; }
+});
+el("raiseMaxBtn").addEventListener("click", function(){
+  var legal = (net.role==="guest") ? guestLegal : legalFor(G.actor);
+  if(legal && legal.maxRaiseTo!==null){ el("raiseInput").value = legal.maxRaiseTo; el("raiseSlider").value = legal.maxRaiseTo; }
+});
+el("raisePotBtn").addEventListener("click", function(){
+  var legal = (net.role==="guest") ? guestLegal : legalFor(G.actor);
+  if(!legal || legal.minRaiseTo===null) return;
+  var me = G ? G.players[G.actor] : null;
+  var potAfter = potTotal() + legal.callAmt;
+  var target = clamp((G ? G.currentBet : 0) + potAfter, legal.minRaiseTo, legal.maxRaiseTo);
+  el("raiseInput").value = target; el("raiseSlider").value = target;
+});
+document.addEventListener("keydown", function(e){
+  if(!el("actionPanel").className.includes("on")) return;
+  if(e.target.tagName==="INPUT" || e.target.tagName==="SELECT" || e.target.tagName==="TEXTAREA") return;
+  var k = e.key.toLowerCase();
+  if(k==="f") actFromUI("fold");
+  else if(k==="c") el("checkCallBtn").click();
+  else if(k==="a") actFromUI("allin");
+});
+el("dealBtn").addEventListener("click", function(){
+  if(net.role==="guest") return;
+  if(G.stage==="idle" || G.stage==="showdown" || G.stage==="handEnd") startHand();
+});
+el("rebuyBtn").addEventListener("click", function(){
+  if(net.role==="guest"){
+    net.hostConn.send({ t:"rebuy" }); return;
+  }
+  var me = G.players[mySeat()], s = G.settings;
+  var amt = clamp(me.rebuyTo || s.buyMin, s.buyMin, s.buyMax);
+  me.chips = amt; me.sittingOut = false;
+  log(me.name+" rebought for "+fmt(amt)+" (this table’s cap is "+fmt(s.buyMax)+").");
+  setMsg("You rebought for "+fmt(amt)+" play chips. Deal when ready.");
+  afterChange();
+});
+el("leaveBtn").addEventListener("click", function(){ leaveTable(); });
+function leaveTable(){
+  if(botTimer) clearTimeout(botTimer);
+  if(net.role==="host"){
+    Object.keys(net.conns).forEach(function(k){ try{ net.conns[k].conn.send({t:"closed"}); }catch(e){} });
+  }
+  if(net.peer){ try{ net.peer.destroy(); }catch(e){} }
+  net = { role:null, peer:null, conns:{}, code:null, mySeat:-1, guestSettings:null, hostConn:null };
+  G = null; view = null;
+  el("tableSection").style.display = "none";
+  el("setupSection").style.display = "";
+  el("joinSection").style.display = "";
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+/* ================= setup form ================= */
+var ALIAS_A = ["Lucky","River","Quiet","Golden","Midnight","Velvet","Iron","Amber","Swift","Mellow"];
+var ALIAS_B = ["Fox","Otter","Comet","Badger","Willow","Raven","Clover","Marlin","Juniper","Falcon"];
+function randomAlias(){ return ALIAS_A[Math.floor(Math.random()*ALIAS_A.length)] + " " + ALIAS_B[Math.floor(Math.random()*ALIAS_B.length)]; }
+el("aliasDice").addEventListener("click", function(){ el("aliasInput").value = randomAlias(); persist(); });
+el("joinDice").addEventListener("click", function(){ el("joinAlias").value = randomAlias(); });
+
+function buildSeatRows(){
+  var n = +el("seatsSel").value;
+  var box = el("seatRows"); box.innerHTML = "";
+  for(var i=1;i<n;i++){
+    var row = document.createElement("div"); row.className = "seatrow";
+    row.innerHTML = '<div class="seatname">Seat '+(i+1)+'</div>';
+    var sel = document.createElement("select"); sel.id = "seatSel"+i;
+    sel.setAttribute("aria-label","Who sits in seat "+(i+1));
+    ["bot-Steady","bot-Learning","bot-Sharp","bot-Pro","local","open","empty"].forEach(function(v){
+      var o = document.createElement("option"); o.value = v;
+      o.textContent = v==="local" ? "A person on this device (pass-and-play)" :
+        v==="open" ? "Open — someone joining online with the code" :
+        v==="empty" ? "Empty — nobody sits here" : "Bot · " + v.slice(4);
+      sel.appendChild(o);
+    });
+    if(i===1) sel.value = "bot-Sharp";
+    row.appendChild(sel);
+    box.appendChild(row);
+  }
+}
+el("seatsSel").addEventListener("change", buildSeatRows);
+
+function readSettingsForm(){
+  return {
+    mode: el("modeSel").value,
+    structure: el("structureSel").value,
+    seats: +el("seatsSel").value,
+    sb: Math.max(1, Math.round(+el("sbInput").value||10)),
+    bb: Math.max(2, Math.round(+el("bbInput").value||20)),
+    buyMin: Math.round(+el("buyMinInput").value||200),
+    buyMax: Math.round(+el("buyMaxInput").value||2000),
+    buyIn: Math.round(+el("buyInInput").value||1000),
+    rebuys: el("rebuySel").value==="on",
+    startStack: Math.round(+el("startStackInput").value||1500),
+    levelMinutes: +el("levelMinSel").value||3
+  };
+}
+function validateSettings(s, buyIn){
+  if(s.bb <= s.sb) return "The big blind must be bigger than the small blind — that’s what makes the blinds work.";
+  if(s.mode==="tournament"){
+    if(s.startStack < s.bb*20) return "The starting stack ("+fmt(s.startStack)+") is too small for blinds starting at "+fmt(s.sb)+"/"+fmt(s.bb)+" — give everyone at least twenty big blinds ("+fmt(s.bb*20)+") or the first level is a shove-fest by force, not by choice.";
+    return null;
+  }
+  if(s.buyMin < s.bb*10) return "The buy-in minimum ("+fmt(s.buyMin)+") is too small for blinds of "+fmt(s.sb)+"/"+fmt(s.bb)+" — a stack should hold at least ten big blinds, or the first hand is all-in by force.";
+  if(s.buyMax < s.buyMin) return "The buy-in maximum ("+fmt(s.buyMax)+") is below the minimum ("+fmt(s.buyMin)+"). The cap can’t be lower than the floor — raise the maximum or lower the minimum.";
+  if(buyIn < s.buyMin) return "Your buy-in of "+fmt(buyIn)+" is below this table’s minimum of "+fmt(s.buyMin)+". The floor binds too — raise your buy-in or lower the table minimum.";
+  if(buyIn > s.buyMax) return "Your buy-in of "+fmt(buyIn)+" is over this table’s maximum of "+fmt(s.buyMax)+". That cap is the anti-ruin rule: nobody sits down with a stack big enough to bully the table. Lower your buy-in, or raise the cap in the settings where everyone can see it.";
+  return null;
+}
+function settingsOnly(s){ return { mode:s.mode||"cash", structure:s.structure, sb:s.sb, bb:s.bb, buyMin:s.buyMin, buyMax:s.buyMax, rebuys:s.rebuys, startStack:s.startStack||1500, levelMinutes:s.levelMinutes||3 }; }
+
+function refreshModeUI(){
+  var tourney = el("modeSel").value==="tournament";
+  el("tourneyFields").style.display = tourney ? "block" : "none";
+  ["cashBuyMin","cashBuyMax","cashBuyIn","cashRebuy"].forEach(function(id){ el(id).style.display = tourney ? "none" : ""; });
+  el("standardNote").textContent = tourney
+    ? "A tournament is a non-standard table by design — the banner on the table will say so, and the blind schedule below is printed for everybody before anyone sits."
+    : "Standard table: no-limit, blinds 10/20, buy-in 200–2,000, rebuys on. Change any of these and the table says so, plainly, while that setting is in play — a variant’s results are the variant’s, never dressed as standard.";
+  if(tourney){
+    var s = readSettingsForm();
+    var sch = buildSchedule(s.sb, s.bb, s.startStack);
+    el("schedulePreview").innerHTML = "<b>The blind schedule</b> — everyone starts with <b>"+fmt(s.startStack)+"</b>, blinds rise every <b>"+s.levelMinutes+" minutes</b>:<br>" +
+      sch.slice(0,8).map(function(l,i){ return "Level "+(i+1)+": "+fmt(l.sb)+"/"+fmt(l.bb); }).join(" · ") +
+      (sch.length>8 ? " · … up to level "+sch.length+" ("+fmt(sch[sch.length-1].sb)+"/"+fmt(sch[sch.length-1].bb)+"), where they stay." : ".");
+  }
+}
+el("modeSel").addEventListener("change", refreshModeUI);
+["sbInput","bbInput","startStackInput","levelMinSel"].forEach(function(id){ el(id).addEventListener("change", refreshModeUI); });
+
+function startLocalTable(online){
+  var s = readSettingsForm();
+  var err = validateSettings(s, s.buyIn);
+  var ref = el("setupRefuse");
+  if(err){ ref.textContent = err; return; }
+  ref.textContent = "";
+  var alias = el("aliasInput").value.trim() || "Player 1";
+  var tourney = s.mode==="tournament";
+  var myStack = tourney ? s.startStack : s.buyIn;
+  var players = [];
+  var me = makePlayer(alias, "local"); me.chips = myStack; me.rebuyTo = myStack; me.sittingOut = false;
+  players.push(me);
+  var localCount = 1;
+  for(var i=1;i<s.seats;i++){
+    var v = el("seatSel"+i) ? el("seatSel"+i).value : "empty";
+    if(v.indexOf("bot-")===0){
+      var lvl = v.slice(4);
+      var b = makePlayer(lvl + " Bot " + i, "bot", lvl);
+      b.chips = tourney ? s.startStack : clamp(s.buyIn, s.buyMin, s.buyMax); b.rebuyTo = b.chips; b.sittingOut = false;
+      players.push(b);
+    } else if(v==="local"){
+      localCount++;
+      var lp = makePlayer("Player " + localCount, "local");
+      lp.chips = tourney ? s.startStack : clamp(s.buyIn, s.buyMin, s.buyMax); lp.rebuyTo = lp.chips; lp.sittingOut = false;
+      players.push(lp);
+    } else if(v==="open"){
+      var op = makePlayer("Open seat", "open");
+      op.sittingOut = true; op.connected = false; op.chips = 0;
+      players.push(op);
+    }
+    // "empty" seats simply don't exist at this table
+  }
+  if(players.filter(function(p){ return !p.sittingOut; }).length < 2){
+    ref.textContent = "This table needs at least one other player — give a seat to a bot, a pass-and-play player, or an online guest.";
+    return;
+  }
+  G = newGame(settingsOnly(s), players);
+  if(tourney){
+    G.tourney = { start: Date.now(), level: 0, schedule: buildSchedule(s.sb, s.bb, s.startStack) };
+    log("🏆 Tournament table: everyone starts with "+fmt(s.startStack)+". Blinds start "+fmt(s.sb)+"/"+fmt(s.bb)+" and rise every "+s.levelMinutes+" minutes over "+G.tourney.schedule.length+" levels. No rebuys — last player with chips wins.");
+  }
+  net.role = online ? "host" : null;
+  log("Table set up: " + limitsText(G.settings).replace(/<[^>]+>/g,"") + ".");
+  if(!settingsAreStandard(G.settings)) log("Non-standard table: " + variantText(G.settings).join(" · ") + ".");
+  el("setupSection").style.display = online ? "" : "none";
+  if(!online) el("joinSection").style.display = "none";
+  afterChange();
+  setMsg(tourney
+    ? "Tournament: you’re in with "+fmt(s.startStack)+" play chips — the same as every seat. Blinds rise every "+s.levelMinutes+" minutes."
+    : "You’re seated with "+fmt(s.buyIn)+" play chips. Tap “Deal the next hand” when you’re ready.");
+  startHand();
+  el("tableSection").scrollIntoView({ behavior:"smooth" });
+  persist();
+}
+el("playLocalBtn").addEventListener("click", function(){ startLocalTable(false); });
+
+/* ================= online: host ================= */
+var PREFIX = "musepoker-";
+function makeCode(){
+  var chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", code = "";
+  for(var i=0;i<5;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+el("hostOnlineBtn").addEventListener("click", function(){
+  if(typeof window.Peer === "undefined"){
+    el("setupRefuse").textContent = "Online tables couldn’t load — the peer-to-peer service didn’t answer. Check your connection and reload, or play on this device: it always works.";
+    return;
+  }
+  startLocalTable(true);
+  if(!G) return;
+  net.code = makeCode();
+  el("hostCodeBox").style.display = "block";
+  el("hostCode").textContent = net.code;
+  try{ net.peer = new Peer(PREFIX + net.code); }
+  catch(e){ el("hostStatus").textContent = "Couldn’t open the online table on this device. The table still works on this device."; return; }
+  net.peer.on("open", function(){
+    el("hostStatus").textContent = "Table open — code " + net.code + ". Waiting for players… bots are playing meanwhile; open seats are taken between hands.";
+    afterChange();
+  });
+  net.peer.on("error", function(){
+    el("hostStatus").textContent = "The peer service hit a snag. The table still works on this device; try opening it online again.";
+  });
+  net.peer.on("connection", function(conn){
+    conn.on("data", function(data){ hostOnData(conn, data); });
+    conn.on("close", function(){ hostDropConn(conn); });
+  });
+});
+function hostSeatFor(conn){
+  var keys = Object.keys(net.conns);
+  for(var i=0;i<keys.length;i++) if(net.conns[keys[i]].conn===conn) return net.conns[keys[i]].seat;
+  return -1;
+}
+function hostOnData(conn, data){
+  if(!data || !G) return;
+  if(data.t==="hello"){
+    conn.send({ t:"welcome", settings: G.settings });
+    return;
+  }
+  if(data.t==="sit"){
+    var seat = G.players.map(function(p,i){return i;}).filter(function(i){ return G.players[i].kind==="open"; })[0];
+    if(seat===undefined){ conn.send({ t:"refused", msg:"This table has no open seat left — every seat is taken. Ask the host to set up a bigger table." }); return; }
+    var s = G.settings;
+    var buyIn, p = G.players[seat];
+    if(s.mode==="tournament"){
+      buyIn = s.startStack; // equal stacks — there is no buy-in to choose at a tournament table
+    } else {
+      buyIn = Math.round(data.buyIn||0);
+      if(buyIn < s.buyMin){ conn.send({ t:"refused", msg:"That buy-in ("+fmt(buyIn)+") is below this table’s minimum of "+fmt(s.buyMin)+". The floor binds for everyone." }); return; }
+      if(buyIn > s.buyMax){ conn.send({ t:"refused", msg:"That buy-in ("+fmt(buyIn)+") is over this table’s maximum of "+fmt(s.buyMax)+". That cap is the anti-ruin rule — nobody sits with more, not even the host." }); return; }
+    }
+    p.name = (data.name||"").trim() || ("Player " + (seat+1));
+    p.kind = "remote"; p.chips = buyIn; p.rebuyTo = buyIn; p.sittingOut = false; p.connected = true; p.folded = true;
+    net.conns[conn.peer] = { conn:conn, seat:seat };
+    conn.send({ t:"seated", seat:seat });
+    log(p.name+" joined online and sat down with "+fmt(buyIn)+".");
+    el("hostStatus").textContent = p.name + " just sat down. Seats fill between hands.";
+    afterChange();
+    return;
+  }
+  if(data.t==="act"){
+    var si = hostSeatFor(conn);
+    if(si>=0 && G.actor===si) applyAction(si, data.action, data.amt);
+    return;
+  }
+  if(data.t==="rebuy"){
+    var sj = hostSeatFor(conn);
+    if(sj>=0){
+      var pp = G.players[sj], ss = G.settings;
+      if(ss.mode!=="tournament" && ss.rebuys && pp.chips < ss.bb){ pp.chips = clamp(pp.rebuyTo||ss.buyMin, ss.buyMin, ss.buyMax); pp.sittingOut=false; log(pp.name+" rebought for "+fmt(pp.chips)+"."); afterChange(); }
+    }
+  }
+}
+function hostDropConn(conn){
+  var seat = hostSeatFor(conn);
+  if(seat>=0 && G){
+    var p = G.players[seat];
+    log(p.name+" left the table (connection closed).");
+    if(!p.folded && G.stage!=="idle" && G.stage!=="showdown" && G.stage!=="handEnd"){
+      if(G.actor===seat){ p.folded = true; advance(); }
+      else p.folded = true;
+    }
+    p.kind = "open"; p.name = "Open seat"; p.chips = 0; p.sittingOut = true; p.connected = false;
+    delete net.conns[conn.peer];
+    afterChange();
+  }
+}
+
+/* ================= online: guest ================= */
+el("joinBtn").addEventListener("click", function(){
+  var code = el("joinCode").value.trim().toUpperCase();
+  el("joinRefuse").textContent = ""; el("joinOk").textContent = "";
+  if(code.length!==5){ el("joinRefuse").textContent = "Table codes are five characters — check the code and try again."; return; }
+  if(typeof window.Peer === "undefined"){
+    el("joinRefuse").textContent = "Online tables couldn’t load — the peer-to-peer service didn’t answer. Check your connection and reload, or set up a table on this device: it always works.";
+    return;
+  }
+  net.code = code; net.role = "guest";
+  el("joinOk").textContent = "Connecting to table " + code + "…";
+  try{ net.peer = new Peer(); }catch(e){ el("joinRefuse").textContent = "Couldn’t start online play on this device."; return; }
+  net.peer.on("open", function(){
+    var conn = net.peer.connect(PREFIX + code, { reliable:true });
+    net.hostConn = conn;
+    conn.on("open", function(){ conn.send({ t:"hello" }); });
+    conn.on("data", guestOnData);
+    conn.on("close", function(){
+      setMsg("The host closed this table. Thanks for playing — set up your own any time.");
+      el("joinRefuse").textContent = "The connection to the host closed.";
+    });
+    setTimeout(function(){
+      if(!net.guestSettings && net.role==="guest"){
+        el("joinRefuse").textContent = "No answer from table " + code + ". Check the code — and that the host still has the table open.";
+      }
+    }, 7000);
+  });
+  net.peer.on("error", function(err){
+    el("joinRefuse").textContent = "Couldn’t reach that table (" + (err && err.type ? err.type : "connection error") + "). Check the code and your connection.";
+  });
+});
+function guestOnData(data){
+  if(!data) return;
+  if(data.t==="welcome"){
+    net.guestSettings = data.settings;
+    el("joinLimits").style.display = "block";
+    el("joinLimitsText").innerHTML = limitsText(data.settings) + ".";
+    var diffs = variantText(data.settings);
+    if(diffs.length) el("joinLimitsText").innerHTML += "<br><b>Non-standard table:</b> " + diffs.join(" · ") + ".";
+    var isT = data.settings.mode==="tournament";
+    el("joinBuyIn").style.display = isT ? "none" : "";
+    document.querySelector('label[for="joinBuyIn"]').style.display = isT ? "none" : "";
+    if(!isT){
+      el("joinBuyIn").min = data.settings.buyMin; el("joinBuyIn").max = data.settings.buyMax;
+      el("joinBuyIn").value = clamp(+el("joinBuyIn").value||data.settings.buyMin, data.settings.buyMin, data.settings.buyMax);
+    }
+    el("sitBtn").style.display = "";
+    el("joinOk").textContent = isT
+      ? "Connected. This is a tournament — everyone starts with the same "+fmt(data.settings.startStack)+" chips, so there’s no buy-in to pick. Take your seat."
+      : "Connected. Read the limits, pick a buy-in inside them, and take your seat.";
+    return;
+  }
+  if(data.t==="refused"){ el("joinRefuse").textContent = data.msg; return; }
+  if(data.t==="seated"){
+    net.mySeat = data.seat;
+    el("joinOk").textContent = "You’re seated. The table is below — hands deal automatically.";
+    el("joinSection").style.display = "none";
+    el("setupSection").style.display = "none";
+    el("tableSection").style.display = "block";
+    el("tableSection").scrollIntoView({ behavior:"smooth" });
+    return;
+  }
+  if(data.t==="closed"){
+    setMsg("The host closed this table. Thanks for playing.");
+    leaveTable();
+    return;
+  }
+  if(data.t==="state"){
+    view = data.view;
+    // compute legal actions guest-side from the snapshot
+    guestLegal = computeGuestLegal(view);
+    render();
+    var me = view.players[net.mySeat];
+    if(view.actor===net.mySeat) setMsg("Your turn.");
+    return;
+  }
+  if(data.t==="msg"){ setMsg(data.msg); }
+}
+function computeGuestLegal(v){
+  if(!v || v.actor!==net.mySeat) return null;
+  var me = v.players[net.mySeat], s = v.settings;
+  var BB = v.tourney ? v.tourney.bb : s.bb;
+  var currentBet = Math.max.apply(null, v.players.map(function(p){ return p.bet; }).concat([0]));
+  var callAmt = Math.max(0, currentBet - me.bet);
+  var out = { callAmt: Math.min(callAmt, me.chips), canCheck: callAmt===0, minRaiseTo:null, maxRaiseTo:null };
+  if(me.chips <= callAmt) return out;
+  if(s.structure==="limit"){
+    var step = (v.stage==="turn"||v.stage==="river") ? BB*2 : BB;
+    var raises = v.players.reduce(function(a,p){ return a; }, 0);
+    out.minRaiseTo = out.maxRaiseTo = currentBet + step;
+    if(me.bet + me.chips < out.minRaiseTo) { out.minRaiseTo = null; out.maxRaiseTo = null; }
+    return out;
+  }
+  var minTo = currentBet===0 ? BB : currentBet + BB; // host enforces the exact min-raise; this guides the box
+  var pot = v.pot;
+  var maxTo = s.structure==="potlimit" ? Math.min(currentBet + pot + callAmt, me.bet + me.chips) : me.bet + me.chips;
+  if(maxTo > currentBet){ out.maxRaiseTo = maxTo; out.minRaiseTo = Math.min(minTo, maxTo); }
+  return out;
+}
+el("sitBtn").addEventListener("click", function(){
+  if(!net.hostConn || !net.guestSettings) return;
+  var s = net.guestSettings;
+  if(s.mode==="tournament"){
+    el("joinRefuse").textContent = "";
+    net.hostConn.send({ t:"sit", name: el("joinAlias").value.trim(), buyIn: s.startStack });
+    return;
+  }
+  var buyIn = Math.round(+el("joinBuyIn").value||0);
+  if(buyIn < s.buyMin){ el("joinRefuse").textContent = "That buy-in is below this table’s minimum of "+fmt(s.buyMin)+". The floor binds for everyone — the host can’t waive it either."; return; }
+  if(buyIn > s.buyMax){ el("joinRefuse").textContent = "That buy-in is over this table’s maximum of "+fmt(s.buyMax)+". That cap is the anti-ruin rule — it’s printed above, and it binds before you sit, not after."; return; }
+  el("joinRefuse").textContent = "";
+  net.hostConn.send({ t:"sit", name: el("joinAlias").value.trim(), buyIn: buyIn });
+});
+
+/* ================= bot honesty check (simulation) ================= */
+var simRunning = false;
+el("simBtn").addEventListener("click", function(){
+  if(simRunning) return;
+  simRunning = true;
+  el("simBtn").disabled = true;
+  el("simResults").innerHTML = "";
+  var names = ["Learning","Steady","Sharp","Pro"];
+  var totals = { Learning:0, Steady:0, Sharp:0, Pro:0 };
+  var TOTAL = 200, done = 0;
+  var realG = G;
+  // build a private sim game
+  var simPlayers = names.map(function(lv){
+    var p = makePlayer(lv, "bot", lv); p.rebuyTo = 1000; return p;
+  });
+  G = newGame({ structure:"nolimit", sb:10, bb:20, buyMin:200, buyMax:2000, rebuys:true }, simPlayers);
+  var realSetMsg = setMsg; setMsg = function(){};
+  var realAfter = afterChange; afterChange = function(){};
+  var realDrive = driveBots; driveBots = function(){};
+
+  function simOneHand(){
+    simPlayers.forEach(function(p){ p.chips = 1000; p.sittingOut = false; p.connected = true; });
+    var startStacks = simPlayers.map(function(p){ return p.chips; });
+    // fast hand: reuse engine but with instant bot decisions
+    startHandSim();
+    simPlayers.forEach(function(p, i){ totals[p.level] += (p.chips - startStacks[i]); });
+  }
+  function startHandSim(){
+    // inline fast version: run the real engine with synchronous bot play
+    var s = G.settings;
+    G.deck = newDeck(); G.board = []; G.reveal = false; G.winners = [];
+    G.players.forEach(function(p){ p.bet=0; p.total=0; p.cards=[]; p.allIn=false; p.acted=false; p.raiseLocked=false; p.lastWin=0; p.folded=false; });
+    G.button = (G.button+1) % G.players.length;
+    var inHand = G.players.map(function(_,i){return i;});
+    for(var r=0;r<2;r++) inHand.forEach(function(i){ G.players[i].cards.push(G.deck.pop()); });
+    var sbIdx = nextInHand(G.button), bbIdx = nextInHand(sbIdx);
+    G.stage = "preflop"; G.raiseCount = 1; G.lastRaiseInc = s.bb;
+    commit(G.players[sbIdx], s.sb); commit(G.players[bbIdx], s.bb);
+    G.currentBet = G.players[bbIdx].bet;
+    G.actor = nextInHand(bbIdx);
+    // synchronous loop with a hard guard
+    var guard = 0;
+    while(guard++ < 500){
+      if(activePlayers().length===1){ settleUncontestedSim(); return; }
+      if(roundComplete()){ finishRoundSim(); if(G.stage==="showdown"||G.stage==="handEnd") return; continue; }
+      var p = G.players[G.actor];
+      if(p.folded || p.allIn){ G.actor = nextInHand(G.actor); continue; }
+      var d = botDecide(G.actor, 0.08);
+      applyActionSim(G.actor, d.action, d.amt);
+      if(G.stage==="showdown"||G.stage==="handEnd") return;
+    }
+  }
+  function applyActionSim(i, action, amt){
+    // same rules as applyAction but without UI/network side effects
+    var p = G.players[i];
+    var legal = legalFor(i);
+    if(action==="raise" && legal.minRaiseTo===null) action = legal.canCheck ? "check" : "call";
+    if(action==="check" && !legal.canCheck) action = "call";
+    if(action==="raise"){
+      amt = clamp(Math.round(amt||legal.minRaiseTo), legal.minRaiseTo, legal.maxRaiseTo);
+      var prevBet = G.currentBet, inc = amt - prevBet;
+      var fullRaise = inc >= G.lastRaiseInc || prevBet===0;
+      commit(p, amt - p.bet);
+      G.currentBet = amt; G.raiseCount++;
+      if(fullRaise) G.lastRaiseInc = inc;
+      G.players.forEach(function(q,j){ if(j!==i && !q.folded && !q.allIn){ if(fullRaise){ q.acted=false; q.raiseLocked=false; } else if(q.acted) q.raiseLocked=true; } });
+      p.acted = true;
+    } else if(action==="fold"){ p.folded = true; p.acted = true; }
+    else if(action==="call"){ commit(p, legal.callAmt); p.acted = true; }
+    else { p.acted = true; }
+    if(activePlayers().length===1){ settleUncontestedSim(); return; }
+    if(!roundComplete()){ G.actor = nextInHand(G.actor); skipSim(); }
+  }
+  function skipSim(){
+    var guard=0;
+    while(G.actor>=0 && guard++<20){
+      var p = G.players[G.actor];
+      if(!p.folded && !p.allIn) return;
+      if(roundComplete()) return;
+      G.actor = nextInHand(G.actor);
+    }
+  }
+  function settleUncontestedSim(){
+    var w = activePlayers()[0];
+    G.players[w].chips += potTotal();
+    G.stage = "handEnd";
+  }
+  function finishRoundSim(){
+    G.players.forEach(function(p){ p.bet=0; p.acted=false; p.raiseLocked=false; });
+    G.currentBet = 0; G.raiseCount = 0; G.lastRaiseInc = G.settings.bb;
+    if(activePlayers().length===1){ settleUncontestedSim(); return; }
+    if(G.stage==="river"){ showdownSim(); return; }
+    G.deck.pop();
+    if(G.stage==="preflop"){ G.board.push(G.deck.pop(), G.deck.pop(), G.deck.pop()); G.stage="flop"; }
+    else if(G.stage==="flop"){ G.board.push(G.deck.pop()); G.stage="turn"; }
+    else if(G.stage==="turn"){ G.board.push(G.deck.pop()); G.stage="river"; }
+    if(canActCount()<=1){ finishRoundSim(); return; }
+    G.actor = nextInHand(G.button);
+    skipSim();
+  }
+  function showdownSim(){
+    G.stage = "showdown";
+    var pots = buildPots();
+    var scores = {};
+    activePlayers().forEach(function(i){ scores[i] = eval7(G.players[i].cards.concat(G.board)); });
+    pots.forEach(function(pot){
+      var best = null;
+      pot.eligible.forEach(function(i){ if(!best || cmpScore(scores[i], best)>0) best = scores[i]; });
+      var winners = pot.eligible.filter(function(i){ return cmpScore(scores[i], best)===0; });
+      var share = Math.floor(pot.amount / winners.length);
+      var odd = pot.amount - share*winners.length;
+      winners.forEach(function(w,k){ G.players[w].chips += share + (k===0?odd:0); });
+    });
+  }
+
+  function chunk(){
+    var t0 = Date.now();
+    while(done < TOTAL && Date.now() - t0 < 60){
+      simOneHand(); done++;
+    }
+    el("simStatus").textContent = "Dealing… " + done + " of " + TOTAL + " hands.";
+    if(done < TOTAL){ setTimeout(chunk, 10); return; }
+    // restore the real game
+    G = realG; setMsg = realSetMsg; afterChange = realAfter; driveBots = realDrive;
+    simRunning = false; el("simBtn").disabled = false;
+    el("simStatus").textContent = "Done — " + TOTAL + " hands, one bot of each level, blinds 10/20, stacks reset to 1,000 every hand. Chips won per 100 hands:";
+    var rows = names.map(function(lv){
+      return "<tr><td><strong>" + lv + "</strong></td><td>" + (totals[lv]>=0?"+":"") + fmt(totals[lv]/TOTAL*100) + "</td></tr>";
+    }).join("");
+    var spread = totals.Pro - totals.Learning;
+    el("simResults").innerHTML = '<table class="results"><tr><th>Bot level</th><th>Play chips won per 100 hands</th></tr>' + rows + "</table>" +
+      '<p class="small muted">' + (spread > 0
+        ? "The levels separate: over these " + TOTAL + " hands the Pro out-won the Learning bot by " + fmt(spread/TOTAL*100) + " chips per 100 hands. Run it again — the exact numbers move, the order is the point."
+        : "This run came out close — small samples wobble. Run it again; over more hands the levels pull apart, because the differences above (samples read, mistakes made, calls priced) are real, not labels.") + "</p>";
+    if(G) afterChange();
+  }
+  chunk();
+});
+
+/* ================= teaching layer ================= */
+var TEACHING = "light";
+try{ if(saved.teaching) TEACHING = saved.teaching; }catch(e){}
+var lastExample = null;      // the player's own last decision vs a bet, for the pot-odds tool
+var coachCache = {};
+var track = { handNo:0, foldStage:null, notedHand:-1 };
+
+function chenScore(cards){
+  var a = Math.max(cards[0].r, cards[1].r), b = Math.min(cards[0].r, cards[1].r);
+  var base = a===14 ? 10 : a===13 ? 8 : a===12 ? 7 : a===11 ? 6 : a/2;
+  if(cards[0].r===cards[1].r) return Math.max(5, base*2);
+  var sc = base;
+  if(cards[0].s===cards[1].s) sc += 2;
+  var gap = a - b - 1;
+  if(gap===1) sc -= 1; else if(gap===2) sc -= 2; else if(gap===3) sc -= 4; else if(gap>=4) sc -= 5;
+  if(gap<=1 && a<12) sc += 1;
+  return sc;
+}
+function startingHandInfo(cards){
+  if(!cards || cards.length<2) return null;
+  var pair = cards[0].r===cards[1].r;
+  var suited = cards[0].s===cards[1].s;
+  var hi = Math.max(cards[0].r, cards[1].r);
+  var chen = chenScore(cards);
+  var desc = pair ? "a pocket pair of " + RANKS[cards[0].r-2] + "s"
+    : cardName(cards[0]) + " and " + cardName(cards[1]) + (suited ? " — the same suit, which adds flush chances" : "");
+  var tier = chen>=8 ? "strong" : chen>=5.5 ? "playable" : "weak";
+  return { desc:desc, tier:tier, chen:chen, pair:pair, suited:suited, hi:hi };
+}
+function oneIn(p){ return p>0 ? Math.max(2, Math.round(1/p)) : "—"; }
+function coachHTML(v, actorIdx){
+  var me = v.players[actorIdx];
+  if(!me || !me.cards || me.cards==="hidden" || !me.cards.length) return "";
+  var key = v.handNo+"|"+v.stage+"|"+actorIdx+"|"+v.pot+"|"+me.bet+"|"+me.chips;
+  if(coachCache.key===key) return coachCache.html;
+  var opps = v.players.filter(function(p){ return !p.folded && !p.sittingOut; }).length - 1;
+  var currentBet = Math.max.apply(null, v.players.map(function(p){ return p.bet; }).concat([0]));
+  var callAmt = Math.max(0, currentBet - me.bet);
+  var eq = equityMC(me.cards, v.board, Math.max(1,opps), 300);
+  var lines = [];
+  if(v.stage==="preflop"){
+    var info = startingHandInfo(me.cards);
+    if(info) lines.push("<b>Your hand:</b> " + info.desc + " — a <b>" + info.tier + "</b> starting hand. " +
+      (info.tier==="strong" ? "Pros raise with this from any seat." :
+       info.tier==="playable" ? "Worth playing — best when the price is small or you act late." :
+       "Most pros fold this unless it’s very cheap to see the flop. Weak starting hands are where slow leaks begin."));
+    var n = v.players.length;
+    if(actorIdx===v.button) lines.push("<b>Position:</b> you’re on the button — after the flop you act <b>last</b>, with everyone else’s choices already visible. That’s the strongest seat at the table.");
+    else if(v.button>=0){
+      var behind = 0, ii = actorIdx;
+      for(var k=0;k<n;k++){ ii=(ii+1)%n; if(ii===v.button) break; if(!v.players[ii].folded && !v.players[ii].sittingOut) behind++; }
+      if(behind>=2) lines.push("<b>Position:</b> " + behind + " players still act behind you this round. Early seats play tighter — you decide with the least information.");
+    }
+    if(info && REC.hands>=10){
+      var vr2 = REC.vpip/REC.hands;
+      if(info.tier==="weak" && vr2>0.45) lines.push("<b>Your record talking:</b> you’ve played " + Math.round(vr2*100) + "% of your starting hands so far — looser than most winning players. This is exactly the kind of hand your own record says to let go.");
+      else if(info.tier==="strong" && REC.pfFolds/REC.hands>0.72) lines.push("<b>Your record talking:</b> you fold most hands before the flop — real discipline. A hand this strong is what that discipline has been saving your chips for.");
+    }
+  } else {
+    var sc = eval7(me.cards.concat(v.board));
+    lines.push("<b>Your hand right now:</b> " + handName(sc) + ", against " + opps + " player" + (opps===1?"":"s") + " still in.");
+    if(v.board.length>=3){
+      var paired = {}; v.board.forEach(function(c){ paired[c.r]=(paired[c.r]||0)+1; });
+      var boardPair = Object.keys(paired).some(function(r){ return paired[r]>=2; });
+      if(boardPair && sc[0]<=1) lines.push("The board itself is paired, so full houses are possible out there — one pair is a fragile hand here.");
+    }
+  }
+  if(callAmt>0){
+    var need = callAmt/(v.pot + callAmt);
+    lines.push("<b>The price:</b> calling costs " + fmt(callAmt) + " to chase a pot of " + fmt(v.pot) + " — you need to win about <b>1 time in " + oneIn(need) + "</b> (" + Math.round(need*100) + "%) to break even. Your rough chance: about <b>1 in " + oneIn(eq) + "</b> (" + Math.round(eq*100) + "%). " +
+      (eq > need + 0.03 ? "<b>The price is right</b> — your chances beat the price." :
+       eq < need - 0.03 ? "<b>The price is steep</b> — you’d pay more than the chance is worth. Folding loses nothing more; the chips already in are gone either way." :
+       "<b>It’s borderline</b> — the price and your chances are close. Position and who bet (and how they’ve been playing) break the tie."));
+    if(callAmt >= v.pot*0.75) lines.push("That’s a <b>big bet</b> — close to the size of the pot. Bets that size usually mean a strong hand, or a bluff meant to look like one. One pair is rarely enough to call them.");
+    // the real alternatives, with their trade-offs — a single way only when the math leaves one
+    if(eq < need - 0.15 && eq < 0.20){
+      lines.push("<b>Your options:</b> here the math honestly leaves one — <b>fold</b>. Calling pays far more than this chance is worth, and raising only puts more chips behind the same problem. One option, because the numbers say so — not because there’s one ‘right style’.");
+    } else {
+      var opts = ["<b>Call</b> — pay the price and see what comes. Best when your chances beat the price; the hidden cost is facing another, bigger bet next round."];
+      if(me.chips > callAmt) opts.push("<b>Raise</b> — you can win the pot right now if they fold, and you build it for the times you’re ahead. The trade-off: it costs the most on the hands where you’re wrong.");
+      opts.push("<b>Fold</b> — lose nothing more and wait for a better spot. The trade-off: you give up a hand that would sometimes have won — that’s the price of every fold, and pros pay it gladly.");
+      lines.push("<b>Your options:</b><br>· " + opts.join("<br>· "));
+    }
+  } else {
+    lines.push("<b>The price:</b> it’s free to stay in (check), or you can bet. Your rough chance of holding the best hand at the end: about <b>1 in " + oneIn(eq) + "</b> (" + Math.round(eq*100) + "%). Betting when you’re ahead makes worse hands pay; checking keeps the pot small when you’re not sure.");
+    var free = ["<b>Check</b> — see the next card free and keep the pot small. Best when you’re unsure or drawing cheaply; the trade-off is giving free chances to hands you could have charged."];
+    if(eq > 0.78) free.push("<b>Bet for value</b> — you’re likely ahead; make worse hands pay now. The trade-off against slow-playing (checking to trap): betting protects your hand, trapping wins more from bluffs but risks free cards beating you. Pros use both — the table decides.");
+    else if(eq > 0.45) free.push("<b>Bet</b> — you may be ahead, and a bet can end the hand right now. The trade-off: if you’re raised, you’ll face a hard choice with a middling hand.");
+    else free.push("<b>Bet as a bluff</b> — you probably don’t have the best hand, but a bet can still win if everyone folds. The trade-off: when you’re called, you’ve paid for the lesson. Bluffs work best against few players who’ve shown weakness.");
+    lines.push("<b>Your options:</b><br>· " + free.join("<br>· "));
+  }
+  lines.push('<span class="small muted">Coach uses only your cards and the shared cards — never anyone’s hidden cards. The chances are rough runouts, the way the bots estimate too.</span>');
+  var html = "🎓 " + lines.join("<br>");
+  coachCache = { key:key, html:html };
+  return html;
+}
+function recordDecisionExample(actorIdx, action){
+  if(net.role==="guest" || !G) {
+    if(!view) return;
+    var me = view.players[actorIdx];
+    var cb = Math.max.apply(null, view.players.map(function(p){ return p.bet; }).concat([0]));
+    var ca = Math.max(0, cb - (me ? me.bet : 0));
+    if(ca>0 && me && me.cards && me.cards!=="hidden"){
+      lastExample = { call:ca, pot:view.pot, cards:me.cards, board:view.board.slice(), action:action, stage:view.stage };
+      renderExample();
+    }
+    return;
+  }
+  var p = G.players[actorIdx];
+  var callAmt = Math.max(0, G.currentBet - p.bet);
+  if(callAmt>0 && p.cards.length){
+    lastExample = { call:callAmt, pot:potTotal(), cards:p.cards.slice(), board:G.board.slice(), action:action, stage:G.stage };
+    renderExample();
+  }
+}
+function renderExample(){
+  var box = el("lastExample");
+  if(!box || !lastExample) return;
+  var ex = lastExample;
+  var need = ex.call/(ex.pot + ex.call);
+  var eq = equityMC(ex.cards, ex.board, 2, 300);
+  box.innerHTML = "<b>Your own last decision, worked:</b> on the " + ex.stage + ", with " + ex.cards.map(cardName).join(" ") +
+    (ex.board.length ? " and a board of " + ex.board.map(cardName).join(" ") : " before any shared cards were out") +
+    ", " + (ex.action==="fold" ? "you folded rather than pay " : "the call cost ") + "<b>" + fmt(ex.call) + "</b> into a pot of <b>" + fmt(ex.pot) + "</b>. " +
+    "Break-even: " + fmt(ex.call) + " ÷ " + fmt(ex.pot + ex.call) + " = about <b>1 win in " + oneIn(need) + "</b> (" + Math.round(need*100) + "%). " +
+    "Your hand’s rough chance at that moment (against a typical field): about <b>1 in " + oneIn(eq) + "</b>. " +
+    (ex.action==="fold"
+      ? (eq < need ? "So the fold priced it right — the chance cost more than it was worth." : "So the call would have been fairly priced — though folding a borderline hand is never a scandal; there’s always another hand.")
+      : (eq >= need ? "So the call was priced right — your chances covered the price." : "So the price was steep that time — worth noticing, because that exact spot is where stacks quietly leak away."));
+}
+function postHandNote(v){
+  var box = el("teachNote");
+  if(TEACHING==="off" || !v || (v.stage!=="showdown" && v.stage!=="handEnd")){ box.style.display="none"; return; }
+  if(track.notedHand===v.handNo){ return; }
+  var mine = mySeat(), me = v.players[mine];
+  if(!me || !me.cards || me.cards==="hidden" || !me.cards.length){ box.style.display="none"; return; }
+  var note = null;
+  var iWon = v.winners.indexOf(mine)>=0;
+  if(me.folded){
+    if(v.board.length===5 && v.reveal){
+      var winIdx = v.winners[0], wp = v.players[winIdx];
+      if(wp && wp.cards && wp.cards!=="hidden" && wp.cards.length){
+        var myScore = eval7(me.cards.concat(v.board)), winScore = eval7(wp.cards.concat(v.board));
+        if(cmpScore(myScore, winScore)>0) note = "For the record: the hand you folded would have won this one — it made " + handName(myScore) + ". That doesn’t make the fold wrong. You decided with what you knew at the time, and judging decisions by information you didn’t have is how players talk themselves into bad calls.";
+      }
+    }
+    if(!note && track.foldStage==="preflop"){
+      var info = startingHandInfo(me.cards);
+      if(info && info.tier==="weak") note = "That fold before the flop? " + info.desc + " is a weak starting hand, and folding it is the standard play — most chips in poker are saved, not won. Quietly correct.";
+    }
+  }
+  if(!note && !me.folded && v.stage==="showdown" && v.board.length===5){
+    var sc2 = eval7(me.cards.concat(v.board));
+    if(iWon) note = "You won with " + handName(sc2) + ". Notice what it beat — showdowns are where you learn what the other players were calling with. That information is free; pros collect it every hand.";
+    else if(sc2[0]<=1) note = "One pair (or less) lost this showdown. On a board with five shared cards, one pair is often second-best — when a big bet comes on the last round and all you hold is one pair, folding is usually the pro play, however much it stings.";
+  }
+  if(!note && !me.folded && v.stage==="handEnd" && iWon){
+    note = "You took that pot without a showdown — everyone folded. That’s the other half of poker: a bet that ends the hand wins exactly the same chips as the best hand does.";
+  }
+  track.notedHand = v.handNo;
+  if(note){ box.style.display="block"; box.innerHTML = "🎓 <b>Coach’s note:</b> " + note; }
+  else box.style.display = "none";
+}
+
+/* ================= strategy record (this device only) ================= */
+function freshRecord(){
+  return { hands:0, won:0, vpip:0, pfFolds:0, calls:0, raises:0, folds:0, checks:0,
+           showdowns:0, sdWon:0, biggestPot:0, net:0, log:[] };
+}
+var REC = freshRecord();
+try{
+  if(saved.record && typeof saved.record.hands==="number"){
+    REC = Object.assign(freshRecord(), saved.record);
+    if(!Array.isArray(REC.log)) REC.log = [];
+  }
+}catch(e){}
+var curHand = null;
+function recordObserve(v){
+  if(!v) return;
+  var mine = mySeat(), me = v.players[mine];
+  if(!me) return;
+  var dealt = me.cards && me.cards!=="hidden" && me.cards.length===2;
+  if(dealt && ["preflop","flop","turn","river"].indexOf(v.stage)>=0){
+    var key = v.handNo + "|" + cardName(me.cards[0]) + cardName(me.cards[1]) + "|" + (v.settings.mode||"cash") + "|" + v.players.length;
+    if(!curHand || curHand.key!==key){
+      curHand = { key:key, n:v.handNo, ts:Date.now(),
+        table:{ mode:v.settings.mode||"cash", structure:v.settings.structure,
+          sb: v.tourney ? v.tourney.sb : v.settings.sb, bb: v.tourney ? v.tourney.bb : v.settings.bb,
+          buyMin: v.settings.buyMin, buyMax: v.settings.buyMax,
+          startStack: v.settings.startStack || null, levelMinutes: v.settings.levelMinutes || null,
+          seats: v.players.length },
+        cards: me.cards.map(cardName), actions:[], stackStart: me.chips + me.total,
+        counted:false, vpip:false };
+    }
+  }
+  if(curHand && !curHand.counted && (v.stage==="showdown" || v.stage==="handEnd")){
+    curHand.counted = true;
+    var won = v.winners.indexOf(mine)>=0;
+    var net = me.chips - curHand.stackStart;
+    REC.hands++; if(won) REC.won++;
+    if(curHand.vpip) REC.vpip++;
+    if(track.foldStage==="preflop") REC.pfFolds++;
+    if(v.stage==="showdown" && !me.folded){ REC.showdowns++; if(won) REC.sdWon++; }
+    if(won && me.lastWin) REC.biggestPot = Math.max(REC.biggestPot, me.lastWin);
+    REC.net += net;
+    REC.log.push({ n:curHand.n, ts:curHand.ts, table:curHand.table, cards:curHand.cards,
+      board: v.board.map(cardName), actions: curHand.actions, pot: v.pot,
+      result: won ? "won" : (me.folded ? "folded" : "lost"), net: net, stackAfter: me.chips });
+    if(REC.log.length>500) REC.log.shift();
+    persist(); renderRecord();
+  }
+}
+function recordMyAction(stage, action, amt){
+  if(action==="fold") REC.folds++;
+  else if(action==="call") REC.calls++;
+  else if(action==="check") REC.checks++;
+  else if(action==="raise" || action==="allin") REC.raises++;
+  if(curHand && !curHand.counted){
+    curHand.actions.push({ stage:stage, a:action, amt: (amt==null ? null : Math.round(amt)) });
+    if(stage==="preflop" && (action==="call" || action==="raise" || action==="allin")) curHand.vpip = true;
+  }
+}
+function recordInsights(){
+  var out = [];
+  if(REC.hands < 10){
+    out.push("Patterns need a little runway — after 10 hands this record starts reading your habits back to you. So far: " + REC.hands + " hand" + (REC.hands===1?"":"s") + ".");
+    return out;
+  }
+  var vr = REC.vpip/REC.hands, pf = REC.pfFolds/REC.hands;
+  if(vr > 0.50) out.push("You play a lot of starting hands — you’ve put chips in before the flop in " + Math.round(vr*100) + "% of hands. That’s looser than most winning players (roughly 20–30%). Loose isn’t doomed, but it means your post-flop decisions carry the whole weight. The cheap fix, if you want it: fold the weakest third of what you’re playing now.");
+  else if(vr < 0.15) out.push("You play very few starting hands — " + Math.round(vr*100) + "% before the flop. That’s tight even by pro standards. Tight is safe, but it leaves money in two places: playable hands in late position that you’re folding, and pots nobody would have contested. One experiment: loosen only on the button for a session and compare the records.");
+  if(pf > 0.75 && vr >= 0.15) out.push("You fold before the flop in " + Math.round(pf*100) + "% of hands. Discipline is a real skill — just check it isn’t fear: your strong hands are what that discipline is saving chips for, so make sure they get played for full value when they come.");
+  if(REC.calls >= 8 && REC.calls > REC.raises*2.5) out.push("You call far more than you raise (" + REC.calls + " calls to " + REC.raises + " raises). Calling can only win with the best hand at the end; raising can also win when everyone folds. That’s not a command to raise more — it’s the one asymmetry your record keeps pointing at.");
+  if(REC.showdowns >= 6 && REC.sdWon/REC.showdowns < 0.35) out.push("You’ve reached " + REC.showdowns + " showdowns and won " + REC.sdWon + ". The leak, if there is one, usually sits in the last call — the river bet you pay off hoping. Your own last-hand examples (in the pot-odds tool above) are the place to check the prices you’ve been paying.");
+  if(out.length===0) out.push("No loud pattern yet — over " + REC.hands + " hands your record looks balanced: you mix calls and raises, and your starting-hand choices sit in a sane range. The record keeps watching; when a habit forms, it will say so here, with the numbers.");
+  out.push("The scoreboard your strategies get graded against: " + (REC.net>=0 ? "up " : "down ") + fmt(Math.abs(REC.net)) + " play chips over " + REC.hands + " recorded hands.");
+  return out;
+}
+function renderRecord(){
+  var b = el("recordBody");
+  if(!b) return;
+  if(REC.hands===0){
+    b.innerHTML = "<p class='muted'>No hands recorded yet — play a hand and your record starts. Every hand is written in the same clean shape: the table’s limits, your cards, every action with its size, the pot, and the outcome — the raw material strategy test runs are graded on.</p>";
+    return;
+  }
+  var vr = Math.round(REC.vpip/REC.hands*100);
+  b.innerHTML =
+    '<table class="results"><tr><th>Your record</th><th></th></tr>' +
+    "<tr><td>Hands played</td><td>" + REC.hands + " (" + REC.won + " won)</td></tr>" +
+    "<tr><td>Hands you chose to play before the flop</td><td>" + REC.vpip + " (" + vr + "%)</td></tr>" +
+    "<tr><td>Folded before the flop</td><td>" + REC.pfFolds + "</td></tr>" +
+    "<tr><td>Your actions</td><td>" + REC.calls + " calls · " + REC.raises + " raises · " + REC.checks + " checks · " + REC.folds + " folds</td></tr>" +
+    "<tr><td>Showdowns</td><td>" + REC.showdowns + " reached, " + REC.sdWon + " won</td></tr>" +
+    "<tr><td>Biggest pot won</td><td>" + fmt(REC.biggestPot) + " play chips</td></tr>" +
+    "<tr><td>Net over the record</td><td>" + (REC.net>=0?"+":"−") + fmt(Math.abs(REC.net)) + " play chips</td></tr></table>" +
+    "<h3>What your record says</h3><ul>" + recordInsights().map(function(t){ return "<li>" + t + "</li>"; }).join("") + "</ul>" +
+    "<p class='small muted'>" + REC.log.length + " hands kept in full detail (the newest 500), each with the table’s limits, your cards, your actions and their sizes, the final pot, and the outcome. Saved on this device only.</p>";
+}
+
+/* ================= hold-to-explain ================= */
+(function(){
+  var toast = el("toast"), timer = null, held = false;
+  function show(text){ toast.textContent = text; toast.className = "toast on"; clearTimeout(timer); timer = setTimeout(function(){ toast.className = "toast"; }, 4200); }
+  document.querySelectorAll("[data-explain]").forEach(function(elm){
+    var start = null;
+    elm.addEventListener("pointerdown", function(){
+      held = false;
+      start = setTimeout(function(){ held = true; show(elm.getAttribute("data-explain")); }, 550);
+    });
+    ["pointerup","pointerleave","pointercancel"].forEach(function(ev){
+      elm.addEventListener(ev, function(){ if(start) clearTimeout(start); });
+    });
+    elm.addEventListener("click", function(e){ if(held){ e.preventDefault(); e.stopPropagation(); held = false; } }, true);
+    elm.addEventListener("mouseenter", function(){ if(window.matchMedia("(hover:hover)").matches) show(elm.getAttribute("data-explain")); });
+    elm.addEventListener("mouseleave", function(){ toast.className = "toast"; });
+  });
+})();
+
+/* ================= offline copy ================= */
+el("offlineBtn").addEventListener("click", function(){
+  try{
+    var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    var blob = new Blob([html], { type:"text/html" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "poker.html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }catch(e){}
+});
+
+/* ================= tournament countdown ================= */
+setInterval(function(){
+  var cd = el("tourneyCountdown");
+  if(!cd || !view || !view.tourney || !view.tourney.endsAt) return;
+  var left = Math.max(0, Math.round((view.tourney.endsAt - Date.now())/1000));
+  cd.textContent = Math.floor(left/60) + ":" + String(left%60).padStart(2,"0");
+}, 1000);
+
+/* ================= init ================= */
+(function init(){
+  if(saved.alias) el("aliasInput").value = saved.alias;
+  if(saved.settings){
+    var s = saved.settings;
+    if(s.mode) el("modeSel").value = s.mode;
+    if(s.structure) el("structureSel").value = s.structure;
+    if(s.seats) el("seatsSel").value = s.seats;
+    if(s.sb) el("sbInput").value = s.sb;
+    if(s.bb) el("bbInput").value = s.bb;
+    if(s.buyMin) el("buyMinInput").value = s.buyMin;
+    if(s.buyMax) el("buyMaxInput").value = s.buyMax;
+    if(s.buyIn) el("buyInInput").value = s.buyIn;
+    if(s.startStack) el("startStackInput").value = s.startStack;
+    if(s.levelMinutes) el("levelMinSel").value = s.levelMinutes;
+    if(typeof s.rebuys === "boolean") el("rebuySel").value = s.rebuys ? "on" : "off";
+  }
+  buildSeatRows();
+  refreshModeUI();
+  renderRecord();
+  el("forgetRecordBtn").addEventListener("click", function(){
+    REC = freshRecord(); curHand = null;
+    persist(); renderRecord();
+    el("recordBody").innerHTML = "<p class='muted'>Forgotten — your record on this device is empty again. It only ever lived here, and now it doesn’t.</p>";
+  });
+  el("exportRecordBtn").addEventListener("click", function(){
+    try{
+      var payload = { kind:"poker-strategy-record", exportedAt:new Date().toISOString(),
+        note:"Play chips only. Recorded on the player's device by the Poker page; kept in one clean shape for strategy test runs.",
+        totals:{ hands:REC.hands, won:REC.won, playedPreflop:REC.vpip, foldedPreflop:REC.pfFolds,
+          calls:REC.calls, raises:REC.raises, checks:REC.checks, folds:REC.folds,
+          showdowns:REC.showdowns, showdownsWon:REC.sdWon, biggestPotWon:REC.biggestPot, netChips:REC.net },
+        insights: recordInsights(),
+        hands: REC.log };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "poker-strategy-record.json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    }catch(e){}
+  });
+  el("teachSel").value = TEACHING;
+  el("teachSel").addEventListener("change", function(){
+    TEACHING = el("teachSel").value;
+    coachCache = {};
+    persist();
+    if(view) render();
+  });
+  ["modeSel","structureSel","sbInput","bbInput","buyMinInput","buyMaxInput","buyInInput","rebuySel","startStackInput","levelMinSel","seatsSel"].forEach(function(id){
+    el(id).addEventListener("change", persist);
+  });
+  // A door from another page (the Tournament Builder, the Start Page) can carry a table code: ?code=XXXXX
+  var codeParam = null;
+  try{
+    codeParam = new URLSearchParams(location.search).get("code");
+    if(!codeParam && location.hash.indexOf("code=")>=0) codeParam = new URLSearchParams(location.hash.slice(1)).get("code");
+  }catch(e){}
+  if(codeParam && /^[A-Za-z0-9]{5}$/.test(codeParam.trim())){
+    el("joinCode").value = codeParam.trim().toUpperCase();
+    el("joinSection").scrollIntoView();
+    setTimeout(function(){ el("joinBtn").click(); }, 700);
+  }
+})();
+</script>
+</body>
+</html>
