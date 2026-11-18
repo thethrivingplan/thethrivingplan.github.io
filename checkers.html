@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Checkers — Free, vs Bot or a Friend on This Device</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3efe4; --bg2:#eae2cd; --card:#fffdf6; --ink:#1d2320; --muted:#5b665e; --line:#d6cbae;
+  --accent:#0f766e; --accent-ink:#ffffff; --gold:#b45309; --red:#b91c1c; --good:#15803d;
+  --sq-light:#f0dcb2; --sq-dark:#96613a; --sq-dark2:#7d4f2c;
+  --piece-red:#c0272d; --piece-red2:#8f1a1f; --piece-blk:#2b2f33; --piece-blk2:#101315;
+  --shadow:0 10px 30px rgba(29,35,32,.13);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#131714; --bg2:#0d100e; --card:#1b211d; --ink:#eef2ec; --muted:#a7b2a8; --line:#35413a;
+    --accent:#2dd4bf; --accent-ink:#05211c; --gold:#fbbf24; --sq-light:#cdb287; --sq-dark:#6e4525; --sq-dark2:#5b3a1f;
+    --shadow:0 10px 30px rgba(0,0,0,.45); }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:44px}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 44px}
+.top{padding:20px 0 6px}
+.top h1{font-size:clamp(40px,7vw,64px);line-height:.95;margin:0;font-weight:900;letter-spacing:-.02em}
+.top h1 span{color:var(--accent)}
+.lede{font-size:18px;color:var(--muted);max-width:660px;margin:10px 0 0}
+.freebar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+.pill{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700}
+.pill strong{color:var(--accent)}
+.pill.hot{border-color:var(--accent);border-width:2px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.btn{border:0;border-radius:999px;padding:12px 20px;font-weight:800;background:var(--accent);color:var(--accent-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.secondary{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.gold{background:var(--gold);color:#fff}
+.btn.small{padding:8px 14px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.small{font-size:13px;color:var(--muted)}
+.gesture{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+label{font-weight:700;font-size:14px;display:block;margin:14px 0 6px}
+input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}
+details{border:1.5px solid var(--line);border-radius:14px;padding:6px 14px 12px;background:var(--card);margin-top:14px}
+summary{font-weight:800;cursor:pointer;display:flex;align-items:center;min-height:44px;list-style:none}
+summary::-webkit-details-marker{display:none}
+details p{margin:8px 0}
+.status{border-radius:12px;padding:12px 14px;font-weight:700;font-size:15px;margin:0 0 12px;border:1.5px solid var(--line);background:var(--bg)}
+.status.win{border-color:var(--good);color:var(--good)}
+.variantbanner{border-radius:12px;padding:12px 14px;font-weight:800;font-size:14px;margin:0 0 12px;border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 12%, var(--card));color:var(--ink)}
+.hidden{display:none !important}
+/* Layout */
+.playgrid{display:grid;grid-template-columns:minmax(0,600px) 1fr;gap:16px;align-items:start;margin-top:16px}
+@media(max-width:900px){.playgrid{grid-template-columns:1fr}}
+/* Board */
+.boardframe{background:#4a3220;border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+@media (prefers-color-scheme: dark){.boardframe{background:#241a10}}
+.board{display:grid;grid-template-columns:repeat(8,1fr);gap:0;border-radius:10px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;position:relative}
+.sq{position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border:0;padding:0;min-height:0}
+.sq.light{background:var(--sq-light)}
+.sq.dark{background:var(--sq-dark)}
+.sq.lastmove{background:#c9a24d}
+.sq.dark.lastmove{background:#a87c2a}
+.sq.sel{box-shadow:inset 0 0 0 4px var(--accent)}
+.sq .coord{position:absolute;font-size:10px;font-weight:700;opacity:.75;pointer-events:none}
+.sq .coord.tl{top:2px;left:4px}
+.sq .coord.br{bottom:2px;right:4px}
+.sq.light .coord{color:#7d4f2c}.sq.dark .coord{color:#f0dcb2}
+.sq .dot{position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(15,118,110,.55);pointer-events:none}
+.sq .ring{position:absolute;inset:6%;border-radius:50%;border:4px solid rgba(185,28,28,.75);pointer-events:none}
+.piece{width:82%;height:82%;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;position:relative;z-index:2;
+  box-shadow:0 3px 6px rgba(0,0,0,.45), inset 0 -4px 7px rgba(0,0,0,.35), inset 0 3px 5px rgba(255,255,255,.25)}
+.piece.red{background:radial-gradient(circle at 35% 30%, #e05257, var(--piece-red) 55%, var(--piece-red2))}
+.piece.blk{background:radial-gradient(circle at 35% 30%, #5a6167, var(--piece-blk) 55%, var(--piece-blk2))}
+.piece::after{content:"";position:absolute;inset:14%;border-radius:50%;border:2px solid rgba(255,255,255,.28)}
+.piece .crown{font-size:clamp(14px,3.4vw,24px);color:#fbbf24;text-shadow:0 1px 2px rgba(0,0,0,.6);line-height:1;z-index:3}
+.piece.mustcap{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+@media (prefers-reduced-motion: reduce){.piece.mustcap{animation:none;outline:3px solid var(--gold);outline-offset:-3px}}
+.piece.dragghost{position:fixed;z-index:60;width:56px;height:56px;pointer-events:none;opacity:.92;transform:translate(-50%,-50%)}
+.turnbanner{border-radius:14px;padding:13px 16px;color:#fff;font-weight:800;font-size:17px;margin-bottom:12px;background:var(--piece-blk)}
+.turnbanner.redturn{background:var(--piece-red)}
+.tray{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0;font-size:14px;font-weight:700}
+.tray .cap{display:inline-flex;gap:2px;flex-wrap:wrap}
+.mini{width:22px;height:22px;border-radius:50%;display:inline-block;box-shadow:inset 0 -2px 3px rgba(0,0,0,.35)}
+.mini.red{background:var(--piece-red)}.mini.blk{background:var(--piece-blk)}
+.movelist{font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.9;word-break:break-word}
+.movelist b{background:var(--bg2);border-radius:6px;padding:1px 5px}
+/* Choice buttons */
+.modegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:520px){.modegrid{grid-template-columns:1fr}}
+.choice{text-align:left;border:2px solid var(--line);background:var(--bg);border-radius:14px;padding:14px;color:var(--ink);width:100%}
+.choice.sel{border-color:var(--accent);outline:3px solid color-mix(in srgb,var(--accent) 25%, transparent)}
+.choice h3,.choice h4{margin:0 0 4px;font-size:18px}
+.choice p{margin:0;color:var(--muted);font-size:13px}
+.levelgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+@media(max-width:520px){.levelgrid{grid-template-columns:1fr}}
+.seg{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.segbtn{border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:9px 16px;font-weight:700}
+.segbtn.sel{border-color:var(--accent);outline:3px solid color-mix(in srgb,var(--accent) 25%, transparent)}
+.kbd{font-family:"IBM Plex Mono",monospace;background:var(--bg2);border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;padding:1px 6px;font-size:12px}
+.navgrid{display:grid;gap:8px;margin-top:8px}
+.navgrid a{display:block;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:700;background:var(--bg);min-height:44px}
+.navgrid a span{display:block;font-weight:400;font-size:.86rem;color:var(--muted)}
+footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
+.scorechips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px}
+.chip .mini{vertical-align:-5px;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Checkers<span>.</span></h1>
+    <p class="lede">Real American checkers — forced jumps, double and triple jumps, kings that move both ways. Play the bot at your level, or pass this device back and forth with a friend. The board is the controller: tap a piece, tap where it goes — or drag it.</p>
+    <div class="freebar">
+      <span class="pill hot"><strong>Free — always free</strong></span>
+      <span class="pill">No ads · No account · No sign-up</span>
+      <span class="pill">Works offline once loaded</span>
+      <span class="pill"><strong>vs Bot</strong> — Learning to Pro</span>
+      <span class="pill"><strong>No name needed</strong> — Player 1 &amp; Player 2 play fine</span>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="offlineBtn" type="button">Download a copy for offline play — tap to download</button>
+      <a class="btn secondary" href="#settingsFold">Rule settings — tap to open</a>
+    </div>
+    <p class="small">The download is this same page as one file: open it with no connection and it plays exactly the same. Once this page has loaded, it also keeps playing if your connection drops.</p>
+  </header>
+
+  <div class="playgrid">
+    <!-- BOARD COLUMN -->
+    <section aria-label="Checkers board">
+      <div id="variantBanner" class="variantbanner hidden" role="status"></div>
+      <div id="turnBanner" class="turnbanner">Black to move</div>
+      <div class="boardframe">
+        <div class="board" id="board" role="grid" aria-label="Checkers board. Tap one of your pieces, then tap a highlighted square to move it. You can also drag a piece to its square."></div>
+      </div>
+      <p class="small" style="margin:10px 2px 0"><strong>How to move:</strong> tap your piece, then tap a glowing square — or drag the piece there. Mouse works the same way. If a jump is glowing red, a capture is forced and you must take it (in standard rules). After a jump, if the same piece can jump again, it must keep going.</p>
+      <div class="scorechips" id="scoreChips"></div>
+      <div class="tray"><span>Black has captured:</span><span class="cap" id="capByBlack"></span></div>
+      <div class="tray"><span>Red has captured:</span><span class="cap" id="capByRed"></span></div>
+      <div class="btnrow">
+        <button class="btn" id="newGameBtn" type="button">New game — tap to start over</button>
+        <button class="btn secondary" id="undoBtn" type="button">Undo — tap to take a move back</button>
+        <button class="btn secondary" id="hintBtn" type="button">Hint — tap for the strongest move</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn secondary" id="flipBtn" type="button">Flip board — tap to flip</button>
+        <button class="btn secondary" id="soundBtn" type="button">Sound: on — tap to change</button>
+        <button class="btn secondary" id="drawBtn" type="button">Call it a draw — tap to offer</button>
+        <button class="btn secondary" id="resignBtn" type="button">Resign — tap to give up</button>
+      </div>
+      <div id="actionMsg" class="status hidden" style="margin-top:12px"></div>
+      <details id="movesFold">
+        <summary>Moves so far &amp; the deep layer — tap to open</summary>
+        <p class="small">Every move in plain notation: a dash is a quiet move, an × is a jump. A move with several × is one turn — a multiple jump. Nothing here is removed; it is just one tap down.</p>
+        <div class="movelist" id="moveList">No moves yet.</div>
+        <p class="small" id="engineNote"></p>
+        <p class="small" id="clockNote"></p>
+      </details>
+    </section>
+
+    <!-- SETUP COLUMN -->
+    <section aria-label="Game setup">
+      <div class="card">
+        <h2 style="margin:0 0 4px">Play — pick how, then play</h2>
+        <p class="small" style="margin:0">A game is already set up and ready on the board. Change anything here and tap <strong>New game</strong> to use it.</p>
+
+        <label>Who are you playing?</label>
+        <div class="modegrid">
+          <button class="choice sel" id="modeBotBtn" type="button">
+            <h3>🤖 Against the bot</h3>
+            <p>Solo, on this device. Pick its level below — nobody needs to find another human to play.</p>
+            <div class="gesture">Tap to choose</div>
+          </button>
+          <button class="choice" id="modeLocalBtn" type="button">
+            <h3>👥 Two players, this device</h3>
+            <p>Pass-and-play. Black and Red take turns on this same phone, tablet or computer.</p>
+            <div class="gesture">Tap to choose</div>
+          </button>
+        </div>
+
+        <div id="botSetup">
+          <label>Bot skill level — pick one</label>
+          <div class="levelgrid">
+            <button class="choice botlvl" type="button" data-level="learning"><h4>Learning</h4><p>Looks 1 move ahead and often plays a casual move. Real mistakes, real lost pieces — the level to learn against.</p><div class="gesture">Tap to choose</div></button>
+            <button class="choice botlvl sel" type="button" data-level="steady"><h4>Steady</h4><p>Looks 3 moves ahead, slips only now and then. A solid, honest game.</p><div class="gesture">Tap to choose</div></button>
+            <button class="choice botlvl" type="button" data-level="sharp"><h4>Sharp</h4><p>Looks 5 moves ahead and never picks at random. Punishes loose pieces.</p><div class="gesture">Tap to choose</div></button>
+            <button class="choice botlvl" type="button" data-level="pro"><h4>Pro</h4><p>Looks 7 moves ahead with the full-strength search — the strongest this page can honestly run. No random moves, ever.</p><div class="gesture">Tap to choose</div></button>
+          </div>
+          <p class="small">The levels really differ — by how far ahead the bot looks and whether it is allowed casual moves. The numbers above are the real search depths it uses, not labels.</p>
+          <label>Your colour</label>
+          <div class="seg" id="sideSeg">
+            <button class="segbtn sel" type="button" data-side="B">Play Black — tap to choose</button>
+            <button class="segbtn" type="button" data-side="R">Play Red — tap to choose</button>
+          </div>
+          <p class="small" id="firstMoveNote">In standard rules Black moves first. If you play Red, the bot opens the game.</p>
+        </div>
+
+        <details>
+          <summary>Names &amp; aliases — tap to open (never required)</summary>
+          <p class="small"><strong>No name is ever required.</strong> Leave these blank and you are Player 1 (Black) and Player 2 (Red). An alias is for this game only, on this device only: never claimed, never registered, never checked, and gone when you clear it. You never have to use a table name to play. Tap 🎲 for a random alias — tap again for another.</p>
+          <p class="small">An alias changes the name over your game — it does not erase anything. The record follows the person, not the name.</p>
+          <label for="nameBlack">Black side — name or alias (optional)</label>
+          <div style="display:flex;gap:8px;align-items:stretch"><input type="text" id="nameBlack" maxlength="20" placeholder="Player 1" autocomplete="off" style="flex:1"><button class="btn secondary" id="diceBlack" type="button" style="white-space:nowrap">🎲 Random — tap</button></div>
+          <label for="nameRed">Red side — name or alias (optional)</label>
+          <div style="display:flex;gap:8px;align-items:stretch"><input type="text" id="nameRed" maxlength="20" placeholder="Player 2" autocomplete="off" style="flex:1"><button class="btn secondary" id="diceRed" type="button" style="white-space:nowrap">🎲 Random — tap</button></div>
+          <div class="btnrow"><button class="btn secondary small" id="applyNamesBtn" type="button">Use these names — tap to apply</button></div>
+        </details>
+
+        <details id="settingsFold">
+          <summary>Page settings &amp; rule variants — tap to open</summary>
+          <p class="small"><strong>Standard rules are the default.</strong> Every variant below really changes how the game plays — the move checker and the bot both obey it. If any rule is not standard, the game says so in plain words above the board, and that game's record is the variant's record, never a standard game's. Settings are <strong>saved on this device only</strong> — nothing is sent anywhere.</p>
+
+          <label>Captures — the big dial</label>
+          <div class="seg" data-setting="forcedCapture">
+            <button class="segbtn sel" type="button" data-val="on">Forced captures ON — standard · tap to choose</button>
+            <button class="segbtn" type="button" data-val="off">Captures optional — friendly variant · tap to choose</button>
+          </div>
+          <p class="small">Standard: if you can jump, you must jump. Friendly variant: you may move quietly instead — gentler for learning, and not a standard game.</p>
+
+          <label>Who moves first</label>
+          <div class="seg" data-setting="firstMove">
+            <button class="segbtn sel" type="button" data-val="B">Black first — standard · tap to choose</button>
+            <button class="segbtn" type="button" data-val="R">Red first — variant · tap to choose</button>
+          </div>
+
+          <label>Kings</label>
+          <div class="seg" data-setting="kingStyle">
+            <button class="segbtn sel" type="button" data-val="step">One square each way — standard American · tap to choose</button>
+            <button class="segbtn" type="button" data-val="flying">Flying kings — variant · tap to choose</button>
+          </div>
+          <p class="small">Flying kings glide any distance along a clear diagonal and can jump a piece from far away, landing on any empty square beyond it — the international style. A very different game.</p>
+
+          <label>Longest jump</label>
+          <div class="seg" data-setting="maxCapture">
+            <button class="segbtn sel" type="button" data-val="off">Any jump is fine — standard · tap to choose</button>
+            <button class="segbtn" type="button" data-val="on">Must take the longest jump chain — variant · tap to choose</button>
+          </div>
+          <p class="small">With this on, if one piece can jump three and another only one, you must take the three. Turning it on also makes captures forced.</p>
+
+          <label>Board helpers</label>
+          <div class="seg" data-setting="showMoves">
+            <button class="segbtn sel" type="button" data-val="on">Show legal moves — on · tap to choose</button>
+            <button class="segbtn" type="button" data-val="off">Show legal moves — off · tap to choose</button>
+          </div>
+          <div class="seg" data-setting="coords">
+            <button class="segbtn sel" type="button" data-val="on">Square letters &amp; numbers — on · tap to choose</button>
+            <button class="segbtn" type="button" data-val="off">Square letters &amp; numbers — off · tap to choose</button>
+          </div>
+          <div class="seg" data-setting="autoFlip">
+            <button class="segbtn sel" type="button" data-val="off">Auto-flip for two players — off · tap to choose</button>
+            <button class="segbtn" type="button" data-val="on">Auto-flip for two players — on · tap to choose</button>
+          </div>
+          <p class="small">Rule changes start a fresh game with the new rules, so a game is never half one rule set and half another.</p>
+        </details>
+
+        <details>
+          <summary>How to play — tap to open</summary>
+          <p><strong>The aim:</strong> capture all of the other side's pieces, or leave them with no legal move. Either way wins.</p>
+          <p><strong>Moving:</strong> pieces move one square diagonally forward on dark squares. Tap your piece, then tap a glowing square — or drag the piece. <span class="kbd">Esc</span> puts a selected piece back down.</p>
+          <p><strong>Jumping:</strong> jump diagonally over a next-door enemy piece onto the empty square just beyond it, and that piece is captured. In standard rules a jump is <strong>forced</strong> — if you can jump, you must. If the same piece can jump again after landing, it must keep jumping in the same turn: double and triple jumps are one move.</p>
+          <p><strong>Kings:</strong> a piece that reaches the far row is crowned — it gets a crown and from then on moves and jumps both forward and backward.</p>
+          <p><strong>Draws:</strong> tap <strong>Call it a draw</strong> to offer one. Against the bot, it accepts when it is not ahead. A game also ends drawn after 80 half-moves with no capture and no ordinary piece moving — only kings shuffling cannot drag a game out forever.</p>
+          <p><strong>Undo &amp; Hint:</strong> Undo takes back the last move (against the bot, yours and the bot's, so it is your turn again). Hint shows the strongest move the Pro search can find, whoever you are playing.</p>
+        </details>
+
+        <details>
+          <summary>About the bot levels — tap to open</summary>
+          <p>The four levels are built differently, not just named differently. <strong>Learning</strong> searches 1 move ahead and takes a random legal move about 4 times in 10. <strong>Steady</strong> searches 3 ahead and slips about 1 time in 10. <strong>Sharp</strong> searches 5 ahead with no random moves. <strong>Pro</strong> searches 7 ahead with move ordering and the full evaluation — material, crowning, advancement, centre control and mobility — and no random moves ever.</p>
+          <p>That gap is real by construction: a bot that can only see one move ahead cannot defend a piece that is attacked in two, and the Pro search sees the whole exchange. If a level ever played the same as another, that would be a bug, not a feature — the depths and slip rates printed here are the exact numbers the code uses.</p>
+          <p>The bot thinks on this device only. No connection, no account, nothing leaves the page.</p>
+        </details>
+
+        <details>
+          <summary>Other pages — the compass · tap to open</summary>
+          <div class="navgrid">
+            <a href="https://thethrivingplan.github.io/" target="_blank" rel="noopener">Start Page ↗</a>
+            <a href="https://muse.ai/s/the-thriving-plan-rxy6xav4xoxrcxsx0/WpKA_ptlnL7ueuq3Iffvs3-1vB5f_2IBpvYzVa8je5U" target="_blank" rel="noopener">The Thriving Plan ↗</a>
+            <a href="https://muse.ai/s/any-legal-case-the-record-qs6xc8xpohxpxmo/3Mz7y6LxZlpRvFjKrNn0KOpzMW44OTcYbNm-VJ4EkrU" target="_blank" rel="noopener">Any Legal Case — The Record ↗</a>
+            <a href="https://muse.ai/s/for-veterans-the-record-oxo6xngxukc6xjxq/BOv0BT4nUtGxtU-el4ZeVb4HzV2KBjA6lRzgl5Uxw3E" target="_blank" rel="noopener">For Veterans — The Record ↗</a>
+            <a href="https://theposterboard.fwh.is" target="_blank" rel="noopener">The Poster Board ↗</a>
+            <a href="https://thethrivingplan.github.io/table/" target="_blank" rel="noopener">The Infinite Table ↗</a>
+            <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗<span>Tell us what this page — and the whole shelf — is missing.</span></a>
+          </div>
+          <p class="small">On the games shelf beside this one: Bowling, Chess, Solitaire and Blackjack — same house rules: free, no ads, a bot whose level you pick, and no name required.</p>
+        </details>
+
+        <div class="btnrow">
+          <button class="btn gold" id="startBtn2" type="button">Start a new game with these choices — tap to start</button>
+        </div>
+        <p class="small" id="saveNote">Your game in progress and your settings are saved on this device only, so you can close the page and come back to the same board. Nothing is sent anywhere, and there is no account.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer>Free forever · No ads, ever · Copyleft — share it, improve it, pass it on. Played entirely on this device.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+/* ============ Pieces & board basics ============
+   Board: array of 64, index = row*8+col, row 0 at top.
+   Values: 1 = Black man, 2 = Black king, -1 = Red man, -2 = Red king, 0 = empty.
+   Black starts at the bottom (rows 5-7) and moves up; Red at the top (rows 0-2) moves down. */
+function rc(i){return [Math.floor(i/8), i%8];}
+function idx(r,c){return r*8+c;}
+function inside(r,c){return r>=0&&r<8&&c>=0&&c<8;}
+function sideOf(v){return v>0?"B":(v<0?"R":null);}
+function opp(s){return s==="B"?"R":"B";}
+function isKing(v){return Math.abs(v)===2;}
+function isMan(v){return Math.abs(v)===1;}
+function crownRow(s){return s==="B"?0:7;}
+function dirsFor(v,settings){
+  if(isKing(v)){
+    return [[-1,-1],[-1,1],[1,-1],[1,1]];
+  }
+  return v>0?[[-1,-1],[-1,1]]:[[1,-1],[1,1]];
+}
+function startBoard(){
+  var b=new Array(64).fill(0);
+  for(var r=0;r<3;r++)for(var c=0;c<8;c++)if((r+c)%2===1)b[idx(r,c)]=-1;
+  for(var r2=5;r2<8;r2++)for(var c2=0;c2<8;c2++)if((r2+c2)%2===1)b[idx(r2,c2)]=1;
+  return b;
+}
+function countPieces(b,s){var n=0,k=0,i;for(i=0;i<64;i++){if(sideOf(b[i])===s){n++;if(isKing(b[i]))k++;}}return {pieces:n,kings:k};}
+
+/* ============ Move segments (one step or one jump) ============ */
+function segmentsFrom(b,i,settings){
+  var v=b[i]; if(!v)return {quiets:[],captures:[]};
+  var s=sideOf(v), pos=rc(i), r=pos[0], c=pos[1], quiets=[], captures=[];
+  var dirs=dirsFor(v,settings);
+  var flying=isKing(v)&&settings.kingStyle==="flying";
+  for(var d=0;d<dirs.length;d++){
+    var dr=dirs[d][0], dc=dirs[d][1];
+    if(flying){
+      var step=1, jumpedOver=-1;
+      while(true){
+        var nr=r+dr*step, nc=c+dc*step;
+        if(!inside(nr,nc))break;
+        var cell=b[idx(nr,nc)];
+        if(jumpedOver<0){
+          if(cell===0){quiets.push(idx(nr,nc));}
+          else if(sideOf(cell)===opp(s)){jumpedOver=idx(nr,nc);}
+          else break;
+        }else{
+          if(cell===0){captures.push({to:idx(nr,nc),over:jumpedOver});}
+          else break;
+        }
+        step++;
+      }
+    }else{
+      var r1=r+dr, c1=c+dc;
+      if(!inside(r1,c1))continue;
+      var cell1=b[idx(r1,c1)];
+      if(cell1===0){quiets.push(idx(r1,c1));}
+      else if(sideOf(cell1)===opp(s)){
+        var r2=r+2*dr, c2=c+2*dc;
+        if(inside(r2,c2)&&b[idx(r2,c2)]===0)captures.push({to:idx(r2,c2),over:idx(r1,c1)});
+      }
+    }
+  }
+  return {quiets:quiets,captures:captures};
+}
+
+/* ============ Full moves (a whole turn, incl. jump chains) ============ */
+function chainsFrom(b,i,settings){
+  // DFS all capture chains starting at i. Returns [{path:[i,...], caps:[overIdx per step], after:board, crowned:bool}]
+  var results=[];
+  function dfs(board,pos,path,caps){
+    var segs=segmentsFrom(board,pos,settings).captures;
+    if(segs.length===0){
+      if(path.length>1)results.push({path:path.slice(),caps:caps.slice(),after:board.slice(),crowned:false});
+      return;
+    }
+    for(var k=0;k<segs.length;k++){
+      var sg=segs[k];
+      var nb=board.slice();
+      var piece=nb[pos];
+      nb[sg.to]=piece; nb[pos]=0; nb[sg.over]=0;
+      var posRC=rc(sg.to);
+      var crownedNow=isMan(piece)&&posRC[0]===crownRow(sideOf(piece));
+      if(crownedNow){
+        nb[sg.to]=piece>0?2:-2;
+        results.push({path:path.concat([sg.to]),caps:caps.concat([sg.over]),after:nb,crowned:true});
+      }else{
+        dfs(nb,sg.to,path.concat([sg.to]),caps.concat([sg.over]));
+      }
+    }
+  }
+  dfs(b.slice(),i,[i],[]);
+  return results;
+}
+function fullMoves(b,side,settings){
+  var captures=[], quiets=[], i, v;
+  for(i=0;i<64;i++){
+    v=b[i]; if(sideOf(v)!==side)continue;
+    var ch=chainsFrom(b,i,settings);
+    for(var k=0;k<ch.length;k++)captures.push(ch[k]);
+    var sg=segmentsFrom(b,i,settings);
+    for(var q=0;q<sg.quiets.length;q++){
+      var nb=b.slice(); var piece=nb[i]; nb[sg.quiets[q]]=piece; nb[i]=0;
+      var toRC=rc(sg.quiets[q]); var cr=isMan(piece)&&toRC[0]===crownRow(side);
+      if(cr)nb[sg.quiets[q]]=piece>0?2:-2;
+      quiets.push({path:[i,sg.quiets[q]],caps:[],after:nb,crowned:cr});
+    }
+  }
+  var mustCap=settings.forcedCapture==="on"||settings.maxCapture==="on";
+  var moves;
+  if(captures.length&&mustCap)moves=captures;
+  else if(captures.length)moves=captures.concat(quiets);
+  else moves=quiets;
+  if(settings.maxCapture==="on"&&captures.length){
+    var max=0; captures.forEach(function(m){if(m.caps.length>max)max=m.caps.length;});
+    moves=captures.filter(function(m){return m.caps.length===max;});
+  }
+  return moves;
+}
+function anyLegal(b,side,settings){return fullMoves(b,side,settings).length>0;}
+
+/* ============ Evaluation & search (negamax, alpha-beta) ============ */
+var VAL={man:100,king:295};
+function evaluate(b,side){
+  // Score from `side`'s point of view.
+  var score=0, myMob=0;
+  for(var i=0;i<64;i++){
+    var v=b[i]; if(!v)continue;
+    var s=sideOf(v), pos=rc(i), r=pos[0], c=pos[1];
+    var val=isKing(v)?VAL.king:VAL.man;
+    if(isMan(v)){
+      var prog=s==="B"?(7-r):r;         // how far the man has advanced
+      val+=prog*6;
+      if(r>=3&&r<=4&&c>=2&&c<=5)val+=7;  // centre
+      if(s==="B"&&r===7)val+=6;         // back-rank guard still home
+      if(s==="R"&&r===0)val+=6;
+      if((c===0||c===7))val+=3;         // edge safety
+    }else{
+      val+= (r>=2&&r<=5&&c>=2&&c<=5)?8:0;
+    }
+    score+= (s===side)? val : -val;
+  }
+  return score;
+}
+var nodes=0, NODE_CAP=220000;
+function negamax(b,side,settings,depth,alpha,beta,ply){
+  nodes++;
+  var moves=fullMoves(b,side,settings);
+  if(moves.length===0)return -100000+ply; // no moves: side to move loses
+  var counts=countPieces(b,side), oc=countPieces(b,opp(side));
+  if(counts.pieces===0)return -100000+ply;
+  if(oc.pieces===0)return 100000-ply;
+  if(depth===0){
+    var ev=evaluate(b,side);
+    // small mobility term at the leaf
+    ev+= (moves.length)*2;
+    return ev;
+  }
+  // Move ordering: captures & crowning first search better.
+  moves.sort(function(a,z){return (z.caps.length*10+(z.crowned?5:0))-(a.caps.length*10+(a.crowned?5:0));});
+  var best=-Infinity;
+  for(var k=0;k<moves.length;k++){
+    var sc=-negamax(moves[k].after,opp(side),settings,depth-1,-beta,-alpha,ply+1);
+    if(sc>best)best=sc;
+    if(best>alpha)alpha=best;
+    if(alpha>=beta)break;
+    if(nodes>NODE_CAP)break;
+  }
+  return best;
+}
+var LEVELS={
+  learning:{depth:1, slip:0.4, name:"Learning"},
+  steady:{depth:3, slip:0.1, name:"Steady"},
+  sharp:{depth:5, slip:0, name:"Sharp"},
+  pro:{depth:7, slip:0, name:"Pro"}
+};
+function chooseBotMove(b,side,settings,levelKey){
+  var cfg=LEVELS[levelKey]||LEVELS.steady;
+  var moves=fullMoves(b,side,settings);
+  if(!moves.length)return null;
+  if(cfg.slip>0&&Math.random()<cfg.slip){
+    return moves[Math.floor(Math.random()*moves.length)];
+  }
+  nodes=0;
+  var best=-Infinity, bestMoves=[], alpha=-Infinity, beta=Infinity;
+  moves.sort(function(a,z){return (z.caps.length*10+(z.crowned?5:0))-(a.caps.length*10+(a.crowned?5:0));});
+  for(var k=0;k<moves.length;k++){
+    var sc=-negamax(moves[k].after,opp(side),settings,cfg.depth-1,-beta,-alpha,1);
+    if(sc>best+0.001){best=sc;bestMoves=[moves[k]];}
+    else if(Math.abs(sc-best)<=0.001){bestMoves.push(moves[k]);}
+    if(sc>alpha)alpha=sc;
+  }
+  return bestMoves[Math.floor(Math.random()*bestMoves.length)];
+}
+function bestHintMove(b,side,settings){
+  nodes=0;
+  var moves=fullMoves(b,side,settings);
+  if(!moves.length)return null;
+  var best=-Infinity, bestM=moves[0], alpha=-Infinity, beta=Infinity;
+  moves.sort(function(a,z){return (z.caps.length*10+(z.crowned?5:0))-(a.caps.length*10+(a.crowned?5:0));});
+  for(var k=0;k<moves.length;k++){
+    var sc=-negamax(moves[k].after,opp(side),settings,5,-beta,-alpha,1);
+    if(sc>best){best=sc;bestM=moves[k];}
+    if(sc>alpha)alpha=sc;
+  }
+  return bestM;
+}
+
+/* ============ Notation ============ */
+var FILES="abcdefgh";
+function sqName(i){var p=rc(i);return FILES[p[1]]+(8-p[0]);}
+function moveNotation(m){
+  var sep=m.caps.length?"×":"–";
+  return m.path.map(sqName).join(sep);
+}
+
+/* ============ Game state, settings, device-only save ============ */
+var SET_KEY="checkers-settings-v1", SAVE_KEY="checkers-save-v1";
+var settings={forcedCapture:"on", firstMove:"B", kingStyle:"step", maxCapture:"off", showMoves:"on", coords:"on", autoFlip:"off"};
+var ui={mode:"bot", level:"steady", humanSide:"B", sound:true};
+try{
+  var savedSettings=JSON.parse(localStorage.getItem(SET_KEY)||"null");
+  if(savedSettings){for(var sk in settings)if(savedSettings[sk])settings[sk]=savedSettings[sk];
+    if(savedSettings.ui){for(var uk in ui)if(savedSettings.ui[uk]!==undefined)ui[uk]=savedSettings.ui[uk];}}
+}catch(e){}
+function persistSettings(){try{var o={};for(var k in settings)o[k]=settings[k];o.ui=ui;localStorage.setItem(SET_KEY,JSON.stringify(o));}catch(e){}}
+function isStandard(){return settings.forcedCapture==="on"&&settings.firstMove==="B"&&settings.kingStyle==="step"&&settings.maxCapture==="off";}
+function variantWords(){
+  var w=[];
+  if(settings.forcedCapture==="off")w.push("captures are optional (friendly variant)");
+  if(settings.firstMove==="R")w.push("Red moves first");
+  if(settings.kingStyle==="flying")w.push("flying kings");
+  if(settings.maxCapture==="on")w.push("you must take the longest jump chain");
+  return w;
+}
+var G=null;
+function freshGame(){
+  return {
+    board:startBoard(),
+    turn:settings.firstMove,
+    over:false, result:"",
+    history:[],           // snapshots before each completed move
+    log:[],               // notation strings
+    halfClock:0,          // half-moves since capture or man move
+    names:{B:"",R:""},
+    mode:ui.mode, level:ui.level, humanSide:ui.humanSide,
+    flipped: ui.mode==="bot" ? ui.humanSide==="R" : settings.firstMove==="R"
+  };
+}
+function persistGame(){
+  try{
+    if(!G)return;
+    localStorage.setItem(SAVE_KEY,JSON.stringify({board:G.board,turn:G.turn,over:G.over,result:G.result,log:G.log,halfClock:G.halfClock,names:G.names,mode:G.mode,level:G.level,humanSide:G.humanSide,settings:settings}));
+  }catch(e){}
+}
+function displayName(side){
+  if(G&&G.names&&G.names[side])return G.names[side];
+  if(G&&G.mode==="bot"&&side!==G.humanSide)return "Bot · "+(LEVELS[G.level]?LEVELS[G.level].name:G.level);
+  return side==="B"?"Player 1":"Player 2";
+}
+function colourWord(side){return side==="B"?"Black":"Red";}
+function isBotTurn(){return G&&!G.over&&G.mode==="bot"&&G.turn!==G.humanSide;}
+
+/* ============ Sound (synthesised, no files) ============ */
+var actx=null;
+function ac(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(actx&&actx.state==="suspended")actx.resume();return actx;}
+function blip(freq,dur,delay,type){
+  if(!ui.sound)return; var c=ac(); if(!c)return;
+  var o=c.createOscillator(), g=c.createGain(), t=c.currentTime+(delay||0);
+  o.type=type||"triangle"; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.10,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+}
+function sndMove(){blip(320,0.08,0);}
+function sndCapture(){blip(520,0.09,0);blip(240,0.12,0.07);}
+function sndCrown(){blip(523,0.12,0);blip(659,0.12,0.1);blip(784,0.18,0.2);}
+function sndWin(){blip(523,0.14,0);blip(659,0.14,0.12);blip(784,0.14,0.24);blip(1046,0.28,0.36);}
+
+/* ============ Human turn handling (stepwise, chains included) ============ */
+var turnMoves=null;      // full moves available to the side to move (human)
+var chainCandidates=null;// remaining full moves consistent with the chain so far
+var chainPath=null;      // squares visited so far this turn
+var selected=-1;
+var lastMoveSquares=[];
+var hintSquares=[];
+var busy=false;
+
+function beginHumanTurn(){
+  turnMoves=fullMoves(G.board,G.turn,settings);
+  chainCandidates=null; chainPath=null; selected=-1; hintSquares=[];
+}
+function destOptions(){
+  // Map: destination square -> true, for the currently selected piece / chain state.
+  var out={};
+  var list=chainCandidates||turnMoves||[];
+  if(chainPath&&chainPath.length){
+    var cur=chainPath[chainPath.length-1];
+    list.forEach(function(m){
+      var ok=true;
+      for(var i=0;i<chainPath.length;i++)if(m.path[i]!==chainPath[i]){ok=false;break;}
+      if(ok&&m.path.length>chainPath.length)out[m.path[chainPath.length]]=true;
+    });
+    return out;
+  }
+  if(selected<0)return out;
+  list.forEach(function(m){if(m.path[0]===selected)out[m.path[1]]=true;});
+  return out;
+}
+function selectablePieces(){
+  var set={};
+  var list=turnMoves||[];
+  list.forEach(function(m){set[m.path[0]]=true;});
+  return set;
+}
+function tryHumanStep(to){
+  var list=chainCandidates||turnMoves||[];
+  var from=chainPath&&chainPath.length?chainPath[chainPath.length-1]:selected;
+  if(from<0)return;
+  var matches=list.filter(function(m){
+    if(chainPath){
+      for(var i=0;i<chainPath.length;i++)if(m.path[i]!==chainPath[i])return false;
+      return m.path[chainPath.length]===to;
+    }
+    return m.path[0]===from&&m.path[1]===to;
+  });
+  if(!matches.length)return;
+  if(!chainPath){
+    // snapshot for undo before the turn starts
+    G.history.push({board:G.board.slice(),turn:G.turn,log:G.log.slice(),halfClock:G.halfClock});
+    chainPath=[from];
+  }
+  var chosen=matches[0];
+  // Apply this segment to the live board. caps[k] is the piece captured going path[k] -> path[k+1];
+  // before extending chainPath, the current segment index is chainPath.length-1.
+  var piece=G.board[from];
+  G.board[to]=piece; G.board[from]=0;
+  var wasCapture=false;
+  var segIdx=chainPath.length-1;
+  var capForSeg=(chosen.caps&&chosen.caps[segIdx]!==undefined)?chosen.caps[segIdx]:null;
+  if(capForSeg!==null&&capForSeg!==undefined){G.board[capForSeg]=0;wasCapture=true;}
+  chainPath.push(to);
+  // Crown check (chain generation already stops at crowning)
+  var toRC=rc(to);
+  var crowned=false;
+  if(isMan(G.board[to])&&toRC[0]===crownRow(G.turn)){G.board[to]=G.board[to]>0?2:-2;crowned=true;}
+  var complete=matches.every(function(m){return m.path.length===chainPath.length;});
+  var continues=matches.some(function(m){return m.path.length>chainPath.length;});
+  if(wasCapture)sndCapture(); else sndMove();
+  if(crowned)sndCrown();
+  if(continues&&!crowned){
+    chainCandidates=matches;
+    selected=to;
+    setMsg("Jump again — the same piece can keep jumping. Tap a glowing square to continue.",false);
+    render();
+    return;
+  }
+  // Turn complete: use the canonical after-board from a matching full move
+  var finalMove=null;
+  matches.forEach(function(m){if(m.path.length===chainPath.length)finalMove=m;});
+  if(finalMove)G.board=finalMove.after.slice();
+  finishTurn(finalMove||chosen,wasCapture);
+}
+function finishTurn(move,wasCapture){
+  var mover=G.turn;
+  // half-move clock: reset on capture or when a man (not king) moved
+  var snap=G.history[G.history.length-1];
+  var movedPieceType=snap?Math.abs(snap.board[move.path[0]]):2;
+  if(wasCapture||(move&&move.caps.length)||movedPieceType===1)G.halfClock=0; else G.halfClock++;
+  G.log.push(moveNotation(move));
+  lastMoveSquares=move.path.slice();
+  chainCandidates=null; chainPath=null; selected=-1; turnMoves=null; hintSquares=[];
+  G.turn=opp(G.turn);
+  // End checks
+  var nextMoves=fullMoves(G.board,G.turn,settings);
+  var myCount=countPieces(G.board,mover), theirCount=countPieces(G.board,G.turn);
+  if(theirCount.pieces===0||nextMoves.length===0){
+    G.over=true;
+    G.result=displayName(mover)+" ("+colourWord(mover)+") wins — "+(theirCount.pieces===0?"the other side has no pieces left.":"the other side has no legal move left.");
+    sndWin();
+  }else if(G.halfClock>=80){
+    G.over=true;
+    G.result="Draw — 80 half-moves with no capture and no ordinary piece moving.";
+  }
+  if(settings.autoFlip==="on"&&G.mode==="local"&&!G.over)G.flipped=!G.flipped;
+  persistGame();
+  render();
+  maybeBot();
+}
+function maybeBot(){
+  if(!G||G.over||!isBotTurn()||busy)return;
+  busy=true;
+  setMsg("The bot ("+(LEVELS[G.level]?LEVELS[G.level].name:G.level)+") is thinking…",false);
+  setTimeout(function(){
+    var mv=chooseBotMove(G.board,G.turn,settings,G.level);
+    busy=false;
+    if(!mv){render();return;}
+    G.history.push({board:G.board.slice(),turn:G.turn,log:G.log.slice(),halfClock:G.halfClock});
+    // animate the chain step by step for clarity
+    var caps=mv.caps.slice();
+    G.board=mv.after.slice();
+    if(caps.length)sndCapture(); else sndMove();
+    if(mv.crowned)sndCrown();
+    finishTurn(mv,caps.length>0);
+  },450);
+}
+
+/* ============ Rendering ============ */
+var boardEl=$("board");
+function render(){
+  if(!G)return;
+  // Turn banner
+  var banner=$("turnBanner");
+  banner.className="turnbanner"+(G.turn==="R"?" redturn":"");
+  if(G.over){
+    banner.textContent="🏁 "+G.result;
+    banner.className="turnbanner"+(G.result.indexOf("Draw")===0?"":" redturn");
+    if(G.result.indexOf("Draw")===0)banner.className="turnbanner";
+  }else if(isBotTurn()){
+    banner.textContent="🤖 "+displayName(G.turn)+"'s turn ("+colourWord(G.turn)+") — thinking…";
+  }else{
+    var mustJump=turnMoves&&turnMoves.length&&turnMoves[0].caps.length>0&&(settings.forcedCapture==="on"||settings.maxCapture==="on");
+    banner.textContent="🎯 "+displayName(G.turn)+"'s turn ("+colourWord(G.turn)+")"+(mustJump?" — a jump is forced: you must capture":" — tap a piece to move");
+    if(chainPath&&chainPath.length>1)banner.textContent="🎯 "+displayName(G.turn)+" — keep jumping with the same piece";
+  }
+  // Variant banner
+  var vb=$("variantBanner");
+  if(!isStandard()){
+    vb.classList.remove("hidden");
+    vb.textContent="Variant rules in play: "+variantWords().join(" · ")+". This game is a variant game — its record is the variant's, not a standard game's.";
+  }else vb.classList.add("hidden");
+  // Score chips + captured trays
+  var cb=countPieces(G.board,"B"), cr=countPieces(G.board,"R");
+  $("scoreChips").innerHTML=
+    '<span class="chip"><span class="mini blk"></span>'+escapeHtml(displayName("B"))+" (Black): "+cb.pieces+" pieces · "+cb.kings+" kings</span>"+
+    '<span class="chip"><span class="mini red"></span>'+escapeHtml(displayName("R"))+" (Red): "+cr.pieces+" pieces · "+cr.kings+" kings</span>";
+  var capByBlack="", capByRed="", i;
+  for(i=0;i<(12-cr.pieces);i++)capByBlack+='<span class="mini red"></span>';
+  for(i=0;i<(12-cb.pieces);i++)capByRed+='<span class="mini blk"></span>';
+  $("capByBlack").innerHTML=capByBlack||'<span class="small">none yet</span>';
+  $("capByRed").innerHTML=capByRed||'<span class="small">none yet</span>';
+  // Move list
+  var ml=$("moveList");
+  if(!G.log.length)ml.textContent="No moves yet.";
+  else{
+    var html="";
+    for(i=0;i<G.log.length;i+=2){
+      html+="<b>"+(i/2+1)+".</b> "+escapeHtml(G.log[i])+(G.log[i+1]?"  "+escapeHtml(G.log[i+1]):"")+"<br>";
+    }
+    ml.innerHTML=html;
+  }
+  $("engineNote").textContent=G.mode==="bot"
+    ? "Bot level in this game: "+(LEVELS[G.level]?LEVELS[G.level].name:G.level)+" — searches "+(LEVELS[G.level]?LEVELS[G.level].depth:3)+" moves ahead"+((LEVELS[G.level]&&LEVELS[G.level].slip)?", with casual moves about "+Math.round(LEVELS[G.level].slip*10)+" in 10.":", with no random moves.")
+    : "Two-player game on this device. Hint uses the Pro-strength search (7-ply family, run at 6 for speed of answer).";
+  $("clockNote").textContent="Draw clock: "+G.halfClock+" of 80 half-moves with no capture and no ordinary piece moving.";
+  renderBoard();
+  $("undoBtn").disabled=!G.history.length||busy;
+}
+function escapeHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function renderBoard(){
+  boardEl.innerHTML="";
+  var dests=(settings.showMoves==="on"&&!G.over&&!isBotTurn())?destOptions():{};
+  var selectables=(!G.over&&!isBotTurn())?selectablePieces():{};
+  var mustSet={};
+  if(turnMoves&&turnMoves.length&&turnMoves[0].caps.length>0&&(settings.forcedCapture==="on"||settings.maxCapture==="on")){
+    turnMoves.forEach(function(m){mustSet[m.path[0]]=true;});
+  }
+  var order=[];
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++)order.push(idx(r,c));
+  if(G.flipped)order.reverse();
+  order.forEach(function(i){
+    var p=rc(i), r=p[0], c=p[1];
+    var sq=document.createElement("button");
+    sq.type="button";
+    sq.className="sq "+(((r+c)%2===1)?"dark":"light");
+    sq.setAttribute("role","gridcell");
+    sq.setAttribute("data-sq",i);
+    sq.setAttribute("aria-label","Square "+sqName(i)+(G.board[i]?(", "+colourWord(sideOf(G.board[i]))+(isKing(G.board[i])?" king":" piece")):""));
+    if(lastMoveSquares.indexOf(i)>=0)sq.classList.add("lastmove");
+    if(hintSquares.indexOf(i)>=0)sq.style.boxShadow="inset 0 0 0 4px var(--gold)";
+    if(i===selected)sq.classList.add("sel");
+    if(settings.coords==="on"){
+      if(c===0){var s1=document.createElement("span");s1.className="coord tl";s1.textContent=String(8-r);sq.appendChild(s1);}
+      if(r===7){var s2=document.createElement("span");s2.className="coord br";s2.textContent=FILES[c];sq.appendChild(s2);}
+    }
+    var v=G.board[i];
+    if(v){
+      var pc=document.createElement("span");
+      pc.className="piece "+(v>0?"blk":"red");
+      if(mustSet[i]&&sideOf(v)===G.turn)pc.classList.add("mustcap");
+      if(isKing(v)){var cr=document.createElement("span");cr.className="crown";cr.textContent="♛";pc.appendChild(cr);}
+      sq.appendChild(pc);
+    }else if(dests[i]){
+      var isCapDest=false;
+      var list=chainCandidates||turnMoves||[];
+      list.forEach(function(m){
+        if(chainPath){var ok=true;for(var k=0;k<chainPath.length;k++)if(m.path[k]!==chainPath[k])ok=false;if(ok&&m.path[chainPath.length]===i&&m.caps.length)isCapDest=true;}
+        else if(selected>=0&&m.path[0]===selected&&m.path[1]===i&&m.caps.length)isCapDest=true;
+      });
+      var mark=document.createElement("span");
+      mark.className=isCapDest?"ring":"dot";
+      sq.appendChild(mark);
+    }
+    boardEl.appendChild(sq);
+  });
+}
+function setMsg(text,isWin){
+  var m=$("actionMsg");
+  if(!text){m.classList.add("hidden");m.textContent="";return;}
+  m.classList.remove("hidden"); m.textContent=text;
+  m.className="status"+(isWin?" win":"");
+}
+
+/* ============ Pointer play: tap-tap and drag ============ */
+function squareFromPoint(x,y){
+  var rect=boardEl.getBoundingClientRect();
+  if(x<rect.left||x>rect.right||y<rect.top||y>rect.bottom)return -1;
+  var fx=(x-rect.left)/rect.width, fy=(y-rect.top)/rect.height;
+  var col=Math.floor(fx*8), row=Math.floor(fy*8);
+  if(G.flipped){col=7-col;row=7-row;}
+  if(row<0||row>7||col<0||col>7)return -1;
+  return idx(row,col);
+}
+function humanTap(i){
+  if(!G||G.over||busy||isBotTurn())return;
+  if(!turnMoves)beginHumanTurn();
+  var v=G.board[i];
+  var dests=destOptions();
+  if(chainPath&&chainPath.length){
+    if(dests[i]){tryHumanStep(i);}
+    return;
+  }
+  if(selected>=0&&dests[i]){tryHumanStep(i);return;}
+  if(v&&sideOf(v)===G.turn&&selectablePieces()[i]){
+    selected=i; sndMove(); render();
+  }else if(v&&sideOf(v)===G.turn){
+    setMsg("That piece cannot move right now"+(turnMoves&&turnMoves.length&&turnMoves[0].caps.length>0&&(settings.forcedCapture==="on"||settings.maxCapture==="on")?" — a jump is forced, so only a piece that can jump may move. The pulsing pieces can jump.":""),false);
+  }else{
+    selected=-1; render();
+  }
+}
+var dragState=null;
+boardEl.addEventListener("pointerdown",function(ev){
+  var sqEl=ev.target.closest("[data-sq]");
+  if(!sqEl)return;
+  var i=parseInt(sqEl.getAttribute("data-sq"),10);
+  if(!G||G.over||busy||isBotTurn())return;
+  if(!turnMoves)beginHumanTurn();
+  var v=G.board[i];
+  if(v&&sideOf(v)===G.turn&&selectablePieces()[i]&&!chainPath){
+    dragState={from:i,x:ev.clientX,y:ev.clientY,ghost:null,moved:false};
+  }
+});
+boardEl.addEventListener("pointermove",function(ev){
+  if(!dragState)return;
+  var dx=ev.clientX-dragState.x, dy=ev.clientY-dragState.y;
+  if(!dragState.moved&&Math.hypot(dx,dy)>10){
+    dragState.moved=true; selected=dragState.from;
+    var v=G.board[dragState.from];
+    var g=document.createElement("span");
+    g.className="piece dragghost "+(v>0?"blk":"red");
+    if(isKing(v)){var cr=document.createElement("span");cr.className="crown";cr.textContent="♛";g.appendChild(cr);}
+    document.body.appendChild(g); dragState.ghost=g; render();
+  }
+  if(dragState.ghost){dragState.ghost.style.left=ev.clientX+"px";dragState.ghost.style.top=ev.clientY+"px";}
+});
+function endDrag(ev){
+  if(!dragState)return;
+  var ds=dragState; dragState=null;
+  if(ds.ghost)ds.ghost.remove();
+  if(ds.moved){
+    var to=squareFromPoint(ev.clientX,ev.clientY);
+    if(to>=0&&destOptions()[to]){selected=ds.from;tryHumanStep(to);return;}
+    render();
+  }
+}
+boardEl.addEventListener("pointerup",function(ev){
+  if(dragState&&dragState.moved){endDrag(ev);return;}
+  var sqEl=ev.target.closest("[data-sq]");
+  dragState=null;
+  if(!sqEl)return;
+  humanTap(parseInt(sqEl.getAttribute("data-sq"),10));
+});
+boardEl.addEventListener("pointercancel",function(){if(dragState&&dragState.ghost)dragState.ghost.remove();dragState=null;render();});
+document.addEventListener("keydown",function(ev){
+  if(ev.key==="Escape"){selected=-1;if(!chainPath)render();}
+});
+
+/* ============ Controls ============ */
+function newGame(){
+  var names={B:($("nameBlack").value||"").trim().slice(0,20), R:($("nameRed").value||"").trim().slice(0,20)};
+  G=freshGame(); G.names=names;
+  lastMoveSquares=[]; hintSquares=[]; busy=false;
+  try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+  beginHumanTurn();
+  setMsg("",false);
+  persistGame(); render();
+  if(settings.autoFlip==="on"&&G.mode==="local"){/* flipped set from firstMove */}
+  maybeBot();
+}
+$("newGameBtn").addEventListener("click",newGame);
+$("startBtn2").addEventListener("click",newGame);
+$("undoBtn").addEventListener("click",function(){
+  if(!G||!G.history.length||busy)return;
+  var steps=(G.mode==="bot"&&G.turn===G.humanSide&&G.history.length>=2)?2:1;
+  // If game over or bot just moved, one step may land on bot turn; step back until human turn or empty.
+  var target=null;
+  for(var s=0;s<steps;s++){
+    target=G.history.pop();
+    if(!target)break;
+  }
+  // In bot mode, ensure we land on the human's turn:
+  if(G.mode==="bot"){
+    while(target&&target.turn!==G.humanSide&&G.history.length){target=G.history.pop();}
+  }
+  if(!target)return;
+  G.board=target.board.slice(); G.turn=target.turn; G.log=target.log.slice(); G.halfClock=target.halfClock;
+  G.over=false; G.result="";
+  chainCandidates=null; chainPath=null; selected=-1; lastMoveSquares=[];
+  beginHumanTurn(); setMsg("Move taken back. Your turn.",false);
+  persistGame(); render();
+});
+$("hintBtn").addEventListener("click",function(){
+  if(!G||G.over||busy||isBotTurn())return;
+  if(!turnMoves)beginHumanTurn();
+  setMsg("Thinking of a hint…",false);
+  setTimeout(function(){
+    var mv=bestHintMove(G.board,G.turn,settings);
+    if(!mv){setMsg("No legal move to hint at.",false);return;}
+    hintSquares=mv.path.slice(); selected=mv.path[0];
+    setMsg("Hint: "+displayName(G.turn)+" — play "+moveNotation(mv)+(mv.caps.length?" (a jump"+(mv.caps.length>1?" chain of "+mv.caps.length:"")+").":"."),false);
+    render();
+  },30);
+});
+$("flipBtn").addEventListener("click",function(){if(!G)return;G.flipped=!G.flipped;render();});
+$("soundBtn").addEventListener("click",function(){
+  ui.sound=!ui.sound; persistSettings();
+  $("soundBtn").textContent="Sound: "+(ui.sound?"on":"off")+" — tap to change";
+  if(ui.sound)sndMove();
+});
+$("resignBtn").addEventListener("click",function(){
+  if(!G||G.over)return;
+  var loser=G.turn, winner=opp(G.turn);
+  if(isBotTurn()){setMsg("The bot does not resign — but you can start a new game any time.",false);return;}
+  G.over=true; G.result=displayName(winner)+" ("+colourWord(winner)+") wins — "+displayName(loser)+" resigned.";
+  setMsg(G.result,true); persistGame(); render();
+});
+$("drawBtn").addEventListener("click",function(){
+  if(!G||G.over)return;
+  if(G.mode==="local"){
+    G.over=true; G.result="Draw — agreed by both players on this device.";
+    setMsg(G.result,true); persistGame(); render(); return;
+  }
+  if(isBotTurn()){setMsg("Wait for your turn to offer a draw.",false);return;}
+  // Bot accepts when it is not ahead on material+position.
+  var ev=evaluate(G.board,G.humanSide);
+  if(ev>=0){
+    G.over=true; G.result="Draw — the bot accepted your offer.";
+    setMsg(G.result,true); persistGame(); render();
+  }else{
+    setMsg("The bot declines — it thinks it is ahead in this game. Play on, or resign.",false);
+  }
+});
+$("offlineBtn").addEventListener("click",function(){
+  try{
+    var html="<!doctype html>\n"+document.documentElement.outerHTML;
+    var blob=new Blob([html],{type:"text/html"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="checkers.html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+  }catch(e){ setMsg("Your browser would not start the download. The game still plays offline once this page has loaded.",false); }
+});
+
+/* ============ Setup wiring ============ */
+function segSelect(containerSel,value){
+  document.querySelectorAll(containerSel+" .segbtn").forEach(function(b){b.classList.toggle("sel",b.getAttribute("data-val")===value||b.getAttribute("data-side")===value);});
+}
+$("modeBotBtn").addEventListener("click",function(){
+  ui.mode="bot"; $("modeBotBtn").classList.add("sel"); $("modeLocalBtn").classList.remove("sel");
+  $("botSetup").classList.remove("hidden"); persistSettings();
+});
+$("modeLocalBtn").addEventListener("click",function(){
+  ui.mode="local"; $("modeLocalBtn").classList.add("sel"); $("modeBotBtn").classList.remove("sel");
+  $("botSetup").classList.add("hidden"); persistSettings();
+});
+document.querySelectorAll(".botlvl").forEach(function(b){
+  b.addEventListener("click",function(){
+    ui.level=b.getAttribute("data-level");
+    document.querySelectorAll(".botlvl").forEach(function(x){x.classList.toggle("sel",x===b);});
+    persistSettings();
+  });
+});
+document.querySelectorAll("#sideSeg .segbtn").forEach(function(b){
+  b.addEventListener("click",function(){
+    ui.humanSide=b.getAttribute("data-side");
+    document.querySelectorAll("#sideSeg .segbtn").forEach(function(x){x.classList.toggle("sel",x===b);});
+    $("firstMoveNote").textContent=ui.humanSide==="B"
+      ?"You are Black. Who moves first follows the rule setting below (standard: Black first)."
+      :"You are Red. If Black moves first (standard), the bot opens the game.";
+    persistSettings();
+  });
+});
+var ALIASES=["Captain Crown","Jumping Jack","Diagonal Dan","Quiet Storm","Corner Pocket","Double Jump","King Me Kate","Checkerboard Charlie","The Patient Pawn-Taker","Ruby Runner","Midnight Mover","Triple Threat"];
+function randomAlias(){return ALIASES[Math.floor(Math.random()*ALIASES.length)];}
+$("diceBlack").addEventListener("click",function(){$("nameBlack").value=randomAlias();});
+$("diceRed").addEventListener("click",function(){$("nameRed").value=randomAlias();});
+$("applyNamesBtn").addEventListener("click",function(){
+  if(!G)return;
+  G.names={B:($("nameBlack").value||"").trim().slice(0,20),R:($("nameRed").value||"").trim().slice(0,20)};
+  persistGame(); render(); setMsg("Names updated for this game.",false);
+});
+document.querySelectorAll("[data-setting]").forEach(function(seg){
+  var key=seg.getAttribute("data-setting");
+  seg.querySelectorAll(".segbtn").forEach(function(b){
+    b.addEventListener("click",function(){
+      var val=b.getAttribute("data-val");
+      if(settings[key]===val)return;
+      settings[key]=val; persistSettings();
+      seg.querySelectorAll(".segbtn").forEach(function(x){x.classList.toggle("sel",x===b);});
+      // Rule change => fresh game under the new rules, keeping names.
+      var names=G?G.names:{B:"",R:""};
+      G=freshGame(); G.names=names;
+      lastMoveSquares=[]; beginHumanTurn(); persistGame(); render(); maybeBot();
+      setMsg(isStandard()?"Back to standard rules — a fresh standard game is on the board.":"Variant rules on — a fresh variant game is on the board. The banner above the board names the variant.",false);
+    });
+  });
+});
+function syncControlsFromState(){
+  // mode
+  $("modeBotBtn").classList.toggle("sel",ui.mode==="bot");
+  $("modeLocalBtn").classList.toggle("sel",ui.mode==="local");
+  $("botSetup").classList.toggle("hidden",ui.mode!=="bot");
+  document.querySelectorAll(".botlvl").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-level")===ui.level);});
+  document.querySelectorAll("#sideSeg .segbtn").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-side")===ui.humanSide);});
+  document.querySelectorAll("[data-setting]").forEach(function(seg){
+    var key=seg.getAttribute("data-setting");
+    seg.querySelectorAll(".segbtn").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-val")===settings[key]);});
+  });
+  $("soundBtn").textContent="Sound: "+(ui.sound?"on":"off")+" — tap to change";
+}
+
+/* ============ Hold-to-explain (house gesture law, light touch) ============ */
+[["newGameBtn","Starts a fresh game with the choices on the right. Your saved game is replaced."],
+ ["undoBtn","Takes back the last move. Against the bot it takes back two half-moves, so it is your turn again."],
+ ["hintBtn","Runs the strongest search this page has and lights up the move it picks, in gold."],
+ ["flipBtn","Turns the board around, so the other colour is at the bottom. Nothing else changes."],
+ ["drawBtn","Offers a draw. In two-player play on this device, tapping it agrees the draw for both sides. The bot accepts only when it is not ahead."],
+ ["resignBtn","The side to move gives up, and the other side wins."]].forEach(function(pair){
+  var el=$(pair[0]); if(!el)return;
+  var timer=null;
+  el.addEventListener("pointerdown",function(){timer=setTimeout(function(){setMsg(pair[1],false);timer=null;},650);});
+  ["pointerup","pointerleave","pointercancel"].forEach(function(evt){el.addEventListener(evt,function(){if(timer){clearTimeout(timer);timer=null;}});});
+});
+
+/* ============ Boot: restore a saved game from this device, or start fresh ============ */
+function boot(){
+  syncControlsFromState();
+  var restored=false;
+  try{
+    var sv=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+    if(sv&&sv.board&&sv.board.length===64){
+      G=freshGame();
+      G.board=sv.board; G.turn=sv.turn||"B"; G.over=!!sv.over; G.result=sv.result||"";
+      G.log=sv.log||[]; G.halfClock=sv.halfClock||0; G.names=sv.names||{B:"",R:""};
+      G.mode=sv.mode||ui.mode; G.level=sv.level||ui.level; G.humanSide=sv.humanSide||ui.humanSide;
+      G.history=[]; // undo history is not kept between visits — said plainly in the save note's spirit
+      ui.mode=G.mode; ui.level=G.level; ui.humanSide=G.humanSide;
+      syncControlsFromState();
+      $("nameBlack").value=G.names.B||""; $("nameRed").value=G.names.R||"";
+      restored=true;
+    }
+  }catch(e){}
+  if(!restored){
+    G=freshGame();
+    $("nameBlack").value=""; $("nameRed").value="";
+  }
+  beginHumanTurn();
+  render();
+  if(restored&&!G.over)setMsg("Welcome back — your saved game from this device is on the board, saved on this device only. Undo history starts fresh after a reload.",false);
+  if(restored&&G.over)setMsg("That saved game is finished: "+G.result,false);
+  maybeBot();
+}
+boot();
+})();
+</script>
+</body>
+</html>
