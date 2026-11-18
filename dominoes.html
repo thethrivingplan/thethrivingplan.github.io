@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Dominoes</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#f4f1ea; --panel:#fffdf7; --ink:#1d2420; --ink-soft:#46524b; --line:#cfc8b8;
+        --felt:#14532d; --felt-deep:#0d3d21; --felt-line:#2c7a47;
+        --tile:#fdfaf0; --tile-edge:#b9b09a; --pip:#22271f;
+        --accent:#9a3412; --accent-ink:#fff7ed; --gold:#b45309;
+        --good:#166534; --warn:#b45309; --chip:#e9e2d0;
+        --shadow:0 2px 10px rgba(20,30,20,.14);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#101512; --panel:#1a211c; --ink:#ece9df; --ink-soft:#a9b4aa; --line:#39443c;
+          --felt:#0e4023; --felt-deep:#082c17; --felt-line:#256b3e;
+          --tile:#f5efdd; --tile-edge:#8f866d; --pip:#22271f;
+          --accent:#c2511f; --accent-ink:#fff7ed; --gold:#d97706;
+          --good:#4ade80; --warn:#fbbf24; --chip:#27312a;
+          --shadow:0 2px 10px rgba(0,0,0,.5);
+        }
+      }
+      html{ -webkit-text-size-adjust:100%; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family: ui-sans-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height:1.45; }
+      .wrap{ max-width:1060px; margin:0 auto; padding:0 14px 56px; }
+      h1,h2,h3{ font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; line-height:1.15; margin:0; }
+      h1{ font-size:2rem; }
+      h2{ font-size:1.3rem; margin-bottom:8px; }
+      h3{ font-size:1.05rem; margin-bottom:6px; }
+      p{ margin:6px 0; }
+      .small{ font-size:.88rem; color:var(--ink-soft); }
+      .tiny{ font-size:.8rem; color:var(--ink-soft); }
+
+      /* Free banner — first and unmissable */
+      .freebar{ background:var(--felt-deep); color:#f3efe2; padding:12px 14px; text-align:center; }
+      .freebar strong{ font-size:1.12rem; letter-spacing:.02em; }
+      .freebar .sub{ display:block; font-size:.9rem; opacity:.92; margin-top:2px; }
+      /* Compass */
+      .compass{ display:flex; flex-wrap:wrap; gap:6px 18px; padding:10px 2px; border-bottom:2px solid var(--line); font-size:.95rem; }
+      .compass a{ color:var(--ink); text-decoration:none; font-weight:600; padding:6px 2px; min-height:2.25rem; display:inline-flex; align-items:center; }
+      .compass a:hover{ text-decoration:underline; }
+      .compass .here{ color:var(--accent); font-weight:700; display:inline-flex; align-items:center; padding:6px 2px; }
+
+      header.hero{ padding:18px 0 6px; }
+      header.hero .lede{ font-size:1.05rem; max-width:62ch; }
+
+      .card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin:14px 0; box-shadow:var(--shadow); }
+      .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      @media (max-width:720px){ .grid2{ grid-template-columns:1fr; } }
+      label.f{ display:block; font-weight:600; margin:10px 0 4px; }
+      select, input[type="text"]{ width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); font-size:1rem; }
+      .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+      .btn{ appearance:none; border:1px solid var(--line); background:var(--panel); color:var(--ink);
+        border-radius:9px; padding:9px 14px; font-size:1rem; cursor:pointer; min-height:2.75rem; font-weight:600; }
+      .btn:hover{ border-color:var(--ink-soft); }
+      .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+      .btn.good{ background:var(--good); border-color:var(--good); color:#fff; }
+      @media (prefers-color-scheme: dark){ .btn.good{ color:#08130c; } }
+      .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn .gest{ display:block; font-size:.72rem; font-weight:500; opacity:.75; }
+      .seg{ display:flex; flex-wrap:wrap; gap:6px; }
+      .seg button{ border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:999px; padding:8px 14px; cursor:pointer; font-weight:600; min-height:2.75rem; }
+      .seg button[aria-pressed="true"]{ background:var(--felt); color:#f3efe2; border-color:var(--felt); }
+      .seatrow{ border:1px solid var(--line); border-radius:8px; padding:10px; margin:8px 0; }
+      .seatrow .row{ justify-content:space-between; }
+      .variant-banner{ background:#fef3c7; color:#78350f; border:1px solid #f59e0b; border-radius:8px; padding:10px 12px; margin:12px 0; font-weight:600; }
+      @media (prefers-color-scheme: dark){ .variant-banner{ background:#3a2a08; color:#fde68a; border-color:#b45309; } }
+
+      /* Table */
+      .table{ background:radial-gradient(ellipse at 50% 38%, var(--felt) 0%, var(--felt-deep) 88%); border-radius:14px; padding:14px; color:#f3efe2; box-shadow:var(--shadow); margin:14px 0; }
+      .scoreboard{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+      .pchip{ background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.25); border-radius:8px; padding:6px 10px; font-size:.9rem; min-width:118px; }
+      .pchip.turn{ outline:2px solid #fbbf24; }
+      .pchip .nm{ font-weight:700; }
+      .pchip .meta{ opacity:.85; font-size:.82rem; }
+      .endsbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; font-size:.95rem; }
+      .endbadge{ background:#f3efe2; color:#1d2420; border-radius:999px; padding:4px 12px; font-weight:700; }
+      .bone{ background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:4px 12px; }
+      .chain{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; min-height:74px; background:rgba(0,0,0,.16); border:1px dashed rgba(255,255,255,.22); border-radius:10px; padding:10px; }
+      .chain .empty-note{ opacity:.8; font-style:italic; }
+      .status{ font-size:1.05rem; font-weight:600; margin:10px 0 4px; min-height:1.5em; }
+      .substatus{ font-size:.92rem; opacity:.9; min-height:1.3em; }
+
+      /* Domino tiles */
+      .dom{ background:var(--tile); border:1.5px solid var(--tile-edge); border-radius:6px; display:flex; flex:none;
+        width:58px; height:30px; box-shadow:0 1px 3px rgba(0,0,0,.35); }
+      .dom.vert{ width:30px; height:58px; flex-direction:column; }
+      .dom .half{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:3px; position:relative; }
+      .dom .half + .half{ border-left:1.5px solid var(--tile-edge); }
+      .dom.vert .half + .half{ border-left:none; border-top:1.5px solid var(--tile-edge); }
+      .dom .pip{ width:5px; height:5px; border-radius:50%; background:var(--pip); place-self:center; visibility:hidden; }
+      .dom .pip.on{ visibility:visible; }
+      .dom.small{ width:44px; height:23px; } .dom.small .pip{ width:4px; height:4px; }
+      .dom.back{ background:repeating-linear-gradient(45deg,#7c2d12,#7c2d12 5px,#66250e 5px,#66250e 10px); border-color:#451a08; }
+      button.dom{ cursor:pointer; padding:0; }
+      button.dom.playable{ outline:3px solid #fbbf24; outline-offset:1px; }
+      button.dom.selected{ outline:3px solid #f3efe2; box-shadow:0 0 0 4px var(--accent); }
+      button.dom:disabled{ opacity:.55; cursor:default; }
+      .hand{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+      .handwrap{ background:rgba(0,0,0,.22); border-radius:10px; padding:10px; margin-top:10px; }
+      .handwrap .who{ font-weight:700; margin-bottom:2px; }
+      .oppbacks{ display:flex; gap:3px; flex-wrap:wrap; }
+
+      /* Teaching */
+      .teach{ border-left:5px solid var(--gold); }
+      .teach h2{ display:flex; align-items:center; gap:8px; }
+      .strat{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin:8px 0; background:var(--panel); }
+      .strat .sname{ font-weight:700; }
+      .strat .trade{ color:var(--ink-soft); font-size:.92rem; }
+      .dialrow{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+
+      /* Tracker */
+      .trackgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(52px,1fr)); gap:6px; margin-top:8px; }
+      .trackcell{ border:1px solid var(--line); border-radius:6px; padding:4px 2px; text-align:center; font-size:.82rem; font-weight:600; background:var(--panel); }
+      .trackcell.gone{ background:var(--chip); color:var(--ink-soft); text-decoration:line-through; opacity:.75; }
+      .counts{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+      .countchip{ background:var(--chip); border-radius:999px; padding:3px 10px; font-size:.85rem; font-weight:600; }
+
+      details{ border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin:12px 0; background:var(--panel); }
+      summary{ cursor:pointer; font-weight:700; padding:6px 0; }
+      table.sim{ border-collapse:collapse; width:100%; font-size:.95rem; }
+      table.sim th, table.sim td{ border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; }
+      table.sim td.n, table.sim th.n{ text-align:right; }
+      ul.tight{ margin:6px 0 6px 18px; padding:0; } ul.tight li{ margin:3px 0; }
+      .overlay{ position:fixed; inset:0; background:rgba(8,20,12,.88); display:none; align-items:center; justify-content:center; z-index:40; padding:18px; }
+      .overlay.show{ display:flex; }
+      .overlay .box{ background:var(--panel); color:var(--ink); border-radius:12px; padding:22px; max-width:440px; width:100%; text-align:center; box-shadow:var(--shadow); }
+      .hidden{ display:none !important; }
+      footer{ border-top:2px solid var(--line); margin-top:26px; padding-top:12px; }
+      .kbd-note{ font-size:.85rem; color:var(--ink-soft); }
+    </style>
+  </head>
+  <body>
+    <div class="freebar">
+      <strong>FREE — always free.</strong>
+      <span class="sub">No ads. No account. No connection needed — the offline door: once this page has loaded once, it plays fully offline, right here on this device.</span>
+    </div>
+    <div class="wrap">
+      <nav class="compass" aria-label="Compass">
+        <a href="https://thethrivingplan.github.io/">Start Page</a>
+        <a href="https://thethrivingplan.github.io/">The Thriving Plan</a>
+        <span class="here" aria-current="page">Dominoes</span>
+        <a href="https://thethrivingplan.github.io/">Other pages</a>
+      </nav>
+
+      <header class="hero">
+        <h1>Dominoes</h1>
+        <p class="lede">The classic <strong>Draw Game</strong> — the proven, documented domino game played with a double-six set, as recorded in standard domino rule collections for well over a century. Match the open ends, draw from the boneyard when you're stuck, and empty your hand — or be left holding the fewest pips when the table blocks. Simple on the surface; underneath, it's a counting game, and this table teaches the counting as you play.</p>
+        <p class="small">One device, pass-and-play. Bots can fill any seat. Nothing is wagered — there is nothing to wager with; it's tiles and bragging rights.</p>
+      </header>
+
+      <!-- ============ SETUP ============ -->
+      <section class="card" id="setupCard" aria-labelledby="setupH">
+        <h2 id="setupH">Set up the table</h2>
+        <p class="small">No name is ever required. Play as Player 1, or give yourself a session alias — it lives only for this sitting and is never an account.</p>
+
+        <div class="grid2">
+          <div>
+            <label class="f" for="aliasInput">Your alias (optional)</label>
+            <div class="row">
+              <input type="text" id="aliasInput" placeholder="Player 1" maxlength="20" style="flex:1; min-width:140px;" />
+              <button class="btn" id="diceBtn" type="button">🎲 Random alias<span class="gest">Tap to roll a name</span></button>
+            </div>
+            <label class="f" for="playerCount">Players at the table</label>
+            <select id="playerCount">
+              <option value="2">2 players</option>
+              <option value="3">3 players</option>
+              <option value="4">4 players</option>
+            </select>
+            <div id="seatList"></div>
+          </div>
+          <div>
+            <h3>Rules — these are settings</h3>
+            <p class="small">Standard Draw Dominoes is the default. Anything you change is labelled a variant, in play and in the record — a variant's score is never dressed as standard.</p>
+            <label class="f" for="setSize">Domino set</label>
+            <select id="setSize">
+              <option value="6">Double-six — 28 tiles (standard)</option>
+              <option value="9">Double-nine — 55 tiles (variant: longer rounds)</option>
+            </select>
+            <label class="f" for="targetScore">Match plays to</label>
+            <select id="targetScore">
+              <option value="50">50 points (short match)</option>
+              <option value="100" selected>100 points (standard)</option>
+              <option value="150">150 points (long match)</option>
+            </select>
+            <label class="f" for="stuckRule">When a player is stuck</label>
+            <select id="stuckRule">
+              <option value="draw">Draw from the boneyard (standard draw game)</option>
+              <option value="pass">Pass — no drawing (variant: pass game)</option>
+            </select>
+            <label class="f">Teaching</label>
+            <div class="seg" role="group" aria-label="Teaching dial" id="teachSeg">
+              <button type="button" data-teach="off" aria-pressed="false">Off</button>
+              <button type="button" data-teach="light" aria-pressed="true">Light</button>
+              <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+            </div>
+            <p class="small">Off teaches nothing. Light gives one honest nudge at a time. Coach shows the real choices — every strategy that fits the position, with its trade-off. Saved on this device only.</p>
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;">
+          <button class="btn primary" id="startBtn" type="button">Start the match<span class="gest">Tap to deal</span></button>
+        </div>
+        <div id="variantBannerSetup"></div>
+      </section>
+
+      <!-- ============ GAME ============ -->
+      <section id="gameCard" class="hidden" aria-labelledby="gameH">
+        <h2 id="gameH" class="hidden">The table</h2>
+        <div id="variantBannerGame"></div>
+        <div class="table" id="tableEl">
+          <div class="scoreboard" id="scoreboard"></div>
+          <div class="endsbar">
+            <span class="endbadge" id="leftEndBadge">Left end: —</span>
+            <span class="endbadge" id="rightEndBadge">Right end: —</span>
+            <span class="bone" id="boneyardBadge">Boneyard: 0</span>
+            <span class="bone" id="roundBadge">Round 1</span>
+          </div>
+          <div class="chain" id="chainEl"><span class="empty-note">The lead tile lands here.</span></div>
+          <p class="status" id="statusEl" role="status"></p>
+          <p class="substatus" id="substatusEl"></p>
+          <div class="row" id="actionRow" style="margin-top:8px;"></div>
+          <div id="handsEl"></div>
+        </div>
+
+        <!-- Teaching panel -->
+        <section class="card teach" id="teachCard" aria-labelledby="teachH">
+          <div class="dialrow">
+            <h2 id="teachH">Teaching</h2>
+            <div class="seg" role="group" aria-label="Teaching dial" id="teachSeg2">
+              <button type="button" data-teach="off" aria-pressed="false">Off</button>
+              <button type="button" data-teach="light" aria-pressed="true">Light</button>
+              <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+            </div>
+          </div>
+          <div id="teachBody"><p class="small">Teaching notes appear here on your turn.</p></div>
+        </section>
+
+        <!-- Tracker -->
+        <details id="trackerDetails">
+          <summary>Played-tiles tracker — the counter's notebook (tap to open)</summary>
+          <p class="small">Every tile that has hit the table this round, marked gone. This notebook only ever uses what's face-up on the table — it never peeks at another player's hand. Counting what's gone is how you know what's still out against you.</p>
+          <div class="counts" id="countChips"></div>
+          <div class="trackgrid" id="trackGrid"></div>
+        </details>
+
+        <div class="row">
+          <button class="btn" id="newMatchBtn" type="button">New match<span class="gest">Tap to go back to setup</span></button>
+        </div>
+      </section>
+
+      <!-- ============ YOUR STRATEGY RECORD ============ -->
+      <section class="card" id="recordCard" aria-labelledby="recordH">
+        <h2 id="recordH">Your strategy record — this game is a strategy builder</h2>
+        <p class="small">Every game you play here teaches twice: the Coach teaches the position, and this record teaches <em>you</em> — your games, your patterns, and the mistakes your own numbers show. It lives on this device only, is never sent anywhere, and the Coach draws on it when it speaks. Forget it any time and it is gone.</p>
+        <div id="recordBody"><p class="small">No games recorded yet. Play a match and your record starts.</p></div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn" id="forgetBtn" type="button">Forget my record<span class="gest">Tap to erase it from this device</span></button>
+        </div>
+      </section>
+
+      <!-- ============ DEPTH: RULES, BOTS, STRATEGIES ============ -->
+      <details>
+        <summary>How the Draw Game works — the documented rules (tap to open)</summary>
+        <ul class="tight">
+          <li><strong>The set.</strong> Standard play uses a double-six set: 28 tiles, every pairing of 0–6. Each player draws 7 tiles in a two-player game, 5 each with three or four players; the rest form the boneyard.</li>
+          <li><strong>The lead.</strong> The player holding the highest double leads it. If no double was dealt, the holder of the heaviest tile leads it.</li>
+          <li><strong>Matching ends.</strong> Each tile played must match the number on one open end of the chain. Doubles are laid crosswise but count as their number on that end.</li>
+          <li><strong>Stuck.</strong> In the draw game, a player with no matching tile draws from the boneyard until they can play or the boneyard runs dry; only then do they pass.</li>
+          <li><strong>Domino!</strong> A player who plays their last tile ends the round and scores every pip left in every other hand.</li>
+          <li><strong>Blocked.</strong> If every player passes in a row, the round is blocked. The hand holding the fewest pips wins and scores the difference: all other hands' pips, minus their own. A tie for fewest scores nothing.</li>
+          <li><strong>The match.</strong> First to the target score takes the match.</li>
+        </ul>
+        <p class="small">This page's rules follow that documented game. The double-nine set and the no-draw pass rule are house variants, labelled as variants wherever they are in play.</p>
+      </details>
+
+      <details>
+        <summary>The strategies the Coach teaches (tap to open)</summary>
+        <ul class="tight">
+          <li><strong>Shed the weight.</strong> Play your heaviest tiles first. Pips left in your hand at the end of a round become somebody else's points — the 6-6 is 12 points waiting to be given away.</li>
+          <li><strong>Keep both doors open.</strong> Pros play so their remaining tiles can answer <em>either</em> end. A hand that can only play on one number is a hand one bad end away from the boneyard.</li>
+          <li><strong>Starve the table.</strong> Count what's been played. If six of the seven tiles carrying a number are already down, making that number an open end leaves opponents almost nothing to answer with — they draw, you breathe.</li>
+          <li><strong>Spend the double.</strong> A double can only ever answer one number, and it's usually heavy. Play it while its number is up; don't carry it hoping.</li>
+          <li><strong>Watch the draw.</strong> When an opponent draws three tiles hunting one number, they've told you what they don't hold. The Coach points at this when it happens.</li>
+        </ul>
+        <p class="small">Where more than one strategy fits a position, the Coach offers each one with its trade-off — a single line only when there is genuinely a single play.</p>
+      </details>
+
+      <details>
+        <summary>Do the bot levels honestly differ? The simulation receipts (tap to open)</summary>
+        <p>The four levels are four different players, not one player with four name tags. Before this page shipped, the exact bot code that plays here was run head-to-head against itself: 300 full matches to 100 points per pairing, double-six draw rules, two players. The labels have to match the numbers or the page doesn't ship.</p>
+        <table class="sim">
+          <thead><tr><th>Match-up</th><th class="n">First level won</th><th class="n">Second level won</th></tr></thead>
+          <tbody>
+            <tr><td>Learning vs Steady</td><td class="n">118</td><td class="n">182</td></tr>
+            <tr><td>Learning vs Sharp</td><td class="n">85</td><td class="n">215</td></tr>
+            <tr><td>Learning vs Pro</td><td class="n">47</td><td class="n">253</td></tr>
+            <tr><td>Steady vs Sharp</td><td class="n">115</td><td class="n">185</td></tr>
+            <tr><td>Steady vs Pro</td><td class="n">47</td><td class="n">253</td></tr>
+            <tr><td>Sharp vs Pro</td><td class="n">103</td><td class="n">197</td></tr>
+          </tbody>
+        </table>
+        <ul class="tight">
+          <li><strong>Learning</strong> plays a random legal tile. A true beginner — beatable, and honest about it.</li>
+          <li><strong>Steady</strong> sheds its heaviest tile first. One real idea, played plainly.</li>
+          <li><strong>Sharp</strong> also keeps tiles that can answer both ends and spends doubles early.</li>
+          <li><strong>Pro</strong> counts the table: it knows which tiles are still out, picks ends opponents are least likely to answer, and plays the endgame by the count.</li>
+        </ul>
+      </details>
+
+      <footer>
+        <p class="small">Copyleft — this page and its code are free to copy, share, and build on: text and design CC BY-SA 4.0, code GPL. The name The Thriving Plan is not part of the grant. No ads, ever. Settings and your strategy record are saved on this device only and labelled as such; nothing leaves the device.</p>
+        <p class="tiny">Dominoes · A work in progress — if something here could be better for everybody, it should be. Built on the documented classic Draw Game.</p>
+      </footer>
+    </div>
+
+    <!-- Pass-the-device overlay -->
+    <div class="overlay" id="passOverlay" role="dialog" aria-modal="true" aria-labelledby="passTitle">
+      <div class="box">
+        <h2 id="passTitle">Pass the device</h2>
+        <p id="passText">Hand the device to the next player.</p>
+        <button class="btn primary" id="passReadyBtn" type="button">I'm ready<span class="gest">Tap to see your tiles</span></button>
+      </div>
+    </div>
+
+    <!-- Round / match end overlay -->
+    <div class="overlay" id="endOverlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+      <div class="box">
+        <h2 id="endTitle">Round over</h2>
+        <div id="endBody" style="text-align:left;"></div>
+        <button class="btn primary" id="endBtn" type="button">Next round<span class="gest">Tap to continue</span></button>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      "use strict";
+      // ---------- helpers ----------
+      function $(id){ return document.getElementById(id); }
+      function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+      function pips(t){ return t[0]+t[1]; }
+      function key(t){ return Math.min(t[0],t[1])+"-"+Math.max(t[0],t[1]); }
+      function makeSet(max){ var s=[]; for(var a=0;a<=max;a++) for(var b=a;b<=max;b++) s.push([a,b]); return s; }
+      var PIPMAP={0:[],1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8],7:[0,2,3,4,5,6,8],8:[0,1,2,3,5,6,7,8],9:[0,1,2,3,4,5,6,7,8]};
+      function domEl(t, opts){
+        opts=opts||{};
+        var d=document.createElement(opts.button?"button":"div");
+        d.className="dom"+(t[0]===t[1]&&opts.vertDoubles?" vert":"")+(opts.small?" small":"");
+        if(opts.button){ d.type="button"; }
+        [t[0],t[1]].forEach(function(n){
+          var h=document.createElement("span"); h.className="half";
+          var map=PIPMAP[n];
+          for(var i=0;i<9;i++){ var p=document.createElement("span"); p.className="pip"+(map.indexOf(i)>=0?" on":""); h.appendChild(p); }
+          d.appendChild(h);
+        });
+        d.setAttribute("aria-label","domino "+t[0]+"-"+t[1]);
+        return d;
+      }
+      var ALIASES=["Dusty Coyote","Velvet Fox","Captain Pip","Lucky Seven","Marble Sage","Quiet Storm","Pepper Jack","Willow Wisp","Iron Sparrow","Golden Mule","Sister Six","Brother Bone","Tumbleweed","Velvet Hammer","Count Carlo","Nina Nine"];
+      function randomAlias(){ return ALIASES[Math.floor(Math.random()*ALIASES.length)]; }
+
+      // ---------- settings (device-only) ----------
+      var settings={ teach:"light" };
+      try{ var saved=JSON.parse(localStorage.getItem("dominoes-settings-v1")||"null"); if(saved&&saved.teach) settings.teach=saved.teach; }catch(e){}
+      function saveSettings(){ try{ localStorage.setItem("dominoes-settings-v1", JSON.stringify(settings)); }catch(e){} }
+
+      // ---------- strategy record (device-only, forgettable) ----------
+      var record=null;
+      function blankRecord(){ return { matches:0, matchWins:0, rounds:0, roundWins:0, dominoOuts:0, blockedRounds:0, pipsHeldAtBlockTotal:0, heavyEndings:0, heavyPipsTotal:0, doublesHeldAtEnd:0, drawsTotal:0, playsTotal:0, endsAnsweredImmediately:0 }; }
+      try{ record=JSON.parse(localStorage.getItem("dominoes-record-v1")||"null"); }catch(e){}
+      if(!record||typeof record.matches!=="number") record=blankRecord();
+      function saveRecord(){ try{ localStorage.setItem("dominoes-record-v1", JSON.stringify(record)); }catch(e){} }
+      function renderRecord(){
+        var el=$("recordBody");
+        if(record.rounds===0){ el.innerHTML='<p class="small">No games recorded yet. Play a match and your record starts.</p>'; return; }
+        var avgBlock = record.blockedRounds? Math.round(record.pipsHeldAtBlockTotal/record.blockedRounds) : null;
+        var answerRate = record.playsTotal? Math.round(100*record.endsAnsweredImmediately/record.playsTotal) : null;
+        var lines=[];
+        lines.push("<p><strong>"+record.matches+"</strong> match"+(record.matches===1?"":"es")+" played · <strong>"+record.matchWins+"</strong> won · <strong>"+record.rounds+"</strong> rounds · <strong>"+record.roundWins+"</strong> rounds won · <strong>"+record.dominoOuts+"</strong> times you dominoed out.</p>");
+        if(avgBlock!==null) lines.push("<p>In <strong>"+record.blockedRounds+"</strong> blocked rounds you held an average of <strong>"+avgBlock+" pips</strong> when the table locked. "+(avgBlock>=14?"That's heavy — your record says the pips you carry into a block are your biggest leak. Shedding weight earlier is your lever.":avgBlock>=8?"Middle of the road — a few heavy tiles still get caught in your hand when the table locks.":"Light hands at the block — you shed weight well.")+"</p>");
+        if(record.heavyEndings>0) lines.push("<p><strong>"+record.heavyEndings+"</strong> rounds ended with 15+ pips still in your hand ("+record.heavyPipsTotal+" pips handed over in total). Those endings are where matches leak away.</p>");
+        if(record.doublesHeldAtEnd>0) lines.push("<p>You've been caught holding <strong>"+record.doublesHeldAtEnd+"</strong> double"+(record.doublesHeldAtEnd===1?"":"s")+" at round's end. Doubles only ever answer one number — your record suggests spending them earlier.</p>");
+        if(answerRate!==null) lines.push("<p>After <strong>"+answerRate+"%</strong> of your plays, the next player answered immediately without drawing. "+(answerRate>=70?"You often leave ends the table can use — the counting strategies (starve the table) are aimed right at this.":"You regularly leave ends that make the next player work — that's the counting game working for you.")+"</p>");
+        lines.push('<p class="tiny">Saved on this device only. The Coach reads this record when it advises you.</p>');
+        el.innerHTML=lines.join("");
+      }
+
+      // ---------- setup UI ----------
+      var seatConfig=[]; // {type:'human'|'bot', level:0..3}
+      function rebuildSeats(){
+        var n=parseInt($("playerCount").value,10);
+        while(seatConfig.length<n) seatConfig.push(seatConfig.length===0?{type:"human",level:1}:{type:"bot",level:1});
+        seatConfig.length=n;
+        if(seatConfig[0].type!=="human") seatConfig[0]={type:"human",level:1};
+        var html="";
+        seatConfig.forEach(function(s,i){
+          html+='<div class="seatrow"><div class="row"><strong>Seat '+(i+1)+(i===0?" (you)":"")+'</strong></div>'
+            +'<label class="f" for="seatType'+i+'">Who plays this seat</label>'
+            +'<select id="seatType'+i+'" data-seat="'+i+'">'
+            +'<option value="human"'+(s.type==="human"?" selected":"")+'>'+(i===0?"You":"A friend — pass-and-play")+'</option>'
+            +'<option value="bot"'+(s.type==="bot"?" selected":"")+(i===0?" disabled":"")+'>A bot</option></select>'
+            +(s.type==="bot"
+              ? '<label class="f" for="seatLevel'+i+'">Bot skill — in plain words</label>'
+                +'<select id="seatLevel'+i+'" data-seat="'+i+'">'
+                +[0,1,2,3].map(function(l){ return '<option value="'+l+'"'+(s.level===l?" selected":"")+'>'+["Learning — plays any tile that fits","Steady — sheds its heaviest tile first","Sharp — keeps both ends open, spends doubles","Pro — counts the table, starves your ends"][l]+'</option>'; }).join("")
+                +'</select>'
+              : '')
+            +'</div>';
+        });
+        $("seatList").innerHTML=html;
+        seatConfig.forEach(function(s,i){
+          $("seatType"+i).addEventListener("change",function(){ seatConfig[i].type=this.value; rebuildSeats(); });
+          var lv=$("seatLevel"+i); if(lv) lv.addEventListener("change",function(){ seatConfig[i].level=parseInt(this.value,10); });
+        });
+        updateVariantBanner();
+      }
+      function isVariant(){
+        return $("setSize").value!=="6" || $("targetScore").value!=="100" || $("stuckRule").value!=="draw";
+      }
+      function variantText(){
+        var parts=[];
+        if($("setSize").value!=="6") parts.push("double-nine set (55 tiles)");
+        if($("targetScore").value!=="100") parts.push("match to "+$("targetScore").value+" points");
+        if($("stuckRule").value!=="draw") parts.push("pass when stuck — no drawing");
+        return parts;
+      }
+      function updateVariantBanner(){
+        var html = isVariant() ? '<div class="variant-banner">Variant in play: '+variantText().join(" · ")+'. Scores under a variant are the variant\u2019s — never dressed as standard.</div>' : "";
+        $("variantBannerSetup").innerHTML=html;
+        $("variantBannerGame").innerHTML=html;
+      }
+      ["setSize","targetScore","stuckRule"].forEach(function(id){ $(id).addEventListener("change",updateVariantBanner); });
+      $("playerCount").addEventListener("change",rebuildSeats);
+      $("diceBtn").addEventListener("click",function(){ $("aliasInput").value=randomAlias(); });
+
+      // teaching dial (both segments stay in sync)
+      function setTeach(v){
+        settings.teach=v; saveSettings();
+        document.querySelectorAll("#teachSeg button, #teachSeg2 button").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-teach")===v?"true":"false"); });
+        renderTeach();
+      }
+      document.querySelectorAll("#teachSeg button, #teachSeg2 button").forEach(function(b){ b.addEventListener("click",function(){ setTeach(b.getAttribute("data-teach")); }); });
+
+      // ---------- game state ----------
+      var G=null;
+      function dealCount(max,n){ if(max===6) return n===2?7:5; return n===2?9:7; }
+      function legalMoves(hand,L,R){
+        if(L===null) return hand.map(function(t,i){ return {i:i,end:"first"}; });
+        var m=[];
+        hand.forEach(function(t,i){ if(t[0]===L||t[1]===L) m.push({i:i,end:"L"}); if(t[0]===R||t[1]===R) m.push({i:i,end:"R"}); });
+        return m;
+      }
+      function endsOf(chain){ return chain.length? [chain[0][0], chain[chain.length-1][1]] : [null,null]; }
+      function playedSet(){ var s={}; G.chain.forEach(function(t){ s[key(t)]=true; }); return s; }
+
+      // Bot brains — the exact code the printed simulation ran.
+      function botChoose(level, hand, chain){
+        var e=endsOf(chain), L=e[0], R=e[1];
+        var moves=legalMoves(hand,L,R);
+        if(!moves.length) return null;
+        if(level===0) return moves[Math.floor(Math.random()*moves.length)];
+        var played=playedSet(), max=G.max;
+        function unseenCount(n, rest){
+          var c=0;
+          for(var a=0;a<=max;a++) for(var b=a;b<=max;b++){
+            if(a!==n&&b!==n) continue;
+            if(played[a+"-"+b]) continue;
+            if(rest.some(function(t){ return t[0]===a&&t[1]===b; })) continue;
+            c++;
+          }
+          return c;
+        }
+        var best=null,bestScore=-1e9;
+        moves.forEach(function(m){
+          var t=hand[m.i];
+          var rest=hand.filter(function(_,j){ return j!==m.i; });
+          var nL,nR;
+          if(chain.length===0){ nL=t[0]; nR=t[1]; }
+          else if(m.end==="L"){ nL=(t[0]===L?t[1]:t[0]); nR=R; }
+          else { nL=L; nR=(t[0]===R?t[1]:t[0]); }
+          var score;
+          if(level===1){ score=pips(t)+Math.random()*0.5; }
+          else{
+            var ownMatch=rest.filter(function(x){ return x[0]===nL||x[1]===nL||x[0]===nR||x[1]===nR; }).length;
+            var bothEnds=(rest.some(function(x){ return x[0]===nL||x[1]===nL; })&&rest.some(function(x){ return x[0]===nR||x[1]===nR; } ))?1:0;
+            if(level===2){ score=pips(t)+1.5*ownMatch+(t[0]===t[1]?1.5:0)+Math.random()*0.4; }
+            else{
+              var unseen=unseenCount(nL,rest)+unseenCount(nR,rest);
+              score=pips(t)+2*ownMatch+2*bothEnds-0.9*unseen+(rest.length===0?1000:0)+Math.random()*0.2;
+              if(rest.length<=2) score+=pips(t)*0.5;
+            }
+          }
+          if(score>bestScore){ bestScore=score; best=m; }
+        });
+        return best;
+      }
+
+      function startMatch(){
+        var max=parseInt($("setSize").value,10);
+        var alias=$("aliasInput").value.trim();
+        var players=seatConfig.map(function(s,i){
+          var name;
+          if(i===0) name=alias||"Player 1";
+          else if(s.type==="human") name="Player "+(i+1);
+          else name=["Learning Bot","Steady Bot","Sharp Bot","Pro Bot"][s.level];
+          return { name:name, type:s.type, level:s.level, hand:[], score:0 };
+        });
+        G={ max:max, target:parseInt($("targetScore").value,10), stuck:$("stuckRule").value,
+            players:players, chain:[], boneyard:[], cur:0, passes:0, round:0, selected:-1,
+            phase:"play", lastEvent:"", winner:null, humanSeat:0, lastPlayBy:-1, lastPlayAnswered:null };
+        record.matches++; saveRecord(); renderRecord();
+        $("setupCard").classList.add("hidden");
+        $("gameCard").classList.remove("hidden");
+        updateVariantBanner();
+        startRound();
+        window.scrollTo({top:0,behavior:"smooth"});
+      }
+
+      function startRound(){
+        G.round++;
+        var set=shuffle(makeSet(G.max));
+        var dn=dealCount(G.max, G.players.length);
+        G.players.forEach(function(p){ p.hand=set.splice(0,dn); });
+        G.boneyard=set; G.chain=[]; G.passes=0; G.selected=-1; G.phase="play"; G.lastPlayBy=-1; G.lastPlayAnswered=null;
+        // lead: highest double, else heaviest tile
+        var starter=-1, startTile=null, startIdx=-1;
+        for(var d=G.max; d>=0 && starter<0; d--){
+          for(var p=0;p<G.players.length;p++){
+            var idx=G.players[p].hand.findIndex(function(t){ return t[0]===d&&t[1]===d; });
+            if(idx>=0){ starter=p; startIdx=idx; startTile=G.players[p].hand[idx]; break; }
+          }
+        }
+        if(starter<0){
+          var bp=-1;
+          G.players.forEach(function(pl,p){ pl.hand.forEach(function(t,i){ if(pips(t)>bp){ bp=pips(t); starter=p; startIdx=i; startTile=t; } }); });
+        }
+        G.players[starter].hand.splice(startIdx,1);
+        G.chain.push([startTile[0],startTile[1]]);
+        G.lastEvent=G.players[starter].name+" leads the "+startTile[0]+"-"+startTile[1]+".";
+        if(G.players[starter].hand.length===0){ endRound(starter,"domino"); return; }
+        G.cur=(starter+1)%G.players.length;
+        afterTurnSetup();
+      }
+
+      function current(){ return G.players[G.cur]; }
+      function isHumanTurn(){ return G && G.phase==="play" && current().type==="human"; }
+
+      function applyPlay(playerIdx, move){
+        var p=G.players[playerIdx];
+        var t=p.hand[move.i];
+        // record: was the previous play answered immediately (no draw/pass between)?
+        if(G.lastPlayBy===G.humanSeat && playerIdx!==G.humanSeat){ G.lastPlayAnswered=true; }
+        p.hand.splice(move.i,1);
+        if(move.end==="first"||G.chain.length===0){ G.chain.push([t[0],t[1]]); }
+        else if(move.end==="L"){ var L=G.chain[0][0]; var outerL=t[0]===L?t[1]:t[0]; G.chain.unshift([outerL,L]); }
+        else { var R=G.chain[G.chain.length-1][1]; var outerR=t[0]===R?t[1]:t[0]; G.chain.push([R,outerR]); }
+        G.passes=0; G.selected=-1;
+        if(playerIdx===G.humanSeat){ record.playsTotal++; G.lastPlayBy=playerIdx; G.lastPlayAnswered=false; }
+        else if(G.lastPlayBy===G.humanSeat && G.lastPlayAnswered===false){ /* still pending until this player acts */ }
+        G.lastEvent=p.name+" plays the "+t[0]+"-"+t[1]+".";
+        if(p.hand.length===0){ endRound(playerIdx,"domino"); return true; }
+        G.cur=(G.cur+1)%G.players.length;
+        return false;
+      }
+
+      function noteUnanswered(){
+        // When the seat after "you" fails to answer (draws or passes), your ends held.
+        if(G.lastPlayBy===G.humanSeat && G.lastPlayAnswered===false){ /* answered=false stays = good */ }
+      }
+
+      function botTurn(){
+        var p=current();
+        if(G.phase!=="play") return;
+        var e=endsOf(G.chain);
+        var mv=botChoose(p.level, p.hand, G.chain);
+        if(!mv){
+          if(G.stuck==="draw"){
+            var drew=0;
+            while(!mv && G.boneyard.length){ p.hand.push(G.boneyard.pop()); drew++; mv=botChoose(p.level,p.hand,G.chain); }
+            if(drew) G.lastEvent=p.name+" draws "+drew+" from the boneyard"+(mv?".":", still stuck.");
+            if(!mv){ G.passes++; G.lastEvent=p.name+" passes — the boneyard is dry and nothing fits."; checkBlockedOrNext(); return; }
+          } else {
+            G.passes++; G.lastEvent=p.name+" passes — nothing fits.";
+            checkBlockedOrNext(); return;
+          }
+        }
+        var ended=applyPlay(G.cur, mv);
+        if(!ended) afterTurnSetup();
+        render();
+      }
+
+      function checkBlockedOrNext(){
+        if(G.passes>=G.players.length){ endRound(-1,"blocked"); return; }
+        G.cur=(G.cur+1)%G.players.length;
+        afterTurnSetup(); render();
+      }
+
+      var shownHuman=-1;
+      function afterTurnSetup(){
+        if(G.phase!=="play") return;
+        var p=current();
+        if(p.type==="human"){
+          if(G.players.filter(function(x){return x.type==="human";}).length>1 && shownHuman!==G.cur){
+            $("passText").textContent="Hand the device to "+p.name+". Their tiles stay hidden until they tap ready.";
+            $("passOverlay").classList.add("show");
+          }
+          shownHuman=G.cur;
+          render();
+        } else {
+          render();
+          setTimeout(botTurn, 750);
+        }
+      }
+
+      function endRound(winnerIdx, how){
+        G.phase="roundEnd";
+        var hp=G.players.map(function(p){ return p.hand.reduce(function(s,t){ return s+pips(t); },0); });
+        var title, body="", roundWinner=winnerIdx;
+        if(how==="domino"){
+          var pts=hp.reduce(function(s,v,i){ return i===winnerIdx?s:s+v; },0);
+          G.players[winnerIdx].score+=pts;
+          title="Domino! "+G.players[winnerIdx].name+" goes out";
+          body="<p>"+G.players[winnerIdx].name+" played their last tile and scores every pip left on the table: <strong>"+pts+" points</strong>.</p>";
+        } else {
+          var low=Math.min.apply(null,hp);
+          var winners=hp.map(function(v,i){ return v===low?i:-1; }).filter(function(i){ return i>=0; });
+          if(winners.length===1){
+            roundWinner=winners[0];
+            var pts2=hp.reduce(function(s,v,i){ return i===roundWinner?s:s+v; },0)-hp[roundWinner];
+            G.players[roundWinner].score+=Math.max(0,pts2);
+            title="Blocked — "+G.players[roundWinner].name+" holds the lightest hand";
+            body="<p>Nobody could play. "+G.players[roundWinner].name+" held only "+low+" pips and scores the difference: <strong>"+Math.max(0,pts2)+" points</strong>.</p>";
+          } else {
+            roundWinner=-1;
+            title="Blocked — a tie at the bottom";
+            body="<p>Nobody could play, and the lightest hands tied at "+low+" pips. By the documented rule, a tie scores nothing.</p>";
+          }
+        }
+        body+="<ul class='tight'>"+G.players.map(function(p,i){ return "<li>"+p.name+": "+hp[i]+" pips left · match score "+p.score+"</li>"; }).join("")+"</ul>";
+        // ---- strategy record (your seat) ----
+        var you=G.players[G.humanSeat];
+        record.rounds++;
+        if(roundWinner===G.humanSeat) record.roundWins++;
+        if(how==="domino"&&winnerIdx===G.humanSeat) record.dominoOuts++;
+        if(how==="blocked"){ record.blockedRounds++; record.pipsHeldAtBlockTotal+=hp[G.humanSeat]; }
+        if(hp[G.humanSeat]>=15){ record.heavyEndings++; record.heavyPipsTotal+=hp[G.humanSeat]; }
+        record.doublesHeldAtEnd+=you.hand.filter(function(t){ return t[0]===t[1]; }).length;
+        if(G.lastPlayBy===G.humanSeat && G.lastPlayAnswered) record.endsAnsweredImmediately++;
+        saveRecord(); renderRecord();
+        // ---- match end? ----
+        var top=Math.max.apply(null, G.players.map(function(p){ return p.score; }));
+        var matchWinner=G.players.findIndex(function(p){ return p.score>=G.target && p.score===top; });
+        var tieTop=G.players.filter(function(p){ return p.score===top; }).length>1;
+        if(matchWinner>=0 && !tieTop){
+          G.phase="matchEnd";
+          if(matchWinner===G.humanSeat){ record.matchWins++; saveRecord(); renderRecord(); }
+          title="Match over — "+G.players[matchWinner].name+" wins";
+          body+="<p><strong>"+G.players[matchWinner].name+"</strong> reaches "+G.players[matchWinner].score+" and takes the match to "+G.target+".</p>";
+          $("endBtn").firstChild.textContent="Play again ";
+        } else {
+          $("endBtn").firstChild.textContent="Next round ";
+        }
+        $("endTitle").textContent=title;
+        $("endBody").innerHTML=body;
+        render();
+        $("endOverlay").classList.add("show");
+      }
+
+      // ---------- human actions ----------
+      function humanDraw(){
+        var p=current(); if(p.type!=="human") return;
+        if(G.boneyard.length===0) return;
+        p.hand.push(G.boneyard.pop());
+        record.drawsTotal++; saveRecord();
+        G.lastEvent=p.name+" draws from the boneyard.";
+        var e=endsOf(G.chain);
+        if(legalMoves(p.hand,e[0],e[1]).length===0 && G.boneyard.length===0){
+          G.substatus="Still nothing that fits, and the boneyard is dry — pass when ready.";
+        }
+        render();
+      }
+      function humanPass(){
+        var p=current(); if(p.type!=="human") return;
+        if(G.lastPlayBy===G.humanSeat){ G.lastPlayAnswered=false; }
+        G.passes++;
+        G.lastEvent=p.name+" passes.";
+        if(G.passes>=G.players.length){ endRound(-1,"blocked"); return; }
+        G.cur=(G.cur+1)%G.players.length;
+        afterTurnSetup(); render();
+      }
+      function humanPlay(move){
+        var idx=G.cur;
+        var ended=applyPlay(idx, move);
+        if(!ended){ afterTurnSetup(); }
+        render();
+      }
+
+      // ---------- rendering ----------
+      function render(){
+        if(!G) return;
+        // scoreboard
+        $("scoreboard").innerHTML=G.players.map(function(p,i){
+          return '<div class="pchip'+(i===G.cur&&G.phase==="play"?" turn":"")+'"><span class="nm">'+p.name+'</span><br><span class="meta">'+p.score+' pts · '+p.hand.length+' tile'+(p.hand.length===1?"":"s")+(p.type==="bot"?" · bot":"")+'</span></div>';
+        }).join("");
+        var e=endsOf(G.chain);
+        $("leftEndBadge").textContent="Left end: "+(e[0]===null?"—":e[0]);
+        $("rightEndBadge").textContent="Right end: "+(e[1]===null?"—":e[1]);
+        $("boneyardBadge").textContent="Boneyard: "+G.boneyard.length;
+        $("roundBadge").textContent="Round "+G.round+" · first to "+G.target;
+        // chain
+        var ch=$("chainEl"); ch.innerHTML="";
+        if(G.chain.length===0){ ch.innerHTML='<span class="empty-note">The lead tile lands here.</span>'; }
+        G.chain.forEach(function(t){ ch.appendChild(domEl(t,{vertDoubles:true,small:true})); });
+        // status
+        if(G.phase==="play"){
+          $("statusEl").textContent=(isHumanTurn()? "Your turn, "+current().name+"." : current().name+" is thinking…");
+          $("substatusEl").textContent=G.lastEvent||"";
+        }
+        renderActions(); renderHands(); renderTeach(); renderTracker();
+      }
+      function renderActions(){
+        var row=$("actionRow"); row.innerHTML="";
+        if(G.phase!=="play"||!isHumanTurn()) return;
+        var p=current(), e=endsOf(G.chain);
+        var moves=legalMoves(p.hand,e[0],e[1]);
+        if(G.selected>=0){
+          var t=p.hand[G.selected];
+          var myMoves=moves.filter(function(m){ return m.i===G.selected; });
+          var endsUsed={};
+          myMoves.forEach(function(m){
+            if(endsUsed[m.end]) return; endsUsed[m.end]=true;
+            var b=document.createElement("button"); b.className="btn good"; b.type="button";
+            b.innerHTML=(m.end==="L"?"Play on the LEFT end ("+e[0]+")":"Play on the RIGHT end ("+e[1]+")")+'<span class="gest">Tap to place the '+t[0]+"-"+t[1]+"</span>";
+            b.addEventListener("click",function(){ humanPlay(m); });
+            row.appendChild(b);
+          });
+          var c=document.createElement("button"); c.className="btn"; c.type="button";
+          c.innerHTML='Choose a different tile<span class="gest">Tap to cancel</span>';
+          c.addEventListener("click",function(){ G.selected=-1; render(); });
+          row.appendChild(c);
+          return;
+        }
+        if(moves.length===0){
+          if(G.stuck==="draw" && G.boneyard.length>0){
+            var d=document.createElement("button"); d.className="btn primary"; d.type="button";
+            d.innerHTML='Draw from the boneyard<span class="gest">Tap to draw one tile</span>';
+            d.addEventListener("click",humanDraw); row.appendChild(d);
+          } else {
+            var ps=document.createElement("button"); ps.className="btn primary"; ps.type="button";
+            ps.innerHTML=(G.stuck==="draw"?'Pass — boneyard is dry':'Pass')+'<span class="gest">Tap to pass your turn</span>';
+            ps.addEventListener("click",humanPass); row.appendChild(ps);
+          }
+        } else if(G.stuck==="draw" && G.boneyard.length>0){
+          $("substatusEl").textContent=(G.lastEvent?G.lastEvent+" ":"")+"Tap one of your glowing tiles to play it.";
+        }
+      }
+      function renderHands(){
+        var wrap=$("handsEl"); wrap.innerHTML="";
+        G.players.forEach(function(p,i){
+          var div=document.createElement("div"); div.className="handwrap";
+          if(p.type==="human" && i===G.cur && G.phase==="play"){
+            div.innerHTML='<div class="who">'+p.name+' — your tiles (tap a glowing tile to play it)</div>';
+            var hand=document.createElement("div"); hand.className="hand";
+            var e=endsOf(G.chain);
+            var moves=legalMoves(p.hand,e[0],e[1]);
+            var playable={}; moves.forEach(function(m){ playable[m.i]=true; });
+            p.hand.slice().map(function(t,idx){ return {t:t,idx:idx}; })
+              .sort(function(a,b){ return pips(b.t)-pips(a.t); })
+              .forEach(function(o){
+                var b=domEl(o.t,{button:true,vertDoubles:false});
+                if(playable[o.idx]) b.classList.add("playable");
+                if(G.selected===o.idx) b.classList.add("selected");
+                if(!playable[o.idx]) b.disabled=true;
+                b.addEventListener("click",function(){
+                  var ms=moves.filter(function(m){ return m.i===o.idx; });
+                  var distinct={}; ms.forEach(function(m){ distinct[m.end]=true; });
+                  if(Object.keys(distinct).length===1){ humanPlay(ms[0]); }
+                  else { G.selected=o.idx; render(); }
+                });
+                hand.appendChild(b);
+              });
+            div.appendChild(hand);
+          } else if(p.type==="human"){
+            div.innerHTML='<div class="who">'+p.name+' — '+p.hand.length+' tiles (hidden until their turn)</div>';
+          } else {
+            div.innerHTML='<div class="who">'+p.name+' — '+p.hand.length+' tiles</div>';
+            var backs=document.createElement("div"); backs.className="oppbacks";
+            p.hand.forEach(function(){ var b=document.createElement("div"); b.className="dom small back"; backs.appendChild(b); });
+            div.appendChild(backs);
+          }
+          wrap.appendChild(div);
+        });
+      }
+      function renderTracker(){
+        if(!G) return;
+        var played=playedSet();
+        var grid=$("trackGrid"); grid.innerHTML="";
+        makeSet(G.max).forEach(function(t){
+          var c=document.createElement("div");
+          c.className="trackcell"+(played[key(t)]?" gone":"");
+          c.textContent=t[0]+"–"+t[1];
+          grid.appendChild(c);
+        });
+        var chips="";
+        for(var n=0;n<=G.max;n++){
+          var total=G.max+1; // tiles carrying number n in a double-N set = N+1
+          var gone=0;
+          G.chain.forEach(function(t){ if(t[0]===n||t[1]===n) gone++; });
+          chips+='<span class="countchip">'+n+'s: '+(total-gone)+' still out</span>';
+        }
+        $("countChips").innerHTML=chips;
+      }
+
+      // ---------- teaching ----------
+      function tilesOutFor(n, myHand){
+        // tiles carrying n that are neither played nor in my hand
+        var played=playedSet(); var c=0;
+        for(var a=0;a<=G.max;a++) for(var b=a;b<=G.max;b++){
+          if(a!==n&&b!==n) continue;
+          if(played[a+"-"+b]) continue;
+          if(myHand.some(function(t){ return t[0]===a&&t[1]===b; })) continue;
+          c++;
+        }
+        return c;
+      }
+      function moveOutcomes(p){
+        var e=endsOf(G.chain), L=e[0], R=e[1];
+        var moves=legalMoves(p.hand,L,R);
+        var seen={}, out=[];
+        moves.forEach(function(m){
+          var k=m.i+"|"+m.end; if(seen[k]) return; seen[k]=true;
+          var t=p.hand[m.i];
+          var rest=p.hand.filter(function(_,j){ return j!==m.i; });
+          var nL,nR;
+          if(G.chain.length===0){ nL=t[0]; nR=t[1]; }
+          else if(m.end==="L"){ nL=(t[0]===L?t[1]:t[0]); nR=R; }
+          else { nL=L; nR=(t[0]===R?t[1]:t[0]); }
+          var ownL=rest.some(function(x){ return x[0]===nL||x[1]===nL; });
+          var ownR=rest.some(function(x){ return x[0]===nR||x[1]===nR; });
+          out.push({ move:m, tile:t, rest:rest, nL:nL, nR:nR, pips:pips(t),
+            ownBoth:ownL&&ownR, ownAny:ownL||ownR,
+            outL:tilesOutFor(nL,rest), outR:tilesOutFor(nR,rest),
+            isDouble:t[0]===t[1] });
+        });
+        return out;
+      }
+      function renderTeach(){
+        var body=$("teachBody");
+        if(settings.teach==="off"){ body.innerHTML='<p class="small">Teaching is off. Nothing will coach you — the table is yours. Turn it back on any time; the dial is saved on this device only.</p>'; return; }
+        if(!G||G.phase!=="play"||!isHumanTurn()){ body.innerHTML='<p class="small">Teaching notes appear here on your turn.</p>'; return; }
+        var p=current();
+        var e=endsOf(G.chain);
+        var outs=moveOutcomes(p);
+        if(settings.teach==="light"){
+          if(outs.length===0){
+            body.innerHTML = G.stuck==="draw"
+              ? '<p>Nothing in your hand matches <strong>'+e[0]+'</strong> or <strong>'+e[1]+'</strong>. That\u2019s what the boneyard is for — draw until one fits. '+(G.boneyard.length<=3?'Only '+G.boneyard.length+' tiles left in it, so the round is nearly decided.':'')+'</p>'
+              : '<p>Nothing in your hand matches <strong>'+e[0]+'</strong> or <strong>'+e[1]+'</strong>, and this variant has no drawing — you pass. In the standard draw game you\u2019d be reaching for the boneyard now.</p>';
+            return;
+          }
+          var heavy=outs.slice().sort(function(a,b){ return b.pips-a.pips; })[0];
+          var msg='<p>Open ends are <strong>'+e[0]+'</strong> and <strong>'+e[1]+'</strong>. Still out against you: <strong>'+tilesOutFor(e[0],p.hand)+' tiles carry a '+e[0]+'</strong>, <strong>'+tilesOutFor(e[1],p.hand)+' carry a '+e[1]+'</strong> (not played, not in your hand). Your heaviest play is the '+heavy.tile[0]+'-'+heavy.tile[1]+' ('+heavy.pips+' pips) — pips left in hand at the end become someone else\u2019s points.</p>';
+          if(record.blockedRounds>=2 && record.pipsHeldAtBlockTotal/record.blockedRounds>=14) msg+='<p class="small">From your own record: you hold an average of '+Math.round(record.pipsHeldAtBlockTotal/record.blockedRounds)+' pips when the table blocks. Shedding weight early is your lever.</p>';
+          body.innerHTML=msg;
+          return;
+        }
+        // Coach: offer every strategy that genuinely applies — never a single line when choices exist.
+        if(outs.length===0){
+          body.innerHTML='<p><strong>Only one option exists here:</strong> '+(G.stuck==="draw"?'draw from the boneyard until a tile fits — there is no choice to coach, and the Coach won\u2019t invent one.':'pass. This variant gives you no draw, so there is no choice to coach.')+'</p>';
+          return;
+        }
+        if(outs.length===1){
+          var o=outs[0];
+          body.innerHTML='<p><strong>Only one play exists here</strong> — the '+o.tile[0]+'-'+o.tile[1]+' on the '+(o.move.end==="L"?"left":"right")+' end — so there is one line and it is this: play it. What to watch: it leaves the ends at '+o.nL+' and '+o.nR+', and you '+(o.ownBoth?'can answer either one. Good shape.':o.ownAny?'can answer one of them.':'hold nothing that answers either — if the ends don\u2019t change, you\u2019ll be drawing.')+'</p>';
+          return;
+        }
+        var strats=[];
+        var byPips=outs.slice().sort(function(a,b){ return b.pips-a.pips; })[0];
+        strats.push({ name:"Shed the weight", pick:byPips, why:"Play the "+byPips.tile[0]+"-"+byPips.tile[1]+" ("+byPips.pips+" pips) on the "+(byPips.move.end==="L"?"left":"right")+".", trade:"Frees you of the most points if the round ends soon — but it may spend a tile that answers an end you'd rather keep covered." });
+        var both=outs.filter(function(x){ return x.ownBoth; }).sort(function(a,b){ return b.pips-a.pips; })[0];
+        if(both && (both.move.i!==byPips.move.i||both.move.end!==byPips.move.end))
+          strats.push({ name:"Keep both doors open", pick:both, why:"Play the "+both.tile[0]+"-"+both.tile[1]+" on the "+(both.move.end==="L"?"left":"right")+" and you can still answer either end ("+both.nL+" and "+both.nR+") with what remains.", trade:"Costs you flexibility elsewhere — you keep heavier or more awkward tiles, and if the round ends next play those pips are yours to give away." });
+        var starve=outs.slice().sort(function(a,b){ return (a.outL+a.outR)-(b.outL+b.outR); })[0];
+        if(starve && (starve.move.i!==byPips.move.i||starve.move.end!==byPips.move.end) && (both===undefined||starve.move.i!==both.move.i||starve.move.end!==both.move.end))
+          strats.push({ name:"Starve the table", pick:starve, why:"Play the "+starve.tile[0]+"-"+starve.tile[1]+" on the "+(starve.move.end==="L"?"left":"right")+". It leaves ends of "+starve.nL+" and "+starve.nR+", with only "+starve.outL+" and "+starve.outR+" unseen tiles able to answer them — opponents are likeliest to draw after this one.", trade:"It plays the count, not your hand: you may keep heavy tiles longer, and if the ends swing back to you, the starved numbers can starve you too." });
+        var dbl=outs.filter(function(x){ return x.isDouble; }).sort(function(a,b){ return b.pips-a.pips; })[0];
+        if(dbl && strats.every(function(s){ return s.pick.move.i!==dbl.move.i||s.pick.move.end!==dbl.move.end; }))
+          strats.push({ name:"Spend the double", pick:dbl, why:"Play the "+dbl.tile[0]+"-"+dbl.tile[1]+" while its number is up. A double only ever answers one number, and this one carries "+dbl.pips+" pips.", trade:"Doubles also make safe holding tiles — nobody can be forced off them — so spending it now trades a sure answer later for safety now." });
+        var html='<p>The position offers <strong>'+strats.length+' real strategies</strong> — here is each with its trade-off. The choice stays yours:</p>';
+        strats.forEach(function(s){
+          html+='<div class="strat"><span class="sname">'+s.name+'.</span> '+s.why+'<div class="trade">Trade-off: '+s.trade+'</div></div>';
+        });
+        html+='<p class="small">The count behind this: open ends '+e[0]+' / '+e[1]+'; tiles still out carrying those numbers: '+tilesOutFor(e[0],p.hand)+' and '+tilesOutFor(e[1],p.hand)+' (played tiles and your own hand excluded — the tracker below shows the full notebook).</p>';
+        if(record.heavyEndings>=2) html+='<p class="small">From your own record: '+record.heavyEndings+' of your rounds ended with 15+ pips in hand. When in doubt, your numbers argue for Shed the weight.</p>';
+        else if(record.rounds>=5 && record.playsTotal>0 && record.endsAnsweredImmediately/record.playsTotal>=0.7) html+='<p class="small">From your own record: the next player answers '+Math.round(100*record.endsAnsweredImmediately/record.playsTotal)+'% of your plays without drawing. Starve the table is aimed at exactly that.</p>';
+        body.innerHTML=html;
+      }
+
+      // ---------- wiring ----------
+      $("startBtn").addEventListener("click",startMatch);
+      $("newMatchBtn").addEventListener("click",function(){
+        G=null; shownHuman=-1;
+        $("gameCard").classList.add("hidden");
+        $("setupCard").classList.remove("hidden");
+        window.scrollTo({top:0,behavior:"smooth"});
+      });
+      $("passReadyBtn").addEventListener("click",function(){ $("passOverlay").classList.remove("show"); render(); });
+      $("endBtn").addEventListener("click",function(){
+        $("endOverlay").classList.remove("show");
+        if(G.phase==="matchEnd"){ G=null; shownHuman=-1; $("gameCard").classList.add("hidden"); $("setupCard").classList.remove("hidden"); }
+        else startRound();
+      });
+      $("forgetBtn").addEventListener("click",function(){
+        record=blankRecord(); saveRecord(); renderRecord();
+        $("recordBody").innerHTML='<p class="small">Forgotten. Your strategy record on this device is erased; it starts again with your next match.</p>';
+      });
+
+      rebuildSeats();
+      setTeach(settings.teach);
+      renderRecord();
+      updateVariantBanner();
+    })();
+    </script>
+  </body>
+</html>
