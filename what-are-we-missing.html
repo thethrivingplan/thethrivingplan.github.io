@@ -115,6 +115,28 @@
   .status{ display:inline-block; font-size:.74rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:3px 10px; border-radius:999px; margin-bottom:8px; }
   .status.live{ background:var(--teal-soft); color:var(--teal); border:1px solid var(--teal); }
   .status.works{ background:transparent; color:var(--gold); border:1px solid var(--gold); }
+  .status.mine{ background:var(--surface2); color:var(--ink); border:1px solid var(--line-strong); }
+
+  /* ---------- Fields you've named (this device only) ---------- */
+  #named[hidden]{ display:none; }
+  .named-intro{ font-size:1.04rem; color:var(--ink-soft); max-width:62ch; margin-bottom:6px; }
+  .named-intro strong{ color:var(--ink); }
+  .named-note{ font-size:.94rem; color:var(--muted); max-width:62ch; margin-bottom:16px; }
+  .named-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:12px; }
+  .named-card h3{ font-size:1.3rem; margin-bottom:6px; }
+  .named-card .broken{ color:var(--ink-soft); }
+  .named-card .broken strong{ color:var(--ink); }
+  .named-card .date{ font-size:.88rem; color:var(--muted); margin-top:8px; }
+  .named-card .next-step{ margin-top:12px; background:var(--surface2); border-radius:10px; padding:10px 12px; font-size:.95rem; color:var(--ink-soft); }
+  .named-card .next-step strong{ color:var(--ink); }
+  .named-card .card-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; align-items:center; }
+  .named-card .card-row a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
+  .named-add{ border:1.5px solid var(--teal); background:var(--teal-soft); border-radius:12px; padding:16px; }
+  .named-add h4{ margin:0 0 6px; font-family:"Newsreader",serif; font-size:1.2rem; }
+  .named-add p{ color:var(--ink-soft); font-size:.97rem; }
+  .named-add p strong{ color:var(--ink); }
+  .named-add .row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; align-items:center; }
+  .named-add-status{ font-size:.9rem; color:var(--teal); font-weight:700; min-height:1.4em; margin-top:8px; }
 
   /* ---------- The door / intake ---------- */
   .door{ background:var(--surface); border:2px solid var(--ink); border-radius:18px; padding:20px; }
@@ -492,6 +514,15 @@
           <button class="btn quiet" type="button" id="forgetBtn">Forget my draft</button>
         </div>
 
+        <div class="named-add">
+          <h4>See it on your copy right away</h4>
+          <p>Filled in <strong>Your field</strong> and <strong>What's broken</strong> above — typed or talked? Add it to your list and <strong>your copy of this page updates right away</strong> to show it below, under “Fields you've named.” That list is <strong>saved on this device only</strong> — only you see it here, and nothing is sent anywhere by adding it.</p>
+          <div class="row">
+            <button class="btn primary" type="button" id="nameFieldBtn">Add this field to my list — Tap to add</button>
+          </div>
+          <p class="named-add-status" id="nameFieldStatus" role="status" aria-live="polite"></p>
+        </div>
+
         <div class="send-box">
           <h4>The send-door: The Poster Board</h4>
           <p>Copy your draft, then post it on <strong>The Poster Board</strong> — public, free, no account.</p>
@@ -509,6 +540,13 @@
         </div>
       </form>
     </details>
+  </section>
+
+  <section id="named" hidden>
+    <div class="sec-head"><span class="no">Yours</span><h2>Fields you've named</h2></div>
+    <p class="named-intro">These are the fields <strong>you</strong> named — shown on <strong>your copy</strong> of this page, right away.</p>
+    <p class="named-note">Saved on this device only — this list lives in this browser on this device, only you see it here, and it is restored when you come back on this device. It is not sent anywhere. Your named fields show on your copy right away; when a field is posted publicly and taken on, it joins the shared list on this page for everybody.</p>
+    <div id="namedList"></div>
   </section>
 
   <section id="after" data-part class="after">
@@ -709,7 +747,7 @@
 <script>
 (function(){
   "use strict";
-  var LS_DRAFT="wawm.draft.v1", LS_DOCK="wawm.dock.v1", LS_SET="wawm.settings.v1", LS_PLACE="wawm.lastplace.v1";
+  var LS_DRAFT="wawm.draft.v1", LS_DOCK="wawm.dock.v1", LS_SET="wawm.settings.v1", LS_PLACE="wawm.lastplace.v1", LS_NAMED="wawm.named.v1";
   function lsGet(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
   function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
@@ -859,6 +897,110 @@
   $("forgetBtn").addEventListener("click", doForget);
   $("forgetBtn2").addEventListener("click", doForget);
 
+  /* ---------- Fields you've named: on this device only ---------- */
+  var namedSection=$("named"), namedListEl=$("namedList"), nameFieldStatus=$("nameFieldStatus");
+  function loadNamed(){ var v=lsGet(LS_NAMED); return Array.isArray(v)?v:[]; }
+  function saveNamed(list){ if(list.length) lsSet(LS_NAMED, list); else lsDel(LS_NAMED); }
+  function formatNamedDate(ts){
+    try{
+      var d=new Date(ts);
+      return d.toLocaleDateString(undefined, {year:"numeric", month:"long", day:"numeric"});
+    }catch(e){ return ""; }
+  }
+  function namedEntryText(e){
+    var lines=[];
+    lines.push("WHAT ARE WE MISSING — a field to take on");
+    if(e.field) lines.push("Field: "+e.field);
+    if(e.broken) lines.push("What's broken: "+e.broken);
+    if(e.hits) lines.push("Who it hits: "+e.hits);
+    if(e.fix) lines.push("What a fix could look like: "+e.fix);
+    if(e.name) lines.push("From: "+e.name);
+    return lines.join("\n");
+  }
+  function copyTextToClipboard(txt, statusEl, okMsg){
+    function done(){ if(statusEl) statusEl.textContent=okMsg; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, function(){ fallback(); });
+    } else fallback();
+    function fallback(){
+      var ta=document.createElement("textarea");
+      ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); done(); }
+      catch(e){ if(statusEl) statusEl.textContent="Copy didn't work on this device — long-press the text to copy it by hand."; }
+      document.body.removeChild(ta);
+    }
+  }
+  function renderNamed(){
+    var list=loadNamed();
+    namedListEl.innerHTML="";
+    if(!list.length){ namedSection.hidden=true; return; }
+    namedSection.hidden=false;
+    // Newest first for display; storage stays oldest-first.
+    var display=list.slice().reverse();
+    display.forEach(function(e){
+      var card=document.createElement("article"); card.className="named-card";
+      var st=document.createElement("span"); st.className="status mine"; st.textContent="Named by you — on this device"; card.appendChild(st);
+      var h=document.createElement("h3"); h.textContent=e.field||"Unnamed field"; card.appendChild(h);
+      var bp=document.createElement("p"); bp.className="broken";
+      var bs=document.createElement("strong"); bs.textContent="What's broken: "; bp.appendChild(bs);
+      bp.appendChild(document.createTextNode(e.broken||"")); card.appendChild(bp);
+      if(e.hits){ var hp=document.createElement("p"); hp.style.marginTop="6px"; hp.style.color="var(--ink-soft)"; var hs=document.createElement("strong"); hs.style.color="var(--ink)"; hs.textContent="Who it hits: "; hp.appendChild(hs); hp.appendChild(document.createTextNode(e.hits)); card.appendChild(hp); }
+      if(e.fix){ var fp=document.createElement("p"); fp.style.marginTop="6px"; fp.style.color="var(--ink-soft)"; var fs=document.createElement("strong"); fs.style.color="var(--ink)"; fs.textContent="What a fix could look like: "; fp.appendChild(fs); fp.appendChild(document.createTextNode(e.fix)); card.appendChild(fp); }
+      var dp=document.createElement("p"); dp.className="date"; dp.textContent="Named on "+formatNamedDate(e.ts)+(e.name?(" · From: "+e.name):""); card.appendChild(dp);
+      var ns=document.createElement("div"); ns.className="next-step";
+      var nss=document.createElement("strong"); nss.textContent="Next step — to make it public: "; ns.appendChild(nss);
+      ns.appendChild(document.createTextNode("copy this field and post it on the Poster Board. Adding it here only updates your copy; posting it publicly is what lets it be taken on and join the shared list above for everybody."));
+      card.appendChild(ns);
+      var row=document.createElement("div"); row.className="card-row";
+      var copyBtn=document.createElement("button"); copyBtn.type="button"; copyBtn.className="btn primary"; copyBtn.textContent="Copy this field — Tap to copy";
+      var entryStatus=document.createElement("span"); entryStatus.className="copy-status"; entryStatus.setAttribute("role","status"); entryStatus.setAttribute("aria-live","polite");
+      copyBtn.addEventListener("click", function(){ copyTextToClipboard(namedEntryText(e), entryStatus, "Copied. Now open the Poster Board and paste it there."); });
+      row.appendChild(copyBtn);
+      var link=document.createElement("a"); link.className="btn"; link.href="https://theposterboard.fwh.is"; link.target="_blank"; link.rel="noopener"; link.textContent="Open the Poster Board ↗"; row.appendChild(link);
+      var removeBtn=document.createElement("button"); removeBtn.type="button"; removeBtn.className="btn quiet"; removeBtn.textContent="Tap to remove";
+      removeBtn.setAttribute("aria-label", "Remove "+(e.field||"this field")+" from your list — Tap to remove");
+      removeBtn.addEventListener("click", function(){
+        var cur=loadNamed().filter(function(x){ return x.id!==e.id; });
+        saveNamed(cur); renderNamed();
+      });
+      row.appendChild(removeBtn);
+      card.appendChild(row);
+      card.appendChild(entryStatus);
+      namedListEl.appendChild(card);
+    });
+  }
+  function addCurrentDraftToNamed(opts){
+    opts=opts||{};
+    var d=draftObj();
+    var field=(d.field||"").trim(), broken=(d.broken||"").trim();
+    if(!field || !broken){
+      if(!opts.silent && nameFieldStatus) nameFieldStatus.textContent="Add your field and what's broken first — both boxes, typed or talked — then tap to add.";
+      return false;
+    }
+    var list=loadNamed();
+    var dupe=list.some(function(x){ return (x.field||"").trim().toLowerCase()===field.toLowerCase() && (x.broken||"").trim().toLowerCase()===broken.toLowerCase(); });
+    if(dupe){
+      if(!opts.silent && nameFieldStatus) nameFieldStatus.textContent="Already on your list below — it's already showing on your copy.";
+      if(!opts.silent) renderNamed();
+      return true;
+    }
+    var entry={ id: Date.now()+"-"+Math.random().toString(36).slice(2,8), field:field, broken:broken, hits:(d.hits||"").trim(), fix:(d.fix||"").trim(), name:(d.name||"").trim(), ts: Date.now() };
+    list.push(entry); saveNamed(list); renderNamed();
+    if(!opts.silent && nameFieldStatus) nameFieldStatus.textContent="Added — your list below just updated on this device. Scroll down to see it under “Fields you've named.”";
+    return true;
+  }
+  if($("nameFieldBtn")){
+    $("nameFieldBtn").addEventListener("click", function(){
+      var ok=addCurrentDraftToNamed();
+      if(ok){
+        // Show the update right away.
+        setTimeout(function(){ var el=$("named"); if(el && !el.hidden) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 60);
+      }
+    });
+  }
+  renderNamed();
+
   /* ---------- Copy draft ---------- */
   function draftText(){
     var d=draftObj(), lines=[];
@@ -873,6 +1015,8 @@
   $("copyBtn").addEventListener("click", function(){
     var txt=draftText(), status=$("copyStatus");
     if(draftEmpty(draftObj())){ status.textContent="Write a little of your draft first — even one line counts."; return; }
+    // Copying a named field also puts it on your own list, so your copy reflects what you said.
+    addCurrentDraftToNamed({silent:true});
     function done(){ status.textContent="Copied. Now open the Poster Board and paste it there."; }
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(txt).then(done, function(){ fallback(); });
