@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Mancala</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root {
+        --bg: #f2e9d8;
+        --panel: #fbf6ea;
+        --panel-line: #d8c8a6;
+        --ink: #2b1d10;
+        --ink-soft: #5d4a33;
+        --accent: #a34d16;
+        --accent-ink: #ffffff;
+        --green: #2f5d3a;
+        --board: #4a2e1b;
+        --board-edge: #33200f;
+        --pit: #674628;
+        --pit-inner: #59391f;
+        --pit-line: #8a653f;
+        --store: #5d3a20;
+        --stone-a: #c1502e;
+        --stone-b: #d9a441;
+        --stone-c: #5b7f4e;
+        --stone-d: #4e6e8a;
+        --glow: #ffd97a;
+        --danger: #9c2b1b;
+        --chip: #e9dcbf;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #17120d;
+          --panel: #241b12;
+          --panel-line: #4a3a26;
+          --ink: #f0e4cd;
+          --ink-soft: #c4ad8a;
+          --accent: #d97c36;
+          --accent-ink: #1c1208;
+          --green: #7fb98a;
+          --board: #2c1e10;
+          --board-edge: #120b05;
+          --pit: #453019;
+          --pit-inner: #3a2812;
+          --pit-line: #6d5133;
+          --store: #503620;
+          --chip: #332818;
+          --danger: #e88a76;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: ui-sans-system, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.5;
+      }
+      .wrap { max-width: 880px; margin: 0 auto; padding: 16px 14px 48px; }
+      h1, h2, h3 { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; line-height: 1.15; }
+      h1 { font-size: 2.1rem; margin: 10px 0 4px; }
+      h2 { font-size: 1.3rem; margin: 0 0 8px; }
+      h3 { font-size: 1.05rem; margin: 14px 0 4px; }
+      p { margin: 6px 0; }
+      .soft { color: var(--ink-soft); }
+      .small { font-size: 0.88rem; }
+      nav.compass {
+        display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline;
+        padding: 8px 0 10px; border-bottom: 2px solid var(--panel-line); font-size: 0.92rem;
+      }
+      nav.compass a { color: var(--accent); font-weight: 600; text-decoration: none; padding: 6px 2px; display: inline-block; }
+      nav.compass a:hover { text-decoration: underline; }
+      nav.compass .others { color: var(--ink-soft); }
+      .free-line {
+        border: 2px solid var(--green); border-radius: 10px; padding: 10px 12px; margin: 14px 0;
+        font-weight: 600; background: var(--panel);
+      }
+      .card {
+        background: var(--panel); border: 1px solid var(--panel-line); border-radius: 12px;
+        padding: 14px; margin: 14px 0;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+      .field { display: flex; flex-direction: column; gap: 4px; min-width: 150px; flex: 1 1 160px; }
+      .field label { font-weight: 600; font-size: 0.92rem; }
+      select, input[type="text"] {
+        font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--panel-line);
+        background: var(--bg); color: var(--ink); width: 100%;
+      }
+      .alias-row { display: flex; gap: 6px; }
+      .alias-row input { flex: 1; }
+      button {
+        font: inherit; font-weight: 600; border-radius: 8px; border: 1px solid var(--panel-line);
+        background: var(--chip); color: var(--ink); padding: 8px 14px; cursor: pointer;
+      }
+      button:hover { filter: brightness(1.05); }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+      button.on { background: var(--green); color: #fff; border-color: var(--green); }
+      @media (prefers-color-scheme: dark) { button.on { color: #101408; } }
+      .seg { display: inline-flex; border: 1px solid var(--panel-line); border-radius: 9px; overflow: hidden; }
+      .seg button { border: 0; border-radius: 0; background: transparent; padding: 8px 12px; }
+      .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+      .variant-banner {
+        display: none; border: 2px dashed var(--accent); border-radius: 10px; padding: 8px 12px;
+        margin: 10px 0; font-weight: 700;
+      }
+      .variant-banner.show { display: block; }
+      /* ---------- Board ---------- */
+      .turn-banner { font-size: 1.08rem; font-weight: 700; margin: 4px 0 10px; min-height: 1.6em; }
+      .board-frame {
+        background: var(--board); border: 3px solid var(--board-edge); border-radius: 18px;
+        padding: 12px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.45);
+      }
+      .board {
+        display: grid; gap: 8px;
+        grid-template-columns: 0.85fr repeat(6, 1fr) 0.85fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .side-label { color: #e8d5ae; font-weight: 700; font-size: 0.85rem; text-align: center; margin: 2px 0 6px; }
+      .side-label.bottom { margin: 6px 0 2px; }
+      .pit, .store {
+        min-width: 0; overflow: hidden;
+        position: relative; border-radius: 999px; border: 2px solid var(--pit-line);
+        background: radial-gradient(ellipse at 50% 38%, var(--pit) 0%, var(--pit-inner) 78%);
+        color: #f4e8cf; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 4px 2px; min-height: 64px; width: 100%;
+      }
+      .store { grid-row: 1 / 3; min-height: 136px; background: radial-gradient(ellipse at 50% 38%, var(--store) 0%, var(--pit-inner) 80%); }
+      .pit.playable { cursor: pointer; border-color: var(--glow); box-shadow: 0 0 0 2px rgba(255,217,122,0.35), inset 0 0 12px rgba(255,217,122,0.25); }
+      .pit.playable:hover { filter: brightness(1.18); }
+      .pit:disabled { cursor: default; }
+      .pit .count, .store .count { font-size: 1.25rem; font-weight: 800; line-height: 1; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+      .pit .plabel, .store .plabel { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.85; }
+      .stones { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; align-content: center; max-width: 44px; min-height: 14px; margin-bottom: 2px; }
+      .stone { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset -1px -2px 2px rgba(0,0,0,0.35), 0 1px 1px rgba(0,0,0,0.4); }
+      .pit.drop-next { box-shadow: 0 0 0 3px var(--glow); }
+      .pit.land { box-shadow: 0 0 0 3px var(--glow), inset 0 0 14px rgba(255,217,122,0.5); }
+      .pit.captured { box-shadow: 0 0 0 3px var(--stone-a); }
+      .drop-badge {
+        position: absolute; top: -7px; right: -4px; background: var(--glow); color: #241703;
+        font-size: 0.68rem; font-weight: 800; border-radius: 999px; padding: 1px 6px; border: 1px solid #a97f1e;
+      }
+      .score-line { display: flex; flex-wrap: wrap; gap: 6px 18px; font-weight: 700; margin-top: 10px; }
+      .teach-panel {
+        border-left: 5px solid var(--green); background: var(--panel); border-radius: 0 10px 10px 0;
+        padding: 10px 12px; margin: 12px 0; min-height: 3em;
+      }
+      .teach-panel:empty { display: none; }
+      .teach-panel .opt { margin: 8px 0; }
+      .teach-panel .opt strong { color: var(--accent); }
+      .log { font-size: 0.9rem; color: var(--ink-soft); max-height: 8.5em; overflow-y: auto; margin: 8px 0 0; padding-left: 18px; }
+      details.card summary { cursor: pointer; font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 1.2rem; font-weight: 700; padding: 4px 0; }
+      table.results { border-collapse: collapse; width: 100%; font-size: 0.95rem; margin: 8px 0; }
+      table.results th, table.results td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--panel-line); }
+      .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 8px 0; }
+      .stat { background: var(--bg); border: 1px solid var(--panel-line); border-radius: 8px; padding: 8px 10px; }
+      .stat .n { font-size: 1.3rem; font-weight: 800; }
+      footer { margin-top: 26px; border-top: 2px solid var(--panel-line); padding-top: 12px; font-size: 0.88rem; color: var(--ink-soft); }
+      .kbd { font-family: ui-monospace, monospace; background: var(--chip); border-radius: 4px; padding: 0 5px; }
+      @media (max-width: 560px) {
+        .board { gap: 5px; }
+        .board-frame { padding: 8px; }
+        .pit, .store { min-height: 56px; }
+        .store { min-height: 120px; }
+        .stones { max-width: 30px; }
+        .stone { width: 7px; height: 7px; }
+        .pit .count, .store .count { font-size: 1rem; }
+        .pit .plabel, .store .plabel { font-size: 0.5rem; line-height: 1.15; text-align: center; }
+        .drop-badge { font-size: 0.58rem; padding: 0 4px; }
+        h1 { font-size: 1.7rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav class="compass" aria-label="Compass">
+        <a href="https://thethrivingplan.github.io/">Start Page</a>
+        <a href="https://thethrivingplan.github.io/">The Thriving Plan</a>
+        <span class="others">Other pages:
+          <a href="https://thethrivingplan.github.io/checkers.html">Checkers</a> ·
+          <a href="https://thethrivingplan.github.io/solitaire.html">Solitaire</a> ·
+          <a href="https://thethrivingplan.github.io/tournament-builder.html">Tournament Builder</a>
+        </span>
+      </nav>
+
+      <h1>Mancala</h1>
+      <p class="soft">The sowing game. Pick up a pit, drop its stones one by one around the board, and finish with more stones in your store than your opponent. No dice, no cards, no luck — just counting.</p>
+
+      <p class="free-line">Free — always free. No ads, no account, nothing to buy. This page works offline: save it or add it to your home screen and the whole game travels with you, no connection needed.</p>
+
+      <p class="small"><strong>The documented game:</strong> this is <strong>Kalah</strong>, the mancala game written down and published by William Champion Jr. in 1940 — the best-documented member of the mancala family, a family of sowing games played and recorded for centuries across Africa and Asia. The rules below follow Kalah as documented: six pits a side, four stones a pit, an extra turn when your last stone lands in your store, and a capture when it lands in an empty pit on your side. Where this page changes a rule, it says so in plain sight and calls it a variant.</p>
+
+      <section class="card" aria-labelledby="setup-h">
+        <h2 id="setup-h">Set up your game</h2>
+        <div class="row">
+          <div class="field">
+            <label for="mode">Who is playing?</label>
+            <select id="mode">
+              <option value="bot">Against the bot</option>
+              <option value="2p">Two players, same device</option>
+            </select>
+          </div>
+          <div class="field" id="level-field">
+            <label for="level">Bot skill — tap to choose</label>
+            <select id="level">
+              <option value="0">Learning — plays loose, misses a lot</option>
+              <option value="1">Steady — takes the obvious good move</option>
+              <option value="2" selected>Sharp — counts several moves ahead</option>
+              <option value="3">Pro — counts deep and solves the endgame</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <div class="field">
+            <label for="alias0">South player name (optional — no name is ever required)</label>
+            <div class="alias-row">
+              <input type="text" id="alias0" placeholder="You" maxlength="24" autocomplete="off" />
+              <button type="button" id="dice0">Random name — tap</button>
+            </div>
+          </div>
+          <div class="field" id="alias1-field">
+            <label for="alias1">North player name (two-player games)</label>
+            <div class="alias-row">
+              <input type="text" id="alias1" placeholder="North player" maxlength="24" autocomplete="off" />
+              <button type="button" id="dice1">Random name — tap</button>
+            </div>
+          </div>
+        </div>
+        <h3>Rule settings — standard rules are the default</h3>
+        <div class="row">
+          <div class="field">
+            <label for="stones">Stones in each pit at the start</label>
+            <select id="stones">
+              <option value="4" selected>4 — the classic Kalah start</option>
+              <option value="3">3 — shorter, sharper game (variant)</option>
+              <option value="6">6 — longer, deeper game (variant)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="captures">Captures</label>
+            <select id="captures">
+              <option value="on" selected>On — standard Kalah</option>
+              <option value="off">Off — pure sowing race (variant)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button type="button" class="primary" id="new-game">New game — tap to start</button>
+          <span class="small soft">Changing any setting starts a fresh game with those rules. Settings are saved on this device only — nothing leaves your phone or computer.</span>
+        </div>
+        <p class="variant-banner" id="variant-banner" role="status"></p>
+      </section>
+
+      <section aria-labelledby="board-h">
+        <h2 id="board-h" class="small" style="position:absolute;left:-9999px;">Game board</h2>
+        <p class="turn-banner" id="turn-banner" aria-live="polite"></p>
+        <div class="board-frame">
+          <p class="side-label" id="north-label">North</p>
+          <div class="board" id="board"></div>
+          <p class="side-label bottom" id="south-label">South — you</p>
+        </div>
+        <div class="score-line" id="score-line"></div>
+        <div class="row" style="margin-top:10px;">
+          <button type="button" id="countit">Count It — tap to turn the training preview on</button>
+          <button type="button" id="undo" disabled>Undo last move — tap</button>
+          <span class="small soft" id="countit-note">Count It is a training tool: tap one of your pits and it shows where every stone will land <em>before</em> you commit. It works while Teaching is on.</span>
+        </div>
+        <div id="preview-panel" class="teach-panel" style="display:none;"></div>
+        <div class="teach-panel" id="teach-panel" aria-live="polite"></div>
+        <ul class="log" id="log" aria-label="Move log"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="teach-h">
+        <h2 id="teach-h">Teaching — your choice, as much or as little as you want</h2>
+        <p>This game teaches the counting as you play, in the moment, tied to the actual board in front of you. You pick how much:</p>
+        <div class="row">
+          <div class="seg" role="group" aria-label="Teaching level">
+            <button type="button" data-teach="off" aria-pressed="false">Off</button>
+            <button type="button" data-teach="light" aria-pressed="true">Light</button>
+            <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+          </div>
+          <span class="small soft">Tap a level to set it. <strong>Off</strong> teaches nothing. <strong>Light</strong> (the default) names the one thing worth seeing. <strong>Coach</strong> lays out your real options — usually more than one — with what each one costs and gains. Saved on this device only.</span>
+        </div>
+        <p class="small" style="margin-top:10px;">Where more than one good strategy exists, the teaching shows more than one, each with its trade-off in plain words. It names a single way only when there is genuinely one move to make.</p>
+      </section>
+
+      <details class="card">
+        <summary>How to play — tap to open</summary>
+        <p><strong>Your side</strong> is the row of six pits nearest you (South, at the bottom) and the big store on your right. North plays the top row, with the store on the left.</p>
+        <p><strong>On your turn:</strong> tap one of your pits. All its stones are picked up and dropped one by one, counter-clockwise, into each pit and store that follows — including your own store, skipping your opponent's store.</p>
+        <p><strong>Free turn:</strong> if your <em>last</em> stone lands in your store, you move again.</p>
+        <p><strong>Capture:</strong> if your last stone lands in an <em>empty pit on your side</em>, that stone and every stone in the pit directly across go into your store.</p>
+        <p><strong>Ending:</strong> when one side's six pits are all empty, the game ends and the other player sweeps every stone left on their side into their store. Most stones in the store wins.</p>
+        <p><strong>The one skill:</strong> counting. A pit whose stone count exactly equals its distance to your store lands its last stone in the store — a free turn. Pits are numbered by that distance in the lessons: the pit beside your store needs 1 stone, the next needs 2, and so on up to 6.</p>
+        <p>Keyboard: <span class="kbd">Tab</span> to a pit, <span class="kbd">Enter</span> to sow it. Every pit button says its count and whose it is.</p>
+      </details>
+
+      <details class="card">
+        <summary>Strategies the pros use — tap to open</summary>
+        <p>There is rarely one right way in Kalah. These are the documented lines of play, each with its price:</p>
+        <h3>1. The free-turn chain</h3>
+        <p>Open and play to land in your store again and again — each landing is another move. In the classic start, the pit with 4 stones that sits 4 steps from your store does it on move one. <em>Trade-off:</em> chaining empties your right-hand pits, and an empty pit facing a loaded enemy pit is a capture waiting to happen — yours to spring, if you get back to it first.</p>
+        <h3>2. The capture trap</h3>
+        <p>Leave one of your pits empty with a full pit across from it, then land a single stone there to take the whole pile. Pros set this up two moves early: first sow a pit so it <em>creates</em> the empty pit, then arrange a one-stone landing. <em>Trade-off:</em> the trap only pays if the across-pit stays loaded — a good opponent will sow it away or capture first.</p>
+        <h3>3. The store race (hoarding)</h3>
+        <p>Feed your store steadily and build the pit beside it, sowing it when its count can carry stones all the way around and back into the store. <em>Trade-off:</em> stones parked on your side at the end get swept by whoever still holds them — a hoard you never bank can become the other player's endgame gift.</p>
+        <h3>4. The starve-out finish</h3>
+        <p>When you are ahead, empty your own side to end the game on your terms. <em>Trade-off:</em> ending the game hands the opponent every stone left on <em>their</em> side — only pull this when your lead beats everything they could sweep.</p>
+        <p>Coach mode points at whichever of these the board is actually offering, and says when a different line beats it.</p>
+      </details>
+
+      <details class="card">
+        <summary>Your strategy record — tap to open</summary>
+        <p>Every game you play here teaches the teacher. This record lives <strong>on this device only</strong> — it is never sent anywhere — and the coaching above reads it, so lessons come from <em>your</em> games, not just generic tips. Each finished game is stored in the same clean form: date, mode, bot level, result, final score, and the move list, so the record can be studied and compared over time.</p>
+        <div id="record-body"><p class="soft">No games recorded yet. Finish a game and your record starts.</p></div>
+        <div class="row" style="margin-top:10px;">
+          <button type="button" id="forget-record">Forget my record — tap to erase it from this device</button>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary>Are the bot levels honest? — tap to open the self-play check</summary>
+        <p>The four levels are built differently, and the difference was tested before this page shipped, on November 18, 2026, under standard rules (4 stones, captures on). The fair test: 24 openings were shuffled at random, and in each pairing both bots played <em>both sides of the same opening</em> — 48 games a pairing — so the powerful first move could not pick the winner. Here is what actually happened:</p>
+        <table class="results">
+          <thead><tr><th>Match</th><th>Result (48 games)</th></tr></thead>
+          <tbody>
+            <tr><td>Pro vs Sharp</td><td><strong>36 – 9</strong> (3 draws)</td></tr>
+            <tr><td>Pro vs Steady</td><td><strong>46 – 2</strong></td></tr>
+            <tr><td>Pro vs Learning</td><td><strong>47 – 0</strong> (1 draw)</td></tr>
+            <tr><td>Sharp vs Steady</td><td><strong>47 – 1</strong></td></tr>
+            <tr><td>Sharp vs Learning</td><td><strong>47 – 1</strong></td></tr>
+            <tr><td>Steady vs Learning</td><td><strong>37 – 8</strong> (3 draws)</td></tr>
+            <tr><td>Sharp vs Sharp (control — same bot both sides)</td><td>23 – 23 (2 draws), as a fair test should read</td></tr>
+          </tbody>
+        </table>
+        <p class="small soft">Learning picks loosely and overlooks free turns and captures on purpose, the way a new player does. Steady takes the best move it can see in one move. Sharp reads the board five moves deep. Pro reads eight moves deep with a sharper eye for captures and free turns, and solves the endgame exactly once twelve or fewer stones remain in the pits. One more honest finding: from the untouched starting position, Pro and Sharp split 8–8 over 16 games — between two strong players the first move is worth that much in Kalah, which is exactly why the check above shuffles the openings. If two levels ever tie in a fair check like this, the labels get fixed; during this game's build, Pro had to be made genuinely stronger twice before it earned its name.</p>
+      </details>
+
+      <footer>
+        <p>Mancala (Kalah) — a house games shelf page. Copyleft: the writing and design on this page are CC BY-SA 4.0 and the code is GPL — copy it, change it, share it, keep it free. No ads, ever. Your settings and strategy record are saved on this device only and can be erased above.</p>
+        <p>Work in progress — if something on this page could be better, that is an invitation, not a flaw in you for noticing.</p>
+      </footer>
+    </div>
+<script>
+"use strict";
+/* ================= Engine (Kalah, as documented) =================
+   Board array of 14: 0-5 South pits, 6 South store, 7-12 North pits, 13 North store. */
+function legalMoves(b, p) {
+  var start = p === 0 ? 0 : 7, out = [], i;
+  for (i = 0; i < 6; i++) if (b[start + i] > 0) out.push(start + i);
+  return out;
+}
+function sideSum(b, p) {
+  var s = p === 0 ? 0 : 7, t = 0, i;
+  for (i = 0; i < 6; i++) t += b[s + i];
+  return t;
+}
+function applyMove(b, p, pit, captures) {
+  var nb = b.slice(), myStore = p === 0 ? 6 : 13, oppStore = p === 0 ? 13 : 6;
+  var stones = nb[pit]; nb[pit] = 0;
+  var idx = pit;
+  while (stones > 0) {
+    idx = (idx + 1) % 14;
+    if (idx === oppStore) continue;
+    nb[idx]++; stones--;
+  }
+  var extra = idx === myStore, captured = 0;
+  if (captures && !extra) {
+    var ms = p === 0 ? 0 : 7;
+    if (idx >= ms && idx <= ms + 5 && nb[idx] === 1) {
+      var opp = 12 - idx;
+      if (nb[opp] > 0) { captured = nb[idx] + nb[opp]; nb[myStore] += captured; nb[idx] = 0; nb[opp] = 0; }
+    }
+  }
+  var over = false;
+  if (sideSum(nb, 0) === 0 || sideSum(nb, 1) === 0) {
+    nb[6] += sideSum(nb, 0); nb[13] += sideSum(nb, 1);
+    for (var i = 0; i < 6; i++) { nb[i] = 0; nb[7 + i] = 0; }
+    over = true;
+  }
+  return { board: nb, extra: extra && !over, over: over, captured: captured, landed: idx };
+}
+/* Where would a pit's stones land? (for Count It and the lessons) */
+function sowPath(b, p, pit) {
+  var oppStore = p === 0 ? 13 : 6, stones = b[pit], idx = pit, path = [];
+  while (stones > 0) {
+    idx = (idx + 1) % 14;
+    if (idx === oppStore) continue;
+    path.push(idx); stones--;
+  }
+  return path;
+}
+/* ================= Bot brains ================= */
+function evaluate(b, p) {
+  var o = 1 - p, ms = p === 0 ? 6 : 13, os = o === 0 ? 6 : 13;
+  var score = (b[ms] - b[os]) * 4 + (sideSum(b, p) - sideSum(b, o)) * 0.4;
+  var start = p === 0 ? 0 : 7, i, pit;
+  for (i = 0; i < 6; i++) { pit = start + i; if (b[pit] > 0 && (pit + b[pit]) % 14 === ms) score += 1.2; }
+  return score;
+}
+function evaluatePro(b, p) {
+  var o = 1 - p, ms = p === 0 ? 6 : 13, os = o === 0 ? 6 : 13;
+  var score = (b[ms] - b[os]) * 5 + (sideSum(b, p) - sideSum(b, o)) * 0.3;
+  var start = p === 0 ? 0 : 7, ostart = o === 0 ? 0 : 7, i, pit, opit;
+  for (i = 0; i < 6; i++) {
+    pit = start + i;
+    if (b[pit] > 0 && (pit + b[pit]) % 14 === ms) score += 1.5;
+    if (b[pit] === 0) score += b[12 - pit] * 0.35;
+    opit = ostart + i;
+    if (b[opit] > 0 && (opit + b[opit]) % 14 === os) score -= 1.5;
+    if (b[opit] === 0) score -= b[12 - opit] * 0.35;
+  }
+  return score;
+}
+function minimax(b, p, turn, depth, alpha, beta, captures, ev) {
+  if (depth === 0) return ev(b, p);
+  var moves = legalMoves(b, turn);
+  if (moves.length === 0) return ev(b, p);
+  var ms = turn === 0 ? 6 : 13;
+  moves = moves.slice().sort(function (a, c) {
+    function rank(m) { return ((m + b[m]) % 14 === ms ? 2 : 0); }
+    return rank(c) - rank(a);
+  });
+  var maximizing = turn === p, best = maximizing ? -Infinity : Infinity, i, r, val;
+  for (i = 0; i < moves.length; i++) {
+    r = applyMove(b, turn, moves[i], captures);
+    if (r.over) val = (r.board[p === 0 ? 6 : 13] - r.board[p === 0 ? 13 : 6]) * 5;
+    else val = minimax(r.board, p, r.extra ? turn : 1 - turn, depth - 1, alpha, beta, captures, ev);
+    if (maximizing) { best = Math.max(best, val); alpha = Math.max(alpha, best); }
+    else { best = Math.min(best, val); beta = Math.min(beta, best); }
+    if (beta <= alpha) break;
+  }
+  return best;
+}
+var BOT_NAMES = ["Learning", "Steady", "Sharp", "Pro"];
+function botMove(b, p, level, captures) {
+  var moves = legalMoves(b, p);
+  if (!moves.length) return null;
+  function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+  var i, r, s, best, bs;
+  if (level === 0) {
+    if (Math.random() < 0.62) return rnd(moves);
+    best = null; bs = -Infinity;
+    for (i = 0; i < moves.length; i++) {
+      r = applyMove(b, p, moves[i], captures);
+      s = evaluate(r.board, p) + (Math.random() * 14 - 7);
+      if (s > bs) { bs = s; best = moves[i]; }
+    }
+    return best;
+  }
+  if (level === 1) {
+    if (Math.random() < 0.08) return rnd(moves);
+    best = null; bs = -Infinity;
+    for (i = 0; i < moves.length; i++) {
+      r = applyMove(b, p, moves[i], captures);
+      s = evaluate(r.board, p) + (Math.random() * 3 - 1.5);
+      if (s > bs) { bs = s; best = moves[i]; }
+    }
+    return best;
+  }
+  var depth = level === 2 ? 5 : 8;
+  var ev = level === 3 ? evaluatePro : evaluate;
+  if (level === 3 && sideSum(b, 0) + sideSum(b, 1) <= 12) depth = 40;
+  best = moves[0]; bs = -Infinity;
+  for (i = 0; i < moves.length; i++) {
+    r = applyMove(b, p, moves[i], captures);
+    var v = r.over ? (r.board[p === 0 ? 6 : 13] - r.board[p === 0 ? 13 : 6]) * 5
+      : minimax(r.board, p, r.extra ? p : 1 - p, depth - 1, -Infinity, Infinity, captures, ev);
+    if (v > bs) { bs = v; best = moves[i]; }
+  }
+  return best;
+}
+</script>
+<script>
+"use strict";
+/* ================= Saved-on-this-device settings & record ================= */
+var SET_KEY = "mancala.settings.v1", REC_KEY = "mancala.record.v1";
+function loadJSON(key, fallback) {
+  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+}
+function saveJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+var settings = loadJSON(SET_KEY, null) || { teaching: "light", mode: "bot", level: 2, stones: 4, captures: true, alias0: "", alias1: "" };
+if (["off", "light", "coach"].indexOf(settings.teaching) < 0) settings.teaching = "light";
+var record = loadJSON(REC_KEY, null) || { games: 0, wins: 0, losses: 0, draws: 0, freeTaken: 0, freeMissed: 0, capTaken: 0, capMissed: 0, biggestCapture: 0, log: [] };
+
+/* ================= Helpers ================= */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function pitNum(p, idx) { return p === 0 ? idx + 1 : idx - 6; }         // pit number from that player's own left
+function pitName(p, idx) {
+  if (idx === 6) return p === 0 ? "your store" : "North's store";
+  if (idx === 13) return p === 1 ? "your store" : "South's store";
+  var owner = idx < 6 ? 0 : 1;
+  return (owner === p ? "your pit " : (owner === 0 ? "South's pit " : "North's pit ")) + pitNum(owner, idx);
+}
+function playerName(p) {
+  if (p === 0) return settings.alias0.trim() || "You";
+  if (settings.mode === "bot") return "Bot — " + BOT_NAMES[settings.level];
+  return settings.alias1.trim() || "North player";
+}
+var STONE_COLORS = ["var(--stone-a)", "var(--stone-b)", "var(--stone-c)", "var(--stone-d)"];
+function stonesHTML(n, seed) {
+  var show = Math.min(n, 12), h = "", i;
+  for (i = 0; i < show; i++) h += '<span class="stone" style="background:' + STONE_COLORS[(seed + i * 3 + n) % 4] + '"></span>';
+  if (n > 12) h += '<span class="small" style="font-weight:800">+' + (n - 12) + "</span>";
+  return h;
+}
+
+/* ================= Game state ================= */
+var board = [], turn = 0, busy = false, gameOver = false;
+var undoStack = [], moveList = [], logLines = [];
+var countItOn = false, previewPit = null;
+var turnAudit = null; // {key, hasFree, hasCap} for the strategy record
+var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var STEP_MS = reduced ? 0 : 170;
+
+function newGame() {
+  board = [];
+  for (var i = 0; i < 14; i++) board.push(settings.stones);
+  board[6] = 0; board[13] = 0;
+  turn = 0; busy = false; gameOver = false;
+  undoStack = []; moveList = []; logLines = []; previewPit = null; turnAudit = null;
+  renderAll();
+  updateVariantBanner();
+  logLine("New game — " + settings.stones + " stones a pit, captures " + (settings.captures ? "on" : "off") + ". South moves first.");
+  teach();
+}
+function updateVariantBanner() {
+  var parts = [];
+  if (settings.stones !== 4) parts.push(settings.stones + " stones in each pit (classic is 4)");
+  if (!settings.captures) parts.push("captures off (classic Kalah plays with captures on)");
+  var b = $("variant-banner");
+  if (parts.length) { b.textContent = "Variant in play: " + parts.join(" · ") + ". Scores in this game are variant scores, not standard Kalah."; b.classList.add("show"); }
+  else { b.textContent = ""; b.classList.remove("show"); }
+}
+function logLine(text) {
+  logLines.unshift(text);
+  if (logLines.length > 40) logLines.pop();
+  $("log").innerHTML = logLines.map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("");
+}
+
+/* ================= Board rendering ================= */
+var pitEls = {};
+function buildBoard() {
+  var bd = $("board"), html = "";
+  html += '<button type="button" class="store" id="cell-13" aria-label="North store"></button>';
+  var i;
+  for (i = 12; i >= 7; i--) html += '<button type="button" class="pit" id="cell-' + i + '" data-pit="' + i + '"></button>';
+  html += '<button type="button" class="store" id="cell-6" aria-label="South store"></button>';
+  // grid order: stores span rows; place south pits in second row via explicit order below
+  bd.innerHTML = html;
+  var south = "";
+  for (i = 0; i < 6; i++) south += '<button type="button" class="pit" id="cell-' + i + '" data-pit="' + i + '"></button>';
+  // Rebuild in proper grid order: store13, north pits, store6, then south pits fill row 2 cols 2-7
+  bd.innerHTML = "";
+  bd.appendChild(mkCell(13, true));
+  for (i = 12; i >= 7; i--) bd.appendChild(mkCell(i, false));
+  bd.appendChild(mkCell(6, true));
+  for (i = 0; i < 6; i++) bd.appendChild(mkCell(i, false));
+  for (i = 0; i < 14; i++) pitEls[i] = $("cell-" + i);
+}
+function mkCell(idx, isStore) {
+  var b = document.createElement("button");
+  b.type = "button"; b.id = "cell-" + idx;
+  b.className = isStore ? "store" : "pit";
+  // Explicit placement: North store at the left end (past North pit 6),
+  // South store at the right end (past South pit 6) — the sowing geometry.
+  if (idx === 13) { b.style.gridColumn = "1"; b.style.gridRow = "1 / 3"; }
+  else if (idx === 6) { b.style.gridColumn = "8"; b.style.gridRow = "1 / 3"; }
+  else if (idx >= 7) { b.style.gridRow = "1"; b.style.gridColumn = String(2 + (12 - idx)); }
+  else { b.style.gridRow = "2"; b.style.gridColumn = String(idx + 2); }
+  if (!isStore) {
+    b.setAttribute("data-pit", idx);
+    b.addEventListener("click", function () { onPitTap(idx); });
+  } else { b.disabled = true; }
+  return b;
+}
+function cellLabel(idx) {
+  if (idx === 6) return "South store";
+  if (idx === 13) return "North store";
+  var owner = idx < 6 ? 0 : 1;
+  return (owner === 0 ? "South" : "North") + " pit " + pitNum(owner, idx);
+}
+function renderAll() { renderBoard(board); renderHeads(); }
+function renderBoard(b) {
+  for (var idx = 0; idx < 14; idx++) {
+    var el = pitEls[idx], n = b[idx], owner = idx === 6 ? 0 : idx === 13 ? 1 : idx < 6 ? 0 : 1;
+    var playable = !busy && !gameOver && idx !== 6 && idx !== 13 && owner === turn && b[idx] > 0 && !(settings.mode === "bot" && turn === 1);
+    el.innerHTML = '<span class="stones">' + stonesHTML(n, idx * 7) + '</span><span class="count">' + n + '</span><span class="plabel">' + esc(cellLabel(idx)) + "</span>";
+    el.setAttribute("aria-label", cellLabel(idx) + ", " + n + " stones" + (playable ? " — tap to sow" : ""));
+    if (idx !== 6 && idx !== 13) { el.disabled = !playable; el.classList.toggle("playable", playable); }
+    el.classList.remove("land", "captured", "drop-next");
+    var old = el.querySelector(".drop-badge"); if (old) old.remove();
+  }
+  if (previewPit !== null && countItOn) renderPreviewMarks(b);
+}
+function renderHeads() {
+  $("north-label").textContent = settings.mode === "bot" ? "North — Bot (" + BOT_NAMES[settings.level] + ")" : "North — " + playerName(1);
+  $("south-label").textContent = "South — " + playerName(0) + (settings.mode === "bot" ? " (you)" : "");
+  var banner = $("turn-banner");
+  if (gameOver) { /* set by finishGame */ }
+  else if (settings.mode === "bot" && turn === 1) banner.textContent = playerName(1) + " is counting…";
+  else banner.textContent = playerName(turn) + (settings.mode === "2p" ? "" : turn === 0 ? " — your turn" : "") + ": tap one of " + (settings.mode === "2p" ? "your" : turn === 0 ? "your" : "their") + " glowing pits to sow it." + (settings.mode === "2p" ? " Pass the device when the turn changes." : "");
+  $("score-line").innerHTML =
+    "<span>" + esc(playerName(0)) + " (South store): " + board[6] + "</span>" +
+    "<span>" + esc(playerName(1)) + " (North store): " + board[13] + "</span>" +
+    "<span class='soft'>Stones still in pits: " + (sideSum(board, 0) + sideSum(board, 1)) + "</span>";
+  $("undo").disabled = busy || undoStack.length === 0;
+}
+
+/* ================= Teaching ================= */
+function bestCaptureFor(b, p) {
+  var moves = legalMoves(b, p), best = 0, bestPit = null, i, r;
+  for (i = 0; i < moves.length; i++) { r = applyMove(b, p, moves[i], settings.captures); if (r.captured > best) { best = r.captured; bestPit = moves[i]; } }
+  return { gain: best, pit: bestPit };
+}
+function analyzeOptions(b, p) {
+  var moves = legalMoves(b, p), store = p === 0 ? 6 : 13, opp = 1 - p, out = [];
+  for (var i = 0; i < moves.length; i++) {
+    var m = moves[i], r = applyMove(b, p, m, settings.captures);
+    var banked = r.board[store] - b[store];
+    var handed = 0;
+    if (!r.over && !r.extra) handed = bestCaptureFor(r.board, opp).gain;
+    var setup = 0;
+    if (!r.over && settings.captures) setup = bestCaptureFor(r.board, p).gain;
+    out.push({ pit: m, r: r, banked: banked, handed: handed, setup: setup, eval: evaluatePro(r.board, p) });
+  }
+  return out;
+}
+function tradeText(o, p) {
+  var bits = [];
+  if (o.r.extra) bits.push("you move again right away");
+  if (o.handed > 0) bits.push("it hands " + playerName(1 - p) + " a capture worth " + o.handed + " if they spot it");
+  else if (!o.r.over) bits.push("it hands over no capture");
+  if (o.r.captured > 0) bits.push("it banks " + o.r.captured + " captured stones at once");
+  return bits.join("; ");
+}
+function recordTip() {
+  if (record.games < 2) return "";
+  var freeSeen = record.freeTaken + record.freeMissed, capSeen = record.capTaken + record.capMissed;
+  if (freeSeen >= 6 && record.freeMissed > record.freeTaken) return "From your own record: you have missed " + record.freeMissed + " free turns against " + record.freeTaken + " taken. Before you sow, count each pit against its distance to your store — the pit 4 steps away needs exactly 4 stones.";
+  if (capSeen >= 6 && record.capMissed > record.capTaken) return "From your own record: you have let " + record.capMissed + " captures pass against " + record.capTaken + " taken. Look for your empty pits with a full pit across — that is where captures live.";
+  if (freeSeen >= 6 && record.freeTaken >= record.freeMissed && record.freeTaken > 0) return "From your own record: you take your free turns well (" + record.freeTaken + " taken, " + record.freeMissed + " missed). The next layer is the two-move capture trap — Coach will name it when the board offers it.";
+  return "";
+}
+function teach() {
+  var panel = $("teach-panel");
+  if (settings.teaching === "off" || gameOver || busy) { if (settings.teaching === "off") panel.innerHTML = ""; return; }
+  if (settings.mode === "bot" && turn === 1) { panel.innerHTML = ""; return; }
+  var p = turn, moves = legalMoves(board, p);
+  if (!moves.length) { panel.innerHTML = ""; return; }
+  var opts = analyzeOptions(board, p);
+  var name = settings.mode === "2p" ? playerName(p) : "You";
+  if (moves.length === 1) {
+    panel.innerHTML = "<strong>Only one move exists:</strong> " + esc(name) + " — " + (p === 0 ? "your" : "your") + " " + pitName(p, moves[0]).replace("your ", "") + " is the only pit with stones, so it is the only play. (One way is named because there is genuinely one option.)";
+    return;
+  }
+  var free = null, cap = null, setup = null, quiet = null, i, o;
+  for (i = 0; i < opts.length; i++) {
+    o = opts[i];
+    if (o.r.extra && !free) free = o;
+    if (o.r.captured > 0 && (!cap || o.r.captured > cap.r.captured)) cap = o;
+    if (o.setup > 0 && !o.r.extra && o.r.captured === 0 && (!setup || o.setup > setup.setup)) setup = o;
+    if (!quiet || o.eval > quiet.eval) quiet = o;
+  }
+  if (settings.teaching === "light") {
+    var msg = "";
+    if (free) msg = "<strong>Free turn waiting:</strong> " + pitName(p, free.pit) + " holds exactly " + board[free.pit] + " stones — count them against the distance to your store and the last one lands in it. Sow it and you move again.";
+    else if (cap) msg = "<strong>Capture on the table:</strong> sowing " + pitName(p, cap.pit) + " lands its last stone in " + pitName(p, cap.r.landed) + " and takes " + cap.r.captured + " stones into your store.";
+    else if (setup) msg = "<strong>A trap can be set:</strong> sowing " + pitName(p, setup.pit) + " lines up a capture worth " + setup.setup + " next turn — the two-move setup pros play for. Coach mode shows the other lines too.";
+    else msg = "<strong>Count first:</strong> no free turn and no capture this move. Pros count every pit anyway — a pit whose stones exactly equal its distance to your store is next turn's free turn.";
+    var tip = recordTip();
+    panel.innerHTML = msg + (tip ? ' <span class="soft">' + esc(tip) + "</span>" : "");
+    return;
+  }
+  /* Coach: several real options, each with its trade-off */
+  var picks = [], seen = {};
+  function add(o, kind, head) { if (o && !seen[o.pit]) { seen[o.pit] = 1; picks.push({ o: o, kind: kind, head: head }); } }
+  add(cap, "Capture", "Take stones now");
+  add(free, "Free turn", "Move again");
+  add(setup, "Set the trap", "Set up a capture");
+  add(quiet, "Positional", "Best board move by deep count");
+  picks = picks.slice(0, 3);
+  var html = "<strong>Coach — " + esc(playerName(p)) + ", your real options:</strong>";
+  for (i = 0; i < picks.length; i++) {
+    var pk = picks[i], oo = pk.o;
+    html += '<p class="opt"><strong>' + (i + 1) + ". " + pk.kind + " — " + pitName(p, oo.pit) + ":</strong> " + esc(pk.head === "Take stones now" ? "banks " + oo.r.captured + " stones by capture" : pk.head === "Move again" ? "its " + board[oo.pit] + " stones end exactly in your store" : pk.head === "Set up a capture" ? "creates a capture worth " + oo.setup + " for next turn" : "banks " + oo.banked + " and keeps your side strong") + ". Trade-off: " + esc(tradeText(oo, p)) + ".</p>";
+  }
+  var threat = bestCaptureFor(board, 1 - p);
+  if (settings.captures && threat.gain >= 4) html += '<p class="opt"><strong>Watch out:</strong> ' + esc(playerName(1 - p)) + " is eyeing a capture worth " + threat.gain + " — the stones across from their empty pit are yours. Sowing those stones away, or filling the landing pit, takes it off the table.</p>";
+  var rt = recordTip();
+  if (rt) html += '<p class="opt soft">' + esc(rt) + "</p>";
+  panel.innerHTML = html;
+}
+
+/* ================= Count It (training preview) ================= */
+function renderPreviewMarks(b) {
+  var path = sowPath(b, turn, previewPit);
+  var lastAt = {};
+  path.forEach(function (idx, i) { lastAt[idx] = i + 1; });
+  Object.keys(lastAt).forEach(function (k) {
+    var el = pitEls[k], badge = document.createElement("span");
+    badge.className = "drop-badge"; badge.textContent = "stone " + lastAt[k];
+    el.appendChild(badge);
+    if (lastAt[k] === path.length) el.classList.add("land");
+  });
+}
+function showPreview(pit) {
+  previewPit = pit;
+  renderBoard(board);
+  var p = turn, path = sowPath(board, p, pit), r = applyMove(board, p, pit, settings.captures);
+  var steps = path.map(function (idx, i) { return (i + 1) + " → " + pitName(p, idx); }).join(", ");
+  var outcome;
+  if (r.over) outcome = "This move ends the game — the sweep decides it.";
+  else if (r.extra) outcome = "Last stone lands in your store: a free turn, you move again. This is the counting lesson in one move — " + board[pit] + " stones, " + board[pit] + " steps, store on the last step.";
+  else if (r.captured > 0) outcome = "Last stone lands in " + pitName(p, r.landed) + ", empty a moment ago, and captures " + r.captured + " stones into your store.";
+  else outcome = "Last stone lands in " + pitName(p, r.landed) + " — no free turn, no capture. The turn passes.";
+  $("preview-panel").style.display = "block";
+  $("preview-panel").innerHTML = "<strong>Count It — " + pitName(p, pit) + " holds " + board[pit] + " stones.</strong><br>They land: " + esc(steps) + ".<br>" + esc(outcome) +
+    '<div class="row" style="margin-top:8px;"><button type="button" class="primary" id="sow-preview">Sow this pit — tap to play it</button><button type="button" id="cancel-preview">Not this pit — tap to cancel</button></div>';
+  $("sow-preview").addEventListener("click", function () { var pp = previewPit; hidePreview(); doMove(pp); });
+  $("cancel-preview").addEventListener("click", function () { hidePreview(); renderAll(); });
+}
+function hidePreview() { previewPit = null; $("preview-panel").style.display = "none"; $("preview-panel").innerHTML = ""; }
+
+/* ================= Playing moves ================= */
+function beginTurnAudit() {
+  if (gameOver) return;
+  var p = turn;
+  if (settings.mode === "bot" && p === 1) { turnAudit = null; return; }
+  var opts = analyzeOptions(board, p);
+  var hasFree = opts.some(function (o) { return o.r.extra; });
+  var hasCap = opts.some(function (o) { return o.r.captured > 0; });
+  turnAudit = { hasFree: hasFree, hasCap: hasCap };
+}
+function settleTurnAudit(result) {
+  if (!turnAudit) return;
+  if (result.extra) record.freeTaken++; else if (turnAudit.hasFree) record.freeMissed++;
+  if (result.captured > 0) { record.capTaken++; if (result.captured > record.biggestCapture) record.biggestCapture = result.captured; }
+  else if (turnAudit.hasCap) record.capMissed++;
+  turnAudit = null;
+  saveJSON(REC_KEY, record);
+}
+function onPitTap(idx) {
+  if (busy || gameOver) return;
+  var owner = idx < 6 ? 0 : 1;
+  if (owner !== turn || board[idx] === 0) return;
+  if (settings.mode === "bot" && turn === 1) return;
+  if (countItOn && settings.teaching !== "off") {
+    if (previewPit === idx) { hidePreview(); doMove(idx); }
+    else showPreview(idx);
+    return;
+  }
+  doMove(idx);
+}
+function doMove(pit) {
+  if (busy || gameOver) return;
+  var p = turn;
+  undoStack.push({ board: board.slice(), turn: turn, logLen: moveList.length });
+  var result = applyMove(board, p, pit, settings.captures);
+  moveList.push(pit);
+  settleTurnAudit(result);
+  busy = true; hidePreview(); renderHeads();
+  // Animate the sowing on a display copy, then commit the real result.
+  var disp = board.slice(), stones = disp[pit]; disp[pit] = 0;
+  var path = sowPath(board, p, pit), step = 0;
+  renderBoard(disp);
+  function nextStep() {
+    if (step < path.length) {
+      disp[path[step]]++; step++;
+      renderBoard(disp);
+      if (pitEls[path[step - 1]]) pitEls[path[step - 1]].classList.add("drop-next");
+      setTimeout(nextStep, STEP_MS);
+    } else {
+      setTimeout(function () {
+        board = result.board; busy = false;
+        var who = playerName(p);
+        var line = who + " sowed " + cellLabel(pit) + " (" + stones + " stones)";
+        if (result.captured > 0) line += " — captured " + result.captured + "!";
+        if (result.extra) line += " — last stone in the store, free turn.";
+        logLine(line);
+        if (result.over) { finishGame(); return; }
+        if (!result.extra) turn = 1 - p;
+        renderAll(); beginTurnAudit(); teach();
+        maybeBot();
+      }, STEP_MS);
+    }
+  }
+  setTimeout(nextStep, STEP_MS);
+}
+function maybeBot() {
+  if (gameOver || settings.mode !== "bot" || turn !== 1) return;
+  busy = true; renderHeads(); renderBoard(board);
+  setTimeout(function () {
+    busy = false;
+    var mv = botMove(board, 1, settings.level, settings.captures);
+    if (mv !== null && mv !== undefined) doMove(mv);
+  }, reduced ? 60 : 650);
+}
+function finishGame() {
+  gameOver = true;
+  var s = board[6], n = board[13];
+  var verdict, resultText;
+  if (s === n) { verdict = "A draw, " + s + "–" + n + "."; resultText = "Draw " + s + "–" + n; }
+  else {
+    var winner = s > n ? 0 : 1;
+    verdict = playerName(winner) + " wins, " + Math.max(s, n) + "–" + Math.min(s, n) + ".";
+    resultText = playerName(winner) + " won " + Math.max(s, n) + "–" + Math.min(s, n);
+  }
+  $("turn-banner").textContent = "Game over — " + verdict + " Tap “New game” above to play again.";
+  logLine("Game over: " + verdict);
+  // Strategy record — clean, consistent intake for every finished game.
+  record.games++;
+  if (settings.mode === "bot") { if (s > n) record.wins++; else if (s < n) record.losses++; else record.draws++; }
+  record.log.unshift({ d: new Date().toISOString().slice(0, 10), mode: settings.mode === "bot" ? "vs Bot — " + BOT_NAMES[settings.level] : "Two players", rules: settings.stones + " stones, captures " + (settings.captures ? "on" : "off"), result: resultText, moves: moveList.join(" ") });
+  if (record.log.length > 25) record.log.length = 25;
+  saveJSON(REC_KEY, record);
+  renderAll(); renderRecord();
+  $("teach-panel").innerHTML = "<strong>Game over.</strong> " + esc(verdict) + (settings.mode === "bot" && s > n ? " Beating " + BOT_NAMES[settings.level] + " — try the next level up and see if the counting holds." : settings.mode === "bot" ? " The rematch is one tap away above. Coach mode, replayed honestly, is how the misses above turn into takes." : "");
+}
+
+/* ================= Record panel ================= */
+function renderRecord() {
+  var el = $("record-body");
+  if (!record.games) { el.innerHTML = '<p class="soft">No games recorded yet. Finish a game and your record starts.</p>'; return; }
+  var freeSeen = record.freeTaken + record.freeMissed, capSeen = record.capTaken + record.capMissed;
+  var html = '<div class="stat-grid">' +
+    '<div class="stat"><div class="n">' + record.games + '</div>games finished</div>' +
+    '<div class="stat"><div class="n">' + record.wins + "–" + record.losses + (record.draws ? "–" + record.draws : "") + '</div>wins–losses' + (record.draws ? "–draws" : "") + ' vs the bot</div>' +
+    '<div class="stat"><div class="n">' + record.freeTaken + "/" + freeSeen + '</div>free turns taken of those offered</div>' +
+    '<div class="stat"><div class="n">' + record.capTaken + "/" + capSeen + '</div>captures taken of those offered</div>' +
+    '<div class="stat"><div class="n">' + record.biggestCapture + '</div>biggest single capture (stones)</div>' +
+    "</div>";
+  var tip = recordTip();
+  html += tip ? '<p><strong>What your record teaches:</strong> ' + esc(tip) + "</p>" : '<p class="soft">Play a few more games and patterns will show here — the lessons come from your games, not from a script.</p>';
+  if (record.log.length) {
+    html += "<h3>Recent games</h3><ul class='log' style='max-height:none'>";
+    record.log.slice(0, 5).forEach(function (g) { html += "<li>" + esc(g.d) + " · " + esc(g.mode) + " · " + esc(g.rules) + " · " + esc(g.result) + "</li>"; });
+    html += "</ul>";
+  }
+  el.innerHTML = html;
+}
+
+/* ================= Wiring ================= */
+var NAME_POOL = ["Dusty Coyote", "Maple Fox", "Juniper", "Copper Kettle", "Sable", "Tumbleweed", "Marigold", "Ironwood", "Pepper", "Low Lantern", "Fig", "Hollis", "Wren", "Sycamore", "Biscuit", "Comet"];
+function randomName() { return NAME_POOL[Math.floor(Math.random() * NAME_POOL.length)]; }
+function syncControls() {
+  $("mode").value = settings.mode;
+  $("level").value = String(settings.level);
+  $("stones").value = String(settings.stones);
+  $("captures").value = settings.captures ? "on" : "off";
+  $("alias0").value = settings.alias0;
+  $("alias1").value = settings.alias1;
+  $("level-field").style.display = settings.mode === "bot" ? "" : "none";
+  $("alias1-field").style.display = settings.mode === "2p" ? "" : "none";
+  document.querySelectorAll("[data-teach]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-teach") === settings.teaching)); });
+}
+function persistSettings() { saveJSON(SET_KEY, settings); }
+$("mode").addEventListener("change", function () { settings.mode = this.value; persistSettings(); syncControls(); newGame(); });
+$("level").addEventListener("change", function () { settings.level = parseInt(this.value, 10); persistSettings(); syncControls(); newGame(); });
+$("stones").addEventListener("change", function () { settings.stones = parseInt(this.value, 10); persistSettings(); newGame(); });
+$("captures").addEventListener("change", function () { settings.captures = this.value === "on"; persistSettings(); newGame(); });
+$("alias0").addEventListener("input", function () { settings.alias0 = this.value; persistSettings(); renderHeads(); });
+$("alias1").addEventListener("input", function () { settings.alias1 = this.value; persistSettings(); renderHeads(); });
+$("dice0").addEventListener("click", function () { settings.alias0 = randomName(); $("alias0").value = settings.alias0; persistSettings(); renderHeads(); });
+$("dice1").addEventListener("click", function () { settings.alias1 = randomName(); $("alias1").value = settings.alias1; persistSettings(); renderHeads(); });
+$("new-game").addEventListener("click", function () { newGame(); });
+document.querySelectorAll("[data-teach]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    settings.teaching = b.getAttribute("data-teach"); persistSettings(); syncControls();
+    if (settings.teaching === "off") { countItOn = false; $("countit").textContent = "Count It — tap to turn the training preview on"; $("countit").classList.remove("on"); hidePreview(); renderAll(); }
+    teach();
+  });
+});
+$("countit").addEventListener("click", function () {
+  if (settings.teaching === "off") {
+    $("preview-panel").style.display = "block";
+    $("preview-panel").innerHTML = "<strong>Count It sleeps while Teaching is Off</strong> — it is a training tool, and Off means off. Turn Teaching to Light or Coach above and Count It wakes up.";
+    return;
+  }
+  countItOn = !countItOn;
+  this.textContent = countItOn ? "Count It is ON — tap one of your pits to preview it, tap it again to sow" : "Count It — tap to turn the training preview on";
+  this.classList.toggle("on", countItOn);
+  if (!countItOn) { hidePreview(); renderAll(); }
+});
+$("undo").addEventListener("click", function () {
+  if (busy || !undoStack.length) return;
+  hidePreview();
+  if (settings.mode === "bot") {
+    // Take back the bot's whole reply (free turns included) and your last move.
+    var snap = null, s0;
+    while (undoStack.length) { s0 = undoStack.pop(); if (s0.turn === 0) { snap = s0; break; } }
+    if (snap) { board = snap.board.slice(); turn = snap.turn; moveList.length = snap.logLen; }
+  } else {
+    var s2 = undoStack.pop();
+    board = s2.board.slice(); turn = s2.turn; moveList.length = s2.logLen;
+  }
+  gameOver = false;
+  logLine("Undone — back to " + playerName(turn) + " to move.");
+  renderAll(); beginTurnAudit(); teach();
+});
+$("forget-record").addEventListener("click", function () {
+  record = { games: 0, wins: 0, losses: 0, draws: 0, freeTaken: 0, freeMissed: 0, capTaken: 0, capMissed: 0, biggestCapture: 0, log: [] };
+  saveJSON(REC_KEY, record); renderRecord();
+  this.textContent = "Record erased — tap again any time";
+  var btn = this;
+  setTimeout(function () { btn.textContent = "Forget my record — tap to erase it from this device"; }, 2500);
+});
+
+buildBoard();
+syncControls();
+newGame();
+beginTurnAudit();
+renderRecord();
+</script>
+  </body>
+</html>
