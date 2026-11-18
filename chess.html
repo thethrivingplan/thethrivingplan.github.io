@@ -1,0 +1,2243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Chess</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      [hidden]{ display:none !important; }
+      :root{
+        --bg:#f6f1e7; --bg2:#efe7d6; --panel:#fffdf7; --ink:#241c12; --ink-soft:#5c5041;
+        --line:#d9cbae; --accent:#7a4a1f; --accent-ink:#fff8ec; --good:#256d46; --bad:#b3352b;
+        --sq-light:#eedcae; --sq-dark:#a26a3d; --sel:#f2c230; --hint:rgba(30,60,30,.35);
+        --last:rgba(242,194,48,.45); --check:rgba(200,40,30,.55);
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#171310; --bg2:#201913; --panel:#241c14; --ink:#f1e8d7; --ink-soft:#c4b49a;
+          --line:#463829; --accent:#d99a4e; --accent-ink:#241708;
+          --sq-light:#e3cd9c; --sq-dark:#96622f;
+        }
+      }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family: ui-sans-system, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        line-height:1.45; }
+      .wrap{ max-width:1120px; margin:0 auto; padding:18px 14px 40px; }
+      h1{ font-family: Georgia, "Times New Roman", serif; font-size:2.1rem; margin:0; letter-spacing:.01em; }
+      h1 span{ color:var(--accent); }
+      h2{ font-family: Georgia, "Times New Roman", serif; font-size:1.3rem; margin:0 0 6px; }
+      h3{ margin:0 0 4px; font-size:1.02rem; }
+      .lede{ color:var(--ink-soft); margin:6px 0 0; max-width:62ch; }
+      .freebar{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0; }
+      .pill{ border:1.5px solid var(--line); background:var(--panel); border-radius:999px;
+        padding:6px 12px; font-size:.86rem; font-weight:600; }
+      .pill strong{ color:var(--accent); }
+      .card{ background:var(--panel); border:1.5px solid var(--line); border-radius:14px;
+        padding:16px; margin-top:16px; }
+      .small{ font-size:.9rem; color:var(--ink-soft); }
+      .gesture{ font-size:.78rem; font-weight:700; color:var(--accent); margin-top:6px; }
+      .modegrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+      @media (max-width:560px){ .modegrid{ grid-template-columns:1fr; } }
+      .modebtn{ text-align:left; border:1.5px solid var(--line); background:var(--bg); color:var(--ink);
+        border-radius:12px; padding:12px 14px; cursor:pointer; font:inherit; }
+      .modebtn p{ margin:0; font-size:.9rem; color:var(--ink-soft); }
+      .modebtn.sel{ border-color:var(--accent); outline:3px solid color-mix(in srgb, var(--accent) 28%, transparent); }
+      .segrow{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+      .segbtn{ border:1.5px solid var(--line); background:var(--bg); color:var(--ink); border-radius:999px;
+        padding:8px 14px; font-weight:700; cursor:pointer; font:inherit; }
+      .segbtn.sel{ border-color:var(--accent); outline:3px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+      .segbtn .lvl-note{ display:block; font-weight:400; font-size:.76rem; color:var(--ink-soft); }
+      label{ font-weight:700; display:block; margin:12px 0 4px; }
+      select, input[type="text"]{ font:inherit; color:var(--ink); background:var(--bg);
+        border:1.5px solid var(--line); border-radius:10px; padding:8px 10px; width:100%; }
+      .btnrow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+      .btn{ border:1.5px solid var(--accent); background:var(--accent); color:var(--accent-ink);
+        border-radius:10px; padding:10px 16px; font-weight:800; cursor:pointer; font:inherit; }
+      .btn.ghost{ background:transparent; color:var(--accent); }
+      .btn.plain{ background:var(--bg); color:var(--ink); border-color:var(--line); }
+      .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      details{ margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+      summary{ cursor:pointer; font-weight:700; padding:6px 0; }
+      .namegrid{ display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; margin-top:8px; }
+      .namegrid label{ margin:0 0 4px; }
+      /* ---------- game layout ---------- */
+      .gamelayout{ display:grid; grid-template-columns:minmax(0,auto) minmax(280px,1fr); gap:18px; align-items:start; }
+      @media (max-width:900px){ .gamelayout{ grid-template-columns:1fr; } }
+      .boardcol{ width:min(94vw,560px); margin:0 auto; }
+      .variantbanner{ border:1.5px solid var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--panel));
+        border-radius:10px; padding:8px 12px; font-size:.92rem; margin-bottom:10px; }
+      .playerbar{ display:flex; align-items:center; gap:8px; padding:6px 2px; min-height:44px; flex-wrap:wrap; }
+      .playerbar .pname{ font-weight:800; }
+      .playerbar .turndot{ width:10px; height:10px; border-radius:50%; background:var(--good);
+        visibility:hidden; flex:none; }
+      .playerbar.active .turndot{ visibility:visible; }
+      .captures{ font-size:1.05rem; letter-spacing:1px; min-height:1.2em; }
+      .captures .cw{ color:#f7f2e6; text-shadow:0 0 2px #000, 0 1px 2px #000; }
+      .captures .cb{ color:#17120c; text-shadow:0 0 2px #fff8; }
+      .matdiff{ font-weight:800; color:var(--accent); font-size:.9rem; }
+      .clock{ margin-left:auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight:700;
+        font-size:1.15rem; background:var(--bg2); border:1.5px solid var(--line); border-radius:8px; padding:2px 10px; }
+      .clock.low{ color:var(--bad); border-color:var(--bad); }
+      .boardwrap{ container-type:inline-size; }
+      .board{ display:grid; width:100%; border:3px solid var(--accent); border-radius:6px; overflow:hidden;
+        touch-action:none; user-select:none; -webkit-user-select:none; position:relative; background:var(--sq-dark); }
+      .sq{ position:relative; border:0; padding:0; margin:0; cursor:pointer; aspect-ratio:1/1;
+        display:flex; align-items:center; justify-content:center; font-family: Georgia, serif; }
+      .sq.light{ background:var(--sq-light); } .sq.dark{ background:var(--sq-dark); }
+      .sq.last::before{ content:""; position:absolute; inset:0; background:var(--last); }
+      .sq.checksq::before{ content:""; position:absolute; inset:0; background:var(--check); }
+      .sq.sel{ box-shadow: inset 0 0 0 4px var(--sel); }
+      .sq.hint::after{ content:""; position:absolute; width:30%; height:30%; border-radius:50%; background:var(--hint); }
+      .sq.caphint::after{ content:""; position:absolute; inset:4%; border-radius:50%;
+        border:5px solid var(--hint); background:transparent; }
+      .piece{ position:relative; z-index:1; font-size:9cqw; line-height:1; pointer-events:none; }
+      .board.files10 .piece{ font-size:7.2cqw; }
+      .piece.pw{ color:#fbf7ec; text-shadow:0 0 3px #201405, 0 2px 3px rgba(0,0,0,.55); }
+      .piece.pb{ color:#191007; text-shadow:0 0 3px rgba(255,246,220,.5), 0 1px 2px rgba(0,0,0,.4); }
+      .piece .badge{ position:absolute; right:-.28em; top:-.18em; font-size:.34em; font-weight:900;
+        font-family: ui-sans-system, system-ui, sans-serif; background:var(--accent); color:var(--accent-ink);
+        border-radius:50%; width:1.5em; height:1.5em; display:flex; align-items:center; justify-content:center; }
+      .coord{ position:absolute; font-size:.62rem; font-weight:800; pointer-events:none; z-index:1;
+        font-family: ui-sans-system, system-ui, sans-serif; }
+      .coord.f{ right:3px; bottom:2px; } .coord.r{ left:3px; top:2px; }
+      .sq.light .coord{ color:var(--sq-dark); } .sq.dark .coord{ color:var(--sq-light); }
+      .dragghost{ position:fixed; z-index:60; pointer-events:none; font-family: Georgia, serif;
+        transform:translate(-50%,-55%); line-height:1; }
+      .statusbar{ font-size:1.06rem; font-weight:700; margin:10px 0 2px; min-height:1.5em; }
+      .statusbar .sub{ display:block; font-size:.88rem; font-weight:400; color:var(--ink-soft); }
+      .pocketrow{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0; font-size:.9rem; }
+      .pocketbtn{ border:1.5px solid var(--line); background:var(--bg); color:var(--ink); border-radius:10px;
+        padding:4px 10px; font-size:1.15rem; cursor:pointer; font-family: Georgia, serif; }
+      .pocketbtn.sel{ border-color:var(--accent); outline:3px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+      .pocketbtn .cnt{ font-size:.8rem; font-weight:800; font-family: ui-sans-system, system-ui, sans-serif; }
+      /* ---------- record ---------- */
+      .recordcard{ max-height:640px; display:flex; flex-direction:column; }
+      .recordlist{ overflow-y:auto; flex:1; min-height:120px; border:1.5px solid var(--line);
+        border-radius:10px; background:var(--bg); padding:8px 10px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:.92rem; }
+      .recordlist table{ border-collapse:collapse; width:100%; }
+      .recordlist td{ padding:2px 6px; vertical-align:top; }
+      .recordlist td.num{ color:var(--ink-soft); width:2.4em; text-align:right; }
+      .recordlist td.cur{ background:var(--last); border-radius:4px; font-weight:700; }
+      .recordempty{ color:var(--ink-soft); font-family: ui-sans-system, system-ui, sans-serif; font-size:.9rem; }
+      /* ---------- modal ---------- */
+      .modal{ position:fixed; inset:0; background:rgba(15,10,4,.55); display:none; z-index:80;
+        align-items:center; justify-content:center; padding:16px; }
+      .modal.open{ display:flex; }
+      .modalbox{ background:var(--panel); color:var(--ink); border-radius:14px; padding:18px;
+        max-width:420px; width:100%; border:1.5px solid var(--line); }
+      .promogrid{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+      .promobtn{ font-size:2.2rem; font-family: Georgia, serif; width:64px; height:64px; border-radius:12px;
+        border:1.5px solid var(--line); background:var(--bg); cursor:pointer; position:relative; }
+      /* ---------- compass ---------- */
+      .navfold{ border:1.5px solid var(--line); border-radius:12px; background:var(--panel); margin-top:12px; padding:4px 14px 10px; }
+      .navfold summary{ font-family: Georgia, serif; font-size:1.05rem; }
+      .navgroup{ font-weight:800; margin:12px 0 4px; color:var(--accent); font-size:.85rem; text-transform:uppercase; letter-spacing:.06em; }
+      .navgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:4px 14px; }
+      .navgrid a{ color:var(--ink); text-decoration:none; padding:8px 4px; border-bottom:1px solid var(--line); display:block; }
+      .navgrid a:hover{ color:var(--accent); }
+      .navgrid .here{ padding:8px 4px; border-bottom:1px solid var(--line); color:var(--ink-soft); display:block; }
+      footer{ margin-top:28px; color:var(--ink-soft); font-size:.85rem; text-align:center; }
+      .kbd{ font-family: ui-monospace, monospace; background:var(--bg2); border:1px solid var(--line);
+        border-bottom-width:3px; border-radius:6px; padding:1px 6px; font-size:.8rem; }
+      .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); z-index:90;
+        background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:999px; font-weight:700;
+        opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; max-width:92vw; text-align:center; }
+      .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+      .coachline{ border:1.5px solid var(--line); background:color-mix(in srgb, var(--good) 9%, var(--panel));
+        border-radius:10px; padding:9px 12px; font-size:.95rem; margin:10px 0 2px; }
+      .coachline strong{ color:var(--good); }
+      .analysisline{ font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:.95rem;
+        background:var(--bg); border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; }
+    </style>
+  </head>
+  <body>
+  <div class="wrap">
+    <header>
+      <h1>Chess<span>.</span></h1>
+      <p class="lede">The real game, whole: every rule enforced — castling, en passant, promotion, check, checkmate, stalemate and the draws. Play the bot at a level you pick, or pass-and-play with a friend on this device. The move record is kept in proper notation as you go — the record is part of the game.</p>
+      <div class="freebar">
+        <span class="pill"><strong>Free</strong> — always free</span>
+        <span class="pill">No ads · No account · No sign-up</span>
+        <span class="pill"><strong>Offline door</strong> — once loaded, it plays with no connection at all</span>
+        <span class="pill"><strong>No name needed</strong> — Player 1 / Player 2 plays fine</span>
+        <span class="pill"><strong>vs Bot</strong> — Learning to Pro, honestly different</span>
+      </div>
+    </header>
+
+    <!-- ================= SETUP ================= -->
+    <section class="card" id="setupCard">
+      <h2>How are you playing?</h2>
+      <p class="small" style="margin:0">Pick one, then start. Everything runs on this one device — no connection, no account.</p>
+      <div class="modegrid">
+        <button class="modebtn sel" id="modeBotBtn" type="button">
+          <h3>🤖 Play against the bot</h3>
+          <p>You against the bot on this device. Pick its skill level below — the levels really are different: shallow and blunder-prone at the bottom, deep and consistent at the top.</p>
+          <div class="gesture">Tap to choose</div>
+        </button>
+        <button class="modebtn" id="modeLocalBtn" type="button">
+          <h3>👥 Two players, same device</h3>
+          <p>Pass-and-play. White and Black take turns on this phone, tablet or computer. Works fully offline once the page is loaded.</p>
+          <div class="gesture">Tap to choose</div>
+        </button>
+      </div>
+
+      <div id="botSetup">
+        <label>Bot skill — tap to choose</label>
+        <div class="segrow" id="levelSeg">
+          <button class="segbtn" type="button" data-level="learning">Learning<span class="lvl-note">Thinks one move ahead. Blunders often — a gentle first opponent.</span></button>
+          <button class="segbtn sel" type="button" data-level="steady">Steady<span class="lvl-note">Thinks two moves ahead. Occasional mistakes.</span></button>
+          <button class="segbtn" type="button" data-level="sharp">Sharp<span class="lvl-note">Thinks three moves ahead, checks captures deeper. Rare mistakes.</span></button>
+          <button class="segbtn" type="button" data-level="pro">Pro<span class="lvl-note">Thinks four moves ahead with a capture search on top. The strongest this page can honestly play.</span></button>
+        </div>
+        <label>Play as — tap to choose</label>
+        <div class="segrow" id="colorSeg">
+          <button class="segbtn sel" type="button" data-color="w">White</button>
+          <button class="segbtn" type="button" data-color="b">Black</button>
+          <button class="segbtn" type="button" data-color="random">Either — coin flip</button>
+        </div>
+      </div>
+
+      <details>
+        <summary>Names &amp; aliases — tap to open (never required)</summary>
+        <p class="small"><strong>Play under an alias if you like — you never have to use your table name here.</strong> An alias is temporary: it lives only for this session on this device, is never claimed, never registered, never checked. Leave the boxes empty and you stay Player 1 and Player 2. Tap 🎲 for a random alias; tap again for another.</p>
+        <p class="small">An alias changes the name over your game — it doesn't erase anything. What you do is still yours, on your record, whatever name you're playing under.</p>
+        <div class="namegrid">
+          <div><label for="nameWhite">White's name</label><input type="text" id="nameWhite" maxlength="24" placeholder="Player 1" autocomplete="off"></div>
+          <button class="btn plain" type="button" id="diceWhite">🎲 Random — tap</button>
+        </div>
+        <div class="namegrid">
+          <div><label for="nameBlack">Black's name</label><input type="text" id="nameBlack" maxlength="24" placeholder="Player 2" autocomplete="off"></div>
+          <button class="btn plain" type="button" id="diceBlack">🎲 Random — tap</button>
+        </div>
+      </details>
+
+      <div class="btnrow">
+        <button class="btn" id="startBtn" type="button">Start game — tap to start</button>
+        <span class="small" id="setupNote">Starting a new game clears the board and begins a fresh record, under the rules set in Page settings below.</span>
+      </div>
+    </section>
+
+    <!-- ================= GAME ================= -->
+    <section class="card" id="gameCard">
+      <div id="variantBanner" class="variantbanner" hidden></div>
+      <div class="gamelayout">
+        <div class="boardcol">
+          <div class="playerbar" id="barTop">
+            <span class="turndot"></span><span class="pname" id="nameTop">Player 2</span>
+            <span class="captures" id="capTop"></span><span class="matdiff" id="matTop"></span>
+            <span class="clock" id="clockTop" hidden>10:00</span>
+          </div>
+          <div class="pocketrow" id="pocketTop" hidden><span>Pocket — tap a piece, then tap a square to drop it:</span></div>
+          <div class="boardwrap"><div class="board" id="board" role="grid" aria-label="Chess board"></div></div>
+          <div class="pocketrow" id="pocketBottom" hidden><span>Pocket — tap a piece, then tap a square to drop it:</span></div>
+          <div class="playerbar" id="barBottom">
+            <span class="turndot"></span><span class="pname" id="nameBottom">Player 1</span>
+            <span class="captures" id="capBottom"></span><span class="matdiff" id="matBottom"></span>
+            <span class="clock" id="clockBottom" hidden>10:00</span>
+          </div>
+          <p class="statusbar" id="statusBar">Set up your game above, then tap Start game.<span class="sub">Tap a piece, then tap a glowing square to move it — or drag the piece there. Mouse works the same.</span></p>
+          <p class="coachline" id="coachLine" hidden></p>
+          <div class="btnrow">
+            <button class="btn" id="newGameBtn" type="button">New game — tap</button>
+            <button class="btn ghost" id="hintBtn" type="button">Hint — tap</button>
+            <button class="btn ghost" id="undoBtn" type="button">Undo — tap</button>
+            <button class="btn ghost" id="flipBtn" type="button">Flip board — tap</button>
+            <button class="btn plain" id="drawBtn" type="button">Offer draw — tap</button>
+            <button class="btn plain" id="claimBtn" type="button" hidden>Claim draw — tap</button>
+            <button class="btn plain" id="resignBtn" type="button">Resign — tap</button>
+          </div>
+          <p class="small" id="gestureNote">On the board: <strong>tap</strong> a piece, then <strong>tap</strong> where it goes — or <strong>drag</strong> it. Keyboard: <span class="kbd">←</span> <span class="kbd">→</span> step through the record's positions to look, <span class="kbd">Esc</span> returns to the live game.</p>
+        </div>
+
+        <div class="card recordcard" style="margin-top:0">
+          <h2>The record</h2>
+          <p class="small" style="margin-top:0">Every move, in standard notation, as it's played. A variant's record is labelled as that variant's — never dressed as a standard game.</p>
+          <p class="small" id="openingLine" hidden style="margin-top:0"></p>
+          <div class="recordlist" id="recordList"><span class="recordempty">No moves yet. White moves first.</span></div>
+          <div class="btnrow">
+            <button class="btn ghost" id="analysisBtn" type="button">Analysis — tap to open</button>
+            <button class="btn ghost" id="copyRecordBtn" type="button">Copy the record — tap</button>
+            <button class="btn ghost" id="downloadRecordBtn" type="button">Download the record (.pgn) — tap</button>
+          </div>
+          <p class="small">Analysis is the pro's habit, one tap down: the engine reads the position on the board — who stands better, by roughly how much, and the real candidate plans, each with what it buys and what it costs — in plain words. Chess is a game of many plans; analysis here never dresses one plan up as the only way, and says so plainly when a position truly has just one move. It opens only when you tap it; it never interrupts a game.</p>
+          <p class="small" id="saveNote">Your game in progress is <strong>saved on this device only</strong>, as you play — close the page and come back, and you can carry on. Nothing is sent anywhere. Use “Forget the saved game” in Page settings to wipe it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section class="card" id="settingsCard">
+      <h2>Page settings — tap to open</h2>
+      <p class="small" style="margin:0">Rule settings live here: the standard game is the default, and every dial really changes how the game plays. When a non-standard rule is in play, the game says so in plain words above the board, and the record carries the variant's name. Settings are <strong>saved on this device only</strong>.</p>
+      <details id="rulesDetails">
+        <summary>Rules of the game — tap to open</summary>
+        <label>Which chess — tap to choose</label>
+        <div class="segrow" id="variantSeg">
+          <button class="segbtn sel" type="button" data-variant="standard">Standard chess<span class="lvl-note">The classic 8×8 game. The default.</span></button>
+          <button class="segbtn" type="button" data-variant="chess960">Chess960<span class="lvl-note">Back rank shuffled (960 possible starts); castling still works, king and rook land on the usual squares.</span></button>
+          <button class="segbtn" type="button" data-variant="capablanca">Capablanca — 10×8<span class="lvl-note">A bigger board with two extra pieces: the Archbishop (bishop + knight) and the Chancellor (rook + knight).</span></button>
+          <button class="segbtn" type="button" data-variant="crazyhouse">Crazyhouse<span class="lvl-note">Captured pieces change colour and go into your pocket — on your turn you may drop one onto any empty square instead of moving.</span></button>
+        </div>
+        <label for="clockSel">Clock</label>
+        <select id="clockSel">
+          <option value="0" selected>No clock — take your time (standard default)</option>
+          <option value="1">1 minute each — bullet</option>
+          <option value="3">3 minutes each — blitz</option>
+          <option value="5">5 minutes each — blitz</option>
+          <option value="10">10 minutes each — rapid</option>
+          <option value="15">15 minutes each — rapid</option>
+          <option value="30">30 minutes each — a long game</option>
+        </select>
+        <label for="incSel">Clock bonus per move (increment)</label>
+        <select id="incSel">
+          <option value="0" selected>No bonus</option>
+          <option value="1">+1 second per move</option>
+          <option value="2">+2 seconds per move</option>
+          <option value="3">+3 seconds per move</option>
+          <option value="5">+5 seconds per move</option>
+        </select>
+        <label>Undo against the bot — tap to choose</label>
+        <div class="segrow" id="undoSeg">
+          <button class="segbtn sel" type="button" data-undo="on">Allowed<span class="lvl-note">Take back your last move (and the bot's reply) any time.</span></button>
+          <button class="segbtn" type="button" data-undo="off">Not allowed<span class="lvl-note">Tournament manners: a played move stands. Undo still works in two-player games, where both of you can see it happen.</span></button>
+        </div>
+        <label>Two-player board turning — tap to choose</label>
+        <div class="segrow" id="autoflipSeg">
+          <button class="segbtn sel" type="button" data-autoflip="off">Board stays put<span class="lvl-note">White's side stays at the bottom. The Flip board button still works any time.</span></button>
+          <button class="segbtn" type="button" data-autoflip="on">Turn the board each move<span class="lvl-note">The board turns so the player to move always sits at the bottom.</span></button>
+        </div>
+        <p class="small">Changing a rule starts fresh with the next game you start — a game already running keeps the rules it began under, and its record says which they were.</p>
+      </details>
+      <details>
+        <summary>Saved game &amp; this device — tap to open</summary>
+        <p class="small">The game in progress and these settings are kept in this browser, on this device only. No account, no server, nothing sent anywhere.</p>
+        <div class="btnrow">
+          <button class="btn plain" id="forgetBtn" type="button">Forget the saved game — tap</button>
+        </div>
+      </details>
+      <details id="teachDetails">
+        <summary>Teaching — tap to open</summary>
+        <p class="small">This page teaches the game as you play it — the training habits professionals use, in plain words, tied to the position in front of you. How much is your choice, and it is saved on this device only.</p>
+        <label>Teaching — tap to choose</label>
+        <div class="segrow" id="teachSeg">
+          <button class="segbtn" type="button" data-teach="off">Off<span class="lvl-note">No teaching at all. Just the game.</span></button>
+          <button class="segbtn sel" type="button" data-teach="light">Light<span class="lvl-note">The opening gets its real name as it's played. Nothing else is said. The default.</span></button>
+          <button class="segbtn" type="button" data-teach="coach">Coach<span class="lvl-note">Light, plus one plain-words note after your move when something important happened — a piece left undefended, a fork, a pin, a trade read. After the fact; it never plays a move for you.</span></button>
+        </div>
+        <p class="small">Two doors stay yours to open at any teaching level above Off: <strong>Hint</strong> (beside New game) lights up the engine's suggested piece and names its move — plus a real alternative and what it costs, when one exists — and <strong>Analysis</strong> (with the record) shows the engine's full read: the candidate plans side by side, each with its trade-off in plain words. A single line is named only when the position genuinely has one option. Neither door ever opens on its own. And the coaching learns from <strong>your strategy record</strong> (below): when your own games show a pattern — pieces left undefended, say — the coach says so, from your record, not from a generic tip sheet.</p>
+      </details>
+      <details>
+        <summary>How the bot plays, honestly — tap to open</summary>
+        <p class="small">The bot is a real chess engine that runs entirely on this page: it generates every legal move, looks ahead, and scores positions by material and piece placement. The four levels differ in <em>how deep it looks</em> and <em>how much randomness is mixed in</em> — Learning looks one move ahead and often picks a weaker move on purpose, like a learner; Steady looks two ahead; Sharp three; Pro four, with an extra search over captures so it doesn't hang pieces to tactics it can see. The levels were tested against each other in self-play while this page was built: Pro checkmated Learning in every test game (in as few as 20 moves), Sharp beat Steady, and Steady beat Learning — the ladder landed in order. No level phones home or looks anything up — there are no opening books and no tablebases; it's all thought out on your device, move by move.</p>
+      </details>
+      <details>
+        <summary>Strategies &amp; their stories — tap to open</summary>
+        <p class="small">“What’s the best option?” deserves evidence, not assertion. On this page it is answered three ways, and all three are shown: the <strong>documented record</strong> — real strategies from real games, with their stories, below; the <strong>engine’s read</strong> — Analysis, with the candidate plans and what each costs; and <strong>your own record</strong> — the strategy record under Teaching, built from your finished games. Where the documented record gives a clean fact, it is printed as one; where chess history only supports “often” or “rarely”, that is the word used — no invented percentages.</p>
+        <h3 style="margin-top:14px">The Ruy Lopez — the opening that never left</h3>
+        <p class="small"><strong>The story:</strong> named for Ruy López de Segura, a Spanish priest who analysed 3.Bb5 in his 1561 book, one of the first chess books ever printed. Four and a half centuries later it is still a main weapon in world championship matches. <strong>Where it worked:</strong> everywhere, for centuries — it asks Black a small, lasting question about the e5 pawn and never stops asking. <strong>Where it didn’t:</strong> in the 2000 World Championship, Vladimir Kramnik answered it with the Berlin Defence (3…Nf6) and Garry Kasparov — the greatest Ruy Lopez player of his era — could not win a single game against it, and lost the title. The lesson the record teaches: no opening is a refutation; every famous line has a famous answer, and the game is in the plans after the opening, not the opening itself.</p>
+        <h3 style="margin-top:14px">The King’s Gambit — glory, then the auditors arrived</h3>
+        <p class="small"><strong>The story:</strong> the romantic era’s signature opening — White offers a pawn for open lines and a king hunt. Its monument is the Immortal Game, London 1851: Adolf Anderssen sacrificed his queen and both rooks and checkmated Lionel Kieseritzky anyway. <strong>Where it worked:</strong> the whole 19th century, and club chess ever since — against unprepared defenders it still produces miniatures. <strong>Where it didn’t:</strong> defence caught up. In 1961 Bobby Fischer published “A Bust to the King’s Gambit”, giving a concrete defensive line (3…d6), and the gambit all but vanished from elite play. The lesson: a strategy’s record is against the defences of its time — a weapon can be famous, beautiful, and retired, all three honestly.</p>
+        <h3 style="margin-top:14px">The Sicilian — the fighting answer</h3>
+        <p class="small"><strong>The story:</strong> 1.e4 c5, recorded as early as the 1600s and long considered suspect, became the twentieth century’s great fighting defence — the mainstay of Fischer and Kasparov when they played Black to win. <strong>Where it worked:</strong> in master practice it is the most-played reply to 1.e4 and, among the major defences, the best-scoring for Black — because it creates an unbalanced position where the stronger player has room to outplay. <strong>Where it didn’t:</strong> that imbalance cuts both ways — it also loses more often than the quiet defences, and whole White systems (the Alapin, the Closed Sicilian) exist just to drain its counterplay. The lesson: the “best” option depends on the result you need — the Sicilian is the pick when a draw is not enough, and the wrong pick when it is.</p>
+        <h3 style="margin-top:14px">The Opera Game — the development lesson</h3>
+        <p class="small"><strong>The story:</strong> Paris, 1858, during an opera performance: Paul Morphy, the American prodigy, faced the Duke of Brunswick and Count Isouard consulting together. Morphy developed every piece once, opened lines, sacrificed his queen, and checkmated on move 17 — while his opponents’ queen and bishops were still on their starting squares. <strong>Where it worked:</strong> it is still the game teachers show first, because the pattern repeats at every level: undeveloped pieces are pieces not playing. <strong>Where it didn’t:</strong> Morphy’s opponents broke every rule the game teaches — the same attack fails against a developed defender, which is the other half of the lesson. When the Coach here nags about loose pieces and slow development, this game is why.</p>
+        <p class="small">More stories join this shelf as the page grows. The pattern to notice: every strategy above has a “where it didn’t” — a strategy with no failures on its record is a story nobody checked.</p>
+      </details>
+      <details>
+        <summary>Your strategy record — tap to open</summary>
+        <p class="small">Every game you finish here teaches this page your patterns — your openings, your results, the mistakes your own record shows — and the coaching draws from it, not from generic tips alone. It is kept as totals only (no game is stored move-by-move here beyond the saved game above), <strong>on this device only</strong>, and you can wipe it any time.</p>
+        <p class="small" id="strategyText">No finished games yet. Finish a game against the bot and your record starts.</p>
+        <div class="btnrow">
+          <button class="btn plain" id="forgetStrategyBtn" type="button">Forget my strategy record — tap</button>
+        </div>
+      </details>
+      <details>
+        <summary>The rules in plain words — tap to open</summary>
+        <p class="small"><strong>The documented game:</strong> this is chess — the game as written down in the FIDE Laws of Chess, the rulebook used in every rated tournament in the world (current edition in force since 2023). Nothing here is an invented house version of it. The variants are documented games too: Chess960 is Bobby Fischer’s Fischer Random Chess, now played in FIDE events; Capablanca chess was designed in the 1920s by world champion José Raúl Capablanca; Crazyhouse is the documented descendant of bughouse chess. Where a variant’s rules differ from the standard game, the board says so while you play it.</p>
+        <p class="small"><strong>Winning:</strong> checkmate — a king in check with no legal move out. <strong>Draws:</strong> stalemate (no legal move, not in check); the same position three times (either player may claim it — a Claim draw button appears); fifty moves with no pawn move and no capture (claimable the same way, and automatic at seventy-five); running out of pieces that could ever mate; an agreed draw; or a flag fall against a player who could never mate, which is scored a draw. <strong>Castling:</strong> king and rook unmoved, squares between them empty, king not in check and not passing through check. In Chess960 the king and rook end on the same squares as standard castling, wherever they started. In Capablanca the king steps three squares toward the rook. <strong>En passant:</strong> a pawn that has just double-stepped can be captured as if it had moved one square — on the very next move only. <strong>Promotion:</strong> a pawn reaching the far rank must promote — your choice of piece. <strong>Crazyhouse drops:</strong> a dropped pawn may not land on the first or last rank, and a pawn that promoted and is later captured goes back into the pocket as a pawn.</p>
+      </details>
+    </section>
+
+    <!-- ================= COMPASS ================= -->
+    <details class="navfold">
+      <summary>Compass — where to go from here</summary>
+      <div class="navgroup">Other pages</div>
+      <div class="navgrid">
+        <a href="https://thethrivingplan.github.io/" target="_blank" rel="noopener">Start Page ↗</a>
+        <a href="https://muse.ai/s/the-thriving-plan-rxy6xav4xoxrcxsx0/WpKA_ptlnL7ueuq3Iffvs3-1vB5f_2IBpvYzVa8je5U" target="_blank" rel="noopener">The Thriving Plan ↗</a>
+        <a href="https://muse.ai/s/any-legal-case-the-record-qs6xc8xpohxpxmo/3Mz7y6LxZlpRvFjKrNn0KOpzMW44OTcYbNm-VJ4EkrU" target="_blank" rel="noopener">Any Legal Case — The Record ↗</a>
+        <a href="https://muse.ai/s/for-veterans-the-record-oxo6xngxukc6xjxq/BOv0BT4nUtGxtU-el4ZeVb4HzV2KBjA6lRzgl5Uxw3E" target="_blank" rel="noopener">For Veterans — The Record ↗</a>
+        <a href="https://theposterboard.fwh.is" target="_blank" rel="noopener">The Poster Board ↗</a>
+        <a href="https://thethrivingplan.github.io/table/" target="_blank" rel="noopener">The Infinite Table ↗</a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a>
+      </div>
+      <div class="navgroup">Tools</div>
+      <div class="navgrid">
+        <a href="https://muse.ai/s/find-a-coupon-zw6xmmiwxaxuxqxj/9ACVz7AOHsuhrsVlWpVI8WphmRihoR0-T8OS_Q2uexM" target="_blank" rel="noopener">Find a Coupon ↗</a>
+        <a href="https://muse.ai/s/star-chart-maker-xfxi6xlxpenvxwg7/yMERZbnMzvhWD39rGjTwzGG7b7SedJLQPauU1vWeQts" target="_blank" rel="noopener">Star Chart Maker ↗</a>
+        <a href="https://muse.ai/s/the-holiday-shopping-list-pxh6xo5xlxcxt7wf/anxj7SscFUa8JcMrZ7VDua2hEu5IH7v0wEfp5M2Eto0" target="_blank" rel="noopener">The Holiday Shopping List ↗</a>
+        <a href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener">Create Your Own Story ↗</a>
+      </div>
+      <div class="navgroup">The games shelf — for fun</div>
+      <div class="navgrid">
+        <span class="here">Chess — you are here</span>
+        <span class="here">Bowling · Checkers · Solitaire · Blackjack — sister games on the shelf, each with a bot whose level you pick</span>
+        <a href="https://muse.ai/s/star-chart-postcard-xrxq6xnxyxtfxpxzxqv/NiAWolORKNUDfO9IVOOHxW3Wg0lhZtVfx3GhaIAjOVE" target="_blank" rel="noopener">Star Chart Postcard ↗</a>
+        <a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener">What Are We Missing? ↗</a>
+      </div>
+    </details>
+
+    <footer>Free forever · No ads · Copyleft — share it, improve it, pass it on. Everything on this page runs on your device; no server holds your game.</footer>
+  </div>
+
+  <!-- promotion picker -->
+  <div class="modal" id="promoModal" role="dialog" aria-modal="true" aria-label="Choose a piece to promote to">
+    <div class="modalbox">
+      <h2>Promote to…</h2>
+      <p class="small" style="margin:0">Your pawn reached the far rank. Tap the piece it becomes.</p>
+      <div class="promogrid" id="promoGrid"></div>
+      <div class="btnrow"><button class="btn plain" id="promoCancel" type="button">Cancel — tap</button></div>
+    </div>
+  </div>
+
+  <!-- analysis view -->
+  <div class="modal" id="analysisModal" role="dialog" aria-modal="true" aria-label="Analysis">
+    <div class="modalbox">
+      <h2>Analysis</h2>
+      <p id="analysisText" style="margin:6px 0"></p>
+      <p class="analysisline" id="analysisLine"></p>
+      <p class="small" id="analysisNote"></p>
+      <div class="btnrow"><button class="btn" id="analysisClose" type="button">Back to the game — tap</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+/*ENGINE-START*/
+'use strict';
+/* ================= Chess engine =================
+   Variants: standard, chess960, capablanca (10x8, archbishop+chancellor), crazyhouse.
+   Board: array of W*8, index = rank*W + file, rank 0 = White's home rank (rank 1).
+   Pieces: 'PNBRQK' standard, 'A' archbishop (B+N), 'C' chancellor (R+N); lowercase = Black. */
+var VAL = { P:100, N:320, B:330, R:500, Q:975, K:20000, A:725, C:875 };
+function pType(p){ return p ? p.toUpperCase() : null; }
+function pColor(p){ return p ? (p === p.toUpperCase() ? 'w' : 'b') : null; }
+function oppC(c){ return c === 'w' ? 'b' : 'w'; }
+function mkPiece(t, c){ return c === 'w' ? t : t.toLowerCase(); }
+
+function emptyPos(variant){
+  var W = variant === 'capablanca' ? 10 : 8;
+  return {
+    variant: variant, W: W,
+    board: new Array(W * 8).fill(null),
+    promoted: new Array(W * 8).fill(false),
+    turn: 'w',
+    castling: { wk:-1, wq:-1, bk:-1, bq:-1 }, /* rook file per right, -1 = none */
+    ep: -1, half: 0, full: 1,
+    pockets: { w:{}, b:{} },
+    kingPos: { w:-1, b:-1 }
+  };
+}
+function placeBackRank(pos, rank, color, arrangement){
+  var W = pos.W;
+  for (var f = 0; f < W; f++) pos.board[rank * W + f] = mkPiece(arrangement[f], color);
+  pos.kingPos[color] = rank * W + arrangement.indexOf('K');
+}
+function setup960(){
+  /* Returns a valid Chess960 back-rank arrangement: bishops on opposite colours,
+     king between the two rooks. */
+  var files = [0,1,2,3,4,5,6,7], arr = new Array(8).fill(null), i, f;
+  var dark = [0,2,4,6], light = [1,3,5,7];
+  var b1 = dark[(Math.random()*4)|0], b2 = light[(Math.random()*4)|0];
+  arr[b1] = 'B'; arr[b2] = 'B';
+  var free = files.filter(function(x){ return !arr[x]; });
+  arr[free[(Math.random()*free.length)|0]] = 'Q';
+  free = files.filter(function(x){ return !arr[x]; });
+  for (i = 0; i < 2; i++){
+    var j = (Math.random()*free.length)|0;
+    arr[free[j]] = 'N'; free.splice(j,1);
+  }
+  arr[free[0]] = 'R'; arr[free[1]] = 'K'; arr[free[2]] = 'R';
+  return arr;
+}
+function newGamePos(variant){
+  var pos = emptyPos(variant), W = pos.W, f;
+  var back, arrangement;
+  if (variant === 'capablanca'){
+    back = ['R','N','A','B','Q','K','B','C','N','R'];
+    placeBackRank(pos, 0, 'w', back); placeBackRank(pos, 7, 'b', back);
+    pos.castling = { wk:9, wq:0, bk:9, bq:0 };
+  } else if (variant === 'chess960'){
+    arrangement = setup960();
+    placeBackRank(pos, 0, 'w', arrangement); placeBackRank(pos, 7, 'b', arrangement);
+    var kf = arrangement.indexOf('K'), rookFiles = [];
+    arrangement.forEach(function(p, i){ if (p === 'R') rookFiles.push(i); });
+    pos.castling = { wk: Math.max(rookFiles[0], rookFiles[1]), wq: Math.min(rookFiles[0], rookFiles[1]),
+                     bk: Math.max(rookFiles[0], rookFiles[1]), bq: Math.min(rookFiles[0], rookFiles[1]) };
+    pos.setup960arrangement = arrangement.slice();
+  } else {
+    back = ['R','N','B','Q','K','B','N','R'];
+    placeBackRank(pos, 0, 'w', back); placeBackRank(pos, 7, 'b', back);
+    pos.castling = { wk:7, wq:0, bk:7, bq:0 };
+  }
+  for (f = 0; f < W; f++){
+    pos.board[1 * W + f] = 'P';
+    pos.board[6 * W + f] = 'p';
+  }
+  return pos;
+}
+function clonePos(pos){
+  var p = {
+    variant: pos.variant, W: pos.W,
+    board: pos.board.slice(), promoted: pos.promoted.slice(),
+    turn: pos.turn,
+    castling: { wk:pos.castling.wk, wq:pos.castling.wq, bk:pos.castling.bk, bq:pos.castling.bq },
+    ep: pos.ep, half: pos.half, full: pos.full,
+    pockets: { w:Object.assign({}, pos.pockets.w), b:Object.assign({}, pos.pockets.b) },
+    kingPos: { w:pos.kingPos.w, b:pos.kingPos.b }
+  };
+  if (pos.setup960arrangement) p.setup960arrangement = pos.setup960arrangement.slice();
+  return p;
+}
+function sqName(pos, sq){
+  return 'abcdefghij'[sq % pos.W] + ((sq / pos.W | 0) + 1);
+}
+function posKey(pos){
+  var s = pos.board.map(function(p){ return p || '.'; }).join('') + pos.turn +
+    pos.castling.wk + ',' + pos.castling.wq + ',' + pos.castling.bk + ',' + pos.castling.bq + '|' + pos.ep;
+  if (pos.variant === 'crazyhouse'){
+    s += '|';
+    ['w','b'].forEach(function(c){ 'PNBRQ'.split('').forEach(function(t){ s += (pos.pockets[c][t]||0); }); s += '/'; });
+  }
+  return s;
+}
+
+var KNIGHT_D = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+var KING_D = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+var BISH_D = [[1,1],[1,-1],[-1,1],[-1,-1]];
+var ROOK_D = [[1,0],[-1,0],[0,1],[0,-1]];
+
+function isAttacked(pos, sq, by){
+  var W = pos.W, B = pos.board, f = sq % W, r = (sq / W) | 0, i, df, dr, nf, nr, p, t;
+  /* pawns */
+  var pr = by === 'w' ? r - 1 : r + 1;
+  if (pr >= 0 && pr < 8){
+    for (i = 0; i < 2; i++){
+      var pf = f + (i === 0 ? -1 : 1);
+      if (pf >= 0 && pf < W){ p = B[pr * W + pf]; if (p && pType(p) === 'P' && pColor(p) === by) return true; }
+    }
+  }
+  /* knight movers: N, A, C */
+  for (i = 0; i < 8; i++){
+    nf = f + KNIGHT_D[i][0]; nr = r + KNIGHT_D[i][1];
+    if (nf < 0 || nf >= W || nr < 0 || nr >= 8) continue;
+    p = B[nr * W + nf]; t = pType(p);
+    if (p && pColor(p) === by && (t === 'N' || t === 'A' || t === 'C')) return true;
+  }
+  /* king */
+  for (i = 0; i < 8; i++){
+    nf = f + KING_D[i][0]; nr = r + KING_D[i][1];
+    if (nf < 0 || nf >= W || nr < 0 || nr >= 8) continue;
+    p = B[nr * W + nf];
+    if (p && pType(p) === 'K' && pColor(p) === by) return true;
+  }
+  /* sliders */
+  function ray(dirs, types){
+    for (var d = 0; d < dirs.length; d++){
+      var cf = f, cr = r;
+      while (true){
+        cf += dirs[d][0]; cr += dirs[d][1];
+        if (cf < 0 || cf >= W || cr < 0 || cr >= 8) break;
+        var q = B[cr * W + cf];
+        if (q){
+          if (pColor(q) === by && types.indexOf(pType(q)) >= 0) return true;
+          break;
+        }
+      }
+    }
+    return false;
+  }
+  if (ray(BISH_D, ['B','Q','A'])) return true;
+  if (ray(ROOK_D, ['R','Q','C'])) return true;
+  return false;
+}
+function inCheck(pos, color){ return isAttacked(pos, pos.kingPos[color], oppC(color)); }
+
+function pseudoMoves(pos, color, capturesOnly){
+  var W = pos.W, B = pos.board, moves = [], sq, p, t, f, r, i, d;
+  var promoPieces = pos.variant === 'capablanca' ? ['Q','C','A','R','B','N'] : ['Q','R','B','N'];
+  function addStep(from, df, dr){
+    var nf = (from % W) + df, nr = ((from / W) | 0) + dr;
+    if (nf < 0 || nf >= W || nr < 0 || nr >= 8) return;
+    var to = nr * W + nf, q = B[to];
+    if (!q){ if (!capturesOnly) moves.push({ from:from, to:to }); }
+    else if (pColor(q) !== color && pType(q) !== 'K') moves.push({ from:from, to:to, captured:q });
+  }
+  function addSlides(from, dirs){
+    var ff = from % W, fr = (from / W) | 0;
+    for (var dd = 0; dd < dirs.length; dd++){
+      var cf = ff, cr = fr;
+      while (true){
+        cf += dirs[dd][0]; cr += dirs[dd][1];
+        if (cf < 0 || cf >= W || cr < 0 || cr >= 8) break;
+        var to = cr * W + cf, q = B[to];
+        if (!q){ if (!capturesOnly) moves.push({ from:from, to:to }); }
+        else { if (pColor(q) !== color && pType(q) !== 'K') moves.push({ from:from, to:to, captured:q }); break; }
+      }
+    }
+  }
+  for (sq = 0; sq < B.length; sq++){
+    p = B[sq]; if (!p || pColor(p) !== color) continue;
+    t = pType(p); f = sq % W; r = (sq / W) | 0;
+    if (t === 'P'){
+      var dir = color === 'w' ? 1 : -1;
+      var startRank = color === 'w' ? 1 : 6;
+      var promoRank = color === 'w' ? 7 : 0;
+      var oneR = r + dir;
+      if (oneR >= 0 && oneR < 8){
+        var one = oneR * W + f;
+        if (!B[one] && !capturesOnly){
+          if (oneR === promoRank) promoPieces.forEach(function(pp){ moves.push({ from:sq, to:one, promo:pp }); });
+          else {
+            moves.push({ from:sq, to:one });
+            if (r === startRank){
+              var two = (r + 2 * dir) * W + f;
+              if (!B[two]) moves.push({ from:sq, to:two, double:true });
+            }
+          }
+        }
+        for (i = 0; i < 2; i++){
+          var cf2 = f + (i === 0 ? -1 : 1);
+          if (cf2 < 0 || cf2 >= W) continue;
+          var capSq = oneR * W + cf2, q2 = B[capSq];
+          if (q2 && pColor(q2) !== color && pType(q2) !== 'K'){
+            if (oneR === promoRank) promoPieces.forEach(function(pp){ moves.push({ from:sq, to:capSq, captured:q2, promo:pp }); });
+            else moves.push({ from:sq, to:capSq, captured:q2 });
+          } else if (!q2 && capSq === pos.ep){
+            moves.push({ from:sq, to:capSq, epCapture:true, captured: mkPiece('P', oppC(color)) });
+          }
+        }
+      }
+    } else if (t === 'N'){
+      KNIGHT_D.forEach(function(dd){ addStep(sq, dd[0], dd[1]); });
+    } else if (t === 'K'){
+      KING_D.forEach(function(dd){ addStep(sq, dd[0], dd[1]); });
+      if (!capturesOnly) addCastles(pos, color, moves);
+    } else {
+      if (t === 'B' || t === 'Q' || t === 'A') addSlides(sq, BISH_D);
+      if (t === 'R' || t === 'Q' || t === 'C') addSlides(sq, ROOK_D);
+      if (t === 'A' || t === 'C') KNIGHT_D.forEach(function(dd){ addStep(sq, dd[0], dd[1]); });
+    }
+  }
+  /* crazyhouse drops */
+  if (pos.variant === 'crazyhouse' && !capturesOnly){
+    var pocket = pos.pockets[color];
+    Object.keys(pocket).forEach(function(pt){
+      if (!pocket[pt]) return;
+      for (var s2 = 0; s2 < B.length; s2++){
+        if (B[s2]) continue;
+        var rr = (s2 / W) | 0;
+        if (pt === 'P' && (rr === 0 || rr === 7)) continue;
+        moves.push({ drop: pt, to: s2 });
+      }
+    });
+  }
+  return moves;
+}
+function addCastles(pos, color, moves){
+  var W = pos.W, B = pos.board, home = color === 'w' ? 0 : 7;
+  var kingSq = pos.kingPos[color], kf = kingSq % W;
+  var enemy = oppC(color);
+  var sides = [
+    { key: color === 'w' ? 'wk' : 'bk', kingDestF: W - 2, rookDestF: W - 3, name:'K' },
+    { key: color === 'w' ? 'wq' : 'bq', kingDestF: 2, rookDestF: 3, name:'Q' }
+  ];
+  if (isAttacked(pos, kingSq, enemy)) return;
+  sides.forEach(function(s){
+    var rookF = pos.castling[s.key];
+    if (rookF < 0) return;
+    var rookSq = home * W + rookF;
+    var rp = B[rookSq];
+    if (!rp || pType(rp) !== 'R' || pColor(rp) !== color) return;
+    var kingDest = home * W + s.kingDestF, rookDest = home * W + s.rookDestF, i2, sq2;
+    /* every square the king crosses (incl. start & dest) unattacked;
+       squares king and rook pass over / land on empty except for king & rook themselves */
+    var lo = Math.min(kf, s.kingDestF), hi = Math.max(kf, s.kingDestF);
+    for (i2 = lo; i2 <= hi; i2++){
+      sq2 = home * W + i2;
+      if (sq2 !== kingSq && sq2 !== rookSq && B[sq2]) return;
+      if (isAttacked(pos, sq2, enemy)) return;
+    }
+    lo = Math.min(rookF, s.rookDestF); hi = Math.max(rookF, s.rookDestF);
+    for (i2 = lo; i2 <= hi; i2++){
+      sq2 = home * W + i2;
+      if (sq2 !== kingSq && sq2 !== rookSq && B[sq2]) return;
+    }
+    moves.push({ from: kingSq, to: kingDest, castle: s.name, rookFrom: rookSq, rookTo: rookDest });
+  });
+}
+function makeMove(pos, m){
+  var W = pos.W, B = pos.board;
+  var undo = { m:m, captured:null, capturedPromoted:false, castling:Object.assign({}, pos.castling),
+               ep:pos.ep, half:pos.half, droppedType:null };
+  pos.ep = -1;
+  if (m.drop){
+    pos.pockets[pos.turn][m.drop]--;
+    B[m.to] = mkPiece(m.drop, pos.turn);
+    pos.promoted[m.to] = false;
+    undo.droppedType = m.drop;
+    pos.half++;
+  } else {
+    var piece = B[m.from];
+    var capturedSq = m.to;
+    if (m.epCapture) capturedSq = m.to + (pos.turn === 'w' ? -W : W);
+    var cap = B[capturedSq];
+    if (cap){
+      undo.captured = cap; undo.capturedPromoted = pos.promoted[capturedSq];
+      if (pos.variant === 'crazyhouse'){
+        var ct = pos.promoted[capturedSq] ? 'P' : pType(cap);
+        pos.pockets[pos.turn][ct] = (pos.pockets[pos.turn][ct] || 0) + 1;
+      }
+      B[capturedSq] = null; pos.promoted[capturedSq] = false;
+      /* captured rook on its home square removes that castling right */
+      clearRookRight(pos, capturedSq);
+    }
+    B[m.from] = null;
+    var wasPromoted = pos.promoted[m.from];
+    pos.promoted[m.from] = false;
+    if (m.castle){
+      B[m.to] = piece;
+      B[m.rookFrom] = null; pos.promoted[m.rookFrom] = false;
+      B[m.rookTo] = mkPiece('R', pos.turn); pos.promoted[m.rookTo] = false;
+    } else if (m.promo){
+      B[m.to] = mkPiece(m.promo, pos.turn);
+      pos.promoted[m.to] = true;
+    } else {
+      B[m.to] = piece;
+      pos.promoted[m.to] = wasPromoted;
+    }
+    if (pType(piece) === 'K'){
+      pos.kingPos[pos.turn] = m.to;
+      if (pos.turn === 'w'){ pos.castling.wk = -1; pos.castling.wq = -1; }
+      else { pos.castling.bk = -1; pos.castling.bq = -1; }
+    }
+    if (pType(piece) === 'R') clearRookRight(pos, m.from);
+    if (m.double) pos.ep = m.from + (pos.turn === 'w' ? W : -W);
+    if (pType(piece) === 'P' || cap) pos.half = 0; else pos.half++;
+  }
+  if (pos.turn === 'b') pos.full++;
+  pos.turn = oppC(pos.turn);
+  return undo;
+}
+function clearRookRight(pos, sq){
+  var W = pos.W, r = (sq / W) | 0, f = sq % W;
+  if (r === 0){
+    if (pos.castling.wk === f && sq === f) pos.castling.wk = -1;
+    if (pos.castling.wq === f && sq === f) pos.castling.wq = -1;
+  } else if (r === 7){
+    if (pos.castling.bk === f && sq === 7 * W + f) pos.castling.bk = -1;
+    if (pos.castling.bq === f && sq === 7 * W + f) pos.castling.bq = -1;
+  }
+}
+function unmakeMove(pos, undo){
+  var m = undo.m, W = pos.W, B = pos.board;
+  pos.turn = oppC(pos.turn);
+  if (pos.turn === 'b') pos.full--;
+  pos.castling = undo.castling; pos.ep = undo.ep; pos.half = undo.half;
+  if (m.drop){
+    B[m.to] = null; pos.promoted[m.to] = false;
+    pos.pockets[pos.turn][m.drop]++;
+    return;
+  }
+  var piece = B[m.to];
+  if (m.castle){
+    B[m.from] = piece; pos.kingPos[pos.turn] = m.from;
+    B[m.to] = null;
+    B[m.rookTo] = null;
+    B[m.rookFrom] = mkPiece('R', pos.turn);
+    if (m.rookFrom === m.to) B[m.to] = null;
+    if (m.rookTo === m.from) { /* king returns over rook dest */ }
+    /* restore exactly: king on from, rook on rookFrom; both dest squares cleared first */
+    B[m.rookTo] = null; B[m.to] = null;
+    B[m.from] = piece; B[m.rookFrom] = mkPiece('R', pos.turn);
+    return;
+  }
+  if (m.promo){ B[m.from] = mkPiece('P', pos.turn); pos.promoted[m.from] = false; }
+  else { B[m.from] = piece; pos.promoted[m.from] = pos.promoted[m.to]; }
+  B[m.to] = null; pos.promoted[m.to] = false;
+  if (pType(piece) === 'K' || m.promo) pos.kingPos[pos.turn] = m.promo ? pos.kingPos[pos.turn] : m.from;
+  if (m.promo) { /* kingPos untouched by pawn promo */ }
+  if (undo.captured){
+    var capturedSq = m.epCapture ? m.to + (pos.turn === 'w' ? -W : W) : m.to;
+    B[capturedSq] = undo.captured;
+    pos.promoted[capturedSq] = undo.capturedPromoted;
+    if (pos.variant === 'crazyhouse'){
+      var ct = undo.capturedPromoted ? 'P' : pType(undo.captured);
+      pos.pockets[pos.turn][ct]--;
+    }
+  }
+}
+function legalMoves(pos, color){
+  var ms = pseudoMoves(pos, color, false), out = [];
+  for (var i = 0; i < ms.length; i++){
+    var u = makeMoveTurn(pos, ms[i], color);
+    if (!isAttacked(pos, pos.kingPos[color], oppC(color))) out.push(ms[i]);
+    unmakeMove(pos, u);
+  }
+  return out;
+}
+function makeMoveTurn(pos, m, color){
+  /* makeMove assumes pos.turn === mover; legalMoves is always called for side to move,
+     but keep a guard for safety */
+  return makeMove(pos, m);
+}
+function legalCaptures(pos, color){
+  var ms = pseudoMoves(pos, color, true), out = [];
+  for (var i = 0; i < ms.length; i++){
+    var u = makeMove(pos, ms[i]);
+    if (!isAttacked(pos, pos.kingPos[color], oppC(color))) out.push(ms[i]);
+    unmakeMove(pos, u);
+  }
+  return out;
+}
+function insufficientMaterial(pos){
+  if (pos.variant === 'crazyhouse'){
+    var anyPocket = false;
+    ['w','b'].forEach(function(c){ Object.keys(pos.pockets[c]).forEach(function(t){ if (pos.pockets[c][t] > 0) anyPocket = true; }); });
+    if (anyPocket) return false;
+  }
+  var pieces = [], bishops = [];
+  for (var i = 0; i < pos.board.length; i++){
+    var p = pos.board[i]; if (!p) continue;
+    var t = pType(p); if (t === 'K') continue;
+    pieces.push(t);
+    if (t === 'B') bishops.push(i);
+  }
+  if (pieces.length === 0) return true;
+  if (pieces.length === 1 && (pieces[0] === 'B' || pieces[0] === 'N')) return true;
+  if (pieces.every(function(t){ return t === 'B'; })){
+    var colours = bishops.map(function(sq){ return ((sq % pos.W) + ((sq / pos.W) | 0)) % 2; });
+    if (colours.every(function(c){ return c === colours[0]; })) return true;
+  }
+  return false;
+}
+/* ---------- SAN ---------- */
+function moveSAN(pos, m){
+  var san, color = pos.turn;
+  if (m.castle) san = m.castle === 'K' ? 'O-O' : 'O-O-O';
+  else if (m.drop) san = (m.drop === 'P' ? '' : m.drop) + '@' + sqName(pos, m.to);
+  else {
+    var piece = pos.board[m.from], t = pType(piece);
+    var isCap = !!m.captured || !!m.epCapture;
+    if (t === 'P'){
+      san = isCap ? 'abcdefghij'[m.from % pos.W] + 'x' : '';
+      san += sqName(pos, m.to);
+      if (m.promo) san += '=' + m.promo;
+    } else {
+      san = t;
+      var others = legalMoves(pos, color).filter(function(x){
+        return !x.drop && !x.castle && x.to === m.to && x.from !== m.from && pos.board[x.from] === piece;
+      });
+      if (others.length){
+        var sameFile = others.some(function(x){ return x.from % pos.W === m.from % pos.W; });
+        var sameRank = others.some(function(x){ return ((x.from / pos.W)|0) === ((m.from / pos.W)|0); });
+        if (!sameFile) san += 'abcdefghij'[m.from % pos.W];
+        else if (!sameRank) san += ((m.from / pos.W)|0) + 1;
+        else san += sqName(pos, m.from);
+      }
+      if (isCap) san += 'x';
+      san += sqName(pos, m.to);
+    }
+  }
+  var u = makeMove(pos, m);
+  var enemy = pos.turn;
+  if (inCheck(pos, enemy)) san += legalMoves(pos, enemy).length === 0 ? '#' : '+';
+  unmakeMove(pos, u);
+  return san;
+}
+/* ---------- evaluation ---------- */
+var PST = {
+  P: [0,0,0,0,0,0,0,0, 50,50,50,50,50,50,50,50, 10,10,20,30,30,20,10,10, 5,5,10,25,25,10,5,5,
+      0,0,0,20,20,0,0,0, 5,-5,-10,0,0,-10,-5,5, 5,10,10,-20,-20,10,10,5, 0,0,0,0,0,0,0,0],
+  N: [-50,-40,-30,-30,-30,-30,-40,-50, -40,-20,0,0,0,0,-20,-40, -30,0,10,15,15,10,0,-30,
+      -30,5,15,20,20,15,5,-30, -30,0,15,20,20,15,0,-30, -30,5,10,15,15,10,5,-30,
+      -40,-20,0,5,5,0,-20,-40, -50,-40,-30,-30,-30,-30,-40,-50],
+  B: [-20,-10,-10,-10,-10,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,10,10,5,0,-10,
+      -10,5,5,10,10,5,5,-10, -10,0,10,10,10,10,0,-10, -10,10,10,10,10,10,10,-10,
+      -10,5,0,0,0,0,5,-10, -20,-10,-10,-10,-10,-10,-10,-20],
+  R: [0,0,0,0,0,0,0,0, 5,10,10,10,10,10,10,5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5,
+      -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, 0,0,0,5,5,0,0,0],
+  Q: [-20,-10,-10,-5,-5,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,5,5,5,0,-10,
+      -5,0,5,5,5,5,0,-5, 0,0,5,5,5,5,0,-5, -10,5,5,5,5,5,0,-10, -10,0,5,0,0,0,0,-10,
+      -20,-10,-10,-5,-5,-10,-10,-20],
+  K: [-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30,
+      -30,-40,-40,-50,-50,-40,-40,-30, -20,-30,-30,-40,-40,-30,-30,-20, -10,-20,-20,-20,-20,-20,-20,-10,
+      20,20,0,0,0,0,20,20, 20,30,10,0,0,10,30,20]
+};
+function pstVal(pos, t, sq, color){
+  var W = pos.W, f = sq % W, r = (sq / W) | 0;
+  if (W === 8 && PST[t]){
+    var rr = color === 'w' ? 7 - r : r;
+    return PST[t][rr * 8 + f];
+  }
+  /* generic placement bonus for wide boards & fairy pieces */
+  var centreDist = Math.abs(f - (W - 1) / 2) + Math.abs(r - 3.5);
+  if (t === 'P') return (color === 'w' ? r : 7 - r) * 6 - Math.abs(f - (W - 1) / 2) * 2;
+  if (t === 'N' || t === 'A' || t === 'C') return Math.max(0, (7 - centreDist)) * 5;
+  if (t === 'B') return 4;
+  if (t === 'K') return -centreDist * 3 + Math.abs(r - (color === 'w' ? 0 : 7)) * -4;
+  return 0;
+}
+function evaluate(pos){
+  var score = 0, i, p, t;
+  var nonPawn = { w:0, b:0 }, hasMajor = { w:false, b:false };
+  for (i = 0; i < pos.board.length; i++){
+    p = pos.board[i]; if (!p) continue;
+    t = pType(p);
+    var v = VAL[t] + pstVal(pos, t, i, pColor(p));
+    score += pColor(p) === 'w' ? v : -v;
+    if (t !== 'P' && t !== 'K'){ nonPawn[pColor(p)] += VAL[t]; if (t === 'Q' || t === 'R' || t === 'A' || t === 'C') hasMajor[pColor(p)] = true; }
+  }
+  /* mop-up: with a major piece against a bare-ish king, drive the lone king
+     to the edge and bring the winning king close, so won endgames convert */
+  function mopup(strong, weak){
+    if (!hasMajor[strong] || nonPawn[weak] > 0) return 0;
+    var kp = pos.kingPos[weak], sk = pos.kingPos[strong], W = pos.W;
+    var kf = kp % W, kr = (kp / W) | 0;
+    var edge = Math.min(kf, W - 1 - kf, kr, 7 - kr); /* 0 = on the edge */
+    var sf = sk % W, sr = (sk / W) | 0;
+    var kingDist = Math.abs(kf - sf) + Math.abs(kr - sr);
+    return (3 - Math.min(edge, 3)) * 14 + (14 - kingDist) * 4;
+  }
+  score += mopup('w', 'b') - mopup('b', 'w');
+  if (pos.variant === 'crazyhouse'){
+    ['w','b'].forEach(function(c){
+      Object.keys(pos.pockets[c]).forEach(function(tt){
+        score += (c === 'w' ? 1 : -1) * (pos.pockets[c][tt] || 0) * VAL[tt];
+      });
+    });
+  }
+  return pos.turn === 'w' ? score : -score;
+}
+/* ---------- search ---------- */
+var MATE = 100000;
+function orderMoves(pos, moves){
+  moves.forEach(function(m){
+    var s = 0;
+    if (m.captured) s = 10 * VAL[pType(m.captured)] - VAL[pos.board[m.from] ? pType(pos.board[m.from]) : 'P'] / 10;
+    if (m.promo) s += VAL[m.promo];
+    if (m.drop) s += 1;
+    m._ord = s;
+  });
+  moves.sort(function(a, b){ return b._ord - a._ord; });
+  return moves;
+}
+function quiesce(pos, alpha, beta, ply){
+  var checked = inCheck(pos, pos.turn);
+  if (checked){
+    /* never "stand pat" while in check — the king must answer */
+    var evasions = orderMoves(pos, legalMoves(pos, pos.turn));
+    if (evasions.length === 0) return -MATE + ply;
+    if (ply > 16) return evaluate(pos);
+    var bestE = -Infinity;
+    for (var e = 0; e < evasions.length; e++){
+      var ue = makeMove(pos, evasions[e]);
+      var se = -quiesce(pos, -beta, -alpha, ply + 1);
+      unmakeMove(pos, ue);
+      if (se > bestE) bestE = se;
+      if (se > alpha) alpha = se;
+      if (alpha >= beta) break;
+    }
+    return bestE;
+  }
+  var stand = evaluate(pos);
+  if (ply > 8) return stand;
+  if (stand >= beta) return beta;
+  if (stand > alpha) alpha = stand;
+  var caps = orderMoves(pos, legalCaptures(pos, pos.turn));
+  for (var i = 0; i < caps.length; i++){
+    var u = makeMove(pos, caps[i]);
+    var s = -quiesce(pos, -beta, -alpha, ply + 1);
+    unmakeMove(pos, u);
+    if (s >= beta) return beta;
+    if (s > alpha) alpha = s;
+  }
+  return alpha;
+}
+function search(pos, depth, alpha, beta, ply){
+  if (pos.half >= 150) return 0;
+  if (depth === 0) return quiesce(pos, alpha, beta, 0);
+  var moves = orderMoves(pos, legalMoves(pos, pos.turn));
+  if (moves.length === 0){
+    if (inCheck(pos, pos.turn)) return -MATE + ply;
+    return 0;
+  }
+  if (insufficientMaterial(pos)) return 0;
+  for (var i = 0; i < moves.length; i++){
+    var u = makeMove(pos, moves[i]);
+    var s = -search(pos, depth - 1, -beta, -alpha, ply + 1);
+    unmakeMove(pos, u);
+    if (s >= beta) return beta;
+    if (s > alpha) alpha = s;
+  }
+  return alpha;
+}
+/* ---------- bot levels: depth + randomness, honestly different ---------- */
+var LEVELS = {
+  learning: { depth: { standard:1, chess960:1, capablanca:1, crazyhouse:1 }, randomChance: 0.30, window: 220, quiesce:false },
+  steady:   { depth: { standard:2, chess960:2, capablanca:2, crazyhouse:2 }, randomChance: 0.06, window: 60,  quiesce:false },
+  sharp:    { depth: { standard:3, chess960:3, capablanca:2, crazyhouse:3 }, randomChance: 0.0,  window: 15,  quiesce:true },
+  pro:      { depth: { standard:4, chess960:4, capablanca:3, crazyhouse:3 }, randomChance: 0.0,  window: 0,   quiesce:true }
+};
+function botChooseMove(pos, levelKey){
+  var cfg = LEVELS[levelKey] || LEVELS.steady;
+  var moves = legalMoves(pos, pos.turn);
+  if (moves.length === 0) return null;
+  if (moves.length === 1) return moves[0];
+  if (Math.random() < cfg.randomChance) return moves[(Math.random() * moves.length) | 0];
+  var depth = cfg.depth[pos.variant] || 2;
+  orderMoves(pos, moves);
+  var i, u, s;
+  if (cfg.window === 0){
+    /* top level: exact best move. Fail-hard bounds are never mistaken for
+       scores — a move only counts when its score is proven inside the window. */
+    var bestScore = -Infinity, bestMove = moves[0];
+    for (i = 0; i < moves.length; i++){
+      u = makeMove(pos, moves[i]);
+      if (bestScore === -Infinity) s = depth <= 1 ? -evaluate(pos) : -search(pos, depth - 1, -Infinity, Infinity, 1);
+      else s = -search(pos, depth - 1, -Infinity, -bestScore, 1);
+      unmakeMove(pos, u);
+      if (s > bestScore){ bestScore = s; bestMove = moves[i]; }
+    }
+    return bestMove;
+  }
+  /* lower levels: every root move gets an exact full-window score (depths are
+     shallow here), so the "nearly as good" pool is honest */
+  var scored = [];
+  for (i = 0; i < moves.length; i++){
+    u = makeMove(pos, moves[i]);
+    s = depth <= 1 ? -evaluate(pos) : -search(pos, depth - 1, -Infinity, Infinity, 1);
+    unmakeMove(pos, u);
+    scored.push({ m: moves[i], s: s });
+  }
+  scored.sort(function(a, b){ return b.s - a.s; });
+  var best = scored[0].s;
+  var pool = scored.filter(function(x){ return x.s >= best - cfg.window; });
+  return pool[(Math.random() * pool.length) | 0].m;
+}
+/*ENGINE-END*/
+</script>
+<script>
+'use strict';
+/* ================= UI layer ================= */
+var $ = function(id){ return document.getElementById(id); };
+var GLYPH = { K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞', P:'♟', A:'♝', C:'♜' };
+var VARIANT_NAMES = { standard:'Standard chess', chess960:'Chess960', capablanca:'Capablanca (10×8)', crazyhouse:'Crazyhouse' };
+var VARIANT_BLURB = {
+  chess960: 'Variant in play: <strong>Chess960</strong> — the back rank was shuffled for this game; castling still lands king and rook on the usual squares. This record is a Chess960 record.',
+  capablanca: 'Variant in play: <strong>Capablanca</strong> — a 10×8 board with two extra pieces per side: the Archbishop (bishop + knight, marked with a small N badge) and the Chancellor (rook + knight, also badged). Castling: the king steps three squares toward the rook. This record is a Capablanca record.',
+  crazyhouse: 'Variant in play: <strong>Crazyhouse</strong> — captured pieces change colour into your pocket; on your turn, tap a pocket piece then a square to drop it instead of moving. This record is a Crazyhouse record.'
+};
+var ALIAS_A = ['Quiet','Turbo','Sleepy','Lucky','Bold','Swift','Patient','Cheeky','Ancient','Midnight','Golden','Wooden'];
+var ALIAS_B = ['Knight','Rook','Bishop','Pawn','Queen','King','Owl','Fox','Badger','Castle','Gambit','Endgame'];
+
+var settings = { variant:'standard', clockMin:0, incSec:0, undoVsBot:true, autoflip:false, teach:'light' };
+var setup = { mode:'bot', level:'steady', colorChoice:'w' };
+var S = null; /* game state */
+var LS_SET = 'chess.settings.v1', LS_SAVE = 'chess.save.v1';
+
+function loadSettings(){
+  try {
+    var s = JSON.parse(localStorage.getItem(LS_SET) || 'null');
+    if (s){ settings = Object.assign(settings, s.settings || {}); setup = Object.assign(setup, s.setup || {}); }
+  } catch(e){}
+}
+function persistSettings(){
+  try { localStorage.setItem(LS_SET, JSON.stringify({ settings: settings, setup: setup })); } catch(e){}
+}
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+
+/* ---------- game state ---------- */
+function freshState(){
+  return {
+    pos: newGamePos(settings.variant),
+    variant: settings.variant,
+    clockMin: settings.clockMin, incSec: settings.incSec,
+    mode: setup.mode, level: setup.level,
+    humanColor: null, /* bot mode */
+    names: { w:'', b:'' },
+    history: [],        /* SAN strings */
+    replayMoves: [],    /* move objects, mirrors history */
+    startArrangement: null, /* chess960 back rank, for review/save */
+    undos: [],
+    keys: {},           /* repetition counts */
+    started: false, over: false, result: null, resultWhy: '',
+    orientation: 'w',
+    selected: -1, selectedDrop: null, legalCache: [],
+    lastOpening: null, coachNote: '',
+    viewPly: -1,        /* -1 = live */
+    clockMs: { w:0, b:0 }, lastTick: null, timerId: null,
+    pendingPromo: null
+  };
+}
+function displayName(color){
+  if (S.mode === 'bot' && S.humanColor && color !== S.humanColor) return 'Bot — ' + levelName(S.level);
+  var n = (S.names[color] || '').trim();
+  if (n) return n;
+  if (S.mode === 'bot') return 'Player 1';
+  return color === 'w' ? 'Player 1' : 'Player 2';
+}
+function levelName(l){ return { learning:'Learning', steady:'Steady', sharp:'Sharp', pro:'Pro' }[l] || l; }
+
+function startGame(fromButton){
+  S = freshState();
+  S.names = { w: $('nameWhite').value, b: $('nameBlack').value };
+  if (setup.mode === 'bot'){
+    var hc = setup.colorChoice;
+    if (hc === 'random') hc = Math.random() < 0.5 ? 'w' : 'b';
+    S.humanColor = hc;
+    S.orientation = hc;
+  } else {
+    S.orientation = 'w';
+  }
+  S.started = true;
+  S.startArrangement = S.pos.setup960arrangement || null;
+  S.keys[posKey(S.pos)] = 1;
+  refreshLegal();
+  if (S.clockMin > 0){ S.clockMs.w = S.clockMs.b = S.clockMin * 60000; }
+  if (fromButton) clearSavedGame();
+  renderAll();
+  setStatus(turnStatusText(), 'White to move first. Tap a piece, then tap a glowing square — or drag the piece there.');
+  maybeBotMove();
+  if (fromButton) $('gameCard').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function turnStatusText(){
+  var c = S.pos.turn;
+  return (c === 'w' ? 'White' : 'Black') + ' to move — ' + displayName(c) + (inCheck(S.pos, c) ? ' · check!' : '');
+}
+function setStatus(main, sub){
+  $('statusBar').innerHTML = '';
+  $('statusBar').appendChild(document.createTextNode(main));
+  if (sub){ var s = document.createElement('span'); s.className = 'sub'; s.textContent = sub; $('statusBar').appendChild(s); }
+}
+
+/* ---------- making moves (UI level) ---------- */
+function currentLegal(){
+  if (!S.started || S.over || S.viewPly !== -1) return [];
+  if (S.mode === 'bot' && S.pos.turn !== S.humanColor) return [];
+  return S.legalCache;
+}
+function refreshLegal(){ S.legalCache = (S.started && !S.over) ? legalMoves(S.pos, S.pos.turn) : []; }
+function doMove(m){
+  var san = moveSAN(S.pos, m);
+  var mover = S.pos.turn;
+  var preInfo = capturePreInfo(m, mover);
+  S.undos.push(makeMove(S.pos, m));
+  S.history.push(san);
+  S.replayMoves.push(m);
+  S._pendingTeach = { m: m, san: san, mover: mover, preInfo: preInfo };
+  S.selected = -1; S.selectedDrop = null;
+  if (S.clockMin > 0 && S.incSec > 0) S.clockMs[mover] += S.incSec * 1000;
+  var k = posKey(S.pos); S.keys[k] = (S.keys[k] || 0) + 1;
+  refreshLegal();
+  afterMove(san, mover);
+  if (S._pendingTeach){ var pt = S._pendingTeach; S._pendingTeach = null; teachAfterMove(pt.m, pt.san, pt.mover, pt.preInfo); recordMoveEvents(pt.m, pt.mover, pt.preInfo); }
+  saveGame();
+}
+function afterMove(san, mover){
+  var pos = S.pos, side = pos.turn;
+  var ended = false;
+  if (S.legalCache.length === 0){
+    if (inCheck(pos, side)){
+      endGame(mover === 'w' ? '1-0' : '0-1', 'Checkmate — ' + displayName(mover) + ' (' + (mover === 'w' ? 'White' : 'Black') + ') wins.');
+    } else {
+      endGame('1/2-1/2', 'Stalemate — ' + displayName(side) + ' has no legal move and is not in check. A draw.');
+    }
+    ended = true;
+  } else if (pos.half >= 150){
+    endGame('1/2-1/2', 'Draw — seventy-five moves with no pawn move and no capture.');
+    ended = true;
+  } else if (insufficientMaterial(pos)){
+    endGame('1/2-1/2', 'Draw — neither side has enough pieces left to checkmate.');
+    ended = true;
+  }
+  if (!ended){
+    var sub = san + ' played.';
+    if (inCheck(pos, side)) sub += ' Check.';
+    if (canClaimDraw()) sub += ' A draw can be claimed — the Claim draw button is showing.';
+    setStatus(turnStatusText(), sub);
+    if (settings.autoflip && S.mode === 'local') S.orientation = side;
+  }
+  renderAll();
+  maybeBotMove();
+}
+function canClaimDraw(){
+  if (!S.started || S.over) return false;
+  return S.pos.half >= 100 || (S.keys[posKey(S.pos)] || 0) >= 3;
+}
+function endGame(result, why){
+  S.over = true; S.result = result; S.resultWhy = why;
+  recordGameEnd();
+  stopClock();
+  setStatus(why, 'Game over. The record below is complete — copy it or download it to keep it.');
+  renderAll();
+  saveGame();
+}
+function maybeBotMove(){
+  if (!S || !S.started || S.over || S.mode !== 'bot') return;
+  if (S.pos.turn === S.humanColor) return;
+  setStatus('The bot is thinking…', 'Playing ' + (S.pos.turn === 'w' ? 'White' : 'Black') + ' at ' + levelName(S.level) + ' level.');
+  renderBars();
+  setTimeout(function(){
+    if (!S.started || S.over || S.mode !== 'bot' || S.pos.turn === S.humanColor) return;
+    var m = botChooseMove(S.pos, S.level);
+    if (m) doMove(m);
+  }, 60);
+}
+
+/* ---------- undo / resign / draw ---------- */
+function undo(){
+  if (!S.started) return;
+  if (S.mode === 'bot' && !settings.undoVsBot && S.history.length > 0){
+    toast('Undo is off against the bot in Page settings — a played move stands.');
+    return;
+  }
+  var n = (S.mode === 'bot') ? (S.pos.turn === S.humanColor ? 2 : 1) : 1;
+  n = Math.min(n, S.undos.length);
+  if (!n) return;
+  for (var i = 0; i < n; i++){
+    var u = S.undos.pop();
+    var k = posKey(S.pos); if (S.keys[k]) S.keys[k]--;
+    unmakeMove(S.pos, u);
+    S.history.pop();
+    S.replayMoves.pop();
+  }
+  S.over = false; S.result = null; S.resultWhy = '';
+  S.selected = -1; S.selectedDrop = null; S.viewPly = -1;
+  refreshLegal();
+  setStatus(turnStatusText(), 'Move taken back.');
+  renderAll();
+  saveGame();
+}
+function resign(){
+  if (!S.started || S.over) return;
+  var loser = S.pos.turn, winner = oppC(loser);
+  endGame(winner === 'w' ? '1-0' : '0-1', displayName(loser) + ' (' + (loser === 'w' ? 'White' : 'Black') + ') resigned — ' + displayName(winner) + ' wins.');
+}
+function drawButton(){
+  if (!S.started || S.over) return;
+  if (S.mode === 'local'){
+    endGame('1/2-1/2', 'Draw agreed by both players.');
+    return;
+  }
+  /* bot decides honestly: accepts when it is not ahead */
+  var before = S.pos.turn;
+  var scoreForBot = 0;
+  var savedTurn = S.pos.turn;
+  S.pos.turn = before; /* evaluate is relative to side to move; bot moves next after offer? The offer is made on the human's turn, bot evaluates its own prospects */
+  var ev = evaluate(S.pos); /* relative to side to move (the human) */
+  scoreForBot = -ev;
+  if (scoreForBot <= 40){
+    endGame('1/2-1/2', 'The bot accepts the draw — it rates the position no better than level for itself.');
+  } else {
+    toast('The bot declines the draw — it rates itself ahead in this position. Play on.');
+  }
+}
+
+/* ---------- clocks ---------- */
+function fmtClock(ms){
+  if (ms < 0) ms = 0;
+  var s = Math.ceil(ms / 1000), m = (s / 60) | 0, ss = s % 60;
+  if (m >= 20) return m + ':' + ('0' + ss).slice(-2);
+  if (s < 20) return m + ':' + ('0' + ss).slice(-2) + '.' + Math.floor((ms % 1000) / 100);
+  return m + ':' + ('0' + ss).slice(-2);
+}
+function startClockLoop(){
+  stopClock();
+  if (!S || S.clockMin <= 0) return;
+  S.lastTick = Date.now();
+  S.timerId = setInterval(function(){
+    if (!S.started || S.over){ stopClock(); return; }
+    var now = Date.now(), dt = now - S.lastTick; S.lastTick = now;
+    if (document.hidden) return;
+    S.clockMs[S.pos.turn] -= dt;
+    if (S.clockMs[S.pos.turn] <= 0){
+      S.clockMs[S.pos.turn] = 0;
+      var loser = S.pos.turn, winner = oppC(loser);
+      /* flag fall loses unless the winner could never mate */
+      var bare = insufficientMaterialForFlag(winner);
+      if (bare) endGame('1/2-1/2', 'Time — ' + displayName(loser) + '’s clock ran out, but ' + displayName(winner) + ' has no way to checkmate. A draw.');
+      else endGame(winner === 'w' ? '1-0' : '0-1', 'Time — ' + displayName(loser) + '’s clock ran out. ' + displayName(winner) + ' wins.');
+      renderClocks();
+      return;
+    }
+    renderClocks();
+  }, 200);
+}
+function insufficientMaterialForFlag(color){
+  /* could this colour ever deliver mate with what it has? pawns/queens/rooks/major fairy pieces, or two+ minors, can */
+  var minors = 0;
+  for (var i = 0; i < S.pos.board.length; i++){
+    var p = S.pos.board[i]; if (!p || pColor(p) !== color) continue;
+    var t = pType(p);
+    if (t === 'P' || t === 'Q' || t === 'R' || t === 'A' || t === 'C') return false;
+    if (t === 'B' || t === 'N') minors++;
+  }
+  if (S.variant === 'crazyhouse' && Object.keys(S.pos.pockets[color]).some(function(t){ return S.pos.pockets[color][t] > 0; })) return false;
+  return minors < 2;
+}
+function stopClock(){ if (S && S.timerId){ clearInterval(S.timerId); S.timerId = null; } }
+
+/* ---------- rendering ---------- */
+function renderAll(){
+  renderBanner(); renderBoard(); renderBars(); renderRecord(); renderPockets(); renderControls(); renderClocks(); renderCoach();
+  if (S && S.started && !S.over && S.clockMin > 0 && !S.timerId) startClockLoop();
+}
+function renderBanner(){
+  var b = $('variantBanner');
+  if (S && S.variant !== 'standard'){ b.hidden = false; b.innerHTML = VARIANT_BLURB[S.variant]; }
+  else { b.hidden = true; b.innerHTML = ''; }
+}
+function displayPos(){
+  if (S.viewPly === -1) return S.pos;
+  var p = newGamePos(S.variant);
+  if (S.variant === 'chess960' && S.startArrangement){
+    /* rebuild the same shuffled start */
+    p = emptyPos(S.variant);
+    placeBackRank(p, 0, 'w', S.startArrangement); placeBackRank(p, 7, 'b', S.startArrangement);
+    var kf = S.startArrangement.indexOf('K'), rooks = [];
+    S.startArrangement.forEach(function(x, i){ if (x === 'R') rooks.push(i); });
+    p.castling = { wk: Math.max(rooks[0], rooks[1]), wq: Math.min(rooks[0], rooks[1]), bk: Math.max(rooks[0], rooks[1]), bq: Math.min(rooks[0], rooks[1]) };
+    for (var f = 0; f < 8; f++){ p.board[8 + f] = 'P'; p.board[48 + f] = 'p'; }
+  }
+  var replay = S.replayMoves.slice(0, S.viewPly);
+  replay.forEach(function(m){ makeMove(p, m); });
+  return p;
+}
+function renderBoard(){
+  var board = $('board');
+  board.innerHTML = '';
+  if (!S || !S.started){
+    /* show a fresh standard board as the face before the first game */
+    if (!S) { S = freshState(); }
+  }
+  var pos = displayPos();
+  var W = pos.W;
+  board.style.gridTemplateColumns = 'repeat(' + W + ', 1fr)';
+  board.classList.toggle('files10', W === 10);
+  var orient = S.orientation;
+  var legal = currentLegal();
+  var targets = {};
+  if (S.selected >= 0) legal.forEach(function(m){ if (!m.drop && m.from === S.selected) targets[m.to] = m; });
+  if (S.selectedDrop) legal.forEach(function(m){ if (m.drop === S.selectedDrop) targets[m.to] = m; });
+  var lastMove = S.viewPly === -1 && S.replayMoves && S.replayMoves.length ? S.replayMoves[S.replayMoves.length - 1] : null;
+  var checkSq = inCheck(pos, pos.turn) ? pos.kingPos[pos.turn] : -1;
+  for (var dr = 0; dr < 8; dr++){
+    for (var df = 0; df < W; df++){
+      var r = orient === 'w' ? 7 - dr : dr;
+      var f = orient === 'w' ? df : W - 1 - df;
+      var sq = r * W + f;
+      var d = document.createElement('button');
+      d.type = 'button';
+      d.className = 'sq ' + (((f + r) % 2 === 0) ? 'dark' : 'light');
+      d.dataset.sq = sq;
+      d.setAttribute('role', 'gridcell');
+      d.setAttribute('aria-label', sqName(pos, sq) + (pos.board[sq] ? ' ' + pos.board[sq] : ''));
+      if (lastMove && !lastMove.drop && (lastMove.from === sq || lastMove.to === sq)) d.classList.add('last');
+      if (lastMove && lastMove.drop && lastMove.to === sq) d.classList.add('last');
+      if (sq === checkSq) d.classList.add('checksq');
+      if (sq === S.selected) d.classList.add('sel');
+      if (targets[sq]) d.classList.add(pos.board[sq] ? 'caphint' : 'hint');
+      var p = pos.board[sq];
+      if (p){
+        var sp = document.createElement('span');
+        sp.className = 'piece ' + (pColor(p) === 'w' ? 'pw' : 'pb');
+        sp.textContent = GLYPH[pType(p)];
+        if (pType(p) === 'A' || pType(p) === 'C'){
+          var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = 'N'; sp.appendChild(bd);
+        }
+        d.appendChild(sp);
+      }
+      if (df === 0){ var cr = document.createElement('span'); cr.className = 'coord r'; cr.textContent = r + 1; d.appendChild(cr); }
+      if (dr === 7){ var cf = document.createElement('span'); cf.className = 'coord f'; cf.textContent = 'abcdefghij'[f]; d.appendChild(cf); }
+      board.appendChild(d);
+    }
+  }
+}
+function capturedBy(pos, color){
+  /* pieces of the enemy that `color` has captured (not on board, not in own pocket) */
+  var startCount = pos.variant === 'capablanca'
+    ? { P:10, N:2, B:2, R:2, Q:1, A:1, C:1 }
+    : { P:8, N:2, B:2, R:2, Q:1 };
+  var onBoard = {}, enemy = oppC(color);
+  pos.board.forEach(function(p){ if (p && pColor(p) === enemy) onBoard[pType(p)] = (onBoard[pType(p)] || 0) + 1; });
+  if (pos.variant === 'crazyhouse'){
+    /* captured pieces sit in the capturer's pocket instead */
+    var mine = pos.pockets[color], out = [];
+    Object.keys(mine).forEach(function(t){ for (var i = 0; i < (mine[t] || 0); i++) out.push(t); });
+    return out;
+  }
+  var out = [];
+  Object.keys(startCount).forEach(function(t){
+    var missing = startCount[t] - (onBoard[t] || 0);
+    /* promoted pieces inflate onBoard counts; clamp by total missing pawns is complex — keep simple count, never negative per type beyond promotions */
+    for (var i = 0; i < missing; i++) out.push(t);
+  });
+  return out;
+}
+function materialScore(pos, color){
+  var s = 0;
+  pos.board.forEach(function(p){ if (p){ var v = VAL[pType(p)] || 0; s += pColor(p) === color ? v : -v; } });
+  if (pos.variant === 'crazyhouse'){
+    ['w','b'].forEach(function(c){ Object.keys(pos.pockets[c]).forEach(function(t){ s += (c === color ? 1 : -1) * (pos.pockets[c][t] || 0) * VAL[t]; }); });
+  }
+  return s;
+}
+function renderBars(){
+  var top = S.orientation === 'w' ? 'b' : 'w';
+  var bottom = S.orientation;
+  fillBar('Top', top); fillBar('Bottom', bottom);
+  $('barTop').classList.toggle('active', S.started && !S.over && S.pos.turn === top);
+  $('barBottom').classList.toggle('active', S.started && !S.over && S.pos.turn === bottom);
+}
+function fillBar(which, color){
+  $('name' + which).textContent = displayName(color) + (color === 'w' ? ' · White' : ' · Black');
+  var caps = capturedBy(S.pos, color);
+  var order = { Q:0, C:1, A:2, R:3, B:4, N:5, P:6 };
+  caps.sort(function(a, b){ return order[a] - order[b]; });
+  $('cap' + which).innerHTML = caps.map(function(t){
+    return '<span class="' + (color === 'w' ? 'cb' : 'cw') + '">' + GLYPH[t] + '</span>';
+  }).join('');
+  var diff = materialScore(S.pos, color);
+  $('mat' + which).textContent = diff > 0 ? '+' + Math.round(diff / 100 * 10) / 10 : '';
+}
+function renderClocks(){
+  var show = S && S.clockMin > 0;
+  var top = S.orientation === 'w' ? 'b' : 'w', bottom = S.orientation;
+  [['Top', top], ['Bottom', bottom]].forEach(function(pair){
+    var el = $('clock' + pair[0]);
+    el.hidden = !show;
+    if (show){
+      el.textContent = fmtClock(S.clockMs[pair[1]]);
+      el.classList.toggle('low', S.clockMs[pair[1]] < 20000);
+    }
+  });
+}
+function renderPockets(){
+  var show = S && S.variant === 'crazyhouse' && S.started;
+  var top = S.orientation === 'w' ? 'b' : 'w', bottom = S.orientation;
+  [['Top', top], ['Bottom', bottom]].forEach(function(pair){
+    var row = $('pocket' + pair[0]);
+    row.hidden = !show;
+    if (!show) return;
+    row.innerHTML = '<span>Pocket:</span>';
+    var pocket = S.pos.pockets[pair[1]], types = Object.keys(pocket).filter(function(t){ return pocket[t] > 0; });
+    if (!types.length){ var e = document.createElement('span'); e.className = 'small'; e.textContent = 'empty — capture something!'; row.appendChild(e); }
+    types.forEach(function(t){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'pocketbtn' + (S.selectedDrop === t && S.pos.turn === pair[1] ? ' sel' : '');
+      b.innerHTML = GLYPH[t] + ' <span class="cnt">×' + pocket[t] + '</span>';
+      b.disabled = !(S.started && !S.over && S.pos.turn === pair[1] && (S.mode === 'local' || pair[1] === S.humanColor));
+      b.addEventListener('click', function(){ pickDrop(t, pair[1]); });
+      row.appendChild(b);
+    });
+  });
+}
+function renderRecord(){
+  var el = $('recordList');
+  if (!S || !S.history.length){ el.innerHTML = '<span class="recordempty">No moves yet. White moves first.</span>'; return; }
+  var html = '<table>';
+  for (var i = 0; i < S.history.length; i += 2){
+    html += '<tr><td class="num">' + ((i / 2) + 1) + '.</td><td' + (S.viewPly === i + 1 ? ' class="cur"' : '') + '>' + S.history[i] + '</td><td' + (S.viewPly === i + 2 ? ' class="cur"' : '') + '>' + (S.history[i + 1] || '') + '</td></tr>';
+  }
+  if (S.result) html += '<tr><td></td><td colspan="2"><strong>' + S.result + '</strong></td></tr>';
+  el.innerHTML = html + '</table>';
+  el.scrollTop = el.scrollHeight;
+}
+function renderControls(){
+  $('hintBtn').hidden = settings.teach === 'off';
+  $('undoBtn').disabled = !S || !S.started || !S.history.length;
+  $('resignBtn').disabled = !S || !S.started || S.over;
+  $('drawBtn').disabled = !S || !S.started || S.over;
+  $('drawBtn').textContent = S && S.mode === 'local' ? 'Agree draw — tap' : 'Offer draw — tap';
+  $('claimBtn').hidden = !canClaimDraw();
+  $('newGameBtn').disabled = !S || !S.started;
+}
+
+/* ---------- input: tap & drag ---------- */
+function humanTurn(){
+  if (!S || !S.started || S.over || S.viewPly !== -1) return false;
+  if (S.mode === 'bot' && S.pos.turn !== S.humanColor) return false;
+  return true;
+}
+function pickDrop(t, color){
+  if (!humanTurn() || S.pos.turn !== color) return;
+  S.selectedDrop = S.selectedDrop === t ? null : t;
+  S.selected = -1;
+  renderBoard(); renderPockets();
+}
+function tryMoveTo(sq){
+  var legal = currentLegal(), m = null;
+  if (S.selectedDrop) m = legal.find(function(x){ return x.drop === S.selectedDrop && x.to === sq; });
+  else if (S.selected >= 0){
+    var cands = legal.filter(function(x){ return !x.drop && x.from === S.selected && x.to === sq; });
+    if (cands.length > 1){ openPromo(cands); return; }
+    m = cands[0];
+  }
+  if (m){ doMove(m); }
+}
+function boardTap(sq){
+  if (!humanTurn()) return;
+  var pos = S.pos, p = pos.board[sq];
+  if ((S.selected >= 0 || S.selectedDrop) && currentLegal().some(function(x){ return x.to === sq && (x.drop ? x.drop === S.selectedDrop : x.from === S.selected); })){
+    tryMoveTo(sq); return;
+  }
+  if (p && pColor(p) === pos.turn){
+    S.selected = sq; S.selectedDrop = null; renderBoard(); renderPockets(); return;
+  }
+  S.selected = -1; S.selectedDrop = null; renderBoard(); renderPockets();
+}
+var drag = null;
+function sqFromPoint(x, y){
+  var board = $('board'), rect = board.getBoundingClientRect();
+  if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return -1;
+  var W = S.pos.W;
+  var df = Math.floor((x - rect.left) / rect.width * W);
+  var dr = Math.floor((y - rect.top) / rect.height * 8);
+  var f = S.orientation === 'w' ? df : W - 1 - df;
+  var r = S.orientation === 'w' ? 7 - dr : dr;
+  return r * W + f;
+}
+function initBoardInput(){
+  var board = $('board');
+  board.addEventListener('pointerdown', function(e){
+    var btn = e.target.closest('.sq'); if (!btn) return;
+    var sq = parseInt(btn.dataset.sq, 10);
+    drag = { from: sq, x0: e.clientX, y0: e.clientY, active: false, ghost: null, pointerId: e.pointerId };
+    if (humanTurn()){
+      var p = S.pos.board[sq];
+      if (p && pColor(p) === S.pos.turn){ S.selected = sq; S.selectedDrop = null; renderBoard(); renderPockets(); }
+    }
+  });
+  board.addEventListener('pointermove', function(e){
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    if (!drag.active && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 8){
+      var p = S.pos.board[drag.from];
+      if (!p || !humanTurn() || pColor(p) !== S.pos.turn) { drag = null; return; }
+      drag.active = true;
+      var g = document.createElement('div');
+      g.className = 'dragghost piece ' + (pColor(p) === 'w' ? 'pw' : 'pb');
+      g.textContent = GLYPH[pType(p)];
+      g.style.fontSize = ($('board').getBoundingClientRect().width / S.pos.W * 0.72) + 'px';
+      document.body.appendChild(g);
+      drag.ghost = g;
+    }
+    if (drag.active && drag.ghost){ drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px'; }
+  });
+  function endDrag(e, cancelled){
+    if (!drag) return;
+    var d = drag; drag = null;
+    if (d.ghost) d.ghost.remove();
+    if (d.active && !cancelled){
+      var sq = sqFromPoint(e.clientX, e.clientY);
+      if (sq >= 0 && sq !== d.from) tryMoveTo(sq);
+      else renderBoard();
+    }
+    d.wasDrag = d.active;
+    setTimeout(function(){ if (d) d.wasDrag = false; }, 0);
+    dragEndedFlag = d.active;
+    setTimeout(function(){ dragEndedFlag = false; }, 50);
+  }
+  board.addEventListener('pointerup', function(e){ endDrag(e, false); });
+  board.addEventListener('pointercancel', function(e){ endDrag(e, true); });
+  board.addEventListener('click', function(e){
+    if (dragEndedFlag) return;
+    var btn = e.target.closest('.sq'); if (!btn) return;
+    boardTap(parseInt(btn.dataset.sq, 10));
+  });
+}
+var dragEndedFlag = false;
+
+/* ---------- promotion picker ---------- */
+function openPromo(cands){
+  S.pendingPromo = cands;
+  var grid = $('promoGrid'); grid.innerHTML = '';
+  var color = S.pos.turn;
+  cands.forEach(function(m){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'promobtn piece ' + (color === 'w' ? 'pw' : 'pb');
+    b.textContent = GLYPH[m.promo];
+    if (m.promo === 'A' || m.promo === 'C'){ var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = 'N'; b.appendChild(bd); }
+    b.setAttribute('aria-label', 'Promote to ' + m.promo);
+    b.addEventListener('click', function(){
+      $('promoModal').classList.remove('open');
+      var chosen = S.pendingPromo.find(function(x){ return x.promo === m.promo; });
+      S.pendingPromo = null;
+      if (chosen) doMove(chosen);
+    });
+    grid.appendChild(b);
+  });
+  $('promoModal').classList.add('open');
+}
+
+/* ---------- record export ---------- */
+function recordText(){
+  var names = { w: displayName('w'), b: displayName('b') };
+  var lines = [];
+  lines.push('[Event "Casual game — Chess page"]');
+  lines.push('[Variant "' + VARIANT_NAMES[S.variant] + '"]');
+  lines.push('[White "' + names.w + '"]');
+  lines.push('[Black "' + names.b + '"]');
+  if (S.result) lines.push('[Result "' + S.result + '"]');
+  if (S.clockMin > 0) lines.push('[TimeControl "' + (S.clockMin * 60) + (S.incSec ? '+' + S.incSec : '') + '"]');
+  lines.push('');
+  var body = '';
+  for (var i = 0; i < S.history.length; i += 2){
+    body += ((i / 2) + 1) + '. ' + S.history[i] + (S.history[i + 1] ? ' ' + S.history[i + 1] + ' ' : ' ');
+  }
+  if (S.result) body += S.result;
+  lines.push(body.trim());
+  return lines.join('\n');
+}
+function copyRecord(){
+  var txt = recordText();
+  function done(){ toast('The record is copied — paste it anywhere to keep it.'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt); done(); });
+  else { fallbackCopy(txt); done(); }
+}
+function fallbackCopy(txt){
+  var ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  ta.remove();
+}
+function downloadRecord(){
+  var blob = new Blob([recordText()], { type: 'text/plain' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'chess-game-' + S.variant + '.pgn';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+}
+
+/* ---------- save / resume (this device only) ---------- */
+function serializeMove(m){
+  if (!m) return null;
+  return { from: m.from, to: m.to, promo: m.promo || null, castle: m.castle || null, drop: m.drop || null,
+           rookFrom: m.rookFrom, rookTo: m.rookTo, epCapture: !!m.epCapture, dbl: !!m.double, captured: m.captured || null };
+}
+function saveGame(){
+  if (!S || !S.started) return;
+  try {
+    localStorage.setItem(LS_SAVE, JSON.stringify({
+      variant: S.variant, mode: S.mode, level: S.level, humanColor: S.humanColor,
+      names: S.names, history: S.history, replayMoves: S.replayMoves.map(serializeMove),
+      startArrangement: S.startArrangement || null,
+      clockMin: S.clockMin, incSec: S.incSec, clockMs: S.clockMs,
+      over: S.over, result: S.result, resultWhy: S.resultWhy, orientation: S.orientation
+    }));
+  } catch(e){}
+}
+function clearSavedGame(){ try { localStorage.removeItem(LS_SAVE); } catch(e){} }
+function resumeGame(data){
+  settings.variant = data.variant;
+  S = freshState();
+  S.variant = data.variant;
+  S.pos = newGamePos(data.variant);
+  if (data.variant === 'chess960' && data.startArrangement){
+    S.pos = emptyPos('chess960');
+    placeBackRank(S.pos, 0, 'w', data.startArrangement); placeBackRank(S.pos, 7, 'b', data.startArrangement);
+    var rooks = []; data.startArrangement.forEach(function(x, i){ if (x === 'R') rooks.push(i); });
+    S.pos.castling = { wk: Math.max(rooks[0], rooks[1]), wq: Math.min(rooks[0], rooks[1]), bk: Math.max(rooks[0], rooks[1]), bq: Math.min(rooks[0], rooks[1]) };
+    for (var f = 0; f < 8; f++){ S.pos.board[8 + f] = 'P'; S.pos.board[48 + f] = 'p'; }
+    S.pos.setup960arrangement = data.startArrangement.slice();
+  }
+  S.startArrangement = data.startArrangement || (S.pos.setup960arrangement || null);
+  S.mode = data.mode; S.level = data.level; S.humanColor = data.humanColor;
+  S.names = data.names || { w:'', b:'' };
+  S.clockMin = data.clockMin || 0; S.incSec = data.incSec || 0;
+  S.clockMs = data.clockMs || { w:0, b:0 };
+  S.orientation = data.orientation || (data.mode === 'bot' ? data.humanColor : 'w');
+  S.started = true;
+  S.keys[posKey(S.pos)] = 1;
+  S.replayMoves = [];
+  (data.replayMoves || []).forEach(function(sm){
+    var legal = legalMoves(S.pos, S.pos.turn);
+    var m = legal.find(function(x){
+      if (sm.drop) return x.drop === sm.drop && x.to === sm.to;
+      return !x.drop && x.from === sm.from && x.to === sm.to && (x.promo || null) === sm.promo && (x.castle || null) === sm.castle;
+    });
+    if (!m) return;
+    S.undos.push(makeMove(S.pos, m));
+    S.replayMoves.push(m);
+    var k = posKey(S.pos); S.keys[k] = (S.keys[k] || 0) + 1;
+  });
+  S.history = data.history || S.replayMoves.map(function(){ return ''; });
+  /* rebuild SAN history honestly by replaying notation */
+  S.history = [];
+  var rp = newGamePos(data.variant);
+  if (data.variant === 'chess960' && data.startArrangement){
+    rp = emptyPos('chess960');
+    placeBackRank(rp, 0, 'w', data.startArrangement); placeBackRank(rp, 7, 'b', data.startArrangement);
+    var rk = []; data.startArrangement.forEach(function(x, i){ if (x === 'R') rk.push(i); });
+    rp.castling = { wk: Math.max(rk[0], rk[1]), wq: Math.min(rk[0], rk[1]), bk: Math.max(rk[0], rk[1]), bq: Math.min(rk[0], rk[1]) };
+    for (var f2 = 0; f2 < 8; f2++){ rp.board[8 + f2] = 'P'; rp.board[48 + f2] = 'p'; }
+  }
+  S.replayMoves.forEach(function(m){ S.history.push(moveSAN(rp, m)); makeMove(rp, m); });
+  S.over = !!data.over; S.result = data.result || null; S.resultWhy = data.resultWhy || '';
+  refreshLegal();
+  syncSetupUI(); syncSettingsUI();
+  $('nameWhite').value = S.names.w || ''; $('nameBlack').value = S.names.b || '';
+  renderAll();
+  if (S.over) setStatus(S.resultWhy, 'That game is finished — start a new one any time.');
+  else { setStatus(turnStatusText(), 'Your saved game, carried on from where you left it.'); maybeBotMove(); }
+}
+
+/* ================= teaching layer =================
+   Dial: off / light / coach (player's choice, saved on this device).
+   Light names the opening as it's played. Coach adds one plain-words note
+   after a move when something important happened. Analysis and Hint live
+   behind their own doors and never appear uninvited. */
+var OPENINGS = [
+  { seq:['e4','e5','Nf3','Nc6','Bb5'], name:'Ruy Lopez', blurb:'one of the oldest openings there is. The bishop pressures the knight that guards the e5 pawn.' },
+  { seq:['e4','e5','Nf3','Nc6','Bc4'], name:'Italian Game', blurb:'the bishop on c4 eyes f7, the tender square next to Black’s king that only the king defends.' },
+  { seq:['e4','e5','Nf3','Nc6','d4'], name:'Scotch Game', blurb:'White opens the centre at once instead of building up slowly.' },
+  { seq:['e4','e5','Nf3','d6'], name:'Philidor Defence', blurb:'Black holds the centre with pawns and develops behind them.' },
+  { seq:['e4','e5','Nf3','Nf6'], name:'Petrov’s Defence', blurb:'Black counterattacks the e4 pawn instead of defending e5.' },
+  { seq:['e4','e5','Nc3'], name:'Vienna Game', blurb:'a King’s Gambit family opening with a knight developed first.' },
+  { seq:['e4','e5','f4'], name:'King’s Gambit', blurb:'White offers a pawn to tear open lines against Black’s king — the romantic era’s favourite weapon.' },
+  { seq:['e4','e5'], name:'King’s Pawn Opening', blurb:'the oldest first moves in chess: both sides claim the centre with pawns and knights to follow.' },
+  { seq:['e4','c5','Nf3','d6','d4','cxd4','Nxd4'], name:'Sicilian Defence, Open', blurb:'Black’s sharpest answer to 1.e4 — an unbalanced fight from the very start.' },
+  { seq:['e4','c5'], name:'Sicilian Defence', blurb:'Black fights for the centre with a flank pawn, inviting an unbalanced game.' },
+  { seq:['e4','e6'], name:'French Defence', blurb:'Black builds a pawn chain and plans to undermine White’s centre later. White gets space; Black gets solidity.' },
+  { seq:['e4','c6'], name:'Caro-Kann', blurb:'a sturdy defence: Black challenges the centre with support from the c-pawn.' },
+  { seq:['e4','d5'], name:'Scandinavian Defence', blurb:'Black challenges White’s centre pawn immediately, and the queen comes out early.' },
+  { seq:['e4','d6','d4','Nf6'], name:'Pirc Defence', blurb:'Black lets White build a big centre, then undermines it.' },
+  { seq:['e4','g6'], name:'Modern Defence', blurb:'Black will fianchetto — put the bishop on g7, its long diagonal — and attack the centre from the side.' },
+  { seq:['d4','d5','c4'], name:'Queen’s Gambit', blurb:'White offers a wing pawn to pull Black’s centre pawn away. It isn’t a true sacrifice — the pawn usually comes back.' },
+  { seq:['d4','d5'], name:'Queen’s Pawn Game', blurb:'a solid, positional start: both sides develop behind their pawns.' },
+  { seq:['d4','Nf6','c4','e6'], name:'Indian Defence', blurb:'Black develops the knight first and keeps the centre pawn breaks for later.' },
+  { seq:['d4','Nf6'], name:'Indian Defence', blurb:'Black doesn’t occupy the centre yet — it gets attacked from a distance first.' },
+  { seq:['d4','f5'], name:'Dutch Defence', blurb:'Black claims kingside space with the f-pawn and aims at White’s king.' },
+  { seq:['c4'], name:'English Opening', blurb:'the Sicilian’s mirror image, with a move in hand: a flank opening fighting for the d5 square.' },
+  { seq:['Nf3'], name:'Réti Opening', blurb:'White develops the knight and keeps every central option open.' },
+  { seq:['g3'], name:'King’s Fianchetto Opening', blurb:'White will put the bishop on g2, where it watches the whole long diagonal.' }
+];
+function openingFor(history){
+  var clean = history.map(function(s){ return s.replace(/[+#]$/, ''); });
+  var best = null;
+  OPENINGS.forEach(function(o){
+    if (o.seq.length > clean.length) return;
+    for (var i = 0; i < o.seq.length; i++) if (clean[i] !== o.seq[i]) return;
+    if (!best || o.seq.length > best.seq.length) best = o;
+  });
+  return best;
+}
+var PIECE_WORD = { P:'pawn', N:'knight', B:'bishop', R:'rook', Q:'queen', K:'king', A:'archbishop', C:'chancellor' };
+/* ---------- the player's own strategy record (this device only) ---------- */
+var LS_STRAT = 'chess.strategy.v1';
+var strategy = null;
+function loadStrategy(){
+  var blank = { games:0, wins:0, losses:0, draws:0, localGames:0, byLevel:{}, openings:{}, hangs:0, hangsLost:0, looseTaken:0, totalMoves:0 };
+  try { strategy = Object.assign(blank, JSON.parse(localStorage.getItem(LS_STRAT) || 'null') || {}); }
+  catch(e){ strategy = blank; }
+}
+function persistStrategy(){ try { localStorage.setItem(LS_STRAT, JSON.stringify(strategy)); } catch(e){} }
+/* the most valuable piece of `color` that is attacked cheaply and undefended */
+function findHanging(pos, color){
+  var enemy = oppC(color), worst = null;
+  for (var s2 = 0; s2 < pos.board.length; s2++){
+    var mp = pos.board[s2];
+    if (!mp || pColor(mp) !== color || pType(mp) === 'K' || VAL[pType(mp)] < 200) continue;
+    var enemyAttackers = attackersOf(pos, s2, enemy);
+    if (!enemyAttackers.length) continue;
+    var cheapest = Math.min.apply(null, enemyAttackers.map(function(a){ return VAL[pType(pos.board[a])]; }));
+    if (cheapest > VAL[pType(mp)]) continue;
+    if (attackersOf(pos, s2, color).length > 0) continue;
+    if (!worst || VAL[pType(mp)] > VAL[pType(pos.board[worst.sq])]) worst = { sq: s2, attackerSq: enemyAttackers[0] };
+  }
+  return worst;
+}
+function recordMoveEvents(m, mover, preInfo){
+  if (!strategy || S.mode !== 'bot') return;
+  if (mover === S.humanColor){
+    if (preInfo.capturedType && preInfo.capturedVal >= 200 && !preInfo.defendedByOwner) strategy.looseTaken++;
+    if (!S.over && findHanging(S.pos, mover)) strategy.hangs++;
+  } else {
+    if (preInfo.capturedType && preInfo.capturedVal >= 200 && !preInfo.defendedByOwner) strategy.hangsLost++;
+  }
+  persistStrategy();
+}
+function recordGameEnd(){
+  if (!strategy || S._recorded) return;
+  S._recorded = true;
+  strategy.totalMoves += S.history.length;
+  var opName = S.lastOpening || 'Unnamed lines';
+  strategy.openings[opName] = strategy.openings[opName] || { n:0, w:0, l:0, d:0 };
+  strategy.openings[opName].n++;
+  if (S.mode === 'bot'){
+    strategy.games++;
+    var rec = strategy.byLevel[S.level] = strategy.byLevel[S.level] || { w:0, l:0, d:0 };
+    if (S.result === '1/2-1/2'){ strategy.draws++; rec.d++; strategy.openings[opName].d++; }
+    else if ((S.result === '1-0') === (S.humanColor === 'w')){ strategy.wins++; rec.w++; strategy.openings[opName].w++; }
+    else { strategy.losses++; rec.l++; strategy.openings[opName].l++; }
+  } else strategy.localGames++;
+  persistStrategy();
+  renderStrategy();
+}
+function renderStrategy(){
+  var el = $('strategyText');
+  if (!el || !strategy) return;
+  if (!strategy.games && !strategy.localGames){
+    el.textContent = 'No finished games yet. Finish a game against the bot and your record starts.';
+    return;
+  }
+  var parts = [];
+  if (strategy.games){
+    parts.push('Against the bot: ' + strategy.games + ' finished game' + (strategy.games > 1 ? 's' : '') + ' — ' + strategy.wins + ' won, ' + strategy.draws + ' drawn, ' + strategy.losses + ' lost. Your games run about ' + Math.max(1, Math.round(strategy.totalMoves / Math.max(1, strategy.games + strategy.localGames))) + ' moves.');
+    var lvlBits = Object.keys(strategy.byLevel).map(function(l){
+      var r = strategy.byLevel[l];
+      return levelName(l) + ': ' + r.w + 'W–' + r.d + 'D–' + r.l + 'L';
+    });
+    if (lvlBits.length) parts.push('By level — ' + lvlBits.join(' · ') + '.');
+  }
+  if (strategy.localGames) parts.push(strategy.localGames + ' two-player game' + (strategy.localGames > 1 ? 's' : '') + ' finished on this device.');
+  var fav = null;
+  Object.keys(strategy.openings).forEach(function(k){ if (!fav || strategy.openings[k].n > strategy.openings[fav].n) fav = k; });
+  if (fav && strategy.openings[fav].n >= 2){
+    var o = strategy.openings[fav];
+    parts.push('Your most-played opening: ' + fav + ' (' + o.n + ' games' + (strategy.games ? ', scored ' + o.w + 'W–' + o.d + 'D–' + o.l + 'L in bot games' : '') + ').');
+  }
+  if (strategy.hangs >= 3)
+    parts.push('Your clearest pattern: pieces left undefended — ' + strategy.hangs + ' times in your games' + (strategy.hangsLost ? ', and ' + strategy.hangsLost + ' of them ' + (strategy.hangsLost > 1 ? 'were' : 'was') + ' taken' : '') + '. That is exactly what the Coach’s one-look habit (is everything guarded?) is aimed at.');
+  else if (strategy.hangsLost >= 1)
+    parts.push('Undefended pieces have cost you ' + strategy.hangsLost + ' piece' + (strategy.hangsLost > 1 ? 's' : '') + ' so far — the record’s first lesson.');
+  if (strategy.looseTaken >= 3)
+    parts.push('Your eye for loose pieces is working: you have taken ' + strategy.looseTaken + ' undefended enemy pieces. That is a real skill — keep feeding it.');
+  el.textContent = parts.join(' ');
+}
+function attacksSquare(pos, from, to){
+  var p = pos.board[from]; if (!p) return false;
+  var W = pos.W, ff = from % W, fr = (from / W) | 0, tf = to % W, tr = (to / W) | 0;
+  var df = tf - ff, dr = tr - fr, t = pType(p), c = pColor(p), i, s;
+  if (t === 'P') return dr === (c === 'w' ? 1 : -1) && Math.abs(df) === 1;
+  if (t === 'N' || t === 'A' || t === 'C'){
+    if ((Math.abs(df) === 1 && Math.abs(dr) === 2) || (Math.abs(df) === 2 && Math.abs(dr) === 1)) return true;
+    if (t === 'N') return false;
+  }
+  if (t === 'K') return Math.max(Math.abs(df), Math.abs(dr)) === 1;
+  function rayClear(){
+    var sf = Math.sign(df), sr = Math.sign(dr);
+    var cf = ff + sf, cr = fr + sr;
+    while (cf !== tf || cr !== tr){
+      if (pos.board[cr * W + cf]) return false;
+      cf += sf; cr += sr;
+    }
+    return true;
+  }
+  if ((t === 'B' || t === 'Q' || t === 'A') && Math.abs(df) === Math.abs(dr) && df !== 0) return rayClear();
+  if ((t === 'R' || t === 'Q' || t === 'C') && (df === 0) !== (dr === 0)) return rayClear();
+  return false;
+}
+function attackersOf(pos, sq, color){
+  var out = [];
+  for (var i = 0; i < pos.board.length; i++){
+    var p = pos.board[i];
+    if (p && pColor(p) === color && attacksSquare(pos, i, sq)) out.push(i);
+  }
+  return out;
+}
+function capturePreInfo(m, mover){
+  if (m.drop || m.castle) return { capturedType: null };
+  var capSq = m.epCapture ? m.to + (mover === 'w' ? -S.pos.W : S.pos.W) : m.to;
+  var cap = S.pos.board[capSq];
+  if (!cap) return { capturedType: null };
+  return {
+    capturedType: pType(cap), capturedSq: capSq, capturedVal: VAL[pType(cap)],
+    defendedByOwner: attackersOf(S.pos, capSq, oppC(mover)).length > 0,
+    attackerVal: VAL[pType(S.pos.board[m.from])]
+  };
+}
+function teachAfterMove(m, san, mover, preInfo){
+  if (settings.teach === 'off') return;
+  var note = '';
+  /* opening names: Light and Coach, standard-shaped starts only */
+  if (S.variant === 'standard' || S.variant === 'crazyhouse'){
+    var op = openingFor(S.history);
+    if (op && op.name !== S.lastOpening){
+      S.lastOpening = op.name;
+      note = 'Opening: ' + op.name + ' — ' + op.blurb;
+      if ({ 'Ruy Lopez':1, 'King’s Gambit':1, 'Sicilian Defence':1, 'Sicilian Defence, Open':1 }[op.name])
+        note += ' Its full story — where it worked and where it didn’t — is under “Strategies & their stories” in Page settings.';
+    }
+  }
+  if (settings.teach === 'coach' && !S.over) note = coachNote(m, mover, preInfo) || note;
+  if (note) S.coachNote = note;
+  renderCoach();
+}
+function coachNote(m, mover, preInfo){
+  var pos = S.pos, enemy = oppC(mover);
+  var moverIsBot = S.mode === 'bot' && mover !== S.humanColor;
+  var victimIsHuman = S.mode === 'bot' && moverIsBot;
+  /* 1 — a capture of an undefended piece: the consequence, or the win */
+  if (preInfo.capturedType && preInfo.capturedVal >= 200 && !preInfo.defendedByOwner){
+    if (victimIsHuman) return 'The bot took your ' + PIECE_WORD[preInfo.capturedType] + ' on ' + sqName(pos, preInfo.capturedSq) + ' — it had no defender. The habit the pros drill: before every move, one look — is everything I care about guarded?';
+    if (!moverIsBot) return 'That ' + PIECE_WORD[preInfo.capturedType] + ' on ' + sqName(pos, preInfo.capturedSq) + ' was undefended — you win it for nothing. Spotting loose pieces is half of tactics.';
+    return 'The bot’s ' + PIECE_WORD[preInfo.capturedType] + ' went undefended on ' + sqName(pos, preInfo.capturedSq) + ', and it was taken. Loose pieces fall.';
+  }
+  /* 2 — even trade of real pieces */
+  if (preInfo.capturedType && preInfo.defendedByOwner && preInfo.capturedVal >= 300 && Math.abs(preInfo.capturedVal - preInfo.attackerVal) <= 30){
+    return 'An even trade — ' + PIECE_WORD[preInfo.capturedType] + ' for ' + PIECE_WORD[pType(pos.board[m.to])] + '. Trades favour the side that is ahead in material, and simplify the game for the side defending.';
+  }
+  /* 3 — fork by the moved piece */
+  if (!m.drop && !m.castle){
+    var movedPiece = pos.board[m.to];
+    if (movedPiece){
+      var hits = [];
+      for (var i = 0; i < pos.board.length; i++){
+        var q = pos.board[i];
+        if (q && pColor(q) === enemy && (pType(q) === 'K' || VAL[pType(q)] >= 300) && attacksSquare(pos, m.to, i)) hits.push(q);
+      }
+      if (hits.length >= 2){
+        var names = hits.map(function(q){ return pType(q) === 'K' ? 'the king' : 'the ' + PIECE_WORD[pType(q)]; });
+        return 'A fork — your ' + PIECE_WORD[pType(movedPiece)] + ' on ' + sqName(pos, m.to) + ' attacks ' + names.join(' and ') + ' at the same time. They can’t both escape. Forks are the most common winning tactic in chess.';
+      }
+      /* 4 — pin by the moved piece (slider lines up piece + king) */
+      var t = pType(movedPiece);
+      if (t === 'B' || t === 'R' || t === 'Q' || t === 'A' || t === 'C'){
+        var dirs = (t === 'B' || t === 'A') ? BISH_D : (t === 'R' || t === 'C') ? ROOK_D : BISH_D.concat(ROOK_D);
+        var W = pos.W, ff = m.to % W, fr = (m.to / W) | 0;
+        for (var d = 0; d < dirs.length; d++){
+          var cf = ff, cr = fr, first = null;
+          while (true){
+            cf += dirs[d][0]; cr += dirs[d][1];
+            if (cf < 0 || cf >= W || cr < 0 || cr >= 8) break;
+            var sqp = pos.board[cr * W + cf];
+            if (sqp){
+              if (!first){ if (pColor(sqp) === enemy && pType(sqp) !== 'K' && VAL[pType(sqp)] >= 300) first = sqp; else break; }
+              else {
+                if (pColor(sqp) === enemy && pType(sqp) === 'K')
+                  return 'A pin — your ' + PIECE_WORD[t] + ' lines up on the ' + PIECE_WORD[pType(first)] + ' with the king directly behind it. The ' + PIECE_WORD[pType(first)] + ' can’t move without exposing the king, so it’s tied down.';
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  /* 5 — the mover left a piece hanging */
+  var worst = findHanging(pos, mover);
+  if (worst){
+    var wp = pos.board[worst.sq];
+    if (S.mode === 'bot' && !moverIsBot){
+      var msg = 'Careful — your ' + PIECE_WORD[pType(wp)] + ' on ' + sqName(pos, worst.sq) + ' has no defender, and the ' + PIECE_WORD[pType(pos.board[worst.attackerSq])] + ' can take it next move. Nothing to do about it now — but that one look before moving is the whole habit.';
+      if (strategy && strategy.hangs >= 2) msg += ' Your own record says this is a pattern: your pieces have gone undefended ' + strategy.hangs + ' times in your games here.';
+      return msg;
+    }
+    if (S.mode === 'local')
+      return 'Look closer: ' + (mover === 'w' ? 'White' : 'Black') + '’s ' + PIECE_WORD[pType(wp)] + ' on ' + sqName(pos, worst.sq) + ' is undefended, and ' + (enemy === 'w' ? 'White' : 'Black') + ' can take it next move.';
+  }
+  /* 6 — bot mode: the bot left something hanging for the player */
+  if (moverIsBot){
+    var botWorst = findHanging(pos, mover);
+    if (botWorst){
+      var bp = pos.board[botWorst.sq];
+      return 'Your move — the bot’s ' + PIECE_WORD[pType(bp)] + ' on ' + sqName(pos, botWorst.sq) + ' is undefended, and your ' + PIECE_WORD[pType(pos.board[botWorst.attackerSq])] + ' can take it. Free pieces are gifts: check for one every move.';
+    }
+  }
+  return '';
+}
+function renderCoach(){
+  var cl = $('coachLine');
+  var show = settings.teach !== 'off' && S && S.coachNote;
+  cl.hidden = !show;
+  if (show) cl.innerHTML = '<strong>Coach:</strong> ' + S.coachNote.replace(/</g, '&lt;');
+  var ol = $('openingLine');
+  var showOp = settings.teach !== 'off' && S && S.lastOpening;
+  ol.hidden = !showOp;
+  if (showOp) ol.textContent = 'Opening: ' + S.lastOpening;
+}
+/* ---------- hint & analysis (doors the player opens) ---------- */
+function rootBest(pos, depth){
+  var moves = legalMoves(pos, pos.turn);
+  if (!moves.length) return null;
+  orderMoves(pos, moves);
+  var best = null, bestScore = -Infinity;
+  for (var i = 0; i < moves.length; i++){
+    var u = makeMove(pos, moves[i]);
+    var s = depth <= 1 ? -evaluate(pos) : -search(pos, depth - 1, -Infinity, i === 0 ? Infinity : -bestScore, 1);
+    unmakeMove(pos, u);
+    if (s > bestScore){ bestScore = s; best = moves[i]; }
+  }
+  return { move: best, score: bestScore };
+}
+/* Every legal move, exactly scored — the honest basis for offering real
+   alternatives instead of dressing one plan up as THE way. */
+function topCandidates(pos, depth){
+  var moves = legalMoves(pos, pos.turn), scored = [];
+  orderMoves(pos, moves);
+  for (var i = 0; i < moves.length; i++){
+    var u = makeMove(pos, moves[i]);
+    var s = depth <= 1 ? -evaluate(pos) : -search(pos, depth - 1, -Infinity, Infinity, 1);
+    unmakeMove(pos, u);
+    scored.push({ move: moves[i], score: s });
+  }
+  scored.sort(function(a, b){ return b.score - a.score; });
+  return scored;
+}
+function pvLine(pos, firstMove, depth, plies){
+  var p = clonePos(pos), sans = [moveSAN(p, firstMove)];
+  makeMove(p, firstMove);
+  var guard = 0;
+  while (guard++ < plies){
+    if (legalMoves(p, p.turn).length === 0) break;
+    var step = rootBest(p, depth);
+    if (!step) break;
+    sans.push(moveSAN(p, step.move));
+    makeMove(p, step.move);
+  }
+  return sans;
+}
+function formatLine(pos, sans){
+  var line = '', moveNo = pos.full, turn = pos.turn;
+  sans.forEach(function(s, i){
+    if (turn === 'w'){ line += moveNo + '. ' + s + ' '; turn = 'b'; }
+    else { if (i === 0) line += moveNo + '… ' + s + ' '; else line += s + ' '; turn = 'w'; moveNo++; }
+  });
+  return line.trim();
+}
+/* What a move buys, in plain words, from the facts of the position. */
+function describePlan(pos, m){
+  var piece = m.drop ? null : pos.board[m.from];
+  var t = m.drop ? m.drop : pType(piece);
+  var color = pos.turn;
+  if (m.castle) return 'king safety first — castling tucks the king behind its pawns and brings a rook into play';
+  if (m.drop) return 'drops a ' + PIECE_WORD[t] + ' straight into the fight from the pocket — Crazyhouse’s whole point';
+  var sanProbe = moveSAN(pos, m);
+  if (sanProbe.indexOf('#') >= 0) return 'checkmate — the game ends here';
+  var capSq = m.epCapture ? m.to + (color === 'w' ? -pos.W : pos.W) : m.to;
+  var cap = pos.board[capSq];
+  if (cap){
+    var defended = attackersOf(pos, capSq, oppC(color)).length > 0;
+    return 'takes the ' + PIECE_WORD[pType(cap)] + ' on ' + sqName(pos, capSq) + (defended ? ' — a trade is on, so count who recaptures and with what' : ' — and it had no defender, so this wins material outright');
+  }
+  if (sanProbe.indexOf('+') >= 0) return 'gives check — the reply is forced, which keeps the initiative (the right to make the threats)';
+  if (t === 'P'){
+    if (m.double) return 'grabs the centre with both feet — space now, and the pawns can be attacked later';
+    var adv = color === 'w' ? (m.to / pos.W | 0) : 7 - ((m.to / pos.W) | 0);
+    if (adv >= 4) return 'pushes a pawn deep into enemy ground — space and cramping, though the pawn itself can become a target';
+    return 'a pawn move — claims space and opens lines for the pieces behind it';
+  }
+  var homeRank = color === 'w' ? 0 : 7;
+  if (((m.from / pos.W) | 0) === homeRank && (t === 'N' || t === 'B' || t === 'Q' || t === 'R'))
+    return 'develops the ' + PIECE_WORD[t] + ' — a new piece joins the fight';
+  var tf = m.to % pos.W, tr = (m.to / pos.W) | 0;
+  if (tf >= pos.W / 2 - 2 && tf <= pos.W / 2 + 1 && tr >= 3 && tr <= 4)
+    return 'posts the ' + PIECE_WORD[t] + ' in the centre, where it watches the most squares';
+  if (t === 'K') return 'walks the king — safety over activity';
+  return 'repositions the ' + PIECE_WORD[t] + ' — a quiet, improving move';
+}
+function costWords(diff){
+  if (diff <= 5) return 'The engine scores it level with its favourite — a genuine alternative, pure taste.';
+  if (diff <= 35) return 'Costs almost nothing against the favourite (a third of a pawn at most).';
+  if (diff <= 85) return 'Costs roughly half a pawn against the favourite — that is the price of this idea.';
+  return 'The engine scores it about ' + (diff / 100).toFixed(1) + ' pawns below the favourite — a real cost, paid for whatever this idea buys.';
+}
+function showHint(){
+  if (settings.teach === 'off'){ toast('Teaching is Off in Page settings — turn it to Light or Coach for hints.'); return; }
+  if (!humanTurn()){ toast('A hint is for the player to move — wait for your turn.'); return; }
+  var depth = S.variant === 'standard' ? 3 : 2;
+  var scored = topCandidates(S.pos, depth);
+  if (!scored.length) return;
+  var best = scored[0], san = moveSAN(S.pos, best.move);
+  if (scored.length === 1){
+    S.coachNote = 'Hint — there is exactly one legal move here: ' + san + '. No choice to offer.';
+  } else {
+    var alt = scored[1], altSan = moveSAN(S.pos, alt.move);
+    var txt = 'Hint — the engine’s pick is ' + san + ': ' + describePlan(S.pos, best.move) + '.';
+    if (best.score - alt.score <= 85)
+      txt += ' Also real: ' + altSan + ' — ' + describePlan(S.pos, alt.move) + '. ' + costWords(best.score - alt.score);
+    else
+      txt += ' Nothing else comes close: the runner-up, ' + altSan + ', ' + costWords(best.score - alt.score).charAt(0).toLowerCase() + costWords(best.score - alt.score).slice(1);
+    txt += ' The pick’s piece is lit up; the move is still yours to make, change, or ignore.';
+    S.coachNote = txt;
+  }
+  if (!best.move.drop){ S.selected = best.move.from; S.selectedDrop = null; }
+  renderCoach(); renderBoard();
+}
+function evalWords(score, turnColor){
+  if (score > MATE - 1000 || score < -(MATE - 1000)){
+    var winner = score > 0 ? turnColor : oppC(turnColor);
+    var plies = MATE - Math.abs(score);
+    var movesN = Math.max(1, Math.ceil(plies / 2));
+    return (winner === 'w' ? 'White' : 'Black') + ' has a forced checkmate — the engine sees mate in about ' + movesN + ' move' + (movesN > 1 ? 's' : '') + '.';
+  }
+  var w = turnColor === 'w' ? score : -score;
+  var who = w >= 0 ? 'White' : 'Black', a = Math.abs(w);
+  if (a < 55) return 'The position is about level — neither side has a real edge. The next mistake probably decides it.';
+  if (a < 140) return who + ' stands better, by roughly a pawn’s worth (' + (a / 100).toFixed(1) + '). A real edge, not yet a win.';
+  if (a < 300) return who + ' stands clearly better, by about ' + (a / 100).toFixed(1) + ' pawns’ worth of material and position. The other side needs a plan, fast.';
+  if (a < 600) return who + ' is much better — about ' + (a / 100).toFixed(1) + ' pawns’ worth, like being a piece up. ' + (who === 'White' ? 'Black' : 'White') + ' needs a tactic or a swindle.';
+  return who + ' is winning — about ' + (a / 100).toFixed(1) + ' pawns’ worth ahead. Short of a blunder, this is over.';
+}
+function openAnalysis(){
+  if (!S || !S.started){ toast('Start a game first — then analysis has a position to read.'); return; }
+  var pos = displayPos();
+  var depth = pos.variant === 'standard' ? 3 : 2;
+  var scored = topCandidates(clonePos(pos), depth);
+  if (!scored.length){ $('analysisText').textContent = 'The game is over — there is no move to analyse.'; $('analysisLine').textContent = ''; $('analysisNote').textContent = ''; $('analysisModal').classList.add('open'); return; }
+  var best = scored[0];
+  $('analysisText').textContent = evalWords(best.score, pos.turn) + ' Whose move: ' + (pos.turn === 'w' ? 'White' : 'Black') + ' (' + displayName(pos.turn) + ').';
+  var html = '';
+  if (scored.length === 1){
+    html = '<strong>Only one legal move exists:</strong> ' + moveSAN(pos, best.move) + ' — ' + describePlan(pos, best.move) + '. No alternatives to weigh; sometimes chess is like that.<br><span style="font-family:ui-monospace,monospace">' + formatLine(pos, pvLine(pos, best.move, depth, 4)) + '</span>';
+  } else {
+    /* the real candidates: everything within ~0.85 pawns of the best, up to three,
+       plus the runner-up named with its cost when only one move is close */
+    var cands = scored.filter(function(c){ return best.score - c.score <= 85; }).slice(0, 3);
+    var letters = ['A', 'B', 'C'];
+    cands.forEach(function(c, i){
+      var san = moveSAN(pos, c.move);
+      html += '<strong>Plan ' + letters[i] + ' — ' + san + ':</strong> ' + describePlan(pos, c.move) + '. ' + (i === 0 ? 'The engine’s favourite.' : costWords(best.score - c.score)) +
+        '<br><span style="font-family:ui-monospace,monospace">' + formatLine(pos, pvLine(pos, c.move, depth, 4)) + '</span>' + (i < cands.length - 1 ? '<br><br>' : '');
+    });
+    if (cands.length === 1 && scored.length > 1){
+      var runner = scored[1];
+      html += '<br><br>One plan stands out here — the rest give up too much. The runner-up, ' + moveSAN(pos, runner.move) + ' (' + describePlan(pos, runner.move) + '), shows the gap: ' + costWords(best.score - runner.score);
+    } else if (cands.length > 1){
+      html += '<br><br>More than one plan is real here — that is normal chess, not indecision. The scores say how close they run; the words say what each one buys.';
+    }
+  }
+  $('analysisLine').innerHTML = html;
+  $('analysisNote').textContent = 'Read by the engine on this page, looking ' + depth + ' moves ahead with a capture search on top. That is a strong club player’s read, not perfection — positions it calls level get lost every day, and the fight is the point.';
+  $('analysisModal').classList.add('open');
+}
+
+/* ---------- setup & settings UI wiring ---------- */
+function segWire(id, attr, cb){
+  var el = $(id);
+  el.addEventListener('click', function(e){
+    var b = e.target.closest('.segbtn'); if (!b) return;
+    el.querySelectorAll('.segbtn').forEach(function(x){ x.classList.toggle('sel', x === b); });
+    cb(b.dataset[attr]);
+  });
+}
+function segSet(id, attr, val){
+  $(id).querySelectorAll('.segbtn').forEach(function(x){ x.classList.toggle('sel', x.dataset[attr] === String(val)); });
+}
+function syncSetupUI(){
+  $('modeBotBtn').classList.toggle('sel', setup.mode === 'bot');
+  $('modeLocalBtn').classList.toggle('sel', setup.mode === 'local');
+  $('botSetup').style.display = setup.mode === 'bot' ? '' : 'none';
+  segSet('levelSeg', 'level', setup.level);
+  segSet('colorSeg', 'color', setup.colorChoice);
+}
+function syncSettingsUI(){
+  segSet('variantSeg', 'variant', settings.variant);
+  $('clockSel').value = String(settings.clockMin);
+  $('incSel').value = String(settings.incSec);
+  segSet('undoSeg', 'undo', settings.undoVsBot ? 'on' : 'off');
+  segSet('autoflipSeg', 'autoflip', settings.autoflip ? 'on' : 'off');
+  segSet('teachSeg', 'teach', settings.teach);
+}
+function randomAlias(){ return ALIAS_A[(Math.random() * ALIAS_A.length) | 0] + ' ' + ALIAS_B[(Math.random() * ALIAS_B.length) | 0]; }
+
+function init(){
+  loadSettings();
+  loadStrategy();
+  S = freshState();
+  S.pos = newGamePos('standard');
+  S.replayMoves = [];
+  refreshLegal();
+  syncSetupUI(); syncSettingsUI();
+  renderAll();
+  renderStrategy();
+  initBoardInput();
+
+  $('modeBotBtn').addEventListener('click', function(){ setup.mode = 'bot'; syncSetupUI(); persistSettings(); });
+  $('modeLocalBtn').addEventListener('click', function(){ setup.mode = 'local'; syncSetupUI(); persistSettings(); });
+  segWire('levelSeg', 'level', function(v){ setup.level = v; persistSettings(); });
+  segWire('colorSeg', 'color', function(v){ setup.colorChoice = v; persistSettings(); });
+  segWire('variantSeg', 'variant', function(v){
+    settings.variant = v; persistSettings();
+    if (S && !S.started){ S.pos = newGamePos(v); S.variant = v; refreshLegal(); renderAll(); }
+    toast('Rule set for the next game: ' + VARIANT_NAMES[v] + '.');
+  });
+  segWire('teachSeg', 'teach', function(v){
+    settings.teach = v; persistSettings(); renderCoach(); renderControls();
+    toast(v === 'off' ? 'Teaching is off — just the game.' : v === 'light' ? 'Teaching: Light — openings named as they’re played.' : 'Teaching: Coach — openings named, plus a note after your move when something important happens.');
+  });
+  segWire('undoSeg', 'undo', function(v){ settings.undoVsBot = v === 'on'; persistSettings(); });
+  segWire('autoflipSeg', 'autoflip', function(v){ settings.autoflip = v === 'on'; persistSettings(); });
+  $('clockSel').addEventListener('change', function(){ settings.clockMin = parseInt(this.value, 10); persistSettings(); });
+  $('incSel').addEventListener('change', function(){ settings.incSec = parseInt(this.value, 10); persistSettings(); });
+  $('diceWhite').addEventListener('click', function(){ $('nameWhite').value = randomAlias(); });
+  $('diceBlack').addEventListener('click', function(){ $('nameBlack').value = randomAlias(); });
+  $('startBtn').addEventListener('click', function(){ startGame(true); });
+  $('newGameBtn').addEventListener('click', function(){ startGame(true); });
+  $('undoBtn').addEventListener('click', undo);
+  $('flipBtn').addEventListener('click', function(){ S.orientation = S.orientation === 'w' ? 'b' : 'w'; renderAll(); });
+  $('resignBtn').addEventListener('click', resign);
+  $('drawBtn').addEventListener('click', drawButton);
+  $('claimBtn').addEventListener('click', function(){
+    if (!canClaimDraw()) return;
+    var why = S.pos.half >= 100 ? 'Draw claimed — fifty moves with no pawn move and no capture.' : 'Draw claimed — the same position has appeared three times.';
+    endGame('1/2-1/2', why);
+  });
+  $('hintBtn').addEventListener('click', showHint);
+  $('analysisBtn').addEventListener('click', openAnalysis);
+  $('analysisClose').addEventListener('click', function(){ $('analysisModal').classList.remove('open'); });
+  $('copyRecordBtn').addEventListener('click', copyRecord);
+  $('downloadRecordBtn').addEventListener('click', downloadRecord);
+  $('promoCancel').addEventListener('click', function(){ $('promoModal').classList.remove('open'); S.pendingPromo = null; });
+  $('forgetBtn').addEventListener('click', function(){ clearSavedGame(); toast('Saved game forgotten — this device keeps nothing of it now.'); });
+  $('forgetStrategyBtn').addEventListener('click', function(){
+    try { localStorage.removeItem(LS_STRAT); } catch(e){}
+    loadStrategy(); renderStrategy();
+    toast('Strategy record forgotten — it starts again from your next finished game.');
+  });
+  document.addEventListener('keydown', function(e){
+    if (!S || !S.started) return;
+    if (e.key === 'ArrowLeft'){ S.viewPly = S.viewPly === -1 ? S.history.length - 1 : Math.max(0, S.viewPly - 1); renderBoard(); renderRecord(); }
+    else if (e.key === 'ArrowRight'){
+      if (S.viewPly === -1) return;
+      S.viewPly = S.viewPly + 1 >= S.history.length ? -1 : S.viewPly + 1; renderBoard(); renderRecord();
+    }
+    else if (e.key === 'Escape'){ S.viewPly = -1; renderBoard(); renderRecord(); }
+  });
+
+  /* a live default game is on the board from the moment the page opens —
+     the setup card above simply restarts it the way you choose */
+  startGame(false);
+
+  /* offer resume */
+  try {
+    var saved = JSON.parse(localStorage.getItem(LS_SAVE) || 'null');
+    if (saved && saved.history && saved.history.length){
+      var note = $('setupNote');
+      note.innerHTML = '';
+      var span = document.createElement('span');
+      span.textContent = 'You have a game saved on this device (' + VARIANT_NAMES[saved.variant] + ', ' + saved.history.length + ' moves). ';
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn ghost'; b.textContent = 'Carry on the saved game — tap';
+      b.addEventListener('click', function(){ resumeGame(saved); $('gameCard').scrollIntoView({ behavior:'smooth' }); });
+      note.appendChild(span); note.appendChild(b);
+    }
+  } catch(e){}
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
