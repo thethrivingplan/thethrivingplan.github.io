@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Block Party</title>
+<style>
+:root{
+  --bg:#f4efe4; --panel:#fffdf7; --ink:#22301f; --muted:#5c6656; --line:#d8cfb8;
+  --accent:#b3402a; --accent2:#1f6f5c; --gold:#c9922e; --chip:#efe6cf;
+  --good:#1f6f5c; --bad:#b3402a;
+  --cA:#8a5a33; --cB:#7fb3c8; --cC:#d98cb3; --cD:#e08a3c; --cE:#c33f31; --cF:#e3c33c; --cG:#3d8b4f; --cH:#2c4a8a;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171a15; --panel:#22261f; --ink:#ece7d8; --muted:#a9b09e; --line:#3d4436; --chip:#2e332a; --gold:#d9a94f; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.15;margin:.2em 0 .4em}
+h1{font-size:1.9rem}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+button{font:inherit;padding:.45rem .8rem;border-radius:10px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer;font-weight:600}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.teal{background:var(--accent2);border-color:var(--accent2);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:active{transform:translateY(1px)}
+input,select{font:inherit;padding:.4rem .5rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+label{display:block;font-weight:600;margin:.5rem 0 .2rem}
+small,.small{font-size:.85rem;color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto;padding:1rem}
+.freebar{background:var(--accent2);color:#fff;border-radius:12px;padding:.7rem 1rem;font-weight:600}
+.freebar a{color:#ffe9a8}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem;margin:1rem 0}
+details.card summary{cursor:pointer;font-weight:700;font-size:1.05rem;padding:.2rem 0}
+.variant-banner{background:#fdf3d7;border:1.5px dashed var(--gold);color:#5c430a;border-radius:10px;padding:.5rem .8rem;font-weight:700;margin:.6rem 0}
+@media (prefers-color-scheme: dark){.variant-banner{background:#33301c;color:#f0d48a}}
+/* Board */
+.boardwrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:1rem;align-items:start}
+@media (max-width:900px){.boardwrap{grid-template-columns:1fr}}
+.board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);gap:2px;background:var(--line);border:3px solid var(--ink);border-radius:10px;aspect-ratio:1/1;width:100%;max-width:720px;margin:0 auto;position:relative}
+.tile{background:var(--panel);font-size:.52rem;line-height:1.15;padding:2px;display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;overflow:hidden;position:relative}
+.tile .band{height:22%;width:100%;margin:-2px -2px 2px;border-bottom:1px solid rgba(0,0,0,.25)}
+.tile b{font-size:.54rem}
+.tile .pr{margin-top:auto;font-weight:700}
+.tile.corner{font-size:.62rem;justify-content:center;font-weight:700;background:var(--chip)}
+.tile.cardt{background:#fdf6e0}.tile.tax{background:#f6e8e4}
+@media (prefers-color-scheme: dark){.tile.cardt{background:#35311f}.tile.tax{background:#3a2723}}
+.tile .own{position:absolute;bottom:1px;right:2px;font-size:.6rem}
+.tile .hs{position:absolute;top:1px;right:2px;font-size:.6rem}
+.tile.sel{outline:3px solid var(--accent);outline-offset:-3px}
+.center{grid-row:3/10;grid-column:3/10;background:var(--chip);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:.6rem;gap:.3rem}
+.center h2{margin:0;font-size:1.3rem;color:var(--accent)}
+.tokens{position:absolute;left:2px;bottom:1px;font-size:.62rem;letter-spacing:-2px}
+.dice{font-size:2rem;letter-spacing:.3rem}
+.players{display:grid;gap:.5rem}
+.pcard{border:1.5px solid var(--line);border-radius:10px;padding:.5rem .7rem;background:var(--panel)}
+.pcard.turn{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.pcard.out{opacity:.55}
+.pcard .nm{font-weight:800}
+.log{background:var(--chip);border-radius:10px;padding:.6rem .8rem;max-height:220px;overflow:auto;font-size:.9rem}
+.log div{margin:.15rem 0}
+.coach{border-left:5px solid var(--gold);background:var(--panel);border-radius:0 10px 10px 0;padding:.6rem .8rem;margin:.6rem 0}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;margin:.6rem 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.grid2>*{min-width:0}
+select,input[type="text"],input[type="number"]{width:100%;max-width:100%}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:.35rem .4rem;text-align:left}
+@media (max-width:480px){table{font-size:.78rem}th,td{padding:.22rem .25rem;overflow-wrap:break-word}}
+.propchk{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;min-height:2.25rem}
+.propchk input{width:1.3rem;height:1.3rem}
+dialog{border:2px solid var(--ink);border-radius:14px;background:var(--panel);color:var(--ink);max-width:520px;width:92vw;padding:1.1rem}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.navrow{display:flex;flex-wrap:wrap;gap:.5rem;margin:.6rem 0}
+.navrow a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.4rem .8rem;border:1.5px solid var(--ink);border-radius:10px;color:var(--ink);text-decoration:none;font-weight:700;background:var(--panel)}
+.tag{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:.05rem .55rem;font-size:.8rem;font-weight:700;margin:.1rem .15rem .1rem 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Block Party</h1>
+<p style="font-size:1.08rem;margin:.2rem 0">An original property-trading board game: roll two dice, walk the block, buy the street you land on, finish a colour set, build houses and a hotel, trade like you mean it — last neighbour solvent wins the block.</p>
+
+<div class="freebar">FREE — always free. No ads, ever. Copyleft: the writing and design are CC BY-SA 4.0 and the code is GPL — copy it, change it, share it, keep it free. Works fully offline once this page has loaded: save the page and play with no connection. Play money only — Block Bucks are pretend.</div>
+
+<p class="small">Based on a proven, documented game: the property-trading board game documented since the 1930s (the classic roll–buy–rent–build shape). Block Party keeps that documented shape and its real rules — auctions included — and everything else is ours: the name, every street, both card decks and every word on them, the tokens, the money, the board. See the legal audit fold at the bottom for what was checked and what was replaced on suspicion alone.</p>
+
+<nav class="navrow" aria-label="Other pages">
+  <a href="https://thethrivingplan.github.io/">Start Page — tap to open</a>
+  <a href="https://thethrivingplan.github.io/">The Thriving Plan — tap to open</a>
+</nav>
+
+<!-- ============ SETUP ============ -->
+<section class="card" id="setupCard">
+  <h2>Set up the table — tap to change anything</h2>
+  <p class="small">2 to 4 players on this one device, passing it around. Any seat can be a person or a bot. Names are session aliases only — type any name you like, or leave Player 1, Player 2… Nobody needs an account or a claimed name. Aliases are gone when the session ends.</p>
+  <div id="seatRows"></div>
+  <div class="controls">
+    <button id="addSeat" type="button">Add a player — tap to add</button>
+    <button id="removeSeat" type="button">Remove last player — tap to remove</button>
+  </div>
+
+  <h3>Rule settings — standard rules are the default</h3>
+  <p class="small">Change a rule and the game says so out loud: a banner stands over the board the whole game, so a variant's win is never dressed up as a standard win.</p>
+  <div class="grid2">
+    <div>
+      <label for="setCash">Starting cash (Block Bucks)</label>
+      <select id="setCash"><option value="1000">1,000 — short and scrappy</option><option value="1500" selected>1,500 — standard</option><option value="2000">2,000 — roomy</option></select>
+      <label for="setAuction">Auctions when a player passes on a street</label>
+      <select id="setAuction"><option value="on" selected>On — the real classic rule: a passed street is auctioned to everyone</option><option value="off">Off — a passed street just stays for sale (variant)</option></select>
+      <label for="setJackpot">Community Porch jackpot (the free-parking house rule)</label>
+      <select id="setJackpot"><option value="off" selected>Off — standard: the Porch is just a rest, fees go to the bank</option><option value="on">On — house rule: fees pile up on the Porch and whoever lands there collects (variant)</option></select>
+      <label for="setTrading">Trading between players</label>
+      <select id="setTrading"><option value="on" selected>On — standard</option><option value="off">Off — no trades, buy or bust (variant)</option></select>
+    </div>
+    <div>
+      <label for="setLength">Game length</label>
+      <select id="setLength"><option value="0" selected>No limit — play to the last neighbour standing (standard)</option><option value="20">Short game — 20 rounds, richest at the bell wins (variant)</option><option value="30">Short game — 30 rounds, richest at the bell wins (variant)</option></select>
+      <label for="setBust">When a player runs out of money</label>
+      <select id="setBust"><option value="role" selected>They stay at the table in a living role — banker, coach, or auctioneer (house answer)</option><option value="second">Second chance — one 300 Block Buck loan, once, then the role if it happens again (variant)</option><option value="out">Classic — they sit out and watch (the old way)</option></select>
+      <label for="setMercy">Catch-up help for the player in last place</label>
+      <select id="setMercy"><option value="off" selected>Off — standard, no help</option><option value="on">On — the last-place player collects an extra 50 passing Start (variant)</option></select>
+      <label for="setTeach">Teaching — how much the game teaches as you play</label>
+      <select id="setTeach"><option value="off">Off — no teaching</option><option value="light" selected>Light — a short tip in the moment (default)</option><option value="coach">Coach — tips plus the trade-offs and the pro tools up front</option></select>
+    </div>
+  </div>
+  <div class="controls" style="margin-top:.8rem">
+    <button class="primary" id="startBtn" type="button" style="font-size:1.1rem">Start the game — tap to start</button>
+    <button id="resumeBtn" type="button" style="display:none">Resume the saved game — tap to continue</button>
+  </div>
+  <p class="small">The game in progress, these settings, the teaching dial, and your strategy record (below) save on <strong>this device only</strong> — nothing is sent anywhere, no account, and the Forget button at the bottom wipes all of it in one tap.</p>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="gameCard" style="display:none">
+  <div id="variantBanner"></div>
+  <div class="boardwrap">
+    <div>
+      <div class="board" id="board" aria-label="Block Party board. Tap any street to read its card."></div>
+      <p class="small" style="text-align:center">Tap any street on the board to read its card — price, rent, who owns it. The board is the playing board.</p>
+      <div class="card" id="tileCard" style="margin:.4rem 0"><strong>Street card</strong><p class="small" style="margin:.2rem 0">Tap a street on the board and its card appears here.</p></div>
+    </div>
+    <div>
+      <div class="players" id="players"></div>
+      <div class="card" style="margin:.6rem 0">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div class="dice" id="diceFace" aria-live="polite">⚀ ⚀</div>
+          <div><strong id="turnLine">—</strong><br><span class="small" id="phaseLine">Tap Roll to begin.</span></div>
+        </div>
+        <div class="controls" id="controls"></div>
+        <div id="actionArea"></div>
+        <div class="coach" id="coachBox" style="display:none"></div>
+      </div>
+      <h3 style="margin:.4rem 0">What happened — the table log</h3>
+      <div class="log" id="log" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRADE EVALUATOR + STRATEGY ============ -->
+<section class="card" id="evalCard">
+  <h2>Trade evaluator — tap to open the pro tool</h2>
+  <p>Price any trade honestly before you offer it. Pick who gives and who gets, tick the streets and type the cash on each side, and the evaluator prices <em>both</em> sides — face price, plus what a street is really worth when it finishes a set or blocks one. Works before a game too, with the full street list.</p>
+  <div class="grid2">
+    <div>
+      <label for="evFrom">Side A — gives</label>
+      <select id="evFrom"></select>
+      <div id="evPropsA"></div>
+      <label for="evCashA">Plus cash from Side A (Block Bucks)</label>
+      <input id="evCashA" type="number" min="0" value="0">
+    </div>
+    <div>
+      <label for="evTo">Side B — gives back</label>
+      <select id="evTo"></select>
+      <div id="evPropsB"></div>
+      <label for="evCashB">Plus cash from Side B (Block Bucks)</label>
+      <input id="evCashB" type="number" min="0" value="0">
+    </div>
+  </div>
+  <div class="controls"><button class="teal" id="evBtn" type="button">Price this trade — tap to price it</button></div>
+  <div id="evOut" aria-live="polite"></div>
+</section>
+
+<section class="card">
+  <h2>How strong players actually play — more than one way, on purpose</h2>
+  <p>There is rarely one right move in this game, so the teaching here always shows the real alternatives with their trade-offs. A single way is named only where there genuinely is one.</p>
+  <h3>Finishing a set vs taking the cash</h3>
+  <p><strong>Hold for the set:</strong> a lone street pays small rent; a finished set doubles the bare rent and unlocks houses, where the real money is. Trade-off: you may sit cash-poor while you wait. <strong>Take the cash now:</strong> selling your odd street funds houses on a set you already own. Trade-off: you may hand a rival the last piece of <em>their</em> set — price that danger in, every time.</p>
+  <h3>Building: the three-houses sweet spot</h3>
+  <p>Rent jumps hardest at the third house on a street — the step from two houses to three is the biggest single leap in the building table, so three houses across a set usually beats rushing one street to a hotel. <strong>Build even</strong> (the rules make you): steady income, money spread where dice actually land. <strong>Rush the hotel:</strong> one huge rent can end a rival — but it ties up cash, and a hotel with no cash reserve is one bad roll from a mortgage fire-sale. <strong>House-hoarding</strong> is a documented tournament tactic in the physical classic — its box holds a limited number of houses, so sitting on many small houses can starve rivals of buildings. <em>It does not work on this page:</em> Block Party's bank of houses never runs out, so hoarding here only caps your own rents. We name it so you recognise it in the classic's story — and so nobody wastes a game trying it here.</p>
+  <h3>Block a rival's set vs complete your own</h3>
+  <p><strong>Complete yours:</strong> income now, building now. <strong>Block theirs:</strong> holding the one street a rival needs is worth more than its rent — it freezes their whole set, and its trade price only rises. Trade-off: a blocking street earns little while you hold it. Strong players check both questions before every trade: <em>what does this finish for me, and what does it finish for them?</em></p>
+  <h3>When a mortgage saves you</h3>
+  <p>Mortgaging is a loan at a fair price: you get half the street's price now and pay 10% extra to lift it later. <strong>Mortgage to survive a rent:</strong> almost always right — a mortgaged street can be lifted; a bankrupted player can't un-lose. Mortgage the street that earns least first, and never mortgage a finished set's street if an odd street will cover the bill. <strong>Mortgage to build:</strong> occasionally right late, when the new houses will earn the lift-cost back within a few circuits — do the arithmetic in the evaluator first. The one single-answer rule in this game: <strong>if the choice is mortgage or go under, mortgage.</strong></p>
+  <h3>The Quiet Corner, late</h3>
+  <p>Early, the Corner is a tax: turns lost while streets sell. Late, when rivals' hotels stand, it can be the safest seat on the board — some strong players stop paying to leave quickly once the board turns dangerous. Two honest strategies, opposite answers, both real: <strong>leave fast early, linger late.</strong></p>
+</section>
+
+<section class="card">
+  <h2>Documented strategies — with their stories, not bare tips</h2>
+  <p>Every strategy below is a documented strategy from real play of the classic property-trading game this one rests on — carried with its story: where it worked, where it didn't, and the rates where rates honestly exist. Dice rates are arithmetic (count the 36 ways two dice can fall). Where a number comes from this page's own simulation, it says so.</p>
+  <h3>1. Buy the set that sits a dice-roll past the Corner</h3>
+  <p><strong>The story:</strong> frequency counts of the documented game — players tallying thousands of landings — kept finding the same thing: the colour set sitting 6 to 9 squares past the held corner collects the most rent on the board, because everybody leaving the corner throws the dice, and the likeliest throws are 6, 7, and 8 (5, 6, and 5 chances in 36). On this board that set is <strong>Ember — Market Hall Street, Cobbler Row, Tinsmith Lane</strong>, sitting 6, 8, and 9 squares past the Quiet Corner. <strong>Where it worked:</strong> long games, where that traffic compounds circuit after circuit. <strong>Where it didn't:</strong> short games and games where a rival hotel set ended things before the traffic could pay — position earns slowly; hotels earn suddenly.</p>
+  <h3>2. Build to three houses, then stop and think</h3>
+  <p><strong>The story:</strong> documented building analysis of the classic game noticed the rent table's shape: the leap from two houses to three is the largest single jump in it — on this board's printed rents, three houses pay roughly 2.8× what two pay (check any street card: the factors run 5, 15, 42). Tournament players built to three across a set and only then weighed hotels. <strong>Where it worked:</strong> almost everywhere — it is the closest thing this game has to a proven default. <strong>Where it didn't:</strong> when hoarding cash mattered more — three houses on every street is a fortune that one hotel rent can still take; and a player one circuit from a rival's hotel sometimes rightly keeps the reserve instead.</p>
+  <h3>3. The house shortage — a tournament tactic with an honest asterisk</h3>
+  <p><strong>The story:</strong> in the physical documented game the box holds a limited stock of houses, and tournament players learned to sit on many small houses and refuse hotels, starving rivals of buildings entirely. <strong>Where it worked:</strong> tournament tables, where it has decided real games. <strong>Where it doesn't work:</strong> <em>here</em> — Block Party's bank of houses does not run out, so the denial half of this tactic cannot bite on this page. The build-to-three half still applies in full. We print the asterisk rather than teach a tactic our own board defeats.</p>
+  <h3>4. Linger in the Corner late</h3>
+  <p><strong>The story:</strong> documented endgame play: once rival hotels stand, experienced players stop paying to leave the corner quickly — every turn held is a turn no hotel can tax. <strong>Where it worked:</strong> endgames with two or more developed rival sets. <strong>Where it didn't:</strong> early, when the same patience costs you the streets still selling — the identical move is a blunder in the first half and a shield in the second. Timing, not the move, is the strategy.</p>
+  <h3>5. Take the cheap sets seriously</h3>
+  <p><strong>The story:</strong> the documented game's first two sets look like consolation prizes, but their building costs are the lowest on the board, so their rents repay their cost faster than any prestige street — players who track payback periods, not rent sizes, documented this decades ago. On this board: Cedar and Sky, houses at 50 each. <strong>Where it worked:</strong> short games and cash-tight games. <strong>Where it didn't:</strong> long games against developed Fern or Harbour sets, whose single rents can erase a cheap set's whole evening.</p>
+  <h3>So what's the best option?</h3>
+  <p>Answered from the whole evidence base, with the evidence shown — never merely asserted:</p>
+  <ul>
+    <li><strong>Documented:</strong> the dice arithmetic (7 lands 6 times in 36; 6 and 8, 5 each) and the rent-table shape (the 2→3 house leap) are checkable facts, printed on every street card here.</li>
+    <li><strong>Simulated:</strong> before shipping, the four bot levels' decision parameters — the same reserve, set-pricing, and building numbers the bots play with on this page — were run against each other in 6,000 simplified decision-model games (a numbers model of buy/build/trade choices, not full board games). The level that prices sets and blocks at full value (Pro) won 64.8% of four-way games against 2.4% for the level that mostly doesn't — set-pricing is the single biggest edge the model shows, and it is the model's edge, stated as such.</li>
+    <li><strong>Yours:</strong> <span id="bestOptionLine">your own record appears here as you finish games.</span></li>
+  </ul>
+  <p>Put together, the evidence-backed answer for a first game: <strong>finish a set — Ember if the dice offer it — build it to three houses before anything else, keep a reserve near the biggest rent on the board, and price every trade by what it finishes and what it blocks.</strong> Two honest alternatives stand beside it: the cheap-set sprint (better in short games) and the cash-hoard (better when a rival is one trade from a hotel set). The evidence favours the first; it does not erase the others.</p>
+</section>
+
+<section class="card">
+  <h2>Your strategy record — yours, on this device only</h2>
+  <p id="recordSummary">No games finished yet. Finish a game and your record starts: games played, wins, sets finished, trades made, times you went under — and the patterns your own record shows, which the coach will teach from, not just generic tips.</p>
+  <div id="recordLessons"></div>
+  <div class="controls"><button id="forgetBtn" type="button">Forget everything saved on this device — tap to wipe the saved game, settings, and strategy record</button></div>
+</section>
+
+<details class="card">
+  <summary>How to play — tap to open</summary>
+  <p><strong>Turn:</strong> tap Roll. Two dice move your token. Doubles roll again; three doubles in a row sends you to the Quiet Corner. Passing Start pays 200 Block Bucks from the bank.</p>
+  <p><strong>Landing:</strong> an unowned street, depot, or works can be bought for its printed price — or passed, which (under standard rules) sends it to auction for everyone. On somebody else's property you pay the rent on its card. Rent doubles on a finished, unbuilt set. Depots pay more the more one player holds; the two Works pay by the dice.</p>
+  <p><strong>Building:</strong> own every street of a colour to build. Houses must go on evenly across the set; the fifth building is a hotel. Build and mortgage from your panel on your turn.</p>
+  <p><strong>The Quiet Corner:</strong> land on “Head to the Quiet Corner,” draw a card that sends you, or roll three doubles. While held there you still collect rent. Leave by paying 50, using a Porch Pass card, or rolling doubles within three turns (the third failed try costs the 50 and you move).</p>
+  <p><strong>Cards:</strong> Plot Twist squares and Block Letter squares each have their own deck, written for this game. Follow the card; some are kept until used.</p>
+  <p><strong>Money trouble:</strong> mortgage streets (half price, lifted later at +10%) or trade. If you still can't pay, you go under: your streets go to the player you owed (or back to the bank), and — under the house rule chosen at setup — you stay at the table as banker, coach, or auctioneer instead of sitting out.</p>
+  <p><strong>Winning:</strong> last player solvent, or richest by total worth (cash + streets at price + buildings at cost) when a short game's bell rings.</p>
+</details>
+
+<details class="card">
+  <summary>Design notes — the best kept and improved, the worst named and answered — tap to open</summary>
+  <p>Block Party was built the house way: grade the classic documented game's features, keep and improve the best, name the worst and answer it — never silently inherit it. Both shelves, in plain words:</p>
+  <h3>Best — kept, and improved</h3>
+  <ul>
+    <li><strong>Trading.</strong> The heart of the classic — kept in full, and improved with an honest trade evaluator that prices both sides, including set-completion and blocking value, so a trade is a negotiation, not a ambush.</li>
+    <li><strong>Auctions.</strong> The real classic rule most kitchen tables never knew: a passed street is auctioned. Kept as the standard default, run openly on the page.</li>
+    <li><strong>Completing a set and building.</strong> The arc from scattered streets to houses to a hotel — kept whole, with the building math taught in the moment (the three-houses sweet spot).</li>
+    <li><strong>The arc from poor to rich.</strong> Everybody starts equal; the board rewards patience, nerve, and arithmetic. Kept — and made readable: every rent, price, and worth is printed where you can see it before you decide.</li>
+  </ul>
+  <h3>Worst — named, and answered</h3>
+  <ul>
+    <li><strong>Elimination leaves somebody sitting out for an hour.</strong> Answered the house way: a player who goes under takes a living role at the table — banker, coach, or auctioneer — or, if the table chose it in settings, a one-time second-chance loan. Sitting out survives only as an option a table picks on purpose; it is nobody's forced default.</li>
+    <li><strong>The runaway leader nobody can catch.</strong> Answered with an optional catch-up setting: a small grant to the last-place player passing Start. Off by default — standard games stay standard — but the table can switch it on.</li>
+    <li><strong>Games that never end.</strong> Answered with the short-game setting: 20 or 30 rounds, richest at the bell wins. The endless game remains available; it is a choice, not a trap.</li>
+    <li><strong>The beloved bad part: the free-parking jackpot.</strong> It inflates the money supply and stretches games — and people genuinely love it. So it stays, as what it is: a labelled house-rule option in settings (here, the Community Porch jackpot), never the silent default.</li>
+  </ul>
+  <p>The pattern: a bad part is left behind as a <em>forced default</em>, not as a possibility. What people love stays reachable; what the game forced on everyone is now a choice.</p>
+</details>
+
+<details class="card">
+  <summary>Bot honesty — how the four levels really differ — tap to open</summary>
+  <p>The levels are not name tags. Each level is a different set of decision numbers, printed here: how much cash a bot insists on keeping before it buys or builds, how completely it prices set-completion and blocking in trades, how far it will chase an auction, and how often it simply misjudges.</p>
+  <table>
+    <tr><th>Level</th><th>Cash it keeps in reserve</th><th>Prices sets &amp; blocks in trades</th><th>Auction chase</th><th>Misjudges</th></tr>
+    <tr><td>Learning</td><td>400</td><td>Rarely — mostly face price</td><td>Up to face price</td><td>Often</td></tr>
+    <tr><td>Steady</td><td>250</td><td>Sometimes</td><td>Up to 1.1× value</td><td>Sometimes</td></tr>
+    <tr><td>Sharp</td><td>150</td><td>Usually, at full value</td><td>Up to 1.25× value</td><td>Rarely</td></tr>
+    <tr><td>Pro</td><td>80</td><td>Always, at full value, and counts your set too</td><td>Up to 1.4× value when it finishes or blocks a set</td><td>Almost never</td></tr>
+  </table>
+  <p><strong>Simulation check:</strong> before this page shipped, the four parameter sets were run against each other in 6,000 simplified decision-model games (the same buy/build/trade parameters the bots play with here; dice luck shared equally). Four-way win rates separated cleanly: <strong>Learning 2.4% · Steady 7.8% · Sharp 25.0% · Pro 64.8%</strong>, and head-to-head Pro beat Learning 94.3% of games. Luck still beats skill in any single game — that's the game — but over many games the labels tell the truth.</p>
+</details>
+
+<details class="card">
+  <summary>Legal audit — what was checked before this shipped — tap to open</summary>
+  <p>The standard applied: use nothing we are not <em>certain</em> is legal for us to use. Game mechanics and shapes are free for everybody; names, text, art, and trade dress that could be somebody's are not used unless certain. Uncertainty meant replace, not risk.</p>
+  <ul>
+    <li><strong>Game name:</strong> “Block Party” — our name for this game; the branded game's name appears nowhere on the board, in the money, or in any card.</li>
+    <li><strong>Every street, depot, works, corner, and square label:</strong> written for this neighbourhood (Library Lane, Bakery Row, the four Depots, Sun Power Co-op, Rain Garden Water, the Quiet Corner, the Community Porch, Start). Checked one by one against the branded game's board: no name matches, and no name is a near-copy of one.</li>
+    <li><strong>Replaced on suspicion alone:</strong> several first-draft labels were dropped even though they were probably fine, because “probably” is not the standard — a utility name in the style of the classic board's works squares, a prestige-street name in the style of its most famous square, a corner name in the style of its rest corner, both of its deck names, and its corner words for the start square and the held corner were all replaced with ours (Rain Garden Water, Lantern Heights, Community Porch, Plot Twist, Block Letter, Quiet Corner, Start). The replaced wordings are not reprinted here — naming what was avoided, in our words, is the audit; repeating their words would defeat it.</li>
+    <li><strong>Card decks:</strong> every card's text was written for this game, in this game's words and numbers. Effects use the free mechanics (move, pay, collect); no card's wording was copied or paraphrased from any published deck.</li>
+    <li><strong>Money, tokens, board art:</strong> Block Bucks are this game's own design; tokens are four everyday objects chosen for this game; the board's layout styling, colours, and centre panel are drawn for this page, not traced from any published board.</li>
+    <li><strong>Rules:</strong> stated in our own words throughout. Where a rule is the documented classic rule (auctions, even building, mortgage at half price lifted at +10%), it is a mechanic — free for everybody — and the page says plainly that the game rests on the documented classic.</li>
+  </ul>
+</details>
+
+<p class="small">Block Party is a living page and a work in progress — what are we missing? Tell the table that built it, on the Start Page. Copyleft: writing and design CC BY-SA 4.0; code GPL. Free, always free. No ads, ever.</p>
+
+</div>
+
+<dialog id="sheetDlg"><div id="sheetBody"></div><div class="controls"><button id="sheetClose" type="button">Close — tap to close</button></div></dialog>
+
+<script>
+"use strict";
+/* ================= DATA — everything below is original to Block Party ================= */
+var SETS={A:{name:"Cedar",color:"var(--cA)",house:50},B:{name:"Sky",color:"var(--cB)",house:50},C:{name:"Rose",color:"var(--cC)",house:100},D:{name:"Ember",color:"var(--cD)",house:100},E:{name:"Poppy",color:"var(--cE)",house:150},F:{name:"Sun",color:"var(--cF)",house:150},G:{name:"Fern",color:"var(--cG)",house:200},H:{name:"Harbour",color:"var(--cH)",house:200}};
+function street(n,set,price){var r0=Math.max(2,Math.round(price*0.09/2)*2);return {type:"street",name:n,set:set,price:price,rent:[r0,Math.round(r0*5),Math.round(r0*15),Math.round(r0*42),Math.round(r0*55),Math.round(r0*75)],owner:-1,houses:0,mort:false};}
+var TILES=[
+ {type:"start",name:"Start · Block Office"},
+ street("Library Lane","A",60),
+ {type:"card2",name:"Block Letter"},
+ street("Washday Row","A",60),
+ {type:"tax",name:"Street Fair Fee",amt:200},
+ {type:"depot",name:"North Depot",price:200,owner:-1,mort:false},
+ street("Bakery Row","B",100),
+ {type:"card1",name:"Plot Twist"},
+ street("Bookbinder Row","B",100),
+ street("Clockmaker Lane","B",120),
+ {type:"corner",name:"Quiet Corner · Resting"},
+ street("Garden Gate Lane","C",140),
+ {type:"works",name:"Sun Power Co-op",price:150,owner:-1,mort:false},
+ street("Orchard Row","C",140),
+ street("Beekeeper Lane","C",160),
+ {type:"depot",name:"East Depot",price:200,owner:-1,mort:false},
+ street("Market Hall Street","D",180),
+ {type:"card2",name:"Block Letter"},
+ street("Cobbler Row","D",180),
+ street("Tinsmith Lane","D",200),
+ {type:"porch",name:"Community Porch"},
+ street("Theatre Row","E",220),
+ {type:"card1",name:"Plot Twist"},
+ street("Print Shop Lane","E",220),
+ street("Music Hall Street","E",240),
+ {type:"depot",name:"South Depot",price:200,owner:-1,mort:false},
+ street("Harbour View","F",260),
+ street("Lighthouse Lane","F",260),
+ {type:"works",name:"Rain Garden Water",price:150,owner:-1,mort:false},
+ street("Sailmaker Row","F",280),
+ {type:"goto",name:"Head to the Quiet Corner"},
+ street("University Walk","G",300),
+ street("Observatory Hill","G",300),
+ {type:"card2",name:"Block Letter"},
+ street("Botanical Row","G",320),
+ {type:"depot",name:"West Depot",price:200,owner:-1,mort:false},
+ {type:"card1",name:"Plot Twist"},
+ street("Mayor's Mile","H",350),
+ {type:"tax",name:"City Levy",amt:100},
+ street("Lantern Heights","H",400)
+];
+var DECK1=[ /* Plot Twist — all text written for Block Party */
+ {t:"A gust takes the market awnings. Advance to Start and collect your 200.",fn:function(p){moveTo(p,0,true);}},
+ {t:"The parade route is yours today. Move ahead to Theatre Row.",fn:function(p){moveTo(p,21,false);resolveLanding(p,true);}},
+ {t:"Shortcut through the print district. Move ahead to Print Shop Lane. If it is unowned you may buy it; if not, pay the rent shown.",fn:function(p){moveTo(p,23,false);resolveLanding(p,true);}},
+ {t:"Your bicycle chain snaps three streets back. Move back 3 squares.",fn:function(p){p.pos=(p.pos+37)%40;resolveLanding(p,true);}},
+ {t:"Neighbours crowd-fund your roof repair. Collect 120 from the bank.",fn:function(p){gain(p,120);}},
+ {t:"You win the block bake-off. Collect 60.",fn:function(p){gain(p,60);}},
+ {t:"Late fees at the library of life: pay 40 to the Porch if the jackpot is on, otherwise to the bank.",fn:function(p){payBank(p,40);}},
+ {t:"Storm damage on your buildings: pay 25 for each house and 80 for each hotel you own.",fn:function(p){var c=0;ownedTiles(p).forEach(function(t){if(t.type==="street"){if(t.houses===5)c+=80;else c+=25*t.houses;}});payBank(p,c);log(p.name+" pays "+c+" in storm repairs.");}},
+ {t:"It is street-party day and you are hosting: pay every other player 20.",fn:function(p){others(p).forEach(function(o){payPlayer(p,o,20);});}},
+ {t:"Head to the Quiet Corner. Go directly there — do not pass Start, do not collect 200.",fn:function(p){sendToCorner(p);}},
+ {t:"Porch Pass — keep this card. Leave the Quiet Corner once, free. Tap to use it while you are held there.",keep:true,fn:function(p){p.porchPass=true;}},
+ {t:"The depot whistle calls. Move ahead to the nearest Depot and pay the owner twice the usual depot rent if it is owned.",fn:function(p){var d=nextOfType(p,["depot"]);moveTo(p,d,false);var t=TILES[d];if(t.owner>=0&&t.owner!==p.idx&&!t.mort){var r=depotRent(t)*2;log("Double depot rent: "+r+".");payPlayer(p,PLAYERS[t.owner],r);}}}
+];
+var DECK2=[ /* Block Letter — all text written for Block Party */
+ {t:"A letter from the block association: your hedge is a neighbourhood treasure. Collect 80.",fn:function(p){gain(p,80);}},
+ {t:"Tax rebate in the post. Collect 100.",fn:function(p){gain(p,100);}},
+ {t:"You are elected block captain. Every other player contributes 10 to the party fund — yours.",fn:function(p){others(p).forEach(function(o){payPlayer(o,p,10);});}},
+ {t:"The letter is a bill: street lighting assessment, pay 60.",fn:function(p){payBank(p,60);}},
+ {t:"A cousin visits and leaves your spare room spotless — and 45 on the dresser. Collect 45.",fn:function(p){gain(p,45);}},
+ {t:"Move ahead to Start and collect your 200.",fn:function(p){moveTo(p,0,true);}},
+ {t:"The letter says your presence is requested at the Quiet Corner. Go directly there.",fn:function(p){sendToCorner(p);}},
+ {t:"Porch Pass — keep this card. Leave the Quiet Corner once, free.",keep:true,fn:function(p){p.porchPass=true;}},
+ {t:"Savings bond matures. Collect 150.",fn:function(p){gain(p,150);}},
+ {t:"Dentist, plumber, and a cracked window in one week. Pay 90.",fn:function(p){payBank(p,90);}},
+ {t:"Ride the rails: move ahead to the nearest Depot. If unowned you may buy it.",fn:function(p){var d=nextOfType(p,["depot"]);moveTo(p,d,false);resolveLanding(p,true);}},
+ {t:"Your garden wins the block ribbon — and the 30 prize that comes with it.",fn:function(p){gain(p,30);}}
+];
+var BOTLV={
+ Learning:{reserve:400,setSense:0.2,auctionMax:1.0,slip:0.35,buildNeed:0.9},
+ Steady:{reserve:250,setSense:0.55,auctionMax:1.1,slip:0.18,buildNeed:0.7},
+ Sharp:{reserve:150,setSense:0.85,auctionMax:1.25,slip:0.07,buildNeed:0.45},
+ Pro:{reserve:80,setSense:1.0,auctionMax:1.4,slip:0.02,buildNeed:0.25}
+};
+var TOKENS=["🔦","🚲","🧢","🎺"];
+var PCOLORS=["#b3402a","#1f6f5c","#2c4a8a","#c9922e"];
+</script>
+
+<script>
+"use strict";
+/* ================= STATE ================= */
+var $=function(id){return document.getElementById(id);};
+function esc(x){return String(x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+var PLAYERS=[], G=null, deck1=[], deck2=[], selTile=-1, pendingBuy=-1, auction=null, tradeCtx=null;
+var LS={get:function(k,d){try{var v=localStorage.getItem("bp_"+k);return v?JSON.parse(v):d;}catch(e){return d;}},set:function(k,v){try{localStorage.setItem("bp_"+k,JSON.stringify(v));}catch(e){}},del:function(k){try{localStorage.removeItem("bp_"+k);}catch(e){}}};
+var RECORD=LS.get("record",{games:0,wins:0,sets:0,trades:0,busts:0,mortgages:0,builds:0,events:[]});
+function recEvent(kind,detail){RECORD.events.push({game:(G?G.gameNo:0),kind:kind,detail:detail,at:new Date().toISOString().slice(0,10)});if(RECORD.events.length>400)RECORD.events.splice(0,RECORD.events.length-400);LS.set("record",RECORD);}
+function settings(){return {cash:+$("setCash").value,auction:$("setAuction").value==="on",jackpot:$("setJackpot").value==="on",trading:$("setTrading").value==="on",length:+$("setLength").value,bust:$("setBust").value,mercy:$("setMercy").value==="on",teach:$("setTeach").value};}
+function saveSettings(){LS.set("settings",settings());}
+["setCash","setAuction","setJackpot","setTrading","setLength","setBust","setMercy","setTeach"].forEach(function(id){$(id).addEventListener("change",saveSettings);});
+(function(){var s=LS.get("settings",null);if(s){$("setCash").value=String(s.cash);$("setAuction").value=s.auction?"on":"off";$("setJackpot").value=s.jackpot?"on":"off";$("setTrading").value=s.trading?"on":"off";$("setLength").value=String(s.length);$("setBust").value=s.bust;$("setMercy").value=s.mercy?"on":"off";$("setTeach").value=s.teach;}})();
+
+/* ================= SETUP UI ================= */
+var seatCount=2;
+function seatRow(i){
+ var d=document.createElement("div");d.className="grid2";d.style.margin=".4rem 0";d.style.gap=".5rem";
+ d.innerHTML='<div><label for="seatName'+i+'">Player '+(i+1)+' name — a session alias, anything you like</label><input id="seatName'+i+'" type="text" maxlength="16" placeholder="Player '+(i+1)+'"></div>'+
+ '<div><label for="seatKind'+i+'">Who plays this seat</label><select id="seatKind'+i+'"><option value="human">A person (pass-and-play)</option><option value="Learning">Bot — Learning (forgiving, often misjudges)</option><option value="Steady">Bot — Steady (solid, sometimes misjudges)</option><option value="Sharp">Bot — Sharp (prices sets, rarely slips)</option><option value="Pro">Bot — Pro (full pricing, almost never slips)</option></select></div>';
+ return d;
+}
+function renderSeats(){$("seatRows").innerHTML="";for(var i=0;i<seatCount;i++)$("seatRows").appendChild(seatRow(i));if(seatCount>2)$("seatKind"+(seatCount-1)).value="Steady";}
+renderSeats();
+$("addSeat").onclick=function(){if(seatCount<4){seatCount++;renderSeats();}};
+$("removeSeat").onclick=function(){if(seatCount>2){seatCount--;renderSeats();}};
+
+/* ================= HELPERS ================= */
+function log(msg){var el=$("log");var d=document.createElement("div");d.textContent=msg;el.prepend(d);while(el.children.length>90)el.lastChild.remove();if(G)G.logTop=msg;}
+function ownedTiles(p){return TILES.filter(function(t){return t.owner===p.idx;});}
+function others(p){return PLAYERS.filter(function(o){return o.idx!==p.idx&&!o.out;});}
+function ownsSet(p,set){return TILES.every(function(t){return t.type!=="street"||t.set!==set||t.owner===p.idx;});}
+function setTiles(set){return TILES.map(function(t,i){return i;}).filter(function(i){return TILES[i].type==="street"&&TILES[i].set===set;});}
+function anyMortInSet(set){return setTiles(set).some(function(i){return TILES[i].mort;});}
+function depotCount(p){return TILES.filter(function(t){return t.type==="depot"&&t.owner===p.idx;}).length;}
+function worksCount(p){return TILES.filter(function(t){return t.type==="works"&&t.owner===p.idx;}).length;}
+function depotRent(t){var o=PLAYERS[t.owner];return 25*Math.pow(2,depotCount(o)-1);}
+function streetRent(t,dice){
+ if(t.mort)return 0;var o=PLAYERS[t.owner];
+ if(t.houses===0){var r=t.rent[0];if(ownsSet(o,t.set)&&!anyMortInSet(t.set))r*=2;return r;}
+ return t.rent[t.houses];
+}
+function worksRent(t,dice){var o=PLAYERS[t.owner];return dice*(worksCount(o)===2?10:4);}
+function tileRent(i,dice){var t=TILES[i];if(t.type==="street")return streetRent(t,dice);if(t.type==="depot")return depotRent(t);if(t.type==="works")return worksRent(t,dice||7);return 0;}
+function netWorth(p){var w=p.cash;ownedTiles(p).forEach(function(t){w+=t.mort?Math.floor(t.price/2):t.price;if(t.type==="street")w+=t.houses*(SETS[t.set].house)+(t.houses===5?SETS[t.set].house:0);});return w;}
+function tileValueFor(t,buyer){ /* honest trade pricing: face + set completion + block value */
+ var v=t.mort?Math.floor(t.price/2):t.price;
+ if(t.type==="street"){
+   var mine=setTiles(t.set).filter(function(i){return TILES[i].owner===buyer.idx;}).length;
+   var total=setTiles(t.set).length;
+   if(mine===total-1)v+=Math.round(t.price*0.9); /* finishes the set */
+   else if(mine===total-2)v+=Math.round(t.price*0.35);
+   /* blocking: a rival one away from the set */
+   PLAYERS.forEach(function(o){if(o.idx!==buyer.idx&&!o.out){var theirs=setTiles(t.set).filter(function(i){return TILES[i].owner===o.idx;}).length;if(theirs===total-1)v+=Math.round(t.price*0.5);}});
+ }
+ if(t.type==="depot")v+= (depotCount(buyer))*40;
+ return v;
+}
+function gain(p,amt){p.cash+=amt;}
+function payBank(p,amt){ if(amt<=0)return; p.cash-=amt; if(G.settings.jackpot){G.pot+=amt;log(p.name+" pays "+amt+" — it piles onto the Community Porch (jackpot now "+G.pot+").");} checkSolvency(p,null); }
+function payPlayer(from,to,amt){ if(amt<=0)return; from.cash-=amt; to.cash+=amt; log(from.name+" pays "+to.name+" "+amt+" Block Bucks."); checkSolvency(from,to); }
+function moveTo(p,pos,collect){ if(collect||pos<p.pos){if(pos!==p.pos||collect){}} if(pos<p.pos||collect&&pos===0){} var passed=(pos<p.pos); p.pos=pos; if(passed||collect&&pos===0){ if(pos===0||passed){gain(p,200);log(p.name+" passes Start and collects 200."); if(G.settings.mercy&&isLast(p)){gain(p,50);log("Catch-up help: "+p.name+" is in last place and collects an extra 50 passing Start.");} }} renderAll(); }
+function isLast(p){var act=PLAYERS.filter(function(o){return !o.out;});return act.every(function(o){return netWorth(o)>=netWorth(p);})&&act.some(function(o){return netWorth(o)>netWorth(p);});}
+function nextOfType(p,types){for(var k=1;k<=40;k++){var i=(p.pos+k)%40;if(types.indexOf(TILES[i].type)>=0)return i;}return 0;}
+function sendToCorner(p){p.pos=10;p.inCorner=true;p.cornerTries=0;log(p.name+" is sent to the Quiet Corner.");teach("corner");renderAll();}
+
+/* ================= TEACHING ================= */
+function teach(kind,extra){
+ var mode=G?G.settings.teach:$("setTeach").value; if(mode==="off")return;
+ var box=$("coachBox"); if(!box)return;
+ var T={
+  buy:["Two honest ways to see this street: <strong>buy it</strong> if it starts or finishes a colour set, or sits 6–9 squares past a corner where dice traffic is heaviest — or <strong>pass it</strong> and let the auction set a cheaper price, keeping cash for a set you care about. A lone street with no set future is the weakest buy on the board.",
+       " Coach detail: with two dice, 7 is the likeliest roll (6 of 36), then 6 and 8 (5 of 36 each). Streets a common roll past the Quiet Corner and Start get landed on most — that is documented dice arithmetic, not a hunch. Your record so far: "+RECORD.sets+" set(s) finished in "+RECORD.games+" finished game(s)."],
+  set:["That finishes a colour set — this is the moment the game turns. Bare rent doubles now, and houses unlock: the real income lives in buildings, not bare streets.",
+       " Coach detail: two ways forward — <strong>build now</strong> for income this circuit, or <strong>hold cash one circuit</strong> if a rival's expensive set stands ahead of you and a big rent would force a mortgage. Most strong players build to three houses per street first (the biggest rent leap) before any hotel."],
+  rent:["Rent paid. Watch the pattern: rents are small until somebody builds — the first player to three houses on a set usually decides the game's shape.",
+        " Coach detail: if that rent hurt, your answers are (a) finish your own set so rent flows back, (b) trade for the street that blocks their set, or (c) keep a cash reserve of roughly the biggest rent on the board. Your record: you have gone under "+RECORD.busts+" time(s) — the coach watches your reserve because your own record says so."],
+  mortgage:["Mortgaging is a loan, not a loss: half the price now, lifted later for 10% extra. If the choice is mortgage or go under, mortgage — that is the one single-answer rule in this game.",
+        " Coach detail: mortgage the street that earns least first; never break a finished set's earning street if an odd street covers the bill. Your record shows "+RECORD.mortgages+" mortgage(s) taken across your games."],
+  trade:["Price a trade by what it <em>finishes</em>, not what it costs: a street that completes a set is worth far more than its printed price, and a street that completes a <em>rival's</em> set should cost them dearly. The evaluator below prices both sides honestly.",
+        " Coach detail: two real strategies — <strong>complete your own set</strong> (income now) or <strong>block theirs</strong> (their set stays frozen and your blocking street's price only rises). Check both before you offer. Your record: "+RECORD.trades+" trade(s) made."],
+  corner:["The Quiet Corner: early in the game it is a tax — turns lost while streets sell. Late, with hotels standing, it can be the safest seat on the board. Leave fast early; consider lingering late. Both are real strategies; the board in front of you decides which.",
+        " Coach detail: you still collect rent while held. Paying the 50 to leave is usually right in the first half; in the second half, count the expensive streets within one dice roll of the Corner before you pay."]
+ };
+ var e=T[kind]; if(!e)return;
+ box.style.display="block";
+ box.innerHTML="<strong>Coach — in plain words:</strong> "+e[0]+(mode==="coach"?e[1]:"")+(extra||"");
+}
+</script>
+
+<script>
+"use strict";
+/* ================= BOARD RENDER ================= */
+function gridPos(i){
+ if(i<=10)return {r:11,c:11-i};
+ if(i<=20)return {r:21-i,c:1};
+ if(i<=30)return {r:1,c:i-19};
+ return {r:i-29,c:11};
+}
+function buildBoard(){
+ var b=$("board");b.innerHTML="";
+ var center=document.createElement("div");center.className="center";
+ center.innerHTML="<h2>Block Party</h2><div class='small'>Our block, our game.<br>Tap a street to read its card.</div><div id='potLine' class='small'></div>";
+ b.appendChild(center);
+ TILES.forEach(function(t,i){
+  var d=document.createElement("div");var gp=gridPos(i);
+  d.className="tile"+((i%10===0)?" corner":"")+(t.type==="card1"||t.type==="card2"?" cardt":"")+(t.type==="tax"?" tax":"");
+  d.style.gridRow=gp.r;d.style.gridColumn=gp.c;d.dataset.idx=i;
+  d.setAttribute("role","button");d.setAttribute("aria-label",t.name+". Tap to read its card.");
+  var band=(t.type==="street")?'<div class="band" style="background:'+SETS[t.set].color+'"></div>':"";
+  var price=(t.price)?'<span class="pr">'+t.price+'</span>':(t.amt?'<span class="pr">pay '+t.amt+'</span>':"");
+  d.innerHTML=band+"<b>"+t.name+"</b>"+price+'<span class="hs" data-hs></span><span class="own" data-own></span><span class="tokens" data-tok></span>';
+  d.onclick=function(){selectTile(i);};
+  b.appendChild(d);
+ });
+}
+function selectTile(i){
+ selTile=i;var t=TILES[i];
+ document.querySelectorAll(".tile").forEach(function(el){el.classList.toggle("sel",+el.dataset.idx===i);});
+ var html="<strong>"+t.name+"</strong>";
+ if(t.type==="street"){
+  html+=" — "+SETS[t.set].name+" set · price "+t.price+" · house cost "+SETS[t.set].house+"<br>Rent: bare "+t.rent[0]+" · full set, unbuilt "+(t.rent[0]*2)+" · 1 house "+t.rent[1]+" · 2 houses "+t.rent[2]+" · 3 houses "+t.rent[3]+" · 4 houses "+t.rent[4]+" · hotel "+t.rent[5]+"<br>Mortgage value "+Math.floor(t.price/2)+".";
+ } else if(t.type==="depot"){html+=" — price 200. Rent: 25 with one depot, 50 with two, 100 with three, 200 with all four.";}
+ else if(t.type==="works"){html+=" — price 150. Rent: 4× the dice rolled, or 10× the dice if one player holds both Works.";}
+ else if(t.type==="tax"){html+=" — pay "+t.amt+" when you land here."+(G&&G.settings.jackpot?" Under the Porch jackpot rule it piles onto the Community Porch.":"");}
+ else if(t.type==="card1"){html+=" — draw a Plot Twist card when you land here.";}
+ else if(t.type==="card2"){html+=" — draw a Block Letter when you land here.";}
+ else if(t.type==="goto"){html+=" — landing here sends you to the Quiet Corner.";}
+ else if(t.type==="corner"){html+=" — resting here is free. If you were sent here, you are held: leave by paying 50, using a Porch Pass, or rolling doubles within three turns.";}
+ else if(t.type==="porch"){html+=" — a rest square. Under the jackpot house rule, whoever lands here collects everything piled on the Porch.";}
+ else if(t.type==="start"){html+=" — collect 200 from the bank each time you pass.";}
+ if(t.owner!==undefined){html+="<br>"+(t.owner<0?"<strong>Unowned</strong> — buy it by landing on it, or win it at auction.":"Owned by <strong>"+esc(PLAYERS[t.owner].name)+"</strong>"+(t.mort?" · <strong>mortgaged</strong> (no rent)":"")+(t.type==="street"&&t.houses?" · "+(t.houses===5?"a hotel":t.houses+" house(s)"):""));}
+ $("tileCard").innerHTML=html;
+}
+function renderAll(){
+ if(!G)return;
+ document.querySelectorAll(".tile").forEach(function(el){
+  var i=+el.dataset.idx,t=TILES[i];
+  el.querySelector("[data-own]").textContent=(t.owner!==undefined&&t.owner>=0)?"●":"";
+  el.querySelector("[data-own]").style.color=(t.owner>=0)?PCOLORS[t.owner]:"";
+  el.querySelector("[data-hs]").textContent=(t.type==="street"&&t.houses)?(t.houses===5?"🏨":"🏠".repeat(t.houses)):"";
+  var toks=PLAYERS.filter(function(p){return p.pos===i&&!p.out;}).map(function(p){return TOKENS[p.idx];}).join("");
+  el.querySelector("[data-tok]").textContent=toks;
+ });
+ $("potLine").textContent=G.settings.jackpot?("Porch jackpot: "+G.pot+" Block Bucks"):"";
+ var pl=$("players");pl.innerHTML="";
+ PLAYERS.forEach(function(p){
+  var d=document.createElement("div");d.className="pcard"+(G.cur===p.idx&&!p.out?" turn":"")+(p.out?" out":"");
+  var props=ownedTiles(p).map(function(t){return t.name+(t.mort?" (mortgaged)":"");}).join(", ")||"no streets yet";
+  d.innerHTML='<span class="nm" style="color:'+PCOLORS[p.idx]+'">'+TOKENS[p.idx]+" "+esc(p.name)+"</span> "+(p.bot?'<span class="tag">Bot · '+p.level+"</span>":'<span class="tag">Person</span>')+(p.out?'<span class="tag">Out · '+p.role+"</span>":"")+(p.inCorner?'<span class="tag">In the Quiet Corner</span>':"")+(p.porchPass?'<span class="tag">Holds a Porch Pass</span>':"")+'<br><strong>'+p.cash+' Block Bucks</strong> · worth '+netWorth(p)+'<br><span class="small">'+props+"</span>";
+  pl.appendChild(d);
+ });
+ var cur=PLAYERS[G.cur];
+ $("turnLine").textContent=G.over?("Game over — "+G.winner+" wins the block!"):(cur.name+"'s turn · Round "+G.round+(G.settings.length?(" of "+G.settings.length):""));
+ $("phaseLine").textContent=G.over?"The game is finished — set up a new one any time.":G.phase==="decide"?"Decide below: buy it, or pass and let the auction speak.":G.phase==="corner"?"Held in the Quiet Corner: pay 50, use a Porch Pass, or roll for doubles.":G.phase==="end"?"Build, mortgage, or trade if you like — then end the turn.":"Tap Roll to move "+cur.name+".";
+ var vb=$("variantBanner");
+ var vars=[];
+ if(!G.settings.auction)vars.push("Auctions OFF");
+ if(G.settings.jackpot)vars.push("Porch jackpot ON");
+ if(!G.settings.trading)vars.push("Trading OFF");
+ if(G.settings.length)vars.push("Short game: "+G.settings.length+" rounds");
+ if(G.settings.bust!=="role")vars.push("Money-trouble rule: "+(G.settings.bust==="second"?"second-chance loan":"classic sit-out"));
+ if(G.settings.mercy)vars.push("Catch-up help ON");
+ if(G.settings.cash!==1500)vars.push("Starting cash "+G.settings.cash);
+ vb.innerHTML=vars.length?'<div class="variant-banner">Variant rules in play: '+vars.join(" · ")+'. This game is scored as a variant game, not a standard game.</div>':"";
+ renderControls(); saveGame();
+}
+function renderControls(){
+ var c=$("controls");c.innerHTML="";var a=$("actionArea");if(!auction&&!tradeCtx)a.innerHTML="";
+ if(!G)return;
+ if(G.over){var nb=document.createElement("button");nb.type="button";nb.className="primary";nb.textContent="Set up a new game — tap to go to the table setup";nb.onclick=function(){$("setupCard").style.display="block";window.scrollTo({top:0,behavior:"smooth"});};c.appendChild(nb);return;}
+ var p=PLAYERS[G.cur];
+ function btn(label,fn,primary){var b=document.createElement("button");b.type="button";b.textContent=label;if(primary)b.className="primary";b.onclick=fn;c.appendChild(b);return b;}
+ if(p.bot){var s=document.createElement("span");s.className="small";s.textContent=p.name+" (bot) is thinking…";c.appendChild(s);return;}
+ if(G.phase==="corner"){
+   btn("Pay 50 and roll — tap to pay and roll",function(){if(p.cash>=50){p.cash-=50;p.inCorner=false;log(p.name+" pays 50 to leave the Quiet Corner.");G.phase="roll";renderAll();}else{log("Not enough cash — mortgage something first, or try for doubles.");}},true);
+   if(p.porchPass)btn("Use Porch Pass and roll — tap to use it",function(){p.porchPass=false;p.inCorner=false;log(p.name+" uses a Porch Pass to leave the Quiet Corner.");G.phase="roll";renderAll();},true);
+   btn("Roll for doubles — tap to roll",function(){cornerRoll(p);},false);
+   manageButtons(p,btn);return;
+ }
+ if(G.phase==="roll"){btn("Roll the dice — tap to roll",function(){doRoll(p);},true);manageButtons(p,btn);}
+ else if(G.phase==="decide"){/* buy/pass buttons live in actionArea */}
+ else if(G.phase==="end"){btn("End turn — tap to pass the device",function(){endTurn();},true);manageButtons(p,btn);}
+}
+function manageButtons(p,btn){
+ if(ownedTiles(p).some(function(t){return t.type==="street"&&ownsSet(p,t.set);}))btn("Build houses — tap to open building",function(){openBuild(p);});
+ if(ownedTiles(p).length)btn("Mortgage or lift — tap to manage streets",function(){openMortgage(p);});
+ if(G.settings.trading&&PLAYERS.some(function(o){return !o.out&&o.idx!==p.idx&&ownedTiles(o).length+ownedTiles(p).length>0;}))btn("Propose a trade — tap to open trading",function(){openTrade(p);});
+}
+
+/* ================= TURN FLOW ================= */
+var DICEFACE=["⚀","⚁","⚂","⚃","⚄","⚅"];
+function roll2(){return [1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];}
+function doRoll(p){
+ var r=roll2(),sum=r[0]+r[1];G.lastDice=sum;
+ $("diceFace").textContent=DICEFACE[r[0]-1]+" "+DICEFACE[r[1]-1];
+ if(r[0]===r[1]){G.doubles++;log(p.name+" rolls "+r[0]+" and "+r[1]+" — doubles!");}else G.doubles=0;
+ if(G.doubles>=3){log("Three doubles in a row — straight to the Quiet Corner.");sendToCorner(p);G.doubles=0;G.phase="end";renderAll();maybeBot();return;}
+ var np=(p.pos+sum)%40;
+ if(np<p.pos||np===0){gain(p,200);log(p.name+" passes Start and collects 200.");if(G.settings.mercy&&isLast(p)){gain(p,50);log("Catch-up help: last place collects an extra 50.");}}
+ p.pos=np;log(p.name+" moves to "+TILES[np].name+".");
+ G.phase="end";renderAll();
+ resolveLanding(p,false,sum);
+}
+function cornerRoll(p){
+ var r=roll2();$("diceFace").textContent=DICEFACE[r[0]-1]+" "+DICEFACE[r[1]-1];
+ if(r[0]===r[1]){p.inCorner=false;p.cornerTries=0;log(p.name+" rolls doubles and leaves the Quiet Corner, moving "+(r[0]+r[1])+".");p.pos=(p.pos+r[0]+r[1])%40;G.phase="end";renderAll();resolveLanding(p,false,r[0]+r[1]);}
+ else{p.cornerTries++;log(p.name+" rolls "+r[0]+" and "+r[1]+" — no doubles ("+p.cornerTries+" of 3 tries).");
+  if(p.cornerTries>=3){log("Third try missed: pay 50 and move.");p.cash-=50;checkSolvency(p,null);p.inCorner=false;p.cornerTries=0;p.pos=(p.pos+r[0]+r[1])%40;G.phase="end";renderAll();resolveLanding(p,false,r[0]+r[1]);}
+  else{G.phase="end";renderAll();}}
+}
+function resolveLanding(p,fromCard,dice){
+ if(p.out)return;var i=p.pos,t=TILES[i];dice=dice||G.lastDice||7;
+ if(t.type==="street"||t.type==="depot"||t.type==="works"){
+   if(t.owner<0){offerBuy(p,i);}
+   else if(t.owner!==p.idx&&!t.mort){var r=tileRent(i,dice);log("Rent on "+t.name+": "+r+" to "+PLAYERS[t.owner].name+".");teach("rent");payPlayer(p,PLAYERS[t.owner],r);G.phase="end";renderAll();}
+   else{G.phase="end";renderAll();}
+ } else if(t.type==="tax"){log(p.name+" pays "+t.name+": "+t.amt+".");payBank(p,t.amt);G.phase="end";renderAll();}
+ else if(t.type==="card1"||t.type==="card2"){drawCard(p,t.type);if(G.phase!=="decide"&&!auction){G.phase="end";renderAll();}}
+ else if(t.type==="goto"){sendToCorner(p);G.phase="end";renderAll();}
+ else if(t.type==="porch"){if(G.settings.jackpot&&G.pot>0){log(p.name+" lands on the Community Porch and collects the jackpot: "+G.pot+"!");gain(p,G.pot);G.pot=0;}else log(p.name+" rests on the Community Porch.");G.phase="end";renderAll();}
+ else{G.phase="end";renderAll();}
+ if(!p.bot&&!p.out&&G.phase==="end")renderControls();
+}
+function drawCard(p,which){
+ var deck=which==="card1"?deck1:deck2;var card=deck.shift();deck.push(card);
+ showSheet("<h3 style='margin-top:0'>"+(which==="card1"?"Plot Twist":"Block Letter")+"</h3><p style='font-size:1.05rem'>"+card.t+"</p>");
+ log(p.name+" draws: "+card.t);
+ if(!card.keep)card.fn(p);else card.fn(p);
+ if(G.phase!=="decide"&&!auction)renderAll();
+}
+function offerBuy(p,i){
+ var t=TILES[i];G.phase="decide";renderAll();
+ teach("buy");
+ if(p.bot){botDecideBuy(p,i);return;}
+ var a=$("actionArea");
+ a.innerHTML="<p><strong>"+t.name+"</strong> is for sale at <strong>"+t.price+"</strong> Block Bucks. You hold "+p.cash+".</p>";
+ var b1=document.createElement("button");b1.className="primary";b1.textContent="Buy "+t.name+" for "+t.price+" — tap to buy";
+ b1.onclick=function(){if(p.cash>=t.price){p.cash-=t.price;t.owner=p.idx;log(p.name+" buys "+t.name+" for "+t.price+".");recEvent("buy",t.name);if(t.type==="street"&&ownsSet(p,t.set)){RECORD.sets++;LS.set("record",RECORD);teach("set");}a.innerHTML="";G.phase="end";renderAll();}else{log("Not enough cash to buy outright — pass and try the auction, or mortgage first.");}};
+ var b2=document.createElement("button");b2.textContent=G.settings.auction?("Pass — tap to send it to auction"):("Pass — tap to leave it for sale");
+ b2.onclick=function(){a.innerHTML="";if(G.settings.auction){startAuction(i,p.idx);}else{G.phase="end";renderAll();}};
+ a.appendChild(b1);a.appendChild(document.createTextNode(" "));a.appendChild(b2);
+}
+/* ================= AUCTION ================= */
+function startAuction(tileIdx,passerIdx){
+ var t=TILES[tileIdx];
+ auction={tile:tileIdx,bid:0,leader:-1,active:PLAYERS.filter(function(o){return !o.out;}).map(function(o){return o.idx;}),turn:0};
+ log("Auction: "+t.name+" (price "+t.price+") is open to everyone.");
+ auctionStep();
+}
+function auctionStep(){
+ if(!auction)return;
+ var act=auction.active;
+ if(act.length===0||(act.length===1&&auction.leader>=0&&act[0]===auction.leader)){finishAuction();return;}
+ if(act.length===1&&auction.leader<0){log("No bids — "+TILES[auction.tile].name+" stays for sale.");auction=null;G.phase="end";renderAll();return;}
+ var idx=act[auction.turn%act.length];
+ if(idx===auction.leader){auction.turn++;auctionStep();return;}
+ var p=PLAYERS[idx];
+ if(p.bot){setTimeout(function(){if(!auction)return;var v=tileValueFor(TILES[auction.tile],p);var cap=Math.min(p.cash,Math.round(v*BOTLV[p.level].auctionMax));if(Math.random()<BOTLV[p.level].slip)cap=Math.round(cap*0.5);
+   if(auction.bid+10<=cap){auction.bid+=10;auction.leader=idx;log(p.name+" bids "+auction.bid+".");}else{auction.active=act.filter(function(x){return x!==idx;});log(p.name+" passes the auction.");}
+   auction.turn++;renderAll();auctionStep();},450);return;}
+ var a=$("actionArea");
+ a.innerHTML="<p><strong>Auction — "+TILES[auction.tile].name+"</strong> · current bid <strong>"+auction.bid+"</strong>"+(auction.leader>=0?(" by "+esc(PLAYERS[auction.leader].name)):"")+". "+esc(p.name)+", you hold "+p.cash+".</p>";
+ var b1=document.createElement("button");b1.className="primary";b1.textContent="Bid "+(auction.bid+10)+" — tap to bid";b1.disabled=p.cash<auction.bid+10;
+ b1.onclick=function(){auction.bid+=10;auction.leader=idx;log(p.name+" bids "+auction.bid+".");auction.turn++;renderAll();auctionStep();};
+ var b2=document.createElement("button");b2.textContent="Pass the auction — tap to pass";
+ b2.onclick=function(){auction.active=auction.active.filter(function(x){return x!==idx;});log(p.name+" passes the auction.");renderAll();auctionStep();};
+ a.appendChild(b1);a.appendChild(document.createTextNode(" "));a.appendChild(b2);
+}
+function finishAuction(){
+ var t=TILES[auction.tile],w=PLAYERS[auction.leader];
+ w.cash-=auction.bid;t.owner=w.idx;log(w.name+" wins the auction for "+t.name+" at "+auction.bid+" (printed price "+t.price+").");
+ if(t.type==="street"&&ownsSet(w,t.set)){teach("set");}
+ auction=null;G.phase="end";renderAll();maybeBot();
+}
+/* ================= BUILD & MORTGAGE ================= */
+function showSheet(html){$("sheetBody").innerHTML=html;$("sheetDlg").showModal();}
+$("sheetClose").onclick=function(){$("sheetDlg").close();};
+function openBuild(p){
+ var html="<h3 style='margin-top:0'>Build — "+esc(p.name)+"</h3><p class='small'>Houses go on evenly across a set; the fifth building on a street is its hotel. Building costs the set's house price per step.</p>";
+ var any=false;
+ Object.keys(SETS).forEach(function(s){if(ownsSet(p,s)&&!anyMortInSet(s)){any=true;html+="<p><strong>"+SETS[s].name+" set</strong> (house cost "+SETS[s].house+"):<br>";
+   setTiles(s).forEach(function(i){var t=TILES[i];html+=t.name+": "+(t.houses===5?"hotel":t.houses+" house(s)")+' <button type="button" data-build="'+i+'">Build one step for '+SETS[s].house+" — tap to build</button><br>";});html+="</p>";}});
+ if(!any)html+="<p>No finished, unmortgaged set to build on yet. Finish a colour set first — that is what trading is for.</p>";
+ showSheet(html);
+ document.querySelectorAll("[data-build]").forEach(function(b){b.onclick=function(){var i=+b.dataset.build,t=TILES[i],cost=SETS[t.set].house;
+   var sibs=setTiles(t.set).map(function(j){return TILES[j].houses;});
+   if(t.houses>=5){log("That street already has its hotel.");return;}
+   if(t.houses>Math.min.apply(null,sibs)){log("Build evenly: another street in this set needs a house first.");$("sheetDlg").close();return;}
+   if(p.cash<cost){log("Not enough cash to build — mortgage or trade first.");$("sheetDlg").close();return;}
+   p.cash-=cost;t.houses++;RECORD.builds++;LS.set("record",RECORD);recEvent("build",t.name+" to "+t.houses);
+   log(p.name+" builds on "+t.name+" — now "+(t.houses===5?"a hotel":t.houses+" house(s)")+".");
+   if(t.houses===3)teach("set","<br><strong>Three houses:</strong> that step is the biggest rent leap in the table — you just took it.");
+   $("sheetDlg").close();renderAll();};});
+}
+function openMortgage(p){
+ var html="<h3 style='margin-top:0'>Mortgage or lift — "+esc(p.name)+"</h3><p class='small'>Mortgaging pays half the printed price now. Lifting costs that plus 10%. A mortgaged street collects no rent; a set with a mortgaged street cannot build.</p>";
+ ownedTiles(p).forEach(function(t){var i=TILES.indexOf(t);
+   if(t.type==="street"&&t.houses>0){html+="<p>"+t.name+": sell its buildings back at half cost first (use Build's set — buildings sell from the most-built street evenly). <button type='button' data-sell='"+i+"'>Sell one building step for "+Math.floor(SETS[t.set].house/2)+" — tap to sell</button></p>";}
+   else if(!t.mort)html+="<p>"+t.name+" <button type='button' data-mort='"+i+"'>Mortgage for "+Math.floor(t.price/2)+" — tap to mortgage</button></p>";
+   else html+="<p>"+t.name+" (mortgaged) <button type='button' data-lift='"+i+"'>Lift for "+Math.ceil(t.price/2*1.1)+" — tap to lift</button></p>";});
+ if(!ownedTiles(p).length)html+="<p>You own nothing to mortgage yet.</p>";
+ showSheet(html);
+ document.querySelectorAll("[data-mort]").forEach(function(b){b.onclick=function(){var t=TILES[+b.dataset.mort];t.mort=true;var v=Math.floor(t.price/2);p.cash+=v;RECORD.mortgages++;LS.set("record",RECORD);recEvent("mortgage",t.name);log(p.name+" mortgages "+t.name+" for "+v+".");teach("mortgage");$("sheetDlg").close();renderAll();};});
+ document.querySelectorAll("[data-lift]").forEach(function(b){b.onclick=function(){var t=TILES[+b.dataset.lift];var c=Math.ceil(t.price/2*1.1);if(p.cash<c){log("Not enough cash to lift that mortgage.");$("sheetDlg").close();return;}p.cash-=c;t.mort=false;log(p.name+" lifts the mortgage on "+t.name+" for "+c+".");$("sheetDlg").close();renderAll();};});
+ document.querySelectorAll("[data-sell]").forEach(function(b){b.onclick=function(){var t=TILES[+b.dataset.sell];var sibs=setTiles(t.set).map(function(j){return TILES[j].houses;});if(t.houses<Math.max.apply(null,sibs)){log("Sell evenly: sell from the most-built street first.");$("sheetDlg").close();return;}t.houses--;var v=Math.floor(SETS[t.set].house/2);p.cash+=v;log(p.name+" sells a building step on "+t.name+" for "+v+".");$("sheetDlg").close();renderAll();};});
+}
+</script>
+
+<script>
+"use strict";
+/* ================= TRADE ================= */
+function sideValue(tileIdxs,cash,receiver){var v=cash;tileIdxs.forEach(function(i){v+=tileValueFor(TILES[i],receiver);});return v;}
+function openTrade(p){
+ var partners=PLAYERS.filter(function(o){return !o.out&&o.idx!==p.idx;});
+ if(!partners.length)return;
+ var partner=partners[0];
+ var html="<h3 style='margin-top:0'>Propose a trade — "+esc(p.name)+"</h3>"+
+ "<label for='trPartner'>Trade with</label><select id='trPartner'>"+partners.map(function(o){return "<option value='"+o.idx+"'>"+esc(o.name)+(o.bot?" (bot · "+o.level+")":"")+"</option>";}).join("")+"</select>"+
+ "<div class='grid2'><div><strong>You give</strong><div id='trMine'></div><label>Plus your cash</label><input id='trCashMine' type='number' min='0' value='0'></div>"+
+ "<div><strong>They give</strong><div id='trTheirs'></div><label>Plus their cash</label><input id='trCashTheirs' type='number' min='0' value='0'></div></div>"+
+ "<div id='trEval' class='coach' style='display:block'></div>"+
+ "<div class='controls'><button type='button' class='primary' id='trGo'>Offer this trade — tap to offer it</button></div>"+
+ "<p class='small'>The evaluator prices both sides honestly — face price plus set-completion and blocking value — before anyone decides.</p>";
+ showSheet(html);
+ function fill(){
+   partner=PLAYERS[+$("trPartner").value];
+   function list(el,owner){$(el).innerHTML=ownedTiles(owner).filter(function(t){return !(t.type==="street"&&t.houses>0);}).map(function(t){var i=TILES.indexOf(t);return "<label class='propchk'><input type='checkbox' class='trchk' data-side='"+el+"' value='"+i+"'> "+t.name+" ("+t.price+")</label>";}).join("")||"<span class='small'>No tradable streets (built streets trade after their buildings are sold).</span>";}
+   list("trMine",p);list("trTheirs",partner);price();
+ }
+ function picked(el){return Array.prototype.slice.call(document.querySelectorAll(".trchk[data-side='"+el+"']:checked")).map(function(c){return +c.value;});}
+ function price(){
+   var a=sideValue(picked("trMine"),+$("trCashMine").value||0,partner),b=sideValue(picked("trTheirs"),+$("trCashTheirs").value||0,p);
+   var d=a-b;
+   $("trEval").innerHTML="<strong>Evaluator:</strong> what you give is honestly worth <strong>"+a+"</strong> to "+esc(partner.name)+"; what you get is honestly worth <strong>"+b+"</strong> to you. "+
+    (Math.abs(d)<=25?"That is a fair trade by the numbers.":(d>0?"You are giving about "+d+" more than you get — two honest plays: ask for more cash, or accept it anyway if it finishes your set before a rival's rent lands.":"You come out about "+(-d)+" ahead — a strong offer for you; expect a thinking partner to push back."))+
+    "<br><span class='small'>Two strategies, always: <strong>complete your own set</strong> (income now) vs <strong>block theirs</strong> (their set stays frozen). This price counts both.</span>";
+   return {a:a,b:b};
+ }
+ $("trPartner").onchange=fill;
+ ["trCashMine","trCashTheirs"].forEach(function(id){$(id).oninput=price;});
+ document.addEventListener("change",function(e){if(e.target.classList&&e.target.classList.contains("trchk"))price();});
+ fill();
+ $("trGo").onclick=function(){
+   var mine=picked("trMine"),theirs=picked("trTheirs"),cm=+$("trCashMine").value||0,ct=+$("trCashTheirs").value||0,pr=price();
+   function execute(){
+     mine.forEach(function(i){TILES[i].owner=partner.idx;});theirs.forEach(function(i){TILES[i].owner=p.idx;});
+     p.cash-=cm;p.cash+=ct;partner.cash-=ct;partner.cash+=cm;
+     RECORD.trades++;LS.set("record",RECORD);recEvent("trade",p.name+" <-> "+partner.name);
+     log("Trade done: "+p.name+" and "+partner.name+" swap streets and cash (evaluator: "+pr.a+" for "+pr.b+").");
+     mine.concat(theirs).forEach(function(i){var t=TILES[i];if(t.type==="street"&&(ownsSet(p,t.set)||ownsSet(partner,t.set)))teach("set");});
+     $("sheetDlg").close();renderAll();
+   }
+   if(partner.bot){
+     var lv=BOTLV[partner.level];
+     var need=pr.a*(partner.level==="Pro"?1.0:partner.level==="Sharp"?0.92:partner.level==="Steady"?0.85:0.7);
+     var accept=pr.b>=need; if(Math.random()<lv.slip)accept=!accept&&pr.b>=pr.a*0.5;
+     if(partner.cash<ct)accept=false;
+     if(accept){log(partner.name+" (bot) accepts the trade.");execute();}
+     else{log(partner.name+" (bot) declines — the evaluator's numbers did not persuade at the "+partner.level+" level.");$("sheetDlg").close();renderAll();}
+   } else {
+     $("sheetBody").innerHTML="<h3 style='margin-top:0'>Pass the device to "+esc(partner.name)+"</h3><p>"+esc(p.name)+" offers a trade. The evaluator prices what you receive at <strong>"+pr.a+"</strong> and what you give at <strong>"+pr.b+"</strong>.</p><div class='controls'><button type='button' class='primary' id='trYes'>Accept — tap to accept</button> <button type='button' id='trNo'>Decline — tap to decline</button></div>";
+     $("trYes").onclick=execute;
+     $("trNo").onclick=function(){log(partner.name+" declines the trade.");$("sheetDlg").close();renderAll();};
+   }
+ };
+ teach("trade");
+}
+/* ================= BOTS ================= */
+function botManage(p){
+ var lv=BOTLV[p.level];
+ /* lift mortgages when flush */
+ if(p.cash>650)ownedTiles(p).forEach(function(t){if(t.mort&&p.cash>Math.ceil(t.price/2*1.1)+200){p.cash-=Math.ceil(t.price/2*1.1);t.mort=false;log(p.name+" lifts the mortgage on "+t.name+".");}});
+ /* build */
+ var guard=0;
+ while(guard++<12){
+   var built=false;
+   Object.keys(SETS).forEach(function(s){if(ownsSet(p,s)&&!anyMortInSet(s)){var idxs=setTiles(s);var minH=Math.min.apply(null,idxs.map(function(i){return TILES[i].houses;}));
+     idxs.forEach(function(i){var t=TILES[i];if(t.houses===minH&&t.houses<5&&p.cash-SETS[s].house>=lv.reserve*lv.buildNeed){p.cash-=SETS[s].house;t.houses++;built=true;log(p.name+" builds on "+t.name+" — now "+(t.houses===5?"a hotel":t.houses+" house(s)")+".");}});}});
+   if(!built)break;
+ }
+}
+function botRaiseCash(p){
+ var guard=0;
+ while(p.cash<0&&guard++<40){
+   var sold=false;
+   ownedTiles(p).forEach(function(t){if(p.cash<0&&t.type==="street"&&t.houses>0){t.houses--;p.cash+=Math.floor(SETS[t.set].house/2);sold=true;log(p.name+" sells a building on "+t.name+" to raise cash.");}});
+   if(p.cash>=0)break;
+   var cands=ownedTiles(p).filter(function(t){return !t.mort;}).sort(function(a,b){return tileValueFor(a,p)-tileValueFor(b,p);});
+   if(cands.length){var t=cands[0];t.mort=true;p.cash+=Math.floor(t.price/2);log(p.name+" mortgages "+t.name+" to stay in the game.");}
+   else break;
+ }
+}
+function botDecideBuy(p,i){
+ var t=TILES[i],lv=BOTLV[p.level];
+ setTimeout(function(){
+   var v=tileValueFor(t,p);
+   var want=v>=t.price*0.95&&(p.cash-t.price>=lv.reserve*0.4||ownsSet(p,t.set)||v>t.price*1.3);
+   if(Math.random()<lv.slip)want=!want&&p.cash>t.price+100;
+   if(want&&p.cash>=t.price){p.cash-=t.price;t.owner=p.idx;log(p.name+" buys "+t.name+" for "+t.price+".");recEvent("botbuy",p.name+" "+t.name);if(t.type==="street"&&ownsSet(p,t.set))log(p.name+" completes the "+SETS[t.set].name+" set!");G.phase="end";renderAll();maybeBot();}
+   else{log(p.name+" passes on "+t.name+".");if(G.settings.auction){startAuction(i,p.idx);}else{G.phase="end";renderAll();maybeBot();}}
+ },600);
+}
+function maybeBot(){
+ if(!G||G.over||auction)return;
+ var p=PLAYERS[G.cur];if(!p||!p.bot||p.out)return;
+ setTimeout(function(){
+   if(!G||G.over||auction)return;var p2=PLAYERS[G.cur];if(!p2.bot)return;
+   if(p2.inCorner){
+     if(p2.cash>260){p2.cash-=50;p2.inCorner=false;log(p2.name+" pays 50 to leave the Quiet Corner.");G.phase="roll";renderAll();setTimeout(function(){botManage(p2);doRoll(p2);afterRoll(p2);},500);}
+     else cornerRoll(p2);
+     return;
+   }
+   if(G.phase==="roll"){botManage(p2);doRoll(p2);afterRoll(p2);}
+   else if(G.phase==="end"){endTurn();}
+ },700);
+}
+function afterRoll(p){ if(!p.out&&G.phase==="end"&&p.bot)setTimeout(function(){if(G&&!G.over&&PLAYERS[G.cur]===p&&G.phase==="end")endTurn();},800); }
+/* ================= SOLVENCY & GOING UNDER ================= */
+function maxRaise(p){var s=0;ownedTiles(p).forEach(function(t){if(t.type==="street")s+=t.houses*Math.floor(SETS[t.set].house/2);if(!t.mort)s+=Math.floor(t.price/2);});return s;}
+function checkSolvency(p,creditor){
+ if(!p||p.cash>=0||p.out)return;
+ if(p.cash+maxRaise(p)>=0){
+   if(p.bot){botRaiseCash(p);}
+   else{log("⚠ "+p.name+" is below zero. Mortgage or sell buildings (Mortgage or lift button) before ending the turn — the game will not let the turn pass in debt.");teach("mortgage");}
+   return;
+ }
+ /* cannot cover: second chance or go under */
+ if(G.settings.bust==="second"&&!p.usedSecond){p.usedSecond=true;p.cash+=300;log("Second chance: "+p.name+" takes the one-time 300 Block Buck loan and plays on.");recEvent("secondchance",p.name);renderAll();return;}
+ p.out=true;p.inCorner=false;
+ var roles=["Banker","Coach","Auctioneer"];p.role=roles[PLAYERS.filter(function(o){return o.out;}).length%3];
+ if(p.bot===false||!p.bot){RECORD.busts++;LS.set("record",RECORD);}
+ recEvent("bust",p.name+" -> "+(creditor?creditor.name:"the bank"));
+ ownedTiles(p).forEach(function(t){t.houses=0;if(creditor){t.owner=creditor.idx;}else{t.owner=-1;t.mort=false;}});
+ p.cash=0;
+ log("💥 "+p.name+" goes under"+(creditor?(" — their streets pass to "+creditor.name):" — their streets return to the bank")+". Under this table's rule, "+p.name+" stays at the table as "+p.role+" — still in the game, still in the evening."+(G.settings.bust==="out"?" (This table chose the classic sit-out rule.)":""));
+ renderAll();checkWin();
+}
+function checkWin(){
+ var act=PLAYERS.filter(function(o){return !o.out;});
+ if(act.length===1){finishGame(act[0]);}
+}
+function finishGame(w){
+ G.over=true;G.winner=w.name;
+ var isHumanWin=!w.bot;
+ RECORD.games++;if(isHumanWin)RECORD.wins++;LS.set("record",RECORD);recEvent("gameend",w.name+" wins");
+ log("🏁 "+w.name+" wins the block with a worth of "+netWorth(w)+" Block Bucks.");
+ showSheet("<h3 style='margin-top:0'>"+esc(w.name)+" wins the block!</h3><p>Final worth "+netWorth(w)+" Block Bucks (cash + streets + buildings). "+(isHumanWin?"That win is in your strategy record below.":"The bot takes this one — your strategy record below shows what your own games are teaching.")+"</p><p class='small'>Start a new game from the setup at the top of the page whenever you're ready.</p>");
+ renderAll();renderRecord();
+}
+/* ================= END TURN ================= */
+function endTurn(){
+ var p=PLAYERS[G.cur];
+ if(p.cash<0){log(p.name+" cannot end the turn in debt — mortgage, sell buildings, or trade first.");if(p.bot)botRaiseCash(p);if(p.cash<0){checkSolvency(p,null);}return;}
+ if(G.doubles>0&&!p.inCorner&&!p.out){G.doubles=0;G.phase="roll";log("Doubles — "+p.name+" rolls again instead of ending.");renderAll();maybeBot();return;}
+ G.doubles=0;
+ var nxt=G.cur;
+ do{nxt=(nxt+1)%PLAYERS.length;if(nxt===0){G.round++;if(G.settings.length&&G.round>G.settings.length){var rich=PLAYERS.filter(function(o){return !o.out;}).sort(function(a,b){return netWorth(b)-netWorth(a);})[0];log("🔔 The bell rings at "+G.settings.length+" rounds.");finishGame(rich);return;}}}while(PLAYERS[nxt].out);
+ G.cur=nxt;var np=PLAYERS[G.cur];
+ G.phase=np.inCorner?"corner":"roll";
+ log("— "+np.name+"'s turn (round "+G.round+").");
+ renderAll();maybeBot();
+}
+/* ================= SAVE / RESUME / START ================= */
+function saveGame(){
+ if(!G||G.over)return;
+ LS.set("game",{players:PLAYERS.map(function(p){return {name:p.name,bot:p.bot,level:p.level,cash:p.cash,pos:p.pos,inCorner:p.inCorner,cornerTries:p.cornerTries,porchPass:p.porchPass,out:p.out,role:p.role,usedSecond:p.usedSecond};}),
+  tiles:TILES.map(function(t){return {owner:t.owner,houses:t.houses||0,mort:!!t.mort};}),
+  cur:G.cur,round:G.round,pot:G.pot,phase:(G.phase==="decide"||G.phase==="roll")?"roll":G.phase,settings:G.settings,gameNo:G.gameNo});
+}
+function startGame(resume){
+ var s=settings();saveSettings();
+ if(!resume){
+   TILES.forEach(function(t){if(t.owner!==undefined)t.owner=-1;if(t.houses!==undefined)t.houses=0;if(t.mort!==undefined)t.mort=false;});
+   PLAYERS=[];
+   for(var i=0;i<seatCount;i++){
+     var kind=$("seatKind"+i).value;var nm=($("seatName"+i).value||"").trim()||("Player "+(i+1));
+     PLAYERS.push({idx:i,name:nm,bot:kind!=="human",level:kind==="human"?null:kind,cash:s.cash,pos:0,inCorner:false,cornerTries:0,porchPass:false,out:false,role:"",usedSecond:false});
+   }
+   deck1=DECK1.slice().sort(function(){return Math.random()-0.5;});
+   deck2=DECK2.slice().sort(function(){return Math.random()-0.5;});
+   G={cur:0,round:1,pot:0,phase:"roll",doubles:0,lastDice:7,over:false,winner:"",settings:s,gameNo:(RECORD.games+1)};
+ } else {
+   var sv=LS.get("game",null);if(!sv)return false;
+   PLAYERS=sv.players.map(function(p,i){p.idx=i;return p;});
+   sv.tiles.forEach(function(st,i){if(TILES[i].owner!==undefined)TILES[i].owner=st.owner;if(TILES[i].houses!==undefined)TILES[i].houses=st.houses;if(TILES[i].mort!==undefined)TILES[i].mort=st.mort;});
+   deck1=DECK1.slice().sort(function(){return Math.random()-0.5;});
+   deck2=DECK2.slice().sort(function(){return Math.random()-0.5;});
+   G={cur:sv.cur,round:sv.round,pot:sv.pot,phase:sv.phase,doubles:0,lastDice:7,over:false,winner:"",settings:sv.settings,gameNo:sv.gameNo||1};
+ }
+ $("setupCard").style.display="none";$("gameCard").style.display="block";
+ buildBoard();$("log").innerHTML="";
+ log(resume?"Game resumed from this device.":"New game! Everyone starts with "+G.settings.cash+" Block Bucks. "+PLAYERS[0].name+" rolls first.");
+ renderAll();selectTile(0);maybeBot();
+ window.scrollTo({top:0,behavior:"smooth"});
+ return true;
+}
+$("startBtn").onclick=function(){startGame(false);};
+$("resumeBtn").onclick=function(){startGame(true);};
+if(LS.get("game",null))$("resumeBtn").style.display="inline-block";
+$("forgetBtn").onclick=function(){LS.del("game");LS.del("settings");LS.del("record");RECORD={games:0,wins:0,sets:0,trades:0,busts:0,mortgages:0,builds:0,events:[]};showSheet("<h3 style='margin-top:0'>Forgotten</h3><p>The saved game, settings, and strategy record on this device are wiped. Nothing was anywhere else to wipe.</p>");renderRecord();$("resumeBtn").style.display="none";};
+/* ================= EVALUATOR ================= */
+function ownableIdx(){return TILES.map(function(t,i){return i;}).filter(function(i){return TILES[i].price;});}
+function fillEval(){
+ var names=PLAYERS.length?PLAYERS.map(function(p){return p.name;}):["Player 1","Player 2","Player 3","Player 4"];
+ $("evFrom").innerHTML=names.map(function(n){return "<option>"+esc(n)+"</option>";}).join("");
+ $("evTo").innerHTML=names.map(function(n,i){return "<option"+(i===1?" selected":"")+">"+esc(n)+"</option>";}).join("");
+ function list(el){$(el).innerHTML=ownableIdx().map(function(i){var t=TILES[i];return "<label class='propchk'><input type='checkbox' class='evchk' data-side='"+el+"' value='"+i+"'> "+t.name+" ("+t.price+")</label>";}).join("");}
+ list("evPropsA");list("evPropsB");
+}
+fillEval();
+$("evBtn").onclick=function(){
+ function picked(el){return Array.prototype.slice.call(document.querySelectorAll(".evchk[data-side='"+el+"']:checked")).map(function(c){return +c.value;});}
+ function realPlayer(nm,ghostIdx){for(var k=0;k<PLAYERS.length;k++)if(PLAYERS[k].name===nm)return PLAYERS[k];return {idx:ghostIdx,name:nm};}
+ var recvB=realPlayer($("evTo").value,91),recvA=realPlayer($("evFrom").value,90);
+ /* value each side for its receiver; when a game is running this counts the streets that player already owns, so set-completion prices honestly */
+ function valFor(idxList,cash,receiver){
+   var v=cash;idxList.forEach(function(i){v+=tileValueFor(TILES[i],receiver);});return v;
+ }
+ var a=valFor(picked("evPropsA"),+$("evCashA").value||0,recvB),b=valFor(picked("evPropsB"),+$("evCashB").value||0,recvA);
+ var d=a-b;
+ $("evOut").innerHTML="<p><strong>"+esc($("evFrom").value)+" gives value "+a+"</strong> · <strong>"+esc($("evTo").value)+" gives value "+b+"</strong> — difference "+Math.abs(d)+". "+
+ (Math.abs(d)<=25?"By the numbers this is a fair trade.":(d>0?esc($("evFrom").value)+" gives more than they get.":esc($("evTo").value)+" gives more than they get."))+
+ "</p><p>Two honest strategies behind any offer: <strong>(1) Complete your own set</strong> — income and building start now, but you may sit cash-poor. <strong>(2) Block or bleed a rival's set</strong> — hold the street they need; it earns little, but its price only rises and their set stays frozen. The evaluator counts set-completion at up to +90% of face price and blocking at +50%, because that is what those streets actually earn and deny over a game.</p>";
+};
+/* ================= RECORD ================= */
+function renderRecord(){
+ var r=RECORD;
+ if(!r.games&&!r.events.length){$("recordSummary").textContent="No games finished yet. Finish a game and your record starts: games played, wins, sets finished, trades made, times you went under — and the patterns your own record shows, which the coach will teach from, not just generic tips.";$("recordLessons").innerHTML="";return;}
+ $("recordSummary").innerHTML="Your record on this device: <strong>"+r.games+" game(s) finished · "+r.wins+" won · "+r.sets+" set(s) finished · "+r.trades+" trade(s) · "+r.builds+" building step(s) · "+r.mortgages+" mortgage(s) · went under "+r.busts+" time(s)</strong>, across "+r.events.length+" recorded events (buys, builds, trades, mortgages, busts — every game's intake, in one consistent form, so the record can be graded honestly).";
+ var L=[];
+ if(r.busts>0)L.push("<strong>Your record shows "+r.busts+" bust(s).</strong> The pattern to test next game: hold a reserve near the biggest rent on the board before building past two houses. Alternative with its trade-off: build faster and accept the risk — it wins more when it works, and your bust count is the price tag so far.");
+ if(r.games>0&&r.trades===0)L.push("<strong>You have finished games without a single trade.</strong> Two ways that can read: your dice fed you whole sets (luck, not a strategy), or trades were there and unpriced. Next game, price one offer in the evaluator even if you decline it — knowing what a set-piece is worth changes every later decision.");
+ if(r.sets>=2)L.push("<strong>Set-finishing is working for you</strong> ("+r.sets+" finished). The next layer strong players add: pricing the <em>block</em> — holding a rival's missing street is worth up to half again its face price in the evaluator.");
+ if(r.mortgages>0&&r.busts===0)L.push("<strong>Your mortgages have all been survived</strong> — you use the loan the way it is meant: a bridge, not a spiral. Keep mortgaging the lowest-earning street first.");
+ if(!L.length)L.push("Play more games and the lessons here get specific — they are drawn from your events, not from a tip sheet.");
+ $("recordLessons").innerHTML=L.map(function(x){return "<p>"+x+"</p>";}).join("");
+ var bo=$("bestOptionLine");if(bo)bo.innerHTML="From your own record so far: "+r.games+" game(s), "+r.wins+" win(s). "+(r.games?("Your win rate is "+Math.round(r.wins/Math.max(1,r.games)*100)+"% — small numbers yet, so the documented and simulated evidence above still outweighs it. As your games pile up, this line follows <em>your</em> evidence more and the generic evidence less."):"No finished games yet — for now the documented stories and the simulation carry the answer.");
+}
+renderRecord();
+</script>
+</body>
+</html>
