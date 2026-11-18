@@ -135,7 +135,7 @@
       <div class="bar" role="group" aria-label="Game controls">
         <button class="btn primary" id="btnNew">New game<span class="gest">Tap to shuffle &amp; deal</span></button>
         <button class="btn" id="btnUndo">Undo<span class="gest">Tap to take back the last move</span></button>
-        <button class="btn" id="btnHint">Hint<span class="gest">Tap and I’ll suggest a real move</span></button>
+        <button class="btn" id="btnHint">Hint<span class="gest">Tap to see your real choices</span></button>
         <button class="btn" id="btnAuto">Send cards home<span class="gest">Tap to auto-move every card that fits a home pile</span></button>
         <span class="stat">Moves <b id="stMoves">0</b></span>
         <span class="stat">Time <b id="stTime">0:00</b></span>
@@ -185,7 +185,7 @@
           <li><b>Moving runs:</b> any face-up run that is already in correct downward alternating order moves together — tap or drag its bottom card.</li>
           <li><b>Stock:</b> tap the face-down pile (top left) to deal onto the waste pile. Only the top waste card can be played. When the stock runs out, tap it again to turn the waste pile back over — if your redeal rule allows.</li>
           <li><b>Turning cards:</b> when you clear the face-up cards off a column, its top face-down card turns over automatically.</li>
-          <li><b>Undo</b> takes back one move at a time, as far back as the deal. <b>Hint</b> looks at the real position and suggests the best legal move it can find — and says plainly when it sees none.</li>
+          <li><b>Undo</b> takes back one move at a time, as far back as the deal. <b>Hint</b> looks at the real position and shows the real choices it can find — when there is more than one way to play, it lists them with what each one gains and what it costs, and it says plainly when there is only one move, or none.</li>
           <li><b>Stuck?</b> If no moves remain and the stock is finished, the game is blocked — Undo to try a different line, or deal a new game.</li>
         </ul>
       </details>
@@ -202,8 +202,9 @@
           <li><b>Think twice before breaking up a run you already built.</b> Splitting a run — a set of cards you’ve stacked in the right order — to move part of it somewhere else rarely gains anything unless it turns over a face-down card. If it doesn’t reveal anything new, it usually just shuffles the same cards around.</li>
           <li><b>Small cards can go home early; bigger ones, wait a little.</b> Aces and 2s are always safe to send home — nothing ever needs to sit on them. A bigger card, though, might still be needed as a landing spot for the card one below it in the other colour, so strong players check before sending it home.</li>
           <li><b>Work the stock steadily.</b> When no moves show, go through the stock pile rather than staring at the same cards. New cards are new chances — and in Draw Three, remember which cards are buried under the top one, because playing the top card brings the next one up.</li>
+          <li><b>There is rarely only one right move.</b> Most positions offer two or three real ways to play, and they trade different things: playing the waste card now clears the waste, but doing a column move first can keep a landing spot open for a card still to come; emptying a column makes room for a King, but it can also break up a run you had already built. Strong players weigh the trade-off, not just the first move that fits. A single move is only “the” move when it really is the only legal or sensible one.</li>
         </ul>
-        <p>The <b>Hint</b> button puts these ideas to work on your actual game — at Light and Coach it tells you the <i>why</i> behind each suggestion, not just the move.</p>
+        <p>The <b>Hint</b> button puts these ideas to work on your actual game — at Light and Coach it lays out the real choices when there is more than one, each with its trade-off in plain words, and names a single way only when there is genuinely one option.</p>
       </details>
 
       <details class="panel" id="settingsPanel">
@@ -233,11 +234,11 @@
             How much is entirely your choice, it takes effect the moment you pick it, and it is saved on this device only.
             Teaching never blocks a move: every card you can legally move, you can move, at every setting.</p>
           <label class="choice"><input type="radio" name="teachRule" value="off" />
-            <span>Off <span class="d">No teaching notes at all. The Hint button still works when you tap it — asking is your act — it just names the move, with no lesson attached.</span></span></label>
+            <span>Off <span class="d">No teaching notes at all. The Hint button still works when you tap it — asking is your act — it just lists the moves that are really there, with no lesson or trade-off attached.</span></span></label>
           <label class="choice"><input type="radio" name="teachRule" value="light" />
-            <span>Light <span class="d">The friendly default. Every hint comes with its why in plain words — why that move, why now — so you learn the thinking while you play. Nothing is said about your own moves.</span></span></label>
+            <span>Light <span class="d">The friendly default. When there is more than one real way to play, the hint offers the alternatives — each with its trade-off in plain words — instead of naming one best move; it names a single way only when there is genuinely one option. So you learn the thinking while you play. Nothing is said about your own moves.</span></span></label>
           <label class="choice"><input type="radio" name="teachRule" value="coach" />
-            <span>Coach <span class="d">Everything in Light, plus a gentle note after a move that works against you — covering a card that was ready to go home, breaking up a run you’d built for no gain, or emptying a column with no King ready. The note always comes after the move, never instead of it, and the move always stands unless you undo it yourself.</span></span></label>
+            <span>Coach <span class="d">Everything in Light — hints offer the alternatives with their trade-offs — plus a gentle note after a move that works against you, naming the other real choice you had: covering a card that was ready to go home, breaking up a run you’d built for no gain, or emptying a column with no King ready. The note always comes after the move, never instead of it, and the move always stands unless you undo it yourself.</span></span></label>
           <span class="stat" id="teachNow"></span>
         </fieldset>
 
@@ -368,6 +369,21 @@ function kingReadyAfter(sel){
   }
   return false;
 }
+function sameMove(aSel,aDest,b){
+  return aSel.kind===b.sel.kind && aSel.i===b.sel.i && aSel.idx===b.sel.idx && aDest.kind===b.dest.kind && aDest.i===b.dest.i;
+}
+function coachAlternative(sel, dest){
+  // name the other real choice the player had, so the coach never implies there was only one way
+  try{
+    var ms=allMoves();
+    for(var i=0;i<ms.length;i++){
+      if(sameMove(sel,dest,ms[i])) continue;
+      // skip a move of the exact same card to an equivalent pile — not a different strategy
+      return " Another real choice you had was: "+ms[i].desc+" Trade-off: "+tradeoffForMove(ms[i]);
+    }
+  }catch(e){}
+  return "";
+}
 function coachNoteFor(sel, dest){
   if(teachLevel()!=="coach") return "";
   var stack=getStack(sel); if(!stack.length) return "";
@@ -377,22 +393,22 @@ function coachNoteFor(sel, dest){
     var dCol=S.tableau[dest.i], dTop=topOf(dCol);
     // 1) covering a card that was ready to go home
     if(dTop && dTop.up && canFoundation(dTop, dTop.s))
-      return "Coach: that covered the "+cname(dTop)+", which was ready to go home to its pile. Covering a card that’s ready to go home means digging it out again later — strong players send it home first, then build. Your move stands, of course; Undo is there if you want it back.";
+      return "Coach: that covered the "+cname(dTop)+", which was ready to go home to its pile. Covering a card that’s ready to go home means digging it out again later — strong players send it home first, then build. Your move stands, of course; Undo is there if you want it back."+coachAlternative(sel, dest);
     // 2) breaking up a run already built, for no reveal
     if(sel.kind==="tableau" && sel.idx>0 && !flips){
       var below=S.tableau[sel.i][sel.idx-1];
       if(below.up && isRed(below.s)!==isRed(lead.s) && below.r===lead.r+1)
-        return "Coach: that split a run you’d already built — the "+cname(lead)+" was sitting happily on the "+cname(below)+". Breaking up a built run is worth it when it turns over a face-down card; this one didn’t, so the same cards are just parked somewhere new. Watch for a reveal before splitting a run. Undo can put it back if you like.";
+        return "Coach: that split a run you’d already built — the "+cname(lead)+" was sitting happily on the "+cname(below)+". Breaking up a built run is worth it when it turns over a face-down card; this one didn’t, so the same cards are just parked somewhere new. Watch for a reveal before splitting a run. Undo can put it back if you like."+coachAlternative(sel, dest);
     }
     // 3) emptying a column with no King ready to fill it
     if(sel.kind==="tableau" && sel.idx===0 && stack.length===S.tableau[sel.i].length && !kingReadyAfter(sel))
-      return "Coach: that emptied column "+(sel.i+1)+", and there’s no King showing anywhere ready to fill it — only a King can start a column. An empty column with no King ready just sits there unused. Next time, check a King is free before clearing a column out. The move stands; Undo is there if you want it.";
+      return "Coach: that emptied column "+(sel.i+1)+", and there’s no King showing anywhere ready to fill it — only a King can start a column. An empty column with no King ready just sits there unused. Next time, check a King is free before clearing a column out. The move stands; Undo is there if you want it."+coachAlternative(sel, dest);
   }
   // 4) sending a mid-size card home while the other colour still needs it as a landing spot
   if(dest.kind==="foundation" && lead.r>=3){
     var oppMin=13; for(var f=0;f<4;f++){ if(isRed(f)!==isRed(lead.s)) oppMin=Math.min(oppMin, S.foundations[f].length); }
     if(oppMin<lead.r-2)
-      return "Coach: the "+cname(lead)+" is home safe — but cards one step below it in the other colour may still need it as a landing spot down here, and those home piles aren’t as far along yet. Aces and 2s can always go home; bigger cards, strong players glance at the other colour’s piles first. It’s done now, and Undo can bring it back if you’d rather keep it in play.";
+      return "Coach: the "+cname(lead)+" is home safe — but cards one step below it in the other colour may still need it as a landing spot down here, and those home piles aren’t as far along yet. Aces and 2s can always go home; bigger cards, strong players glance at the other colour’s piles first. It’s done now, and Undo can bring it back if you’d rather keep it in play."+coachAlternative(sel, dest);
   }
   return "";
 }
@@ -522,7 +538,7 @@ function whyForMove(m){
     if(lead.r<=2) return "Why: Aces and 2s are always safe to send home — no card ever needs to land on them down here, so home is where they belong.";
     var oppMin=13; for(var f=0;f<4;f++){ if(isRed(f)!==isRed(lead.s)) oppMin=Math.min(oppMin, S.foundations[f].length); }
     if(oppMin>=lead.r-2) return "Why: it’s safe to send home — the other colour’s home piles have nearly caught up, so no card still down here needs the "+cname(lead)+" as a landing spot.";
-    return "Why: it makes progress home. One caution strong players keep: a card sent home can’t be a landing spot any more, so with bigger cards they check the other colour’s piles first — here, the rest of the position makes this the best move going.";
+    return "Why: it makes progress home. One caution strong players keep: a card sent home can’t be a landing spot any more, so with bigger cards they check the other colour’s piles first — here, the rest of the position makes this a strong way to play it, though holding it as a landing spot a while longer is the alternative.";
   }
   if(dest.kind==="tableau" && !S.tableau[dest.i].length){
     // into an empty column
@@ -537,19 +553,87 @@ function whyForMove(m){
   if(dLen>=longestColLen(dest.i)) return "Why: of the places this fits, it builds on the longer pile first — long piles are where cards get buried, and stacking there keeps your shorter piles free as landing spots for other cards.";
   return "Why: it keeps the build growing in the right order — down, alternating colours — and every card stacked in order is a card closer to going home.";
 }
+function breaksBuiltRun(sel, lead){
+  if(sel.kind!=="tableau" || sel.idx<=0) return false;
+  var below=S.tableau[sel.i][sel.idx-1];
+  return !!(below && below.up && isRed(below.s)!==isRed(lead.s) && below.r===lead.r+1);
+}
+function coversHomeReady(dest){
+  if(dest.kind!=="tableau") return null;
+  var tp=topOf(S.tableau[dest.i]);
+  return (tp && tp.up && canFoundation(tp, tp.s)) ? tp : null;
+}
+function tradeoffForMove(m){
+  var sel=m.sel, dest=m.dest, stack=getStack(sel), lead=stack[0];
+  if(!lead) return "";
+  var gain="", cost="";
+  /* ---- the gain, in plain words ---- */
+  if(flipsCard(sel)) gain="it turns over a face-down card in column "+(sel.i+1)+", and a card you can see is a card you can use";
+  else if(dest.kind==="foundation" && lead.r<=2) gain="it sends home a card that is always safe to send home — nothing ever needs to land on an Ace or a 2";
+  else if(dest.kind==="foundation") gain="it gets the "+cname(lead)+" home for good and frees whatever was underneath it";
+  else if(dest.kind==="tableau" && !S.tableau[dest.i].length) gain="it starts a new column with a King — a fresh column is more room to build in";
+  else if(sel.kind==="waste") gain="it puts the waste card to work and uncovers the next card in the waste";
+  else if(sel.kind==="foundation") gain="it brings a card back down to unstick a build that has stalled";
+  else if(stack.length>1) gain="it moves a run of "+stack.length+" cards together, keeping the run you built intact";
+  else gain="it extends a build in the right order — down, alternating colours — which is how cards work their way home";
+  /* ---- the cost, in plain words ---- */
+  var covered=coversHomeReady(dest);
+  if(covered) cost="it covers the "+cname(covered)+", which was ready to go home — you would have to dig it out again later, so sending that card home first is the other way to play it";
+  else if(dest.kind==="foundation" && lead.r>=3){
+    var oppMin=13; for(var f=0;f<4;f++){ if(isRed(f)!==isRed(lead.s)) oppMin=Math.min(oppMin, S.foundations[f].length); }
+    if(oppMin<lead.r-2) cost="once home, the "+cname(lead)+" can no longer be a landing spot for a card one step below it in the other colour — and those piles are not as far along, so holding it down here a while longer is a real alternative";
+    else cost="once home it cannot be used as a landing spot any more — but the other colour’s piles have nearly caught up, so that cost is small here";
+  }
+  else if(breaksBuiltRun(sel, lead) && !flipsCard(sel)) cost="it splits a run you had already built and reveals nothing new — keeping the run intact and playing a different card first is the other way to play it, for example emptying a column for a King instead of breaking the run up";
+  else if(dest.kind==="tableau" && !S.tableau[dest.i].length) cost="it uses up the empty column — after this you have no spare column, so if a King shows up later there is nowhere new to put it until another column clears";
+  else if(sel.kind==="foundation") cost="it costs a little score and undoes progress home, so it is only worth it when it frees something bigger";
+  else if(sel.kind==="waste" && dest.kind==="tableau") cost="it commits the waste card to this pile now — doing a column move first would keep this landing spot open, in case the next card out of the stock fits here better; holding the waste card costs nothing except that it stays on top of the waste, blocking the card underneath";
+  else if(sel.kind==="tableau" && dest.kind==="tableau" && !flipsCard(sel)) cost="it reveals no new card, so it rearranges the table rather than opening it up — a move that turns a card over, if you have one, usually changes more";
+  else cost="it leaves the rest of the table as it is, so your other moves stay open after it";
+  return gain+"; but "+cost+".";
+}
+function distinctStrategies(moves){
+  // Different strategies, not the same card offered to two equivalent piles.
+  var out=[], seen={};
+  for(var i=0;i<moves.length && out.length<3;i++){
+    var m=moves[i], lead=getStack(m.sel)[0]; if(!lead) continue;
+    var key=m.sel.kind+":"+m.sel.i+":"+m.sel.idx+":"+lead.s+"-"+lead.r+":"+m.dest.kind;
+    // same source card to another tableau pile is the same strategy — keep only the best-ranked one
+    if(seen[key]) continue;
+    seen[key]=true;
+    out.push(m);
+  }
+  return out;
+}
 function doHint(){
   if(S.won){ setHint("This game is won — every card is home. Deal a new game whenever you’re ready."); return; }
   var teach = teachLevel()!=="off";
   var moves=allMoves();
   if(moves.length){
-    var m=moves[0];
-    hintHL={sel:m.sel, dest:m.dest};
-    setHint("Hint: "+m.desc+(teach? " "+whyForMove(m) : ""));
+    var options=distinctStrategies(moves);
+    var top=options[0];
+    hintHL={sel:top.sel, dest:top.dest};
+    if(options.length===1){
+      setHint("Hint — this is the only real move here: "+top.desc+(teach? " "+whyForMove(top)+" Trade-off: "+tradeoffForMove(top) : ""));
+      render(); return;
+    }
+    if(!teach){
+      var plain="Hint: you have "+options.length+" real choices here: ";
+      for(var pi=0; pi<options.length; pi++) plain+=(pi+1)+". "+options[pi].desc+" ";
+      setHint(plain.trim());
+      render(); return;
+    }
+    var txt="Hint: you have "+options.length+" real choices here — there isn’t just one best move. ";
+    for(var oi=0; oi<options.length; oi++){
+      txt+=(oi+1)+". "+options[oi].desc+" Trade-off: "+tradeoffForMove(options[oi])+" ";
+    }
+    txt+="If you want a lean: choice 1 is the one strong players reach for first here — "+whyForMove(top).replace(/^Why:\s*/,"").replace(/^./, function(ch){ return ch.toLowerCase(); })+" But the others are real plays, not mistakes — pick the trade-off you prefer.";
+    setHint(txt.trim());
     render(); return;
   }
-  if(S.stock.length){ hintHL=null; setHint("Hint: no card moves right now — tap the stock pile to deal "+(S.settings.draw===1?"a card":"up to three cards")+" and look again."+(teach?" Why: new cards are new chances — when nothing on the table moves, the stock is the only way the game can change.":"")); render(); return; }
+  if(S.stock.length){ hintHL=null; setHint("Hint — your only option right now: no card moves, so tap the stock pile to deal "+(S.settings.draw===1?"a card":"up to three cards")+" and look again."+(teach?" Why: new cards are new chances — when nothing on the table moves, the stock is the only way the game can change.":"")); render(); return; }
   if(S.waste.length && (S.settings.redeals==="unlimited" || S.passes<3)){
-    hintHL=null; setHint("Hint: no card moves right now — tap the empty stock slot to turn the waste pile back over and go through it again."+(teach?" Why: cards you couldn’t use on the last pass may fit now that the table has changed.":"")); render(); return;
+    hintHL=null; setHint("Hint — your only option right now: no card moves, so tap the empty stock slot to turn the waste pile back over and go through it again."+(teach?" Why: cards you couldn’t use on the last pass may fit now that the table has changed.":"")); render(); return;
   }
   hintHL=null;
   setHint("I see no moves left, and the stock is finished — this game looks blocked. Undo to try a different line, or deal a new game. (I only suggest moves that are really legal; there are none I can find.)");
@@ -809,8 +893,8 @@ for(var ti=0; ti<teachRadios.length; ti++){
     setHint(teachLevel()==="off"
       ? "Teaching is off. No teaching notes — and the Hint button still works whenever you tap it."
       : "Teaching: "+teachName()+". "+(teachLevel()==="coach"
-        ? "Hints will explain their why, and after a move that works against you, a gentle coach note will say what happened and what to watch for. It never blocks a move."
-        : "Hints will explain their why in plain words as you ask for them. Nothing will be said about your own moves."));
+        ? "Hints will offer the real choices with their trade-offs when there is more than one, and after a move that works against you, a gentle coach note will say what happened and name the other choice you had. It never blocks a move."
+        : "Hints will offer the real choices with their trade-offs in plain words when there is more than one, and name a single way only when there is genuinely one. Nothing will be said about your own moves."));
     render();
   });
 }
