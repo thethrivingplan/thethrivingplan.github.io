@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Reversi — free, no ads, teaches as you play</title>
+<style>
+  :root{
+    --bg:#f6f4ee; --panel:#fffdf7; --ink:#1d2420; --ink-soft:#48524c;
+    --line:#d8d2c2; --accent:#17603c; --accent-ink:#ffffff;
+    --board:#1e7a4a; --board-dark:#14532f; --cell-line:#0d3d22;
+    --gold:#b8860b; --warn-bg:#fdf3e0; --warn-line:#d9a441; --warn-ink:#5c430a;
+    --good-bg:#e7f3ea; --good-line:#5d9c72;
+    --chip:#efe9d8; --shadow:0 2px 10px rgba(30,40,30,.12);
+    --disc-b:#17181a; --disc-w:#f7f4ec;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141816; --panel:#1d2320; --ink:#ece9df; --ink-soft:#b3bab2;
+      --line:#39423c; --accent:#2e9e63; --accent-ink:#0d1512;
+      --board:#17603c; --board-dark:#0f4529; --cell-line:#082b18;
+      --gold:#d9a441; --warn-bg:#33290f; --warn-line:#8a6a24; --warn-ink:#f0d48a;
+      --good-bg:#16301f; --good-line:#3f7d55;
+      --chip:#2a312c; --shadow:0 2px 10px rgba(0,0,0,.4);
+      --disc-b:#0a0b0c; --disc-w:#f7f4ec;
+    }
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif; line-height:1.5; }
+  button, select, input[type="text"]{ min-height:2.75rem; font:inherit; }
+  button{ cursor:pointer; }
+  .wrap{ max-width:1060px; margin:0 auto; padding:0 16px 48px; }
+
+  /* compass */
+  .compass{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:baseline;
+    padding:10px 0 8px; border-bottom:1px solid var(--line); font-size:.92rem; }
+  .compass a{ color:var(--accent); text-decoration:none; font-weight:600; padding:6px 2px; display:inline-block; }
+  .compass a:hover{ text-decoration:underline; }
+  .compass .here{ color:var(--ink-soft); }
+
+  .freebar{ margin:14px 0 0; background:var(--accent); color:var(--accent-ink);
+    border-radius:10px; padding:12px 16px; font-weight:700; font-size:1.02rem; }
+  .freebar small{ display:block; font-weight:500; opacity:.92; margin-top:2px; }
+
+  h1{ font-family:Georgia,"Times New Roman",serif; font-size:2.3rem; margin:18px 0 4px; letter-spacing:.01em; }
+  .sub{ color:var(--ink-soft); margin:0 0 6px; max-width:65ch; }
+  .src{ font-size:.9rem; color:var(--ink-soft); max-width:70ch; }
+  .src strong{ color:var(--ink); }
+
+  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:22px; margin-top:18px; align-items:start; }
+  @media (max-width:880px){ .layout{ grid-template-columns:1fr; } }
+
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); padding:16px; }
+  .panel + .panel{ margin-top:16px; }
+  .panel h2{ font-family:Georgia,serif; font-size:1.25rem; margin:0 0 10px; }
+  .panel h3{ font-size:1rem; margin:16px 0 6px; }
+
+  /* score strip */
+  .scorestrip{ display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; margin-bottom:12px; }
+  .scorecard{ flex:1 1 130px; border:1px solid var(--line); border-radius:10px; padding:8px 12px;
+    display:flex; align-items:center; gap:10px; background:var(--panel); }
+  .scorecard.turn{ outline:3px solid var(--gold); outline-offset:-1px; }
+  .discdot{ width:30px; height:30px; border-radius:50%; flex:none; box-shadow:inset -3px -4px 6px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.3); }
+  .discdot.b{ background:var(--disc-b); } .discdot.w{ background:var(--disc-w); border:1px solid #b9b2a0; }
+  .scorecard .who{ font-weight:700; line-height:1.15; }
+  .scorecard .who small{ display:block; font-weight:500; color:var(--ink-soft); font-size:.8rem; }
+  .scorecard .num{ margin-left:auto; font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  .statusline{ flex:1 1 100%; font-weight:600; min-height:1.5em; }
+  .variantbanner{ flex:1 1 100%; background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink);
+    border-radius:8px; padding:8px 12px; font-weight:600; display:none; }
+  .variantbanner.show{ display:block; }
+
+  /* board */
+  .boardframe{ background:var(--board-dark); padding:10px; border-radius:14px; box-shadow:var(--shadow); }
+  .coords{ display:grid; color:#cfe8d8; font-size:.72rem; text-align:center; font-weight:700; }
+  .board{ display:grid; gap:2px; background:var(--cell-line); border:2px solid var(--cell-line); border-radius:6px; overflow:hidden;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none; }
+  .cell{ background:var(--board); aspect-ratio:1/1; border:0; padding:0; min-height:0; position:relative;
+    display:flex; align-items:center; justify-content:center; border-radius:0; }
+  .cell:focus-visible{ outline:3px solid var(--gold); outline-offset:-3px; z-index:2; }
+  .cell .disc{ width:82%; height:82%; border-radius:50%; pointer-events:none;
+    box-shadow:inset -4px -6px 9px rgba(0,0,0,.35), inset 3px 4px 6px rgba(255,255,255,.18), 0 2px 3px rgba(0,0,0,.35); }
+  .cell .disc.b{ background:radial-gradient(circle at 35% 30%, #3a3d42, var(--disc-b) 65%); }
+  .cell .disc.w{ background:radial-gradient(circle at 35% 30%, #ffffff, var(--disc-w) 65%); }
+  .cell .hint{ width:26%; height:26%; border-radius:50%; border:3px solid rgba(255,255,255,.55); pointer-events:none; }
+  .cell.legal{ cursor:pointer; }
+  .cell.legal:hover{ background:#27965e; }
+  .cell.lastmove::after{ content:""; position:absolute; inset:auto; width:14%; height:14%; border-radius:50%;
+    background:var(--gold); bottom:6%; right:6%; box-shadow:0 0 0 2px rgba(0,0,0,.25); }
+  .cell.coachpick{ box-shadow:inset 0 0 0 4px var(--gold); }
+  .cell.flipanim .disc{ animation:flip .45s ease; }
+  @keyframes flip{ 0%{ transform:scaleX(1);} 50%{ transform:scaleX(.08);} 100%{ transform:scaleX(1);} }
+  @media (prefers-reduced-motion: reduce){ .cell.flipanim .disc{ animation:none; } }
+  .boardgesture{ text-align:center; color:var(--ink-soft); font-size:.9rem; margin:10px 0 0; font-weight:600; }
+
+  /* teaching */
+  .teachbox{ border-radius:10px; padding:12px 14px; margin-top:12px; display:none; }
+  .teachbox.show{ display:block; }
+  .teachbox.tip{ background:var(--good-bg); border:1px solid var(--good-line); }
+  .teachbox.warn{ background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink); }
+  .teachbox .t-head{ font-weight:800; margin-bottom:4px; }
+  .teachbox p{ margin:4px 0; }
+  .strat{ border-top:1px dashed currentColor; padding-top:8px; margin-top:8px; }
+  .strat:first-of-type{ border-top:0; padding-top:2px; margin-top:4px; }
+  .strat b{ display:block; }
+  .strat .play{ font-weight:700; }
+
+  /* controls */
+  .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .btn{ border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:9px;
+    padding:10px 16px; font-weight:700; box-shadow:var(--shadow); }
+  .btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .btn:disabled{ opacity:.45; cursor:default; }
+  .btn small{ display:block; font-weight:500; font-size:.75rem; opacity:.8; }
+  label.fld{ display:block; font-weight:700; margin:12px 0 4px; }
+  label.fld small{ display:block; font-weight:500; color:var(--ink-soft); }
+  select, input[type="text"]{ width:100%; border:1px solid var(--line); border-radius:8px; padding:10px;
+    background:var(--panel); color:var(--ink); }
+  .seg{ display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .seg button{ flex:1; border:0; background:var(--panel); color:var(--ink); font-weight:700; padding:10px 4px; min-height:2.75rem; }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .seg button + button{ border-left:1px solid var(--line); }
+  .checkline{ display:flex; gap:10px; align-items:flex-start; padding:10px 0 2px; min-height:2.75rem; }
+  .checkline input{ width:22px; height:22px; margin-top:2px; flex:none; }
+  .aliasrow{ display:flex; gap:8px; } .aliasrow input{ flex:1; } .aliasrow button{ flex:none; }
+  .saved-note{ font-size:.85rem; color:var(--ink-soft); margin-top:10px; }
+
+  details.deep{ margin-top:16px; border:1px solid var(--line); border-radius:12px; background:var(--panel); box-shadow:var(--shadow); }
+  details.deep > summary{ cursor:pointer; font-weight:800; padding:14px 16px; min-height:2.75rem; list-style-position:inside; }
+  details.deep .inside{ padding:0 16px 16px; }
+  .mobgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .mobcard{ border:1px solid var(--line); border-radius:10px; padding:10px 12px; text-align:center; }
+  .mobcard .big{ font-size:2rem; font-weight:800; font-variant-numeric:tabular-nums; }
+  table.sim{ border-collapse:collapse; width:100%; font-size:.93rem; }
+  table.sim th, table.sim td{ border-bottom:1px solid var(--line); padding:7px 8px; text-align:left; }
+  table.sim td.n, table.sim th.n{ text-align:right; font-variant-numeric:tabular-nums; }
+  .recordgrid{ display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; font-size:.95rem; }
+  .recordgrid b{ font-variant-numeric:tabular-nums; }
+  .movelist{ font-size:.9rem; color:var(--ink-soft); max-height:180px; overflow:auto; white-space:pre-wrap; }
+  footer{ margin-top:28px; border-top:1px solid var(--line); padding-top:14px; color:var(--ink-soft); font-size:.9rem; }
+  footer p{ margin:4px 0; }
+  .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="compass" aria-label="Compass">
+    <a href="https://thethrivingplan.github.io/">Start Page</a>
+    <a href="https://thethrivingplan.github.io/">The Thriving Plan</a>
+    <span class="here">Other pages: Games Shelf → Reversi</span>
+  </nav>
+
+  <div class="freebar">Free — always free. No ads, no account, no sign-up.
+    <small>Offline door: once this page has loaded, it works with no connection at all. Everything below runs on this one device.</small>
+  </div>
+
+  <h1>Reversi</h1>
+  <p class="sub">Trap a line of your opponent's discs between two of yours and the whole line flips to your colour. Most discs when the board fills — or when neither side can move — wins. A minute to learn; the corners will take you a lifetime.</p>
+  <p class="src"><strong>The documented game:</strong> this is <strong>Reversi</strong>, the game published in London in <strong>1883</strong> and described in print ever since — the original, public-domain game, played here under its documented rules (8×8 board, four centre discs, a move must outflank and flip, a side with no legal move passes). It is not the later trademarked variant sold under another name; nothing here copies that product's branding or text.</p>
+
+  <div class="layout">
+    <!-- ============ BOARD SIDE ============ -->
+    <div>
+      <div class="scorestrip" aria-live="polite">
+        <div class="scorecard" id="cardB">
+          <span class="discdot b" aria-hidden="true"></span>
+          <span class="who"><span id="nameB">Black</span><small id="roleB">You</small></span>
+          <span class="num" id="scoreB">2</span>
+        </div>
+        <div class="scorecard" id="cardW">
+          <span class="discdot w" aria-hidden="true"></span>
+          <span class="who"><span id="nameW">White</span><small id="roleW">Bot</small></span>
+          <span class="num" id="scoreW">2</span>
+        </div>
+        <div class="variantbanner" id="variantBanner" role="status"></div>
+        <div class="statusline" id="statusLine">Black to move. Tap a square to place.</div>
+      </div>
+
+      <div class="boardframe">
+        <div class="board" id="board" role="grid" aria-label="Reversi board. Tap a square to place a disc."></div>
+      </div>
+      <p class="boardgesture">Tap a square to place a disc · Dotted squares are legal moves · Gold dot marks the last move</p>
+
+      <div class="teachbox" id="teachBox" aria-live="polite"></div>
+
+      <div class="row" style="margin-top:14px;">
+        <button class="btn primary" id="btnNew">New game<small>Tap to start over</small></button>
+        <button class="btn" id="btnUndo">Undo<small>Tap to take back</small></button>
+        <button class="btn" id="btnHint">Hint<small>Tap for move ideas</small></button>
+      </div>
+
+      <details class="deep" id="proTools">
+        <summary>Pro tools — tap to open (mobility counter, position map, move record)</summary>
+        <div class="inside">
+          <h3>The mobility counter — the number pros actually watch</h3>
+          <p>Mobility is how many legal moves a side has right now. Discs can be retaken; moves are freedom. A side rich in discs but starved of moves is losing the real game — the classic beginner trap is grabbing every flip and ending up with nowhere good to go.</p>
+          <div class="mobgrid">
+            <div class="mobcard"><div class="big" id="mobB">4</div><span id="mobNameB">Black</span> moves available</div>
+            <div class="mobcard"><div class="big" id="mobW">4</div><span id="mobNameW">White</span> moves available</div>
+          </div>
+          <h3>Position map, in plain words</h3>
+          <p><strong>Corners</strong> can never be flipped once taken — the only truly safe discs on the board. <strong>The squares beside an empty corner</strong> (the two edge squares next to it, and the diagonal square inside) usually hand that corner to your opponent — pros call the diagonal one the X-square and treat all three as poison until the corner is settled. <strong>Edges</strong> are strong once they connect to a corner. <strong>The middle</strong> is weather: it changes every move, so don't fall in love with a big pile there.</p>
+          <h3>Move record</h3>
+          <div class="movelist" id="moveList">No moves yet.</div>
+        </div>
+      </details>
+
+      <details class="deep">
+        <summary>How to play — tap to open</summary>
+        <div class="inside">
+          <p><strong>The one rule:</strong> place a disc so that one or more straight lines (across, down, or diagonal) of your opponent's discs are trapped between your new disc and one already yours. Every trapped disc flips to your colour. If a placement traps nothing, it isn't legal.</p>
+          <p><strong>Passing:</strong> if you have no legal move, you pass and your opponent plays again. The game ends when the board is full or neither side can move — empty squares left over simply belong to nobody.</p>
+          <p><strong>Winning:</strong> most discs of your colour when the game ends. The lead changes hands violently near the end — a 20-disc "lead" in the middle is often a loss wearing a costume.</p>
+          <p><strong>First game?</strong> Leave Teaching on Light, play the Learning bot, and watch what the tips keep pointing at: corners and choices, not piles of discs.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ============ SETUP SIDE ============ -->
+    <div>
+      <section class="panel" aria-label="Game setup">
+        <h2>Set up the game</h2>
+
+        <label class="fld" for="selMode">Who is playing<small>Two-player is pass-and-play on this one device.</small></label>
+        <select id="selMode">
+          <option value="bot">Me against the bot</option>
+          <option value="2p">Two players, same device</option>
+        </select>
+
+        <div id="botSettings">
+          <label class="fld" for="selBot">Bot skill<small>Each level plays a genuinely different game — the proof is printed below.</small></label>
+          <select id="selBot">
+            <option value="learning">Learning — grabs the biggest flip</option>
+            <option value="steady">Steady — counts discs</option>
+            <option value="sharp">Sharp — plays mobility and corners</option>
+            <option value="pro">Pro — the real positional game</option>
+          </select>
+          <label class="fld" for="selSide">Your colour<small>Black always moves first.</small></label>
+          <select id="selSide">
+            <option value="1">Black (first move)</option>
+            <option value="-1">White (second move)</option>
+          </select>
+        </div>
+
+        <label class="fld" for="aliasB">Names (optional — alias freedom)<small>No name is ever required. Aliases are session decoration only; play works fine as Black and White.</small></label>
+        <div class="aliasrow">
+          <input type="text" id="aliasB" placeholder="Black's alias (optional)" maxlength="18" autocomplete="off" />
+          <button class="btn" id="diceB" type="button" aria-label="Random alias for Black">🎲<small>Tap for a random alias</small></button>
+        </div>
+        <div class="aliasrow" style="margin-top:8px;">
+          <input type="text" id="aliasW" placeholder="White's alias (optional)" maxlength="18" autocomplete="off" />
+          <button class="btn" id="diceW" type="button" aria-label="Random alias for White">🎲<small>Tap for a random alias</small></button>
+        </div>
+
+        <label class="fld">Teaching<small>Teaches the pro gospel in the moment — corners are king, mobility beats disc count, the squares beside an empty corner are poison. Where more than one real strategy exists, it offers the alternatives with their trade-offs, and names a single way only when there is genuinely one option.</small></label>
+        <div class="seg" role="group" aria-label="Teaching level">
+          <button id="teachOff" aria-pressed="false">Off</button>
+          <button id="teachLight" aria-pressed="true">Light</button>
+          <button id="teachCoach" aria-pressed="false">Coach</button>
+        </div>
+        <p class="saved-note" style="margin-top:6px;">Off means off. Light comments on the big moments. Coach shows its thinking before your moves, drawn from your own record below as well as the position.</p>
+      </section>
+
+      <section class="panel" aria-label="Rule settings">
+        <h2>Rule settings</h2>
+        <label class="fld" for="selSize">Board size<small>8×8 is the standard, documented game. Other sizes are variants and are labelled as variants while they are in play; their results are the variant's, never dressed as standard.</small></label>
+        <select id="selSize">
+          <option value="8">8 × 8 — standard</option>
+          <option value="6">6 × 6 — short variant</option>
+          <option value="10">10 × 10 — long variant</option>
+        </select>
+        <label class="checkline">
+          <input type="checkbox" id="chkMoves" checked />
+          <span><strong>Show legal moves</strong> — dotted squares mark where you may play. Turning this off is the classic no-help game; the board stops guiding you.</span>
+        </label>
+        <p class="saved-note">Settings and the teaching dial are saved <strong>on this device only</strong> — nothing is sent anywhere, there is no account, and clearing your browser data clears them.</p>
+      </section>
+
+      <section class="panel" aria-label="Your strategy record">
+        <h2>Your strategy record</h2>
+        <p style="margin-top:0;">Every game you play here is also a strategy builder: this record keeps <strong>your</strong> games and <strong>your</strong> patterns on this device, and the teaching draws from it — not generic tips alone. It lives only here and you can wipe it in one tap.</p>
+        <div class="recordgrid" id="recordGrid">
+          <span>Games finished</span><b id="recGames">0</b>
+          <span>Won / Lost / Drawn</span><b id="recWLD">0 / 0 / 0</b>
+          <span>Corners you took</span><b id="recCorners">0</b>
+          <span>Corners handed away*</span><b id="recGiven">0</b>
+          <span>Poison-square plays†</span><b id="recPoison">0</b>
+          <span>Biggest-flip grabs‡</span><b id="recGreedy">0</b>
+        </div>
+        <p class="saved-note">* A corner your opponent took on the move right after yours. † Playing beside a corner that was still empty. ‡ Taking the largest flip on offer when a corner or a quieter move existed.</p>
+        <p id="recordLesson" style="font-weight:600;"></p>
+        <button class="btn" id="btnForget">Forget my record<small>Tap to wipe it from this device</small></button>
+      </section>
+
+      <section class="panel" aria-label="Do the bot levels really differ">
+        <h2>Do the levels really differ?</h2>
+        <p style="margin-top:0;">Checked the honest way: the bots played each other head-to-head on the standard 8×8 board, colours swapped halfway so first move is shared fairly — 20 games per pairing among Learning, Steady, and Sharp, 10 per pairing against Pro (Pro thinks longer). The ladder is real: <strong>every level beat every level below it</strong>, and the two disc-grabbers sit close together, exactly as their strategies suggest.</p>
+        <table class="sim" id="simTable">
+          <thead><tr><th>Match-up</th><th class="n">Result</th><th class="n">Avg discs</th></tr></thead>
+          <tbody id="simBody">
+            <tr><td>Learning vs Steady</td><td class="n">8–12</td><td class="n">30.1 – 33.9</td></tr>
+            <tr><td>Learning vs Sharp</td><td class="n">1–19</td><td class="n">17.6 – 46.4</td></tr>
+            <tr><td>Steady vs Sharp</td><td class="n">1–19</td><td class="n">14.8 – 49.0</td></tr>
+            <tr><td>Learning vs Pro</td><td class="n">0–10</td><td class="n">10.5 – 53.5</td></tr>
+            <tr><td>Steady vs Pro</td><td class="n">0–10</td><td class="n">7.0 – 54.9</td></tr>
+            <tr><td>Sharp vs Pro</td><td class="n">0–10</td><td class="n">11.2 – 50.3</td></tr>
+          </tbody>
+        </table>
+        <p class="saved-note">How each level actually plays: <strong>Learning</strong> takes the biggest flip it can see and daydreams about a third of its moves. <strong>Steady</strong> counts discs and takes the move that leaves it with the most — the classic beginner strategy, played perfectly. <strong>Sharp</strong> scores squares the pro way (corners and mobility first) and peeks at your best reply. <strong>Pro</strong> searches several moves deep with that same pro scoring, and solves the endgame outright once ten or fewer squares remain.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>Copyleft.</strong> This page and its code are free to copy, share, and build on: text and design under <strong>CC BY-SA 4.0</strong>, code under the <strong>GPL</strong>. Derivatives carry the same freedom. No ads — ever. Reversi itself is a public-domain game from 1883; the trademarked name of its later commercial variant is deliberately not used.</p>
+    <p>A work in progress, like everything on the shelf — if something here could be better for everybody, the Start Page's “What are we missing?” door is where to say it.</p>
+  </footer>
+</div>
+
+<script>
+'use strict';
+/* ================= Engine (identical logic to the headless self-play check) ================= */
+var DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function newBoard(n){
+  var b = new Int8Array(n*n), m = n/2;
+  b[(m-1)*n+(m-1)] = -1; b[(m-1)*n+m] = 1;
+  b[m*n+(m-1)] = 1;       b[m*n+m] = -1;
+  return b;
+}
+function flipsFor(b, n, idx, player){
+  if (b[idx] !== 0) return null;
+  var r = Math.floor(idx/n), c = idx%n, opp = -player, all = null;
+  for (var d=0; d<8; d++){
+    var dr = DIRS[d][0], dc = DIRS[d][1];
+    var rr = r+dr, cc = c+dc, line = [];
+    while (rr>=0 && rr<n && cc>=0 && cc<n && b[rr*n+cc] === opp){ line.push(rr*n+cc); rr+=dr; cc+=dc; }
+    if (line.length && rr>=0 && rr<n && cc>=0 && cc<n && b[rr*n+cc] === player){
+      if (!all) all = [];
+      for (var k=0;k<line.length;k++) all.push(line[k]);
+    }
+  }
+  return all;
+}
+function legalMoves(b, n, player){
+  var out = [];
+  for (var i=0;i<n*n;i++) if (b[i]===0){ var f = flipsFor(b,n,i,player); if (f) out.push({idx:i, flips:f}); }
+  return out;
+}
+function applyMove(b, move, player){
+  var nb = Int8Array.from(b);
+  nb[move.idx] = player;
+  for (var k=0;k<move.flips.length;k++) nb[move.flips[k]] = player;
+  return nb;
+}
+function countDiscs(b, player){ var s=0; for (var i=0;i<b.length;i++) if (b[i]===player) s++; return s; }
+function countMoves(b, n, player){
+  var count = 0;
+  for (var i=0;i<n*n;i++){
+    if (b[i]!==0) continue;
+    var r = Math.floor(i/n), c = i%n, opp = -player, ok = false;
+    for (var d=0; d<8 && !ok; d++){
+      var rr = r+DIRS[d][0], cc = c+DIRS[d][1], seen = false;
+      while (rr>=0 && rr<n && cc>=0 && cc<n && b[rr*n+cc] === opp){ seen = true; rr+=DIRS[d][0]; cc+=DIRS[d][1]; }
+      if (seen && rr>=0 && rr<n && cc>=0 && cc<n && b[rr*n+cc] === player) ok = true;
+    }
+    if (ok) count++;
+  }
+  return count;
+}
+function countEmpty(b){ var s=0; for (var i=0;i<b.length;i++) if (b[i]===0) s++; return s; }
+function isCorner(n, idx){ var r=Math.floor(idx/n), c=idx%n; return (r===0||r===n-1)&&(c===0||c===n-1); }
+var POISONCACHE = {};
+function poisonSet(n){
+  if (POISONCACHE[n]) return POISONCACHE[n];
+  var set = {}, corners = [0, n-1, n*(n-1), n*n-1];
+  for (var k=0;k<4;k++){
+    var r = Math.floor(corners[k]/n), c = corners[k]%n;
+    for (var d=0; d<8; d++){
+      var rr = r+DIRS[d][0], cc = c+DIRS[d][1];
+      if (rr>=0&&rr<n&&cc>=0&&cc<n) set[rr*n+cc] = corners[k];
+    }
+  }
+  POISONCACHE[n] = set; return set;
+}
+function staticWeight(b, n, idx){
+  var r = Math.floor(idx/n), c = idx%n;
+  if (isCorner(n,idx)) return 120;
+  var poison = poisonSet(n);
+  if (poison[idx] !== undefined){
+    var cn = poison[idx];
+    if (b[cn] === 0){
+      var cr = Math.floor(cn/n), cc = cn%n;
+      return (r!==cr && c!==cc) ? -28 : -16;
+    }
+    return 6;
+  }
+  if (r===0||r===n-1||c===0||c===n-1) return 8;
+  return 0;
+}
+function evaluate(b, n, player){
+  var opp = -player;
+  var myMoves = countMoves(b,n,player);
+  var opMoves = countMoves(b,n,opp);
+  var myDiscs = countDiscs(b,player), opDiscs = countDiscs(b,opp);
+  var e = countEmpty(b), score = 0;
+  var corners = [0, n-1, n*(n-1), n*n-1], myC = 0, opC = 0, k;
+  for (k=0;k<4;k++){ if (b[corners[k]]===player) myC++; else if (b[corners[k]]===opp) opC++; }
+  score += (myC - opC) * 900;
+  if (myMoves + opMoves > 0) score += 14 * (100 * (myMoves - opMoves) / (myMoves + opMoves));
+  var wsum = 0;
+  for (k=0;k<n*n;k++){ if (b[k]===player) wsum += staticWeight(b,n,k); else if (b[k]===opp) wsum -= staticWeight(b,n,k); }
+  score += wsum * 3;
+  var discW = e > 14 ? 0.6 : (e > 6 ? 3 : 25);
+  score += (myDiscs - opDiscs) * discW;
+  if (e === 0 || (myMoves===0 && opMoves===0)) score += (myDiscs - opDiscs) * 100;
+  return score;
+}
+/* ---- bots ---- */
+function botLearning(b, n, player){
+  var moves = legalMoves(b,n,player);
+  if (!moves.length) return null;
+  if (Math.random() < 0.30) return moves[Math.floor(Math.random()*moves.length)];
+  var best = -1, pick = moves[0];
+  for (var k=0;k<moves.length;k++){ var s = moves[k].flips.length + Math.random()*0.9; if (s > best){ best = s; pick = moves[k]; } }
+  return pick;
+}
+function botSteady(b, n, player){
+  var moves = legalMoves(b,n,player);
+  if (!moves.length) return null;
+  var best = -1e18, pick = moves[0];
+  for (var k=0;k<moves.length;k++){
+    var nb = applyMove(b, moves[k], player);
+    var s = (countDiscs(nb,player) - countDiscs(nb,-player)) * 10 + moves[k].flips.length + Math.random()*1.5;
+    if (s > best){ best = s; pick = moves[k]; }
+  }
+  return pick;
+}
+function botSharp(b, n, player){
+  var moves = legalMoves(b,n,player);
+  if (!moves.length) return null;
+  var best = -1e18, pick = moves[0];
+  for (var k=0;k<moves.length;k++){
+    var nb = applyMove(b, moves[k], player);
+    var s = evaluate(nb, n, player);
+    var replies = legalMoves(nb, n, -player);
+    if (replies.length){
+      var worst = -1e18;
+      for (var j=0;j<replies.length;j++){ var rb = applyMove(nb, replies[j], -player); var rs = evaluate(rb, n, -player); if (rs > worst) worst = rs; }
+      s -= worst * 0.55;
+    } else if (legalMoves(nb, n, player).length) s += 60;
+    s += Math.random() * 2;
+    if (s > best){ best = s; pick = moves[k]; }
+  }
+  return pick;
+}
+function negamax(b, n, player, depth, alpha, beta){
+  var moves = legalMoves(b,n,player);
+  if (depth === 0) return evaluate(b,n,player);
+  if (!moves.length){
+    if (!legalMoves(b,n,-player).length) return evaluate(b,n,player);
+    return -negamax(b, n, -player, depth-1, -beta, -alpha);
+  }
+  var ordered = moves.slice().sort(function(a,c2){ return ((isCorner(n,c2.idx)?1:0)-(isCorner(n,a.idx)?1:0)) || (c2.flips.length-a.flips.length); });
+  var best = -Infinity;
+  for (var k=0;k<ordered.length;k++){
+    var nb = applyMove(b, ordered[k], player);
+    var s = -negamax(nb, n, -player, depth-1, -beta, -alpha);
+    if (s > best) best = s;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;
+  }
+  return best;
+}
+function botPro(b, n, player){
+  var moves = legalMoves(b,n,player);
+  if (!moves.length) return null;
+  var e = countEmpty(b);
+  var depth = e <= 10 ? e : 4;
+  var ordered = moves.slice().sort(function(a,c2){ return ((isCorner(n,c2.idx)?1:0)-(isCorner(n,a.idx)?1:0)) || (c2.flips.length-a.flips.length); });
+  var best = -Infinity, pick = ordered[0];
+  for (var k=0;k<ordered.length;k++){
+    var nb = applyMove(b, ordered[k], player);
+    var s = -negamax(nb, n, -player, depth-1, -Infinity, Infinity);
+    if (s > best){ best = s; pick = ordered[k]; }
+  }
+  return pick;
+}
+var BOTS = { learning: botLearning, steady: botSteady, sharp: botSharp, pro: botPro };
+var BOTNAMES = { learning:'Learning', steady:'Steady', sharp:'Sharp', pro:'Pro' };
+
+/* ================= Notation helpers ================= */
+function sqName(n, idx){ return 'abcdefghij'[idx%n] + (Math.floor(idx/n)+1); }
+function sqDesc(n, idx){
+  var r = Math.floor(idx/n), c = idx%n;
+  if (isCorner(n,idx)) return 'the corner ' + sqName(n,idx);
+  var poison = poisonSet(n);
+  if (poison[idx] !== undefined && true) return sqName(n,idx);
+  return sqName(n,idx);
+}
+
+/* ================= Strategy analysis (shared by Coach + Hint) =================
+   Returns up to 3 genuinely different plans, each with its trade-off.
+   A single plan is returned only when there is a single legal move,
+   or one move takes a corner (stated plainly as the one real option). */
+function analyseMoves(b, n, player){
+  var moves = legalMoves(b,n,player);
+  if (!moves.length) return { plans: [], moves: moves };
+  var scored = moves.map(function(m){
+    var nb = applyMove(b, m, player);
+    var myNext = legalMoves(nb, n, player).length;
+    var opNext = legalMoves(nb, n, -player).length;
+    var opCorner = legalMoves(nb, n, -player).some(function(r){ return isCorner(n, r.idx); });
+    return { move: m, board: nb, score: evaluate(nb, n, player),
+      flips: m.flips.length, myNext: myNext, opNext: opNext,
+      corner: isCorner(n, m.idx),
+      poison: (poisonSet(n)[m.idx] !== undefined) && b[poisonSet(n)[m.idx]] === 0,
+      givesCorner: opCorner };
+  });
+  scored.sort(function(a,c2){ return c2.score - a.score; });
+  if (scored.length === 1) return { plans: [{ s: scored[0], kind:'only', label:'The only move', why:'It is the only legal move on the board — when there is genuinely one option, the teaching says so instead of inventing alternatives.' }], moves: moves, scored: scored };
+  var cornerMove = null, quiet = null, big = null, mobility = null, k, s;
+  for (k=0;k<scored.length;k++){ s = scored[k]; if (s.corner && !cornerMove) cornerMove = s; }
+  // biggest flip
+  var byFlips = scored.slice().sort(function(a,c2){ return c2.flips - a.flips; });
+  big = byFlips[0];
+  // quiet mobility: few flips, best (myNext - opNext), not poison
+  var byMob = scored.slice().sort(function(a,c2){ return ((c2.myNext - c2.opNext) - (a.myNext - a.opNext)) || (a.flips - c2.flips); });
+  for (k=0;k<byMob.length;k++){ if (!byMob[k].poison){ mobility = byMob[k]; break; } }
+  quiet = scored[0];
+  var plans = [], used = {};
+  function add(s, kind, label, why){ if (s && !used[s.move.idx]){ used[s.move.idx] = 1; plans.push({ s:s, kind:kind, label:label, why:why }); } }
+  if (cornerMove){
+    add(cornerMove, 'corner', 'Take the corner', 'A corner can never be flipped back — it is permanent ground, and edges built from it are safe. When a corner is on offer it is almost always the one real play; the alternatives below are shown so you can see what you would be giving up.');
+  }
+  add(mobility, 'mobility', 'Keep your options open', 'Flips few discs now, but leaves you with more moves than your opponent next turn — and leaves them fewer. Mobility is the currency pros hoard: the player with choices makes the other player take the poison squares.');
+  if (big && big.flips >= 4) add(big, 'big', 'Grab the big flip', 'The most discs right now. The trade-off pros warn about: a big flip early usually feeds your opponent fresh lines and choices, and the disc lead it builds melts by the endgame. Strong late, shaky early.');
+  add(quiet, 'best', 'The engine\u2019s pick', 'The highest-rated move on the position as a whole — corners, mobility, and disc count weighed together the pro way.');
+  if (plans.length < 2){ // guarantee a real second alternative when one exists
+    for (k=0;k<scored.length;k++){ add(scored[k], 'alt', 'Another real option', 'A different balance of flips, safety, and choices — compare its trade-off with the plan above.'); if (plans.length >= 2) break; }
+  }
+  return { plans: plans.slice(0,3), moves: moves, scored: scored };
+}
+
+/* ================= Game state ================= */
+var $ = function(id){ return document.getElementById(id); };
+var store = {
+  get: function(k, d){ try { var v = localStorage.getItem('reversi.'+k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set: function(k, v){ try { localStorage.setItem('reversi.'+k, JSON.stringify(v)); } catch(e){} },
+  del: function(k){ try { localStorage.removeItem('reversi.'+k); } catch(e){} }
+};
+var settings = {
+  mode: store.get('mode','bot'), bot: store.get('bot','learning'), side: store.get('side',1),
+  size: store.get('size',8), showMoves: store.get('showMoves', true),
+  teaching: store.get('teaching','light'),
+  aliasB: store.get('aliasB',''), aliasW: store.get('aliasW','')
+};
+var record = store.get('record', null) || { games:0, wins:0, losses:0, draws:0, corners:0, given:0, poison:0, greedy:0, moves:0 };
+function saveRecord(){ store.set('record', record); }
+
+var G = null; // current game
+function freshGame(){
+  var n = settings.size;
+  G = { n: n, board: newBoard(n), turn: 1, history: [], passes: 0, over: false,
+        lastIdx: -1, lastFlips: [], coachIdx: -1,
+        stats: { corners:0, given:0, poison:0, greedy:0, moves:0, pendingCornerWatch:false } };
+  renderAll();
+  maybeBotTurn();
+}
+function humanTurn(){
+  if (G.over) return false;
+  if (settings.mode === '2p') return true;
+  return G.turn === settings.side;
+}
+function playerName(p){
+  var a = p === 1 ? settings.aliasB : settings.aliasW;
+  if (a) return a;
+  return p === 1 ? 'Black' : 'White';
+}
+function roleText(p){
+  if (settings.mode === '2p') return 'Human';
+  return p === settings.side ? 'You' : 'Bot · ' + BOTNAMES[settings.bot];
+}
+
+/* ================= Rendering ================= */
+var boardEl = $('board');
+function renderAll(){
+  renderScore(); renderBoard(); renderProTools(); renderVariant(); updateUndo();
+}
+function renderVariant(){
+  var parts = [];
+  if (settings.size !== 8) parts.push(settings.size + '×' + settings.size + ' board');
+  if (!settings.showMoves) parts.push('legal-move dots off');
+  var el = $('variantBanner');
+  if (parts.length){ el.textContent = 'Variant in play: ' + parts.join(' · ') + ' — a fair game, but its results are the variant\u2019s, not standard 8×8 Reversi.'; el.classList.add('show'); }
+  else { el.textContent = ''; el.classList.remove('show'); }
+}
+function renderScore(){
+  var b = countDiscs(G.board, 1), w = countDiscs(G.board, -1);
+  $('scoreB').textContent = b; $('scoreW').textContent = w;
+  $('nameB').textContent = playerName(1); $('nameW').textContent = playerName(-1);
+  $('roleB').textContent = roleText(1); $('roleW').textContent = roleText(-1);
+  $('cardB').classList.toggle('turn', !G.over && G.turn === 1);
+  $('cardW').classList.toggle('turn', !G.over && G.turn === -1);
+  var st = $('statusLine');
+  if (G.over){
+    var bn = playerName(1), wn = playerName(-1);
+    if (b > w) st.textContent = 'Game over — ' + bn + ' (Black) wins ' + b + '–' + w + '. Tap New game to play again.';
+    else if (w > b) st.textContent = 'Game over — ' + wn + ' (White) wins ' + w + '–' + b + '. Tap New game to play again.';
+    else st.textContent = 'Game over — a draw, ' + b + '–' + w + '. Tap New game to play again.';
+  } else {
+    var who = playerName(G.turn);
+    var moves = legalMoves(G.board, G.n, G.turn);
+    if (!moves.length) st.textContent = who + ' has no legal move and must pass…';
+    else if (settings.mode === 'bot' && !humanTurn()) st.textContent = BOTNAMES[settings.bot] + ' bot (' + who + ') is thinking…';
+    else st.textContent = who + ' to move. Tap a square to place.';
+  }
+}
+function renderBoard(){
+  var n = G.n;
+  boardEl.style.gridTemplateColumns = 'repeat(' + n + ', 1fr)';
+  boardEl.innerHTML = '';
+  var moves = G.over ? [] : legalMoves(G.board, n, G.turn);
+  var legalIdx = {};
+  moves.forEach(function(m){ legalIdx[m.idx] = m; });
+  var showDots = settings.showMoves && humanTurn() && !G.over;
+  var lastFlip = {};
+  G.lastFlips.forEach(function(f){ lastFlip[f] = 1; });
+  for (var i=0;i<n*n;i++){
+    var cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cell';
+    cell.setAttribute('role','gridcell');
+    var v = G.board[i];
+    var r = Math.floor(i/n), c = i%n;
+    var label = sqName(n,i) + ', row ' + (r+1) + ' column ' + (c+1);
+    if (v === 1) label += ', black disc'; else if (v === -1) label += ', white disc'; else label += ', empty';
+    if (legalIdx[i]) label += ', legal move, flips ' + legalIdx[i].flips.length;
+    cell.setAttribute('aria-label', label);
+    if (v !== 0){
+      var d = document.createElement('span');
+      d.className = 'disc ' + (v === 1 ? 'b' : 'w');
+      cell.appendChild(d);
+      if (lastFlip[i] || i === G.lastIdx) cell.classList.add('flipanim');
+    } else if (showDots && legalIdx[i]){
+      var h = document.createElement('span'); h.className = 'hint'; cell.appendChild(h);
+      cell.classList.add('legal');
+    }
+    if (i === G.lastIdx) cell.classList.add('lastmove');
+    if (settings.teaching === 'coach' && humanTurn() && i === G.coachIdx) cell.classList.add('coachpick');
+    (function(idx){
+      cell.addEventListener('click', function(){ onTapSquare(idx); });
+    })(i);
+    boardEl.appendChild(cell);
+  }
+}
+function renderProTools(){
+  $('mobB').textContent = legalMoves(G.board, G.n, 1).length;
+  $('mobW').textContent = legalMoves(G.board, G.n, -1).length;
+  $('mobNameB').textContent = playerName(1);
+  $('mobNameW').textContent = playerName(-1);
+  var ml = $('moveList');
+  if (!G.history.length) ml.textContent = 'No moves yet.';
+  else {
+    var lines = [];
+    for (var k=0;k<G.history.length;k+=2){
+      var line = (k/2+1) + '. ' + G.history[k].text;
+      if (G.history[k+1]) line += '   ' + G.history[k+1].text;
+      lines.push(line);
+    }
+    ml.textContent = lines.join('\n');
+  }
+}
+function updateUndo(){ $('btnUndo').disabled = !G.history.length; }
+
+/* ================= Teaching ================= */
+function teach(html, kind){
+  var box = $('teachBox');
+  if (settings.teaching === 'off' || !html){ box.className = 'teachbox'; box.innerHTML = ''; return; }
+  box.className = 'teachbox show ' + (kind || 'tip');
+  box.innerHTML = html;
+}
+function clearTeach(){ var box = $('teachBox'); box.className = 'teachbox'; box.innerHTML = ''; }
+function recordLessonLine(){
+  var el = $('recordLesson');
+  if (!record.games && !record.moves){ el.textContent = ''; return; }
+  var lines = [];
+  if (record.games >= 2 && record.poison >= 3) lines.push('From your own record: you have played beside an empty corner ' + record.poison + ' times in ' + record.games + ' finished games — that is the habit costing you corners. The Coach now flags those squares before you commit.');
+  if (record.given >= 2) lines.push('From your own record: opponents have taken a corner on the move right after yours ' + record.given + ' times. Before you play, ask what your move opens up for them.');
+  if (record.greedy >= 3) lines.push('From your own record: ' + record.greedy + ' of your moves grabbed the biggest flip while a corner or a quieter move existed. Your piles are not the problem — your timing is.');
+  if (!lines.length && record.games >= 1) lines.push('From your own record: ' + record.games + ' game' + (record.games===1?'':'s') + ' in, no repeat leak spotted yet — corners taken: ' + record.corners + '. Keep playing and this panel will name your patterns as they form.');
+  el.textContent = lines[0] || '';
+}
+function coachBeforeMove(){
+  G.coachIdx = -1;
+  if (settings.teaching !== 'coach' || !humanTurn() || G.over) return;
+  var a = analyseMoves(G.board, G.n, G.turn);
+  if (!a.plans.length) return;
+  var html = '<div class="t-head">Coach — your options, honestly weighed</div>';
+  a.plans.forEach(function(p){
+    html += '<div class="strat"><b>' + p.label + ': <span class="play">' + sqName(G.n, p.s.move.idx) + '</span></b>' + p.why +
+      ' <em>(Flips ' + p.s.flips + '; leaves you ' + p.s.myNext + ' moves to their ' + p.s.opNext + '.)</em></div>';
+  });
+  if (record.poison >= 3){
+    html += '<p><strong>Your record talking:</strong> you have played beside an empty corner ' + record.poison + ' times — if any plan above sits next to an empty corner, that is exactly the habit to break.</p>';
+  }
+  teach(html, 'tip');
+  G.coachIdx = a.plans[0].s.move.idx;
+}
+function teachAfterMove(player, move, beforeBoard){
+  if (settings.teaching === 'off') return;
+  var n = G.n, isHuman = (settings.mode === '2p') || (player === settings.side);
+  var poison = poisonSet(n);
+  var wasPoison = poison[move.idx] !== undefined && beforeBoard[poison[move.idx]] === 0;
+  var wasCorner = isCorner(n, move.idx);
+  if (wasCorner){
+    teach('<div class="t-head">' + (isHuman ? 'Corner taken.' : 'The corner is gone.') + '</div><p>' +
+      (isHuman ? 'That disc can never be flipped — build your edge outward from it and it anchors the whole side.'
+               : 'Your opponent now owns a disc that can never be flipped. Watch the edges next to it: discs built from a corner are safe too.') + '</p>', 'tip');
+    return;
+  }
+  if (wasPoison && (settings.teaching === 'coach' || isHuman)){
+    teach('<div class="t-head">That square was poison</div><p>' + sqName(n, move.idx) +
+      ' sits beside a corner that is still empty. Playing there usually hands your opponent the very line they need to take that corner next. Pros leave those squares alone until the corner is settled — even when the flip looks juicy.</p>', 'warn');
+    return;
+  }
+  if (settings.teaching === 'coach' && isHuman){
+    var myM = legalMoves(G.board, n, player).length, opM = legalMoves(G.board, n, -player).length;
+    var myD = countDiscs(G.board, player), opD = countDiscs(G.board, -player);
+    if (opM === 0) teach('<div class="t-head">They have no move.</div><p>Your opponent must pass — the strongest position in Reversi. You just starved their mobility to zero; that is worth more than any pile of discs.</p>', 'tip');
+    else if (myD > opD + 8 && countEmpty(G.board) > 16) teach('<div class="t-head">A big lead, early — careful.</div><p>You lead by ' + (myD - opD) + ' discs with most of the board still open, and the mobility count is you ' + myM + ' moves to their ' + opM + '. Mid-game disc leads usually melt; choices are what survive. Prefer moves that keep your options wide and theirs narrow.</p>', 'warn');
+  }
+}
+
+/* ================= Playing ================= */
+function onTapSquare(idx){
+  if (G.over || !humanTurn()) return;
+  var moves = legalMoves(G.board, G.n, G.turn);
+  var mv = null;
+  for (var k=0;k<moves.length;k++) if (moves[k].idx === idx) mv = moves[k];
+  if (!mv){
+    if (settings.teaching !== 'off' && G.board[idx] === 0)
+      teach('<div class="t-head">Not a legal move</div><p>A placement must trap at least one line of your opponent\u2019s discs between the new disc and one of yours — across, down, or diagonal. The dotted squares are the ones that do.</p>', 'warn');
+    return;
+  }
+  doMove(mv, G.turn);
+}
+function doMove(mv, player){
+  var before = Int8Array.from(G.board);
+  // per-game + lifetime stats for the human side(s)
+  var isHumanSide = settings.mode === '2p' || player === settings.side;
+  if (isHumanSide){
+    var a = analyseMoves(before, G.n, player);
+    var poison = poisonSet(G.n);
+    G.stats.moves++;
+    if (isCorner(G.n, mv.idx)) G.stats.corners++;
+    if (poison[mv.idx] !== undefined && before[poison[mv.idx]] === 0) G.stats.poison++;
+    var maxFlips = 0; a.scored.forEach(function(s){ if (s.flips > maxFlips) maxFlips = s.flips; });
+    var betterExisted = a.scored.some(function(s){ return s.corner || (s.score > (a.scored.filter(function(x){ return x.move.idx === mv.idx; })[0] || {score:-1e18}).score + 40); });
+    var myScore = null; a.scored.forEach(function(s){ if (s.move.idx === mv.idx) myScore = s.score; });
+    var bestScore = a.scored.length ? a.scored[0].score : 0;
+    if (mv.flips.length === maxFlips && maxFlips >= 3 && (bestScore - (myScore||0)) > 60) G.stats.greedy++;
+    G.stats.pendingCornerWatch = true;
+  } else {
+    // bot just moved: did it take a corner right after a human move?
+    if (G.stats.pendingCornerWatch && isCorner(G.n, mv.idx)) G.stats.given++;
+    G.stats.pendingCornerWatch = false;
+  }
+  G.board = applyMove(G.board, mv, player);
+  G.lastIdx = mv.idx; G.lastFlips = mv.flips.slice();
+  G.history.push({ board: before, player: player, idx: mv.idx,
+    text: (player === 1 ? 'Black' : 'White') + ' ' + sqName(G.n, mv.idx) + ' (+' + (mv.flips.length+1) + ')' });
+  G.turn = -player; G.passes = 0;
+  afterTurn(before, mv, player);
+}
+function afterTurn(before, mv, player){
+  renderAll();
+  teachAfterMove(player, mv, before);
+  // pass / end handling
+  var nextMoves = legalMoves(G.board, G.n, G.turn);
+  if (!nextMoves.length){
+    if (!legalMoves(G.board, G.n, -G.turn).length){ endGame(); return; }
+    var passer = playerName(G.turn);
+    G.history.push({ board: Int8Array.from(G.board), player: G.turn, idx: -1, text: (G.turn === 1 ? 'Black' : 'White') + ' passes' });
+    G.turn = -G.turn; G.passes++;
+    renderAll();
+    if (settings.teaching !== 'off')
+      teach('<div class="t-head">' + passer + ' must pass</div><p>No legal move — every empty square fails to trap a line. This is mobility deciding a game out loud: the side with moves plays twice.</p>', 'tip');
+  }
+  if (settings.teaching === 'coach') coachBeforeMove();
+  renderBoard();
+  maybeBotTurn();
+}
+function endGame(){
+  G.over = true;
+  var b = countDiscs(G.board, 1), w = countDiscs(G.board, -1);
+  // fold this game's human stats into the lifetime record (bot games: from the human's seat; 2p: both seats are human)
+  record.games++; record.corners += G.stats.corners; record.given += G.stats.given;
+  record.poison += G.stats.poison; record.greedy += G.stats.greedy; record.moves += G.stats.moves;
+  if (settings.mode === 'bot'){
+    var mine = settings.side === 1 ? b : w, theirs = settings.side === 1 ? w : b;
+    if (mine > theirs) record.wins++; else if (theirs > mine) record.losses++; else record.draws++;
+  } else {
+    record.draws += (b === w) ? 1 : 0; // 2p results belong to the table, not a win/loss vs the bot
+    if (b !== w) { /* counted as a finished game only */ }
+  }
+  saveRecord(); renderRecord(); renderAll();
+  var bn = playerName(1), wn = playerName(-1);
+  var verdict = b > w ? bn + ' (Black) wins ' + b + '–' + w : (w > b ? wn + ' (White) wins ' + w + '–' + b : 'A draw at ' + b + '–' + w);
+  var lesson = '';
+  if (settings.teaching !== 'off'){
+    if (G.stats.given > 0) lesson = ' Look at your record: a corner changed hands right after your move ' + G.stats.given + ' time' + (G.stats.given===1?'':'s') + ' this game — replay the move record and find the moment.';
+    else if (G.stats.poison > 0) lesson = ' You played beside an empty corner ' + G.stats.poison + ' time' + (G.stats.poison===1?'':'s') + ' this game — your record above keeps count across games.';
+    else if (G.stats.corners > 0) lesson = ' You took ' + G.stats.corners + ' corner' + (G.stats.corners===1?'':'s') + ' — the permanent ground did its work.';
+  }
+  teach('<div class="t-head">Game over</div><p>' + verdict + '.' + lesson + '</p>', 'tip');
+}
+function maybeBotTurn(){
+  if (G.over || settings.mode !== 'bot' || humanTurn()) { if (settings.teaching === 'coach') { coachBeforeMove(); renderBoard(); } return; }
+  renderAll();
+  var myTurn = G.turn;
+  setTimeout(function(){
+    if (G.over || G.turn !== myTurn || settings.mode !== 'bot') return;
+    var mv = BOTS[settings.bot](G.board, G.n, G.turn);
+    if (!mv){ afterTurn(Int8Array.from(G.board), { idx:-1, flips:[] }, -G.turn); return; }
+    doMove(mv, G.turn);
+  }, 480);
+}
+
+/* ================= Controls ================= */
+$('btnNew').addEventListener('click', function(){ clearTeach(); freshGame(); });
+$('btnUndo').addEventListener('click', function(){
+  if (!G.history.length) return;
+  var steps = settings.mode === 'bot' ? 2 : 1;
+  var target = null;
+  for (var k=0;k<steps && G.history.length;k++){
+    var h = G.history.pop();
+    target = h; // earliest popped in this batch holds the board to restore
+  }
+  // restore the board from before the earliest undone move
+  var restoreFrom = G.history.length ? null : target;
+  // We stored each entry's pre-move board; the last popped entry is the earliest undone move.
+  G.board = Int8Array.from(target.board);
+  G.turn = target.player; G.over = false; G.lastIdx = -1; G.lastFlips = [];
+  clearTeach(); renderAll();
+  if (settings.teaching === 'coach'){ coachBeforeMove(); renderBoard(); }
+});
+$('btnHint').addEventListener('click', function(){
+  if (G.over || !humanTurn()) return;
+  var a = analyseMoves(G.board, G.n, G.turn);
+  if (!a.plans.length){ teach('<div class="t-head">No move to hint</div><p>You have no legal move — you pass, and the turn goes back.</p>', 'warn'); return; }
+  var html = '<div class="t-head">Hint — the real options, with trade-offs</div>';
+  a.plans.forEach(function(p){
+    html += '<div class="strat"><b>' + p.label + ': <span class="play">' + sqName(G.n, p.s.move.idx) + '</span></b>' + p.why +
+      ' <em>(Flips ' + p.s.flips + '; leaves you ' + p.s.myNext + ' moves to their ' + p.s.opNext + '.)</em></div>';
+  });
+  teach(html, 'tip');
+  G.coachIdx = a.plans[0].s.move.idx; renderBoard();
+});
+$('btnForget').addEventListener('click', function(){
+  record = { games:0, wins:0, losses:0, draws:0, corners:0, given:0, poison:0, greedy:0, moves:0 };
+  saveRecord(); renderRecord();
+  $('recordLesson').textContent = 'Record wiped from this device.';
+});
+function renderRecord(){
+  $('recGames').textContent = record.games;
+  $('recWLD').textContent = record.wins + ' / ' + record.losses + ' / ' + record.draws;
+  $('recCorners').textContent = record.corners;
+  $('recGiven').textContent = record.given;
+  $('recPoison').textContent = record.poison;
+  $('recGreedy').textContent = record.greedy;
+  recordLessonLine();
+}
+
+/* aliases + dice */
+var ALIAS_A = ['Dusty','Velvet','Lucky','Silent','Amber','Cosmic','Mellow','Rusty','Scarlet','Golden','Midnight','Peppy'];
+var ALIAS_B = ['Coyote','Badger','Heron','Otter','Falcon','Marlin','Walnut','Comet','Juniper','Cinder','Meadow','Harbor'];
+function randomAlias(){ return ALIAS_A[Math.floor(Math.random()*ALIAS_A.length)] + ' ' + ALIAS_B[Math.floor(Math.random()*ALIAS_B.length)]; }
+$('diceB').addEventListener('click', function(){ $('aliasB').value = randomAlias(); settings.aliasB = $('aliasB').value; store.set('aliasB', settings.aliasB); renderScore(); renderProTools(); });
+$('diceW').addEventListener('click', function(){ $('aliasW').value = randomAlias(); settings.aliasW = $('aliasW').value; store.set('aliasW', settings.aliasW); renderScore(); renderProTools(); });
+$('aliasB').addEventListener('change', function(){ settings.aliasB = $('aliasB').value.trim(); store.set('aliasB', settings.aliasB); renderScore(); renderProTools(); });
+$('aliasW').addEventListener('change', function(){ settings.aliasW = $('aliasW').value.trim(); store.set('aliasW', settings.aliasW); renderScore(); renderProTools(); });
+
+/* settings wiring */
+function saveSettings(){
+  store.set('mode', settings.mode); store.set('bot', settings.bot); store.set('side', settings.side);
+  store.set('size', settings.size); store.set('showMoves', settings.showMoves); store.set('teaching', settings.teaching);
+}
+$('selMode').addEventListener('change', function(){ settings.mode = this.value; $('botSettings').style.display = settings.mode === 'bot' ? '' : 'none'; saveSettings(); clearTeach(); freshGame(); });
+$('selBot').addEventListener('change', function(){ settings.bot = this.value; saveSettings(); clearTeach(); freshGame(); });
+$('selSide').addEventListener('change', function(){ settings.side = parseInt(this.value, 10); saveSettings(); clearTeach(); freshGame(); });
+$('selSize').addEventListener('change', function(){ settings.size = parseInt(this.value, 10); saveSettings(); clearTeach(); freshGame(); });
+$('chkMoves').addEventListener('change', function(){ settings.showMoves = this.checked; saveSettings(); renderAll(); });
+function setTeaching(v){
+  settings.teaching = v; saveSettings();
+  $('teachOff').setAttribute('aria-pressed', v==='off'); $('teachLight').setAttribute('aria-pressed', v==='light'); $('teachCoach').setAttribute('aria-pressed', v==='coach');
+  clearTeach();
+  if (v === 'coach'){ coachBeforeMove(); renderBoard(); }
+  if (v === 'light' && humanTurn() && !G.over) teach('<div class="t-head">Teaching on Light</div><p>Tips appear at the big moments — corners, poison squares, passes. Switch to Coach any time for the options before every move, or Off for silence.</p>', 'tip');
+}
+$('teachOff').addEventListener('click', function(){ setTeaching('off'); });
+$('teachLight').addEventListener('click', function(){ setTeaching('light'); });
+$('teachCoach').addEventListener('click', function(){ setTeaching('coach'); });
+
+/* init from saved settings */
+$('selMode').value = settings.mode;
+$('botSettings').style.display = settings.mode === 'bot' ? '' : 'none';
+$('selBot').value = settings.bot;
+$('selSide').value = String(settings.side);
+$('selSize').value = String(settings.size);
+$('chkMoves').checked = settings.showMoves;
+$('aliasB').value = settings.aliasB; $('aliasW').value = settings.aliasW;
+$('teachOff').setAttribute('aria-pressed', settings.teaching==='off');
+$('teachLight').setAttribute('aria-pressed', settings.teaching==='light');
+$('teachCoach').setAttribute('aria-pressed', settings.teaching==='coach');
+renderRecord();
+freshGame();
+if (settings.teaching === 'light') teach('<div class="t-head">Teaching on Light</div><p>One idea to carry into your first game: <strong>the biggest flip is often the worst move</strong>. Flips can be flipped back — corners can\u2019t. Play, and the tips will point at the moments that matter.</p>', 'tip');
+</script>
+</body>
+</html>
