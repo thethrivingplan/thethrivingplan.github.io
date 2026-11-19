@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Riddles</title>
+<style>
+  :root{
+    --bg:#edf0e4; --card:#fffdf6; --card2:#f4f1e3; --ink:#1d2620; --ink-soft:#43534a;
+    --line:#c9cfb8; --accent:#9c441f; --accent-ink:#ffffff; --green:#20503c; --green-soft:#dcead9;
+    --gold:#a97a12; --chip-e:#dcead9; --chip-m:#f3e3bd; --chip-h:#f2d3c2;
+    --bad:#8f2f22; --good:#20503c; --focus:#20503c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10161a; --card:#1a2226; --card2:#222c30; --ink:#eef2ec; --ink-soft:#b9c6bb;
+      --line:#3a474d; --accent:#d98a5f; --accent-ink:#1a120c; --green:#8fc7a8; --green-soft:#24382e;
+      --gold:#e0b45c; --chip-e:#24382e; --chip-m:#3d3520; --chip-h:#3d2b20;
+      --bad:#f0a08e; --good:#8fc7a8; --focus:#e0b45c;
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-text-size-adjust:100%}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button,select,input[type="text"]{font:inherit}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:44rem;margin:0 auto;padding:0 1rem 3rem}
+  /* Free line */
+  .freeline{background:var(--green);color:#f2f6ef;padding:.6rem 1rem;text-align:center;font-size:.98rem}
+  @media (prefers-color-scheme: dark){.freeline{background:#24382e;color:#e6f0e4}}
+  .freeline a{color:#ffd98a;font-weight:700;text-decoration:underline;text-underline-offset:3px;padding:.35rem .15rem;display:inline-block}
+  .freeline strong{font-weight:800}
+  /* Compass */
+  .compass{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;padding:.7rem .5rem .2rem}
+  .compass a{color:var(--ink);text-decoration:none;border:1.5px solid var(--line);background:var(--card);
+    border-radius:999px;padding:.45rem .8rem;font-size:.92rem;font-weight:600}
+  .compass a .dir{color:var(--accent);font-weight:800;margin-right:.3rem}
+  h1{font-family:"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,serif;
+    font-size:2.4rem;line-height:1.1;margin:.8rem 0 .3rem;text-align:center;letter-spacing:.01em}
+  .lede{text-align:center;color:var(--ink-soft);margin:0 auto 1rem;max-width:34rem}
+  .playingas{text-align:center;font-size:.92rem;color:var(--ink-soft);margin:.2rem 0 .6rem;min-height:1.2em}
+  /* Banner */
+  .banner{display:none;border:2px solid var(--gold);background:var(--chip-m);color:var(--ink);
+    border-radius:10px;padding:.6rem .9rem;margin:.6rem 0;font-size:.95rem}
+  .banner.show{display:block}
+  /* Game card */
+  .gamecard{background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    padding:1.1rem 1.1rem 1.2rem;box-shadow:0 2px 10px rgba(20,30,20,.08)}
+  .meta{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between}
+  .chip{display:inline-block;border-radius:999px;padding:.18rem .65rem;font-size:.82rem;font-weight:700;letter-spacing:.02em}
+  .chip.easy{background:var(--chip-e)} .chip.medium{background:var(--chip-m)} .chip.hard{background:var(--chip-h)}
+  .progress{font-size:.9rem;color:var(--ink-soft);font-weight:600}
+  .riddle{font-family:"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,serif;
+    font-size:1.45rem;line-height:1.45;margin:1rem 0 1.1rem}
+  .answerrow{display:flex;gap:.5rem;flex-wrap:wrap}
+  .answerrow input[type="text"]{flex:1 1 12rem;padding:.55rem .7rem;border:1.5px solid var(--line);
+    border-radius:10px;background:var(--card);color:var(--ink);font-size:1.05rem}
+  .btn{border-radius:10px;border:1.5px solid var(--green);background:var(--green);color:#fff;
+    padding:.55rem 1rem;font-weight:700;cursor:pointer;font-size:1rem}
+  @media (prefers-color-scheme: dark){.btn{color:#10160f}}
+  .btn.secondary{background:var(--card);color:var(--ink);border-color:var(--line)}
+  .btn.accent{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btnrow{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.2rem 0 .4rem}
+  @media (max-width:30rem){.choices{grid-template-columns:1fr}}
+  .choice{text-align:left;background:var(--card2);border:1.5px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:.6rem .8rem;font-weight:600;cursor:pointer;font-size:1rem}
+  .feedback{margin-top:.9rem;font-size:1.02rem;min-height:1.4em}
+  .feedback.good{color:var(--good);font-weight:700}
+  .feedback.try{color:var(--bad);font-weight:600}
+  .hintbox{display:none;background:var(--card2);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;
+    padding:.6rem .9rem;margin-top:.7rem}
+  .hintbox.show{display:block}
+  .hintbox p{margin:.25rem 0}
+  .hintbox .hlabel{font-size:.8rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--gold)}
+  .reveal{display:none;margin-top:1rem;border-top:1.5px dashed var(--line);padding-top:.9rem}
+  .reveal.show{display:block}
+  .reveal .ans{font-family:Georgia,serif;font-size:1.25rem;font-weight:700}
+  .reveal p{margin:.45rem 0}
+  .reveal .framing{background:var(--green-soft);border-radius:10px;padding:.55rem .85rem}
+  .nextrow{margin-top:1rem;display:none}
+  .nextrow.show{display:block}
+  .deckdone{display:none;text-align:center;padding:1rem 0 .4rem}
+  .deckdone.show{display:block}
+  /* Folds */
+  details{background:var(--card);border:1.5px solid var(--line);border-radius:14px;margin-top:1rem;padding:0 1.1rem}
+  details[open]{padding-bottom:1.1rem}
+  summary{cursor:pointer;font-weight:800;font-size:1.08rem;padding:.85rem 0;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary .gesture{font-weight:600;font-size:.88rem;color:var(--accent)}
+  details p,details li{color:var(--ink)}
+  details .soft{color:var(--ink-soft)}
+  /* Settings */
+  .field{margin:.9rem 0}
+  .field label,.field .flabel{display:block;font-weight:700;margin-bottom:.35rem}
+  .field .hint{font-size:.9rem;color:var(--ink-soft);margin-top:.3rem}
+  .seg{display:flex;gap:.45rem;flex-wrap:wrap}
+  .seg button{border:1.5px solid var(--line);background:var(--card2);color:var(--ink);border-radius:10px;
+    padding:.5rem .9rem;font-weight:700;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+  @media (prefers-color-scheme: dark){.seg button[aria-pressed="true"]{color:#10160f}}
+  select{padding:.5rem .6rem;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);width:100%;max-width:22rem}
+  input.aliasin{padding:.5rem .7rem;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);width:100%;max-width:22rem}
+  /* Record */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.2rem,1fr));gap:.55rem;margin:.6rem 0}
+  .stat{background:var(--card2);border-radius:10px;padding:.6rem .8rem}
+  .stat .num{font-size:1.5rem;font-weight:800;line-height:1.15}
+  .stat .lab{font-size:.85rem;color:var(--ink-soft);font-weight:600}
+  .patterns{background:var(--green-soft);border-radius:10px;padding:.6rem .95rem;margin:.7rem 0}
+  .patterns p{margin:.3rem 0}
+  footer{margin-top:1.6rem;text-align:center;color:var(--ink-soft);font-size:.9rem}
+  footer p{margin:.3rem 0}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="freeline">
+  <strong>Free — always free.</strong> No account, no ads, ever.
+  <a href="#" id="offlineDoor">available offline — tap to download this page</a>
+  so it works with no connection at all.
+</div>
+
+<div class="wrap">
+  <nav class="compass" aria-label="Compass — the main doors on this page">
+    <a href="#play"><span class="dir">N</span>Play</a>
+    <a href="#settings"><span class="dir">E</span>Settings</a>
+    <a href="#story"><span class="dir">S</span>The old story</a>
+    <a href="#record"><span class="dir">W</span>Your record</a>
+  </nav>
+
+  <h1>Riddles</h1>
+  <p class="lede">One riddle at a time. Read it slowly, turn it over, and answer in your own words — the game accepts close answers, so “an echo” and “echo” both count.</p>
+  <p class="playingas" id="playingAs"></p>
+
+  <div class="banner" id="variantBanner" role="status"></div>
+
+  <!-- GAME (the face) -->
+  <section class="gamecard" id="play" aria-label="The riddle game">
+    <div id="playArea">
+      <div class="meta">
+        <span class="chip easy" id="diffChip">Easy</span>
+        <span class="progress" id="progress">Riddle 1 of 45</span>
+      </div>
+      <p class="riddle" id="riddleText"></p>
+
+      <div id="typeArea">
+        <div class="answerrow">
+          <label class="sr" for="answerInput">Your answer</label>
+          <input type="text" id="answerInput" placeholder="Type your answer here" autocomplete="off" />
+          <button class="btn" id="checkBtn" type="button">Check answer — tap</button>
+        </div>
+      </div>
+      <div id="choiceArea" style="display:none">
+        <div class="choices" id="choices"></div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn secondary" id="hintBtn" type="button">Tap for a hint</button>
+        <button class="btn secondary" id="giveUpBtn" type="button">Give up — tap to see the answer and why</button>
+      </div>
+      <p class="hint" id="hintNote" style="color:var(--ink-soft);font-size:.92rem;margin:.45rem 0 0"></p>
+
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      <div class="hintbox" id="hintBox"></div>
+
+      <div class="reveal" id="reveal">
+        <p>The answer: <span class="ans" id="revealAnswer"></span></p>
+        <div id="revealWhy"></div>
+      </div>
+
+      <div class="nextrow" id="nextRow">
+        <button class="btn accent" id="nextBtn" type="button">Next riddle — tap</button>
+      </div>
+    </div>
+
+    <div class="deckdone" id="deckDone">
+      <p style="font-family:Georgia,serif;font-size:1.3rem;font-weight:700">That is the whole deck — well played.</p>
+      <p id="deckDoneStats"></p>
+      <button class="btn" id="againBtn" type="button">Play again — tap to reshuffle the deck</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS (depth, one tap away) -->
+  <details id="settings">
+    <summary>Settings <span class="gesture">— tap to open</span></summary>
+
+    <div class="field">
+      <span class="flabel" id="teachLabel">Teaching — how much help the game offers</span>
+      <div class="seg" role="group" aria-labelledby="teachLabel" id="teachSeg">
+        <button type="button" data-teach="off">Off — tap</button>
+        <button type="button" data-teach="light">Light — tap</button>
+        <button type="button" data-teach="coach">Coach — tap</button>
+      </div>
+      <p class="hint" id="teachExplain"></p>
+      <p class="hint">Saved on this device only. Nothing is sent anywhere.</p>
+    </div>
+
+    <div class="field">
+      <label for="orderSel">Order of the deck</label>
+      <select id="orderSel">
+        <option value="shuffled">Shuffled — a mix every time (standard)</option>
+        <option value="grouped">Grouped by difficulty — easy first, then medium, then hard</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="filterSel">Which riddles to play</label>
+      <select id="filterSel">
+        <option value="all">All difficulties (standard)</option>
+        <option value="easy">Easy only</option>
+        <option value="medium">Medium only</option>
+        <option value="hard">Hard only</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="styleSel">How to answer</label>
+      <select id="styleSel">
+        <option value="type">Type it in your own words (standard)</option>
+        <option value="choices">Pick from 4 choices</option>
+      </select>
+      <p class="hint">Any setting that is not the standard one is named on a banner above the riddle while you play — no quiet rule changes.</p>
+    </div>
+
+    <div class="field">
+      <label for="aliasInput">Play as (optional — a name for this visit only)</label>
+      <input class="aliasin" type="text" id="aliasInput" placeholder="Leave blank to just play" maxlength="24" />
+      <p class="hint">No claimed name is ever needed here. A name you type lives only for this visit and is never saved or checked.</p>
+    </div>
+
+    <div class="field">
+      <button class="btn" id="applyBtn" type="button">Apply settings &amp; start a fresh deck — tap</button>
+    </div>
+  </details>
+
+  <!-- STORY (depth, one tap away) -->
+  <details id="story">
+    <summary>The old story of riddles <span class="gesture">— tap to open</span></summary>
+    <p>Riddles are one of the oldest games in the world — a folk form, passed mouth to mouth for thousands of years, long before anyone wrote them down. Wherever people gathered, somebody would pose a puzzle in words and everybody else would try to crack it.</p>
+    <p>The old stories are full of riddle contests. In the Hebrew Bible, Samson poses a riddle at his wedding feast — “Out of the eater came something to eat” — and wagers garments on whether his guests can solve it in seven days. In Greek story, the Sphinx waits outside Thebes and asks every traveller the riddle of the creature that walks on four legs in the morning, two at noon, and three in the evening; Oedipus answers “a human being” and the city is freed. You will meet that same riddle in this deck, retold in plain words. Old English poets filled a whole book — the Exeter Book — with riddles about candles, rivers, keys and storms, and nobody signed their name to any of them.</p>
+    <p><strong>Where these riddles come from:</strong> every riddle in this deck is either a traditional folk riddle — the kind passed down for centuries, like the echo, the shadow and the candle — retold here in our own plain words, or a new riddle written for this page in the same traditional style. No riddle is copied from a modern book, website or game.</p>
+    <p><strong>How answering works, in plain words:</strong> the game tidies up what you type — capital letters, spaces and punctuation do not matter — and it accepts close answers where that is fair. Type “an echo”, “Echo!” or “echo” and all three count. Some riddles accept a near-synonym too, like “footprints” for “footsteps”.</p>
+  </details>
+
+  <!-- RECORD (depth, one tap away) -->
+  <details id="record">
+    <summary>Your record <span class="gesture">— tap to open</span></summary>
+    <p class="soft">Your record lives on this device only. Nothing is sent anywhere, and there is no account. Forgetting clears the record and nothing else — your settings stay.</p>
+    <div class="stats" id="statsGrid"></div>
+    <div class="patterns" id="patterns"></div>
+    <div class="btnrow">
+      <button class="btn secondary" id="dlJson" type="button">Download JSON — tap</button>
+      <button class="btn secondary" id="dlCsv" type="button">Download CSV — tap</button>
+      <button class="btn secondary" id="forgetBtn" type="button">Forget my record — tap</button>
+    </div>
+    <p class="hint soft" id="forgetNote" style="font-size:.92rem"></p>
+  </details>
+
+  <footer>
+    <p>Copyleft — writings, pages and designs: CC BY-SA 4.0; code: GPL. Share and adapt freely with credit; anything you make from it carries the same freedom.</p>
+    <p>No ads, ever. Free — always free.</p>
+  </footer>
+</div>
+
+<script>
+/* ============ THE DECK ============
+   Every riddle below is either a traditional folk riddle retold in our own
+   plain words, or a new riddle written for this page in the traditional
+   style. None is copied from a modern book, website or game.
+   Fields: id, d (difficulty), q (the riddle), a (the answer, shown),
+   ok (accepted answers before tidying), h (three hints, weakest first),
+   why (the wordplay in plain words), also (a second way to see it, optional). */
+var RIDDLES = [
+/* ---------- EASY ---------- */
+{id:"echo",d:"easy",q:"I answer everyone who calls out to me, yet I have no voice of my own. I live in canyons, tunnels and empty halls. What am I?",a:"An echo",ok:["echo"],
+ h:["You hear me, but you never see me.","I cannot speak first — I need someone else to make a sound.","Shout into a deep gorge and I will shout your own words back at you."],
+ why:"An echo is your own voice bouncing back off a wall or a cliff face. It seems to answer you, but every word it says is one of yours — it has no voice of its own.",
+ also:"Another way to see it: an echo is a mirror for sound. A mirror shows your face without having one; an echo repeats your voice without having one."},
+{id:"shadow",d:"easy",q:"I follow you everywhere the sun shines, I shrink to almost nothing at noon, and I vanish completely in the dark. What am I?",a:"A shadow",ok:["shadow"],
+ h:["You can step on me, but you can never pick me up.","I am made by light — or rather, by light being blocked.","Look at the ground behind you on a sunny day and you will see me lying there."],
+ why:"Your body blocks the sunlight, and the dark shape left on the ground is your shadow. When the sun is straight overhead the blocked patch is smallest, and with no light at all there is nothing to block.",
+ also:"Another way to see it: a shadow is not a thing at all — it is a place where light did not arrive."},
+{id:"candle",d:"easy",q:"I am tall when I am young and short when I am old. One breath can end me, yet while I live I give light to the whole room. What am I?",a:"A candle",ok:["candle"],
+ h:["I melt a little more every hour I am used.","You light me with a match, and you put me out by blowing.","Birthday cakes would look bare without me."],
+ why:"A candle burns down as it gives light, so a new candle stands tall and an old one is short. Its flame is small enough that one breath of air can blow it out.",
+ also:"Another way to see it: the candle spends itself to shine — the light costs it its own height."},
+{id:"egg",d:"easy",q:"I wear a thin, fragile shell. Inside me waits something not yet born — and cracking me open is how breakfast begins. What am I?",a:"An egg",ok:["egg"],
+ h:["A hen is very proud of me.","I am round, I roll, and I break easily.","You can boil me, fry me or scramble me."],
+ why:"An egg carries a chick that has not hatched yet, sealed inside a thin shell. In the kitchen, that same shell is cracked open to cook what is inside.",
+ also:"Another way to see it: the egg is a packed lunch and a cradle in one — food for the chick, and a house around it."},
+{id:"needle",d:"easy",q:"I have one eye, but I cannot see. Wherever the thread goes, I go first. What am I?",a:"A needle",ok:["needle","sewing needle"],
+ h:["I am small, sharp and made of metal.","Without me, torn clothes stay torn.","My eye is not for looking — thread passes through it."],
+ why:"The hole at the top of a sewing needle is called its eye, though it sees nothing. The needle is pulled through cloth first and the thread follows behind it.",
+ also:"Another way to see it: many tools borrow body words — a needle's eye, a table's legs, a river's mouth. The riddle hides in the borrowed word."},
+{id:"sponge",d:"easy",q:"I am full of holes from top to bottom, yet I hold water very well. What am I?",a:"A sponge",ok:["sponge"],
+ h:["You will find me by the kitchen sink.","Squeeze me and the water comes back out.","The holes are exactly why I work — they are little pockets for water."],
+ why:"A sponge is full of tiny holes, and each hole is a small pocket that traps water. Being full of holes is not its weakness — it is the whole trick of how it holds water.",
+ also:"Another way to see it: the riddle sounds impossible because 'full of holes' usually means 'leaks'. Here the holes are cups, not gaps."},
+{id:"footsteps",d:"easy",q:"The more of me you take, the more of me you leave behind. What am I?",a:"Footsteps",ok:["footsteps","footprints","steps","footstep","footprint"],
+ h:["You make me just by walking.","Look behind you on a muddy path and count me.","Every one you take plants another one behind you."],
+ why:"Each step you take is one more footstep made, and it stays behind you as a print in the mud or snow. Taking steps and leaving steps are the same act.",
+ also:"Another way to see it: 'take' usually means carrying something away. Here, taking a step creates the very thing it leaves."},
+{id:"river",d:"easy",q:"I run all day and all night but I never walk. I have a bed but I never sleep in it, and my journey always ends at the sea. What am I?",a:"A river",ok:["river"],
+ h:["Fish live in me.","I have banks on both sides, but no money at all.","Rain fills me, and I carry it downhill to the ocean."],
+ why:"We say a river runs, though it has no legs — the water flows. Its bed is the channel it flows along, not a bed for sleeping, and most rivers end by flowing into the sea.",
+ also:"Another way to see it: two borrowed words do the hiding — 'runs' and 'bed'. Both are true of a river, just not in the way you first hear them."},
+{id:"clock",d:"easy",q:"I have hands that never clap and a face that never smiles, and I tell you the same news all day long. What am I?",a:"A clock",ok:["clock"],
+ h:["I hang on walls and sit on bedside tables.","My hands move in circles, very slowly.","Ask me the time and I will show you — without saying a word."],
+ why:"A clock's pointers are called hands and its front is called its face, though neither can clap or smile. What it 'tells' you is the time, over and over, all day.",
+ also:"Another way to see it: like the needle's eye, this riddle hides inside everyday words — hands and face that are not body parts at all."},
+{id:"towel",d:"easy",q:"The harder I work at drying, the wetter I become. What am I?",a:"A towel",ok:["towel"],
+ h:["You reach for me after a bath.","I soak up water so that you do not have to stay wet.","Drying you off costs me — every bit of water I take lands on me."],
+ why:"A towel dries you by taking your water onto itself. The better it does its job, the more water it holds, so the wetter it gets.",
+ also:"Another way to see it: the towel does not destroy the water, it moves it — from you to itself."},
+{id:"comb",d:"easy",q:"I have a row of fine teeth, but I never bite anything. I spend my days running through hair. What am I?",a:"A comb",ok:["comb"],
+ h:["I live in pockets, purses and bathroom drawers.","My teeth are thin and close together, made for untangling.","Run me through tangled hair and it comes out smooth."],
+ why:"The thin prongs of a comb are called its teeth. They look like a little row of teeth, but they are made for smoothing hair, not biting.",
+ also:"Another way to see it: once again the trick is a borrowed body word — teeth that belong to a tool, not a mouth."},
+{id:"map",d:"easy",q:"I can show you every road, river and mountain in the whole land, yet I fold up small enough to fit in your pocket — and I have never travelled anywhere. What am I?",a:"A map",ok:["map"],
+ h:["Explorers and drivers lean on me.","I am a picture of a place, drawn small.","Everything on me is in its right place — just shrunk down a long way."],
+ why:"A map is a shrunken drawing of the land: every road and river in its true place, but small enough to fold away. It shows all the journeys without ever taking one.",
+ also:"Another way to see it: the map knows the way the way a photograph knows a face — by picturing it, not by going there."},
+{id:"mirror",d:"easy",q:"I show you your own face, but I am not you. Break me into pieces and there are more of me — each one showing less. What am I?",a:"A mirror",ok:["mirror"],
+ h:["You check me before you leave the house.","Everything I show is backwards, left for right.","Even a broken shard of me still works, just smaller."],
+ why:"A mirror throws light back in a neat pattern, so you see your own reflection. Every broken piece still reflects — there are just more, smaller mirrors, each showing a smaller picture.",
+ also:"Another way to see it: the mirror never holds your face. The moment you walk away, it is empty — it only borrows faces."},
+{id:"bubble",d:"easy",q:"I am round and shining with rainbow colours, I float gently on the air, and a single touch ends me. What am I?",a:"A bubble",ok:["bubble","soap bubble"],
+ h:["Children chase me across summer gardens.","I am made of soap, water and a breath of air.","I pop — that is the only ending I ever have."],
+ why:"A soap bubble is a skin of soapy water thinner than paper, wrapped around a puff of air. It shines with shifting colours, drifts on the breeze, and the slightest touch breaks the skin — pop.",
+ also:"Another way to see it: a bubble is almost nothing at all — a breath wearing a film of water — which is why it is so easy to end."},
+{id:"wind",d:"easy",q:"You cannot see me and you cannot hold me, but you can hear me in the trees and feel me push against your face. What am I?",a:"The wind",ok:["wind"],
+ h:["I bend grass and carry kites.","Sailors love me and picnics curse me.","I am air on the move — nothing more, and nothing less."],
+ why:"Wind is simply air moving from place to place. Moving air cannot be seen or held, but it pushes on skin, rattles leaves and carries sound of its own through the trees.",
+ also:"Another way to see it: you never see the wind itself — you only ever see what it touches. The riddle lists its footprints, not its face."},
+/* ---------- MEDIUM ---------- */
+{id:"time",d:"medium",q:"I am handed out to everyone alike, spent by everyone, and no one can save me up or buy a minute more of me. Once I have passed, I never come back. What am I?",a:"Time",ok:["time"],
+ h:["Kings and beggars get exactly the same amount of me each day.","Clocks measure me, but they cannot hold me.","You are spending me right now, reading this riddle."],
+ why:"Time passes at the same rate for everyone and cannot be stored, bought or recovered. 'Spending time' and 'saving time' are just ways of talking — the minutes go either way.",
+ also:"Another way to see it: time is the one currency that spends itself. Leave money alone and it stays; leave time alone and it is gone."},
+{id:"fire",d:"medium",q:"Feed me and I grow strong. Give me a drink of water and I die. I dance without legs and breathe without lungs. What am I?",a:"Fire",ok:["fire","flame","a fire"],
+ h:["Logs and twigs are my dinner.","I need air as much as I need food — smother me and I fade.","Campers gather round me for warmth and light."],
+ why:"Fire grows when it is fed with wood or fuel and is killed by water. It flickers and leaps like a dancer, and it truly does use up oxygen — 'breathing' — as it burns.",
+ also:"Another way to see it: fire is less a thing than an event — the visible show of something burning. That is why feeding and starving it both work as words."},
+{id:"book",d:"medium",q:"I have a spine but no bones, leaves but no tree, and a thousand words but no voice to speak them. What am I?",a:"A book",ok:["book","a book"],
+ h:["Libraries are full of me.","My leaves turn, but not in autumn.","Someone must read me aloud if I am ever to be heard."],
+ why:"A book's bound edge is called its spine, its pages are sometimes called leaves, and it holds words in print — silent until a reader lends them a voice.",
+ also:"Another way to see it: three borrowed words hide here at once — spine, leaves and the 'voice' of written words. Find one and the rest fall into place."},
+{id:"piano",d:"medium",q:"I have more keys than any door in the house, yet I cannot open a single lock. Press my keys the right way and I sing. What am I?",a:"A piano",ok:["piano"],
+ h:["My keys come in black and white.","I am far too heavy to carry from room to room.","Great players make my keys dance under their fingers."],
+ why:"A piano has eighty-eight keys, but they are levers that strike strings, not keys for locks. Pressed in the right order, they make music — the piano 'sings'.",
+ also:"Another way to see it: 'key' is doing double duty — a lock's key and a musician's key are cousins in name only."},
+{id:"coffin",d:"medium",q:"Whoever makes me does not need me. Whoever buys me does not use me. Whoever uses me does not know it. What am I?",a:"A coffin",ok:["coffin","casket"],
+ h:["I am made carefully, bought sadly, and used once.","The one I am for is past knowing anything at all.","Think of the last journey a person ever takes."],
+ why:"A coffin is built by a carpenter who does not need it, bought by family who will not use it, and used by the dead — who cannot know it. Each line of the riddle is true of a different person.",
+ also:"Another way to see it: the riddle works by switching people between lines. Ask 'who?' after every claim and the answer steps forward."},
+{id:"silence",d:"medium",q:"I am so delicate that simply saying my name is enough to break me. What am I?",a:"Silence",ok:["silence"],
+ h:["Libraries and sleeping babies both ask for me.","I am not a thing you can touch — I am the absence of something.","The moment you speak, I am gone."],
+ why:"Silence is the absence of sound. The instant you say the word 'silence' out loud, you have made a sound — and the silence is broken by its own name.",
+ also:"Another way to see it: some riddles hide in objects; this one hides in a rule. Anything whose name destroys it must be made of quiet."},
+{id:"darkness",d:"medium",q:"The more of me there is, the less you can see. Pile me on thicker and the world disappears. What am I?",a:"Darkness",ok:["darkness","the dark","dark"],
+ h:["A single candle pushes me back.","I am not a substance — I am what is left when something else leaves.","Close your eyes and you carry a little of me with you."],
+ why:"Darkness is the absence of light. The deeper the darkness, the less light reaches your eyes, so the less you can see — more of it means less of everything else.",
+ also:"Another way to see it: like silence, darkness is an absence dressed as a thing. The riddle treats 'nothing to see by' as if it were a pile that grows."},
+{id:"age",d:"medium",q:"I climb higher for every person alive and I never come back down. Once a year I am counted out loud, often over cake and candles. What am I?",a:"Your age",ok:["age","your age"],
+ h:["Children are proud of me; some grown-ups hide me.","Birthdays are my counting day.","A newborn starts me at zero, and I only ever go up."],
+ why:"Your age rises by one every year and can never fall. It is announced and celebrated on birthdays — counted out loud, over cake and candles.",
+ also:"Another way to see it: plenty of numbers go up and down — weight, money, height in old age. Age is the one that only climbs."},
+{id:"tomorrow",d:"medium",q:"I am always on my way, but I never actually arrive. Chase me as fast as you like — when you get here, I have moved a day ahead of you. What am I?",a:"Tomorrow",ok:["tomorrow"],
+ h:["Plans and promises are always being made in my name.","At midnight I change my name and a new one of me takes my place.","Today was me, yesterday. Think about that."],
+ why:"Tomorrow is always one day in the future. When that day arrives it is called today, and 'tomorrow' has moved on to the day after. It can never be caught because arriving renames it.",
+ also:"Another way to see it: tomorrow is not a day at all — it is a direction, like 'ahead'. You can walk towards it forever."},
+{id:"name",d:"medium",q:"It belongs entirely to you — it is yours and no one else's — yet everybody else uses it far more often than you do. What is it?",a:"Your name",ok:["name","your name","my name"],
+ h:["You were given it before you could speak.","Other people say it to call you, greet you and talk about you.","How often do you say your own, compared with how often you hear it?"],
+ why:"Your name belongs to you, but you rarely say it yourself — you introduce yourself once, while everyone who knows you uses it every day to call you and speak of you.",
+ also:"Another way to see it: ownership and use are different things. The riddle sounds impossible until you separate who a thing belongs to from who uses it."},
+{id:"breath",d:"medium",q:"I am lighter than a feather — I weigh nothing at all — yet the strongest person alive cannot hold me for more than a short while. What am I?",a:"Breath",ok:["breath","your breath"],
+ h:["Swimmers and singers both train with me.","Holding me is a contest every child has tried.","Let me go and I leave as air; keep me in and you will soon be desperate."],
+ why:"Breath is just air, weightless for practical purposes. But holding your breath starves the body of oxygen, and no strength of muscle can overrule that for long.",
+ also:"Another way to see it: the contest in this riddle is not strength against weight — it is strength against need. Need always wins."},
+{id:"hole",d:"medium",q:"The more you dig out of me, the bigger I grow — yet I am made of nothing at all. What am I?",a:"A hole",ok:["hole","a hole"],
+ h:["Gardeners and gravediggers both make me.","I am an absence with edges.","Take earth away and I increase; fill me in and I shrink."],
+ why:"A hole is empty space shaped by the ground around it. Digging removes earth, and the empty space — the hole — grows bigger, even though it is made of nothing.",
+ also:"Another way to see it: this is the third absence riddle in the deck (with silence and darkness). When a riddle describes nothing behaving like something, guess an absence."},
+{id:"rain",d:"medium",q:"I fall from the sky a thousand at a time and never get hurt. I run through the streets though I have no feet, and the fields are glad to drink me. What am I?",a:"Rain",ok:["rain"],
+ h:["Umbrellas exist because of me.","I arrive as drops and leave as puddles, streams and soaked soil.","Crops wait for me all summer long."],
+ why:"Rain falls as countless drops, 'runs' through streets as flowing water, and is soaked up — drunk — by dry fields. Each verb is borrowed from living things, but each is true of water.",
+ also:"Another way to see it: read the verbs loosely. Fall, run, drink — water does all three, in its own watery way."},
+{id:"envelope",d:"medium",q:"My first letter is E and my last letter is E, and there is a letter inside me — yet I am a single thing you can hold in one hand. What am I?",a:"An envelope",ok:["envelope"],
+ h:["This is a word riddle — the answer plays with two meanings of 'letter'.","You lick my flap or peel my strip before you send me.","Letters travel inside me, and my own name begins and ends with E."],
+ why:"'Envelope' begins and ends with the letter E, and an envelope carries a letter — a written message — inside it. The riddle turns on 'letter' meaning two things: a character of the alphabet and a piece of mail.",
+ also:"Another way to see it: when a riddle mentions letters at the start and end, it is usually talking about the answer's own spelling, not the thing itself."},
+{id:"stairs",d:"medium",q:"I go up and I go down, all day and all night, yet I never move from my place. People climb all over me to reach their own front doors. What am I?",a:"Stairs",ok:["stairs","staircase","steps","a staircase"],
+ h:["Tall houses cannot do without me.","I am a road that climbs.","Every one of my steps stays exactly where it was built — you do the moving."],
+ why:"Stairs lead both up and down while staying perfectly still — the climbing is done by the people on them. 'I go up and down' describes the direction the stairs point, not any motion of their own.",
+ also:"Another way to see it: the riddle gives the stairs the traveller's verbs. Whenever an object 'travels' without moving, check whether it is a path."},
+/* ---------- HARD ---------- */
+{id:"human",d:"hard",q:"In the morning of my life I go on four legs. At midday I go on two. In the evening I go on three — the third a stick I lean on. What am I?",a:"A human being",ok:["human","a human","human being","a human being","man","a man","person","a person","mankind"],
+ h:["This is the most famous riddle in the world — the Sphinx asked it outside Thebes.","The 'morning', 'midday' and 'evening' are not hours of one day.","Think of a whole life: crawling, walking, and an old age helped by a cane."],
+ why:"This is the Sphinx's riddle from the Greek story of Oedipus, retold in plain words. Morning means childhood, when a baby crawls on all fours; midday is grown life, walking on two legs; evening is old age, walking with a stick — the third 'leg'.",
+ also:"Another way to see it: the day is a picture of a lifetime. Once you stretch the clock across eighty years instead of twenty-four hours, the legs count themselves."},
+{id:"onion",d:"hard",q:"Strip off my coats one by one and you will weep, though I have done nothing to hurt you. I wear layer upon layer, and there is no jewel at my centre. What am I?",a:"An onion",ok:["onion","an onion"],
+ h:["You will find me in the kitchen, near the knives.","My coats are thin skins, and peeling them is a famous tear-jerker.","Cooks chop me into soups and stews every day."],
+ why:"An onion is built of layers wrapped around each other, like coats. Cutting or peeling it releases a vapour that stings the eyes and makes them water — it makes you cry without meaning you any harm.",
+ also:"Another way to see it: the 'coats' are layers, and the tears are chemistry, not sorrow. Two plain facts, each disguised in story clothes."},
+{id:"promise",d:"hard",q:"I can be broken without being held, dropped, struck or even touched. One careless sentence is enough to break me. What am I?",a:"A promise",ok:["promise","a promise"],
+ h:["Children seal me with crossed fingers and solemn words.","Breaking me hurts trust, not bones.","You make me with your word — and your word can end me."],
+ why:"A promise is made of words and intention, not of anything solid, so it can be 'broken' — gone back on — without anything physical being touched at all. The breaking is a betrayal, not a snap.",
+ also:"Another way to see it: English breaks many invisible things — silence, a promise, the news, a habit. This one is broken by the same mouth that made it."},
+{id:"nothing",d:"hard",q:"The poor have plenty of me. The rich are in need of me. And if you eat me, you will die. What am I?",a:"Nothing",ok:["nothing"],
+ h:["This is an old folk riddle — and its answer is a trick of grammar.","What do the poor have lots of? Say it plainly.","If your plate holds me at every meal, starvation follows."],
+ why:"The poor have nothing, the rich need nothing, and if you eat nothing you starve. The riddle works because 'nothing' behaves like a thing in all three sentences while being the absence of anything.",
+ also:"Another way to see it: it is the boldest of the absence riddles — the answer is the emptiness itself, named out loud."},
+{id:"secret",d:"hard",q:"Keep me and I am yours alone. Speak me aloud to the world and I am gone forever — though everyone now knows me. What am I?",a:"A secret",ok:["secret","a secret"],
+ h:["Whispers are my natural home.","Telling me does not destroy the fact — it destroys what I am.","A diary with a little lock is built to guard me."],
+ why:"A secret is a fact plus the rule that it is not shared. Tell it, and the fact survives perfectly well — but it is not a secret any more. What dies is the secrecy itself.",
+ also:"Another way to see it: like silence, a secret is defined by a condition, not by contents. Change the condition and the thing vanishes while everything it was about remains."},
+{id:"smoke",d:"hard",q:"I rise from the fire, but I am not the flame. I have no body you can grab hold of, and the wind scatters me like a toy. What am I?",a:"Smoke",ok:["smoke"],
+ h:["Chimneys exist to give me a road out of the house.","I am made of tiny specks too small to see one by one.","Where I drift from a rooftop, a fire is burning below."],
+ why:"Smoke is a cloud of tiny unburnt specks carried upward by hot air from a fire. It is not the flame itself, it cannot be held, and the wind tears its thin body apart easily.",
+ also:"Another way to see it: smoke is the fire's footprint in the air — proof of burning, drifting away from the scene."},
+{id:"ice",d:"hard",q:"I am water standing hard as stone. I am born in the cold of winter, I can bear a skater's weight, and the sun is my one true enemy. What am I?",a:"Ice",ok:["ice"],
+ h:["Ponds wear me as a winter coat.","Warm me up and I turn back into what I was.","Cubes of me cool your drink in summer — refugees from the cold."],
+ why:"Ice is water frozen solid: hard enough to walk and skate on, formed when the cold comes, and melted back to water by the sun's warmth. Its hardness is only borrowed from the temperature.",
+ also:"Another way to see it: the riddle describes a substance by its season and its enemy. Many hard riddles hide a familiar thing behind its life story."},
+{id:"moon",d:"hard",q:"All my light is borrowed. Night by night I change my shape — a sliver, a half, a full round face — and the tides of the sea answer to my pull. What am I?",a:"The moon",ok:["moon","the moon"],
+ h:["You mostly see me after dark, though I sometimes visit the daytime sky.","My 'changing shape' is really shadow and sunlight playing across me.","Sailors have steered by me for thousands of years."],
+ why:"The moon shines by reflecting sunlight — borrowed light. As sun, Earth and moon shift positions, we see different lit portions: crescent, half, full. And the moon's gravity is what pulls the ocean tides.",
+ also:"Another way to see it: two clues are about appearances (light and shape) and one is about power (tides). The answer must be something that only seems to change — and the moon is the great seem-er of the sky."},
+{id:"dream",d:"hard",q:"I visit you only while you sleep. I show you places that never existed and people who are not there — and the moment you wake, I scatter like mist. What am I?",a:"A dream",ok:["dream","a dream"],
+ h:["You cannot invite me, and you cannot keep me.","In my world you can fly, and nobody thinks it strange.","Try to hold on to me at breakfast — I fade as you reach for me."],
+ why:"A dream is the mind's own theatre during sleep: vivid scenes with no real place or people behind them. Waking breaks the state that sustains it, and the memory of it fades within minutes.",
+ also:"Another way to see it: the dream is real as an experience and unreal as a place. The riddle leans on both halves of that at once."},
+{id:"anchor",d:"hard",q:"Sailors throw me overboard on purpose, heavy as I am, precisely so the ship will not wander. The waves argue with me all night and lose. What am I?",a:"An anchor",ok:["anchor","an anchor"],
+ h:["I am the opposite of a sail: I exist to stop travel, not start it.","My weight and my grip on the seabed hold a whole ship in place.","Drop me, and the ship stays; raise me, and the voyage begins."],
+ why:"An anchor is a heavy weight on a chain, dropped to the seabed to hold a ship in one place against wind and waves. Throwing it overboard is not losing it — it is putting it to work.",
+ also:"Another way to see it: most tools help things move. This one's whole virtue is refusal — it is a brake for the sea."},
+{id:"incorrectly",d:"hard",q:"Here is a spelling riddle: which word is spelled incorrectly in every dictionary ever printed?",a:"“Incorrectly”",ok:["incorrectly"],
+ h:["Read the question very literally — it is a trap about words themselves.","The word is spelled i-n-c-o-r-r-e-c-t-l-y, and that is exactly right — and exactly the answer.","Dictionaries really do spell this word 'incorrectly'... by spelling it correctly."],
+ why:"The word 'incorrectly' is spelled i-n-c-o-r-r-e-c-t-l-y in every dictionary — which is to say, it is spelled 'incorrectly'. The joke turns on the word describing its own spelling.",
+ also:"Another way to see it: this is a self-describing word, like 'short' being a short word. When a riddle asks about every dictionary, suspect the answer is hiding in the question's own wording."},
+{id:"keyboard",d:"hard",q:"I have keys that open no locks, a space you could never live in, and an Enter with no door at all. What am I?",a:"A keyboard",ok:["keyboard","a keyboard","computer keyboard"],
+ h:["Your fingers are probably resting near one right now.","My 'space' is one long bar at the bottom.","Press Enter and something happens — but no door swings open."],
+ why:"A computer keyboard has letter keys that open nothing, a space bar that is not a room, and an Enter key that is not a doorway. Three everyday words — keys, space, enter — all borrowed from the physical world.",
+ also:"Another way to see it: this is the piano riddle's younger sibling. Whenever a list of familiar words feels slightly wrong, ask what object borrows all of them."},
+{id:"glove",d:"hard",q:"I have fingers of my own but no life in them. I fit your hand like a second skin, and I come as one of a pair, to keep you warm. What am I?",a:"A glove",ok:["glove","a glove"],
+ h:["You wear me in winter, one on each hand.","My fingers are hollow — yours fill them.","Boxers and surgeons wear versions of me too."],
+ why:"A glove is shaped with fingers, but they are empty cloth until a living hand fills them. Gloves come in pairs and their commonest job is warmth.",
+ also:"Another way to see it: the glove is clothing shaped like the body — it borrows the hand's form the way the clock borrows a face."},
+{id:"stamp",d:"hard",q:"I travel to the far corners of the world, to cities I will never see — yet the whole time, I never leave my own small corner. What am I?",a:"A postage stamp",ok:["stamp","postage stamp","a stamp","a postage stamp"],
+ h:["Letters cannot travel without me — or could not, in the old days.","My corner is the top corner of an envelope.","I am small, square, sticky on one side, and I ride — I do not walk."],
+ why:"A postage stamp rides in the corner of an envelope wherever the letter goes — around the world — while staying exactly in its corner the whole way. It travels without moving relative to its letter.",
+ also:"Another way to see it: the riddle plays on two frames at once — the world, where the stamp journeys far, and the envelope, where it never budges."},
+{id:"teapot",d:"hard",q:"I begin with a T, I end with a T, and I have T inside me — ready to pour out for guests. What am I?",a:"A teapot",ok:["teapot","a teapot"],
+ h:["This is a letter riddle — the T is doing three jobs, and one of them is a drink.","My name starts and ends with the letter T.","What hot drink, starting with T, could be inside a pot?"],
+ why:"'Teapot' begins and ends with the letter T, and a teapot holds tea — pronounced exactly like the letter T. The same sound does all three jobs: first letter, last letter, and the drink inside.",
+ also:"Another way to see it: spelling riddles often hide a homophone — a word that sounds like a letter. Tea/T is one of the oldest of them."}
+];
+
+/* ============ HELPERS ============ */
+function $(id){return document.getElementById(id);}
+function tidy(s){return (s||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim()
+  .replace(/^(a|an|the|your|my)\s+/,"").replace(/^(a|an|the)\s+/,"");}
+function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function download(name, text, type){
+  var blob=new Blob([text],{type:type});var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},400);
+}
+function escCsv(v){v=String(v==null?"":v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+
+/* ============ SAVED STATE (this device only) ============ */
+var REC_KEY="riddles-record-v1", SET_KEY="riddles-settings-v1";
+function loadJSON(k, fallback){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fallback;}catch(e){return fallback;}}
+function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+var record = loadJSON(REC_KEY, []);
+if(!Array.isArray(record)) record=[];
+var settings = loadJSON(SET_KEY, {teaching:"light", order:"shuffled", filter:"all", style:"type"});
+if(["off","light","coach"].indexOf(settings.teaching)<0) settings.teaching="light";
+if(["shuffled","grouped"].indexOf(settings.order)<0) settings.order="shuffled";
+if(["all","easy","medium","hard"].indexOf(settings.filter)<0) settings.filter="all";
+if(["type","choices"].indexOf(settings.style)<0) settings.style="type";
+
+/* ============ GAME STATE ============ */
+var deck=[], pos=0, hintsUsed=0, finished=false, lastAnswer="", alias="";
+
+/* ============ RECORD: totals & patterns ============ */
+function totals(){
+  var t={solved:0,gaveUp:0,hints:0,cur:0,best:0};
+  var run=0;
+  record.forEach(function(r){
+    t.hints+=r.hintsUsed||0;
+    if(r.outcome==="solved"){t.solved++;run++;if(run>t.best)t.best=run;}
+    else{t.gaveUp++;run=0;}
+  });
+  t.cur=run; return t;
+}
+function renderRecord(){
+  var t=totals();
+  var cells=[["Riddles solved",t.solved],["Gave up",t.gaveUp],["Hints used",t.hints],
+             ["Finished in all",t.solved+t.gaveUp],["Current streak",t.cur+" solved in a row"],
+             ["Best streak",t.best+" solved in a row"]];
+  $("statsGrid").innerHTML=cells.map(function(c){
+    return '<div class="stat"><div class="num">'+c[1]+'</div><div class="lab">'+c[0]+'</div></div>';}).join("");
+  var p=[];
+  if(record.length===0){
+    p.push("No finished riddles yet. Solve one or give up on one, and your own patterns will be read back to you here, in plain words.");
+  }else{
+    var byDiff={};
+    record.forEach(function(r){
+      if(!byDiff[r.difficulty])byDiff[r.difficulty]={s:0,g:0};
+      if(r.outcome==="solved")byDiff[r.difficulty].s++;else byDiff[r.difficulty].g++;
+    });
+    var bestD=null,bestRate=-1,bestN=0;
+    ["easy","medium","hard"].forEach(function(d){
+      var b=byDiff[d]; if(!b)return; var n=b.s+b.g; var rate=b.s/n;
+      if(rate>bestRate||(rate===bestRate&&n>bestN)){bestRate=rate;bestD=d;bestN=n;}
+    });
+    if(bestD)p.push("Of the riddles you have finished, you solve <strong>"+bestD+"</strong> ones most reliably — "+Math.round(bestRate*100)+"% of the "+bestN+" you have tried at that level.");
+    var withHints=record.filter(function(r){return (r.hintsUsed||0)>0;});
+    if(withHints.length){
+      var hs=withHints.filter(function(r){return r.outcome==="solved";}).length;
+      p.push("Hints: you have taken a hint on "+withHints.length+" finished riddle"+(withHints.length===1?"":"s")+", and gone on to solve "+hs+" of them ("+Math.round(hs/withHints.length*100)+"%). "+(hs===withHints.length?"So far, every hint you have taken has ended in a solve.":(hs===0?"So far no hint has carried you to a solve — the Coach level gives up to three hints, each stronger, if you want more of a ladder.":"Hints are helping, and they cost nothing — they are teaching, not cheating.")));
+    }else{
+      p.push("You have not taken a single hint yet. Hints cost nothing and are never held against you — on Light you get one nudge per riddle; on Coach, up to three, each stronger.");
+    }
+    var noHintSolved=record.filter(function(r){return r.outcome==="solved"&&(r.hintsUsed||0)===0;}).length;
+    if(noHintSolved)p.push("You have solved "+noHintSolved+" riddle"+(noHintSolved===1?"":"s")+" with no hint at all.");
+  }
+  $("patterns").innerHTML=p.map(function(x){return "<p>"+x+"</p>";}).join("");
+}
+
+/* ============ DECK ============ */
+function buildDeck(){
+  var list=RIDDLES.filter(function(r){return settings.filter==="all"||r.d===settings.filter;});
+  if(settings.order==="grouped"){
+    var rank={easy:0,medium:1,hard:2};
+    list=list.slice().sort(function(a,b){return rank[a.d]-rank[b.d];});
+  }else{
+    list=shuffle(list);
+  }
+  deck=list; pos=0;
+}
+function maxHints(){return settings.teaching==="off"?0:(settings.teaching==="light"?1:3);}
+
+function renderBanner(){
+  var parts=[];
+  if(settings.order==="grouped")parts.push("grouped by difficulty instead of shuffled");
+  if(settings.filter!=="all")parts.push(settings.filter+" riddles only");
+  if(settings.style==="choices")parts.push("pick-from-4-choices answering instead of typing");
+  var b=$("variantBanner");
+  if(parts.length){
+    b.textContent="Non-standard rule in play: "+parts.join("; ")+". (Standard play is: shuffled, all difficulties, type your answer.)";
+    b.classList.add("show");
+  }else{b.classList.remove("show");b.textContent="";}
+}
+
+function showRiddle(){
+  finished=false; hintsUsed=0; lastAnswer="";
+  var r=deck[pos];
+  $("playArea").style.display=""; $("deckDone").classList.remove("show");
+  var chip=$("diffChip");
+  chip.textContent=r.d==="easy"?"Easy":(r.d==="medium"?"Medium":"Hard");
+  chip.className="chip "+r.d;
+  $("progress").textContent="Riddle "+(pos+1)+" of "+deck.length;
+  $("riddleText").textContent=r.q;
+  $("feedback").textContent=""; $("feedback").className="feedback";
+  $("hintBox").innerHTML=""; $("hintBox").classList.remove("show");
+  $("reveal").classList.remove("show"); $("nextRow").classList.remove("show");
+  $("answerInput").value="";
+  /* answer style */
+  if(settings.style==="choices"){
+    $("typeArea").style.display="none"; $("choiceArea").style.display="";
+    buildChoices(r);
+  }else{
+    $("typeArea").style.display=""; $("choiceArea").style.display="none";
+  }
+  /* hint availability */
+  var mh=maxHints(), hb=$("hintBtn");
+  if(mh===0){
+    hb.disabled=true; hb.textContent="Hints are off";
+    $("hintNote").textContent="Teaching is set to Off, so no hints are offered. You can change that in Settings — tap to open it below.";
+  }else{
+    hb.disabled=false; hb.textContent="Tap for a hint ("+mh+" allowed on "+(settings.teaching==="light"?"Light":"Coach")+")";
+    $("hintNote").textContent=settings.teaching==="light"
+      ? "Teaching is on Light: one nudge per riddle, if you ask for it."
+      : "Teaching is on Coach: up to three hints per riddle, each one stronger, and the wordplay explained after you finish.";
+  }
+  $("giveUpBtn").disabled=false;
+  $("checkBtn").disabled=false;
+  if(settings.style==="type")$("answerInput").focus();
+}
+
+function buildChoices(r){
+  var others=shuffle(RIDDLES.filter(function(x){return x.id!==r.id;}))
+    .slice(0,3).map(function(x){return x.a;});
+  var opts=shuffle([r.a].concat(others));
+  $("choices").innerHTML="";
+  opts.forEach(function(o){
+    var b=document.createElement("button");
+    b.type="button"; b.className="choice"; b.textContent=o+" — tap";
+    b.addEventListener("click",function(){ if(!finished) submitAnswer(o); });
+    $("choices").appendChild(b);
+  });
+}
+
+function matches(r, given){
+  var g=tidy(given); if(!g)return false;
+  return r.ok.some(function(o){return tidy(o)===g;});
+}
+
+function finishRiddle(outcome){
+  finished=true;
+  var r=deck[pos];
+  record.push({riddleId:r.id, difficulty:r.d, outcome:outcome, hintsUsed:hintsUsed,
+    teaching:settings.teaching, answer:lastAnswer, at:new Date().toISOString()});
+  saveJSON(REC_KEY, record); renderRecord();
+  $("checkBtn").disabled=true; $("hintBtn").disabled=true; $("giveUpBtn").disabled=true;
+  var ch=$("choices").querySelectorAll("button");
+  for(var i=0;i<ch.length;i++)ch[i].disabled=true;
+  /* reveal */
+  $("revealAnswer").textContent=r.a;
+  var html="";
+  if(settings.teaching==="coach"||outcome==="gaveup"){
+    html+="<p><strong>Why it works:</strong> "+r.why+"</p>";
+    if(r.also)html+='<p class="framing">'+r.also+"</p>";
+  }else{
+    html+='<p style="color:var(--ink-soft)">The wordplay behind this one is explained on the Coach teaching level — or it is always explained when you give up, at any level.</p>';
+  }
+  $("revealWhy").innerHTML=html;
+  $("reveal").classList.add("show");
+  $("nextBtn").textContent=(pos+1>=deck.length)?"Finish — tap to see the deck's end":"Next riddle — tap";
+  $("nextRow").classList.add("show");
+}
+
+function submitAnswer(given){
+  var r=deck[pos]; lastAnswer=given;
+  var fb=$("feedback");
+  if(matches(r,given)){
+    fb.textContent="That's it — solved!"+(hintsUsed?" (with "+hintsUsed+" hint"+(hintsUsed===1?"":"s")+")":" No hints needed.");
+    fb.className="feedback good";
+    finishRiddle("solved");
+  }else{
+    fb.textContent="Not quite — that is not it. Read the riddle once more, slowly, and try again. There is no penalty for trying.";
+    fb.className="feedback try";
+  }
+}
+
+/* ============ WIRING ============ */
+$("checkBtn").addEventListener("click",function(){
+  if(finished)return;
+  var v=$("answerInput").value;
+  if(!tidy(v)){$("feedback").textContent="Type an answer first — even a wild guess is a fine start.";$("feedback").className="feedback try";return;}
+  submitAnswer(v);
+});
+$("answerInput").addEventListener("keydown",function(e){
+  if(e.key==="Enter"){e.preventDefault();$("checkBtn").click();}
+});
+$("hintBtn").addEventListener("click",function(){
+  if(finished)return;
+  var r=deck[pos], mh=maxHints();
+  if(mh===0)return;
+  if(hintsUsed>=mh){
+    $("feedback").textContent=settings.teaching==="light"
+      ? "That was your one Light nudge for this riddle. Switch Teaching to Coach in Settings if you want a ladder of three."
+      : "All three Coach hints are out for this riddle — the answer is within reach of the third one.";
+    $("feedback").className="feedback try"; return;
+  }
+  var box=$("hintBox");
+  var div=document.createElement("div");
+  div.innerHTML='<p class="hlabel">Hint '+(hintsUsed+1)+' of '+mh+'</p><p></p>';
+  div.querySelectorAll("p")[1].textContent=r.h[hintsUsed];
+  box.appendChild(div); box.classList.add("show");
+  hintsUsed++;
+  $("hintBtn").textContent=hintsUsed>=mh?"No hints left — tap for a hint is spent":"Tap for a hint ("+(mh-hintsUsed)+" left)";
+});
+$("giveUpBtn").addEventListener("click",function(){
+  if(finished)return;
+  lastAnswer=$("answerInput").value||lastAnswer||"";
+  var fb=$("feedback");
+  fb.textContent="No shame in that — some of these have stumped people for a thousand years. Here is the answer, and why it works.";
+  fb.className="feedback";
+  finishRiddle("gaveup");
+});
+$("nextBtn").addEventListener("click",function(){
+  pos++;
+  if(pos>=deck.length){
+    $("playArea").style.display="none";
+    var t=totals();
+    $("deckDoneStats").textContent="Your record so far: "+t.solved+" solved, "+t.gaveUp+" given up, "+t.hints+" hints used, best streak "+t.best+".";
+    $("deckDone").classList.add("show");
+  }else showRiddle();
+});
+$("againBtn").addEventListener("click",function(){ buildDeck(); renderBanner(); showRiddle(); window.scrollTo({top:0,behavior:"smooth"}); });
+
+/* Settings */
+function teachExplain(){
+  var m={off:"Off: no hints are offered, and wordplay is explained only when you give up. The riddles, unaided.",
+         light:"Light: one nudge per riddle when you tap for a hint. A fair middle road.",
+         coach:"Coach: up to three hints per riddle, each stronger than the last — and after every solve or give-up, the wordplay is explained in plain words, with a second way of seeing it where the riddle has one."};
+  $("teachExplain").textContent=m[settings.teaching];
+}
+function paintSettings(){
+  var btns=$("teachSeg").querySelectorAll("button");
+  for(var i=0;i<btns.length;i++)btns[i].setAttribute("aria-pressed",btns[i].getAttribute("data-teach")===settings.teaching?"true":"false");
+  $("orderSel").value=settings.order; $("filterSel").value=settings.filter; $("styleSel").value=settings.style;
+  teachExplain();
+}
+$("teachSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b)return;
+  settings.teaching=b.getAttribute("data-teach"); saveJSON(SET_KEY,settings); paintSettings();
+  if(!finished)showRiddleSoft();
+});
+function showRiddleSoft(){ /* refresh hint availability without losing the current riddle or typed text */
+  var typed=$("answerInput").value; showRiddle(); $("answerInput").value=typed;
+}
+$("applyBtn").addEventListener("click",function(){
+  settings.order=$("orderSel").value; settings.filter=$("filterSel").value; settings.style=$("styleSel").value;
+  saveJSON(SET_KEY,settings); paintSettings(); buildDeck(); renderBanner(); showRiddle();
+  $("feedback").textContent="Fresh deck started with your settings.";
+  document.getElementById("play").scrollIntoView({behavior:"smooth"});
+});
+$("aliasInput").addEventListener("input",function(){
+  alias=this.value.trim();
+  $("playingAs").textContent=alias?("Playing as "+alias+" — just for this visit."):"";
+});
+
+/* Record buttons */
+$("dlJson").addEventListener("click",function(){
+  download("riddles-record.json", JSON.stringify({game:"riddles", exportedAt:new Date().toISOString(), entries:record},null,2), "application/json");
+});
+$("dlCsv").addEventListener("click",function(){
+  var head="riddleId,difficulty,outcome,hintsUsed,teaching,answer,at";
+  var lines=record.map(function(r){return [r.riddleId,r.difficulty,r.outcome,r.hintsUsed,r.teaching,r.answer,r.at].map(escCsv).join(",");});
+  download("riddles-record.csv", head+"\n"+lines.join("\n"), "text/csv");
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+  if(!forgetArmed){
+    forgetArmed=true; this.textContent="Tap again to confirm — this clears your record only";
+    $("forgetNote").textContent="One more tap clears every recorded riddle. Your settings and teaching level stay as they are.";
+    return;
+  }
+  record=[]; saveJSON(REC_KEY,record); renderRecord();
+  forgetArmed=false; this.textContent="Forget my record — tap";
+  $("forgetNote").textContent="Done — your record is cleared. Nothing else was touched.";
+});
+
+/* Offline door: download this very page */
+$("offlineDoor").addEventListener("click",function(e){
+  e.preventDefault();
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  download("riddles.html", html, "text/html");
+});
+
+/* Details gesture labels: open <-> close */
+document.querySelectorAll("details").forEach(function(d){
+  var g=d.querySelector("summary .gesture"); if(!g)return;
+  d.addEventListener("toggle",function(){ g.textContent=d.open?"— tap to close":"— tap to open"; });
+});
+
+/* ============ START ============ */
+paintSettings(); buildDeck(); renderBanner(); showRiddle(); renderRecord();
+</script>
+</body>
+</html>
