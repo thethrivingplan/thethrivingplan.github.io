@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>First Word — Word Association</title>
+<style>
+:root{
+  --bg:#f7f3ea; --panel:#fffdf7; --ink:#1e1b16; --muted:#5c564c; --line:#ddd3bf;
+  --accent:#b45309; --accent-ink:#fff; --teal:#0f766e; --teal-soft:#ccfbf1;
+  --close:#15803d; --stretch:#b45309; --broken:#b91c1c; --unfiled:#475569;
+  --chip:#efe8d8; --shadow:0 2px 10px rgba(30,27,22,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171512; --panel:#221f1b; --ink:#f3efe6; --muted:#b8b0a1; --line:#3d382f;
+  --accent:#f59e0b; --accent-ink:#1e1b16; --teal:#2dd4bf; --teal-soft:#134e4a;
+  --chip:#2e2a24; --shadow:0 2px 10px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+h1,h2,h3{font-family:Georgia,'Times New Roman',serif;line-height:1.15;margin:.2em 0 .4em}
+h1{font-size:2.1rem} h2{font-size:1.45rem} h3{font-size:1.1rem}
+p{margin:.4em 0}
+button,input,select{min-height:44px;font:inherit}
+button{cursor:pointer;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:.55rem .9rem;font-weight:600}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+@media (prefers-color-scheme: dark){button.teal{color:#06201d}}
+button:active{transform:translateY(1px)}
+input[type=text]{border:1.5px solid var(--line);border-radius:10px;padding:.55rem .8rem;background:var(--panel);color:var(--ink);width:100%}
+select{border:1.5px solid var(--line);border-radius:10px;padding:.5rem;background:var(--panel);color:var(--ink)}
+.wrap{max-width:960px;margin:0 auto;padding:16px}
+.freebar{background:var(--ink);color:var(--bg);padding:10px 16px;font-weight:700;text-align:center;font-size:.95rem}
+.freebar button{margin-left:10px;min-height:36px;padding:.3rem .7rem;background:var(--bg);color:var(--ink);border:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;box-shadow:var(--shadow)}
+.compass{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.compass a{flex:1 1 120px;text-align:center;text-decoration:none;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:10px 6px;font-weight:700;min-height:44px}
+.compass small{display:block;font-weight:400;color:var(--muted)}
+.controls{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:700px){.controls{grid-template-columns:1fr 1fr 1fr}}
+label{font-weight:700;font-size:.9rem;display:block}
+label span{display:block;font-weight:400;color:var(--muted);font-size:.82rem;margin-top:2px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.current-word{font-family:Georgia,serif;font-size:2.6rem;text-align:center;padding:14px 6px;letter-spacing:.02em}
+.trail{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+.trail .w{background:var(--chip);border:1px solid var(--line);padding:4px 10px;border-radius:999px;font-weight:700}
+.trail .arr{color:var(--muted)}
+.grade{border-radius:10px;padding:12px 14px;margin:10px 0;border:1.5px solid var(--line)}
+.grade.close{border-color:var(--close)} .grade.stretch{border-color:var(--stretch)} .grade.broken{border-color:var(--broken)} .grade.unfiled{border-color:var(--unfiled)}
+.badge{display:inline-block;font-weight:800;padding:2px 10px;border-radius:999px;color:#fff;font-size:.85rem}
+.close .badge{background:var(--close)} .stretch .badge{background:var(--stretch)} .broken .badge{background:var(--broken)} .unfiled .badge{background:var(--unfiled)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1 1 auto}
+.grid6{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+@media(min-width:640px){.grid6{grid-template-columns:repeat(3,1fr)}}
+.tile{border:2px solid var(--line);border-radius:12px;padding:16px 8px;text-align:center;font-family:Georgia,serif;font-size:1.3rem;background:var(--panel)}
+.tile.target{border-color:var(--accent);background:var(--chip)}
+.tile.guessed{outline:3px solid var(--teal)}
+.tile small{display:block;font-family:system-ui,sans-serif;font-size:.75rem;color:var(--muted)}
+.scorebig{font-size:1.6rem;font-weight:800}
+.muted{color:var(--muted)} .small{font-size:.88rem}
+.teach{background:var(--teal-soft);border-radius:10px;padding:12px 14px;margin:10px 0}
+body[data-dial="0"] .teach{display:none}
+body[data-dial="1"] .teach .deep,body[data-dial="1"] .teach .explain{display:none}
+body[data-dial="2"] .teach .deep{display:none}
+.kicker{font-size:.8rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+#explainBox{display:none;background:var(--ink);color:var(--bg);border-radius:10px;padding:12px 14px;margin:10px 0}
+footer{color:var(--muted);font-size:.88rem;padding:20px 0 40px}
+a{color:var(--teal)}
+.stat{display:inline-block;background:var(--chip);border-radius:8px;padding:6px 12px;margin:3px;font-weight:700}
+.log{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px}
+.log div{padding:6px 4px;border-bottom:1px dashed var(--line)} .log div:last-child{border-bottom:none}
+</style>
+</head>
+<body data-dial="2">
+<div class="freebar">FREE — always free. No ads. No account. <button id="offlineBtn" data-explain="Downloads a copy of this page as one HTML file so you can open it later with no connection.">Tap to download for offline</button></div>
+<div class="wrap">
+
+<header>
+<p class="kicker">Word Association</p>
+<h1>First Word</h1>
+<p style="font-size:1.08rem">Say the first word that fits. Two games about how your mind files words — by <strong>meaning</strong>, by <strong>sound</strong>, and by <strong>memory</strong>. Every link is graded out loud, with the why shown. Nothing is hidden.</p>
+</header>
+
+<nav class="compass" aria-label="Compass">
+<a href="#play">🧭 Play<small>North — the games</small></a>
+<a href="#learn">Learn<small>East — why links work</small></a>
+<a href="#record">Your record<small>South — scores on this device</small></a>
+<a href="#about">About<small>West — sources &amp; copyleft</small></a>
+</nav>
+
+<section class="card" aria-label="Your settings">
+<div class="controls">
+<div><label for="alias">Your name — any alias you like
+<span>Alias freedom: use your real name, a nickname, or a made-up one. Change it any time. It only labels your record.</span></label>
+<input type="text" id="alias" placeholder="e.g. Sparrow" autocomplete="off"></div>
+<div><label for="dial">Teaching dial
+<span>Tap to change how much teaching shows: Quiet, Hints, Explain, or Deep Dive.</span></label>
+<select id="dial"><option value="0">0 — Quiet (just play)</option><option value="1">1 — Hints</option><option value="2" selected>2 — Explain the why</option><option value="3">3 — Deep Dive</option></select></div>
+<div><label for="botLevel">Bot partner
+<span>Honestly different — not just labelled different. Sunny takes the most obvious link. Mix varies. Weaver hunts sideways sound &amp; memory links, so its chain is harder to follow.</span></label>
+<select id="botLevel"><option value="easy">Sunny — obvious links</option><option value="mid" selected>Mix — varied links</option><option value="hard">Weaver — sideways links</option></select></div>
+</div>
+<div id="explainBox" role="status"></div>
+<p class="small muted">Gesture guide: <strong>Tap</strong> does the thing written on the button. <strong>Hold</strong> (press and keep holding) any main button to hear what it does before you use it. Every button says its tap action in plain words.</p>
+</section>
+
+<main id="play">
+<div class="tabs" role="tablist">
+<button role="tab" id="tabChain" aria-selected="true" data-explain="Switches to The Chain: you and the bot trade single words, each one linked to the word before it.">Tap to play The Chain</button>
+<button role="tab" id="tabClue" aria-selected="false" data-explain="Switches to One-Word Clue: you give one word to steer the bot guesser to a target word hidden among decoys.">Tap to play One-Word Clue</button>
+</div>
+
+<!-- ============ THE CHAIN ============ -->
+<section class="card" id="chainGame">
+<h2>The Chain</h2>
+<p>You and the bot trade <strong>one word at a time</strong>. Each new word must connect to the word just before it. Links are judged from <strong>our own written association bank</strong> — common, everyday associations written for this page, not a scraped list. Grades: <strong>Close</strong> (most people would say it), <strong>Stretch</strong> (real, but sideways — often the clever ones), <strong>Broken</strong> (no link in the bank), or <strong>Unfiled</strong> (a word our bank doesn't hold yet — that's our gap, not your fault).</p>
+
+<div class="teach"><strong>🧠 How minds file words</strong>
+<p class="hint"><em>Hint:</em> A link can live in three drawers at once — meaning, sound, and memory.</p>
+<p class="explain"><em>Explain:</em> <strong>Meaning</strong> — same family (ocean → wave), opposites (hot → cold), part-of (wheel → car). <strong>Sound</strong> — rhymes and echoes (moon → spoon). <strong>Memory</strong> — phrases and moments (peanut → butter; birthday → cake). Close links usually come from meaning. Clever links usually come from sound or memory — they feel like a small jump, then click.</p>
+<p class="deep"><em>Deep Dive:</em> Why does the same link feel obvious to one person and random to another? Because the memory drawer is personal. “Hospital” may file next to “birth” for one person and “fear” for another. Neither filing is wrong — the bank here grades the <em>common</em> filing, and says so. When your link is graded Stretch or Broken, read the why: it tells you which drawer the bank expected, so you can see the gap between your filing and the common one. That gap <em>is</em> the game.</p>
+</div>
+
+<p class="muted" style="text-align:center;margin-bottom:0">Last word — your word must connect to this one:</p>
+<div class="current-word" id="curWord">ocean</div>
+<div class="trail" id="trail" aria-label="Chain so far"></div>
+
+<div class="row">
+<input type="text" id="chainInput" placeholder="Type ONE word…" aria-label="Your word" autocomplete="off">
+<button class="primary" id="playWordBtn" data-explain="Plays your word: grades its link to the last word, shows the why, adds it to the chain, then the bot answers with its own linked word.">Tap to play your word</button>
+</div>
+<div class="row" style="margin-top:8px">
+<button id="botStartBtn" data-explain="Lets the bot play the next word from the current word, so you can watch how its level changes the links it picks.">Tap to let the bot go next</button>
+<button id="newChainBtn" data-explain="Starts a fresh chain from a new starter word and clears the current trail. Your record keeps the old chain's score.">Tap to start a new chain</button>
+</div>
+<div id="chainResult" aria-live="polite"></div>
+<p>Chain score: <span class="scorebig" id="chainScore">0</span> &nbsp;·&nbsp; Links played: <span id="chainCount">0</span> &nbsp;·&nbsp; Longest unbroken run: <span id="chainRun">0</span></p>
+</section>
+
+<!-- ============ ONE-WORD CLUE ============ -->
+<section class="card" id="clueGame" hidden>
+<h2>One-Word Clue</h2>
+<p>One word is the <strong>target</strong> (ringed in gold). The other five are decoys. Give the bot guesser <strong>exactly one word</strong> to steer it to the target — without steering it to a decoy. You are scored on <strong>how clean the steer is</strong>: a clue tied tightly to the target and loosely to everything else scores highest. Your clue can't be the target itself, contain the target, or be one of the words on the board.</p>
+
+<div class="teach"><strong>🎯 Why one word is hard</strong>
+<p class="hint"><em>Hint:</em> The best clue is not the closest word to the target — it's the word closest to the target <em>and far from the decoys</em>.</p>
+<p class="explain"><em>Explain:</em> “Wet” points at ocean — but also at river and rain if they're on the board. A clean clue checks every decoy before it leaves your mouth. That's the whole skill: hold six filings in mind, not one.</p>
+<p class="deep"><em>Deep Dive:</em> Different guessers file differently, so the same clue lands differently. A meaning-first guesser hears “salty” and goes to ocean; a sound-first guesser hears “salty” and may drift to “sandy.” This bot shows its full ranking after each round, so you can see exactly which drawer your clue pulled on — and adjust for the guesser in front of you, which is what good clue-givers do with people, too.</p>
+</div>
+
+<p>Round <span id="clueRound">1</span> — steer the guesser to the gold word:</p>
+<div class="grid6" id="clueBoard"></div>
+<div class="row">
+<input type="text" id="clueInput" placeholder="Type ONE clue word…" aria-label="Your clue word" autocomplete="off">
+<button class="primary" id="giveClueBtn" data-explain="Sends your one-word clue to the bot guesser. It ranks all six board words by how strongly your clue pulls toward each, then picks the top one.">Tap to give your clue</button>
+</div>
+<div class="row" style="margin-top:8px">
+<button id="nextClueBtn" data-explain="Deals the next clue round: a new target and five new decoys.">Tap for the next round</button>
+</div>
+<div id="clueResult" aria-live="polite"></div>
+<p>Clue score: <span class="scorebig" id="clueScore">0</span> &nbsp;·&nbsp; Rounds: <span id="clueCount">0</span> &nbsp;·&nbsp; Clean steers: <span id="clueClean">0</span></p>
+</section>
+</main>
+
+<section class="card" id="learn">
+<h2>Learn — the three drawers</h2>
+<h3>1 · Meaning</h3><p>Words filed by what they <em>are</em>: families (fruit: apple, banana), opposites (day, night), parts (petal, flower), and jobs (knife cuts, clock tells time). Meaning links are the fastest and most shared — that's why they grade Close.</p>
+<h3>2 · Sound</h3><p>Words filed by how they <em>sound</em>: rhymes (cat, hat), same starts (sun, sand), echoes (whisper, whistle). Sound links feel playful and are easier to miss — a meaning-first listener may call them Broken when they're really Stretch.</p>
+<h3>3 · Memory</h3><p>Words filed by what they've <em>been through together</em>: set phrases (salt &amp; pepper), places (beach → towel), and personal moments. Memory links are the most personal drawer — and the main reason the same clue lands differently for different people.</p>
+<p><strong>The why under the why:</strong> association isn't trivia. It's a map of how a mind is organised. Playing these games, you watch your own map — which drawer you reach for first, and which drawers other minds reach for. That noticing is the skill that transfers: to clues, to conversations, to spotting when someone's words are steering <em>you</em>.</p>
+</section>
+
+<section class="card" id="record">
+<h2>Your record</h2>
+<p class="small muted">Kept in this tab on this device only — nothing is sent anywhere. Use Export to keep a copy as a file; Forget wipes it here.</p>
+<div id="stats"></div>
+<h3>History</h3>
+<div class="log" id="historyLog"><div class="muted">Nothing played yet. Your turns will appear here.</div></div>
+<div class="row" style="margin-top:10px">
+<button class="teal" id="exportBtn" data-explain="Downloads your record — alias, scores, and every graded turn — as a small JSON file you keep.">Tap to export your record</button>
+<button id="forgetBtn" data-explain="Erases your record from this page: scores, history, and alias. This cannot be undone.">Tap to forget everything</button>
+</div>
+</section>
+
+<section class="card" id="about">
+<h2>About &amp; sources</h2>
+<p><strong>The association bank</strong> was written for this page from common, everyday associations — the kind documented for over a century in word-association research (the “first word that comes to mind” exercise used since the early 1900s). No proprietary word list was scraped or copied. The bank is small and honest about it: words it doesn't hold grade <em>Unfiled</em>, never Broken.</p>
+<p><strong>The clue game</strong> is our own version of the documented one-word steering form: one clue, one target, decoys, scored on the cleanliness of the steer.</p>
+<p><strong>Bot honesty:</strong> the three bot levels genuinely pick differently — Sunny only takes Close meaning links; Mix takes any bank link; Weaver prefers Stretch sound &amp; memory links. The guesser ranks board words from the same bank you are graded by, and shows its ranking.</p>
+</section>
+
+<footer>
+<p>Copyleft — this page and its games are free to copy, share, and adapt under <strong>CC BY-SA 4.0</strong> (writings &amp; design) and <strong>GPL</strong> (code). Derivatives carry the same freedom. No ads, ever. Built on the house template: free first, teach honestly, keep the record on the player's own device.</p>
+</footer>
+</div>
+
+<script>
+"use strict";
+/* ---------- OUR OWN ASSOCIATION BANK ----------
+   Each link: [wordA, wordB, strength 2=close 1=stretch, drawer, why] */
+var LINKS=[
+["ocean","wave",2,"meaning","Waves are what an ocean does — part and action in one."],
+["ocean","sea",2,"meaning","Near-synonyms; most people file them in the same slot."],
+["ocean","beach",2,"memory","The classic pairing: ocean is where a beach lives."],
+["ocean","salt",2,"memory","Ocean water is salt water — a fact filed with the word itself."],
+["ocean","fish",2,"meaning","Fish live in the ocean; habitat links grade close."],
+["ocean","blue",1,"memory","Ocean is pictured blue — a colour-memory link, so a stretch."],
+["sea","shell",1,"sound","Sea / shell share the sh-sea sound shelf — a sound link."],
+["beach","sand",2,"meaning","A beach is made of sand — part-of links grade close."],
+["beach","towel",1,"memory","Towel comes along to the beach — a packed-bag memory link."],
+["sand","castle",2,"memory","Sandcastles: the set activity filed with sand."],
+["sand","desert",2,"meaning","Deserts are seas of sand — same material, different place."],
+["wave","surf",2,"meaning","Surf is waves breaking — same event, two angles."],
+["wave","hand",1,"memory","A wave is also a greeting — same word, memory of the gesture."],
+["surf","board",2,"meaning","A surfboard is the tool of surfing."],
+["sun","moon",2,"meaning","The sky pair — filed together since childhood."],
+["sun","hot",2,"meaning","The sun is the heat source; property links grade close."],
+["sun","day",2,"meaning","Day is when the sun is up."],
+["sun","flower",1,"memory","Sunflowers turn to the sun — and 'sun' hides inside the word."],
+["moon","night",2,"meaning","The moon is night's marker."],
+["moon","star",2,"meaning","Moon and stars share the night-sky shelf."],
+["moon","spoon",1,"sound","Moon / spoon is a pure rhyme — a sound-drawer link."],
+["star","light",2,"meaning","Stars shine light across distance."],
+["star","wish",1,"memory","'Wish upon a star' — a song-memory link."],
+["night","dark",2,"meaning","Dark is night's defining property."],
+["night","sleep",2,"memory","Night is when sleep happens."],
+["day","light",2,"meaning","Daylight — the words arrive together."],
+["light","dark",2,"meaning","The textbook opposite pair."],
+["light","lamp",2,"meaning","A lamp is a light you own."],
+["dark","cave",1,"memory","Caves are pictured pitch dark — a place-memory stretch."],
+["fire","hot",2,"meaning","Fire's first property is heat."],
+["fire","wood",2,"meaning","Wood is fire's classic fuel."],
+["fire","water",2,"meaning","Opposites that also cancel each other."],
+["fire","camp",1,"memory","Campfire — the compound memory does the work."],
+["water","rain",2,"meaning","Rain is water arriving."],
+["water","river",2,"meaning","A river is water with a path."],
+["water","drink",2,"meaning","Water's first job."],
+["water","ice",2,"meaning","Ice is water, frozen — same stuff, other state."],
+["rain","cloud",2,"meaning","Rain falls from clouds."],
+["rain","storm",2,"meaning","A storm is rain with force."],
+["rain","umbrella",2,"memory","The tool filed against rain."],
+["cloud","sky",2,"meaning","Clouds live in the sky."],
+["cloud","soft",1,"memory","Clouds are pictured soft — a look-and-feel memory."],
+["storm","wind",2,"meaning","Wind is half of every storm."],
+["storm","thunder",2,"meaning","Thunder is a storm's sound."],
+["wind","kite",2,"memory","Wind is what a kite eats."],
+["wind","tree",1,"memory","Trees are how you see wind — an indirect, stretch link."],
+["snow","winter",2,"meaning","Snow is winter's signature."],
+["snow","cold",2,"meaning","Snow's first property."],
+["snow","white",2,"memory","Snow is pictured white."],
+["ice","cold",2,"meaning","Cold made solid."],
+["ice","cream",2,"memory","Ice cream — the set phrase carries it."],
+["tree","leaf",2,"meaning","Leaves are a tree's parts."],
+["tree","forest",2,"meaning","A forest is trees, plural."],
+["tree","apple",1,"memory","Apples grow on trees — true, but one step removed."],
+["leaf","green",2,"memory","Leaves are pictured green."],
+["leaf","fall",1,"memory","Leaves fall in fall — season and pun together."],
+["forest","bird",2,"meaning","Birds are forest residents."],
+["flower","garden",2,"meaning","Gardens are where flowers are kept."],
+["flower","bee",2,"memory","Bees work flowers — a partnership filed together."],
+["flower","rose",2,"meaning","A rose is the example flower most people name first."],
+["garden","grow",2,"meaning","Growing is a garden's whole job."],
+["bird","fly",2,"meaning","Flying is the bird's defining action."],
+["bird","song",2,"memory","Birdsong — the sound filed with the animal."],
+["bird","egg",2,"meaning","Birds lay eggs; life-cycle links grade close."],
+["fish","swim",2,"meaning","Swimming is the fish's defining action."],
+["fish","chips",1,"memory","Fish and chips — a menu-phrase memory link."],
+["cat","dog",2,"meaning","The pet pair — filed as rivals and siblings."],
+["cat","milk",1,"memory","The storybook cat laps milk — a picture-book memory."],
+["cat","mouse",2,"memory","Cat-and-mouse: the chase is filed with both."],
+["dog","bark",2,"meaning","Bark is the dog's sound."],
+["dog","bone",2,"memory","The cartoon dog's treasure."],
+["dog","loyal",1,"meaning","Dogs are filed under loyalty — a trait link, so a stretch."],
+["horse","ride",2,"meaning","Riding is what horses are for, in the common filing."],
+["horse","cow",2,"meaning","Stablemates — same farm shelf."],
+["cow","milk",2,"meaning","Milk comes from cows — source links grade close."],
+["milk","cheese",2,"meaning","Cheese is milk, transformed."],
+["milk","white",1,"memory","Milk is pictured white — colour-memory."],
+["cheese","mouse",1,"memory","The storybook mouse wants cheese."],
+["cheese","bread",2,"memory","Bread and cheese — the plate pairing."],
+["bread","butter",2,"memory","Bread and butter — the set phrase itself."],
+["bread","knife",2,"meaning","You cut bread with a knife."],
+["butter","toast",2,"memory","Butter goes on toast."],
+["knife","fork",2,"meaning","Cutlery drawer: knife and fork sit together."],
+["knife","cut",2,"meaning","Cutting is a knife's job."],
+["fork","spoon",2,"meaning","Cutlery drawer neighbours."],
+["spoon","soup",2,"memory","Spoons are filed with soup."],
+["spoon","moon",1,"sound","Spoon / moon — the rhyme drawer again."],
+["plate","table",2,"meaning","Plates sit on tables."],
+["table","chair",2,"meaning","The furniture pair."],
+["chair","sit",2,"meaning","Sitting is a chair's job."],
+["book","page",2,"meaning","Pages are a book's parts."],
+["book","read",2,"meaning","Reading is what books are for."],
+["book","school",1,"memory","School is where books pile up — place-memory."],
+["page","pen",1,"memory","Pen works on the page — a desk-memory link."],
+["pen","paper",2,"memory","Pen and paper — the set phrase."],
+["paper","tree",1,"meaning","Paper comes from trees — source link, one step back."],
+["school","teacher",2,"meaning","Teachers are school's people."],
+["school","learn",2,"meaning","Learning is school's job."],
+["teacher","apple",1,"memory","An apple for the teacher — a school-story memory."],
+["music","song",2,"meaning","A song is music with words."],
+["music","dance",2,"memory","Music is what you dance to."],
+["song","sing",2,"meaning","Singing is how a song happens."],
+["song","bird",1,"memory","Birdsong borrows the word — a cross-drawer stretch."],
+["dance","music",2,"memory","The pair runs both ways."],
+["guitar","music",2,"meaning","A guitar is a music tool."],
+["guitar","string",2,"meaning","Strings are a guitar's parts."],
+["drum","beat",2,"meaning","A drum's output is the beat."],
+["drum","guitar",1,"meaning","Bandmates — same shelf, weaker pull."],
+["heart","love",2,"memory","The heart is love's symbol — a symbol-memory link."],
+["heart","beat",2,"meaning","A heartbeat is the heart's action."],
+["love","kiss",2,"memory","Kisses are filed under love."],
+["kiss","lips",2,"meaning","Lips do the kissing."],
+["ring","gold",2,"memory","Rings are pictured gold."],
+["ring","finger",2,"meaning","Rings live on fingers."],
+["ring","bell",1,"sound","A bell rings — same word, sound-and-action link."],
+["gold","silver",2,"meaning","The metal pair."],
+["gold","money",2,"memory","Gold stands for wealth."],
+["silver","moon",1,"memory","Moonlight is called silver — a poetic memory stretch."],
+["money","bank",2,"meaning","Banks are where money is kept."],
+["bank","river",1,"memory","A river has banks — same word, other filing. A classic trap link."],
+["river","bridge",2,"meaning","Bridges cross rivers."],
+["river","flow",2,"meaning","Flowing is a river's action."],
+["bridge","cross",2,"meaning","Crossing is a bridge's job."],
+["bridge","road",2,"meaning","Roads run over bridges."],
+["road","car",2,"meaning","Cars live on roads."],
+["road","trip",2,"memory","Road trip — the set phrase."],
+["car","wheel",2,"meaning","Wheels are a car's parts."],
+["car","drive",2,"meaning","Driving is what you do with a car."],
+["wheel","round",2,"meaning","Round is a wheel's shape."],
+["train","track",2,"meaning","Trains run on tracks."],
+["train","plane",1,"meaning","Travel shelf neighbours — weaker pull."],
+["plane","sky",2,"meaning","Planes fly in the sky."],
+["plane","fly",2,"meaning","Flying is a plane's action."],
+["sky","blue",2,"memory","Sky is pictured blue."],
+["blue","sea",1,"memory","The sea is pictured blue — colour-memory."],
+["blue","sad",1,"memory","'Feeling blue' — an idiom-memory stretch."],
+["red","apple",2,"memory","Apples are pictured red."],
+["red","fire",1,"memory","Fire is pictured red-orange — colour-memory."],
+["green","leaf",2,"memory","Leaves are pictured green."],
+["green","grow",1,"meaning","Green things grow — a loose meaning stretch."],
+["apple","banana",2,"meaning","Fruit-shelf neighbours."],
+["apple","orange",2,"meaning","Fruit-shelf neighbours."],
+["apple","pie",2,"memory","Apple pie — the set dish."],
+["banana","yellow",2,"memory","Bananas are pictured yellow."],
+["banana","monkey",1,"memory","The storybook monkey eats bananas."],
+["orange","lemon",2,"meaning","Citrus-shelf neighbours."],
+["orange","juice",2,"memory","Orange juice — the breakfast phrase."],
+["lemon","sour",2,"meaning","Sour is a lemon's taste."],
+["lemon","yellow",2,"memory","Lemons are pictured yellow."],
+["sweet","sour",2,"meaning","Taste opposites."],
+["sweet","sugar",2,"meaning","Sugar is sweet's source."],
+["sweet","candy",2,"memory","Candy is the sweet treat filed first."],
+["coffee","tea",2,"meaning","The hot-drink pair."],
+["coffee","morning",2,"memory","Coffee is filed with mornings."],
+["coffee","cup",2,"meaning","Coffee comes in a cup."],
+["tea","cup",2,"memory","A cup of tea — the set phrase."],
+["cup","saucer",1,"memory","Cup and saucer — tableware pairing, a stretch for most."],
+["morning","sun",1,"memory","Morning is when the sun arrives."],
+["morning","breakfast",2,"memory","Breakfast is morning's meal."],
+["sleep","dream",2,"memory","Dreams happen in sleep."],
+["sleep","bed",2,"meaning","Beds are for sleep."],
+["dream","wish",1,"memory","Dreams and wishes share the hoping shelf."],
+["bed","pillow",2,"meaning","Pillows live on beds."],
+["bed","night",1,"memory","Bed is filed with night-time."],
+["clock","time",2,"meaning","Clocks tell time."],
+["clock","tick",2,"sound","Tick-tock — the clock's sound, filed by ear."],
+["time","watch",2,"meaning","A watch tells time on a wrist."],
+["watch","hand",1,"memory","A watch has hands — and sits near one. A wordplay stretch."],
+["hand","finger",2,"meaning","Fingers are a hand's parts."],
+["hand","glove",2,"memory","Gloves cover hands."],
+["foot","shoe",2,"meaning","Shoes go on feet."],
+["foot","sock",2,"meaning","Socks go on feet, under shoes."],
+["shoe","sock",2,"meaning","The footwear pair."],
+["shoe","lace",2,"meaning","Laces are a shoe's parts."],
+["hat","head",2,"meaning","Hats go on heads."],
+["hat","coat",1,"meaning","Clothing-shelf neighbours."],
+["coat","winter",2,"memory","Coats are filed with winter."],
+["coat","cold",1,"memory","You wear a coat against cold."],
+["winter","summer",2,"meaning","Season opposites."],
+["winter","snow",2,"meaning","Winter brings snow."],
+["summer","hot",2,"meaning","Summer's defining property."],
+["summer","beach",1,"memory","Beaches are filed with summer."],
+["king","queen",2,"meaning","The royal pair."],
+["king","crown",2,"meaning","A crown is a king's marker."],
+["queen","crown",2,"meaning","Queens wear crowns too."],
+["crown","gold",1,"memory","Crowns are pictured gold."],
+["castle","king",2,"memory","Kings live in castles, in the common filing."],
+["castle","stone",2,"meaning","Castles are built of stone."],
+["breakfast","egg",2,"memory","Eggs are breakfast's staple."],
+["egg","bird",2,"meaning","Birds lay eggs — the cycle closes."],
+["egg","shell",2,"meaning","A shell is an egg's casing."],
+["stone","hard",2,"meaning","Hard is stone's property."],
+["stone","river",1,"memory","Stones are found in rivers — place-memory."],
+["salt","pepper",2,"memory","Salt and pepper — the table's set phrase."],
+["salt","sea",1,"memory","The sea is salt — a fact-memory link."],
+["pepper","hot",1,"meaning","Pepper brings heat — a loose property stretch."],
+["sugar","coffee",1,"memory","Sugar goes in coffee, for many."],
+["toast","breakfast",2,"memory","Toast is a breakfast staple."],
+["soup","hot",1,"meaning","Soup is served hot — a property stretch."],
+["glove","winter",1,"memory","Gloves come out in winter."],
+["umbrella","rain",2,"memory","The pair runs both ways."],
+["thunder","light",1,"memory","Thunder and lightning arrive together — a storm-memory pairing."],
+["kite","sky",1,"memory","Kites fly in the sky."],
+["cave","dark",1,"memory","The pair runs both ways."],
+["lamp","light",2,"meaning","The pair runs both ways."],
+["track","train",2,"meaning","The pair runs both ways."]
+];
+/* fix thunder-light drawer honestly: it is a memory pairing */
+var BANK={};
+function norm(w){return (w||"").toLowerCase().trim().replace(/[^a-z'-]/g,"");}
+LINKS.forEach(function(L){
+  var a=L[0],b=L[1];
+  (BANK[a]=BANK[a]||[]).push({to:b,s:L[2],d:L[3],why:L[4]});
+  (BANK[b]=BANK[b]||[]).push({to:a,s:L[2],d:L[3],why:L[4]});
+});
+function edge(a,b){ if(!BANK[a])return null; for(var i=0;i<BANK[a].length;i++) if(BANK[a][i].to===b) return BANK[a][i]; return null; }
+function sharedNeighbour(a,b){ if(!BANK[a]||!BANK[b])return null; for(var i=0;i<BANK[a].length;i++){ if(edge(b,BANK[a][i].to)) return BANK[a][i].to; } return null; }
+function judge(a,b){
+  a=norm(a); b=norm(b);
+  if(a===b) return {grade:"broken",label:"Broken",pts:0,why:"Same word twice isn't a link — the chain needs a new filing, not a repeat."};
+  var e=edge(a,b);
+  if(e){
+    if(e.s===2) return {grade:"close",label:"Close",pts:10,drawer:e.d,why:e.why+" Filed under: "+e.d+". Close links feel obvious because most minds file these together."};
+    return {grade:"stretch",label:"Stretch — clever",pts:7,drawer:e.d,why:e.why+" Filed under: "+e.d+". Stretch links feel clever because the mind has to hop one shelf over — then it clicks."};
+  }
+  var sh=sharedNeighbour(a,b);
+  if(sh) return {grade:"stretch",label:"Stretch",pts:5,drawer:"meaning",why:"No direct link in the bank, but both connect through “"+sh+"” — a two-hop path. Real, but the listener has to make the middle hop themselves, so it lands as a stretch."};
+  if(!BANK[a]||!BANK[b]) return {grade:"unfiled",label:"Unfiled",pts:2,why:"One of these words isn't in our written bank yet, so we can't honestly grade the link. That's the bank's gap — noted, not scored against you as broken."};
+  return {grade:"broken",label:"Broken",pts:0,why:"No path in the bank connects “"+a+"” to “"+b+"” — not directly, and not through a shared neighbour. It may live in your personal memory drawer (a private association), but the common filing can't find it. Try a word that shares meaning, sound, or a set phrase with “"+a+"”."};
+}
+/* ---------- STATE (this tab only) ---------- */
+var S={alias:"",chainScore:0,chainLinks:0,run:0,bestRun:0,clueScore:0,clueRounds:0,clueClean:0,history:[],cur:"ocean",trail:["ocean"],clueIdx:0};
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function logHist(txt){ S.history.push(txt); renderRecord(); }
+function renderRecord(){
+  $("stats").innerHTML='<span class="stat">Player: '+esc(S.alias||"— (set an alias above)")+'</span><span class="stat">Chain score: '+S.chainScore+'</span><span class="stat">Clue score: '+S.clueScore+'</span><span class="stat">Total: '+(S.chainScore+S.clueScore)+'</span>';
+  $("historyLog").innerHTML = S.history.length? S.history.map(function(h){return "<div>"+esc(h)+"</div>"}).join("") : '<div class="muted">Nothing played yet. Your turns will appear here.</div>';
+  $("chainScore").textContent=S.chainScore; $("chainCount").textContent=S.chainLinks; $("chainRun").textContent=S.bestRun;
+  $("clueScore").textContent=S.clueScore; $("clueCount").textContent=S.clueRounds; $("clueClean").textContent=S.clueClean;
+}
+function renderTrail(){ $("trail").innerHTML=S.trail.map(function(w,i){return (i?'<span class="arr">→</span>':"")+'<span class="w">'+esc(w)+"</span>"}).join(""); $("curWord").textContent=S.cur; }
+/* ---------- BOT ---------- */
+function botPick(from){
+  var opts=(BANK[from]||[]).filter(function(o){return S.trail.indexOf(o.to)===-1});
+  if(!opts.length) opts=BANK[from]||[];
+  if(!opts.length) return null;
+  var lvl=$("botLevel").value, pool=opts;
+  if(lvl==="easy"){ var c=opts.filter(function(o){return o.s===2&&o.d==="meaning"}); if(c.length)pool=c; }
+  if(lvl==="hard"){ var st=opts.filter(function(o){return o.s===1}); if(st.length)pool=st; }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function gradeHTML(who,from,to,j){
+  return '<div class="grade '+j.grade+'"><span class="badge">'+j.label+' · +'+j.pts+'</span> <strong>'+esc(who)+':</strong> '+esc(from)+' → '+esc(to)+'<br><span class="small">'+esc(j.why)+'</span></div>';
+}
+function doBotTurn(){
+  var pick=botPick(S.cur); if(!pick){ $("chainResult").innerHTML='<div class="grade unfiled"><span class="badge">Unfiled</span> The bot has no banked word from “'+S.cur+'” — the chain rests here. Tap to start a new chain.</div>'; return; }
+  var j=judge(S.cur,pick.to);
+  $("chainResult").innerHTML+=gradeHTML("Bot",S.cur,pick.to,j);
+  S.chainScore+=j.pts; S.chainLinks++; if(j.grade==="broken"){S.run=0}else{S.run++; if(S.run>S.bestRun)S.bestRun=S.run;}
+  logHist("Bot: "+S.cur+" → "+pick.to+" — "+j.label+" (+"+j.pts+")");
+  S.cur=pick.to; S.trail.push(pick.to); renderTrail(); renderRecord();
+}
+$("playWordBtn").addEventListener("click",function(){
+  var w=norm($("chainInput").value);
+  if(!w){$("chainResult").innerHTML='<div class="grade broken"><span class="badge">No word</span> Type one word first — the first one that comes to mind is the honest one.</div>';return;}
+  if(w.indexOf(" ")>-1){$("chainResult").innerHTML='<div class="grade broken"><span class="badge">One word</span> The Chain takes exactly one word at a time.</div>';return;}
+  var j=judge(S.cur,w);
+  $("chainResult").innerHTML=gradeHTML(S.alias||"You",S.cur,w,j);
+  S.chainScore+=j.pts; S.chainLinks++; if(j.grade==="broken"){S.run=0}else{S.run++; if(S.run>S.bestRun)S.bestRun=S.run;}
+  logHist((S.alias||"You")+": "+S.cur+" → "+w+" — "+j.label+" (+"+j.pts+")");
+  S.cur=w; S.trail.push(w); $("chainInput").value=""; renderTrail(); renderRecord();
+  setTimeout(doBotTurn,450);
+});
+$("botStartBtn").addEventListener("click",function(){ $("chainResult").innerHTML=""; doBotTurn(); });
+var STARTERS=["ocean","fire","music","apple","king","coffee","moon","garden","clock","river"];
+$("newChainBtn").addEventListener("click",function(){
+  S.cur=STARTERS[Math.floor(Math.random()*STARTERS.length)]; S.trail=[S.cur]; S.run=0; $("chainResult").innerHTML=""; renderTrail();
+});
+$("chainInput").addEventListener("keydown",function(e){ if(e.key==="Enter") $("playWordBtn").click(); });
+/* ---------- CLUE GAME ---------- */
+var ROUNDS=[
+ {target:"ocean",decoys:["desert","mountain","city","forest","volcano"]},
+ {target:"moon",decoys:["sun","star","cloud","lamp","mirror"]},
+ {target:"bread",decoys:["stone","wood","paper","glass","iron"]},
+ {target:"bird",decoys:["fish","horse","snake","frog","bee"]},
+ {target:"winter",decoys:["summer","spring","autumn","morning","night"]},
+ {target:"guitar",decoys:["drum","piano","violin","trumpet","flute"]},
+ {target:"king",decoys:["queen","knight","farmer","baker","sailor"]},
+ {target:"coffee",decoys:["tea","milk","juice","water","soup"]}
+];
+/* extra filing words so decoys can be ranked honestly via categories */
+var CATS={desert:["sand","hot","dry"],mountain:["snow","stone","high"],city:["road","busy","buildings"],forest:["tree","green","wood"],volcano:["fire","hot","stone"],sun:["hot","day","sky"],star:["night","sky","light"],cloud:["sky","rain","soft"],lamp:["light","night","table"],mirror:["glass","face","silver"],stone:["hard","river","cold"],wood:["tree","fire","brown"],paper:["pen","book","white"],glass:["cup","clear","break"],iron:["hard","metal","cold"],fish:["water","swim","sea"],horse:["ride","farm","fast"],snake:["long","green","bite"],frog:["green","jump","pond"],bee:["flower","honey","sting"],summer:["hot","beach","sun"],spring:["flower","rain","green"],autumn:["leaf","fall","orange"],morning:["sun","breakfast","coffee"],night:["dark","moon","sleep"],piano:["music","keys","black"],violin:["music","string","bow"],trumpet:["music","loud","gold"],flute:["music","wind","soft"],queen:["king","crown","royal"],knight:["sword","horse","castle"],farmer:["field","cow","grow"],baker:["bread","oven","flour"],sailor:["sea","boat","wind"],tea:["cup","hot","drink"],milk:["cow","white","drink"],juice:["orange","sweet","drink"],water:["drink","river","wet"],soup:["hot","spoon","bowl"]};
+function clueScoreFor(clue,word){
+  var score=0, notes=[];
+  var e=edge(clue,word); if(e){ score+= e.s===2?4:2.5; notes.push("direct bank link ("+(e.s===2?"close":"stretch")+", "+e.d+")"); }
+  var sh=sharedNeighbour(clue,word); if(sh){ score+=1.5; notes.push("both link to “"+sh+"”"); }
+  var cats=CATS[word]||[]; if(cats.indexOf(clue)>-1){ score+=3; notes.push("“"+clue+"” is filed with "+word+" in the common filing"); }
+  if(BANK[word]){ for(var i=0;i<BANK[word].length;i++){ if(BANK[word][i].to===clue){} } }
+  /* category of clue word itself */
+  Object.keys(CATS).forEach(function(k){});
+  if(clue && word && clue[0]===word[0]){ score+=0.3; notes.push("same starting sound (weak pull)"); }
+  if(clue.length>2 && word.indexOf(clue.slice(0,3))===0){ score+=0.5; }
+  return {score:score,notes:notes};
+}
+function renderClue(){
+  var r=ROUNDS[S.clueIdx%ROUNDS.length];
+  $("clueRound").textContent=(S.clueIdx%ROUNDS.length)+1;
+  var all=[r.target].concat(r.decoys);
+  /* stable shuffle by round so layout varies */
+  all=all.slice().sort(function(){return 0.5-Math.random()});
+  $("clueBoard").innerHTML=all.map(function(w){
+    var isT=w===r.target;
+    return '<div class="tile'+(isT?" target":"")+'" data-w="'+w+'">'+w+(isT?'<small>★ TARGET — steer the guesser here</small>':'<small>decoy</small>')+"</div>";
+  }).join("");
+}
+$("giveClueBtn").addEventListener("click",function(){
+  var r=ROUNDS[S.clueIdx%ROUNDS.length];
+  var clue=norm($("clueInput").value);
+  var board=[r.target].concat(r.decoys);
+  if(!clue){ $("clueResult").innerHTML='<div class="grade broken"><span class="badge">No clue</span> Type exactly one clue word.</div>'; return; }
+  if(clue.indexOf(" ")>-1){ $("clueResult").innerHTML='<div class="grade broken"><span class="badge">One word only</span> A clue is a single word — that limit is the game.</div>'; return; }
+  if(board.indexOf(clue)>-1){ $("clueResult").innerHTML='<div class="grade broken"><span class="badge">Not allowed</span> Your clue can\'t be a word on the board.</div>'; return; }
+  if(clue===r.target||clue.indexOf(r.target)>-1||r.target.indexOf(clue)>-1&&clue.length>2){ $("clueResult").innerHTML='<div class="grade broken"><span class="badge">Too direct</span> Your clue can\'t be, or contain, the target itself.</div>'; return; }
+  var ranked=board.map(function(w){ var cs=clueScoreFor(clue,w); return {w:w,score:cs.score,notes:cs.notes}; }).sort(function(a,b){return b.score-a.score});
+  var guess=ranked[0], targetRank=ranked.filter(function(x){return x.w===r.target})[0];
+  var hit=guess.w===r.target;
+  var margin=targetRank.score-(ranked[0].w===r.target?(ranked[1]?ranked[1].score:0):ranked[0].score);
+  var pts=0,label="",cls="";
+  if(hit&&margin>=2){pts=10;label="Clean steer · +10";cls="close";}
+  else if(hit){pts=6;label="Steered home, but close · +6";cls="stretch";}
+  else if(targetRank.score>0&&margin>=-1.5){pts=2;label="Near miss · +2";cls="stretch";}
+  else{pts=0;label="Steered away · +0";cls="broken";}
+  S.clueScore+=pts; S.clueRounds++; if(hit&&margin>=2)S.clueClean++;
+  var tiles=document.querySelectorAll("#clueBoard .tile");
+  tiles.forEach(function(t){ if(t.getAttribute("data-w")===guess.w) t.classList.add("guessed"); });
+  var why = hit? "Your clue “"+clue+"” pulled hardest toward "+r.target+(targetRank.notes.length?" — "+targetRank.notes.join("; "):"")+". The margin over the nearest decoy was "+margin.toFixed(1)+", which is what 'clean' means here: close to the target, far from the rest."
+    : "Your clue “"+clue+"” pulled hardest toward “"+guess.w+"”"+(guess.notes.length?" — "+guess.notes.join("; "):" — the bank finds no filing for it with any board word, so the guesser fell back on the weakest pull")+". For "+r.target+" it scored "+targetRank.score.toFixed(1)+(targetRank.notes.length?" ("+targetRank.notes.join("; ")+")":"")+". A cleaner clue shares a filing with "+r.target+" that none of the decoys share.";
+  $("clueResult").innerHTML='<div class="grade '+cls+'"><span class="badge">'+label+'</span> <strong>Guesser picked: '+guess.w+'</strong> (target: '+r.target+')<br><span class="small">'+why+'</span><br><span class="small"><strong>Guesser\'s full ranking:</strong> '+ranked.map(function(x){return x.w+" "+x.score.toFixed(1)}).join(" · ")+'</span></div>';
+  logHist("Clue “"+clue+"” → target "+r.target+": guesser picked "+guess.w+" — "+label);
+  $("clueInput").value=""; renderRecord();
+});
+$("nextClueBtn").addEventListener("click",function(){ S.clueIdx++; $("clueResult").innerHTML=""; renderClue(); });
+$("clueInput").addEventListener("keydown",function(e){ if(e.key==="Enter") $("giveClueBtn").click(); });
+/* ---------- TABS ---------- */
+function setTab(chain){
+  $("tabChain").setAttribute("aria-selected",chain); $("tabClue").setAttribute("aria-selected",!chain);
+  $("chainGame").hidden=!chain; $("clueGame").hidden=chain;
+}
+$("tabChain").addEventListener("click",function(){setTab(true)});
+$("tabClue").addEventListener("click",function(){setTab(false)});
+/* ---------- SETTINGS ---------- */
+$("alias").addEventListener("input",function(){ S.alias=this.value.trim(); renderRecord(); });
+$("dial").addEventListener("change",function(){ document.body.setAttribute("data-dial",this.value); });
+/* ---------- HOLD TO EXPLAIN ---------- */
+document.querySelectorAll("[data-explain]").forEach(function(el){
+  var t=null;
+  el.addEventListener("pointerdown",function(){ t=setTimeout(function(){ var b=$("explainBox"); b.style.display="block"; b.textContent="What this does: "+el.getAttribute("data-explain"); },550); });
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ el.addEventListener(ev,function(){ if(t)clearTimeout(t); }); });
+});
+/* ---------- RECORD: EXPORT + FORGET + OFFLINE ---------- */
+$("exportBtn").addEventListener("click",function(){
+  var data={game:"First Word — Word Association",player:S.alias||"(no alias)",exported:new Date().toISOString(),chainScore:S.chainScore,clueScore:S.clueScore,history:S.history};
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"})); a.download="first-word-record.json"; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+});
+$("forgetBtn").addEventListener("click",function(){
+  S={alias:"",chainScore:0,chainLinks:0,run:0,bestRun:0,clueScore:0,clueRounds:0,clueClean:0,history:[],cur:"ocean",trail:["ocean"],clueIdx:S.clueIdx};
+  $("alias").value=""; $("chainResult").innerHTML=""; $("clueResult").innerHTML=""; renderTrail(); renderRecord();
+  $("explainBox").style.display="block"; $("explainBox").textContent="Forgotten. Scores, history, and alias are cleared from this page.";
+});
+$("offlineBtn").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"})); a.download="first-word-offline.html"; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+});
+renderTrail(); renderClue(); renderRecord();
+</script>
+</body>
+</html>
