@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>First Flight — Flight Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#e8eff3; --bg2:#dce7ec; --panel:#ffffff; --panel2:#f2f6f8;
+  --ink:#15242f; --muted:#4b6172; --line:#c3d2db;
+  --sky:#1c6db4; --sky-soft:#dceefb; --amber:#b95e10; --amber-soft:#fdeeda;
+  --ok:#177245; --ok-soft:#e0f2e7; --bad:#b3261e; --bad-soft:#fbe7e5;
+  --warn:#8a5a00; --warn-soft:#fdf3d7;
+  --shadow:0 2px 10px rgba(21,36,47,.10);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b131a; --bg2:#0e1a23; --panel:#14222d; --panel2:#182833;
+    --ink:#e9f1f5; --muted:#9db2c0; --line:#2a3f4e;
+    --sky:#5aa9e6; --sky-soft:#12314a; --amber:#eda14e; --amber-soft:#3d2a10;
+    --ok:#4cc983; --ok-soft:#123526; --bad:#ff7a6e; --bad-soft:#401a16;
+    --warn:#f2c14e; --warn-soft:#3a2f0e;
+    --shadow:0 2px 12px rgba(0,0,0,.45);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:"Barlow Condensed","Barlow",sans-serif;letter-spacing:.02em;line-height:1.1;margin:0}
+h1{font-size:clamp(30px,6vw,46px);font-weight:700;text-transform:uppercase}
+h2{font-size:clamp(22px,4vw,29px);font-weight:600;text-transform:uppercase}
+h3{font-size:19px;font-weight:600}
+p{margin:.45em 0}
+a{color:var(--sky)}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+button{font-family:inherit;font-size:15px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:.45rem .8rem;cursor:pointer;touch-action:manipulation}
+button:hover{border-color:var(--sky)}
+button:active{transform:translateY(1px)}
+button.primary{background:var(--sky);border-color:var(--sky);color:#fff}
+@media (prefers-color-scheme: dark){button.primary{color:#08131c}}
+button.danger{border-color:var(--bad);color:var(--bad)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select,input[type="text"]{font-family:inherit;font-size:15px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:.45rem .6rem}
+.wrap{max-width:1180px;margin:0 auto;padding:0 14px 40px}
+.freebar{background:var(--ink);color:var(--bg);padding:10px 14px}
+.freebar .wrap{padding-bottom:0;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between}
+.freebar strong{font-family:"Barlow Condensed",sans-serif;font-size:19px;letter-spacing:.04em;text-transform:uppercase}
+.freebar button{background:transparent;color:inherit;border-color:currentColor}
+header.hero{padding:22px 0 6px}
+.hero .sub{font-size:18px;color:var(--muted);max-width:65ch}
+.compass{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.compass a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.35rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);text-decoration:none;font-weight:600;font-size:14.5px}
+.compass a:hover{border-color:var(--sky)}
+.limits{border:2px solid var(--bad);background:var(--bad-soft);border-radius:var(--radius);padding:14px 16px;margin:14px 0}
+.limits h2{color:var(--bad);font-size:22px}
+.grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:960px){.grid.sim{grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin:14px 0}
+.card.flush{padding:10px}
+canvas#skyview{width:100%;height:auto;display:block;border-radius:10px;background:#7db8dd}
+.variant-banner{display:none;border:2px dashed var(--amber);background:var(--amber-soft);color:var(--ink);border-radius:10px;padding:8px 12px;font-weight:600;margin:0 0 10px}
+.variant-banner.show{display:block}
+.inst-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+@media (min-width:640px){.inst-row{grid-template-columns:repeat(4,1fr) 1.2fr}}
+.inst{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.inst .lab{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.inst .val{font-family:"Barlow Semi Condensed",monospace;font-size:30px;font-weight:600;line-height:1.05}
+.inst .unit{font-size:12px;color:var(--muted)}
+.inst.warn .val{color:var(--bad)}
+.inst canvas{width:100%;height:64px;display:block}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.badge{font-size:13px;font-weight:700;padding:.3rem .6rem;border-radius:999px;border:1px solid var(--line);background:var(--panel2)}
+.badge.on-sky{background:var(--sky-soft);border-color:var(--sky);color:var(--ink)}
+.badge.on-ok{background:var(--ok-soft);border-color:var(--ok)}
+.badge.on-bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.badge.on-warn{background:var(--warn-soft);border-color:var(--warn)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media (min-width:640px){.controls{grid-template-columns:repeat(4,1fr)}}
+.ctl{display:flex;flex-direction:column;gap:6px}
+.ctl .cap{font-size:12.5px;color:var(--muted);text-align:center}
+.ctl button.big{font-size:17px;padding:.7rem .5rem;min-height:3.2rem}
+input[type="range"]{width:100%;min-height:2.25rem;accent-color:var(--sky)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--sky);color:#fff}
+@media (prefers-color-scheme: dark){.seg button[aria-pressed="true"]{color:#08131c}}
+.checklist{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.checklist li{margin:0}
+.checklist button.item{width:100%;text-align:left;display:flex;gap:10px;align-items:flex-start;font-weight:500;border-radius:10px;padding:.6rem .7rem;min-height:2.75rem}
+.checklist .box{flex:0 0 auto;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px}
+.checklist button.item.done{border-color:var(--ok);background:var(--ok-soft)}
+.checklist button.item.done .box{background:var(--ok);border-color:var(--ok);color:#fff}
+.checklist .why{display:block;font-size:13px;color:var(--muted);font-weight:400}
+.coachbox{border-left:5px solid var(--sky);background:var(--sky-soft);border-radius:0 10px 10px 0;padding:10px 12px;min-height:64px}
+.coachbox .who{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.coachbox p{margin:.2em 0}
+.debrief{border-left:5px solid var(--bad);background:var(--bad-soft);border-radius:0 10px 10px 0;padding:10px 12px;display:none}
+.debrief.show{display:block}
+.debrief.good{border-color:var(--ok);background:var(--ok-soft)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0}
+details summary{cursor:pointer;font-weight:600;padding:.6rem .8rem;min-height:2.75rem;display:flex;align-items:center}
+details .body{padding:0 14px 12px}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:15px}
+th,td{border-bottom:1px solid var(--line);padding:.45rem .5rem;text-align:left;vertical-align:top}
+th{font-family:"Barlow Semi Condensed",sans-serif;letter-spacing:.03em}
+@media (max-width:680px){
+  table{display:block}
+  tr{display:block;border-bottom:2px solid var(--line);padding:.35rem 0}
+  td,th{display:block;border-bottom:none;padding:.2rem .5rem}
+}
+.ladder{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:700px){.ladder{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1020px){.ladder{grid-template-columns:repeat(3,1fr)}}
+.chal{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel2)}
+.chal.done{border-color:var(--ok);background:var(--ok-soft)}
+.chal.active{border-color:var(--sky);box-shadow:0 0 0 2px var(--sky-soft)}
+.chal h3{margin-bottom:2px}
+.chal p{font-size:14.5px;color:var(--muted)}
+.record-nums{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:700px){.record-nums{grid-template-columns:repeat(4,1fr)}}
+.rec-num{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.rec-num .n{font-family:"Barlow Semi Condensed",sans-serif;font-size:32px;font-weight:600}
+.rec-num .l{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.small{font-size:13.5px;color:var(--muted)}
+.kbd{font-family:ui-monospace,monospace;font-size:.9em;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 .3em;background:var(--panel2)}
+footer{border-top:1px solid var(--line);margin-top:26px;padding-top:14px;color:var(--muted);font-size:14px}
+#minimap{width:100%;height:auto;display:block;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.toast{position:sticky;bottom:10px;background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;font-weight:600;display:none;z-index:5}
+.toast.show{display:block}
+.wx-choice{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.log{font-size:14px;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel2)}
+.log p{margin:.25em 0}
+</style>
+</head>
+<body>
+<div class="freebar">
+  <div class="wrap" style="display:flex">
+    <span><strong>Free — always free.</strong> No ads, no accounts, no locked lessons. Everything on this page works for everyone.</span>
+    <button id="btn-download" type="button">Download this page — tap to save it and fly offline</button>
+  </div>
+</div>
+
+<div class="wrap">
+<header class="hero">
+  <h1>First Flight</h1>
+  <p class="sub">A small flight simulator with the real theory of flying built in — the four forces, angle of attack, stalls, ground effect, checklists, and the circuit — so the only thing left to learn is your own skill with the controls.</p>
+  <nav class="compass" aria-label="Page compass">
+    <a href="#fly">✈ Fly</a>
+    <a href="#checklists">☑ Checklists</a>
+    <a href="#challenges">▲ Challenges</a>
+    <a href="#learn">? The Why</a>
+    <a href="#strategies">⇄ Strategies</a>
+    <a href="#weather">☁ Weather judgment</a>
+    <a href="#record">▤ Your record</a>
+    <a href="#settings">⚙ Settings &amp; variants</a>
+  </nav>
+</header>
+
+<section class="limits" aria-labelledby="limits-h">
+  <h2 id="limits-h">Honest limits — read this first</h2>
+  <p><strong>This is a teaching toy with real theory. It is not flight training.</strong> It cannot teach your hands, your eyes, or your judgment the way the sky does, and nothing you score here counts toward any licence. The flight model is simplified on purpose — the simplifications are named in <a href="#model">The flight model, honestly</a> below.</p>
+  <p><strong>The real door is a real aeroplane with a real instructor.</strong> If flying calls to you, book a trial lesson at a local flying school — one hour in a real trainer, with an instructor beside you, teaches more than a hundred hours here. This page's job is narrower and honest: when you do sit in that seat, the words <em>angle of attack</em>, <em>stall</em>, and <em>checklist</em> will already mean something to you.</p>
+</section>
+
+<div class="grid sim">
+  <section class="card flush" id="fly" aria-labelledby="fly-h">
+    <h2 id="fly-h" style="padding:4px 6px 8px">Fly</h2>
+    <p class="variant-banner" id="variant-banner" role="status"></p>
+    <canvas id="skyview" width="880" height="420" aria-label="Side view of your aeroplane, the runway, and the sky"></canvas>
+    <div class="inst-row" role="group" aria-label="Instruments">
+      <div class="inst" id="inst-asi"><div class="lab">Airspeed</div><div class="val" id="v-asi">0</div><div class="unit">knots</div></div>
+      <div class="inst" id="inst-alt"><div class="lab">Altitude</div><div class="val" id="v-alt">0</div><div class="unit">feet above ground</div></div>
+      <div class="inst" id="inst-vsi"><div class="lab">Up / down</div><div class="val" id="v-vsi">0</div><div class="unit">feet per minute</div></div>
+      <div class="inst" id="inst-aoa"><div class="lab">Angle of attack</div><div class="val" id="v-aoa">0°</div><div class="unit">stalls near 15°</div></div>
+      <div class="inst"><div class="lab">Attitude — pitch &amp; bank</div><canvas id="attitude" width="220" height="64" aria-label="Attitude indicator"></canvas><div class="unit" id="v-att">pitch 0° · bank 0° · heading 090°</div></div>
+    </div>
+    <div class="badges" aria-label="Flight state">
+      <span class="badge" id="b-ground">On the ground</span>
+      <span class="badge" id="b-ge">Ground effect</span>
+      <span class="badge" id="b-stall">STALL</span>
+      <span class="badge" id="b-flaps">Flaps up</span>
+      <span class="badge" id="b-thr">Throttle 0%</span>
+      <span class="badge" id="b-goal">Goal: just fly — take off when ready</span>
+      <span class="badge" id="b-energy" style="display:none">Pilot energy 100%</span>
+    </div>
+    <div class="controls">
+      <div class="ctl">
+        <button class="big primary" id="btn-thr-up" type="button" data-explain="Throttle is thrust — one of the four forces. More throttle pushes the aeroplane forward; speed then lets the wing make lift. It does not lift you by itself.">Throttle + · tap or hold</button>
+        <button class="big" id="btn-thr-dn" type="button" data-explain="Cutting throttle removes thrust. Drag then slows you, the wing makes less lift, and the aeroplane settles — that is how a descent begins.">Throttle − · tap or hold</button>
+        <span class="cap">Throttle — or drag the slider below</span>
+        <input type="range" id="thr-slider" min="0" max="100" value="0" aria-label="Throttle slider, percent" />
+      </div>
+      <div class="ctl">
+        <button class="big primary" id="btn-pitch-up" type="button" data-explain="Pulling the nose up raises the angle of attack: more lift for a moment, but more drag too. Held too far, the angle passes about 15 degrees and the wing stalls — at any speed.">Nose up · tap or hold</button>
+        <button class="big" id="btn-pitch-dn" type="button" data-explain="Pushing the nose down lowers the angle of attack. That is the first move in stall recovery: less angle, then the wing flies again.">Nose down · tap or hold</button>
+        <span class="cap">Pitch — the elevator. Keys: <span class="kbd">↑</span> <span class="kbd">↓</span></span>
+      </div>
+      <div class="ctl">
+        <button class="big" id="btn-bank-l" type="button" data-explain="Banking tilts the lift sideways, and the sideways part is what turns you. The price: less lift points up, so a turn needs a touch more nose-up and power, and the stall speed rises.">Bank left · tap or hold</button>
+        <button class="big" id="btn-bank-r" type="button" data-explain="Banking tilts the lift sideways, and the sideways part is what turns you. The price: less lift points up, so a turn needs a touch more nose-up and power, and the stall speed rises.">Bank right · tap or hold</button>
+        <span class="cap">Bank &amp; turn — keys: <span class="kbd">←</span> <span class="kbd">→</span></span>
+      </div>
+      <div class="ctl">
+        <button class="big" id="btn-flaps" type="button" data-explain="Flaps change the wing's shape: more lift at low speed, and more drag. That bargain — slower flight, steeper descent — is exactly what a landing wants.">Flaps · tap to toggle</button>
+        <button class="big" id="btn-brake" type="button" data-explain="Wheel brakes only work on the ground, and only once the wing has stopped flying. Braking hard while still fast just wears tyres — slow down first, then brake.">Brake · tap or hold</button>
+        <span class="cap">Also: <span class="kbd">W</span>/<span class="kbd">S</span> throttle · <span class="kbd">F</span> flaps · <span class="kbd">B</span> brake · Hold any control to hear it explained</span>
+        <button id="btn-reset" type="button">Reset flight · tap to start over on the runway</button>
+      </div>
+    </div>
+    <p class="small" style="padding:6px 6px 0">The side view shows height and speed. The small map (right) shows where you are over the ground — that is where the circuit lives. Wind, weight, and weather are under <a href="#settings">Settings</a>.</p>
+  </section>
+
+  <div>
+    <section class="card" aria-labelledby="coach-h">
+      <h2 id="coach-h">Coach</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0">
+        <span id="pilot-label">Pilot:</span>
+        <input type="text" id="alias" maxlength="24" placeholder="Your name or callsign" aria-labelledby="pilot-label" style="flex:1;min-width:140px" />
+      </div>
+      <p class="small">Fly as any name you like — alias freedom. It is saved on this device only and used only to label your record.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">
+        <span>Teaching:</span>
+        <div class="seg" role="group" aria-label="Teaching dial">
+          <button type="button" data-teach="off" aria-pressed="false">Off</button>
+          <button type="button" data-teach="light" aria-pressed="true">Light</button>
+          <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+        </div>
+        <span class="small">Saved on this device.</span>
+      </div>
+      <div class="coachbox" aria-live="polite">
+        <div class="who">Coach says</div>
+        <p id="coach-text">Run the before-takeoff checklist (right, below the map), then full throttle, and ease the nose up near 55 knots. Hold any control button to hear what it really does.</p>
+      </div>
+      <div class="debrief" id="debrief" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-labelledby="map-h">
+      <h2 id="map-h">Map — the circuit from above</h2>
+      <canvas id="minimap" width="520" height="330" aria-label="Top-down map showing the runway and your position"></canvas>
+      <p class="small">Runway runs east–west. A standard circuit is a left-hand rectangle: take off east, climb, turn left four times, land back east. The dashed line is the pattern to aim for.</p>
+    </section>
+
+    <section class="card" id="checklists" aria-labelledby="chk-h">
+      <h2 id="chk-h">Checklists — run them like a pilot</h2>
+      <p>Real pilots read each item out loud, touch or check the thing itself, then answer. Here: <strong>tap each item to check it</strong>, in order, before you fly. Skipping is possible — and the Coach will notice, the way an instructor would.</p>
+      <h3 style="margin-top:12px">Before takeoff</h3>
+      <ul class="checklist" id="chk-to"></ul>
+      <p class="small" id="chk-to-status">Not run yet.</p>
+      <h3 style="margin-top:12px">Before landing</h3>
+      <ul class="checklist" id="chk-land"></ul>
+      <p class="small" id="chk-land-status">Run this on final approach, before you touch down.</p>
+    </section>
+  </div>
+</div>
+
+<section class="card" id="challenges" aria-labelledby="chal-h">
+  <h2 id="chal-h">The challenge ladder</h2>
+  <p>Fly them in order — each one adds exactly one new piece of the real skill, the way a syllabus does. <strong>This ladder is a difficulty ramp on purpose:</strong> it starts with one control and one idea, and each rung adds exactly one more — a new force to manage, a new discipline, weather you were not trusted with before. Real syllabuses are built this way because skill compounds and confidence should never outrun it. Tap a challenge to make it your goal; the badge above the controls tracks it.</p>
+  <div class="ladder" id="ladder"></div>
+  <p style="margin-top:10px"><button id="btn-stall-setup" type="button">Set up the stall exercise · tap to be placed at 2,500 ft, slow and nose-high</button>
+  <span class="small">For challenge 6. Deliberate stalls at altitude, with height to recover, are how real students learn them — never near the ground.</span></p>
+</section>
+
+<section class="card" id="purpose" aria-labelledby="purpose-h">
+  <h2 id="purpose-h">Purpose flights — somebody is waiting</h2>
+  <p>There is no money anywhere in this simulator — nothing to earn, buy, or win. Flying's real stakes were never money. They are these: <strong>a person at the other end who needs what you are carrying, a passenger trusting your hands, and your standing with the people who taught you.</strong> That is what the top of the ladder is for.</p>
+  <p><strong>Purpose flights unlock with trust.</strong> Earn the circuit endorsement (challenge 4) and the instructor starts handing you real jobs — the usefulness reward is capability itself: each sign-off below lets you do something you could not do before. A purpose flight only counts flown the way the waiting person needs it flown — the medicine run wants a checklist-clean, on-time arrival; your passenger wants a smooth one. Fail the standard and the flight honestly does not count. Nobody pays you. Somebody needed you, and either you showed up well or you did not — that is the whole stake, and in real flying it is usually the true one.</p>
+  <div class="ladder" id="purpose-list"></div>
+  <h3 style="margin-top:14px">The medicine run load — capacity is a real limit</h3>
+  <p>An aeroplane can only carry so much and stay inside its limits. Before the medicine run, choose the load — and feel what the choice costs. Heavier means the clinic gets more, and the aeroplane gives you less: a longer roll, a higher stall speed, a weaker climb. Sometimes the honest answer is two trips. Sometimes it is leaving the crates. It is never "everything, always" — that refusal is weight and balance doing its job.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap" role="group" aria-label="Medicine run load choice">
+    <button type="button" data-load="light">Medicine only · tap — lightest, climbs best, the nurse waits for the next trip</button>
+    <button type="button" data-load="std">Medicine + nurse · tap — the balanced load</button>
+    <button type="button" data-load="heavy">Medicine + nurse + crates · tap — everything arrives, every number gets worse</button>
+    <button type="button" data-load="over">Everything + full fuel · tap to try it</button>
+  </div>
+  <p class="small" id="load-note">No load chosen yet — the medicine run flies at Standard weight until you choose.</p>
+</section>
+
+<section class="card" id="learn" aria-labelledby="learn-h">
+  <h2 id="learn-h">The why — all of it</h2>
+  <p>Every behaviour of the aeroplane above is explained here, in plain words. Tap a heading to open it.</p>
+
+  <details open>
+    <summary>The four forces — and why a wing lifts (tap to close)</summary>
+    <div class="body">
+      <p>Four forces act on every aeroplane, always: <strong>lift</strong> (up, from the wings), <strong>weight</strong> (down, gravity on the mass), <strong>thrust</strong> (forward, from the propeller), and <strong>drag</strong> (backward, the air resisting). In steady level flight they balance: lift equals weight, thrust equals drag. Change any one and the aeroplane accelerates — climbs, sinks, speeds up, or slows down — until they balance again. That single idea explains almost everything you will feel in the simulator.</p>
+      <p><strong>Why does the wing lift at all?</strong> A wing is shaped and angled so it pushes air <em>downward</em> as it passes. Push air down, and the air pushes the wing up — Newton's third law, the same reason a rocket rises by throwing exhaust down. The curved top surface also speeds the air over it, lowering pressure there (Bernoulli's effect), which adds to the lift — but the honest core is deflection: <em>a wing flies by throwing air at the ground.</em> No downward push, no lift, whatever the shape.</p>
+      <p>Lift grows with the <strong>square of speed</strong> — double the speed, four times the lift — and with the wing's angle to the airflow, up to a point. That point is the stall, and it is the most important idea on this page.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Angle of attack and the stall — it is about angle, not speed (tap to open)</summary>
+    <div class="body">
+      <p><strong>Angle of attack</strong> is the angle between the wing and the air coming at it — not the angle of the nose to the horizon. Pitch the nose up while climbing steeply and the airflow still comes from ahead-below; the angle of attack is the difference between where the nose points and where you are actually travelling.</p>
+      <p>Raise the angle and lift rises — until about <strong>15 degrees</strong>. Past that, the air can no longer follow the wing's top surface. It breaks away in turbulence, lift collapses, drag soars, and the wing <strong>stalls</strong>. The nose drops because the tail, still flying, pushes it down — the aeroplane's built-in plea for a lower angle.</p>
+      <p>Because a stall is about <em>angle</em>, it can happen at <strong>any speed</strong>: fast in a steep turn (where banking raises the angle the wing needs), or slow and level on approach. "Stall speed" is just the speed where level flight <em>demands</em> the critical angle. Recovery is always the same first move: <strong>reduce the angle</strong> — nose down — then add power and let speed rebuild. Pulling up harder in a stall is the one instinct that makes it worse, and unlearning it is why students practise stalls at altitude.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Ground effect — the cushion near the ground (tap to open)</summary>
+    <div class="body">
+      <p>Within about one wingspan of the ground — roughly 35 feet for a trainer — the ground interferes with the wing's downwash. The air cannot be pushed down as freely, so the wing gets <em>more lift and less drag</em> for the same speed and angle. Pilots call it <strong>ground effect</strong>, and you will feel it twice: floating long on landing when you arrive too fast (the cushion refuses to let you down), and lifting off too early on takeoff, then sagging as you climb out of the cushion before the wing can truly fly. The simulator models it inside 40 feet — watch the badge, and watch a fast approach float.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Weight and balance, in plain words (tap to open)</summary>
+    <div class="body">
+      <p><strong>Weight</strong> is simple and unforgiving: a heavier aeroplane needs more lift, so it must fly faster or at a bigger angle. Its stall speed rises, its takeoff roll lengthens, and its climb weakens. Try the Heavy setting below and measure all three — the numbers move exactly as the theory says.</p>
+      <p><strong>Balance</strong> is where the weight sits. An aeroplane balances on its centre of gravity like a seesaw. Too far forward and the nose is heavy — hard to rotate, hard to flare. Too far back and the nose is twitchy-light and, far worse, a stall can become unrecoverable because the tail lacks the leverage to push the nose down. That is why real loading is calculated, not guessed: every seat, bag, and litre of fuel has a known weight and a known distance from the datum, and the sums must land inside a printed envelope. This simulator fixes balance at a safe middle point and varies only weight — the envelope maths itself is the named simplification.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Why checklists exist — and how pilots really run them (tap to open)</summary>
+    <div class="body">
+      <p>Checklists were born from a crash: in 1935 a prototype bomber, flown by one of the most experienced test pilots alive, crashed on takeoff because a control lock was left in. The aeroplane was judged "too complex for any one memory" — and the checklist was the fix. The lesson stands: <strong>checklists are not for beginners; they are for humans.</strong> Memory fails under stress, hurry, and interruption, in experts most dangerously because they trust it.</p>
+      <p>Real pilots run them two ways. For routine phases they use <em>flow then check</em>: do the actions from a practised pattern, then read the list to catch what the pattern missed. For anything interrupted, they restart the list — an interrupted checklist resumed from memory is how items get skipped. And they say items out loud, touching each control, because a spoken, physical check catches what a silent glance slides over. The two lists on this page are shortened versions of a real trainer's, and running them clean is counted in your record because the habit — not the items — is the skill.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Circuit discipline — the pattern around the field (tap to open)</summary>
+    <div class="body">
+      <p>Airfields run a one-way system in the sky: the <strong>circuit</strong> (called the <em>pattern</em> in the US). Take off into wind, climb straight, turn left onto <em>crosswind</em>, left again onto <em>downwind</em> — flying back parallel to the runway at circuit height, about 1,000 feet — then left onto <em>base</em>, and left once more onto <em>final</em>, lined up and descending to land. Everyone flying the same rectangle at the same height in the same direction is what makes a busy field predictable instead of chaotic.</p>
+      <p>The discipline inside it: fixed heights, fixed turn points, radio calls at each leg, and a constant scan for the aeroplane ahead of you in the sequence. Downwind is where the before-landing checklist belongs — gear, flaps, speed — finished before base, so final is flown with both hands and full attention. Challenge 5 asks you to fly exactly that, and the map above draws the rectangle you are aiming for.</p>
+    </div>
+  </details>
+
+  <details id="model">
+    <summary>The flight model, honestly — what is real here and what is simplified (tap to open)</summary>
+    <div class="body">
+      <p><strong>What is modelled for real:</strong> lift rising with the square of airspeed and with angle of attack up to a critical angle near 15°, then collapsing (the stall); drag rising with speed and steeply with angle; thrust falling as speed builds; weight set by the loading you choose; banking tilting lift so turns cost height and raise the stall speed; ground effect strengthening lift and cutting drag below 40 feet; headwind adding to airspeed but not ground speed.</p>
+      <p><strong>The named simplifications:</strong> one fixed aeroplane, a generic two-seat trainer — no specific make or model, and no real aeroplane's numbers. Balance is fixed mid-envelope (weight varies, centre of gravity does not). No engine failure, no icing, no turbulence beyond the gusty setting's wind swings, no other traffic, no radio. The air is always at sea-level density. The world is flat, the runway endless in patience if not in length. Numbers are rounded to teach the shape of the truth — a real trainer's handbook figures will differ in detail, and the handbook wins.</p>
+    </div>
+  </details>
+</section>
+
+<section class="card" id="strategies" aria-labelledby="strat-h">
+  <h2 id="strat-h">Strategies — more than one way, with the trade-offs printed</h2>
+
+  <h3 style="margin-top:10px">Climbing away: three honest choices</h3>
+  <table>
+    <tr><th>Strategy</th><th>How</th><th>You gain</th><th>You pay</th></tr>
+    <tr><td><strong>Best rate</strong></td><td>Full power, climb near 75 kt</td><td>Most height per minute — the default climb</td><td>Less forward view over the nose; engine works hardest</td></tr>
+    <tr><td><strong>Best angle</strong></td><td>Full power, climb near 62 kt</td><td>Most height per distance — clears obstacles off the end of the runway</td><td>Close to the stall; one gust or distraction eats the margin</td></tr>
+    <tr><td><strong>Cruise climb</strong></td><td>Climb near 90 kt</td><td>Speed, cooling, and visibility — good for long climbs</td><td>Slow height gain; the field falls behind you slowly</td></tr>
+  </table>
+
+  <h3>Coming back down: the approach bargain</h3>
+  <table>
+    <tr><th>Strategy</th><th>How</th><th>You gain</th><th>You pay</th></tr>
+    <tr><td><strong>Full-flap approach</strong></td><td>Flaps out, about 65 kt</td><td>Slowest, steepest, shortest landing — the standard</td><td>Drag is high: add power late and the response is sluggish</td></tr>
+    <tr><td><strong>No-flap approach</strong></td><td>Flaps up, about 75 kt</td><td>Crisp control, better in strong gusts — a real technique, not a shortcut</td><td>Faster touchdown and a much longer roll; floats in ground effect</td></tr>
+    <tr><td><strong>Power-off glide</strong></td><td>Throttle closed, glide near 70 kt</td><td>Teaches pure energy judgment; the engine-failure rehearsal</td><td>No second chances on height — undershoot cannot be fixed, only a go-around can</td></tr>
+  </table>
+  <p><strong>The landing grade</strong> reads three numbers, as an instructor does: approach speed in the last 200 feet (aim 60–70 kt with flaps), descent rate at touchdown (under 200 feet per minute is a greaser, 200–500 firm and fine, over 500 is a thump that teaches), and touchdown point (in the first third of the runway — float past halfway and the honest move was a go-around).</p>
+  <p><strong>The go-around is a strategy, not a failure.</strong> Any approach that feels wrong — too fast, too high, floating long — gets full power, nose to climb attitude, flaps away in stages, and another circuit. Instructors grade a timely go-around <em>higher</em> than a rescued bad landing. The simulator counts go-arounds in your record with respect, not shame.</p>
+
+  <h3>Stall recovery: the order matters</h3>
+  <p>Two schools argue the emphasis. <strong>Angle-first</strong> (the modern standard): reduce angle of attack first, <em>then</em> full power — because power alone, pitched up, can deepen the stall. <strong>Power-first</strong> (the older habit): throttle up immediately, minimise height loss — it worked in docile trainers but can fail exactly when the stall is aggravated. This simulator grades angle-first: recovery counts when the angle drops below 10° and the wing is flying again, and the height you lose is printed beside it. Try both orders in challenge 6 and compare the altitude bill.</p>
+</section>
+
+<section class="card" id="weather" aria-labelledby="wx-h">
+  <h2 id="wx-h">Weather judgment — the go / no-go call</h2>
+  <p>More real flights are saved on the ground than in the air. Read each brief and make the call a careful new pilot should. Tap an answer to see the reasoning.</p>
+  <div id="wx-list"></div>
+  <details style="margin-top:10px">
+    <summary>The theory underneath: wind, gusts, and density (tap to open)</summary>
+    <div class="body">
+      <p><strong>Headwind is a gift:</strong> it adds to airspeed for free, shortening the takeoff roll and steepening the climb — you take off into it, always. <strong>Tailwind is theft:</strong> even 5 kt behind you stretches the roll and flattens the climb, which is why runways change direction with the wind. <strong>Crosswind</strong> pushes you sideways off the centreline and demands a crab or a wing-down slip; every pilot and aeroplane has a limit, and a new pilot's personal limit is far below the aeroplane's. <strong>Gusts</strong> are sudden angle-of-attack changes delivered by the sky: on a gusty approach pilots add half the gust factor to approach speed — extra energy as insurance against a sudden lull dropping the wing toward the stall. <strong>Hot, high, and humid</strong> air is thin air (density altitude): the wing and engine both perform as if higher up, rolls lengthen, climbs sag. The judgment rule that covers all of it: <em>personal minimums</em> — limits you set on the ground, in calm and writing, that the excitement of a waiting aeroplane is not allowed to renegotiate.</p>
+    </div>
+  </details>
+</section>
+
+<section class="card" id="record" aria-labelledby="rec-h">
+  <h2 id="rec-h">Your record</h2>
+  <p class="small">Saved on this device only — nothing is sent anywhere. Export it to keep a copy, or forget it in one tap.</p>
+  <p id="rec-who" style="font-weight:600"></p>
+  <div class="record-nums">
+    <div class="rec-num"><div class="n" id="r-flights">0</div><div class="l">Flights (takeoffs)</div></div>
+    <div class="rec-num"><div class="n" id="r-landings">0</div><div class="l">Landings</div></div>
+    <div class="rec-num"><div class="n" id="r-stalls">0</div><div class="l">Stalls recovered</div></div>
+    <div class="rec-num"><div class="n" id="r-checks">0</div><div class="l">Checklists run clean</div></div>
+  </div>
+  <h3 style="margin-top:14px">Your standing at the field — instructor sign-offs</h3>
+  <p class="small">A real logbook is a pilot's standing: each endorsement is an instructor writing, in effect, <em>I watched this person do it properly, and I trust them with more.</em> Sign-offs here are earned the same way — by doing the thing, to the standard, where the record can see it. They are never bought, unlocked with points, or given for time served.</p>
+  <div class="log" id="standing-list"><p class="small">No sign-offs yet. Your first is one takeoff away.</p></div>
+  <h3 style="margin-top:14px">Recent flights</h3>
+  <div class="log" id="rec-log"><p class="small">Nothing yet. Your flights, landing grades, stalls, and go-arounds will be written here, exactly as they happened.</p></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+    <button id="btn-export" type="button">Export record · tap to download a copy</button>
+    <button id="btn-forget" class="danger" type="button">Forget everything · tap to erase the whole record now</button>
+  </div>
+</section>
+
+<section class="card" id="settings" aria-labelledby="set-h">
+  <h2 id="set-h">Settings — the rules are settings</h2>
+  <p>Change a rule and a banner appears over the aeroplane naming it a <strong>variant</strong>, so a score under changed rules never pretends to be standard. Standard is: calm wind, standard weight, honest stall.</p>
+  <table>
+    <tr><th>Setting</th><th>Choice</th><th>What it teaches</th></tr>
+    <tr>
+      <td><strong>Wind</strong></td>
+      <td><div class="seg" role="group" aria-label="Wind setting">
+        <button type="button" data-wind="calm" aria-pressed="true">Calm</button>
+        <button type="button" data-wind="head" aria-pressed="false">Headwind 10 kt</button>
+        <button type="button" data-wind="gusty" aria-pressed="false">Gusty</button>
+      </div></td>
+      <td>Headwind shortens the takeoff; gusts swing your airspeed and angle without warning.</td>
+    </tr>
+    <tr>
+      <td><strong>Weight</strong></td>
+      <td><div class="seg" role="group" aria-label="Weight setting">
+        <button type="button" data-weight="light" aria-pressed="false">Light 2,100 lb</button>
+        <button type="button" data-weight="std" aria-pressed="true">Standard 2,400 lb</button>
+        <button type="button" data-weight="heavy" aria-pressed="false">Heavy 2,700 lb</button>
+      </div></td>
+      <td>Heavier means a higher stall speed, a longer roll, a weaker climb. Measure it.</td>
+    </tr>
+    <tr>
+      <td><strong>Gentle stall</strong></td>
+      <td><div class="seg" role="group" aria-label="Gentle stall setting">
+        <button type="button" data-gentle="off" aria-pressed="true">Off — honest stall</button>
+        <button type="button" data-gentle="on" aria-pressed="false">On — softened</button>
+      </div></td>
+      <td>A variant for a first five minutes: the stall bites later and softer. Labelled a variant because real wings do not soften.</td>
+    </tr>
+  </table>
+  <p class="small">Loading for the weight setting, in plain words: <em>Light</em> is you alone with half fuel. <em>Standard</em> is two people and full fuel. <em>Heavy</em> adds bags to the limit — legal, but every number gets worse, which is the lesson.</p>
+  <table>
+    <tr>
+      <td><strong>Pilot energy — fatigue</strong></td>
+      <td><div class="seg" role="group" aria-label="Pilot fatigue setting">
+        <button type="button" data-fatigue="off" aria-pressed="true">Off</button>
+        <button type="button" data-fatigue="on" aria-pressed="false">On — fly tired, honestly</button>
+      </div>
+      <button id="btn-rest" type="button" style="margin-top:6px">Rest · tap to restore your energy</button></td>
+      <td>Real pilots check themselves before the aeroplane — the <strong>IMSAFE</strong> check: Illness, Medication, Stress, Alcohol, Fatigue, Emotion. Turn this on and a long session drains your energy; below half, your control inputs arrive late and imprecise, the way fatigue really degrades a pilot — slower, sloppier, and worst of all, less aware of it. The Coach will name it. Rest restores you. It is a variant because it changes how the controls answer, and the record labels flights flown tired.</td>
+    </tr>
+  </table>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<footer>
+  <p><strong>First Flight</strong> — an original teaching simulator. All text, art, and code on this page are original to it.</p>
+  <p>Copyleft: this page is free to copy, share, and adapt under CC BY-SA 4.0 — derivatives carry the same freedom. No ads, ever. Your record and settings live on your device only.</p>
+  <p>Not flight training. For the real thing, find a flying school near you and book a trial lesson with a qualified instructor.</p>
+</footer>
+</div>
+
+<script>
+"use strict";
+/* ============ First Flight — a simplified, honest flight model ============ */
+var $ = function(id){ return document.getElementById(id); };
+var DEG = Math.PI/180, KT = 1.68781; /* knots -> ft/s */
+var store = {
+  get:function(k,d){ try{ var v = localStorage.getItem("firstflight."+k); return v===null? d : JSON.parse(v); }catch(e){ return d; } },
+  set:function(k,v){ try{ localStorage.setItem("firstflight."+k, JSON.stringify(v)); }catch(e){} },
+  del:function(k){ try{ localStorage.removeItem("firstflight."+k); }catch(e){} }
+};
+
+/* ---------- Settings (rules are settings) ---------- */
+var settings = { wind:"calm", weight:"std", gentle:"off" };
+var WEIGHTS = { light:2100, std:2400, heavy:2700 };
+function isVariant(){ return settings.wind!=="calm" || settings.weight!=="std" || settings.gentle==="on"; }
+function variantText(){
+  var parts=[];
+  if(settings.wind==="head") parts.push("Headwind 10 kt");
+  if(settings.wind==="gusty") parts.push("Gusty wind");
+  if(settings.weight==="light") parts.push("Light weight 2,100 lb");
+  if(settings.weight==="heavy") parts.push("Heavy weight 2,700 lb");
+  if(settings.gentle==="on") parts.push("Gentle stall (softened — real wings do not soften)");
+  return parts.length? "Variant in play: "+parts.join(" · ") : "";
+}
+
+/* ---------- Aeroplane state ---------- */
+var S = null;
+function resetFlight(placeAirborne){
+  S = {
+    e: -1400, n: 0,            /* feet east / north of runway threshold centre-start */
+    alt: 0,                    /* feet AGL */
+    vh: 0, vv: 0,              /* ground velocity ft/s (horizontal magnitude, vertical) */
+    heading: 90,               /* degrees, east */
+    pitch: 0, bank: 0,         /* degrees */
+    throttle: 0, flaps: false, brake: false,
+    onGround: true, stalled: false, crashed: false, landed: false,
+    time: 0, maxAlt: 0, stallAltStart: 0, wasStalled: false,
+    levelTimer: 0, turnStart: null, turnAccum: 0, lastHeading: 90,
+    circuitStep: 0, approachSpeeds: [], goArounds: 0, airborne: false,
+    tookOffWithoutChecklist: false, landedWithChecklist: false, flightCounted: false
+  };
+  if(placeAirborne){
+    S.alt = 2500; S.onGround=false; S.airborne=true; S.vh = 45*KT; S.pitch = 14; S.throttle = 0.25; S.e = 0; S.n = -6000;
+  }
+  syncControls(); hideDebrief();
+}
+function weight(){ return WEIGHTS[settings.weight]; }
+function windNow(t){
+  if(settings.wind==="head") return 10;
+  if(settings.wind==="gusty") return Math.max(0, 6 + 6*Math.sin(t*0.7) + 4*Math.sin(t*1.9+1.3));
+  return 0;
+}
+function aoaDeg(){
+  var gamma = Math.atan2(S.vv, Math.max(S.vh,0.01))/DEG;
+  if(S.onGround) return S.pitch;
+  return S.pitch - gamma;
+}
+function stallAngle(){ return settings.gentle==="on" ? 19 : 15; }
+function aero(dt){
+  var W = weight(), Sref = 174, rho = 0.002377, m = W/32.174;
+  var hw = windNow(S.time);                       /* headwind kt */
+  var vGround = Math.sqrt(S.vh*S.vh + S.vv*S.vv); /* ft/s */
+  var vAir = Math.max(0, vGround + hw*KT*Math.cos((S.heading-90)*0 + 0) * (S.vh>=0?1:1) );
+  /* Airspeed: ground speed plus headwind component (wind blows from ahead on runway heading) */
+  vAir = Math.max(0, vGround + hw*KT);
+  var vKt = vAir/KT;
+  var aoa = aoaDeg();
+  var crit = stallAngle();
+  var cl = 0.28 + aoa*0.088 + (S.flaps? 0.35:0);
+  if(aoa > crit){ cl = (0.28 + crit*0.088 + (S.flaps?0.35:0)) - (aoa-crit)*(settings.gentle==="on"?0.03:0.055); cl = Math.max(cl, 0.55); }
+  var cd = 0.035 + 0.05*cl*cl + (S.flaps? 0.035:0);
+  var inGE = (!S.onGround && S.alt < 40) || (S.onGround);
+  if(S.alt < 40){ cl *= 1.10; cd *= 0.85; }       /* ground effect */
+  var q = 0.5*rho*vAir*vAir*Sref;
+  var L = q*cl, D = q*cd;
+  var T = S.throttle * 660 * Math.max(0.35, 1 - vKt/260);
+  S.stalled = (!S.onGround && aoa > crit);
+  if(S.stalled && !S.wasStalled){ S.stallAltStart = S.alt; onStallStart(); }
+  if(!S.stalled && S.wasStalled){ onStallRecovered(); }
+  S.wasStalled = S.stalled;
+  /* Force vectors: lift perpendicular to velocity, drag opposite, thrust along pitch */
+  var v = Math.max(vAir, 0.01);
+  var ux = S.vh/Math.max(vGround,0.01), uz = S.vv/Math.max(vGround,0.01);
+  if(vGround < 0.5){ ux = 1; uz = 0; }
+  var bankRad = S.bank*DEG;
+  var liftVert = L*Math.cos(bankRad);
+  var Fx = T*Math.cos(S.pitch*DEG) - D*ux - liftVert*(-uz);
+  var Fz = T*Math.sin(S.pitch*DEG) - D*uz + liftVert*ux - W;
+  if(S.onGround){
+    Fz = 0; S.vv = 0;
+    var roll = T - D - (S.brake? W*0.25 : W*0.012);
+    if(S.pitch > 2 && vKt > 30){ /* nose-up on ground: lift can unload the gear */ }
+    S.vh += (roll/m)*dt;
+    if(L > W && S.pitch > 3){ S.onGround=false; S.airborne=true; S.vv = 2; onTakeoff(); }
+    if(S.vh < 0) S.vh = 0;
+  } else {
+    S.vh += (Fx/m)*dt;
+    S.vv += (Fz/m)*dt;
+    if(S.vh < 0) S.vh = 0;
+  }
+  /* Heading from bank */
+  if(!S.onGround && Math.abs(S.bank) > 1 && vKt > 20){
+    var rate = (32.174*Math.tan(bankRad)/Math.max(vGround,30))/DEG; /* deg/s */
+    S.heading = (S.heading + rate*dt + 360)%360;
+  }
+  /* Position: heading 90 = east */
+  var hRad = (90 - S.heading)*DEG; /* math angle */
+  var vxE = S.vh*Math.cos(hRad), vxN = S.vh*Math.sin(hRad);
+  S.e += vxE*dt; S.n += vxN*dt;
+  S.alt += S.vv*dt;
+  S.maxAlt = Math.max(S.maxAlt, S.alt);
+  S.time += dt;
+  /* Touchdown */
+  if(!S.onGround && S.alt <= 0){
+    S.alt = 0;
+    onTouchdown();
+  }
+  if(S.onGround && S.alt < 0) S.alt = 0;
+  S._vKt = vKt; S._aoa = aoa; S._inGE = S.alt < 40; S._hw = hw; S._cl = cl;
+  return S;
+}
+
+/* ---------- Events ---------- */
+var coachQueue = [];
+function onTakeoff(){
+  record.flights += 1; S.flightCounted = true;
+  if(!chkState.to.done){ S.tookOffWithoutChecklist = true; coachSay("You took off without running the before-takeoff checklist. Real instructors stop the flight for that — the list exists because memory fails. It is noted in your record, honestly.", true); }
+  else coachSay("Airborne. The wing is flying because lift now beats weight — speed and angle did that, not the throttle directly.");
+  addLog("Takeoff — flight "+record.flights+(S.tookOffWithoutChecklist? " (checklist not run)":""));
+  saveRecord(); challengeEvent("takeoff");
+}
+function onStallStart(){
+  coachSay("STALL. The angle of attack passed "+stallAngle()+" degrees — the airflow has broken away from the wing. Nose down first: reduce the angle, then power.", true);
+  showDebrief("Why you stalled", "A stall is an angle, not a speed. Your angle of attack went past about "+stallAngle()+"°, the smooth airflow over the wing broke into turbulence, and lift collapsed while drag soared. The fix is always the same first move: <strong>reduce the angle</strong> — nose down — then add power and let speed rebuild. Pulling up harder would deepen it.", false);
+}
+function onStallRecovered(){
+  var lost = Math.max(0, Math.round(S.stallAltStart - S.alt));
+  record.stalls += 1;
+  addLog("Stall recovered — "+lost+" ft lost in the recovery");
+  coachSay("Recovered — the wing is flying again. That recovery cost "+lost+" feet of height. At altitude that is a lesson; near the ground it would be an accident. That is why stalls are practised up high.");
+  saveRecord(); challengeEvent("stallRecovered", {lost:lost});
+}
+function onTouchdown(){
+  var vsi = Math.round(S.vv*60); /* fpm, negative */
+  var vKt = S._vKt || 0;
+  var past = Math.round(S.e + 1400); /* feet past threshold (runway starts e=-1500..1500; threshold at -1500+100) */
+  var tdPoint = Math.max(0, Math.round(S.e + 1500));
+  var grade, note, good=true;
+  if(vsi < -1000 || S.stalled){
+    grade = "Crash"; good=false;
+    showDebrief("That was a crash, and here is the theory", "You arrived at the ground descending at "+Math.abs(vsi)+" feet per minute"+(S.stalled? ", still stalled — the wing was not flying at all":"")+". An aeroplane can only trade height for time so fast; the landing gear and the people inside absorb the rest. The energy had to go somewhere, and it went into the airframe. Reset and fly the approach slower in descent, not necessarily slower in speed: flare to raise the nose, bleed the descent rate in ground effect, and touch near 60–65 kt.", false);
+    S.crashed = true;
+  } else if(vsi < -500){
+    grade = "Hard landing";
+    showDebrief("A hard landing — the theory that explains it", "Touchdown at "+Math.abs(vsi)+" feet per minute. You likely flared late or too little: the descent built up on final was never traded away. In ground effect the wing makes extra lift — a proper flare uses that cushion to flatten the last fifty feet into a gentle arrival. Carry a touch more speed (energy in the bank) and start the flare earlier, in small steps.", false);
+  } else if(vsi < -200){ grade = "Firm"; note="A firm, honest arrival — airliners aim for exactly this."; }
+  else { grade = "Smooth"; note="A greaser. The flare traded descent for float and the wheels kissed."; }
+  var speedNote = vKt>75? " Approach speed "+Math.round(vKt)+" kt was fast — extra speed floats in ground effect and eats runway." : (vKt<52 && !S.crashed? " You were close to the stall at touchdown — slow is good, slower is dangerous." : "");
+  if(grade!=="Crash"){
+    record.landings += 1;
+    var chk = chkState.land.done ? " · landing checklist run clean" : " · landing checklist not run";
+    addLog("Landing graded "+grade+" — touchdown "+Math.abs(vsi)+" fpm at "+Math.round(vKt)+" kt, "+tdPoint+" ft past the threshold"+chk);
+    if(chkState.land.done){ S.landedWithChecklist = true; }
+    if(good && vsi >= -500) coachSay("Touchdown: "+grade+". "+(note||"")+speedNote);
+    challengeEvent("landing", {vsi:vsi, vKt:vKt, tdPoint:tdPoint, grade:grade});
+  } else {
+    addLog("Crash on landing — descent "+Math.abs(vsi)+" fpm at "+Math.round(vKt)+" kt");
+    challengeEvent("crash", {});
+  }
+  S.onGround = true; S.landed = true; S.vv = 0;
+  saveRecord(); renderRecord();
+}
+
+/* ---------- Rendering ---------- */
+var sky = $("skyview"), sctx = sky.getContext("2d");
+var clouds = [];
+for(var i=0;i<14;i++) clouds.push({x:Math.random()*4000, y:30+Math.random()*160, s:0.6+Math.random()*0.9});
+function drawSky(){
+  var W = sky.width, H = sky.height;
+  var g = sctx.createLinearGradient(0,0,0,H);
+  if(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches){ g.addColorStop(0,"#274b66"); g.addColorStop(0.72,"#3f6d8f"); g.addColorStop(0.721,"#4a4238"); g.addColorStop(1,"#5c5344"); }
+  else { g.addColorStop(0,"#5ea9de"); g.addColorStop(0.72,"#a8d4f0"); g.addColorStop(0.721,"#8a9a6b"); g.addColorStop(1,"#77875c"); }
+  sctx.fillStyle = g; sctx.fillRect(0,0,W,H);
+  var groundY = H*0.72;
+  var altPx = Math.min(S.alt, 3000)/3000 * (H*0.5);
+  var camAlt = Math.max(0, S.alt - 220);
+  var gy = groundY + Math.min(camAlt*0.11, H*0.42);
+  /* clouds */
+  sctx.fillStyle = "rgba(255,255,255,.85)";
+  clouds.forEach(function(c){
+    var cx = ((c.x - S.e*0.25) % (W+240) + (W+240)) % (W+240) - 120;
+    var cy = c.y + camAlt*0.05;
+    if(cy > gy-14) return;
+    sctx.beginPath();
+    sctx.ellipse(cx, cy, 34*c.s, 11*c.s, 0, 0, 7); sctx.ellipse(cx+22*c.s, cy+3, 24*c.s, 9*c.s, 0, 0, 7); sctx.ellipse(cx-24*c.s, cy+3, 22*c.s, 8*c.s, 0, 0, 7);
+    sctx.fill();
+  });
+  /* ground */
+  sctx.fillStyle = "#77875c"; sctx.fillRect(0, gy, W, H-gy);
+  /* runway: visible when near the field (|n| < 2500) */
+  if(Math.abs(S.n) < 2600 && camAlt < 700){
+    var rwW = 3000 * 0.24, rwX = W/2 - (S.e)*0.24 - rwW/2 + 1500*0.24 - 1500*0.24;
+    var startX = W/2 - (S.e + 1500)*0.24, endX = W/2 - (S.e - 1500)*0.24;
+    sctx.fillStyle = "#4c4c4c"; sctx.fillRect(startX, gy, endX-startX, 14);
+    sctx.fillStyle = "#fff";
+    for(var x=startX+20; x<endX-20; x+=46) sctx.fillRect(x, gy+6, 26, 2.5);
+    sctx.fillRect(startX+6, gy+2, 4, 10); sctx.fillRect(endX-10, gy+2, 4, 10);
+  }
+  /* plane */
+  var px = W/2, py = gy - 16 - Math.min(S.alt*0.11, H*0.42) + (S.onGround? 0 : 0);
+  if(S.alt > 0) py = gy - 16 - Math.min(S.alt,3000)*0.11;
+  py = Math.max(py, 54);
+  sctx.save(); sctx.translate(px, py);
+  if(S.stalled){ sctx.translate((Math.random()-0.5)*3, (Math.random()-0.5)*3); }
+  sctx.rotate(-S.pitch*DEG*0.7);
+  /* fuselage — original simple trainer profile */
+  sctx.fillStyle = "#f4f6f7"; sctx.strokeStyle = "#24333e"; sctx.lineWidth = 2;
+  sctx.beginPath();
+  sctx.moveTo(-52, 2); sctx.quadraticCurveTo(-54,-8,-38,-10); sctx.lineTo(6,-11); sctx.quadraticCurveTo(30,-11,44,-4); sctx.quadraticCurveTo(54,0,44,4); sctx.lineTo(-30,7); sctx.quadraticCurveTo(-48,7,-52,2); sctx.closePath(); sctx.fill(); sctx.stroke();
+  /* tail */
+  sctx.beginPath(); sctx.moveTo(-46,-8); sctx.lineTo(-58,-24); sctx.lineTo(-48,-25); sctx.lineTo(-36,-10); sctx.closePath(); sctx.fill(); sctx.stroke();
+  sctx.fillStyle = "#b95e10"; sctx.fillRect(-40, -2, 70, 4);
+  /* wing */
+  sctx.fillStyle = "#dfe7ea"; sctx.beginPath(); sctx.moveTo(-2,4); sctx.lineTo(20,4); sctx.lineTo(26,10); sctx.lineTo(2,10); sctx.closePath(); sctx.fill(); sctx.stroke();
+  /* canopy */
+  sctx.fillStyle = "#7db8dd"; sctx.beginPath(); sctx.ellipse(16,-10,10,5,0,0,7); sctx.fill(); sctx.stroke();
+  /* prop */
+  if(S.throttle > 0.03){ sctx.strokeStyle="rgba(36,51,62,.55)"; sctx.beginPath(); sctx.moveTo(52,-13); sctx.lineTo(52,9); sctx.stroke(); }
+  /* gear */
+  sctx.strokeStyle="#24333e"; sctx.beginPath(); sctx.moveTo(-16,8); sctx.lineTo(-16,14); sctx.moveTo(22,8); sctx.lineTo(22,14); sctx.stroke();
+  sctx.fillStyle="#24333e"; sctx.beginPath(); sctx.ellipse(-16,16,5,3.4,0,0,7); sctx.ellipse(22,16,5,3.4,0,0,7); sctx.fill();
+  sctx.restore();
+  /* stall warning text */
+  if(S.stalled){ sctx.fillStyle="#b3261e"; sctx.font="700 30px 'Barlow Condensed',sans-serif"; sctx.textAlign="center"; sctx.fillText("— STALL —", W/2, 44); }
+  if(S._inGE && !S.onGround){ sctx.fillStyle="rgba(21,36,47,.75)"; sctx.font="600 16px Barlow,sans-serif"; sctx.textAlign="center"; sctx.fillText("ground effect — the cushion is holding you up", W/2, H-12); }
+}
+var att = $("attitude"), actx = att.getContext("2d");
+function drawAttitude(){
+  var W=att.width, H=att.height, cx=W/2, cy=H/2;
+  actx.clearRect(0,0,W,H);
+  actx.save(); actx.beginPath(); actx.rect(0,0,W,H); actx.clip();
+  actx.translate(cx,cy); actx.rotate(-S.bank*DEG); actx.translate(0, S.pitch*1.1);
+  actx.fillStyle="#5ea9de"; actx.fillRect(-W,-H*2,W*2,H*2);
+  actx.fillStyle="#8a6d4a"; actx.fillRect(-W,0,W*2,H*2);
+  actx.strokeStyle="#fff"; actx.beginPath(); actx.moveTo(-W,0); actx.lineTo(W,0); actx.stroke();
+  actx.restore();
+  actx.strokeStyle="#f2c14e"; actx.lineWidth=3;
+  actx.beginPath(); actx.moveTo(cx-34,cy); actx.lineTo(cx-10,cy); actx.lineTo(cx,cy+6); actx.lineTo(cx+10,cy); actx.lineTo(cx+34,cy); actx.stroke();
+}
+var mm = $("minimap"), mctx = mm.getContext("2d");
+function drawMap(){
+  var W=mm.width, H=mm.height; mctx.clearRect(0,0,W,H);
+  var sc = 0.036, cx = W/2 - S.e*sc*0 + 0, ox = W/2, oy = H/2;
+  function X(e){ return ox + e*sc; } function Y(n){ return oy - n*sc; }
+  /* circuit guide */
+  mctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--muted"); mctx.setLineDash([5,5]); mctx.lineWidth=1.5;
+  mctx.strokeRect(X(-1500), Y(2600), 3000*sc, 2600*sc);
+  mctx.setLineDash([]);
+  /* runway */
+  mctx.strokeStyle = "#888"; mctx.lineWidth=7; mctx.beginPath(); mctx.moveTo(X(-1500),Y(0)); mctx.lineTo(X(1500),Y(0)); mctx.stroke();
+  mctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--muted"); mctx.font="12px Barlow"; mctx.textAlign="center";
+  mctx.fillText("RUNWAY — take off & land east →", ox, Y(0)+22);
+  mctx.fillText("DOWNWIND", ox, Y(2600)-6); mctx.fillText("FINAL →", X(900), Y(-260));
+  /* plane */
+  var px = X(S.e), py = Y(S.n);
+  px = Math.max(10, Math.min(W-10, px)); py = Math.max(10, Math.min(H-10, py));
+  mctx.save(); mctx.translate(px,py); mctx.rotate((S.heading-90)*DEG);
+  mctx.fillStyle = "#b3261e"; mctx.beginPath(); mctx.moveTo(9,0); mctx.lineTo(-7,-6); mctx.lineTo(-7,6); mctx.closePath(); mctx.fill();
+  mctx.restore();
+}
+
+/* ---------- Instruments & coach loop ---------- */
+var lastCoachAt = 0, lastCoachMsg = "";
+function coachSay(msg, force){
+  var mode = teachMode;
+  if(mode==="off" && !force) return;
+  var now = performance.now();
+  if(!force && msg===lastCoachMsg && now-lastCoachAt < 4000) return;
+  lastCoachMsg = msg; lastCoachAt = now;
+  $("coach-text").textContent = msg;
+}
+function coachThink(){
+  if(teachMode==="off") return;
+  var vKt = S._vKt||0, aoa = S._aoa||0;
+  if(S.onGround && vKt > 5 && vKt < 50) coachSay("Rolling. Lift is growing with the square of your speed — at 55 knots the wing can carry the weight. Ease the nose up, don't snatch it.");
+  else if(S.onGround && S.throttle===0 && vKt<2 && S.time>2) coachSay("Sitting still burns nothing but daylight. Checklist first, then throttle up smoothly — thrust takes a moment to become speed, and speed becomes lift.");
+  else if(!S.onGround && aoa > 11 && aoa <= stallAngle()) coachSay("Angle of attack is "+Math.round(aoa)+"° — close to the "+stallAngle()+"° where the wing lets go. Ease the nose down a touch.");
+  else if(!S.onGround && vKt < 52 && S.alt > 300) coachSay("Slow at "+Math.round(vKt)+" knots. The wing needs a bigger angle to hold you up here — and the stall lives at the end of that road. Lower the nose or add power.");
+  else if(!S.onGround && S.alt < 45 && vKt > 72 && S.vv < -200) coachSay("Fast and low over the runway — ground effect will float you. Either commit to the flare and let speed bleed, or go around. Floating halfway down the runway is how runways run out.");
+  else if(!S.onGround && Math.abs(S.bank) > 25) coachSay("Banked "+Math.round(Math.abs(S.bank))+"°. The lift is tilted, so less of it holds you up — that is why you are sinking, and why the stall speed is higher in a turn.");
+  else if(teachMode==="coach" && !S.onGround && S.alt > 700 && Math.abs(S.vv) < 120) coachSay("Level and steady. Feel the balance: lift equals weight, thrust equals drag. Any change you make now has to be paid back to return to this — that accounting is all of flying.");
+  else if(teachMode==="coach" && !S.onGround && S.vv < -700) coachSay("Descending fast at "+Math.abs(Math.round(S.vv*60))+" feet per minute. Height is energy in the bank — you are spending it. Fine if the runway is the plan; expensive if it is not.");
+}
+function showDebrief(title, html, good){
+  var d = $("debrief"); d.className = "debrief show"+(good?" good":"");
+  d.innerHTML = "<strong>"+title+"</strong><p>"+html+"</p>";
+}
+function hideDebrief(){ $("debrief").className = "debrief"; $("debrief").innerHTML=""; }
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.className="toast show"; setTimeout(function(){ t.className="toast"; }, 3600); }
+
+/* ---------- Main loop ---------- */
+var lastT = performance.now(), uiTick = 0;
+function frame(now){
+  var dt = Math.min((now-lastT)/1000, 0.05); lastT = now;
+  if(!S.crashed){
+    applyHeld(dt);
+    aero(dt);
+  }
+  drawSky(); drawAttitude(); drawMap();
+  uiTick += dt;
+  if(uiTick > 0.12){
+    uiTick = 0;
+    $("v-asi").textContent = Math.round(S._vKt||0);
+    $("v-alt").textContent = Math.round(S.alt);
+    var vsi = Math.round(S.vv*60);
+    $("v-vsi").textContent = (vsi>0?"+":"")+vsi;
+    $("v-aoa").textContent = Math.round(S._aoa||0)+"°";
+    $("inst-aoa").className = "inst"+((S._aoa||0) > stallAngle()-3 && !S.onGround ? " warn":"");
+    $("inst-asi").className = "inst"+((S._vKt||0) < 50 && !S.onGround ? " warn":"");
+    $("v-att").textContent = "pitch "+Math.round(S.pitch)+"° · bank "+Math.round(S.bank)+"° · heading "+String(Math.round(S.heading)).padStart(3,"0")+"°";
+    $("b-ground").textContent = S.crashed? "Flight ended — reset to fly again" : (S.onGround? (S.landed? "On the ground — landed" : "On the ground") : "Airborne");
+    $("b-ground").className = "badge"+(S.onGround? "" : " on-sky");
+    $("b-ge").className = "badge"+(S._inGE && !S.onGround? " on-ok":"");
+    $("b-stall").className = "badge"+(S.stalled? " on-bad":"");
+    $("b-stall").style.display = S.stalled? "" : "none";
+    $("b-ge").style.display = (S._inGE && !S.onGround)? "" : "none";
+    $("b-flaps").textContent = S.flaps? "Flaps down" : "Flaps up";
+    $("b-thr").textContent = "Throttle "+Math.round(S.throttle*100)+"%";
+    coachThink(); challengeTick();
+  }
+  requestAnimationFrame(frame);
+}
+</script>
+
+<script>
+"use strict";
+/* ================= Part 2: controls, checklists, challenges, record ================= */
+var teachMode = store.get("teach","light");
+var alias = store.get("alias","");
+var record = store.get("record", null) || { flights:0, landings:0, stalls:0, checks:0, goArounds:0, challenges:{}, log:[] };
+var fatigue = { on: store.get("fatigue","off")==="on", energy: 100, warned:false };
+var payloadChoice = "std";
+
+function saveRecord(){ store.set("record", record); }
+function addLog(text){
+  var tag = fatigue.on? " (fatigue mode)" : "";
+  record.log.unshift(text+tag);
+  if(record.log.length>24) record.log.length = 24;
+  renderRecord();
+}
+function renderRecord(){
+  $("r-flights").textContent = record.flights;
+  $("r-landings").textContent = record.landings;
+  $("r-stalls").textContent = record.stalls;
+  $("r-checks").textContent = record.checks;
+  $("rec-who").textContent = alias? ("Logbook of "+alias) : "Logbook — set your name or callsign above and it labels this record.";
+  var log = $("rec-log");
+  if(record.log.length){ log.innerHTML = record.log.map(function(l){ return "<p>"+l.replace(/</g,"&lt;")+"</p>"; }).join(""); }
+  renderStanding(); renderLadder();
+}
+var ENDORSEMENTS = [
+  ["takeoff","First Solo sign-off","You got an aeroplane off the ground and back into the sky's keeping. An instructor's first signature."],
+  ["climb","Climb & Level endorsement","You can put the aeroplane at a height and keep it there — the basic contract of all flying."],
+  ["turns","Turns endorsement","You can change direction without losing the plot — or the height."],
+  ["landing","Landing sign-off","An instructor watched your arrivals and signed. This is the one students want most, and it shows."],
+  ["circuit","Circuit endorsement — trusted with the field","You can share a busy sky in the pattern. This sign-off is what unlocks the purpose flights: the field now trusts you with work that matters."],
+  ["stall","Stall-recovery sign-off","You have met the stall deliberately, at height, and flown out of it. Fear replaced by procedure."],
+  ["medicine","Purpose pilot — the clinic run","Somebody waited on you, and you showed up properly. The field remembers that."],
+  ["passenger","Passenger-carrying trust","A person rode with you and arrived soothed, not shaken. You are trusted with people now."],
+  ["weather","Weather trust","The instructor hands you the gusty days. Capability is the reward: more sky, honestly earned."]
+];
+function renderStanding(){
+  var el = $("standing-list"); if(!el) return;
+  var got = ENDORSEMENTS.filter(function(e){ return record.challenges[e[0]]; });
+  var next = ENDORSEMENTS.filter(function(e){ return !record.challenges[e[0]]; })[0];
+  if(!got.length){ el.innerHTML = "<p class='small'>No sign-offs yet. Your first is one takeoff away.</p>"; return; }
+  el.innerHTML = got.map(function(e){ return "<p><strong>✓ "+e[1]+"</strong> — "+e[2]+"</p>"; }).join("") +
+    (next? "<p class='small'>Next within reach: <strong>"+next[1]+"</strong>.</p>" : "<p class='small'>Every sign-off on the board. The sky is wide — the real one is wider. A trial lesson is the door.</p>");
+}
+
+/* ---------- Checklists ---------- */
+var CHK = {
+  to: { items:[
+    ["Fuel — enough for the flight, plus reserve","An engine that stops for want of fuel is a planning failure, not bad luck."],
+    ["Controls free — pitch and bank answer the controls","A jammed control found on the ground is an inconvenience. Found at 200 feet, it is an emergency."],
+    ["Instruments sane — airspeed zero, altitude reads the field","Gauges that lie on the ground will lie in the air, where you have less time to doubt them."],
+    ["Flaps — set for takeoff","Flaps change the wing. Know which wing you are taking off with."],
+    ["Engine run-up — throttle rises smooth and strong","Full power asked for politely on the ground first, so it is there rudely at 55 knots."],
+    ["Runway clear — look both ways, ground and sky","The other aeroplane you did not see is the only one that can hurt you here."]
+  ], status:"chk-to-status", list:"chk-to" },
+  land: { items:[
+    ["Speed — plan 65 knots on final","Speed is energy. Too little and the stall is near; too much and ground effect floats you long."],
+    ["Flaps — set for landing","The slow, steep wing is the landing wing. Set it early, while there is time."],
+    ["Gear — fixed gear, down. Say it out loud anyway","This trainer's gear does not retract — and the habit of saying it is what protects you in aeroplanes whose gear does."],
+    ["Runway in sight and clear","If you cannot see it, you cannot land on it. That sentence has ended arguments and saved lives."],
+    ["Go-around — say the words before you need them","Full power, climb attitude, flaps in stages. Decided now, it takes one second up there. Decided up there, it takes ten."]
+  ], status:"chk-land-status", list:"chk-land" }
+};
+var chkState = { to:{next:0, clean:true, done:false}, land:{next:0, clean:true, done:false} };
+function renderChecklist(which){
+  var def = CHK[which], st = chkState[which], ul = $(def.list);
+  ul.innerHTML = "";
+  def.items.forEach(function(it, i){
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "item"+(i < st.next? " done":"");
+    b.innerHTML = "<span class='box'>"+(i < st.next? "✓":"")+"</span><span>"+it[0]+"<span class='why'>"+it[1]+"</span></span>";
+    b.setAttribute("aria-label", "Checklist item: "+it[0]+". Tap to check it.");
+    b.addEventListener("click", function(){ tapChecklist(which, i); });
+    li.appendChild(b); ul.appendChild(li);
+  });
+  var status = $(def.status);
+  if(st.done) status.textContent = st.clean? "Run clean, in order — counted in your record. This is exactly how it is done." : "Complete, but the order broke along the way. Real discipline is the order too — reset the flight and run it clean to count it.";
+  else if(st.next>0) status.textContent = st.next+" of "+def.items.length+" checked"+(st.clean? " — in order, keep going." : " — order broken; finish it, then run it clean next time.");
+}
+function tapChecklist(which, i){
+  var st = chkState[which], def = CHK[which];
+  if(st.done) return;
+  if(i < st.next) return;               /* already checked */
+  if(i !== st.next){ st.clean = false; coachSay("Out of order. A checklist is a sequence, not a shopping list — the order is part of the discipline. It still counts as finished, but not as clean.", true); st.next = i+1; }
+  else st.next = i+1;
+  /* fill any gaps as checked when jumping */
+  if(st.next >= def.items.length){
+    st.done = true;
+    if(st.clean){ record.checks += 1; saveRecord(); coachSay((which==="to"? "Before-takeoff":"Before-landing")+" checklist run clean — spoken, touched, in order. Counted. That habit is worth more than any single item on it.", true); addLog((which==="to"? "Before-takeoff":"Before-landing")+" checklist run clean"); }
+    else addLog((which==="to"? "Before-takeoff":"Before-landing")+" checklist completed out of order — not counted clean");
+  }
+  renderChecklist(which); renderRecord();
+}
+function resetChecklist(which){ chkState[which] = {next:0, clean:true, done:false}; renderChecklist(which); }
+
+/* ---------- Challenges ---------- */
+var CHALLENGES = [
+  { id:"takeoff", n:"1 · First take-off", d:"Run the before-takeoff checklist, full throttle, ease the nose up near 55 kt, and climb through 200 feet.", hint:"Goal: take off and climb through 200 ft" },
+  { id:"climb", n:"2 · Climb and level", d:"Climb to between 950 and 1,100 feet and hold it level — vertical speed inside ±150 fpm — for five steady seconds.", hint:"Goal: level at ~1,000 ft for 5 seconds" },
+  { id:"turns", n:"3 · Turns", d:"Above 500 feet, turn through 180 degrees of heading in total. Bank near 25°, add a whisper of nose-up and power, and mind the height the tilted lift costs you.", hint:"Goal: 180° of turning above 500 ft" },
+  { id:"circuit", n:"4 · The circuit", d:"Fly the rectangle on the map: take off east, climb, turn left to crosswind (north), left to downwind (west, ~1,000 ft), left to base (south), left to final (east) — then land.", hint:"Goal: fly the circuit legs in order, then land" },
+  { id:"landing", n:"5 · Landings, graded", d:"Land with a Firm or Smooth grade, touching down in the first 2,000 feet of runway. Run the before-landing checklist on final. Approach near 65 kt with flaps.", hint:"Goal: a Firm or Smooth landing in the first 2,000 ft" },
+  { id:"stall", n:"6 · Stall recovery, deliberately", d:"Use the setup button below: you will be placed at 2,500 feet, slow and nose-high. Let it stall — then recover angle-first and lose less than 600 feet doing it.", hint:"Goal: stall on purpose, recover losing under 600 ft" }
+];
+var PURPOSE = [
+  { id:"medicine", n:"Purpose · The medicine run", d:"A clinic up the valley needs medicine before dark. Fly the circuit and deliver it: landing checklist run clean and a Firm landing or better. Choose the load below first — capacity is part of the job.", hint:"Goal: circuit + clean landing checklist + Firm or better", locked:"circuit" },
+  { id:"passenger", n:"Purpose · Get Sam home", d:"Sam missed the last bus and the road is flooded. Your passenger is nervous and has a bad back: only a Smooth landing counts. Fly gently — small banks, no drama.", hint:"Goal: any route you like — but the touchdown must grade Smooth", locked:"circuit" },
+  { id:"weather", n:"Purpose · The gusty-day errand", d:"The instructor trusts you with weather now — prove it was earned. Switch the wind to Gusty in Settings, then take off and land Firm or better while the sky pushes back.", hint:"Goal: with Gusty wind on — take off and land Firm or better", locked:"circuit" }
+];
+var activeChallenge = null;
+function allChallenges(){ return CHALLENGES.concat(PURPOSE); }
+function renderLadder(){
+  var mk = function(c, host){
+    var el = $(host); if(!el) return;
+    el.innerHTML = "";
+    c.forEach(function(ch){
+      var done = !!record.challenges[ch.id];
+      var locked = ch.locked && !record.challenges[ch.locked];
+      var div = document.createElement("div");
+      div.className = "chal"+(done? " done":"")+(activeChallenge===ch.id? " active":"");
+      div.innerHTML = "<h3>"+ch.n+(done? " ✓":"")+(locked? " — locked":"")+"</h3><p>"+ch.d+"</p>";
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = locked? "Locked — earn the circuit endorsement first · tap to hear why" : (activeChallenge===ch.id? "This is your goal now" : "Make this my goal · tap");
+      b.disabled = activeChallenge===ch.id;
+      b.addEventListener("click", function(){
+        if(locked){ coachSay("Purpose flights are handed out on trust, and trust here is the circuit endorsement — challenge 4, The circuit. Fly the pattern cleanly first; then the field gives you work that matters. That is not a lock for its own sake: it is how a real field decides who carries the medicine.", true); toast("Locked: earn the Circuit endorsement (challenge 4) first."); return; }
+        activeChallenge = ch.id; S.circuitStep = 0; S.turnAccum = 0; S.levelTimer = 0;
+        $("b-goal").textContent = ch.hint;
+        coachSay("Goal set: "+ch.n+". "+ch.d, true);
+        renderLadder();
+      });
+      div.appendChild(b); el.appendChild(div);
+    });
+  };
+  mk(CHALLENGES, "ladder"); mk(PURPOSE, "purpose-list");
+}
+function completeChallenge(id, msg){
+  if(record.challenges[id]) { return; }
+  record.challenges[id] = true; saveRecord();
+  var end = ENDORSEMENTS.filter(function(e){ return e[0]===id; })[0];
+  toast("Challenge complete: "+(end? end[1] : id));
+  coachSay(msg + (end? " Sign-off earned: "+end[1]+"." : ""), true);
+  addLog("Challenge complete — "+(end? end[1] : id));
+  showDebrief("Signed off", "<strong>"+(end? end[1] : id)+"</strong> — "+(end? end[2] : "")+" Written into your logbook, where your standing lives.", true);
+  renderLadder(); renderStanding();
+}
+var tickLast = performance.now(), lowApproach = false;
+function challengeTick(){
+  var now = performance.now(), dt = Math.min((now-tickLast)/1000, 0.5); tickLast = now;
+  /* go-around detection — a strategy, counted with respect */
+  if(!S.onGround && S.alt < 260 && S.vv < -2 && Math.abs(S.n) < 1800) lowApproach = true;
+  if(lowApproach && !S.onGround && S.alt > 480 && S.throttle > 0.8){
+    lowApproach = false; record.goArounds += 1; saveRecord();
+    addLog("Go-around — the approach was refused and flown again. Graded as good judgment.");
+    coachSay("Go-around — and good. Refusing a bad approach is a skill instructors grade highly. The record counts it with respect.", true);
+  }
+  if(S.onGround) lowApproach = false;
+  /* turns accumulation */
+  if(!S.onGround && S.alt > 500){
+    var dh = Math.abs(S.heading - S.lastHeading); if(dh > 180) dh = 360-dh;
+    S.turnAccum += dh;
+  }
+  S.lastHeading = S.heading;
+  if(!activeChallenge) return;
+  var vKt = S._vKt||0;
+  if(activeChallenge==="takeoff" && !S.onGround && S.alt >= 200)
+    completeChallenge("takeoff","Two hundred feet, airborne and climbing. The first time is supposed to feel like that.");
+  if(activeChallenge==="climb" && !S.onGround && S.alt>=950 && S.alt<=1150 && Math.abs(S.vv*60)<=150){
+    S.levelTimer += dt;
+    if(S.levelTimer >= 5) completeChallenge("climb","Level at a thousand feet and holding it. That quiet steadiness is the whole game — everything else is built on it.");
+  } else if(activeChallenge==="climb") S.levelTimer = 0;
+  if(activeChallenge==="turns" && S.turnAccum >= 180)
+    completeChallenge("turns","One hundred and eighty degrees of turning, above 500 feet. You felt the lift tilt and paid for it correctly.");
+  if(activeChallenge==="circuit" && !S.onGround){
+    var h = S.heading, legs = ["Take off east and climb","Crosswind — turn left to north","Downwind — left to west, ~1,000 ft","Base — left to south","Final — left to east, descending to land","Landed — circuit complete"];
+    var step = S.circuitStep;
+    if(step===0 && S.alt>300 && h>55 && h<125) step=1;
+    else if(step===1 && (h>325 || h<35)) step=2;
+    else if(step===2 && h>235 && h<305 && S.alt>550 && S.alt<1500) step=3;
+    else if(step===3 && h>145 && h<215) step=4;
+    else if(step===4 && h>55 && h<125 && S.alt<750) step=5;
+    if(step!==S.circuitStep){ S.circuitStep = step; $("b-goal").textContent = "Circuit: "+legs[step]; if(step>0 && step<5) coachSay("Circuit: "+legs[step]+"."); }
+  }
+}
+function challengeEvent(kind, data){
+  if(kind==="landing"){
+    if(activeChallenge==="landing" && (data.grade==="Firm"||data.grade==="Smooth") && data.tdPoint<=2000)
+      completeChallenge("landing","Graded "+data.grade+", "+data.tdPoint+" feet in. An instructor would sign that page.");
+    if(activeChallenge==="circuit" && S.circuitStep>=4 && data.grade!=="Crash")
+      completeChallenge("circuit","The full rectangle, flown in order, and home. The pattern is yours now.");
+    if(activeChallenge==="medicine" && data.grade!=="Crash" && data.grade!=="Hard landing" && chkState.land.done && chkState.land.clean)
+      completeChallenge("medicine","Delivered — checklist clean, arrival Firm or better, load: "+payloadChoice+". The clinic has its medicine before dark, and nobody paid anybody. Somebody needed it; you brought it.");
+    if(activeChallenge==="passenger" && data.grade==="Smooth")
+      completeChallenge("passenger","Smooth as promised. Sam is home, back intact, telling people flying is gentle. You did that.");
+    if(activeChallenge==="weather" && settings.wind==="gusty" && (data.grade==="Firm"||data.grade==="Smooth"))
+      completeChallenge("weather","Gusty day, honest landing. The trust was earned and then proven — the only order those two things ever come in.");
+  }
+  if(kind==="stallRecovered" && activeChallenge==="stall" && data.lost < 600)
+    completeChallenge("stall","Recovered with "+data.lost+" feet spent. Angle first, then power — the order is the lesson, and you flew it.");
+}
+
+/* ---------- Controls ---------- */
+var held = {};
+function bindHold(id, key){
+  var el = $(id);
+  var on = function(e){ e.preventDefault(); held[key]=true; };
+  var off = function(){ held[key]=false; };
+  el.addEventListener("pointerdown", on);
+  el.addEventListener("pointerup", off); el.addEventListener("pointerleave", off); el.addEventListener("pointercancel", off);
+  el.addEventListener("click", function(){ if(key==="brake") return; pulse(key); });
+}
+function pulse(key){
+  if(key==="thrU") S.throttle = Math.min(1, S.throttle+0.07);
+  if(key==="thrD") S.throttle = Math.max(0, S.throttle-0.07);
+  if(key==="pitU") S.pitch = Math.min(22, S.pitch+1.6);
+  if(key==="pitD") S.pitch = Math.max(-9, S.pitch-1.6);
+  if(key==="bnkL") S.bank = Math.max(-40, S.bank-5);
+  if(key==="bnkR") S.bank = Math.min(40, S.bank+5);
+  syncControls();
+}
+function fatigueFactor(){
+  if(!fatigue.on) return 1;
+  return fatigue.energy > 50? 1 : (0.55 + fatigue.energy/100); /* tired: inputs shrink & wander */
+}
+function applyHeld(dt){
+  var f = fatigueFactor();
+  var wander = (fatigue.on && fatigue.energy < 50)? (Math.random()-0.5)*1.6 : 0;
+  if(held.thrU) S.throttle = Math.min(1, S.throttle + 0.55*dt);
+  if(held.thrD) S.throttle = Math.max(0, S.throttle - 0.55*dt);
+  if(held.pitU) S.pitch = Math.min(22, S.pitch + 13*dt*f + wander*dt*4);
+  if(held.pitD) S.pitch = Math.max(-9, S.pitch - 15*dt*f + wander*dt*4);
+  if(held.bnkL) S.bank = Math.max(-40, S.bank - 26*dt*f);
+  if(held.bnkR) S.bank = Math.min(40, S.bank + 26*dt*f);
+  S.brake = !!held.brake;
+  if(!held.bnkL && !held.bnkR && !S.onGround) S.bank += (0 - S.bank)*Math.min(1, dt*0.25); /* gentle self-level, a named kindness of the model */
+  /* Pitch holds where you set it, on the ground as in the air: in this simplified cockpit the elevator control sets the nose attitude and keeps it, so tap pilots and hold pilots fly the same aeroplane. */
+  /* fatigue drain: flying costs the pilot, stalls and wrestling cost more */
+  if(fatigue.on && !S.onGround){
+    fatigue.energy = Math.max(0, fatigue.energy - dt*(S.stalled? 2.4 : 1.05));
+    if(fatigue.energy < 50 && !fatigue.warned){
+      fatigue.warned = true;
+      coachSay("You are flying tired, and it shows — inputs arriving late and ragged. That is fatigue's real trick: it degrades the pilot and hides the evidence. Real answer, on the ground and in here: land, and rest. The Rest button is in Settings.", true);
+    }
+    var b = $("b-energy"); b.style.display=""; b.textContent = "Pilot energy "+Math.round(fatigue.energy)+"%"+(fatigue.energy<50? " — tired: controls degraded":"");
+    b.className = "badge"+(fatigue.energy<50? " on-warn":" on-ok");
+  }
+  if(held.thrU||held.thrD) syncControls();
+}
+function syncControls(){ var s=$("thr-slider"); if(s) s.value = Math.round(S.throttle*100); }
+$("thr-slider").addEventListener("input", function(){ S.throttle = this.value/100; });
+bindHold("btn-thr-up","thrU"); bindHold("btn-thr-dn","thrD");
+bindHold("btn-pitch-up","pitU"); bindHold("btn-pitch-dn","pitD");
+bindHold("btn-bank-l","bnkL"); bindHold("btn-bank-r","bnkR");
+bindHold("btn-brake","brake");
+$("btn-flaps").addEventListener("click", function(){
+  S.flaps = !S.flaps;
+  coachSay(S.flaps? "Flaps down: more lift at low speed, more drag with it. The wing is now the landing wing — slower, steeper." : "Flaps up: the clean wing. Less drag, faster flight — and a higher stall speed. Know which wing you are flying.");
+});
+$("btn-reset").addEventListener("click", function(){
+  var wasTo = chkState.to.done, wasLand = chkState.land.done;
+  resetFlight(false); resetChecklist("to"); resetChecklist("land");
+  coachSay("Back on the runway, engine idling. Run the before-takeoff checklist, then fly. Resetting is free — in the real world it is called a new day, and pilots treasure it.", true);
+});
+$("btn-stall-setup").addEventListener("click", function(){
+  activeChallenge = "stall"; resetFlight(true); resetChecklist("land");
+  $("b-goal").textContent = "Goal: stall on purpose, recover losing under 600 ft";
+  coachSay("Set up at 2,500 feet, slow, nose high — the deliberate stall, practised the way students do: with height underneath. Ease the throttle back and hold the nose up gently. When it stalls: nose down first, then power.", true);
+  renderLadder();
+});
+window.addEventListener("keydown", function(e){
+  if(e.target && (e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"||e.target.tagName==="SELECT")) return;
+  var k = e.key;
+  if(k==="ArrowUp"){ held.pitU=true; e.preventDefault(); }
+  else if(k==="ArrowDown"){ held.pitD=true; e.preventDefault(); }
+  else if(k==="ArrowLeft"){ held.bnkL=true; e.preventDefault(); }
+  else if(k==="ArrowRight"){ held.bnkR=true; e.preventDefault(); }
+  else if(k==="w"||k==="W") held.thrU=true;
+  else if(k==="s"||k==="S") held.thrD=true;
+  else if(k==="b"||k==="B") held.brake=true;
+  else if(k==="f"||k==="F"){ S.flaps=!S.flaps; }
+});
+window.addEventListener("keyup", function(e){
+  var k = e.key;
+  if(k==="ArrowUp") held.pitU=false; else if(k==="ArrowDown") held.pitD=false;
+  else if(k==="ArrowLeft") held.bnkL=false; else if(k==="ArrowRight") held.bnkR=false;
+  else if(k==="w"||k==="W") held.thrU=false; else if(k==="s"||k==="S") held.thrD=false;
+  else if(k==="b"||k==="B") held.brake=false;
+});
+/* hold-to-explain: hold any labelled control and the Coach explains it */
+document.querySelectorAll("[data-explain]").forEach(function(el){
+  var timer = null;
+  el.addEventListener("pointerdown", function(){ timer = setTimeout(function(){ $("coach-text").textContent = el.getAttribute("data-explain"); lastCoachMsg = el.getAttribute("data-explain"); }, 550); });
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ el.addEventListener(ev, function(){ if(timer) clearTimeout(timer); }); });
+});
+
+/* ---------- Teaching dial & alias ---------- */
+function paintSeg(attr, val){ document.querySelectorAll("[data-"+attr+"]").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-"+attr)===val? "true":"false"); }); }
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click", function(){
+    teachMode = b.getAttribute("data-teach"); store.set("teach", teachMode); paintSeg("teach", teachMode);
+    coachSay(teachMode==="off"? "Teaching off. The aeroplane will still talk — stalls and warnings always speak — but the lessons go quiet." : teachMode==="coach"? "Coach mode: I will narrate the theory as it happens, including the quiet bits. That is the fastest way this page teaches." : "Light teaching: the important notes, in the moment, and silence otherwise.", true);
+  });
+});
+paintSeg("teach", teachMode);
+var aliasEl = $("alias"); aliasEl.value = alias;
+aliasEl.addEventListener("change", function(){ alias = this.value.trim(); store.set("alias", alias); renderRecord(); toast(alias? ("Flying as "+alias+". It labels your logbook, on this device only.") : "Name cleared."); });
+
+/* ---------- Settings ---------- */
+function paintVariant(){
+  var parts = [];
+  if(settings.wind==="head") parts.push("Headwind 10 kt");
+  if(settings.wind==="gusty") parts.push("Gusty wind");
+  if(settings.weight==="light") parts.push("Light weight 2,100 lb");
+  if(settings.weight==="heavy") parts.push("Heavy weight 2,700 lb");
+  if(settings.gentle==="on") parts.push("Gentle stall (softened — real wings do not soften)");
+  if(fatigue.on) parts.push("Pilot fatigue simulation on — controls degrade as you tire");
+  var b = $("variant-banner");
+  if(parts.length){ b.textContent = "Variant in play: "+parts.join(" · ")+". Scores under changed rules are labelled, never passed off as standard."; b.className = "variant-banner show"; }
+  else { b.textContent=""; b.className="variant-banner"; }
+}
+function wireSeg(attr, fn){
+  document.querySelectorAll("[data-"+attr+"]").forEach(function(b){
+    b.addEventListener("click", function(){ var v=b.getAttribute("data-"+attr); paintSeg(attr, v); fn(v); paintVariant(); });
+  });
+}
+wireSeg("wind", function(v){ settings.wind=v; coachSay(v==="head"? "Headwind 10 knots: free airspeed. Watch the takeoff roll shrink — the wing does not care about ground speed, only air over it." : v==="gusty"? "Gusty. The wind will swing without asking — every gust is a sudden change in airspeed and angle. Add a little speed on approach, as real pilots add half the gust factor." : "Calm. The standard sky.", true); });
+wireSeg("weight", function(v){ settings.weight=v; payloadChoice=v; coachSay("Weight now "+WEIGHTS[v]+" lb. Heavier: the wing must work harder — stall speed up, roll longer, climb weaker. It is all measurable; go measure it.", true); });
+wireSeg("gentle", function(v){ settings.gentle=v; coachSay(v==="on"? "Gentle stall on — a labelled variant. The stall now bites near 19 degrees and softer. Learn the shape here; know that real wings keep the honest 15." : "Honest stall restored: 15 degrees, full bite.", true); });
+wireSeg("fatigue", function(v){ fatigue.on = (v==="on"); store.set("fatigue", v); if(fatigue.on){ fatigue.energy = 100; fatigue.warned=false; $("b-energy").style.display=""; coachSay("Fatigue on. Your energy drains as you fly — that drain is the IMSAFE check made playable. Below half, your controls go late and ragged. Land and rest before the sky grades you on it.", true); } else { $("b-energy").style.display="none"; coachSay("Fatigue off — the rested pilot, every flight.", true); } paintVariant(); });
+paintSeg("wind", settings.wind); paintSeg("weight", settings.weight); paintSeg("gentle", settings.gentle); paintSeg("fatigue", fatigue.on? "on":"off");
+if(fatigue.on) $("b-energy").style.display="";
+$("btn-rest").addEventListener("click", function(){ fatigue.energy = 100; fatigue.warned=false; toast("Rested. Energy back to 100% — sleep is the only real cure, and this button is its honest stand-in."); coachSay("Rested. In the real world this takes a night, not a tap — which is exactly why duty limits exist: you cannot tap your way out of tired at 3,000 feet.", true); });
+
+/* ---------- Medicine-run load (capacity) ---------- */
+document.querySelectorAll("[data-load]").forEach(function(b){
+  b.addEventListener("click", function(){
+    var v = b.getAttribute("data-load");
+    if(v==="over"){
+      $("load-note").textContent = "Refused — and the refusal is the lesson. Everything plus full fuel puts this aeroplane over its maximum weight: the wing would need more speed than the runway gives, and the sums simply say no. Something stays behind, or fuel comes off, or there are two trips. Real pilots make this exact call, in writing, before every flight.";
+      coachSay("Over the limit — the aeroplane refuses, politely and in advance, the way weight-and-balance maths does. That 'no' on the ground is the cheapest safety device in aviation.", true);
+      return;
+    }
+    payloadChoice = v; settings.weight = v; paintSeg("weight", v); paintVariant();
+    $("load-note").textContent = v==="light"? "Load chosen: medicine only (2,100 lb). Best climb, shortest roll — and the nurse waits for a second trip. Capacity is a choice, not a failure." : v==="std"? "Load chosen: medicine + nurse (2,400 lb). The balanced load — the standard aeroplane doing a standard job." : "Load chosen: everything (2,700 lb). The clinic gets it all in one trip — and you get a longer roll, a higher stall speed, and a climb you will have to nurse. Feel all three.";
+  });
+});
+
+/* ---------- Weather judgment ---------- */
+var WX = [
+  { q:"A calm morning, light winds, sky clear for a hundred miles. You are a new pilot flying the circuit.", a:"go", why:"Go — this is the weather training is built in. Calm air lets you learn the aeroplane instead of fighting the sky." },
+  { q:"Wind straight down the runway at 22 knots, gusting to 31. Your instructor is away; you would fly solo.", a:"nogo", why:"No-go, for you, today. Gusts of 9 knots swing your airspeed and angle on final, and a solo student's personal minimums sit far below this. The aeroplane could likely do it; the honest limit is the pilot's, and it rules." },
+  { q:"A warm afternoon, 8-knot tailwind on the only runway direction in use, and you are heavy.", a:"nogo", why:"No-go — or wait for the wind to turn. A tailwind stretches the takeoff roll and flattens the climb, and heavy makes both worse. Two small thefts that add up to a fence at the far end." }
+];
+var wxHost = $("wx-list");
+WX.forEach(function(item, idx){
+  var div = document.createElement("div"); div.style.margin = "10px 0";
+  div.innerHTML = "<p><strong>Brief "+(idx+1)+":</strong> "+item.q+"</p>";
+  var row = document.createElement("div"); row.className = "wx-choice";
+  var fb = document.createElement("p"); fb.className = "small"; fb.style.width = "100%";
+  [["go","Go · tap"],["nogo","No-go · tap"]].forEach(function(opt){
+    var b = document.createElement("button"); b.type="button"; b.textContent = opt[1];
+    b.addEventListener("click", function(){
+      var right = opt[0]===item.a;
+      fb.innerHTML = (right? "<strong>That is the call.</strong> " : "<strong>Not the call a careful pilot makes.</strong> ")+item.why;
+      fb.style.color = right? "var(--ok)" : "var(--bad)";
+    });
+    row.appendChild(b);
+  });
+  div.appendChild(row); div.appendChild(fb); wxHost.appendChild(div);
+});
+
+/* ---------- Record export & forget ---------- */
+$("btn-export").addEventListener("click", function(){
+  var data = { pilot: alias||"unnamed", exported: new Date().toISOString(), record: record };
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "first-flight-logbook.json"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  toast("Logbook downloaded — your copy, to keep wherever you keep things.");
+});
+$("btn-forget").addEventListener("click", function(){
+  record = { flights:0, landings:0, stalls:0, checks:0, goArounds:0, challenges:{}, log:[] };
+  store.del("record"); saveRecord(); activeChallenge = null;
+  $("b-goal").textContent = "Goal: just fly — take off when ready";
+  renderRecord(); toast("Forgotten in one tap, as promised. The logbook is a clean page again — export first next time if you want a copy.");
+});
+
+/* ---------- Download door ---------- */
+$("btn-download").addEventListener("click", function(){
+  var blob = new Blob(["<!doctype html>\n"+document.documentElement.outerHTML], {type:"text/html"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "first-flight.html"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  toast("Saved. Open the file anywhere — the simulator flies offline.");
+});
+
+/* ---------- Init ---------- */
+renderChecklist("to"); renderChecklist("land");
+resetFlight(false);
+renderRecord(); paintVariant();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
