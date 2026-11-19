@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Gin Rummy</title>
+<style>
+  :root{
+    --bg:#f3eee1; --panel:#fffdf4; --panel2:#efe8d3; --ink:#1e2620; --muted:#5a665c;
+    --felt:#175c36; --felt-deep:#0e4527; --felt-edge:#0a3520;
+    --brass:#a86f14; --brass-ink:#7c520c;
+    --red:#b3271e; --black:#20242a;
+    --card:#fffef9; --card-edge:#d8d2bd;
+    --line:#d9d2ba; --good:#175c36; --warn:#8a5a00; --bad:#9c2318;
+    --shadow:0 2px 10px rgba(30,40,25,.14);
+    --table-bg:var(--felt);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1511; --panel:#182119; --panel2:#1e2a20; --ink:#edf2ea; --muted:#a9b8ab;
+      --felt:#14492c; --felt-deep:#0e3820; --felt-edge:#082615;
+      --brass:#d29a35; --brass-ink:#e8bc66;
+      --red:#ff7a6e; --black:#e8ecf2;
+      --card:#f7f4e8; --card-edge:#b9b294;
+      --line:#33452f; --good:#7fc793; --warn:#e8bc66; --bad:#ff9a8a;
+      --shadow:0 2px 10px rgba(0,0,0,.5);
+    }
+  }
+  body[data-table="navy"]{ --felt:#1d3f63; --felt-deep:#152f4c; --felt-edge:#0f243c; }
+  body[data-table="walnut"]{ --felt:#6b4423; --felt-deep:#54331a; --felt-edge:#402512; }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:.5rem .9rem;box-shadow:var(--shadow)}
+  button:hover{border-color:var(--brass)}
+  button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  button.primary{background:var(--felt);color:#fff;border-color:var(--felt-deep);font-weight:700}
+  button.brass{background:var(--brass);color:#fff;border-color:#7c520c;font-weight:700}
+  button.danger{background:transparent;color:var(--bad);border-color:var(--bad);box-shadow:none}
+  select,input[type="text"],input[type="number"]{font:inherit;padding:.45rem .6rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 14px 48px}
+  .freeline{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--felt-deep);color:#fff;padding:10px 14px;font-size:.95rem}
+  .freeline strong{letter-spacing:.02em}
+  .freeline button{background:#fff;color:var(--felt-deep);border:none;font-weight:700;box-shadow:none}
+  .gesture{display:block;font-size:.72rem;font-weight:400;opacity:.75;letter-spacing:.02em}
+  .primary .gesture,.brass .gesture{opacity:.85}
+  header.hero{padding:22px 0 6px}
+  header.hero h1{font-size:2.4rem}
+  header.hero p{max-width:68ch;color:var(--muted);margin:.5rem 0 0}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;position:sticky;top:0;z-index:30;background:var(--bg);padding:8px 0}
+  nav.compass a{flex:1 1 auto;text-align:center;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.55rem .5rem;font-weight:600;min-height:2.25rem}
+  nav.compass a span{display:block;font-size:.7rem;font-weight:400;color:var(--muted)}
+  section{margin:26px 0}
+  section>h2{font-size:1.55rem;margin-bottom:4px}
+  .sub{color:var(--muted);margin:0 0 12px;max-width:72ch}
+  /* ---------- table ---------- */
+  .table{background:radial-gradient(ellipse at 50% 38%,var(--felt) 55%,var(--felt-deep) 100%);border:6px solid var(--felt-edge);border-radius:22px;padding:16px;color:#fff;box-shadow:var(--shadow)}
+  .scoreline{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .scorechip{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:.4rem .7rem;font-size:.92rem}
+  .scorechip b{font-size:1.05rem}
+  .botrow,.playerrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  .who{font-weight:700}
+  .who small{display:block;font-weight:400;opacity:.85;font-size:.8rem}
+  .minihand{display:flex;gap:3px;flex-wrap:wrap}
+  .minicard{width:26px;height:38px;border-radius:4px;background:repeating-linear-gradient(45deg,#274b8f,#274b8f 4px,#1d3a70 4px,#1d3a70 8px);border:1px solid rgba(255,255,255,.5)}
+  .minicard.revealed{background:var(--card);color:var(--black);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;width:auto;min-width:26px;padding:0 2px}
+  .minicard.revealed.red{color:var(--red)}
+  .middle{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center;margin:16px 0;padding:14px;background:rgba(0,0,0,.18);border-radius:14px}
+  .pile{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .pile .lbl{font-size:.8rem;opacity:.9}
+  .pile button.pilebtn{background:transparent;border:none;box-shadow:none;padding:4px}
+  .playingcard{width:64px;height:92px;border-radius:8px;background:var(--card);color:var(--black);border:1px solid var(--card-edge);display:flex;flex-direction:column;align-items:flex-start;padding:5px 7px;font-weight:700;font-size:1.05rem;line-height:1.1;box-shadow:0 2px 6px rgba(0,0,0,.35);text-align:left}
+  .playingcard .suit{font-size:1.3rem}
+  .playingcard.red{color:var(--red)}
+  .playingcard.back{background:repeating-linear-gradient(45deg,#274b8f,#274b8f 6px,#1d3a70 6px,#1d3a70 12px);border-color:#dfe6f5;align-items:center;justify-content:center;color:#fff;font-size:1.4rem}
+  .playingcard.empty{background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.5);color:#fff;align-items:center;justify-content:center;font-size:.8rem;font-weight:400}
+  .msg{flex:1 1 240px;text-align:center;font-size:1.02rem;min-height:3rem}
+  .msg b{color:#ffd97a}
+  .hand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0 4px}
+  .hand .playingcard{cursor:pointer;transition:transform .12s ease}
+  .hand .playingcard:hover{transform:translateY(-5px)}
+  .hand .playingcard.sel{transform:translateY(-12px);outline:3px solid #ffd97a}
+  .hand .playingcard.melded{box-shadow:0 0 0 2px #ffd97a,0 2px 6px rgba(0,0,0,.35)}
+  .handmeta{text-align:center;font-size:.95rem;min-height:1.5rem}
+  .handmeta b{color:#ffd97a}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+  .actions button{background:var(--panel);color:var(--ink)}
+  .actions button.primary{background:#ffd97a;color:#3a2c00;border-color:#c9a227}
+  .actions button.knockbtn{background:var(--brass);color:#fff;border-color:#7c520c;font-weight:700}
+  .hintbox{margin-top:14px;background:var(--panel);color:var(--ink);border-radius:12px;padding:12px 14px;font-size:.95rem}
+  .hintbox h3{font-size:1rem;margin-bottom:4px}
+  .hintbox p{margin:.3rem 0}
+  .logbox{margin-top:12px;background:rgba(0,0,0,.25);border-radius:12px;padding:10px 14px;font-size:.88rem;max-height:170px;overflow:auto}
+  .logbox div{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .discardstrip{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+  .discardstrip span{background:var(--card);color:var(--black);border-radius:4px;padding:1px 5px;font-size:.75rem;font-weight:700}
+  .discardstrip span.red{color:var(--red)}
+  .discardstrip span.bybot{outline:2px solid #ffd97a}
+  /* ---------- panels ---------- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:720px){.grid{grid-template-columns:1fr} header.hero h1{font-size:1.9rem} .playingcard{width:56px;height:82px}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  .panel h3{font-size:1.15rem;margin-bottom:6px}
+  .panel p,.panel li{font-size:.96rem}
+  details.panel{padding:0}
+  details.panel summary{cursor:pointer;padding:14px 16px;font-family:Georgia,serif;font-size:1.12rem;font-weight:700;list-style:none;min-height:2.25rem}
+  details.panel summary::-webkit-details-marker{display:none}
+  details.panel summary .gesture{font-family:inherit;color:var(--muted)}
+  details.panel .inner{padding:0 16px 16px}
+  table.num{border-collapse:collapse;width:100%;margin:8px 0;font-size:.93rem}
+  table.num th,table.num td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  table.num th{background:var(--panel2)}
+  table.num td.n,table.num th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .field{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+  .field label{font-weight:600}
+  .note{font-size:.88rem;color:var(--muted)}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:10px 0}
+  .stat{background:var(--panel2);border-radius:10px;padding:10px;text-align:center}
+  .stat b{display:block;font-size:1.4rem;font-family:Georgia,serif}
+  .resultbanner{margin-top:14px;background:#ffd97a;color:#33270a;border-radius:12px;padding:12px 14px;font-size:.97rem}
+  .resultbanner:empty{display:none}
+  footer{border-top:1px solid var(--line);margin-top:36px;padding-top:16px;color:var(--muted);font-size:.9rem}
+  .kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:.85em}
+  @media (prefers-reduced-motion: reduce){ .hand .playingcard{transition:none} html{scroll-behavior:auto} }
+</style>
+</head>
+<body data-table="felt">
+
+<div class="freeline">
+  <div><strong>Free — always free.</strong> No ads. No account. No paywall. The whole game, right here.</div>
+  <button id="btnDownload" type="button">Download this page<span class="gesture">Tap to save it for offline play</span></button>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <h1>Gin Rummy</h1>
+    <p>The classic two-player card game, in full: build melds, cut your deadwood, and decide — knock early for a safe handful of points, or hold out for gin and the big bonus while the other player races you. Play against the bot below, with the real math shown while you play.</p>
+  </header>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#play">Play<span>Tap to go to the table</span></a>
+    <a href="#why">The Full Why<span>Tap for melds, math &amp; reads</span></a>
+    <a href="#rules">Rules &amp; Settings<span>Tap — the rules are settings</span></a>
+    <a href="#record">Your Record<span>Tap — saved on this device only</span></a>
+  </nav>
+
+  <!-- ================= PLAY ================= -->
+  <section id="play">
+    <h2>The table</h2>
+    <p class="sub">You play under any name you like — that is alias freedom, and it never leaves this device. Pick a bot honestly: each level below says exactly what it can and cannot do.</p>
+
+    <div class="field">
+      <label for="aliasInput">Your table name</label>
+      <input type="text" id="aliasInput" maxlength="24" value="You" />
+      <label for="botLevel">Bot</label>
+      <select id="botLevel">
+        <option value="casual">Casual — learning the game</option>
+        <option value="steady" selected>Steady — solid club play</option>
+        <option value="sharp">Sharp — tracks every discard</option>
+      </select>
+      <label for="teachDial">Teaching</label>
+      <select id="teachDial">
+        <option value="off">Off</option>
+        <option value="hints" selected>Hints</option>
+        <option value="coach">Coach — full why, live</option>
+      </select>
+      <label for="tableColor">Table</label>
+      <select id="tableColor">
+        <option value="felt">Green felt</option>
+        <option value="navy">Navy</option>
+        <option value="walnut">Walnut</option>
+      </select>
+    </div>
+    <p class="note" id="botHonest"></p>
+
+    <div class="table" id="tableEl">
+      <div class="scoreline">
+        <div class="scorechip"><span id="scoreYouName">You</span>: <b id="scoreYou">0</b></div>
+        <div class="scorechip">Hand <b id="handNo">–</b> · Dealer: <b id="dealerName">–</b> · Target: <b id="targetLbl">100</b> · Knock at ≤ <b id="knockLbl">10</b></div>
+        <div class="scorechip">Bot: <b id="scoreBot">0</b></div>
+      </div>
+
+      <div class="botrow">
+        <div class="who">Bot<small id="botStatus">Waiting for a deal</small></div>
+        <div class="minihand" id="botHandEl" aria-label="Bot hand"></div>
+        <div class="scorechip" id="botDeadwoodChip" hidden>Bot deadwood: <b id="botDeadwoodVal">–</b></div>
+      </div>
+
+      <div class="middle">
+        <div class="pile">
+          <button class="pilebtn" id="btnStock" type="button" aria-label="Draw from stock">
+            <span class="playingcard back" id="stockCard">♠</span>
+          </button>
+          <span class="lbl">Stock · <span id="stockCount">–</span> left<span class="gesture">Tap the deck to draw</span></span>
+        </div>
+        <div class="msg" id="msgEl">Press <b>Deal a hand</b> to start.</div>
+        <div class="pile">
+          <button class="pilebtn" id="btnDiscardPile" type="button" aria-label="Take the discard">
+            <span class="playingcard empty" id="discardCard">Empty</span>
+          </button>
+          <span class="lbl">Discard pile<span class="gesture">Tap the card to take it</span></span>
+        </div>
+      </div>
+
+      <div class="playerrow">
+        <div class="who"><span id="playerNameLbl">You</span><small>Your hand — tap a card to select it, then discard or knock</small></div>
+        <div class="scorechip">Your deadwood: <b id="playerDeadwoodVal">–</b></div>
+      </div>
+      <div class="hand" id="playerHandEl"></div>
+      <div class="handmeta" id="handMeta"></div>
+
+      <div class="actions">
+        <button class="primary" id="btnDeal" type="button">Deal a hand<span class="gesture">Tap to deal</span></button>
+        <button id="btnTakeUp" type="button" hidden>Take the upcard<span class="gesture">Tap to take it</span></button>
+        <button id="btnPassUp" type="button" hidden>Pass<span class="gesture">Tap to pass</span></button>
+        <button id="btnDiscardSel" type="button" hidden>Discard selected<span class="gesture">Tap to discard</span></button>
+        <button class="knockbtn" id="btnKnock" type="button" hidden>Knock<span class="gesture">Tap to knock and end the hand</span></button>
+        <button class="knockbtn" id="btnBigGin" type="button" hidden>Declare Big Gin<span class="gesture">Tap — all 11 cards melded</span></button>
+        <button id="btnSort" type="button">Sort: by rank<span class="gesture">Tap to switch sort</span></button>
+      </div>
+
+      <div class="resultbanner" id="resultEl" role="status"></div>
+
+      <div class="hintbox" id="hintBox">
+        <h3>Table talk</h3>
+        <p id="hintText">Hints appear here when the Teaching dial is on. Hints shows your best discard and deadwood. Coach adds the knock math and what the bot's discards are telling you.</p>
+        <div id="readBox"></div>
+      </div>
+
+      <div class="logbox" id="logEl" aria-label="Hand log"></div>
+      <div>
+        <div style="font-size:.82rem;opacity:.9;margin-top:10px">Every discard this hand, in order (gold outline = the bot's):</div>
+        <div class="discardstrip" id="discardStrip"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WHY ================= -->
+  <section id="why">
+    <h2>The Full Why</h2>
+    <p class="sub">Why? → How? → Act. Nothing here is a verdict handed down — it is the math and the reads, in the open, so your own judgment gets sharper every hand.</p>
+
+    <div class="grid">
+      <details class="panel" open>
+        <summary>Melds &amp; deadwood math<span class="gesture">Tap to open or close</span></summary>
+        <div class="inner">
+          <p><strong>What it is.</strong> A <em>meld</em> is a set of 3–4 cards of the same rank (7♠ 7♥ 7♦) or a run of 3+ cards in one suit (4♣ 5♣ 6♣). Aces are low only — Q♠ K♠ A♠ is not a run. Every card not in a meld is <em>deadwood</em>, and deadwood is what you pay with.</p>
+          <p><strong>What it costs.</strong> Ace = 1, 2–10 = face value, J/Q/K = 10 each. Three loose face cards are 30 deadwood — more than most hands are lost by. The table above counts your deadwood live, using the best possible meld arrangement of the cards you hold, so the number you see is the real number.</p>
+          <p><strong>What it means.</strong> A card is worth keeping only if it is pulling its weight: it is in a meld, one card from a meld (a pair, or two to a run), or cheap. A lone K with no partner and no run neighbours is 10 points of rent every turn. Pairs are a promise, not a meld — two 9s are still 18 deadwood until the third 9 or a run arrives.</p>
+          <p><strong>How to act.</strong> Early, keep flexible cards (middle ranks like 5–8 touch the most runs). Late, dump expensive loners first. When you draw, ask: does this card lower my deadwood <em>after</em> my best discard, not before?</p>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary>Knock or play for gin? The risk, priced<span class="gesture">Tap to open or close</span></summary>
+        <div class="inner">
+          <p><strong>Knocking</strong> ends the hand when your deadwood is at or under the knock value (10 by default — it is a setting, below). You score the <em>difference</em> between the bot's deadwood and yours. <strong>Gin</strong> is deadwood 0: the difference <em>plus a 25-point bonus</em>, and the defender cannot lay off a single card. <strong>Big Gin</strong> — all 11 cards melded before you discard — pays the difference plus 50.</p>
+          <p><strong>The price of waiting.</strong> Every extra turn you chase gin, the bot gets a turn too. Here is the knock decision in plain numbers, knocking with 6 deadwood:</p>
+          <table class="num">
+            <tr><th>If the bot's deadwood is…</th><th class="n">You score</th><th>What happened</th></tr>
+            <tr><td>20</td><td class="n">14</td><td>A clean, ordinary knock win.</td></tr>
+            <tr><td>11</td><td class="n">5</td><td>Small win — still a win.</td></tr>
+            <tr><td>6 or less</td><td class="n">Bot scores 25+</td><td><strong>Undercut.</strong> The bot's deadwood ties or beats yours, so the bot takes the difference <em>plus 25</em>.</td></tr>
+          </table>
+          <p><strong>The gin gamble, honestly.</strong> Say you sit on 4 deadwood with two realistic gin outs in a 30-card stock. Each draw is roughly a 2-in-30 shot; over three more turns you gin perhaps 1 time in 5 — and in the other 4, the bot may knock first and catch you holding those same 4 plus whatever you picked up. Gin's +25 is real money, but a knock banked now can never be undercut by a hand that never gets played. Rule of thumb the good players use: <em>knock early with 7 or less; chase gin only when your deadwood is already tiny and the stock is still fat.</em> The Coach dial prices this for your exact hand, live.</p>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>Reading the discards<span class="gesture">Tap to open or close</span></summary>
+        <div class="inner">
+          <p>The discard pile is the only honest newspaper at the table. Three reads, in order of strength:</p>
+          <p><strong>1. What the bot picks up is close to gospel.</strong> Nobody takes a face-up card for fun. If the bot takes the 8♣, it wants 8s, or 7♣/9♣, or both. From that moment, your 8♦ is a loaded card: discard it only when you must. The Coach names these cards for you as they happen.</p>
+          <p><strong>2. What the bot throws early is usually safe.</strong> A first-turn discard of 3♦ says the bot is (probably) not building diamonds near the 3, and its mates 3♠ 3♥ 3♣ just got safer to throw yourself. <em>Probably</em> — a sharp player occasionally throws bait. This page's Sharp bot does not bluff its discards; that limit is stated, not hidden.</p>
+          <p><strong>3. What the bot passes tells a story too.</strong> If the bot refuses a 5♥ upcard, hearts around the 5 are a little safer. If the bot keeps refusing low cards and the stock shrinks, it is usually already close — knock sooner rather than later.</p>
+          <p><strong>Dead cards.</strong> When two of a rank are already in the discard pile, the other two can never make a set for anyone — and a run needing a card already buried is dead too. Counting burials is how Sharp plays, and the discard strip above keeps the whole pile visible so you can count with it.</p>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary>Undercut &amp; laying off — the defender's rights<span class="gesture">Tap to open or close</span></summary>
+        <div class="inner">
+          <p><strong>Laying off.</strong> When a player knocks (not gin), the defender may attach their own deadwood cards onto the knocker's melds — a fourth 9 onto a set of 9s, a 3♣ or 7♣ onto a 4♣ 5♣ 6♣ run — before deadwood is counted. Laying off is automatic and optimal on this page; you never lose points to a missed layoff.</p>
+          <p><strong>Undercut.</strong> If, after laying off, the defender's deadwood is <em>equal to or less than</em> the knocker's, the defender wins the hand: they score the difference <em>plus a 25-point undercut bonus</em>. Ties go to the defender — that is why knocking with 10 late in a hand is braver than it looks, and knocking with 1–3 is nearly undercut-proof.</p>
+          <p><strong>Against gin there is no defence.</strong> No laying off, no undercut — gin's deadwood is 0 and cannot be tied. That immunity is half of what the +25 bonus is paying for.</p>
+          <p><strong>Drawn hands &amp; the stock.</strong> If the stock runs down to two cards and nobody has knocked, the hand is a draw: no score, and the same dealer deals again.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= RULES & SETTINGS ================= -->
+  <section id="rules">
+    <h2>Rules &amp; settings</h2>
+    <p class="sub">The rules are settings: change them and the table plays by your numbers from the next deal. Changes save on this device only.</p>
+    <div class="grid">
+      <div class="panel">
+        <h3>The documented rules this table plays</h3>
+        <ul>
+          <li>Standard 52-card deck. Dealer deals 10 cards each; the next card turns face up to start the discard pile, the rest is the stock.</li>
+          <li>The non-dealer is offered the upcard first; if they pass, the dealer may take it; if both pass, the non-dealer draws first.</li>
+          <li>On your turn: draw the top of the stock or take the top discard, then discard one card. You may not discard a card you just took from the discard pile on that same turn.</li>
+          <li>Knock when your deadwood — after your discard — is at or under the knock value. Gin is deadwood 0 (bonus 25, no laying off against it). Big Gin is all 11 cards melded (bonus 50).</li>
+          <li>Defender lays off onto the knocker's melds (never against gin), then deadwood is compared. Equal or lower defender deadwood = undercut, defender scores the difference + 25.</li>
+          <li>The loser of a hand deals the next. First to the target score wins the match; if the loser never scored a point all match, the winner adds a 100-point shutout bonus.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Your settings</h3>
+        <div class="field">
+          <label for="knockValue">Knock value (max deadwood to knock)</label>
+          <select id="knockValue">
+            <option value="1">1 — gin-or-bust flavour</option>
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="10" selected>10 — classic</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="targetScore">Match target score</label>
+          <select id="targetScore">
+            <option value="50">50 — quick match</option>
+            <option value="100" selected>100 — classic</option>
+            <option value="150">150</option>
+            <option value="250">250 — long match</option>
+          </select>
+        </div>
+        <div class="field">
+          <button id="btnNewMatch" type="button">Start a new match<span class="gesture">Tap to reset scores to 0</span></button>
+        </div>
+        <h3 style="margin-top:16px">What each bot really does — honestly</h3>
+        <ul>
+          <li><strong>Casual</strong> keeps cards that lower its deadwood, but forgets the discard pile, sometimes keeps a pretty card it should throw, and knocks on a coin flip when it can. It does not read your discards at all.</li>
+          <li><strong>Steady</strong> always takes a discard that improves its hand, always throws its worst card, and knocks with 7 or less (or anything legal when the stock runs low). It notices what it needs, not what you need.</li>
+          <li><strong>Sharp</strong> does everything Steady does, plus: it remembers every discard, avoids feeding ranks and suits you have picked up, prefers throwing cards whose mates are already buried, and prices the knock-vs-gin choice by deadwood and stock left. It does <em>not</em> peek at your hand, and it never bluffs a discard.</li>
+        </ul>
+        <p class="note">No bot sees your cards. Every bot decision is made from its own hand and the public discard pile — the same information you get.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RECORD ================= -->
+  <section id="record">
+    <h2>Your record</h2>
+    <p class="sub">Kept on this device only, in this browser — nothing is sent anywhere, and there is no account to send it to. Export it to keep a copy, or forget it in one tap.</p>
+    <div class="panel">
+      <div class="statgrid">
+        <div class="stat"><b id="stHands">0</b>Hands played</div>
+        <div class="stat"><b id="stWins">0</b>Hands won</div>
+        <div class="stat"><b id="stGins">0</b>Gins by you</div>
+        <div class="stat"><b id="stUnderFor">0</b>Undercuts you scored</div>
+        <div class="stat"><b id="stUnderAgainst">0</b>Times you were undercut</div>
+        <div class="stat"><b id="stMatches">0</b>Matches won</div>
+      </div>
+      <div class="field">
+        <button id="btnExport" type="button">Export record (JSON)<span class="gesture">Tap to download a copy</span></button>
+        <button class="danger" id="btnForget" type="button">Forget my record<span class="gesture">Tap, then tap again to confirm</span></button>
+        <span class="note" id="forgetMsg" role="status"></span>
+      </div>
+      <div>
+        <h3>Match history this session</h3>
+        <div id="historyEl" class="note">No hands finished yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Gin Rummy is a public-domain folk game — its rules belong to everyone, which is exactly why they are printed in full above. This page is copyleft: text and design CC BY-SA 4.0, code GPL — copy it, teach from it, build on it, keep it free. No ads, ever. Built on the house template: free first, the full why one tap away, and your facts entered once and carried only on your own device.</p>
+    <p>What are we missing? If a rule variant you grew up with is not a setting here — Oklahoma Gin's knock value follows the upcard, Hollywood scoring, a 7-card kids' deal — that is a door, not a dead end: variants join this page as settings, never as replacements.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ================= cards & meld math ================= */
+var SUITS=["♠","♥","♦","♣"], SUITNAME=["spades","hearts","diamonds","clubs"];
+var RANKS=["","A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+function cval(c){ return c.rank===1?1:Math.min(c.rank,10); }
+function cname(c){ return RANKS[c.rank]+SUITS[c.suit]; }
+function isRed(c){ return c.suit===1||c.suit===2; }
+function makeDeck(){ var d=[],id=0; for(var s=0;s<4;s++) for(var r=1;r<=13;r++) d.push({rank:r,suit:s,id:id++}); return d; }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+
+/* All meld masks for a hand (bitmask over hand indices). */
+function meldMasks(hand){
+  var masks=[], n=hand.length, i,j,k;
+  var byRank={};
+  hand.forEach(function(c,idx){ (byRank[c.rank]=byRank[c.rank]||[]).push(idx); });
+  Object.keys(byRank).forEach(function(r){
+    var idxs=byRank[r];
+    if(idxs.length>=3){
+      for(i=0;i<idxs.length;i++)for(j=i+1;j<idxs.length;j++)for(k=j+1;k<idxs.length;k++)
+        masks.push((1<<idxs[i])|(1<<idxs[j])|(1<<idxs[k]));
+      if(idxs.length===4) masks.push((1<<idxs[0])|(1<<idxs[1])|(1<<idxs[2])|(1<<idxs[3]));
+    }
+  });
+  var bySuit={};
+  hand.forEach(function(c,idx){ (bySuit[c.suit]=bySuit[c.suit]||[]).push(idx); });
+  Object.keys(bySuit).forEach(function(s){
+    var idxs=bySuit[s].slice().sort(function(a,b){return hand[a].rank-hand[b].rank;});
+    for(i=0;i<idxs.length;i++){
+      var m=0;
+      for(j=i;j<idxs.length;j++){
+        if(j>i && hand[idxs[j]].rank!==hand[idxs[j-1]].rank+1) break;
+        m|=(1<<idxs[j]);
+        if(j-i+1>=3) masks.push(m);
+      }
+    }
+  });
+  return masks;
+}
+/* Best (minimum deadwood) arrangement. Returns {deadwood, melds:[[card]], dead:[card]} */
+function analyze(hand){
+  var masks=meldMasks(hand), n=hand.length, memo={};
+  function pop(mask){ var c=0; while(mask){ c+=mask&1; mask>>=1; } return c; }
+  function solve(used){
+    if(memo[used]) return memo[used];
+    var i=0; while(i<n && (used>>i & 1)) i++;
+    if(i>=n){ var done={pts:0,count:0,list:[]}; memo[used]=done; return done; }
+    var best=solve(used|(1<<i)); // leave card i as deadwood
+    for(var m=0;m<masks.length;m++){
+      var mask=masks[m];
+      if((mask & (1<<i)) && !(mask & used)){
+        var sub=solve(used|mask), pts=0, mm=mask;
+        while(mm){ var b=mm & -mm, idx=Math.round(Math.log2(b)); pts+=cval(hand[idx]); mm^=b; }
+        var cand={pts:sub.pts+pts, count:sub.count+pop(mask), list:[mask].concat(sub.list)};
+        if(cand.pts>best.pts || (cand.pts===best.pts && cand.count>best.count)) best=cand;
+      }
+    }
+    memo[used]=best; return best;
+  }
+  var res=solve(0), usedAll=0, melds=[];
+  res.list.forEach(function(mask){ usedAll|=mask; var g=[]; for(var i=0;i<n;i++) if(mask>>i&1) g.push(hand[i]); melds.push(g); });
+  var dead=[], total=0;
+  hand.forEach(function(c,i){ total+=cval(c); if(!(usedAll>>i&1)) dead.push(c); });
+  return { deadwood: total-res.pts, melds: melds, dead: dead };
+}
+/* Lay defender dead cards onto knocker melds; returns new defender analysis info. */
+function layOff(defHand, knockerMelds){
+  var defA=analyze(defHand);
+  var melds=knockerMelds.map(function(g){ return g.slice(); });
+  var remaining=defA.dead.slice(), changed=true, guard=0;
+  while(changed && guard++<20){
+    changed=false;
+    for(var di=0; di<remaining.length; di++){
+      var c=remaining[di], placed=false;
+      for(var mi=0; mi<melds.length && !placed; mi++){
+        var g=melds[mi];
+        if(g.every(function(x){return x.rank===c.rank;})){ g.push(c); placed=true; }
+        else if(g.every(function(x){return x.suit===c.suit;})){
+          var ranks=g.map(function(x){return x.rank;});
+          if(c.suit===g[0].suit && (c.rank===Math.min.apply(null,ranks)-1 || c.rank===Math.max.apply(null,ranks)+1)){ g.push(c); placed=true; }
+        }
+      }
+      if(placed){ remaining.splice(di,1); di--; changed=true; }
+    }
+  }
+  var dw=remaining.reduce(function(a,c){return a+cval(c);},0);
+  return { deadwood: dw, laidOff: defA.dead.length-remaining.length, remaining: remaining };
+}
+/* Best discard from an 11-card hand: returns {idx, deadwood, analysis} */
+function bestDiscard(hand, forbiddenId){
+  var best=null;
+  hand.forEach(function(c,i){
+    if(forbiddenId!=null && c.id===forbiddenId) return;
+    var rest=hand.filter(function(_,j){return j!==i;});
+    var a=analyze(rest);
+    if(!best || a.deadwood<best.deadwood) best={idx:i, deadwood:a.deadwood, analysis:a, card:c};
+  });
+  return best;
+}
+
+/* ================= state ================= */
+var LS_REC="gin-rummy-record-v1", LS_SET="gin-rummy-settings-v1";
+var settings={ alias:"You", bot:"steady", teach:"hints", knock:10, target:100, table:"felt", sort:"rank" };
+try{ var s=JSON.parse(localStorage.getItem(LS_SET)||"null"); if(s) settings=Object.assign(settings,s); }catch(e){}
+var record={ hands:0, wins:0, gins:0, underFor:0, underAgainst:0, matches:0 };
+try{ var r=JSON.parse(localStorage.getItem(LS_REC)||"null"); if(r) record=Object.assign(record,r); }catch(e){}
+function saveSettings(){ try{ localStorage.setItem(LS_SET, JSON.stringify(settings)); }catch(e){} }
+function saveRecord(){ try{ localStorage.setItem(LS_REC, JSON.stringify(record)); }catch(e){} }
+
+var G=null;
+function newGameState(){
+  return { phase:"idle", deck:[], stock:[], pile:[], player:[], bot:[],
+    dealer:"bot", turn:null, selected:-1, drawnDiscardId:null, botDrawnDiscardId:null,
+    scores:{player:0, bot:0}, handNo:0, history:[], offerStage:0,
+    botTook:[], playerTook:[], discardLog:[], botPassedUp:false, over:false, matchOver:false,
+    playerScoredThisMatch:false, botScoredThisMatch:false };
+}
+G=newGameState();
+
+function $(id){ return document.getElementById(id); }
+function log(msg){ var el=$("logEl"); var d=document.createElement("div"); d.textContent=msg; el.prepend(d); while(el.children.length>40) el.removeChild(el.lastChild); }
+function setMsg(html){ $("msgEl").innerHTML=html; }
+
+/* ================= hand flow ================= */
+function startHand(){
+  var deck=shuffle(makeDeck());
+  G.player=[]; G.bot=[]; G.pile=[]; G.discardLog=[]; G.botTook=[]; G.playerTook=[];
+  G.selected=-1; G.drawnDiscardId=null; G.botDrawnDiscardId=null; G.botPassedUp=false; G.over=false;
+  for(var i=0;i<10;i++){ G.bot.push(deck.pop()); G.player.push(deck.pop()); }
+  G.pile.push(deck.pop());
+  G.stock=deck;
+  G.handNo++;
+  var nonDealer = G.dealer==="bot" ? "player" : "bot";
+  G.turn=nonDealer; G.offerStage=1; G.phase="offer";
+  sortHand(G.player); sortHand(G.bot);
+  $("resultEl").textContent="";
+  log("Hand "+G.handNo+" dealt. "+(G.dealer==="bot"?"Bot":"You")+" dealt; the upcard is "+cname(G.pile[G.pile.length-1])+".");
+  render();
+  if(nonDealer==="bot"){ setTimeout(botOffer, 650); }
+  else setMsg("The upcard is <b>"+cname(G.pile[G.pile.length-1])+"</b>. Take it, or pass?");
+}
+function sortHand(h){
+  if(settings.sort==="rank") h.sort(function(a,b){ return a.rank-b.rank || a.suit-b.suit; });
+  else h.sort(function(a,b){ return a.suit-b.suit || a.rank-b.rank; });
+}
+function botWantsUpcard(card){
+  var test=G.bot.concat([card]);
+  var bd=bestDiscard(test, card.id);
+  var cur=analyze(G.bot).deadwood;
+  var lvl=settings.bot;
+  if(lvl==="casual") return bd.deadwood<cur || Math.random()<0.18;
+  return bd.deadwood<cur || pairsOrNear(G.bot, card)>=2;
+}
+function pairsOrNear(hand, card){
+  var n=0;
+  hand.forEach(function(c){ if(c.rank===card.rank) n+=2; if(c.suit===card.suit && Math.abs(c.rank-card.rank)<=2) n+=1; });
+  return n;
+}
+function botOffer(){
+  if(G.phase!=="offer") return;
+  var up=G.pile[G.pile.length-1];
+  if(botWantsUpcard(up)){
+    G.pile.pop(); G.bot.push(up); G.botDrawnDiscardId=up.id; G.botTook.push(up);
+    G.phase="botDiscard"; G.turn="bot";
+    log("Bot takes the upcard "+cname(up)+".");
+    render(); setTimeout(botDiscardPhase, 750);
+  } else {
+    G.botPassedUp=true;
+    log("Bot passes on the upcard "+cname(up)+".");
+    if(G.offerStage===1){
+      G.offerStage=2; G.turn=G.dealer;
+      if(G.dealer==="bot"){ /* dealer is bot, already passed as non-dealer? cannot happen */ }
+      else { setMsg("Bot passed. As dealer, you may take the <b>"+cname(up)+"</b> upcard — or pass and the bot draws first."); render(); }
+      if(G.dealer==="bot"){ G.turn="player"; G.phase="draw"; setMsg("Both passed. Your draw — stock or the discard."); render(); }
+    } else {
+      G.phase="draw"; G.turn = G.dealer==="bot" ? "player" : "bot";
+      if(G.turn==="bot"){ setMsg("Both passed. The bot draws first."); render(); setTimeout(botDraw, 650); }
+      else { setMsg("Both passed. Your draw — stock or the discard."); render(); }
+    }
+    render();
+  }
+}
+function playerTakeUp(){
+  if(G.phase!=="offer" || G.turn!=="player") return;
+  var up=G.pile.pop(); G.player.push(up); G.drawnDiscardId=up.id; G.playerTook.push(up);
+  G.phase="discard"; sortHand(G.player);
+  log("You take the upcard "+cname(up)+".");
+  setMsg("You hold 11. Pick a card to discard — or knock if your deadwood after discarding is ≤ "+settings.knock+".");
+  render();
+}
+function playerPassUp(){
+  if(G.phase!=="offer" || G.turn!=="player") return;
+  var up=G.pile[G.pile.length-1];
+  log("You pass on the upcard "+cname(up)+".");
+  if(G.offerStage===1){
+    G.offerStage=2; G.turn=G.dealer;
+    if(G.dealer==="bot"){ setTimeout(botOffer, 650); setMsg("You passed. The bot, as dealer, decides on the upcard…"); }
+    else { G.phase="draw"; G.turn="bot"; setTimeout(botDraw,650); setMsg("Both passed. The bot draws first."); }
+  } else {
+    G.phase="draw"; G.turn="bot"; setTimeout(botDraw, 650); setMsg("Both passed. The bot draws first.");
+  }
+  render();
+}
+function playerDraw(fromPile){
+  if(G.phase!=="draw" || G.turn!=="player") return;
+  var c;
+  if(fromPile){
+    if(!G.pile.length) return;
+    c=G.pile.pop(); G.drawnDiscardId=c.id; G.playerTook.push(c);
+    log("You take the discard "+cname(c)+".");
+  } else {
+    if(!G.stock.length) return;
+    c=G.stock.pop(); G.drawnDiscardId=null;
+    log("You draw from the stock.");
+  }
+  G.player.push(c); sortHand(G.player); G.selected=-1; G.phase="discard";
+  setMsg("You hold 11. Tap a card to select it, then discard — or knock if you qualify.");
+  render();
+}
+function afterPlayerDiscard(){
+  if(checkStockEnd()) return;
+  G.turn="bot"; G.phase="botDraw"; render();
+  setTimeout(botDraw, 700);
+}
+function checkStockEnd(){
+  if(G.stock.length<=2 && !G.over){
+    G.over=true; G.phase="handOver";
+    var txt="The stock ran down to two cards with no knock — the hand is a <b>draw</b>. No score. Same dealer deals again.";
+    $("resultEl").innerHTML=txt; setMsg("Hand drawn. <b>Deal</b> to play the next hand.");
+    log("Hand drawn — stock exhausted."); render(); return true;
+  }
+  return false;
+}
+function playerDiscard(knock){
+  if(G.phase!=="discard" || G.selected<0) return;
+  var c=G.player[G.selected];
+  if(G.drawnDiscardId!=null && c.id===G.drawnDiscardId){ setMsg("You can't discard the <b>"+cname(c)+"</b> — you just took it from the discard pile this turn. Pick another."); return; }
+  var rest=G.player.filter(function(_,j){return j!==G.selected;});
+  var a=analyze(rest);
+  if(knock && a.deadwood>settings.knock){ setMsg("That discard leaves <b>"+a.deadwood+"</b> deadwood — over the knock value of "+settings.knock+". You can't knock with it."); return; }
+  G.player.splice(G.selected,1); G.selected=-1;
+  G.pile.push(c); G.discardLog.push({card:c, by:"player"});
+  if(knock){ resolveKnock("player", rest, G.bot.slice()); return; }
+  log("You discard "+cname(c)+". Your deadwood: "+analyze(G.player).deadwood+".");
+  G.drawnDiscardId=null;
+  afterPlayerDiscard();
+}
+function playerBigGin(){
+  if(G.phase!=="discard") return;
+  if(analyze(G.player).deadwood!==0) return;
+  resolveKnock("player", G.player.slice(), G.bot.slice(), true);
+}
+
+/* ================= bot brain ================= */
+function botDraw(){
+  if(G.over || G.phase==="idle") return;
+  G.phase="botDraw";
+  var lvl=settings.bot, up=G.pile[G.pile.length-1], take=false;
+  if(up){
+    var test=G.bot.concat([up]);
+    var bd=bestDiscard(test, up.id);
+    var cur=analyze(G.bot).deadwood;
+    if(lvl==="casual"){ take = bd.deadwood<cur && Math.random()<0.85 || Math.random()<0.10; }
+    else { take = bd.deadwood<cur || pairsOrNear(G.bot, up)>=3; }
+    if(lvl==="sharp" && !take && pairsOrNear(G.bot, up)>=2 && G.stock.length>15) take=true;
+  }
+  var c;
+  if(take && up){ G.pile.pop(); c=up; G.botDrawnDiscardId=c.id; G.botTook.push(c); log("Bot takes the discard "+cname(c)+"."); }
+  else { c=G.stock.pop(); G.botDrawnDiscardId=null; log("Bot draws from the stock."); }
+  G.bot.push(c); sortHand(G.bot);
+  G.phase="botDiscard"; render();
+  setTimeout(botDiscardPhase, 650);
+}
+function botDiscardDanger(c){
+  /* Sharp only: how dangerous is discarding c, given what the player has picked up? */
+  var danger=0;
+  G.playerTook.forEach(function(t){
+    if(t.rank===c.rank) danger+=8;
+    if(t.suit===c.suit && Math.abs(t.rank-c.rank)<=2) danger+=5;
+  });
+  /* buried mates make a card safer */
+  var buried=0;
+  G.discardLog.forEach(function(d){ if(d.card.rank===c.rank) buried++; });
+  danger-=buried*3;
+  return danger;
+}
+function botDiscardPhase(){
+  if(G.over) return;
+  var lvl=settings.bot;
+  var forbidden=G.botDrawnDiscardId;
+  /* Big gin check */
+  if(analyze(G.bot).deadwood===0 && G.bot.length===11){ resolveKnock("bot", G.bot.slice(), G.player.slice(), true); return; }
+  var cands=[];
+  G.bot.forEach(function(c,i){
+    if(forbidden!=null && c.id===forbidden) return;
+    var rest=G.bot.filter(function(_,j){return j!==i;});
+    var a=analyze(rest);
+    cands.push({i:i, card:c, deadwood:a.deadwood, rest:rest});
+  });
+  cands.sort(function(x,y){ return x.deadwood-y.deadwood || cval(y.card)-cval(x.card); });
+  var pick=cands[0];
+  if(lvl==="casual"){
+    var pool=cands.slice(0, Math.min(3, cands.length));
+    pick=pool[Math.floor(Math.random()*pool.length)];
+    if(Math.random()<0.15) pick=cands[Math.floor(Math.random()*cands.length)];
+  } else if(lvl==="sharp"){
+    var bestScore=null;
+    cands.forEach(function(cd){
+      var score=cd.deadwood*10 + botDiscardDanger(cd.card) - cval(cd.card)*0.1;
+      if(bestScore===null || score<bestScore){ bestScore=score; pick=cd; }
+    });
+  }
+  /* knock decision */
+  var d=pick.deadwood, knock=false;
+  if(d===0) knock=true;
+  else if(d<=settings.knock){
+    if(lvl==="casual") knock = Math.random()<0.5 || G.stock.length<12;
+    else if(lvl==="steady") knock = d<=7 || G.stock.length<15;
+    else { /* sharp: price it */
+      if(d<=4) knock=true;
+      else if(d<=7) knock = G.stock.length<22 || G.handNo>0 && G.bot.length<=10 && Math.random()<0.7;
+      else knock = G.stock.length<10;
+    }
+  }
+  G.bot.splice(pick.i,1);
+  G.pile.push(pick.card); G.discardLog.push({card:pick.card, by:"bot"});
+  G.botDrawnDiscardId=null;
+  if(knock){ resolveKnock("bot", pick.rest, G.player.slice()); return; }
+  log("Bot discards "+cname(pick.card)+".");
+  if(checkStockEnd()) return;
+  G.turn="player"; G.phase="draw";
+  setMsg("Bot discarded <b>"+cname(pick.card)+"</b>. Your draw — take it, or draw from the stock.");
+  render();
+}
+
+/* ================= scoring ================= */
+function resolveKnock(knocker, knockerHand, defenderHand, bigGin){
+  G.over=true; G.phase="handOver";
+  var kA=analyze(knockerHand);
+  var isGin = bigGin ? true : kA.deadwood===0;
+  var dA, laid=0;
+  if(isGin){ dA={deadwood: analyze(defenderHand).deadwood}; }
+  else { var lo=layOff(defenderHand, kA.melds); dA={deadwood: lo.deadwood}; laid=lo.laidOff; }
+  var winner, pts=0, note="";
+  if(bigGin){ winner=knocker; pts=dA.deadwood+50; note="Big Gin! All 11 cards melded. Defender deadwood "+dA.deadwood+" + 50 bonus."; }
+  else if(isGin){ winner=knocker; pts=(dA.deadwood-kA.deadwood)+25; note="Gin! No laying off against gin. Defender deadwood "+dA.deadwood+" + 25 bonus."; }
+  else if(dA.deadwood<=kA.deadwood){ winner = knocker==="player"?"bot":"player"; pts=(kA.deadwood-dA.deadwood)+25; note="UNDERCUT! Defender deadwood "+dA.deadwood+" ties or beats knocker's "+kA.deadwood+" — defender takes the difference + 25."; }
+  else { winner=knocker; pts=dA.deadwood-kA.deadwood; note="Knock stands. Knocker deadwood "+kA.deadwood+", defender deadwood "+dA.deadwood+(laid?(" after laying off "+laid+" card"+(laid>1?"s":"")):"")+"."; }
+  if(winner==="player"){ G.scores.player+=pts; G.playerScoredThisMatch=true; } else { G.scores.bot+=pts; G.botScoredThisMatch=true; }
+  /* record */
+  record.hands++;
+  if(winner==="player") record.wins++;
+  if(isGin && knocker==="player") record.gins++;
+  if(!isGin && !bigGin && dA.deadwood<=kA.deadwood){ if(winner==="player") record.underFor++; else record.underAgainst++; }
+  saveRecord(); renderRecord();
+  var winnerName = winner==="player" ? settings.alias : "Bot";
+  var line=winnerName+" scores "+pts+". "+note;
+  G.history.unshift("Hand "+G.handNo+": "+line+" — Match: "+settings.alias+" "+G.scores.player+", Bot "+G.scores.bot+".");
+  log(line);
+  /* expose final hands for reveal */
+  G.revealBot = knocker==="bot" ? knockerHand : defenderHand;
+  G.revealPlayer = knocker==="player" ? knockerHand : defenderHand;
+  G.revealKnockerDead = kA.deadwood; G.revealDefDead = dA.deadwood;
+  /* next dealer = loser */
+  G.dealer = winner==="player" ? "bot" : "player";
+  /* match end? */
+  var target=settings.target, matchMsg="";
+  if(G.scores.player>=target || G.scores.bot>=target){
+    var mw = G.scores.player>=target ? "player" : "bot";
+    var loserTotal = mw==="player" ? G.scores.bot : G.scores.player;
+    var loserScored = mw==="player" ? G.botScoredThisMatch : G.playerScoredThisMatch;
+    if(!loserScored && loserTotal===0){ if(mw==="player") G.scores.player+=100; else G.scores.bot+=100; matchMsg=" Shutout! The loser never scored, so the winner adds 100."; }
+    G.matchOver=true;
+    if(mw==="player"){ record.matches++; saveRecord(); renderRecord(); }
+    matchMsg=" <b>Match over — "+(mw==="player"?settings.alias:"Bot")+" wins "+G.scores.player+"–"+G.scores.bot+".</b>"+matchMsg+" Start a new match from Rules & Settings, or just deal — a new match begins.";
+    G.scores={player:0,bot:0}; G.playerScoredThisMatch=false; G.botScoredThisMatch=false; G.handNo=0;
+  }
+  $("resultEl").innerHTML="<b>"+(knocker==="player"?settings.alias:"Bot")+(bigGin?" declares Big Gin":isGin?" goes Gin":" knocks")+" with deadwood "+kA.deadwood+".</b> "+line+matchMsg;
+  setMsg("Hand over. <b>Deal</b> for the next hand.");
+  render();
+}
+
+/* ================= rendering ================= */
+function cardEl(c, opts){
+  opts=opts||{};
+  var b=document.createElement("button");
+  b.type="button"; b.className="playingcard"+(isRed(c)?" red":"")+(opts.sel?" sel":"")+(opts.meld?" melded":"");
+  b.innerHTML="<span>"+RANKS[c.rank]+"</span><span class='suit'>"+SUITS[c.suit]+"</span>";
+  b.setAttribute("aria-label", RANKS[c.rank]+" of "+SUITNAME[c.suit]);
+  if(opts.onClick) b.addEventListener("click", opts.onClick);
+  return b;
+}
+function render(){
+  $("scoreYouName").textContent=settings.alias;
+  $("playerNameLbl").textContent=settings.alias;
+  $("scoreYou").textContent=G.scores.player;
+  $("scoreBot").textContent=G.scores.bot;
+  $("handNo").textContent=G.handNo||"–";
+  $("dealerName").textContent=G.handNo? (G.dealer==="bot"?"Bot":settings.alias) : "–";
+  $("targetLbl").textContent=settings.target;
+  $("knockLbl").textContent=settings.knock;
+  $("stockCount").textContent=G.stock.length;
+  /* bot hand */
+  var bh=$("botHandEl"); bh.innerHTML="";
+  var botCards = G.over && G.revealBot ? G.revealBot : G.bot;
+  botCards.forEach(function(c){
+    if(G.over && G.revealBot){ var s=document.createElement("span"); s.className="minicard revealed"+(isRed(c)?" red":""); s.textContent=cname(c); bh.appendChild(s); }
+    else { var d=document.createElement("span"); d.className="minicard"; bh.appendChild(d); }
+  });
+  $("botStatus").textContent = G.over ? "Hand over — bot's cards revealed" :
+    G.turn==="bot" ? "Bot is thinking…" : (settings.bot==="sharp"?"Sharp bot — tracking the discards":settings.bot==="steady"?"Steady bot":"Casual bot");
+  if(G.over && G.revealBot){ $("botDeadwoodChip").hidden=false; $("botDeadwoodVal").textContent = analyze(G.revealBot).deadwood; }
+  else $("botDeadwoodChip").hidden=true;
+  /* piles */
+  var top=G.pile[G.pile.length-1], dc=$("discardCard");
+  if(top){ dc.className="playingcard"+(isRed(top)?" red":""); dc.innerHTML="<span>"+RANKS[top.rank]+"</span><span class='suit'>"+SUITS[top.suit]+"</span>"; }
+  else { dc.className="playingcard empty"; dc.textContent="Empty"; }
+  $("stockCard").className="playingcard back"; $("stockCard").textContent="♠";
+  /* player hand */
+  var ph=$("playerHandEl"); ph.innerHTML="";
+  var pA=analyze(G.player);
+  var meldIds={}; pA.melds.forEach(function(g){ g.forEach(function(c){ meldIds[c.id]=true; }); });
+  G.player.forEach(function(c,i){
+    ph.appendChild(cardEl(c,{ sel:i===G.selected, meld: settings.teach!=="off" && !!meldIds[c.id] && G.player.length<=11,
+      onClick:function(){ if(G.phase==="discard"){ G.selected = G.selected===i ? -1 : i; render(); } } }));
+  });
+  $("playerDeadwoodVal").textContent = G.player.length? pA.deadwood : "–";
+  /* hand meta */
+  var meta="";
+  if(G.phase==="discard" && G.selected>=0){
+    var c=G.player[G.selected];
+    var rest=G.player.filter(function(_,j){return j!==G.selected;});
+    var ra=analyze(rest);
+    meta="Selected <b>"+cname(c)+"</b> — discarding it leaves deadwood <b>"+ra.deadwood+"</b>"+(ra.deadwood===0?" — that's GIN!":ra.deadwood<=settings.knock?" — you can KNOCK":"");
+  } else if(G.player.length===10 && !G.over){
+    meta="Deadwood <b>"+pA.deadwood+"</b> · "+pA.melds.length+" meld"+(pA.melds.length===1?"":"s")+" · "+pA.dead.length+" loose card"+(pA.dead.length===1?"":"s");
+  } else if(G.player.length===11){
+    var bd=bestDiscard(G.player, G.drawnDiscardId);
+    if(bd) meta="11 cards — best discard <b>"+cname(bd.card)+"</b> leaves deadwood <b>"+bd.deadwood+"</b>";
+  }
+  $("handMeta").innerHTML=meta;
+  /* buttons */
+  var myOffer = G.phase==="offer" && G.turn==="player";
+  $("btnTakeUp").hidden=!myOffer; $("btnPassUp").hidden=!myOffer;
+  var canAct = G.phase==="discard" && G.selected>=0;
+  $("btnDiscardSel").hidden=!(G.phase==="discard");
+  $("btnDiscardSel").disabled=!canAct;
+  var knockOk=false;
+  if(canAct){ var rest2=G.player.filter(function(_,j){return j!==G.selected;}); knockOk=analyze(rest2).deadwood<=settings.knock; }
+  $("btnKnock").hidden=!(G.phase==="discard");
+  $("btnKnock").disabled=!knockOk;
+  if(G.phase==="discard" && canAct){ var r3=G.player.filter(function(_,j){return j!==G.selected;}); $("btnKnock").firstChild.textContent = analyze(r3).deadwood===0 ? "Go Gin " : "Knock "; }
+  var bigGin = G.phase==="discard" && G.player.length===11 && analyze(G.player).deadwood===0;
+  $("btnBigGin").hidden=!bigGin;
+  $("btnSort").firstChild.textContent="Sort: by "+settings.sort+" ";
+  $("btnDeal").disabled = !(G.phase==="idle"||G.phase==="handOver");
+  /* discard strip */
+  var ds=$("discardStrip"); ds.innerHTML="";
+  G.discardLog.forEach(function(d){ var s=document.createElement("span"); s.className=(isRed(d.card)?"red":"")+(d.by==="bot"?" bybot":""); s.textContent=cname(d.card); ds.appendChild(s); });
+  var up=G.pile[G.pile.length-1];
+  if(up && G.discardLog.length===0){ var s2=document.createElement("span"); s2.className=isRed(up)?"red":""; s2.textContent=cname(up)+" (upcard)"; ds.appendChild(s2); }
+  renderHints();
+}
+function renderHints(){
+  var box=$("hintText"), read=$("readBox");
+  if(settings.teach==="off"){ box.textContent="Teaching is off. Turn it to Hints or Coach above whenever you want the math back."; read.innerHTML=""; return; }
+  var parts=[];
+  if(G.phase==="discard"){
+    var bd=bestDiscard(G.player, G.drawnDiscardId);
+    if(bd) parts.push("Best discard: <b>"+cname(bd.card)+"</b> → deadwood <b>"+bd.deadwood+"</b>."+(bd.deadwood===0?" That's gin — take it.":bd.deadwood<=settings.knock?" You can knock with that.":""));
+    if(settings.teach==="coach" && bd){
+      if(bd.deadwood>0 && bd.deadwood<=settings.knock){
+        parts.push("Coach — knock math: knocking now banks the difference if the bot is higher, but if the bot's deadwood is ≤ "+bd.deadwood+" you are undercut and the bot takes the difference + 25. With the stock at "+G.stock.length+" cards, "+(G.stock.length>22?"there is time to improve toward gin if you have real outs; with a thin stock, bank it.":"the stock is thin — banking the knock is usually right."));
+      } else if(bd.deadwood<=4){
+        parts.push("Coach: your deadwood is already tiny. Each extra turn chasing gin gives the bot a turn to knock first — price the +25 bonus against that, not against zero.");
+      }
+    }
+  } else if(G.phase==="draw" && G.turn==="player"){
+    var up=G.pile[G.pile.length-1];
+    if(up){ var test=G.player.concat([up]); var bd2=bestDiscard(test, up.id); var cur=analyze(G.player).deadwood;
+      parts.push("The discard is <b>"+cname(up)+"</b>: taking it and discarding your worst leaves deadwood <b>"+bd2.deadwood+"</b> (you're at "+cur+" now). "+(bd2.deadwood<cur?"It improves you — but it also tells the bot what you're building.":"The stock is the quieter choice unless that card completes a meld."));
+    }
+  } else if(G.phase==="offer" && G.turn==="player"){
+    parts.push("Upcard rule of thumb: take it if it completes a meld or pairs with two cards you hold. Taking it shows the bot a card you want — that information is part of the price.");
+  }
+  if(!parts.length) parts.push("Deadwood now: <b>"+(G.player.length?analyze(G.player).deadwood:"–")+"</b>. Loose face cards cost 10 each — they are the first thing to fix.");
+  box.innerHTML=parts.join(" ");
+  /* discard reading */
+  if(settings.teach==="coach"){
+    var lines=[];
+    G.botTook.forEach(function(c){ lines.push("Bot picked up <b>"+cname(c)+"</b> — treat your "+RANKS[c.rank]+"s and "+(c.rank>1?RANKS[c.rank-1]+SUITS[c.suit]:"")+(c.rank>1&&c.rank<13?" / ":"")+(c.rank<13?RANKS[c.rank+1]+SUITS[c.suit]:"")+" as dangerous discards."); });
+    var botThrows=G.discardLog.filter(function(d){return d.by==="bot";}).slice(0,3);
+    botThrows.forEach(function(d){ lines.push("Bot threw "+cname(d.card)+" early — its rank-mates are a little safer for you (a read, not a promise)."); });
+    if(G.botPassedUp) lines.push("Bot passed the upcard — a small tell about what it isn't building.");
+    read.innerHTML = lines.length? "<p style='margin-top:8px'><strong>Reading the bot:</strong> "+lines.join(" ")+"</p>" : "";
+  } else read.innerHTML="";
+}
+
+/* ================= record UI ================= */
+function renderRecord(){
+  $("stHands").textContent=record.hands; $("stWins").textContent=record.wins;
+  $("stGins").textContent=record.gins; $("stUnderFor").textContent=record.underFor;
+  $("stUnderAgainst").textContent=record.underAgainst; $("stMatches").textContent=record.matches;
+  $("historyEl").innerHTML = G.history.length? G.history.map(function(h){return "<div>"+h+"</div>";}).join("") : "No hands finished yet.";
+}
+
+/* ================= wiring ================= */
+function applySettingsToUI(){
+  $("aliasInput").value=settings.alias;
+  $("botLevel").value=settings.bot; $("teachDial").value=settings.teach;
+  $("knockValue").value=String(settings.knock); $("targetScore").value=String(settings.target);
+  $("tableColor").value=settings.table; document.body.setAttribute("data-table", settings.table);
+  var honest={
+    casual:"Casual bot, honestly: it plays its own deadwood and forgets the discard pile. It will sometimes keep a card it should throw and knocks on a coin flip. A learning opponent, not a pushover act.",
+    steady:"Steady bot, honestly: it always takes a discard that improves its hand, always throws its worst card, and knocks with 7 or less. It never reads your discards — feed it carefully anyway.",
+    sharp:"Sharp bot, honestly: it remembers every discard, avoids feeding what you've picked up, throws buried cards first, and prices knock-vs-gin by deadwood and stock. It cannot see your hand and never bluffs."
+  };
+  $("botHonest").textContent=honest[settings.bot];
+  render();
+}
+$("aliasInput").addEventListener("change", function(){ settings.alias=this.value.trim()||"You"; saveSettings(); applySettingsToUI(); });
+$("botLevel").addEventListener("change", function(){ settings.bot=this.value; saveSettings(); applySettingsToUI(); });
+$("teachDial").addEventListener("change", function(){ settings.teach=this.value; saveSettings(); render(); });
+$("tableColor").addEventListener("change", function(){ settings.table=this.value; saveSettings(); document.body.setAttribute("data-table", settings.table); });
+$("knockValue").addEventListener("change", function(){ settings.knock=parseInt(this.value,10); saveSettings(); render(); });
+$("targetScore").addEventListener("change", function(){ settings.target=parseInt(this.value,10); saveSettings(); render(); });
+$("btnNewMatch").addEventListener("click", function(){ G=newGameState(); $("resultEl").textContent=""; setMsg("New match. Press <b>Deal a hand</b> to start."); log("New match started — scores reset."); render(); renderRecord(); });
+$("btnDeal").addEventListener("click", function(){ if(G.phase==="idle"||G.phase==="handOver") startHand(); });
+$("btnTakeUp").addEventListener("click", playerTakeUp);
+$("btnPassUp").addEventListener("click", playerPassUp);
+$("btnStock").addEventListener("click", function(){ playerDraw(false); });
+$("btnDiscardPile").addEventListener("click", function(){ if(G.phase==="offer"&&G.turn==="player") playerTakeUp(); else playerDraw(true); });
+$("btnDiscardSel").addEventListener("click", function(){ playerDiscard(false); });
+$("btnKnock").addEventListener("click", function(){ playerDiscard(true); });
+$("btnBigGin").addEventListener("click", playerBigGin);
+$("btnSort").addEventListener("click", function(){ settings.sort = settings.sort==="rank" ? "suit" : "rank"; saveSettings(); sortHand(G.player); render(); });
+$("btnDownload").addEventListener("click", function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"}); var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="gin-rummy.html"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+$("btnExport").addEventListener("click", function(){
+  var blob=new Blob([JSON.stringify({record:record, settings:{alias:settings.alias,knock:settings.knock,target:settings.target}},null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="gin-rummy-record.json"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+var forgetArmed=false;
+$("btnForget").addEventListener("click", function(){
+  if(!forgetArmed){ forgetArmed=true; $("forgetMsg").textContent="Tap Forget once more to erase your record, name, and settings from this device."; return; }
+  try{ localStorage.removeItem(LS_REC); localStorage.removeItem(LS_SET); }catch(e){}
+  record={ hands:0, wins:0, gins:0, underFor:0, underAgainst:0, matches:0 };
+  forgetArmed=false; $("forgetMsg").textContent="Forgotten. This device now holds no record of your games.";
+  renderRecord();
+});
+/* expose for verification / curious players */
+window.GinRummy={ state:function(){return G;}, analyze:analyze, startHand:startHand, settings:settings, record:function(){return record;} };
+applySettingsToUI(); renderRecord();
+</script>
+</body>
+</html>
