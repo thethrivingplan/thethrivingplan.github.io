@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Pairs — the memory matching game</title>
+<style>
+  :root{
+    --bg:#f4f1e8; --panel:#fffdf6; --panel2:#efe9d8; --ink:#22301f; --ink2:#4c5a48;
+    --line:#d8d0ba; --accent:#1f6f4a; --accent-ink:#ffffff; --gold:#b8860b;
+    --felt:#2e5d43; --felt2:#26503a; --cardback:#31572c; --cardback2:#40916c;
+    --cardface:#fffef9; --warn:#8a5a00; --warnbg:#fdf3d7; --danger:#9c2b2b;
+    --shadow:0 2px 10px rgba(34,48,31,.14); --radius:14px;
+    --coachbg:#eef6ee; --coachline:#bcd6bc;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141a15; --panel:#1e2620; --panel2:#232d25; --ink:#e8ecdf; --ink2:#b3bfa9;
+      --line:#3a463b; --accent:#4caf7d; --accent-ink:#0d1f14; --gold:#d9a441;
+      --felt:#1d3a2a; --felt2:#183324; --cardback:#2c5c40; --cardback2:#3d7a57;
+      --cardface:#f4f1e4; --warn:#e8c877; --warnbg:#3a3018; --danger:#e88;
+      --shadow:0 2px 10px rgba(0,0,0,.5);
+      --coachbg:#1c2b20; --coachline:#39543d;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia,'Iowan Old Style','Times New Roman',serif;
+    font-size:17px;line-height:1.5}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer}
+  .wrap{max-width:1060px;margin:0 auto;padding:14px 16px 48px}
+  /* ---------- top strip ---------- */
+  .freeline{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
+    background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 14px;font-size:15.5px}
+  .freeline strong{font-size:16.5px}
+  .freeline .door{background:rgba(255,255,255,.16);color:inherit;border:1.5px solid currentColor;
+    border-radius:8px;padding:6px 12px;font-size:14.5px;min-height:2.25rem}
+  .compass{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+  .compass a{color:var(--ink2);text-decoration:none;border:1px solid var(--line);border-radius:999px;
+    padding:7px 13px;font-size:14px;background:var(--panel);min-height:2rem;display:inline-flex;align-items:center}
+  .compass a[aria-current]{background:var(--panel2);color:var(--ink);font-weight:bold;border-color:var(--ink2)}
+  h1{font-size:clamp(34px,6vw,52px);margin:10px 0 2px;letter-spacing:.5px;line-height:1.05}
+  .sub{color:var(--ink2);margin:0 0 6px;max-width:62ch}
+  .rulesline{font-size:15px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 14px;box-shadow:var(--shadow)}
+  /* ---------- layout ---------- */
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:16px;margin-top:16px;align-items:start}
+  @media (max-width:820px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;box-shadow:var(--shadow);margin-bottom:16px}
+  .panel h2{font-size:19px;margin:0 0 8px}
+  .panel h3{font-size:16px;margin:14px 0 6px}
+  .panel p{margin:6px 0}
+  .small{font-size:14px;color:var(--ink2)}
+  fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 12px;padding:8px 10px 10px}
+  legend{font-size:13.5px;font-weight:bold;color:var(--ink2);padding:0 4px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;
+    padding:7px 11px;font-size:14.5px;min-height:2.5rem}
+  .opt[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:bold}
+  .opt .cnt{display:block;font-size:12px;opacity:.85;font-weight:normal}
+  label.alias{display:block;font-size:14px;margin:8px 0 2px;color:var(--ink2)}
+  input[type="text"]{width:100%;font:inherit;font-size:15px;padding:7px 9px;border:1.5px solid var(--line);
+    border-radius:8px;background:var(--panel);color:var(--ink)}
+  .bigbtn{width:100%;background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;
+    padding:12px;font-size:17px;font-weight:bold;min-height:3rem}
+  .ghostbtn{background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-radius:9px;
+    padding:8px 13px;font-size:14.5px;min-height:2.5rem}
+  .dangerbtn{border-color:var(--danger);color:var(--danger)}
+  /* ---------- board ---------- */
+  .banner{background:var(--warnbg);color:var(--warn);border:1px solid var(--gold);border-radius:10px;
+    padding:8px 12px;font-size:14.5px;margin-bottom:12px}
+  .banner:empty{display:none}
+  .scorebar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 13px;
+    font-size:15px;box-shadow:var(--shadow)}
+  .stat b{font-size:18px}
+  .stat.turn{outline:2.5px solid var(--gold);outline-offset:1px}
+  .felt{background:linear-gradient(160deg,var(--felt),var(--felt2));border-radius:18px;padding:14px;
+    box-shadow:inset 0 0 0 3px rgba(0,0,0,.15), var(--shadow)}
+  .board{display:grid;gap:8px}
+  @media (max-width:520px){.board{gap:5px}.felt{padding:8px}}
+  .card{position:relative;aspect-ratio:3/4;border:none;background:none;padding:0;cursor:pointer;
+    perspective:600px;min-height:0;-webkit-tap-highlight-color:transparent}
+  .card:disabled{cursor:default}
+  .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .38s ease}
+  .card.up .inner,.card.matched .inner{transform:rotateY(180deg)}
+  .side{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+  .back{background:
+      radial-gradient(circle at 50% 42%, rgba(255,255,255,.20) 0 16%, transparent 17%),
+      repeating-linear-gradient(45deg,var(--cardback) 0 10px,var(--cardback2) 10px 20px);
+    border:2px solid rgba(255,255,255,.35)}
+  .back::after{content:"✦";color:rgba(255,255,255,.75);font-size:clamp(14px,3.4vw,26px)}
+  .face{background:var(--cardface);border:2px solid #cbbf9d;transform:rotateY(180deg);padding:4px 2px}
+  .face svg{width:72%;height:66%;flex:none}
+  .face .fname{font-size:clamp(9px,2.2vw,13.5px);color:#3c4a38;font-family:inherit;line-height:1.1;text-align:center}
+  .card.matched .face{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}
+  .card.matched{opacity:.92}
+  .gesture{font-size:13.5px;color:var(--ink2);margin-top:8px;text-align:center}
+  /* ---------- coach ---------- */
+  .coach{background:var(--coachbg);border:1px solid var(--coachline);border-radius:var(--radius);
+    padding:14px;margin-top:16px}
+  .coach h2{font-size:19px;margin:0 0 6px}
+  .coachnote{font-size:16.5px;background:var(--panel);border-radius:10px;padding:10px 12px;border:1px solid var(--coachline)}
+  .coachnote:empty{display:none}
+  .strat{border-top:1px dashed var(--coachline);padding:10px 0 2px}
+  .strat h3{margin:0 0 3px;font-size:16px}
+  .strat p{margin:3px 0;font-size:15px}
+  .trade{font-size:14px;color:var(--ink2)}
+  /* ---------- tables & record ---------- */
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:8px 0}
+  th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{font-size:13px;color:var(--ink2)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .recwrap{overflow-x:auto}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .trendbox{background:var(--panel2);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
+  .winbox{background:var(--panel);border:2px solid var(--gold);border-radius:var(--radius);
+    padding:16px;margin-top:16px;box-shadow:var(--shadow)}
+  .winbox h2{margin:0 0 6px;font-size:24px}
+  footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;font-size:13.5px;color:var(--ink2)}
+  footer p{margin:4px 0}
+  .kbd-note{font-size:13.5px;color:var(--ink2)}
+  :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){.inner{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="freeline">
+    <span><strong>Free — always free.</strong> No ads, no accounts, no paywalls, nothing locked. Play right here, or take the whole game with you:</span>
+    <button class="door" id="downloadBtn" type="button">⬇ Download this page — tap to save a copy that works offline</button>
+  </div>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#" aria-current="page">♟ Games shelf</a>
+    <a href="#play">Play</a>
+    <a href="#coachPanel">Coach</a>
+    <a href="#botHonesty">Bot honesty</a>
+    <a href="#recordPanel">Your record</a>
+    <a href="#strategies">Strategies</a>
+  </nav>
+
+  <h1>Pairs</h1>
+  <p class="sub">The memory matching game — the old Concentration form. Cards lie face down in a grid. Flip two: a match stays up, a miss flips back. Clear the whole grid, and in solo play do it in as few flips as you can.</p>
+  <p class="rulesline"><strong>The one rule that matters:</strong> every card you have ever seen is a clue, whether it matched or not. The game is won by the memory you build from your misses. <span class="small">All the pictures on the cards are our own drawings, made for this page.</span></p>
+
+  <div class="layout">
+    <!-- ============ SETTINGS ============ -->
+    <div>
+      <section class="panel" aria-labelledby="setH">
+        <h2 id="setH">Set up your game</h2>
+        <p class="small">Rules are settings here — change any of them and the banner above the board names the variant in play. Nothing is hidden.</p>
+
+        <fieldset>
+          <legend>Grid size — tap to choose</legend>
+          <div class="opts" id="gridOpts" role="group" aria-label="Grid size"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Who plays — tap to choose</legend>
+          <div class="opts" id="modeOpts" role="group" aria-label="Mode">
+            <button type="button" class="opt" data-mode="solo" aria-pressed="true">Solo<small class="cnt">against the clock &amp; the flip count</small></button>
+            <button type="button" class="opt" data-mode="bot" aria-pressed="false">Against the bot<small class="cnt">take turns; most pairs wins</small></button>
+            <button type="button" class="opt" data-mode="duo" aria-pressed="false">Two players<small class="cnt">same device, pass it back and forth</small></button>
+          </div>
+          <p class="small">In turn games, a match earns another turn — the classic rule. That is why a good memory snowballs.</p>
+        </fieldset>
+
+        <fieldset id="botField">
+          <legend>Bot memory level — tap to choose</legend>
+          <div class="opts" id="botOpts" role="group" aria-label="Bot level"></div>
+          <p class="small">The rate is the chance each card the bot sees actually sticks in its memory. The full honesty box is <a href="#botHonesty">below the board</a>.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Teaching — tap to choose (saved on this device)</legend>
+          <div class="opts" id="teachOpts" role="group" aria-label="Teaching level">
+            <button type="button" class="opt" data-teach="off" aria-pressed="false">Off<small class="cnt">just the game</small></button>
+            <button type="button" class="opt" data-teach="light" aria-pressed="true">Light<small class="cnt">a note now and then</small></button>
+            <button type="button" class="opt" data-teach="coach" aria-pressed="false">Coach<small class="cnt">teaching on your actual grid, every turn</small></button>
+          </div>
+        </fieldset>
+
+        <div id="aliasBox">
+          <label class="alias" for="name1">Player 1 name — optional, never required</label>
+          <input type="text" id="name1" maxlength="18" placeholder="Player 1" autocomplete="off" />
+          <label class="alias" for="name2">Player 2 / bot game name — optional</label>
+          <input type="text" id="name2" maxlength="18" placeholder="Player 2" autocomplete="off" />
+          <p class="small">Play under any name you like, or none at all. No name is ever claimed, checked, or required — leave these blank and the game runs exactly the same.</p>
+        </div>
+
+        <button class="bigbtn" id="newGameBtn" type="button">New game — tap to shuffle &amp; deal</button>
+        <p class="kbd-note">Keyboard: Tab to a card, Enter or Space flips it. Every card says what a tap does.</p>
+      </section>
+
+      <section class="panel" id="botHonesty" aria-labelledby="botH">
+        <h2 id="botH">Bot honesty — how its memory really works</h2>
+        <p>The bot has <strong>no hidden knowledge</strong>. It only ever “knows” cards that have been flipped face-up where it could see them — the same cards you saw. Each time a card shows, the bot gets <strong>one memory roll</strong> at its level’s rate: roll under the rate and the card sticks; roll over it and the bot plays as if it never saw it. A card shown twice gets two chances to stick. The bot never peeks at face-down cards it hasn’t seen.</p>
+        <table aria-label="Bot memory rates">
+          <thead><tr><th>Level</th><th class="num">Chance one seen card sticks</th><th class="num">Chance it recalls a whole seen pair*</th></tr></thead>
+          <tbody id="botRateRows"></tbody>
+        </table>
+        <p class="small">*Plain reasoning, shown rather than asserted: recalling a pair needs <em>both</em> copies remembered, and the two rolls are independent, so the chance is the rate multiplied by itself (rate²). Learning: 0.40 × 0.40 = 0.16 — it will usually miss pairs it has technically “seen.” Pro: 1.00 × 1.00 = 1.00 — perfect recall of everything shown, but it still knows nothing about cards never flipped.</p>
+        <p class="small">Don’t take our word for it — run the check. This simulates the exact memory roll the bot uses, 4,000 times per level, and prints what actually stuck:</p>
+        <button class="ghostbtn" id="simBtn" type="button">Run the memory check — tap to simulate</button>
+        <p id="simOut" class="small" role="status"></p>
+      </section>
+    </div>
+
+    <!-- ============ PLAY ============ -->
+    <div id="play">
+      <div class="banner" id="variantBanner" role="status"></div>
+      <div class="scorebar" id="scorebar" aria-live="polite"></div>
+      <div class="felt"><div class="board" id="board" role="grid" aria-label="Card grid"></div></div>
+      <p class="gesture">Tap a face-down card to flip it. Tap a second card to try for its pair. Matched cards stay up; misses flip back after a moment — watch them before they go.</p>
+
+      <div id="winSlot"></div>
+
+      <section class="coach" id="coachPanel" aria-labelledby="coachH">
+        <h2 id="coachH">Coach</h2>
+        <div class="coachnote" id="coachNote" role="status"></div>
+        <div id="strategyList"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ RECORD ============ -->
+  <section class="panel" id="recordPanel" aria-labelledby="recH" style="margin-top:16px">
+    <h2 id="recH">Your strategy record</h2>
+    <p class="small">Kept <strong>on this device only</strong> — nothing is sent anywhere, no account. Every finished game is written in the same clean shape: date, grid, flips, time, mode, bot level. Export it any time; forget it in one tap.</p>
+    <div class="trendbox" id="trendBox">No finished games yet. Finish a game and your record starts — over time it shows your flips per pair falling as your memory trains. That fall is the proof, in your own numbers.</div>
+    <div class="recwrap"><table aria-label="Game record">
+      <thead><tr><th>Date</th><th>Grid</th><th>Mode</th><th class="num">Flips</th><th class="num">Flips / pair</th><th class="num">Time</th><th>Result</th></tr></thead>
+      <tbody id="recRows"></tbody>
+    </table></div>
+    <div class="btnrow">
+      <button class="ghostbtn" id="exportBtn" type="button">Export record — tap to download a file</button>
+      <button class="ghostbtn dangerbtn" id="forgetBtn" type="button">Forget everything — tap to wipe the record</button>
+      <span id="forgetConfirm" hidden>
+        <button class="ghostbtn dangerbtn" id="forgetYes" type="button">Yes, wipe it — tap to confirm</button>
+        <button class="ghostbtn" id="forgetNo" type="button">Keep it — tap to cancel</button>
+      </span>
+    </div>
+    <p class="small" id="recStatus" role="status"></p>
+  </section>
+
+  <!-- ============ STRATEGIES ============ -->
+  <section class="panel" id="strategies" aria-labelledby="stratH">
+    <h2 id="stratH">The strategies, with their trade-offs</h2>
+    <p>There is more than one honest way to play this game. None is magic; each buys something and costs something. The Coach teaches from these, on your actual grid.</p>
+    <div id="strategyFull"></div>
+    <h3>The honest note about memory</h3>
+    <p>Memory is trainable — not as a slogan, but measurably, and this page measures it. Your record tracks flips per pair game after game: when that number falls, your memory for places is genuinely improving, because the game, the grids, and the counting never change. Slow weeks happen and the record shows those too. What improves is a real skill — holding locations in mind — and it carries off this page into kitchens, car parks, and workshops.</p>
+  </section>
+
+  <footer>
+    <p><strong>Pairs</strong> — an original page: name, words, and card pictures are our own work, made for this shelf. The game form itself (cards face down, flip two, match stays up) is the documented classic known as Concentration, older than anyone’s claim on it.</p>
+    <p>Copyleft: this page is free to copy and share under CC BY-SA 4.0 — pass it on, keep it free. No ads, ever. Your record and settings live on your device only.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ================= Card faces — our own original drawings (inline SVG) ================= */
+function svgWrap(inner, bg){ return '<svg viewBox="0 0 60 60" role="img" aria-hidden="true"><circle cx="30" cy="30" r="27" fill="'+bg+'"/>'+inner+'</svg>'; }
+var FACES = [
+ {id:'cat',   name:'Cat',    svg:svgWrap('<circle cx="30" cy="34" r="13" fill="#e8912d"/><path d="M19 26 L17 14 L27 21 Z" fill="#e8912d"/><path d="M41 26 L43 14 L33 21 Z" fill="#e8912d"/><circle cx="25" cy="33" r="2.2" fill="#22301f"/><circle cx="35" cy="33" r="2.2" fill="#22301f"/><path d="M28 39 Q30 41 32 39" stroke="#22301f" fill="none" stroke-width="1.8" stroke-linecap="round"/>','#fdeed3')},
+ {id:'fish',  name:'Fish',   svg:svgWrap('<path d="M10 30 Q24 15 40 30 Q24 45 10 30 Z" fill="#3a86c8"/><path d="M40 30 L52 20 L52 40 Z" fill="#2f6da3"/><circle cx="19" cy="28" r="2.4" fill="#fff"/>','#d9ecfa')},
+ {id:'bird',  name:'Bird',   svg:svgWrap('<ellipse cx="30" cy="34" rx="12" ry="10" fill="#7b5ea7"/><circle cx="38" cy="24" r="7" fill="#7b5ea7"/><path d="M44 24 L52 27 L44 30 Z" fill="#e8a13a"/><path d="M20 30 Q10 22 14 34 Q18 38 22 36" fill="#5d4785"/><circle cx="40" cy="23" r="1.8" fill="#fff"/>','#ece4f7')},
+ {id:'frog',  name:'Frog',   svg:svgWrap('<ellipse cx="30" cy="36" rx="15" ry="11" fill="#58a34c"/><circle cx="21" cy="26" r="5.5" fill="#58a34c"/><circle cx="39" cy="26" r="5.5" fill="#58a34c"/><circle cx="21" cy="26" r="2.4" fill="#fff"/><circle cx="39" cy="26" r="2.4" fill="#fff"/><circle cx="21" cy="26" r="1.2" fill="#22301f"/><circle cx="39" cy="26" r="1.2" fill="#22301f"/><path d="M23 38 Q30 43 37 38" stroke="#2c5c26" fill="none" stroke-width="2" stroke-linecap="round"/>','#e2f3dc')},
+ {id:'guitar',name:'Guitar', svg:svgWrap('<circle cx="26" cy="38" r="11" fill="#b45a2d"/><circle cx="33" cy="31" r="8" fill="#b45a2d"/><circle cx="28" cy="36" r="4" fill="#5e2f14"/><rect x="36" y="12" width="5" height="22" rx="2" transform="rotate(38 38 23)" fill="#7a4322"/>','#fae8d8')},
+ {id:'drum',  name:'Drum',   svg:svgWrap('<ellipse cx="30" cy="24" rx="15" ry="5" fill="#f3ead2"/><path d="M15 24 L15 42 Q30 48 45 42 L45 24 Q30 30 15 24 Z" fill="#c23b3b"/><path d="M15 33 Q30 39 45 33" stroke="#f3ead2" fill="none" stroke-width="2"/><line x1="14" y1="10" x2="26" y2="21" stroke="#7a4322" stroke-width="3" stroke-linecap="round"/><line x1="46" y1="10" x2="34" y2="21" stroke="#7a4322" stroke-width="3" stroke-linecap="round"/>','#fbe3e3')},
+ {id:'horn',  name:'Horn',   svg:svgWrap('<path d="M12 34 L36 26 L36 42 L12 40 Z" fill="#d9a441"/><ellipse cx="42" cy="34" rx="6" ry="11" fill="#c08c2a"/><rect x="8" y="34" width="5" height="6" fill="#8a6420"/><circle cx="20" cy="28" r="2.4" fill="#8a6420"/>','#fdf3d7')},
+ {id:'star',  name:'Star',   svg:svgWrap('<path d="M30 10 L36 24 L51 25 L39 34 L43 49 L30 41 L17 49 L21 34 L9 25 L24 24 Z" fill="#e8b71a" stroke="#b8860b" stroke-width="1.6"/>','#fdf6d8')},
+ {id:'moon',  name:'Moon',   svg:svgWrap('<path d="M40 10 A21 21 0 1 0 50 42 A16.5 16.5 0 1 1 40 10 Z" fill="#e6c95c"/><circle cx="22" cy="24" r="2" fill="#fff"/><circle cx="30" cy="14" r="1.5" fill="#fff"/>','#e8ecf7')},
+ {id:'sun',   name:'Sun',    svg:svgWrap('<g stroke="#e08a1a" stroke-width="3.4" stroke-linecap="round"><line x1="30" y1="6" x2="30" y2="13"/><line x1="30" y1="47" x2="30" y2="54"/><line x1="6" y1="30" x2="13" y2="30"/><line x1="47" y1="30" x2="54" y2="30"/><line x1="13" y1="13" x2="18" y2="18"/><line x1="42" y1="42" x2="47" y2="47"/><line x1="47" y1="13" x2="42" y2="18"/><line x1="18" y1="42" x2="13" y2="47"/></g><circle cx="30" cy="30" r="12" fill="#f2b21b"/>','#fdf0d0')},
+ {id:'wrench',name:'Wrench', svg:svgWrap('<path d="M38 12 A10 10 0 1 0 48 22 L35 35 L28 28 Z" fill="#7d8a99" transform="rotate(8 30 30)"/><rect x="14" y="38" width="9" height="16" rx="4" transform="rotate(45 18 46)" fill="#7d8a99"/>','#e6ebef')},
+ {id:'hammer',name:'Hammer', svg:svgWrap('<rect x="27" y="26" width="6" height="26" rx="3" transform="rotate(24 30 39)" fill="#9a6a35"/><path d="M14 16 Q30 8 46 15 L44 24 Q30 18 17 24 Z" fill="#68737f"/>','#ece7dd')},
+ {id:'key',   name:'Key',    svg:svgWrap('<circle cx="22" cy="24" r="9" fill="none" stroke="#c9971c" stroke-width="5"/><line x1="28" y1="31" x2="46" y2="49" stroke="#c9971c" stroke-width="5" stroke-linecap="round"/><line x1="38" y1="41" x2="45" y2="36" stroke="#c9971c" stroke-width="4" stroke-linecap="round"/><line x1="43" y1="46" x2="50" y2="41" stroke="#c9971c" stroke-width="4" stroke-linecap="round"/>','#fbf0cd')},
+ {id:'leaf',  name:'Leaf',   svg:svgWrap('<path d="M14 46 Q12 18 46 13 Q48 42 20 47 Q16 47 14 46 Z" fill="#4e9b47"/><path d="M17 44 Q28 30 43 17" stroke="#2f6b2a" fill="none" stroke-width="2.2"/>','#e4f4e0')},
+ {id:'flower',name:'Flower', svg:svgWrap('<g fill="#d96c9e"><circle cx="30" cy="18" r="7"/><circle cx="41" cy="27" r="7"/><circle cx="38" cy="40" r="7"/><circle cx="22" cy="40" r="7"/><circle cx="19" cy="27" r="7"/></g><circle cx="30" cy="30" r="6.5" fill="#f2b21b"/>','#fbe7f1')},
+ {id:'boat',  name:'Boat',   svg:svgWrap('<path d="M30 10 L30 34 L14 34 Z" fill="#e8e2d2"/><path d="M33 20 L33 34 L46 34 Z" fill="#c23b3b"/><path d="M10 38 L50 38 L44 48 L16 48 Z" fill="#7a4a22"/><path d="M8 52 Q16 49 24 52 Q32 55 40 52 Q48 49 54 52" stroke="#3a86c8" fill="none" stroke-width="2.4"/>','#dff0fa')},
+ {id:'rocket',name:'Rocket', svg:svgWrap('<path d="M30 7 Q40 18 40 32 L20 32 Q20 18 30 7 Z" fill="#c8cfd6"/><circle cx="30" cy="22" r="4.5" fill="#3a86c8"/><path d="M20 30 Q13 38 16 46 L21 40 Z" fill="#c23b3b"/><path d="M40 30 Q47 38 44 46 L39 40 Z" fill="#c23b3b"/><path d="M26 42 Q30 54 34 42 Q30 46 26 42 Z" fill="#e8861a"/>','#e9edf5')},
+ {id:'cup',   name:'Cup',    svg:svgWrap('<path d="M14 22 L44 22 L41 46 Q30 50 17 46 Z" fill="#3f7fbf"/><path d="M44 27 Q54 28 52 35 Q50 41 42 40" fill="none" stroke="#3f7fbf" stroke-width="4"/><path d="M21 15 Q24 11 21 7 M30 15 Q33 11 30 7 M39 15 Q42 11 39 7" stroke="#9db8cc" fill="none" stroke-width="2.2" stroke-linecap="round"/>','#e2eefb')}
+];
+
+/* ================= Settings & storage (this device only) ================= */
+var GRIDS = [
+ {key:'4x3', cols:4, rows:3, label:'4 × 3'},
+ {key:'4x4', cols:4, rows:4, label:'4 × 4'},
+ {key:'6x5', cols:6, rows:5, label:'6 × 5'},
+ {key:'6x6', cols:6, rows:6, label:'6 × 6'}
+];
+var BOT_LEVELS = [
+ {key:'learning', name:'Learning', rate:0.40},
+ {key:'steady',   name:'Steady',   rate:0.65},
+ {key:'sharp',    name:'Sharp',    rate:0.85},
+ {key:'pro',      name:'Pro',      rate:1.00}
+];
+var LS_SET='pairs-settings-v1', LS_REC='pairs-record-v1';
+function loadJSON(k, d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+var settings = loadJSON(LS_SET, {grid:'4x3', mode:'solo', bot:'steady', teach:'light', name1:'', name2:''});
+if(!GRIDS.some(function(g){return g.key===settings.grid;})) settings.grid='4x3';
+if(['solo','bot','duo'].indexOf(settings.mode)<0) settings.mode='solo';
+if(!BOT_LEVELS.some(function(b){return b.key===settings.bot;})) settings.bot='steady';
+if(['off','light','coach'].indexOf(settings.teach)<0) settings.teach='light';
+var record = loadJSON(LS_REC, []);
+
+/* ================= Strategies (taught by the Coach) ================= */
+var STRATEGIES = [
+ {name:'Systematic sweeping', body:'Always probe new cards in a fixed pattern — left to right, top to bottom, never skipping around. A miss then still maps the board: you know exactly which ground is covered and which is untouched.', trade:'Costs: feels slower at first, and early flips “waste” turns on empty ground. Buys: zero re-flips of places you already know are wrong — the most common way beginners burn flips.'},
+ {name:'Anchor landmarks', body:'Tie each seen card to a fixed landmark: “Horn, top row, second from the corner.” Corners and edges are the strongest anchors because they never move and are easy to point at in your mind.', trade:'Costs: a moment of effort per card. Buys: recall you can actually find again — a picture with no address is a picture lost.'},
+ {name:'Say the place aloud', body:'When a card flips, say its name and place out loud (or under your breath): “Cat, bottom left.” Hearing it adds a second memory trace to the visual one, and the two back each other up.', trade:'Costs: feels silly, and is slower per card. Buys: measurably stickier recall — two traces fail less often than one. In a turn game it also warns your opponent what you know, so weigh it when playing against someone.'},
+ {name:'Chunk the board into neighbourhoods', body:'Split the grid into quarters and hold one neighbourhood at a time: “top-left is done, top-right holds the Drum somewhere.” You never hold the whole board — you hold four small maps and a note about each.', trade:'Costs: on small grids it is overkill. Buys: the only way the 6 × 6 board (18 pairs) fits in a human head — nobody holds 36 places flat, but four groups of nine is fair work.'}
+];
+
+/* ================= Game state ================= */
+var S = null;
+function gridOf(){ return GRIDS.filter(function(g){return g.key===settings.grid;})[0]; }
+function botOf(){ return BOT_LEVELS.filter(function(b){return b.key===settings.bot;})[0]; }
+function pName(i){
+  var v = (i===0? settings.name1 : settings.name2).trim();
+  if(v) return v;
+  if(settings.mode==='bot' && i===1) return 'The Bot ('+botOf().name+')';
+  return 'Player '+(i+1);
+}
+function newGame(){
+  var g = gridOf(), pairs = g.cols*g.rows/2;
+  var faces = FACES.slice(0, pairs);
+  var deck = [];
+  faces.forEach(function(f){ deck.push(f.id); deck.push(f.id); });
+  for(var i=deck.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S = {
+    deck:deck, matched:{}, up:[], lock:false, flips:0, pairsFound:0, totalPairs:pairs,
+    current:0, scores:[0,0], turnFlips:[0,0],
+    seen:{},               /* faceId -> Set of positions ever revealed (public knowledge) */
+    botMem:{},             /* faceId -> Set of positions the bot actually remembers */
+    startedAt:null, elapsed:0, timerId:null, over:false,
+    humanTurns:0, scattered:0, lastProbe:-1, finishedRecorded:false
+  };
+  renderBoard(); renderScore(); renderBanner();
+  coachSay(startNote(), true);
+}
+function startNote(){
+  var g=gridOf();
+  if(settings.teach==='off') return '';
+  var base = 'New game: '+g.label+', '+S.totalPairs+' pairs. ';
+  if(settings.teach==='coach') return base + STRATEGIES[0].name+' is a good default here: probe left to right, top to bottom, so even your misses draw the map.';
+  return base + 'Flip two and watch the misses — they are the map you will win with.';
+}
+/* Bot observation: one memory roll per reveal, at the printed rate. */
+function botObserve(pos, faceId){
+  if(Math.random() < botOf().rate){
+    if(!S.botMem[faceId]) S.botMem[faceId]={};
+    S.botMem[faceId][pos]=true;
+  }
+}
+function observe(pos, faceId){
+  if(!S.seen[faceId]) S.seen[faceId]={};
+  S.seen[faceId][pos]=true;
+  botObserve(pos, faceId);
+}
+function faceName(id){ return FACES.filter(function(f){return f.id===id;})[0].name; }
+function posLabel(pos){
+  var g=gridOf(), r=Math.floor(pos/g.cols), c=pos%g.cols;
+  return 'row '+(r+1)+', column '+(c+1);
+}
+
+/* ================= Rendering ================= */
+var boardEl=document.getElementById('board'), scoreEl=document.getElementById('scorebar'),
+    bannerEl=document.getElementById('variantBanner'), coachEl=document.getElementById('coachNote'),
+    winSlot=document.getElementById('winSlot');
+function renderBoard(){
+  var g=gridOf();
+  boardEl.style.gridTemplateColumns='repeat('+g.cols+',1fr)';
+  boardEl.innerHTML='';
+  S.deck.forEach(function(faceId, pos){
+    var f=FACES.filter(function(x){return x.id===faceId;})[0];
+    var b=document.createElement('button');
+    b.type='button'; b.className='card'; b.dataset.pos=pos;
+    b.setAttribute('role','gridcell');
+    b.setAttribute('aria-label','Card '+(pos+1)+' of '+S.deck.length+', face down. Tap to flip.');
+    b.innerHTML='<span class="inner"><span class="side back"></span><span class="side face">'+f.svg+'<span class="fname">'+f.name+'</span></span></span>';
+    b.addEventListener('click', function(){ flip(pos); });
+    boardEl.appendChild(b);
+  });
+}
+function cardEl(pos){ return boardEl.children[pos]; }
+function fmtTime(sec){ var m=Math.floor(sec/60), s=sec%60; return m+':'+(s<10?'0':'')+s; }
+function renderScore(){
+  var html='';
+  html+='<span class="stat">Flips <b>'+S.flips+'</b></span>';
+  html+='<span class="stat">Pairs <b>'+S.pairsFound+' / '+S.totalPairs+'</b></span>';
+  html+='<span class="stat">Time <b id="clock">'+fmtTime(S.elapsed)+'</b></span>';
+  if(settings.mode!=='solo'){
+    html+='<span class="stat'+(S.current===0?' turn':'')+'">'+escapeHtml(pName(0))+' <b>'+S.scores[0]+'</b> pairs</span>';
+    html+='<span class="stat'+(S.current===1?' turn':'')+'">'+escapeHtml(pName(1))+' <b>'+S.scores[1]+'</b> pairs</span>';
+    html+='<span class="stat">Turn: <b>'+escapeHtml(pName(S.current))+'</b></span>';
+  }
+  scoreEl.innerHTML=html;
+}
+function renderBanner(){
+  var parts=[];
+  var g=gridOf();
+  if(settings.mode==='bot') parts.push('Variant in play: against the bot — '+botOf().name+' memory ('+Math.round(botOf().rate*100)+'% of seen cards stick), most pairs wins, a match earns another turn.');
+  if(settings.mode==='duo') parts.push('Variant in play: two players on one device — most pairs wins, a match earns another turn. Pass the device when the turn changes.');
+  if(g.key!=='4x4') parts.push('Grid variant: '+g.label+' — '+(g.cols*g.rows/2)+' pairs.');
+  if(settings.teach==='coach') parts.push('Coach teaching is on.');
+  bannerEl.textContent = parts.join(' ');
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+/* ================= Coach ================= */
+function coachSay(msg, force){
+  if(settings.teach==='off') { coachEl.textContent=''; return; }
+  if(settings.teach==='light' && !force && Math.random()<0.45) return;
+  coachEl.textContent = msg;
+}
+function coachOnMiss(first, second){
+  if(settings.teach==='off') return;
+  var g=gridOf();
+  /* Did the player walk past a known mate? */
+  [first, second].forEach(function(fp){
+    var p=fp.pos;
+    var seen=S.seen[S.deck[p]];
+    if(seen){ var others=Object.keys(seen).map(Number).filter(function(x){return x!==p && !S.matched[x];});
+      if(others.length && settings.teach==='coach'){
+        coachSay('Coach: the '+faceName(S.deck[p])+' at '+posLabel(p)+' — its mate was seen earlier at '+posLabel(others[0])+'. That is the miss that teaches: next time, before flipping somewhere new, ask “have I seen this one’s pair?”', true); return;
+      }
+    }
+  });
+  if(settings.teach==='coach'){
+    var strat = STRATEGIES[S.humanTurns % STRATEGIES.length];
+    coachSay('Coach — '+strat.name+': '+strat.body, true);
+  } else {
+    coachSay('Miss — but both cards are on your map now: '+faceName(S.deck[first.pos])+' at '+posLabel(first.pos)+', '+faceName(S.deck[second.pos])+' at '+posLabel(second.pos)+'. Say the places aloud and they stick better.');
+  }
+}
+function coachOnMatch(p, byMemory){
+  if(settings.teach==='off') return;
+  if(byMemory){
+    coachSay((settings.teach==='coach'?'Coach: ':'')+'Matched the '+faceName(S.deck[p])+'s from memory — that pair was earned by an earlier miss. This is the whole game working as it should.', true);
+  } else if(settings.teach==='coach'){
+    coachSay('Coach: a fresh match — good fortune, honestly labelled. The pairs you find by memory are the ones that prove the training.', true);
+  }
+}
+
+/* ================= Play flow ================= */
+function startTimer(){
+  if(S.timerId) return;
+  S.startedAt=Date.now();
+  S.timerId=setInterval(function(){
+    S.elapsed=Math.floor((Date.now()-S.startedAt)/1000);
+    var c=document.getElementById('clock'); if(c) c.textContent=fmtTime(S.elapsed);
+  },500);
+}
+function stopTimer(){ if(S.timerId){ clearInterval(S.timerId); S.timerId=null; } }
+
+function flip(pos){
+  if(!S || S.over || S.lock) return;
+  if(settings.mode==='bot' && S.current===1) return;      /* bot's turn */
+  if(S.matched[pos] || S.up.indexOf(pos)>=0) return;
+  doFlip(pos, S.current);
+  afterHumanAction();
+}
+function doFlip(pos, player){
+  startTimer();
+  var faceId=S.deck[pos];
+  var wasSeenBefore = !!(S.seen[faceId] && Object.keys(S.seen[faceId]).some(function(x){ return Number(x)!==pos; }));
+  observe(pos, faceId);
+  S.flips++; S.turnFlips[player]++;
+  S.up.push({pos:pos, byMemory:wasSeenBefore});
+  var el=cardEl(pos);
+  el.classList.add('up');
+  el.setAttribute('aria-label','Card '+(pos+1)+': '+faceName(faceId));
+  if(S.up.length===2){
+    S.lock=true;
+    var a=S.up[0], b=S.up[1];
+    if(S.deck[a.pos]===S.deck[b.pos]){
+      setTimeout(function(){
+        S.matched[a.pos]=true; S.matched[b.pos]=true;
+        [a.pos,b.pos].forEach(function(p){ var e=cardEl(p); e.classList.add('matched'); e.disabled=true;
+          e.setAttribute('aria-label','Card '+(p+1)+': '+faceName(S.deck[p])+', matched.'); });
+        S.pairsFound++;
+        if(settings.mode!=='solo'){ S.scores[player]++; }
+        if(player===0) coachOnMatch(a.pos, a.byMemory||b.byMemory);
+        S.up=[]; S.lock=false;
+        renderScore();
+        if(S.pairsFound>=S.totalPairs){ finishGame(); return; }
+        if(settings.mode==='bot' && player===1){ setTimeout(botTurn, 650); }  /* match = another turn */
+      }, 420);
+    } else {
+      var fa={pos:a.pos}, fb={pos:b.pos};
+      setTimeout(function(){
+        [a.pos,b.pos].forEach(function(p){ var e=cardEl(p); e.classList.remove('up');
+          e.setAttribute('aria-label','Card '+(p+1)+' of '+S.deck.length+', face down. Tap to flip.'); });
+        S.up=[]; S.lock=false;
+        if(player===0 && settings.mode!=='solo' || settings.mode==='solo'){ if(player===0) coachOnMiss(fa, fb); }
+        if(settings.mode!=='solo'){
+          S.current = 1 - S.current;
+          S.humanTurns++;
+          renderScore();
+          if(settings.mode==='bot' && S.current===1){ setTimeout(botTurn, 700); }
+        } else { S.humanTurns++; }
+        renderScore();
+      }, 1050);
+    }
+  }
+  renderScore();
+}
+function afterHumanAction(){ /* hook kept simple: scoreboard already re-rendered in doFlip */ }
+
+/* ================= Bot ================= */
+function botKnownPair(){
+  var ids=Object.keys(S.botMem);
+  for(var i=0;i<ids.length;i++){
+    var poss=Object.keys(S.botMem[ids[i]]).map(Number).filter(function(p){ return !S.matched[p]; });
+    if(poss.length>=2) return poss.slice(0,2);
+  }
+  return null;
+}
+function botKnownMate(pos){
+  var mem=S.botMem[S.deck[pos]];
+  if(!mem) return null;
+  var poss=Object.keys(mem).map(Number).filter(function(p){ return p!==pos && !S.matched[p]; });
+  return poss.length? poss[0] : null;
+}
+function botUnknown(exclude){
+  var opts=[];
+  for(var p=0;p<S.deck.length;p++){
+    if(S.matched[p] || exclude.indexOf(p)>=0) continue;
+    var remembered = S.botMem[S.deck[p]] && S.botMem[S.deck[p]][p];
+    if(!remembered) opts.push(p);
+  }
+  if(!opts.length){ for(var q=0;q<S.deck.length;q++){ if(!S.matched[q] && exclude.indexOf(q)<0) opts.push(q); } }
+  return opts[Math.floor(Math.random()*opts.length)];
+}
+function botTurn(){
+  if(!S || S.over || S.current!==1) return;
+  var pair=botKnownPair();
+  if(pair){
+    doFlip(pair[0],1);
+    setTimeout(function(){ doFlip(pair[1],1); }, 620);
+    return;
+  }
+  var first=botUnknown([]);
+  if(first===undefined) return;
+  doFlip(first,1);
+  setTimeout(function(){
+    if(S.over) return;
+    var mate=botKnownMate(first);
+    var second = (mate!==null && mate!==undefined) ? mate : botUnknown([first]);
+    if(second===undefined || second===null) second=botUnknown([first]);
+    if(second!==undefined && second!==null) doFlip(second,1);
+  }, 620);
+}
+
+/* ================= Finish & record ================= */
+function finishGame(){
+  S.over=true; stopTimer();
+  renderScore();
+  var g=gridOf();
+  var result='Cleared';
+  if(settings.mode==='bot') result = S.scores[0]>S.scores[1] ? pName(0)+' won '+S.scores[0]+'–'+S.scores[1] : (S.scores[1]>S.scores[0] ? 'Bot won '+S.scores[1]+'–'+S.scores[0] : 'Draw '+S.scores[0]+'–'+S.scores[1]);
+  if(settings.mode==='duo') result = S.scores[0]===S.scores[1] ? 'Draw '+S.scores[0]+'–'+S.scores[1] : (S.scores[0]>S.scores[1]? pName(0):pName(1))+' won '+Math.max(S.scores[0],S.scores[1])+'–'+Math.min(S.scores[0],S.scores[1]);
+  if(!S.finishedRecorded){
+    S.finishedRecorded=true;
+    record.push({
+      date:new Date().toISOString(),
+      grid:g.key, pairs:S.totalPairs, flips:S.flips,
+      flipsPerPair:Math.round((S.flips/S.totalPairs)*100)/100,
+      seconds:S.elapsed, mode:settings.mode,
+      botLevel: settings.mode==='bot' ? settings.bot : null,
+      result:result
+    });
+    saveJSON(LS_REC, record);
+    renderRecord();
+  }
+  var msg;
+  if(settings.mode==='solo'){
+    var par = S.totalPairs*2;
+    msg = '<h2>Grid cleared!</h2><p><strong>'+S.flips+' flips</strong> for '+S.totalPairs+' pairs in '+fmtTime(S.elapsed)+'. A perfect-memory run needs exactly '+par+' flips (two per pair, never a miss) — you used '+S.flips+', so '+(S.flips-par)+' flips went to learning the board. That gap is the thing that shrinks as you train, and your record below is tracking it.</p>';
+  } else {
+    msg = '<h2>'+escapeHtml(result)+'</h2><p>Final pairs — '+escapeHtml(pName(0))+': '+S.scores[0]+' · '+escapeHtml(pName(1))+': '+S.scores[1]+'. Total flips: '+S.flips+', time '+fmtTime(S.elapsed)+'.</p>';
+  }
+  winSlot.innerHTML='<div class="winbox" role="status">'+msg+'<button class="bigbtn" id="againBtn" type="button">Play again — tap for a fresh shuffle</button></div>';
+  document.getElementById('againBtn').addEventListener('click', function(){ winSlot.innerHTML=''; newGame(); });
+  coachSay('Game recorded below. Look at your flips per pair across games — a falling line is your memory training, in your own numbers.', true);
+}
+
+/* ================= Record rendering ================= */
+function renderRecord(){
+  var rows=document.getElementById('recRows'), trend=document.getElementById('trendBox');
+  if(!record.length){
+    rows.innerHTML='<tr><td colspan="7" class="small">No games recorded yet.</td></tr>';
+    trend.textContent='No finished games yet. Finish a game and your record starts — over time it shows your flips per pair falling as your memory trains. That fall is the proof, in your own numbers.';
+    return;
+  }
+  rows.innerHTML = record.slice().reverse().slice(0,30).map(function(r){
+    return '<tr><td>'+escapeHtml(new Date(r.date).toLocaleDateString())+'</td><td>'+escapeHtml(r.grid)+'</td><td>'+
+      escapeHtml(r.mode==='bot' ? 'Bot · '+r.botLevel : r.mode)+'</td><td class="num">'+r.flips+'</td><td class="num">'+
+      r.flipsPerPair.toFixed(2)+'</td><td class="num">'+fmtTime(r.seconds)+'</td><td>'+escapeHtml(r.result||'Cleared')+'</td></tr>';
+  }).join('');
+  var solo = record.filter(function(r){ return typeof r.flipsPerPair==='number'; });
+  if(solo.length>=2){
+    var first3 = solo.slice(0,3), last3 = solo.slice(-3);
+    var avg=function(a){ return a.reduce(function(s,r){return s+r.flipsPerPair;},0)/a.length; };
+    var f=avg(first3), l=avg(last3);
+    var pts = solo.slice(-14);
+    var max=Math.max.apply(null, pts.map(function(r){return r.flipsPerPair;}))*1.15;
+    var min=Math.min.apply(null, pts.map(function(r){return r.flipsPerPair;}))*0.85;
+    var W=300,H=64, step=pts.length>1? W/(pts.length-1):0;
+    var poly = pts.map(function(r,i){ var x=(i*step).toFixed(1), y=(H-((r.flipsPerPair-min)/(max-min||1))*H).toFixed(1); return x+','+y; }).join(' ');
+    var verdict = l<f-0.05 ? 'Your flips per pair are <strong>falling</strong> — first games averaged '+f.toFixed(2)+', latest games '+l.toFixed(2)+'. That is memory training, measured on your own games.' :
+                  l>f+0.05 ? 'Latest games ('+l.toFixed(2)+' flips/pair) sit above your first games ('+f.toFixed(2)+'). Bigger grids, harder modes, and honest slow weeks all do that — the line over more games is the real story.' :
+                  'Holding steady at about '+l.toFixed(2)+' flips per pair. Try a bigger grid or a stronger bot and watch what the line does.';
+    trend.innerHTML='<strong>'+record.length+' game'+(record.length===1?'':'s')+' recorded.</strong> '+verdict+
+      '<br><svg viewBox="0 0 '+W+' '+H+'" width="100%" height="64" preserveAspectRatio="none" aria-hidden="true" style="margin-top:8px"><polyline points="'+poly+'" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg>'+
+      '<span class="small">Flips per pair, oldest → newest (lower is better). A perfect-memory run is exactly 2.00.</span>';
+  } else {
+    trend.innerHTML='<strong>1 game recorded.</strong> Play a few more and this box reads your pattern back: whether your flips per pair are falling as your memory trains.';
+  }
+}
+
+/* ================= Settings UI ================= */
+function buildOpts(){
+  var go=document.getElementById('gridOpts');
+  go.innerHTML='';
+  GRIDS.forEach(function(g){
+    var b=document.createElement('button');
+    b.type='button'; b.className='opt'; b.dataset.grid=g.key;
+    b.setAttribute('aria-pressed', String(settings.grid===g.key));
+    b.innerHTML=g.label+'<small class="cnt">'+(g.cols*g.rows/2)+' pairs</small>';
+    b.addEventListener('click', function(){ settings.grid=g.key; saveJSON(LS_SET, settings); buildOpts(); winSlot.innerHTML=''; newGame(); });
+    go.appendChild(b);
+  });
+  var bo=document.getElementById('botOpts');
+  bo.innerHTML='';
+  BOT_LEVELS.forEach(function(lv){
+    var b=document.createElement('button');
+    b.type='button'; b.className='opt'; b.dataset.bot=lv.key;
+    b.setAttribute('aria-pressed', String(settings.bot===lv.key));
+    b.innerHTML=lv.name+'<small class="cnt">'+Math.round(lv.rate*100)+'% memory</small>';
+    b.addEventListener('click', function(){ settings.bot=lv.key; saveJSON(LS_SET, settings); buildOpts(); renderBotRates(); winSlot.innerHTML=''; newGame(); });
+    bo.appendChild(b);
+  });
+  document.getElementById('botRateRows').innerHTML = BOT_LEVELS.map(function(lv){
+    return '<tr><td>'+lv.name+'</td><td class="num">'+Math.round(lv.rate*100)+'%</td><td class="num">'+Math.round(lv.rate*lv.rate*100)+'%</td></tr>';
+  }).join('');
+  document.getElementById('botField').style.display = settings.mode==='bot' ? '' : 'none';
+  document.getElementById('aliasBox').style.display = settings.mode==='solo' ? 'none' : '';
+  document.querySelectorAll('#modeOpts .opt').forEach(function(b){
+    b.setAttribute('aria-pressed', String(b.dataset.mode===settings.mode));
+  });
+  document.querySelectorAll('#teachOpts .opt').forEach(function(b){
+    b.setAttribute('aria-pressed', String(b.dataset.teach===settings.teach));
+  });
+}
+function renderBotRates(){ buildOpts(); }
+document.querySelectorAll('#modeOpts .opt').forEach(function(b){
+  b.addEventListener('click', function(){ settings.mode=b.dataset.mode; saveJSON(LS_SET, settings); buildOpts(); winSlot.innerHTML=''; newGame(); });
+});
+document.querySelectorAll('#teachOpts .opt').forEach(function(b){
+  b.addEventListener('click', function(){
+    settings.teach=b.dataset.teach; saveJSON(LS_SET, settings); buildOpts();
+    if(settings.teach==='off'){ coachEl.textContent=''; document.getElementById('strategyList').innerHTML=''; }
+    else renderStrategies();
+    coachSay(settings.teach==='coach' ? 'Coach is on: I will teach on your actual grid as you play — starting with sweeping in a pattern so your misses still map the board.' : 'Teaching set to Light: a note now and then, never in your way.', true);
+    renderBanner();
+  });
+});
+['name1','name2'].forEach(function(id, i){
+  var el=document.getElementById(id);
+  el.value = i===0? settings.name1 : settings.name2;
+  el.addEventListener('input', function(){
+    if(i===0) settings.name1=el.value; else settings.name2=el.value;
+    saveJSON(LS_SET, settings); renderScore();
+  });
+});
+document.getElementById('newGameBtn').addEventListener('click', function(){ winSlot.innerHTML=''; newGame(); });
+
+/* ================= Strategy panels ================= */
+function stratHtml(list){
+  return list.map(function(s){
+    return '<div class="strat"><h3>'+escapeHtml(s.name)+'</h3><p>'+escapeHtml(s.body)+'</p><p class="trade">'+escapeHtml(s.trade)+'</p></div>';
+  }).join('');
+}
+function renderStrategies(){
+  document.getElementById('strategyFull').innerHTML = stratHtml(STRATEGIES);
+  document.getElementById('strategyList').innerHTML =
+    settings.teach==='coach' ? '<h3 style="margin-top:12px">The four strategies Coach teaches from</h3>'+stratHtml(STRATEGIES) :
+    settings.teach==='light' ? '<p class="small" style="margin-top:10px">Light teaching: short notes during play. The full strategies, with trade-offs, are in <a href="#strategies">the strategies section</a> — and Coach mode puts all four here, taught on your grid as you play.</p>' : '';
+}
+
+/* ================= Sim check ================= */
+document.getElementById('simBtn').addEventListener('click', function(){
+  var N=4000, out=[];
+  BOT_LEVELS.forEach(function(lv){
+    var stuck=0;
+    for(var i=0;i<N;i++){ if(Math.random()<lv.rate) stuck++; }
+    out.push(lv.name+': printed '+Math.round(lv.rate*100)+'%, simulated '+(stuck/N*100).toFixed(1)+'% stuck');
+  });
+  document.getElementById('simOut').textContent='Ran '+N+' memory rolls per level just now, using the same roll the bot plays with — '+out.join(' · ')+'. Small wobbles from the printed rate are chance doing its ordinary work; run it again and they move.';
+});
+
+/* ================= Record buttons ================= */
+document.getElementById('exportBtn').addEventListener('click', function(){
+  var blob=new Blob([JSON.stringify({game:'Pairs', exported:new Date().toISOString(), record:record}, null, 2)], {type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pairs-record.json'; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  document.getElementById('recStatus').textContent='Record downloaded as pairs-record.json — '+record.length+' game(s) in it.';
+});
+document.getElementById('forgetBtn').addEventListener('click', function(){
+  document.getElementById('forgetConfirm').hidden=false;
+});
+document.getElementById('forgetNo').addEventListener('click', function(){
+  document.getElementById('forgetConfirm').hidden=true;
+});
+document.getElementById('forgetYes').addEventListener('click', function(){
+  record=[]; saveJSON(LS_REC, record); renderRecord();
+  document.getElementById('forgetConfirm').hidden=true;
+  document.getElementById('recStatus').textContent='Record wiped from this device. Nothing was sent anywhere; it is simply gone.';
+});
+
+/* ================= Offline download door ================= */
+document.getElementById('downloadBtn').addEventListener('click', function(){
+  var html='<!doctype html>\n'+document.documentElement.outerHTML;
+  var blob=new Blob([html], {type:'text/html'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pairs.html'; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+
+/* ================= Go ================= */
+buildOpts();
+renderStrategies();
+renderRecord();
+newGame();
+</script>
+</body>
+</html>
