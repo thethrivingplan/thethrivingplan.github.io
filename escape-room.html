@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Locked Study — Escape Room</title>
+<style>
+  :root{
+    --bg:#edf0e9; --panel:#fbfbf7; --panel2:#f1f3ec; --ink:#1d2420; --muted:#4c5a52;
+    --line:#c9d2c4; --accent:#1f5f57; --accent-ink:#ffffff; --brass:#9a6b1e; --brass-soft:#f3e5c3;
+    --good:#2e7d46; --warn:#a34d12; --danger:#a02c22; --chip:#e6ebdf; --shadow:0 2px 10px rgba(20,30,25,.12);
+    --focus:#b3541e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121714; --panel:#1b221e; --panel2:#232b26; --ink:#e8ece6; --muted:#a9b6ab;
+      --line:#39443c; --accent:#3d9c8e; --accent-ink:#0d1512; --brass:#d9a84e; --brass-soft:#3a2f16;
+      --good:#6fce8d; --warn:#e0954f; --danger:#e07a6d; --chip:#2a332c; --shadow:0 2px 10px rgba(0,0,0,.5);
+      --focus:#e08a4c;
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;font-size:17px}
+  h1,h2,h3{font-family:"Iowan Old Style",Palatino,Palatino Linotype,Georgia,serif;line-height:1.2;margin:0 0 .4em}
+  h1{font-size:2rem}
+  h2{font-size:1.45rem;margin-top:0}
+  h3{font-size:1.12rem}
+  p{margin:.45em 0}
+  a{color:var(--accent)}
+  button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+    border-radius:.55rem;padding:.45rem .8rem}
+  button:hover{border-color:var(--accent)}
+  button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:650}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  select,input[type="text"]{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:.5rem;padding:.4rem .6rem}
+  .wrap{max-width:980px;margin:0 auto;padding:0 1rem 3rem}
+  .freeline{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;
+    background:var(--accent);color:var(--accent-ink);padding:.6rem 1rem;font-weight:600}
+  .freeline button{background:transparent;color:inherit;border-color:currentColor;font-weight:650}
+  nav.compass{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:.25rem;padding:.4rem .6rem}
+  nav.compass a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.3rem .7rem;border-radius:.5rem;
+    text-decoration:none;color:var(--ink);font-weight:600}
+  nav.compass a:hover{background:var(--panel2)}
+  header.hero{padding:1.4rem 0 .6rem}
+  .fairlaw{border:2px solid var(--brass);background:var(--brass-soft);border-radius:.8rem;padding:.8rem 1rem;margin:.8rem 0}
+  .fairlaw strong{color:var(--brass)}
+  @media (prefers-color-scheme: dark){.fairlaw strong{color:var(--brass)}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:.9rem;padding:1rem;margin:1rem 0;box-shadow:var(--shadow)}
+  .settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.7rem;align-items:end}
+  .settings label{font-weight:600;display:block}
+  .settings select{width:100%;margin-top:.25rem}
+  .checkrow{display:flex;align-items:center;gap:.55rem;font-weight:600;min-height:2.75rem;padding:.3rem 0}
+  .checkrow input{width:1.35rem;height:1.35rem;flex:none}
+  .variant-banner{border:1px dashed var(--brass);border-radius:.6rem;padding:.5rem .8rem;margin:.7rem 0;font-weight:600}
+  .variant-banner.standard{border-color:var(--line);font-weight:500;color:var(--muted)}
+  .hud{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;align-items:center;font-weight:600;margin:.4rem 0}
+  .hud .pill{background:var(--chip);border-radius:2rem;padding:.2rem .75rem}
+  .scenebox{border:1px solid var(--line);border-radius:.9rem;overflow:hidden;background:#20241f}
+  .scenebox svg{display:block;width:100%;height:auto}
+  .hotspot{fill:rgba(255,255,255,0);stroke:rgba(255,255,255,0);stroke-width:3;cursor:pointer}
+  .hotspot:hover,.hotspot:focus{fill:rgba(255,210,110,.14);stroke:var(--brass);stroke-dasharray:7 5;outline:none}
+  .searchrow{display:flex;flex-wrap:wrap;gap:.45rem;margin:.7rem 0 .2rem}
+  .searchrow .lbl{width:100%;font-weight:650}
+  #log{background:var(--panel2);border:1px solid var(--line);border-radius:.7rem;padding:.7rem .9rem;min-height:4.2rem}
+  #log p{margin:.2em 0}
+  #log .found{font-weight:650}
+  .invbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.7rem 0}
+  .invbar .lbl{font-weight:700}
+  .item{border:2px solid var(--line);background:var(--panel2);border-radius:.7rem;padding:.5rem .8rem;font-weight:650;min-height:3rem}
+  .item[aria-pressed="true"]{border-color:var(--brass);background:var(--brass-soft)}
+  .item small{display:block;font-weight:500;color:var(--muted)}
+  .coachbox{border-left:5px solid var(--accent);background:var(--panel2);border-radius:0 .7rem .7rem 0;padding:.7rem .9rem;margin:.7rem 0}
+  .coachbox .who{font-weight:750;color:var(--accent);text-transform:none}
+  .focuspanel{border:1px solid var(--line);border-radius:.7rem;padding:.8rem .9rem;margin:.7rem 0;background:var(--panel)}
+  .codepad{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+  .codepad input{font-size:1.3rem;letter-spacing:.35em;width:9.5rem;text-align:center}
+  .bells{display:flex;flex-wrap:wrap;gap:.6rem}
+  .bellbtn{min-width:6.5rem;min-height:3.2rem;font-weight:700}
+  .btnrow{display:flex;flex-wrap:wrap;gap:.5rem;margin:.7rem 0}
+  details{border:1px solid var(--line);border-radius:.7rem;padding:.2rem .9rem;margin:.6rem 0;background:var(--panel)}
+  summary{cursor:pointer;font-weight:700;padding:.55rem 0;min-height:2.5rem;display:flex;align-items:center}
+  table{border-collapse:collapse;width:100%}
+  th,td{border-bottom:1px solid var(--line);padding:.45rem .5rem;text-align:left;vertical-align:top}
+  th{font-size:.92rem;color:var(--muted)}
+  .strat{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem}
+  .strat article{border:1px solid var(--line);border-radius:.8rem;padding:.8rem .95rem;background:var(--panel2)}
+  .trade{font-size:.94rem}
+  .trade b{color:var(--accent)}
+  .muted{color:var(--muted)}
+  .small{font-size:.92rem}
+  .winbox{border:2px solid var(--good);border-radius:.9rem;padding:1rem;background:var(--panel2);margin:.8rem 0}
+  footer{border-top:1px solid var(--line);margin-top:2rem;padding-top:1rem;color:var(--muted);font-size:.93rem}
+  .kbd-hint{font-size:.9rem;color:var(--muted)}
+  @media (max-width:560px){ h1{font-size:1.65rem} .codepad input{width:8rem} .hideS{display:none} }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<div class="freeline">
+  <span>Free — always free. No ads, no account, nothing locked.</span>
+  <button type="button" id="dlBtn">Tap to download this page for offline play</button>
+</div>
+<nav class="compass" aria-label="Page compass">
+  <a href="#play">Play</a>
+  <a href="#howto">How to play</a>
+  <a href="#strategies">Strategies</a>
+  <a href="#record">Your record</a>
+  <a href="#basis">About the form</a>
+</nav>
+<div class="wrap">
+
+<header class="hero">
+  <h1>The Locked Study — and two more doors</h1>
+  <p>An escape room game in three original rooms: <strong>The Locked Study</strong>, <strong>The Greenhouse</strong>, and <strong>The Tide Boathouse</strong>. Search each drawn room by tapping, gather what you find, combine what belongs together, and work out every code from clues inside the room itself.</p>
+  <div class="fairlaw" role="note">
+    <strong>The fair-play law:</strong> every solution is findable inside the room you are standing in. No answer needs a guess, a search engine, or knowledge from outside the room. If you are stuck, the room is holding a clue you have not looked at yet — and the hint ladder below will walk you to it, rung by rung.
+  </div>
+</header>
+
+<section class="card" id="play" aria-label="Game">
+  <h2 id="roomTitle">The Locked Study</h2>
+  <p class="muted" id="roomIntro"></p>
+
+  <div class="settings" aria-label="Settings">
+    <div>
+      <label for="roomSel">Room — tap to choose</label>
+      <select id="roomSel">
+        <option value="study">Room 1 · The Locked Study</option>
+        <option value="greenhouse">Room 2 · The Greenhouse</option>
+        <option value="boathouse">Room 3 · The Tide Boathouse</option>
+      </select>
+    </div>
+    <div>
+      <label for="teachSel">Teaching — tap to choose</label>
+      <select id="teachSel">
+        <option value="off">Off — no coaching</option>
+        <option value="light" selected>Light — a short tip as you play</option>
+        <option value="coach">Coach — full puzzle craft, in the moment</option>
+      </select>
+    </div>
+    <div>
+      <label class="checkrow"><input type="checkbox" id="hintsChk" checked /> Hints allowed</label>
+      <label class="checkrow"><input type="checkbox" id="timerChk" /> Timer on (variant)</label>
+    </div>
+  </div>
+  <p class="small muted">Teaching level and these settings are saved on this device only. No name is ever required to play — signing your record below is optional, always.</p>
+  <div class="variant-banner standard" id="variantBanner">Standard form in play: untimed, hints allowed — the relaxed documented form for a web page.</div>
+
+  <div class="hud" aria-live="polite">
+    <span class="pill" id="hudTime" hidden>⏱ <span id="timeVal">0:00</span></span>
+    <span class="pill">Hints used: <span id="hudHints">0</span></span>
+    <span class="pill">Holding: <span id="hudInv">nothing yet</span></span>
+  </div>
+
+  <div class="scenebox" id="sceneBox"></div>
+  <div class="searchrow" id="searchRow" role="group" aria-label="Places to search"></div>
+  <p class="kbd-hint">Tap a place in the picture, or tap its labelled button — both do the same search. Tap an item in your hands to select it, then tap a place to use it there. Tap one item, then a second item, to try combining them.</p>
+
+  <div id="log" aria-live="polite" aria-label="What happens"></div>
+
+  <div class="invbar" id="invBar"><span class="lbl">In your hands:</span> <span class="muted" id="invEmpty">empty — search the room</span></div>
+  <div class="btnrow">
+    <button type="button" id="combineBtn" hidden>Tap to combine the two selected items</button>
+    <button type="button" id="hintBtn">Tap for a hint</button>
+    <button type="button" id="restartBtn">Tap to restart this room</button>
+    <button type="button" id="giveupBtn">Tap to give up on this room</button>
+  </div>
+  <div id="focusPanel"></div>
+  <div id="coachBox"></div>
+  <div id="winBox"></div>
+</section>
+
+<section class="card" id="howto">
+  <h2>How to play</h2>
+  <ol>
+    <li><strong>Search.</strong> Tap places in the room — furniture, floor, walls. Some hold items; some hold clues; some are just a room being a room.</li>
+    <li><strong>Carry.</strong> What you find goes into your hands at the bottom of the room. Tap an item to select it (it glows), then tap a place to use it there.</li>
+    <li><strong>Combine.</strong> Some things are two halves of one tool. Tap one item, then tap a second item, and the game tries to put them together.</li>
+    <li><strong>Codes.</strong> A lock never wants a guessed number. Somewhere in the room, a note gives the <em>order</em> and the room itself gives the <em>numbers</em> — counts, colours, sequences. Find both halves before you touch the dials.</li>
+    <li><strong>Hints.</strong> The hint ladder has three rungs for wherever you are stuck: a nudge, a stronger hint, then the answer with its <em>why</em>. Every hint you take is written into your record, honestly — hints are a tool, not a cheat, and the record simply says you used them.</li>
+    <li><strong>Escape.</strong> The last key opens the door. Your time (on timed runs), your hints, and whether you escaped or gave up all go into your record below.</li>
+  </ol>
+  <details>
+    <summary>Tap to open: the three rooms, in plain words</summary>
+    <p><strong>The Locked Study.</strong> A scholar's room, locked from the outside. A key, a drawer, a dark corner, a safe, and a shelf of coloured books.</p>
+    <p><strong>The Greenhouse.</strong> Glass, soil, and blooms. Tools come in pieces here, and the flowers themselves are keeping a number.</p>
+    <p><strong>The Tide Boathouse.</strong> Nets, bells, and a chained door. One puzzle here is not a number at all — it is an order, and it rings.</p>
+  </details>
+</section>
+
+<section class="card" id="strategies">
+  <h2>Strategies — more than one way through a room</h2>
+  <p>There is no single right way to search a room. These are the approaches experienced players actually use, with what each one costs and buys. Coach mode teaches them in the moment, on the room you are standing in.</p>
+  <div class="strat">
+    <article>
+      <h3>1 · The grid sweep</h3>
+      <p>Divide the room into quarters in your mind and search one quarter completely before moving on — top-left, top-right, bottom-left, bottom-right.</p>
+      <p class="trade"><b>Buys:</b> nothing gets skipped; your first pass is thorough. <b>Costs:</b> slower, and you will tap some scenery that holds nothing.</p>
+    </article>
+    <article>
+      <h3>2 · Feature-first</h3>
+      <p>Go straight for the things that look worked — drawers, locks, loose edges, anything slightly out of place — and sweep the plain scenery last.</p>
+      <p class="trade"><b>Buys:</b> fast progress when your eye is good. <b>Costs:</b> the one plain-looking place you skipped is, sooner or later, the one holding the key.</p>
+    </article>
+    <article>
+      <h3>3 · Revisit after every find</h3>
+      <p>Every new item changes what the old places mean. After each find, re-check the places you already searched — a locked drawer is a different place once you hold a key.</p>
+      <p class="trade"><b>Buys:</b> catches the chains other players stall on. <b>Costs:</b> some re-taps come back empty; it feels slower than it is.</p>
+    </article>
+    <article>
+      <h3>4 · Inventory thinking</h3>
+      <p>When stuck, stop searching the room and audit your hands: <em>What haven't I used? What changed since I last looked?</em> An unused item is an unanswered question.</p>
+      <p class="trade"><b>Buys:</b> breaks most stalls without a hint. <b>Costs:</b> none, except the pause itself.</p>
+    </article>
+    <article>
+      <h3>5 · Code-hunting</h3>
+      <p>Numbers hide in counts (how many books, blooms, bells), in colours (which order a note names them), and in sequences (what order things happen or hang). When you meet a lock, ask: <em>what in this room can be counted, and what tells me the order?</em></p>
+      <p class="trade"><b>Buys:</b> turns a lock from a guess into a reading exercise. <b>Costs:</b> you must actually find the note — the order half — before the count means anything.</p>
+    </article>
+    <article>
+      <h3>6 · The hint ladder, used well</h3>
+      <p>Take one rung, then go back and work — don't climb all three at once. A nudge preserves the solve; the full answer teaches it.</p>
+      <p class="trade"><b>Buys:</b> you keep moving and still learn the room. <b>Costs:</b> every rung is counted in your record, so a clean-sheet run means climbing sparingly.</p>
+    </article>
+  </div>
+</section>
+
+<section class="card" id="record">
+  <h2>Your record</h2>
+  <p>Saved on this device only — nothing is sent anywhere, and there is no account. Every finished room is written in the same clean shape: room, result, time, timed or not, hints used.</p>
+  <label for="aliasInput"><strong>Sign your escapes as</strong> (optional — never required, and play never asks)</label>
+  <p><input type="text" id="aliasInput" placeholder="Any name you like, or leave blank" maxlength="30" style="width:min(22rem,100%)" /></p>
+  <div id="recordSummary"><p class="muted">No finished rooms yet. Your escapes and give-ups will stand here.</p></div>
+  <div id="recordTable"></div>
+  <div class="btnrow">
+    <button type="button" id="exportBtn">Tap to export your record (downloads a file)</button>
+    <button type="button" id="forgetBtn">Tap to forget everything</button>
+  </div>
+  <p class="small muted" id="forgetMsg"></p>
+</section>
+
+<section class="card" id="basis">
+  <h2>About the form</h2>
+  <p>The escape room is a documented game form with two chapters. First came the browser games of the early 2000s: small point-and-click adventures, drawn in a web page, in which you woke in a single locked room and escaped by searching it — clicking drawers, pockets, and picture frames, combining what you found, and reading codes out of the room's own details. Then, from 2007 in Japan and spreading worldwide through the 2010s, the form left the screen: physical escape rooms locked real groups of people in themed rooms with the same grammar — search, combine, decode, unlock — against a clock.</p>
+  <p>This page is built in the first chapter's shape, on purpose: the drawn, tappable room, at your own pace. That is why the <strong>standard form here is untimed</strong> — the relaxed, documented form of the browser originals. The clock belongs to the physical rooms, so here it stands as a labelled variant you can switch on, never a pressure you must accept. All three rooms, their puzzles, their art, and their words are original to this page, written for it — the form is borrowed, nothing else is.</p>
+  <details>
+    <summary>Tap to open: what "rules are settings" means here</summary>
+    <p>Room choice, hints on or off, timer on or off — these are settings, not laws, and you may change them freely, even mid-room. When your settings differ from the standard form (untimed, hints allowed), the banner above the room says so and names the variant in play, and your record notes which form each finish was earned under. Nothing about a variant is hidden.</p>
+  </details>
+</section>
+
+<footer>
+  <p>Copyleft — this page, its rooms, and its words are shared under CC BY-SA 4.0: copy it, change it, pass it on, keep it free. No ads, ever. Works offline once downloaded.</p>
+</footer>
+</div>
+<script>
+"use strict";
+/* ---------- Scenes: original inline SVG, drawn for this page ---------- */
+function hs(x,y,w,h,label){return '<rect class="hotspot" tabindex="0" role="button" aria-label="Tap to search: '+label+'" data-hs="'+label+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="10"></rect>';}
+
+var SCENES = {
+study:
+'<svg viewBox="0 0 800 450" role="img" aria-label="A drawn study: bookshelf, desk, rug, painting, clock, and a locked door">'+
+'<rect width="800" height="330" fill="#5d4a36"/><rect y="330" width="800" height="120" fill="#3d2f22"/>'+
+'<rect x="0" y="322" width="800" height="8" fill="#2c2117"/>'+
+/* bookshelf */
+'<g id="svg-shelf"><rect x="40" y="70" width="180" height="250" fill="#2c2117"/><rect x="52" y="82" width="156" height="226" fill="#6d5138"/>'+
+'<rect x="52" y="150" width="156" height="8" fill="#2c2117"/><rect x="52" y="228" width="156" height="8" fill="#2c2117"/>'+
+/* top row: 3 red, then others */
+'<g id="svg-books">'+
+'<rect x="60" y="102" width="16" height="48" fill="#b03a2e"/><rect x="78" y="102" width="16" height="48" fill="#b03a2e"/><rect x="96" y="102" width="16" height="48" fill="#b03a2e"/>'+
+'<rect x="116" y="102" width="16" height="48" fill="#3d6fb4"/><rect x="134" y="102" width="16" height="48" fill="#3d6fb4"/><rect x="152" y="102" width="16" height="48" fill="#3d6fb4"/><rect x="170" y="102" width="16" height="48" fill="#3d6fb4"/><rect x="188" y="102" width="14" height="48" fill="#3d6fb4"/>'+
+'<rect x="60" y="180" width="16" height="48" fill="#4d8a4f"/><rect x="78" y="180" width="16" height="48" fill="#4d8a4f"/>'+
+'<rect x="100" y="180" width="16" height="48" fill="#8a6d3b"/><rect x="118" y="180" width="16" height="48" fill="#8a6d3b"/><rect x="136" y="180" width="16" height="48" fill="#7a5c2e"/><rect x="156" y="186" width="40" height="42" fill="#54432c"/>'+
+'<rect x="60" y="258" width="16" height="50" fill="#71563a"/><rect x="78" y="258" width="16" height="50" fill="#71563a"/><rect x="96" y="258" width="16" height="50" fill="#5e4930"/><rect x="118" y="258" width="52" height="14" fill="#4a3823"/><rect x="118" y="276" width="52" height="14" fill="#54432c"/>'+
+'</g></g>'+
+/* clock */
+'<g id="svg-clock"><circle cx="400" cy="80" r="34" fill="#e8ddc4" stroke="#2c2117" stroke-width="5"/><line x1="400" y1="80" x2="400" y2="58" stroke="#2c2117" stroke-width="4"/><line x1="400" y1="80" x2="418" y2="88" stroke="#2c2117" stroke-width="4"/></g>'+
+/* desk */
+'<g id="svg-desk"><rect x="300" y="215" width="220" height="18" fill="#4a3520"/><rect x="312" y="233" width="18" height="95" fill="#3a2a18"/><rect x="490" y="233" width="18" height="95" fill="#3a2a18"/>'+
+'<rect id="svg-drawer" x="345" y="240" width="130" height="42" fill="#5e4426" stroke="#2c2117" stroke-width="3"/><circle cx="410" cy="261" r="6" fill="#d9a84e"/>'+
+'<rect x="330" y="188" width="46" height="27" fill="#274b73"/><rect x="440" y="180" width="14" height="35" fill="#7a2020"/><rect x="458" y="186" width="12" height="29" fill="#20503a"/></g>'+
+/* rug */
+'<g id="svg-rug"><ellipse id="svg-rugBody" cx="400" cy="392" rx="185" ry="42" fill="#7a3038"/><ellipse cx="400" cy="392" rx="140" ry="29" fill="#93404a"/><ellipse cx="400" cy="392" rx="90" ry="17" fill="#7a3038"/></g>'+
+/* painting / safe */
+'<g id="svg-painting"><rect x="575" y="90" width="130" height="105" fill="#c9a227" stroke="#7a5c10" stroke-width="4"/><rect x="585" y="100" width="110" height="85" fill="#7d9bb3"/><path d="M585 165 L630 125 L660 150 L680 132 L695 150 L695 185 L585 185 Z" fill="#4a6741"/><circle cx="668" cy="118" r="10" fill="#e8ddc4"/></g>'+
+'<g id="svg-safe" style="display:none"><rect x="578" y="92" width="124" height="110" fill="#3c4147" stroke="#191c1f" stroke-width="4"/><circle cx="640" cy="140" r="24" fill="#565d64" stroke="#191c1f" stroke-width="3"/><circle cx="640" cy="140" r="6" fill="#191c1f"/><rect id="svg-safeDoor" x="592" y="106" width="96" height="82" fill="none" stroke="#24282c" stroke-width="2"/></g>'+
+/* door */
+'<g id="svg-door"><rect x="716" y="120" width="72" height="212" fill="#4a3520" stroke="#2c2117" stroke-width="4"/><rect x="728" y="136" width="48" height="80" fill="#5e4426"/><rect x="728" y="232" width="48" height="80" fill="#5e4426"/><circle id="svg-knob" cx="730" cy="230" r="7" fill="#d9a84e"/></g>'+
+hs(40,70,180,250,'bookshelf')+hs(290,170,240,165,'desk')+hs(215,345,370,95,'rug')+hs(570,85,140,120,'painting')+hs(360,40,80,80,'clock')+hs(712,115,80,222,'door')+
+'</svg>',
+
+greenhouse:
+'<svg viewBox="0 0 800 450" role="img" aria-label="A drawn greenhouse: glass roof, bench, flower bed, pots, cabinet, tap, and a door">'+
+'<rect width="800" height="450" fill="#a8c8b0"/><path d="M0 90 L400 0 L800 90 L800 450 L0 450 Z" fill="#cfe4d2" opacity="0.55"/>'+
+'<g stroke="#5f7a63" stroke-width="6"><line x1="130" y1="58" x2="130" y2="450"/><line x1="400" y1="6" x2="400" y2="450"/><line x1="670" y1="58" x2="670" y2="450"/><line x1="0" y1="200" x2="800" y2="200"/></g>'+
+'<rect y="380" width="800" height="70" fill="#7a6248"/>'+
+/* bench */
+'<g id="svg-bench"><rect x="36" y="255" width="170" height="14" fill="#6d5138"/><rect x="48" y="269" width="12" height="70" fill="#54432c"/><rect x="182" y="269" width="12" height="70" fill="#54432c"/><rect x="70" y="228" width="34" height="27" fill="#8a5a2b"/><rect x="130" y="236" width="52" height="19" fill="#4d6b8a"/></g>'+
+/* bloom bed: 2 yellow, 4 pink, 1 white */
+'<g id="svg-bed"><rect x="240" y="300" width="250" height="52" fill="#4a3823"/><rect x="240" y="292" width="250" height="14" fill="#5e4426"/>'+
+'<g stroke="#3e6b34" stroke-width="4"><line x1="272" y1="300" x2="272" y2="262"/><line x1="322" y1="300" x2="322" y2="258"/><line x1="362" y1="300" x2="362" y2="266"/><line x1="402" y1="300" x2="402" y2="256"/><line x1="432" y1="300" x2="432" y2="264"/><line x1="458" y1="300" x2="458" y2="258"/><line x1="292" y1="300" x2="292" y2="268"/></g>'+
+'<g><circle cx="272" cy="254" r="11" fill="#e9c33c"/><circle cx="322" cy="250" r="11" fill="#e58bb1"/><circle cx="362" cy="258" r="11" fill="#e58bb1"/><circle cx="402" cy="248" r="11" fill="#e58bb1"/><circle cx="432" cy="256" r="11" fill="#e58bb1"/><circle cx="458" cy="250" r="11" fill="#e9c33c"/><circle cx="292" cy="260" r="11" fill="#f4f1e6"/></g></g>'+
+/* pots */
+'<g id="svg-soilpot"><path d="M540 300 L610 300 L600 356 L550 356 Z" fill="#a3542f"/><rect x="534" y="290" width="82" height="14" fill="#bf683c"/><ellipse cx="575" cy="297" rx="36" ry="6" fill="#3a2a18"/></g>'+
+'<g id="svg-emptypot"><path d="M636 300 L706 300 L696 356 L646 356 Z" fill="#8a8f94"/><rect x="630" y="290" width="82" height="14" fill="#a2a7ab"/><ellipse cx="671" cy="297" rx="36" ry="6" fill="#4c4438"/><g id="svg-sprout" style="display:none"><path d="M671 296 C671 272 660 268 650 262 M671 296 C671 270 684 266 692 258" stroke="#3e6b34" stroke-width="5" fill="none"/><circle cx="671" cy="252" r="7" fill="#d9a84e"/></g></g>'+
+/* cabinet */
+'<g id="svg-cabinet"><rect x="36" y="60" width="130" height="150" fill="#54604f" stroke="#333d31" stroke-width="4"/><rect x="52" y="76" width="98" height="60" fill="#68755f"/><circle cx="72" cy="158" r="10" fill="#e9c33c"/><circle cx="101" cy="158" r="10" fill="#e58bb1"/><circle cx="130" cy="158" r="10" fill="#f4f1e6"/><rect id="svg-cabDoor" x="52" y="140" width="98" height="56" fill="none" stroke="#333d31" stroke-width="2"/></g>'+
+/* tap */
+'<g id="svg-tap"><rect x="726" y="215" width="16" height="120" fill="#7d8891"/><path d="M690 215 L742 215 L742 232 L706 232 L706 248" fill="none" stroke="#7d8891" stroke-width="10"/><rect x="684" y="204" width="34" height="12" fill="#a02c22"/></g>'+
+/* door */
+'<g id="svg-ghdoor"><rect x="540" y="90" width="86" height="230" fill="#dde8dc" stroke="#5f7a63" stroke-width="6"/><line x1="540" y1="205" x2="626" y2="205" stroke="#5f7a63" stroke-width="5"/><circle cx="556" cy="212" r="7" fill="#9a6b1e"/></g>'+
+hs(30,250,185,95,'bench')+hs(235,240,260,120,'flower bed')+hs(530,285,90,80,'soil pot')+hs(625,285,90,80,'empty pot')+hs(30,55,140,160,'cabinet')+hs(675,195,80,150,'tap')+hs(535,85,95,240,'door')+
+'</svg>',
+
+boathouse:
+'<svg viewBox="0 0 800 450" role="img" aria-label="A drawn boathouse: crate, shelf, dark loft, three hanging bells, a locker, a winch, nets, and a chained door">'+
+'<rect width="800" height="450" fill="#4d4237"/><g stroke="#3a3128" stroke-width="3"><line x1="0" y1="90" x2="800" y2="90"/><line x1="0" y1="200" x2="800" y2="200"/><line x1="0" y1="310" x2="800" y2="310"/></g>'+
+'<rect y="385" width="800" height="65" fill="#33291f"/>'+
+/* loft */
+'<g id="svg-loft"><rect x="270" y="18" width="280" height="105" fill="#171310"/><g id="svg-loftIn" style="display:none"><rect x="270" y="18" width="280" height="105" fill="#4a3b28"/><rect x="330" y="38" width="160" height="66" fill="#e8ddc4"/><text x="410" y="62" text-anchor="middle" font-size="15" fill="#3a2c14" font-family="Georgia,serif">Bell order, cut by the keeper:</text><text x="410" y="86" text-anchor="middle" font-size="16" font-weight="bold" fill="#3a2c14" font-family="Georgia,serif">Copper · Brass · Copper · Iron</text></g></g>'+
+/* crate */
+'<g id="svg-crate"><rect x="42" y="300" width="120" height="90" fill="#6d5138" stroke="#3a2a18" stroke-width="4"/><line x1="42" y1="345" x2="162" y2="345" stroke="#3a2a18" stroke-width="4"/><line x1="102" y1="300" x2="102" y2="390" stroke="#3a2a18" stroke-width="4"/></g>'+
+/* shelf with lantern */
+'<g id="svg-shelf3"><rect x="42" y="150" width="150" height="12" fill="#54432c"/><g id="svg-lantern"><rect x="88" y="106" width="34" height="44" fill="#c9a227" opacity="0.9"/><rect x="96" y="96" width="18" height="10" fill="#54432c"/><rect id="svg-flame" x="99" y="120" width="12" height="18" fill="#8a8f94"/></g><rect x="140" y="126" width="40" height="24" fill="#5e6b52"/></g>'+
+/* bells */
+'<g id="svg-bells"><line x1="250" y1="150" x2="570" y2="150" stroke="#241d15" stroke-width="7"/>'+
+'<g><line x1="320" y1="150" x2="320" y2="176" stroke="#241d15" stroke-width="4"/><path d="M300 210 L340 210 L332 176 L308 176 Z" fill="#c9a227"/><circle cx="320" cy="216" r="6" fill="#8a6d10"/></g>'+
+'<g><line x1="410" y1="150" x2="410" y2="176" stroke="#241d15" stroke-width="4"/><path d="M390 210 L430 210 L422 176 L398 176 Z" fill="#b06a35"/><circle cx="410" cy="216" r="6" fill="#7a4520"/></g>'+
+'<g><line x1="500" y1="150" x2="500" y2="176" stroke="#241d15" stroke-width="4"/><path d="M480 210 L520 210 L512 176 L488 176 Z" fill="#8a8f94"/><circle cx="500" cy="216" r="6" fill="#565b60"/></g></g>'+
+/* locker */
+'<g id="svg-locker"><rect x="600" y="180" width="80" height="150" fill="#4d5a60" stroke="#2b3337" stroke-width="4"/><rect id="svg-lockDoor" x="612" y="194" width="56" height="90" fill="#5b686e"/><circle cx="640" cy="300" r="8" fill="#2b3337"/></g>'+
+/* winch */
+'<g id="svg-winch"><rect x="230" y="330" width="110" height="18" fill="#54432c"/><circle cx="285" cy="305" r="30" fill="#6d5138" stroke="#3a2a18" stroke-width="5"/><circle cx="285" cy="305" r="9" fill="#3a2a18"/><g id="svg-crank" style="display:none"><line x1="285" y1="305" x2="322" y2="282" stroke="#2b3337" stroke-width="7"/><circle cx="326" cy="279" r="8" fill="#a02c22"/></g></g>'+
+/* nets */
+'<g id="svg-nets" stroke="#7a7264" stroke-width="2" opacity="0.85"><path d="M590 30 L700 110 M700 30 L590 110 M610 22 L610 118 M645 18 L645 122 M680 22 L680 118 M585 55 L705 55 M585 85 L705 85" fill="none"/></g>'+
+/* door with chain */
+'<g id="svg-bhdoor"><rect x="716" y="150" width="72" height="238" fill="#54432c" stroke="#33291f" stroke-width="4"/><g id="svg-chain"><path d="M712 250 L792 218" stroke="#c9ccd0" stroke-width="7" stroke-dasharray="9 5"/><circle cx="752" cy="234" r="11" fill="#3c4147"/></g><circle cx="730" cy="290" r="7" fill="#d9a84e"/></g>'+
+hs(36,295,132,100,'crate')+hs(36,92,160,75,'shelf')+hs(265,12,290,118,'loft')+hs(285,145,250,85,'bells')+hs(595,175,90,160,'locker')+hs(225,265,125,90,'winch')+hs(585,15,125,115,'nets')+hs(710,145,82,248,'door')+
+'</svg>'
+};
+
+/* ---------- Item names ---------- */
+var ITEMS = {
+  brassKey:{name:"Brass key", sub:"small, warm from the rug"},
+  torch:{name:"Torch", sub:"dead — no battery"},
+  battery:{name:"Battery", sub:"full charge"},
+  litTorch:{name:"Lit torch", sub:"torch + battery, burning"},
+  noteStudy:{name:"Folded note", sub:"“Scarlet, sky, leaf — in that order.”"},
+  ironKey:{name:"Iron door key", sub:"heavy, from the safe"},
+  handle:{name:"Wooden handle", sub:"a tool, missing its head"},
+  blade:{name:"Trowel blade", sub:"a tool, missing its handle"},
+  trowel:{name:"Trowel", sub:"handle + blade, whole again"},
+  seeds:{name:"Seed packet", sub:"“Sow, then water.”"},
+  noteGreen:{name:"Tin note", sub:"“The cabinet dials: sun, blush, cloud.”"},
+  can:{name:"Watering can", sub:"empty"},
+  fullCan:{name:"Watering can", sub:"full of water"},
+  vineKey:{name:"Vine key", sub:"grown, not made"},
+  oilCan:{name:"Oil can", sub:"full, and smells of the harbour"},
+  lantern:{name:"Lantern", sub:"dry — no oil"},
+  litLantern:{name:"Lit lantern", sub:"lantern + oil, burning"},
+  crank:{name:"Crank handle", sub:"from the locker"}
+};
+
+/* ---------- Hints & coaching, per room, in solve order ---------- */
+var STEPS = {
+study:[
+ {key:"key", nudge:"Low places hide small things.", strong:"Something on the floor of this room is not lying flat.", answer:"Tap the rug. The brass key is underneath it. Why: soft coverings and floor level are where small dropped things end up — search low before you search high.", coach:"Search pattern: work the room in a grid — floor first, then furniture, then walls. The floor quarter of a room is the one new players skip, and it is where small things hide."},
+ {key:"drawer", nudge:"A key wants its lock — and not every lock is a door.", strong:"The brass key is small. Try it on furniture before the big door.", answer:"Select the brass key, then tap the desk. The drawer opens: a torch and a folded note. Why: match the key's size to the lock's size.", coach:"Inventory thinking: a new item re-opens old places. The desk did not change — you did. Revisit searched places after every find."},
+ {key:"battery", nudge:"The note names colours. Where do colours live in a study?", strong:"Search the bookshelf closely — something is tucked behind the books.", answer:"Tap the bookshelf. Behind the books sits a battery. Why: shelves hide things in the gap between spines and wall.", coach:"A clue tells you where to look again, not just what to do. “Scarlet, sky, leaf” is a bookshelf talking — colours in this room live on spines."},
+ {key:"combine", nudge:"A dead torch is two halves of one idea.", strong:"You hold a torch and a battery. Tap one, then tap the other, to combine them.", answer:"Tap the torch in your hands, then tap the battery. They combine into a lit torch. Why: when two items describe each other's missing half, they belong together.", coach:"Combining: read each item's description aloud. “Dead — no battery” is the torch telling you exactly what it wants."},
+ {key:"safe", nudge:"Some things only show themselves in better light.", strong:"The painting's edges looked loose, and it was too dark behind it. Bring light.", answer:"Select the lit torch, then tap the painting. It swings aside and reveals a safe. Why: darkness in a drawn room is a locked door of another kind — light is its key.", coach:"When a place answers “too dark to see”, that is not a dead end; it is a shopping list. The room is telling you to find light."},
+ {key:"code", nudge:"Scarlet, sky, leaf — in that order. Count; do not guess.", strong:"Count the coloured spines on the bookshelf: red first, then blue, then green.", answer:"The bookshelf holds 3 red, 5 blue, and 2 green books, so the safe code is 352. Why: the note gave the order, the shelf gave the counts — a code is a reading, not a riddle.", coach:"Code-hunting: every lock needs two finds — the thing you can count, and the note that gives the order. You have both. If a code ever feels like a guess, one of the two finds is still missing."},
+ {key:"door", nudge:"One lock left, and it is the big one.", strong:"The iron key is heavy — made for the study door.", answer:"Select the iron key, then tap the door. Why: the last key in a room is almost always the door's; save your searching for the locks that are not the exit.", coach:"Endgame habit: when you hold a key you have not used, stop searching and go straight to the largest remaining lock."}
+],
+greenhouse:[
+ {key:"parts", nudge:"Tools in this room come in pieces. Look at working height, and look at soil level.", strong:"The bench holds one half of a tool. The flower bed's soil glints with the other.", answer:"Tap the bench for the wooden handle, then tap the flower bed for the trowel blade half-buried in its soil. Why: a greenhouse keeps tools where the work is — benches and beds.", coach:"Grid sweep, greenhouse edition: benches (hand height), beds and pots (soil height), then the fittings (cabinet, tap, door). Three bands, searched in order, miss nothing."},
+ {key:"trowel", nudge:"Two halves, one tool.", strong:"Tap the handle, then tap the blade, to combine them.", answer:"Tap the wooden handle, then the trowel blade. Together they make a whole trowel. Why: a handle with no head and a head with no handle describe each other exactly.", coach:"Read descriptions like contracts: “missing its head” and “missing its handle” are two halves of one sentence."},
+ {key:"dig", nudge:"A trowel wants soil. One pot here has never been planted — only buried in.", strong:"Use the trowel on the soil pot (the terracotta one).", answer:"Select the trowel, then tap the soil pot. You dig up a tin holding seeds and a note. Why: buried things live in the pot that looks full but grows nothing.", coach:"Inventory thinking: ask of each place, “what tool was made for this?” Soil answers to a trowel the way a lock answers to a key."},
+ {key:"plant", nudge:"Seeds want a home before they want water.", strong:"The empty pot is waiting. Put the seeds in it.", answer:"Select the seed packet, then tap the empty pot. The seeds are sown. Why: order matters — sowing before watering is the room's small lesson in sequence.", coach:"Sequence puzzles wear many coats. Here it is gardening; elsewhere it is bells or colours. The skill is the same: find what must come first, and what proves it."},
+ {key:"cabinet", nudge:"The cabinet's dials are painted as colours. The bed is keeping the count.", strong:"Count the blooms in the flower bed by colour: sun-yellow, then blush-pink, then cloud-white.", answer:"The bed holds 2 yellow, 4 pink, and 1 white bloom, so the cabinet code is 241. Why: the tin note and the dials give the order — sun, blush, cloud — and the bed gives the counts.", coach:"Same code-hunting law as the study, new coat: count what the room grows, order it by the note. Counts hide in anything repeated — books, blooms, bells."},
+ {key:"fill", nudge:"An empty can and a tap are a sentence waiting for its verb.", strong:"Take the can to the tap and fill it.", answer:"Select the watering can, then tap the tap. It fills. Why: containers in escape rooms exist to be carried between a source and a thirst.", coach:"When you gain a container, immediately ask two questions: where is it filled, and where is it emptied? You usually already walked past both."},
+ {key:"water", nudge:"Something you planted is thirsty.", strong:"Water the empty pot — the one you sowed.", answer:"Select the full watering can, then tap the empty pot. The seeds sprout at once, and a vine key hangs from the new stem. Why: in this room, growth is the lock and water is the key turning.", coach:"Revisit after every change: the “empty pot” stopped being empty the moment you sowed it. Places keep their names; their meanings move."},
+ {key:"door", nudge:"A grown key for a glass door.", strong:"Use the vine key on the greenhouse door.", answer:"Select the vine key, then tap the door. Why: the room grew its own key — the last item is the exit, as usual.", coach:"Endgame habit, again: unused key in hand, largest lock in the room. Go."}
+],
+boathouse:[
+ {key:"oil", nudge:"A boathouse keeps its working things in boxes and on shelves. Search both.", strong:"The crate by the floor holds something that smells of the harbour.", answer:"Tap the crate for the oil can, then tap the shelf for the lantern. Why: stores live low (crates) and tools live at hand height (shelves) — search both bands.", coach:"Grid sweep by bands: floor stores, hand-height shelves, then the high places. The boathouse's secret is in the highest band of all — but it will take light to read."},
+ {key:"light", nudge:"A dry lantern is two halves of one idea.", strong:"Tap the oil can, then tap the lantern, to combine them.", answer:"Tap the oil can, then the lantern. Filled and lit, the lantern burns. Why: “dry — no oil” is the lantern naming its missing half, exactly as the torch did.", coach:"Combining, second lesson: the pattern from the study repeats in new clothes. Skill in these rooms is mostly recognising a shape you have solved before."},
+ {key:"chart", nudge:"The loft is too dark to read. You are carrying light now.", strong:"Take the lit lantern up to the loft (the dark band at the top).", answer:"Select the lit lantern, then tap the loft. In its light you read the keeper's chart: Copper, Brass, Copper, Iron. Why: darkness is a lock; light is its key — the study taught the same law.", coach:"When a room repeats a law (“too dark”), it is testing whether the lesson travelled. Good rooms do this; good players notice."},
+ {key:"bells", nudge:"Three bells, one order, and the order is written — you have read it.", strong:"Ring them as the chart cuts it: copper first, then brass, then copper again, then iron.", answer:"Tap the bells to open the bell board, then tap: Copper, Brass, Copper, Iron. The locker clicks open. Why: a sequence lock is a code whose digits are sounds — the chart is its note, the bells its dials.", coach:"Code-hunting, third form: counts gave digits in the study and the greenhouse; here an order gives a sequence. Ask of every lock: is it asking how many, or in what order?"},
+ {key:"crank", nudge:"Something clicked open when the bells finished. Go and collect.", strong:"Search the locker — the bells unlocked it.", answer:"Tap the locker. Inside is the crank handle. Why: a lock opening is a sound before it is a sight; when you hear a click, find what changed.", coach:"After every success, re-scan: what changed? Rooms announce progress quietly — an opened locker, a lifted rug. The revisit habit catches all of it."},
+ {key:"winch", nudge:"A crank wants a winch, and a winch here is holding a chain.", strong:"Put the crank on the winch (the drum by the floor).", answer:"Select the crank handle, then tap the winch. It turns, hauls, and lifts the chain off the door. Why: the door was never locked with a key — it was held by a machine, and machines want their handles.", coach:"Not every exit opens with a key. When a door is chained, look for the mechanism, not a keyhole."},
+ {key:"door", nudge:"The chain is up. The door is just a door now.", strong:"Tap the door and walk out.", answer:"Tap the door. Why: sometimes the last step is only a step — take it.", coach:"Endgame habit, last form: when nothing stands between you and the door, stop solving and leave. Rooms are escaped by walking out of them."}
+]};
+
+var ROOMMETA = {
+ study:{title:"The Locked Study", intro:"A scholar's room, locked from the outside. Somewhere in here: a way out, in pieces."},
+ greenhouse:{title:"The Greenhouse", intro:"Glass, soil, and blooms. The tools here come in pieces, and the flowers are keeping a number."},
+ boathouse:{title:"The Tide Boathouse", intro:"Nets, bells, and a chained door. One lock in here is not a number — it is an order, and it rings."}
+};
+</script>
+<script>
+"use strict";
+/* ---------- State ---------- */
+var $ = function(id){return document.getElementById(id);};
+var LS_REC="locked-study-record-v1", LS_SET="locked-study-settings-v1";
+var settings = {teach:"light", hints:true, timer:false, alias:""};
+try{ var s=JSON.parse(localStorage.getItem(LS_SET)||"null"); if(s){settings.teach=s.teach||"light"; settings.hints=s.hints!==false; settings.timer=!!s.timer; settings.alias=s.alias||"";} }catch(e){}
+var record = {version:1, entries:[]};
+try{ var r=JSON.parse(localStorage.getItem(LS_REC)||"null"); if(r && r.entries) record=r; }catch(e){}
+
+var G = null; // per-run state
+function newRun(roomId){
+  G = {room:roomId, inv:[], flags:{}, selected:null, hintsUsed:0, hintRung:{}, start:Date.now(), elapsed:0, timerInt:null, done:false, bellSeq:[], activeLock:null};
+  renderAll();
+  say(ROOMMETA[roomId].intro);
+  coachFor(true);
+  startTimer();
+}
+function saveSettings(){ try{localStorage.setItem(LS_SET, JSON.stringify(settings));}catch(e){} }
+function saveRecord(){ try{localStorage.setItem(LS_REC, JSON.stringify(record));}catch(e){} }
+
+/* ---------- Helpers ---------- */
+function say(html, found){
+  var log=$("log"); log.innerHTML = '<p'+(found?' class="found"':'')+'>'+html+'</p>';
+}
+function has(item){ return G.inv.indexOf(item)>=0; }
+function give(item){ if(!has(item)){ G.inv.push(item); } renderInv(); }
+function take(item){ var i=G.inv.indexOf(item); if(i>=0) G.inv.splice(i,1); if(G.selected===item) G.selected=null; renderInv(); }
+function esc(t){ return t.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+/* ---------- Current step (for hints & coach) ---------- */
+function currentStep(){
+  var f=G.flags, st=STEPS[G.room];
+  if(G.room==="study"){
+    if(!f.key) return st[0]; if(!f.drawer) return st[1]; if(!f.battery) return st[2];
+    if(!f.torchLit) return st[3]; if(!f.safeSeen) return st[4]; if(!f.safeOpen) return st[5]; return st[6];
+  }
+  if(G.room==="greenhouse"){
+    if(!(f.handle&&f.blade)) return st[0]; if(!f.trowel) return st[1]; if(!f.dug) return st[2];
+    if(!f.planted) return st[3]; if(!f.cabinet) return st[4]; if(!f.canFull) return st[5];
+    if(!f.grown) return st[6]; return st[7];
+  }
+  if(!(f.oil&&f.lantern)) return st[0]; if(!f.lit) return st[1]; if(!f.chart) return st[2];
+  if(!f.bells) return st[3]; if(!f.crank) return st[4]; if(!f.winch) return st[5]; return st[6];
+}
+
+/* ---------- Coaching ---------- */
+function coachFor(fresh){
+  var box=$("coachBox");
+  if(settings.teach==="off"){ box.innerHTML=""; return; }
+  var step=currentStep(); if(!step){ box.innerHTML=""; return; }
+  if(settings.teach==="light"){
+    box.innerHTML='<div class="coachbox"><span class="who">A light tip:</span> '+esc(step.nudge)+'</div>';
+  } else {
+    box.innerHTML='<div class="coachbox"><span class="who">Coach:</span> '+esc(step.coach)+'<br><span class="muted">Where you stand: '+esc(step.nudge)+'</span></div>';
+  }
+}
+
+/* ---------- Rendering ---------- */
+function renderAll(){
+  $("roomTitle").textContent = ROOMMETA[G.room].title;
+  $("roomIntro").textContent = ROOMMETA[G.room].intro;
+  $("roomSel").value = G.room;
+  $("sceneBox").innerHTML = SCENES[G.room];
+  bindScene(); syncVisuals(); renderSearchRow(); renderInv(); renderHud(); renderFocus();
+}
+function bindScene(){
+  var nodes=document.querySelectorAll("#sceneBox .hotspot");
+  for(var i=0;i<nodes.length;i++){
+    (function(el){
+      el.addEventListener("click", function(){ tapHotspot(el.getAttribute("data-hs")); });
+      el.addEventListener("keydown", function(ev){ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); tapHotspot(el.getAttribute("data-hs")); } });
+    })(nodes[i]);
+  }
+}
+var SEARCHLISTS = {
+ study:["bookshelf","desk","rug","painting","clock","door"],
+ greenhouse:["bench","flower bed","soil pot","empty pot","cabinet","tap","door"],
+ boathouse:["crate","shelf","loft","bells","locker","winch","nets","door"]
+};
+function renderSearchRow(){
+  var row=$("searchRow"); row.innerHTML='<span class="lbl">Places to search — tap one:</span>';
+  SEARCHLISTS[G.room].forEach(function(name){
+    var b=document.createElement("button"); b.type="button"; b.textContent="Tap to search the "+name;
+    b.addEventListener("click", function(){ tapHotspot(name); }); row.appendChild(b);
+  });
+}
+function syncVisuals(){
+  var f=G.flags, d=document;
+  function show(id,on){ var el=d.getElementById(id); if(el) el.style.display=on?"":"none"; }
+  if(G.room==="study"){
+    show("svg-safe", !!f.safeSeen); show("svg-painting", !f.safeSeen);
+    var rug=d.getElementById("svg-rugBody"); if(rug) rug.setAttribute("transform", f.key?"translate(28,-8)":"");
+    var dr=d.getElementById("svg-drawer"); if(dr) dr.setAttribute("fill", f.drawer?"#8a6a3d":"#5e4426");
+    var sd=d.getElementById("svg-safeDoor"); if(sd) sd.setAttribute("stroke", f.safeOpen?"#2e7d46":"#24282c");
+    var kn=d.getElementById("svg-knob"); if(kn) kn.setAttribute("fill", f.doorOpen?"#2e7d46":"#d9a84e");
+  }
+  if(G.room==="greenhouse"){
+    show("svg-sprout", !!f.grown);
+    var cd=d.getElementById("svg-cabDoor"); if(cd) cd.setAttribute("stroke", f.cabinet?"#2e7d46":"#333d31");
+  }
+  if(G.room==="boathouse"){
+    show("svg-loftIn", !!f.chart); show("svg-crank", !!f.crankOn);
+    show("svg-chain", !f.winch);
+    var fl=d.getElementById("svg-flame"); if(fl) fl.setAttribute("fill", f.lit?"#e8862e":"#8a8f94");
+    var ld=d.getElementById("svg-lockDoor"); if(ld) ld.setAttribute("fill", f.bells?"#7d8a90":"#5b686e");
+  }
+}
+function renderInv(){
+  var bar=$("invBar");
+  bar.innerHTML='<span class="lbl">In your hands:</span>';
+  if(!G.inv.length){ bar.innerHTML+=' <span class="muted">empty — search the room</span>'; }
+  G.inv.forEach(function(id){
+    var it=ITEMS[id]; var b=document.createElement("button"); b.type="button"; b.className="item";
+    b.setAttribute("aria-pressed", G.selected===id?"true":"false");
+    b.innerHTML=esc(it.name)+"<small>"+esc(it.sub)+"</small>";
+    b.addEventListener("click", function(){ tapItem(id); });
+    bar.appendChild(b);
+  });
+  $("hudInv").textContent = G.inv.length ? G.inv.map(function(i){return ITEMS[i].name;}).join(", ") : "nothing yet";
+}
+function renderHud(){
+  $("hudHints").textContent = G.hintsUsed;
+  $("hudTime").hidden = !settings.timer;
+}
+function fmt(sec){ var m=Math.floor(sec/60), s=sec%60; return m+":"+(s<10?"0":"")+s; }
+function startTimer(){
+  if(G.timerInt) clearInterval(G.timerInt);
+  if(!settings.timer) { renderHud(); return; }
+  G.timerInt=setInterval(function(){ if(!G.done){ G.elapsed=Math.floor((Date.now()-G.start)/1000); $("timeVal").textContent=fmt(G.elapsed);} },500);
+  renderHud();
+}
+
+/* ---------- Focus panel: code locks & bells ---------- */
+function renderFocus(){
+  var p=$("focusPanel"); var f=G.flags;
+  if(G.activeLock==="safe" && !f.safeOpen){
+    p.innerHTML='<div class="focuspanel"><h3>The safe — three dials</h3>'+
+    '<p class="small muted">The note gives the order; the room gives the numbers. Enter the code, then tap Unlock.</p>'+
+    '<div class="codepad"><input id="codeIn" inputmode="numeric" maxlength="3" aria-label="Three digit code" placeholder="···"/>'+
+    '<button type="button" class="primary" id="codeGo">Tap to unlock the safe</button>'+
+    '<button type="button" id="codeBack">Tap to step back</button></div><p class="small" id="codeMsg"></p></div>';
+    $("codeGo").addEventListener("click", function(){ tryCode("safe", $("codeIn").value); });
+    $("codeBack").addEventListener("click", function(){ G.activeLock=null; renderFocus(); });
+    return;
+  }
+  if(G.activeLock==="cabinet" && !f.cabinet){
+    p.innerHTML='<div class="focuspanel"><h3>The cabinet — three dials, painted sun, blush, cloud</h3>'+
+    '<p class="small muted">Count the blooms in the bed, in the dials\' order. Enter the code, then tap Unlock.</p>'+
+    '<div class="codepad"><input id="codeIn" inputmode="numeric" maxlength="3" aria-label="Three digit code" placeholder="···"/>'+
+    '<button type="button" class="primary" id="codeGo">Tap to unlock the cabinet</button>'+
+    '<button type="button" id="codeBack">Tap to step back</button></div><p class="small" id="codeMsg"></p></div>';
+    $("codeGo").addEventListener("click", function(){ tryCode("cabinet", $("codeIn").value); });
+    $("codeBack").addEventListener("click", function(){ G.activeLock=null; renderFocus(); });
+    return;
+  }
+  if(G.activeLock==="bells" && !f.bells){
+    p.innerHTML='<div class="focuspanel"><h3>The bells — tap them in the keeper\'s order</h3>'+
+    '<p class="small muted">'+(f.chart?"The chart reads: Copper · Brass · Copper · Iron.":"You have not read the order anywhere yet — it is written somewhere in this room, in a place that needs light.")+' Rung so far: <strong id="bellProg">'+(G.bellSeq.join(" · ")||"—")+'</strong></p>'+
+    '<div class="bells">'+
+    '<button type="button" class="bellbtn" data-bell="Brass">🔔 Tap the brass bell</button>'+
+    '<button type="button" class="bellbtn" data-bell="Copper">🔔 Tap the copper bell</button>'+
+    '<button type="button" class="bellbtn" data-bell="Iron">🔔 Tap the iron bell</button>'+
+    '<button type="button" id="bellBack">Tap to step back</button></div></div>';
+    var btns=p.querySelectorAll("[data-bell]");
+    for(var i=0;i<btns.length;i++){ (function(b){ b.addEventListener("click", function(){ ringBell(b.getAttribute("data-bell")); }); })(btns[i]); }
+    $("bellBack").addEventListener("click", function(){ G.activeLock=null; renderFocus(); });
+    return;
+  }
+  p.innerHTML="";
+}
+function tryCode(which, val){
+  val=(val||"").trim();
+  var ok = (which==="safe" && val==="352") || (which==="cabinet" && val==="241");
+  var msg=$("codeMsg");
+  if(!ok){ if(msg) msg.textContent="The dials spin back. That is not the room's number — recount, in the note's order."; return; }
+  G.activeLock=null;
+  if(which==="safe"){
+    G.flags.safeOpen=true; give("ironKey");
+    say("Click — the safe opens. Inside, one heavy <strong>iron door key</strong>, and nothing else. The room kept its promise: the answer was on the shelf the whole time.", true);
+  } else {
+    G.flags.cabinet=true; give("can");
+    say("Click — the cabinet opens. Inside stands a <strong>watering can</strong>, empty, waiting for the tap.", true);
+  }
+  syncVisuals(); renderFocus(); coachFor();
+}
+var BELL_ORDER=["Copper","Brass","Copper","Iron"];
+function ringBell(name){
+  G.bellSeq.push(name);
+  var ok=true;
+  for(var i=0;i<G.bellSeq.length;i++){ if(G.bellSeq[i]!==BELL_ORDER[i]) ok=false; }
+  if(!ok){
+    G.bellSeq=[];
+    say("The bells clatter out of order and fall silent. Somewhere, something resets. The order is written in this room — in a place that needs light.");
+    renderFocus(); return;
+  }
+  if(G.bellSeq.length===BELL_ORDER.length){
+    G.flags.bells=true; G.activeLock=null;
+    say("Copper… brass… copper… iron. On the last note, a deep <strong>click</strong> comes from the locker. The bells were its key all along.", true);
+    syncVisuals(); renderFocus(); coachFor(); return;
+  }
+  say("The "+name.toLowerCase()+" bell rings clear — and the sound feels <em>right</em>. The sequence holds.");
+  renderFocus();
+}
+
+/* ---------- Combining ---------- */
+var COMBOS = {
+ "torch+battery":"litTorch", "battery+torch":"litTorch",
+ "handle+blade":"trowel", "blade+handle":"trowel",
+ "oilCan+lantern":"litLantern", "lantern+oilCan":"litLantern"
+};
+function tapItem(id){
+  if(G.done) return;
+  if(!G.selected){ G.selected=id; renderInv(); say(ITEMS[id].name+" selected. Tap a place in the room to use it there — or tap a second item to try combining them."); return; }
+  if(G.selected===id){ G.selected=null; renderInv(); say(ITEMS[id].name+" put away."); return; }
+  var a=G.selected, b=id, key=a+"+"+b, result=COMBOS[key];
+  if(result){
+    take(a); take(b); give(result); G.selected=null;
+    if(result==="litTorch"){ G.flags.torchLit=true; say("The battery clicks in — the <strong>torch flares alight</strong>. Darkness in this room just lost its vote.", true); }
+    if(result==="trowel"){ G.flags.trowel=true; say("Handle meets blade, and the fit is perfect: a whole <strong>trowel</strong>. Two halves, one tool.", true); }
+    if(result==="litLantern"){ G.flags.lit=true; say("Oil in, wick trimmed, struck — the <strong>lantern burns</strong> with a steady harbour light.", true); }
+    syncVisuals(); coachFor();
+  } else {
+    say("The "+ITEMS[a].name.toLowerCase()+" and the "+ITEMS[b].name.toLowerCase()+" do not belong together. Nothing happens — and nothing is lost.");
+    G.selected=null; renderInv();
+  }
+}
+
+/* ---------- Hotspots ---------- */
+function useFail(place){ say("The "+(G.selected?ITEMS[G.selected].name.toLowerCase():"")+" does nothing at the "+place+". Try it somewhere its shape fits."); }
+function tapHotspot(name){
+  if(G.done) return;
+  var sel=G.selected;
+  if(G.room==="study") studyTap(name, sel);
+  else if(G.room==="greenhouse") greenTap(name, sel);
+  else boatTap(name, sel);
+  syncVisuals(); renderInv(); renderHud();
+}
+
+function studyTap(name, sel){
+  var f=G.flags;
+  if(name==="rug"){
+    if(sel){ useFail("rug"); return; }
+    if(!f.key){ f.key=true; give("brassKey"); say("You lift the rug's corner. Underneath, exactly where a dropped thing would slide: a small <strong>brass key</strong>. Taken.", true); coachFor(); }
+    else say("Under the rug: dust, floorboards, and the satisfaction of having looked.");
+    return;
+  }
+  if(name==="desk"){
+    if(sel==="brassKey"){
+      if(!f.drawer){ f.drawer=true; G.selected=null; give("torch"); give("noteStudy"); say("The brass key turns in the desk drawer. Inside: a <strong>torch</strong> (dead — no battery) and a <strong>folded note</strong>: “Scarlet, sky, leaf — in that order.” Both taken.", true); coachFor(); }
+      else say("The drawer is already open, and empty now.");
+      return;
+    }
+    if(sel){ useFail("desk"); return; }
+    if(!f.drawer) say("A wide desk. Its drawer is locked — a small lock, wanting a small key.");
+    else say("The desk drawer stands open and empty. On the desk: two books and an ink bottle, all ordinary.");
+    return;
+  }
+  if(name==="bookshelf"){
+    if(sel){ useFail("bookshelf"); return; }
+    if(!f.battery){ f.battery=true; give("battery"); say("You run a finger along the shelves — and behind the books, in the gap against the wall, your fingers find a <strong>battery</strong>. Taken. The coloured spines, counted: <strong>3 red, 5 blue, 2 green</strong>.", true); coachFor(); }
+    else say("The coloured spines, counted again to be sure: <strong>3 red books, 5 blue, 2 green</strong>. The rest are plain brown spines, nothing hiding.");
+    return;
+  }
+  if(name==="painting"){
+    if(sel==="litTorch"){
+      if(!f.safeSeen){ f.safeSeen=true; G.selected=null; say("Torch raised, you lean close — the painting is <em>hinged</em>. It swings aside, and behind it, set into the wall: a <strong>safe</strong>, with three dials. Tap the painting's place again to work the safe.", true); coachFor(); }
+      else say("The safe stands revealed behind the swung painting.");
+      return;
+    }
+    if(sel){ useFail("painting"); return; }
+    if(f.safeSeen){ G.activeLock="safe"; renderFocus(); say("The safe: three dials, patient as stone. Its number is a reading, not a guess — order from the note, counts from the shelf."); }
+    else say("A harbour painting in a gilt frame. Its edges sit oddly proud of the wall — but behind it is pitch dark. You would need light to see anything there.");
+    return;
+  }
+  if(name==="clock"){
+    if(sel){ useFail("clock"); return; }
+    say("The clock says ten past four, and has clearly said so for some years. It ticks anyway. A stopped clock in a locked room: scenery, not a clue — this room plays fair, and not everything in it is a puzzle.");
+    return;
+  }
+  if(name==="door"){
+    if(sel==="ironKey"){ f.doorOpen=true; G.selected=null; escapeRoom(); return; }
+    if(sel){ useFail("door"); return; }
+    say("The study door. Locked, solid, and entirely unbothered by you so far. It wants a heavy key — heavier than the little brass one.");
+    return;
+  }
+}
+
+function greenTap(name, sel){
+  var f=G.flags;
+  if(name==="bench"){
+    if(sel){ useFail("bench"); return; }
+    if(!f.handle){ f.handle=true; give("handle"); say("On the bench, among pots and twine: a <strong>wooden handle</strong> — a tool's handle, missing its head. Taken.", true); coachFor(); }
+    else say("The bench holds empty pots and a ball of twine. Nothing else is hiding at working height.");
+    return;
+  }
+  if(name==="flower bed"){
+    if(sel){ useFail("flower bed"); return; }
+    if(!f.blade){ f.blade=true; give("blade"); say("You part the blooms and brush the soil — something glints. A <strong>trowel blade</strong>, half-buried, missing its handle. Taken. The blooms, counted by colour: <strong>2 yellow, 4 pink, 1 white</strong>.", true); coachFor(); }
+    else say("The flower bed, counted carefully: <strong>2 sun-yellow blooms, 4 blush-pink, 1 cloud-white</strong>. The soil has given up its secret already.");
+    return;
+  }
+  if(name==="soil pot"){
+    if(sel==="trowel"){
+      if(!f.dug){ f.dug=true; G.selected=null; give("seeds"); give("noteGreen"); say("The trowel bites — and strikes tin. Dug up: a small tin holding a <strong>seed packet</strong> and a <strong>note</strong>: “The cabinet dials: sun, blush, cloud.” Both taken.", true); coachFor(); }
+      else say("The soil pot is thoroughly dug. The tin is out; the secret is spent.");
+      return;
+    }
+    if(sel){ useFail("soil pot"); return; }
+    say("A terracotta pot, full of soil, growing nothing. The soil looks… disturbed, once, long ago. By hand it would take all day; with the right tool, a minute.");
+    return;
+  }
+  if(name==="empty pot"){
+    if(sel==="seeds"){
+      if(!f.planted){ f.planted=true; take("seeds"); G.selected=null; say("You sow the seeds in the empty pot and pat the soil down. Now they want one thing, and it is not in your hands yet.", true); coachFor(); }
+      else say("Already sown.");
+      return;
+    }
+    if(sel==="fullCan"){
+      if(!f.planted){ say("You water bare soil. It darkens, obligingly, and nothing else happens. Something needs to be <em>in</em> this pot first."); return; }
+      if(!f.grown){ f.grown=true; take("fullCan"); give("can"); G.selected=null; give("vineKey"); say("Water sinks in — and the soil <em>moves</em>. A green shoot climbs, fast as only a storybook greenhouse allows, and at its top hangs a small key the vine has grown around: a <strong>vine key</strong>. Taken.", true); coachFor(); }
+      else say("The vine stands tall, its key already taken.");
+      return;
+    }
+    if(sel==="can"){ say("The can is empty. An empty can waters nothing — it needs the tap first."); return; }
+    if(sel){ useFail("empty pot"); return; }
+    say(f.planted ? "The pot holds sown seeds, waiting on water." : "A grey pot of bare, dry soil. It has the look of a beginning.");
+    return;
+  }
+  if(name==="cabinet"){
+    if(sel){ useFail("cabinet"); return; }
+    if(f.cabinet){ say("The cabinet stands open and empty — the can is in your hands."); return; }
+    G.activeLock="cabinet"; renderFocus();
+    say("The cabinet is locked with three dials, painted — in order — sun-yellow, blush-pink, cloud-white. Somewhere in this room, those colours can be counted.");
+    return;
+  }
+  if(name==="tap"){
+    if(sel==="can"){ take("can"); give("fullCan"); G.selected=null; G.flags.canFull=true; say("Under the tap, the can fills with a bright, cold sound. <strong>Watering can — full.</strong>", true); coachFor(); return; }
+    if(sel){ useFail("tap"); return; }
+    say("A standpipe tap, dripping steadily into the gravel. It works. It is waiting for something to fill.");
+    return;
+  }
+  if(name==="door"){
+    if(sel==="vineKey"){ escapeRoom(); return; }
+    if(sel){ useFail("door"); return; }
+    say("The greenhouse door: glass in a green frame, locked. Its keyhole is small and oddly organic, as if the room grew it.");
+    return;
+  }
+}
+
+function boatTap(name, sel){
+  var f=G.flags;
+  if(name==="crate"){
+    if(sel){ useFail("crate"); return; }
+    if(!f.oil){ f.oil=true; give("oilCan"); say("The crate lid creaks up. Inside, packed in straw: an <strong>oil can</strong>, full, smelling of the harbour. Taken.", true); coachFor(); }
+    else say("The crate holds straw and the ghost of the oil can. Searched.");
+    return;
+  }
+  if(name==="shelf"){
+    if(sel){ useFail("shelf"); return; }
+    if(!f.lantern){ f.lantern=true; give("lantern"); say("On the shelf: a <strong>lantern</strong> — glass sound, wick trimmed, and bone dry. No oil. Taken.", true); coachFor(); }
+    else say("The shelf holds a coil of tarred twine and a tin of screws. Ordinary stores.");
+    return;
+  }
+  if(name==="loft"){
+    if(sel==="litLantern"){
+      if(!f.chart){ f.chart=true; G.selected=null; say("Lantern raised into the loft's dark — and there, nailed to a beam, a <strong>brass chart</strong>, cut by the keeper's hand: <strong>Copper · Brass · Copper · Iron</strong>. You read it twice and keep it.", true); coachFor(); }
+      else say("The chart hangs in the lamplight: Copper · Brass · Copper · Iron.");
+      return;
+    }
+    if(sel){ useFail("loft"); return; }
+    say("The loft, overhead: a black band of stored sails and shadow. Anything up there is unreadable without light — this room plays fair, and it is telling you so.");
+    return;
+  }
+  if(name==="bells"){
+    if(sel){ useFail("bells"); return; }
+    if(f.bells){ say("The bells hang quiet, their work done. The locker stands open."); return; }
+    G.activeLock="bells"; G.bellSeq=[]; renderFocus();
+    say("Three bells on a beam: brass (gold), copper (red-brown), iron (grey). They are a lock that is played, not turned — but played in <em>what order</em>? The answer is written somewhere in this room.");
+    return;
+  }
+  if(name==="locker"){
+    if(sel){ useFail("locker"); return; }
+    if(!f.bells){ say("A steel locker, locked — and it has no keyhole at all. Whatever opens it, it is not a key. Listening closely: the lock's tongue is wired to the bell beam above."); return; }
+    if(!f.crank){ f.crank=true; give("crank"); say("The locker stands open. Inside, oiled and ready: a <strong>crank handle</strong>. Taken.", true); coachFor(); }
+    else say("The locker is open and empty. Its secret is in your hands.");
+    return;
+  }
+  if(name==="winch"){
+    if(sel==="crank"){
+      if(!f.winch){ f.winch=true; f.crankOn=true; take("crank"); G.selected=null; say("The crank seats on the winch with a clunk. You haul — gears groan, the drum turns — and the <strong>chain slides up off the door</strong> and hangs clear. The door is just a door now.", true); coachFor(); }
+      else say("The winch has done its work.");
+      return;
+    }
+    if(sel){ useFail("winch"); return; }
+    say("A winch drum, wound with chain that runs up and across to the door. Its square drive socket stands empty — it is missing its handle, the way these things always are.");
+    return;
+  }
+  if(name==="nets"){
+    if(sel){ useFail("nets"); return; }
+    say("Fishing nets, hung to dry, smelling of salt and tar. You shake them out: corks, a lead weight, one very surprised dried starfish. No keys — this room plays fair, and not everything in it is a puzzle.");
+    return;
+  }
+  if(name==="door"){
+    if(sel){ useFail("door"); return; }
+    if(f.winch){ escapeRoom(); return; }
+    say("The boathouse door, chained across with harbour chain and a padlock the size of a fist. The chain runs to the winch — the door is held by a machine, not a keyhole.");
+    return;
+  }
+}
+
+/* ---------- Finish ---------- */
+function finishRun(result){
+  if(G.done) return; G.done=true;
+  if(G.timerInt) clearInterval(G.timerInt);
+  var secs = settings.timer ? Math.floor((Date.now()-G.start)/1000) : null;
+  record.entries.push({room:G.room, result:result, seconds:secs, timed:!!settings.timer, hints:G.hintsUsed, teach:settings.teach, alias:settings.alias||"", at:new Date().toISOString()});
+  saveRecord(); renderRecord();
+  return secs;
+}
+function escapeRoom(){
+  var secs=finishRun("escaped");
+  say("The key turns. The door swings wide on daylight — <strong>you are out.</strong>", true);
+  $("winBox").innerHTML='<div class="winbox"><h3>Escaped — '+esc(ROOMMETA[G.room].title)+'</h3>'+
+   '<p>'+(settings.timer?('Time: <strong>'+fmt(secs)+'</strong> (timed variant). '):'Untimed — the standard form. ')+'Hints used: <strong>'+G.hintsUsed+'</strong>. Written into your record below, in the clean shape.</p>'+
+   '<div class="btnrow"><button type="button" class="primary" id="nextBtn">Tap to play the next room</button>'+
+   '<button type="button" id="againBtn">Tap to play this room again</button></div></div>';
+  var order=["study","greenhouse","boathouse"]; var nxt=order[(order.indexOf(G.room)+1)%3];
+  $("nextBtn").addEventListener("click", function(){ $("winBox").innerHTML=""; newRun(nxt); window.scrollTo({top:0,behavior:"smooth"}); });
+  $("againBtn").addEventListener("click", function(){ $("winBox").innerHTML=""; newRun(G.room); });
+  coachBoxClear();
+}
+function coachBoxClear(){ if(settings.teach!=="off") $("coachBox").innerHTML='<div class="coachbox"><span class="who">Coach:</span> Room escaped. Notice what carried you: every lock in that room was answered by something the room itself showed you. That is the whole craft — the rest is practice.</div>'; }
+
+/* ---------- Hints ---------- */
+$("hintBtn").addEventListener("click", function(){
+  if(G.done) return;
+  if(!settings.hints){ say("Hints are off in your settings — a variant you chose. The room still holds every clue; the Strategies section below is not a hint, and it is always open."); return; }
+  var step=currentStep(); if(!step) return;
+  var rung=(G.hintRung[step.key]||0);
+  if(rung===0){ G.hintRung[step.key]=1; G.hintsUsed++; say("<strong>Hint — a nudge:</strong> "+esc(step.nudge)); }
+  else if(rung===1){ G.hintRung[step.key]=2; G.hintsUsed++; say("<strong>Hint — stronger:</strong> "+esc(step.strong)); }
+  else if(rung===2){ G.hintRung[step.key]=3; G.hintsUsed++; say("<strong>Hint — the answer, with its why:</strong> "+esc(step.answer)); }
+  else { say("You hold the full answer for this step already — it stands in the hint above. The next move is yours."); return; }
+  renderHud();
+});
+
+/* ---------- Controls ---------- */
+$("restartBtn").addEventListener("click", function(){ $("winBox").innerHTML=""; newRun(G.room); });
+$("giveupBtn").addEventListener("click", function(){
+  if(G.done) return;
+  finishRun("gave-up");
+  var steps=STEPS[G.room].map(function(s,i){ return (i+1)+". "+s.answer; }).join("<br>");
+  say("You step back from "+ROOMMETA[G.room].title+". It goes in the record honestly as <strong>given up</strong> — and the room keeps no grudge. The full walkthrough stands below, so the room still teaches you something.", true);
+  $("winBox").innerHTML='<div class="winbox" style="border-color:var(--warn)"><h3>Given up — the walkthrough</h3><p class="small">'+steps+'</p><div class="btnrow"><button type="button" class="primary" id="retryBtn">Tap to try this room again</button></div></div>';
+  $("retryBtn").addEventListener("click", function(){ $("winBox").innerHTML=""; newRun(G.room); });
+  coachBoxClear();
+});
+$("roomSel").addEventListener("change", function(){ $("winBox").innerHTML=""; newRun(this.value); });
+$("teachSel").addEventListener("change", function(){ settings.teach=this.value; saveSettings(); coachFor(); });
+$("hintsChk").addEventListener("change", function(){ settings.hints=this.checked; saveSettings(); renderVariant(); });
+$("timerChk").addEventListener("change", function(){ settings.timer=this.checked; saveSettings(); renderVariant(); if(G){ G.start=Date.now()- (G.elapsed||0)*1000; startTimer(); } });
+function renderVariant(){
+  var b=$("variantBanner"); var parts=[];
+  if(settings.timer) parts.push("Timed run");
+  if(!settings.hints) parts.push("Hints off");
+  if(parts.length){ b.className="variant-banner"; b.textContent="Variant in play: "+parts.join(" · ")+". The standard form is untimed, with hints allowed — your record notes the form each finish was earned under."; }
+  else { b.className="variant-banner standard"; b.textContent="Standard form in play: untimed, hints allowed — the relaxed documented form for a web page."; }
+  $("hintBtn").textContent = settings.hints ? "Tap for a hint (nudge → stronger → the answer)" : "Tap for a hint (off in your settings)";
+}
+
+/* ---------- Record UI ---------- */
+var ROOMNAMES={study:"The Locked Study", greenhouse:"The Greenhouse", boathouse:"The Tide Boathouse"};
+function renderRecord(){
+  var sum=$("recordSummary"), tbl=$("recordTable");
+  if(!record.entries.length){ sum.innerHTML='<p class="muted">No finished rooms yet. Your escapes and give-ups will stand here.</p>'; tbl.innerHTML=""; return; }
+  var escN=record.entries.filter(function(e){return e.result==="escaped";}).length;
+  var giveN=record.entries.length-escN;
+  var hints=record.entries.reduce(function(a,e){return a+e.hints;},0);
+  var roomsDone={}; record.entries.forEach(function(e){ if(e.result==="escaped") roomsDone[e.room]=true; });
+  sum.innerHTML='<p><strong>'+escN+'</strong> room'+(escN===1?"":"s")+' escaped · <strong>'+giveN+'</strong> given up · <strong>'+hints+'</strong> hints used in all · <strong>'+Object.keys(roomsDone).length+' of 3</strong> rooms escaped at least once.</p>';
+  var rows=record.entries.slice().reverse().map(function(e){
+    return "<tr><td>"+esc(ROOMNAMES[e.room]||e.room)+"</td><td>"+(e.result==="escaped"?"Escaped":"Given up")+"</td><td>"+(e.timed?fmt(e.seconds||0):"untimed")+"</td><td>"+e.hints+"</td><td class=\"hideS\">"+(e.alias?esc(e.alias):'<span class="muted">unsigned</span>')+"</td><td class=\"hideS\">"+esc((e.at||"").slice(0,10))+"</td></tr>";
+  }).join("");
+  tbl.innerHTML='<table><thead><tr><th>Room</th><th>Result</th><th>Time</th><th>Hints</th><th class="hideS">Signed</th><th class="hideS">Date</th></tr></thead><tbody>'+rows+"</tbody></table>";
+}
+$("aliasInput").addEventListener("change", function(){ settings.alias=this.value.trim(); saveSettings(); });
+$("exportBtn").addEventListener("click", function(){
+  var blob=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="escape-room-record.json"; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400);
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click", function(){
+  if(!forgetArmed){ forgetArmed=true; this.textContent="Tap again to confirm — this wipes the record on this device"; return; }
+  record={version:1, entries:[]}; saveRecord(); renderRecord();
+  forgetArmed=false; this.textContent="Tap to forget everything";
+  $("forgetMsg").textContent="Forgotten. The record on this device is empty.";
+});
+
+/* ---------- Download door ---------- */
+$("dlBtn").addEventListener("click", function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="the-locked-study-escape-room.html"; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400);
+});
+
+/* ---------- Init ---------- */
+$("teachSel").value=settings.teach;
+$("hintsChk").checked=settings.hints;
+$("timerChk").checked=settings.timer;
+$("aliasInput").value=settings.alias||"";
+renderVariant(); renderRecord();
+newRun("study");
+</script>
+</body>
+</html>
