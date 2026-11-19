@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>New Town — City Builder</title>
+<style>
+:root{
+  --bg:#f4f1e8; --panel:#fffdf6; --ink:#22301f; --muted:#5c6656; --line:#d8d2bf;
+  --accent:#2e6b34; --accent-ink:#ffffff; --warn:#9a5b00; --bad:#a02c22; --good:#2e6b34;
+  --chip:#e9e4d2; --water:#2f6f9f; --power:#b8860b; --tile:#e7dfc8; --tile-line:#c9c2a8;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171a15; --panel:#20241d; --ink:#e8ead9; --muted:#a9b09c; --line:#3a4033;
+    --accent:#7fb069; --accent-ink:#10160e; --chip:#2c3226; --tile:#2a2f24; --tile-line:#454d3a;
+    --warn:#e0a458; --bad:#e07a6a; --good:#8fc97f; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;line-height:1.45}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:.35rem .6rem}
+button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+a{color:var(--accent)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 .8rem 2rem}
+.freeline{background:var(--accent);color:var(--accent-ink);padding:.5rem .8rem;font-weight:bold;text-align:center}
+.freeline a{color:var(--accent-ink);text-decoration:underline}
+.freeline button{background:transparent;border:1px solid var(--accent-ink);color:var(--accent-ink);min-height:2.25rem}
+h1{font-size:1.9rem;margin:.6rem 0 .2rem}
+h2{font-size:1.25rem;margin:1.2rem 0 .4rem;border-bottom:2px solid var(--line);padding-bottom:.2rem}
+h3{font-size:1.05rem;margin:.8rem 0 .3rem}
+p.small, .small{font-size:.9rem;color:var(--muted)}
+.compass{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0}
+.compass a{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:.45rem .8rem;text-decoration:none;min-height:2.25rem;display:inline-flex;align-items:center}
+.stats{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:.4rem;background:var(--bg);padding:.5rem 0;border-bottom:2px solid var(--line)}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.3rem .6rem;font-weight:bold}
+.stat span{display:block;font-size:.75rem;font-weight:normal;color:var(--muted)}
+.banner{border:2px solid var(--warn);color:var(--warn);background:var(--panel);border-radius:6px;padding:.5rem .7rem;font-weight:bold;margin:.5rem 0}
+.msg{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:.5rem .7rem;margin:.5rem 0;min-height:2.4rem}
+.toolbar{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.45rem;margin:.5rem 0}
+.tool{text-align:left;font-size:.92rem}
+.tool b{display:block;font-size:1rem}
+.tool .cost{color:var(--muted);font-size:.82rem;display:block}
+.tool.sel .cost{color:var(--accent-ink)}
+.mapwrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.5rem}
+#map{display:grid;gap:2px;width:100%}
+.cell{aspect-ratio:1/1;border:1px solid var(--tile-line);background:var(--tile);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:clamp(.55rem,2.2vw,1.05rem);cursor:pointer;padding:0;min-height:0;position:relative;text-align:center;line-height:1.05}
+.cell.road{background:#8d8d84;color:#fff}
+.cell.home{background:#b7d3a8}
+.cell.shop{background:#f2cf8b}
+.cell.work{background:#c3b2d9}
+.cell.power{background:#f4e08a}
+.cell.water{background:#a9cfe8}
+.cell.park{background:#7fb069;color:#fff}
+.cell.school{background:#f0b4a0}
+.cell.clinic{background:#f6f0f0}
+.cell.fire{background:#e08a7a}
+.cell.rubble{background:#6b6257;color:#fff}
+@media (prefers-color-scheme: dark){
+ .cell.home{background:#3d5a34}.cell.shop{background:#6b551f}.cell.work{background:#4c3f63}
+ .cell.power{background:#6b5c1a}.cell.water{background:#274b63}.cell.school{background:#6b4034}
+ .cell.clinic{background:#4a4a4a}.cell.fire{background:#71352b}.cell.road{background:#55554e}
+}
+.cell .occ{position:absolute;bottom:0;right:2px;font-size:.6rem;font-weight:bold}
+.cell.cov-good{outline:3px solid var(--good);outline-offset:-3px}
+.cell.cov-part{outline:3px solid var(--warn);outline-offset:-3px}
+.cell.cov-none{outline:3px solid var(--bad);outline-offset:-3px}
+.cell.pw-yes{box-shadow:inset 0 0 0 3px var(--power)}
+.cell.pw-no{box-shadow:inset 0 0 0 3px var(--bad)}
+.cell.selected{outline:3px solid var(--ink);outline-offset:-3px}
+.cols{display:grid;grid-template-columns:1fr;gap:1rem}
+@media(min-width:860px){.cols{grid-template-columns:1fr 1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.7rem .9rem}
+table{border-collapse:collapse;width:100%}
+td,th{padding:.25rem .3rem;border-bottom:1px solid var(--line);text-align:left}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.total td{font-weight:bold;border-top:2px solid var(--ink)}
+.note{border-left:4px solid var(--accent);background:var(--panel);padding:.5rem .7rem;margin:.45rem 0;border-radius:0 6px 6px 0}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note b{display:block}
+label{display:block;margin:.4rem 0;font-weight:bold}
+label .hint{font-weight:normal;color:var(--muted);font-size:.88rem;display:block}
+input[type="text"],select{font:inherit;padding:.35rem .5rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);width:100%}
+input[type="range"]{width:100%}
+.row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;margin:.45rem 0}
+.seg{display:flex;gap:.3rem;flex-wrap:wrap}
+footer{margin-top:1.5rem;border-top:2px solid var(--line);padding-top:.6rem;font-size:.9rem;color:var(--muted)}
+ul{margin:.3rem 0 .3rem 1.1rem;padding:0}
+.kbd{font-size:.85rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="freeline">Free — always free. No ads, ever. <button id="offlineBtn" type="button">Tap to download this page — available offline</button></div>
+<div class="wrap" id="top">
+
+<nav class="compass" aria-label="Compass">
+  <a href="#mapSec">🧭 Map — tap to go</a>
+  <a href="#budgetSec">Budget — tap to go</a>
+  <a href="#coachSec">Coach — tap to go</a>
+  <a href="#rulesSec">Rules &amp; prices — tap to go</a>
+  <a href="#recordSec">Your record — tap to go</a>
+  <a href="#settingsSec">Settings — tap to go</a>
+</nav>
+
+<h1>New Town</h1>
+<p>Build a town on the grid: lay roads, homes, shops and workplaces, give them power and water, put services near the homes, and keep the budget alive. People move in when the town works — and move out when it doesn't. Every number the game uses is printed on this page. No hidden numbers.</p>
+
+<div class="stats" role="status" aria-label="Town at a glance">
+  <div class="stat"><span>Population</span><span id="stPop" style="font-size:1rem;color:var(--ink);font-weight:bold">0</span></div>
+  <div class="stat"><span>Treasury</span><span id="stMoney" style="font-size:1rem;color:var(--ink);font-weight:bold">$0</span></div>
+  <div class="stat"><span>Month</span><span id="stMonth" style="font-size:1rem;color:var(--ink);font-weight:bold">1</span></div>
+  <div class="stat"><span>Happiness</span><span id="stHappy" style="font-size:1rem;color:var(--ink);font-weight:bold">—</span></div>
+  <div class="stat"><span>Town</span><span id="stName" style="font-size:1rem;color:var(--ink);font-weight:bold">New Town</span></div>
+</div>
+
+<div id="variantBanner" class="banner" hidden>Variant in play: <span id="variantText"></span> This town's record will be labelled as a variant, never as standard.</div>
+<div id="closedBanner" class="banner" hidden>This town is closed and its record is written. Tap “Start a new town” below to play again.</div>
+
+<div class="row">
+  <label style="flex:1;min-width:180px">Town name <span class="hint">Optional — no name is ever required to play. Tap the dice for a random name.</span>
+  <input type="text" id="townName" maxlength="30" placeholder="e.g. Millbrook"></label>
+  <button id="randomName" type="button">🎲 Tap for a random name</button>
+</div>
+
+<div class="row" aria-label="Time controls">
+  <button id="playBtn" type="button">▶ Tap to play — time runs month by month</button>
+  <button id="pauseBtn" type="button">⏸ Tap to pause</button>
+  <span class="small">Speed — tap to choose:</span>
+  <span class="seg" id="speedSeg">
+    <button type="button" data-speed="1" class="sel">1×</button>
+    <button type="button" data-speed="2">2×</button>
+    <button type="button" data-speed="4">4×</button>
+  </span>
+  <button id="stepBtn" type="button">Tap to step one month</button>
+</div>
+
+<div class="row">
+  <label style="flex:1;min-width:220px">Tax rate: <span id="taxLabel">10%</span>
+    <span class="hint">Higher taxes fund services but push people away. Lower taxes please people but starve the budget. The trade-off runs both ways — the Coach explains it on your own town below.</span>
+  <input type="range" id="taxRate" min="0" max="20" step="1" value="10"></label>
+</div>
+
+<div id="msg" class="msg" role="status">Pick a tool below, then tap a tile on the map to place it. Tap a placed building to inspect it. Hold a building tile to open its full explainer.</div>
+
+<section id="mapSec">
+<h2>The map — tap a tile to place, tap a building to inspect, hold a building for its full explainer</h2>
+<div class="row">
+  <span class="small">View — tap to choose:</span>
+  <span class="seg" id="viewSeg">
+    <button type="button" data-view="normal" class="sel">Normal</button>
+    <button type="button" data-view="coverage">Service coverage</button>
+    <button type="button" data-view="power">Power &amp; water</button>
+  </span>
+  <span class="small">Coverage view: green outline = a home reached by school, clinic, fire cover and a park; amber = some; red = none. Power &amp; water view: gold ring = powered and watered, red ring = missing one or both.</span>
+</div>
+<div class="toolbar" id="toolbar" role="group" aria-label="Building tools — tap to select, then tap a tile to place"></div>
+<div class="mapwrap"><div id="map"></div></div>
+<p class="small">Legend: 🛣 road · 🏠 home · 🏪 shop · 🏭 workplace · ⚡ power plant · 💧 water pump · 🌳 park · 🏫 school · 🏥 clinic · 🚒 fire station · ▓ rubble (bulldoze it). A number on a home is how many people live there (a home holds up to 6).</p>
+<div class="panel" id="inspector"><b>Inspector</b><p class="small" style="margin:.2rem 0">Tap any placed building and its story appears here in plain words — why it is empty, why people are unhappy, what would fix it. Hold a building tile and this opens with the full checklist.</p></div>
+</section>
+
+<div class="cols">
+<section id="budgetSec" class="panel">
+<h2 style="border:none;margin-top:0">Budget — last month, every line named</h2>
+<div id="budgetBody"><p class="small">No month has run yet. Press play or step a month and every income and upkeep line will be listed here with its amount.</p></div>
+<p class="small">How money works, in plain words: each resident pays tax of $3 a month at a 10% tax rate (it scales with the rate you set). An open shop pays $20 a month at 10%, an open workplace $30. Upkeep is charged per building at the prices printed on the tools above. If the treasury falls below $0 the town does not instantly end — but the Coach will warn you, and a town that stays broke cannot build.</p>
+</section>
+
+<section id="coachSec" class="panel">
+<h2 style="border:none;margin-top:0">Teaching</h2>
+<label>Teaching dial — tap to choose. Saved on this device only.
+<span class="seg" id="teachSeg">
+  <button type="button" data-teach="off">Off — never teaches</button>
+  <button type="button" data-teach="light">Light — big moments only</button>
+  <button type="button" data-teach="coach">Coach — full coaching</button>
+</span></label>
+<div id="coachBody"></div>
+</section>
+</div>
+
+<section id="settingsSec">
+<h2>Settings — rules are settings</h2>
+<p class="small">Standard play is: standard map, standard funds, disasters on. Anything else is a variant, and the game says so with a banner and labels the record as a variant. Changing a setting starts a new town.</p>
+<div class="cols">
+<label>Map size
+<select id="setMap">
+  <option value="small">Small — 10 × 8</option>
+  <option value="standard" selected>Standard — 14 × 10</option>
+  <option value="large">Large — 18 × 12</option>
+</select></label>
+<label>Starting funds
+<select id="setFunds">
+  <option value="tight">Tight — $500 (variant)</option>
+  <option value="standard" selected>Standard — $1,000</option>
+  <option value="comfortable">Comfortable — $2,000 (variant)</option>
+</select></label>
+<label>Disasters — fires
+<select id="setFire">
+  <option value="on" selected>On — fires can break out (standard)</option>
+  <option value="off">Off — no fires (variant)</option>
+</select></label>
+</div>
+<p class="small">How fires work, printed plainly: each month, every building with no fire station within 5 tiles has a small chance (3 in 100) to catch fire. A fire destroys that building, and each neighbour without fire cover has a 40 in 100 chance to catch too. Rubble must be bulldozed ($5) before the tile can be reused.</p>
+<div class="row">
+  <button id="newTownBtn" type="button">Tap to start a new town with these settings</button>
+  <button id="finishBtn" type="button">Tap to finish this town — writes its record</button>
+  <button id="giveUpBtn" type="button">Tap to give up this town — writes its record</button>
+</div>
+</section>
+
+<section id="rulesSec">
+<h2>Rules &amp; prices — everything printed, nothing hidden</h2>
+<div class="cols">
+<div class="panel">
+<h3 style="margin-top:0">What a home needs</h3>
+<ul>
+<li><b>A road next to it.</b> No road, nobody can reach it.</li>
+<li><b>Power:</b> a power plant within 6 tiles. <b>Water:</b> a water pump within 6 tiles.</li>
+<li><b>Jobs within reach:</b> a shop or workplace within 5 tiles, with jobs free. A shop gives 4 jobs, a workplace 8.</li>
+<li><b>Decent happiness</b> (40 or more, town-wide). Parks, school, clinic and fire cover raise it; high taxes and joblessness lower it.</li>
+</ul>
+<p>A home that has everything gains up to 2 people a month, to a full house of 6. A home missing power, water or a road loses 2 people a month. A home with no jobs nearby loses 1 a month. A home empty for 3 straight months is <b>abandoned</b>. Each home shows its state in plain words in the Inspector: no power, no water, no road, no jobs nearby, happy, unhappy, or abandoned.</p>
+<h3>Shops need customers</h3>
+<p>A shop only opens — and only pays tax and offers jobs — if it has power, water, a road beside it, <b>and</b> homes with people in them within 4 tiles. A shop with no homes nearby fails, however nice the building is. A workplace needs power, water and a road, but not nearby customers.</p>
+</div>
+<div class="panel">
+<h3 style="margin-top:0">Prices (also printed on every tool)</h3>
+<table>
+<tr><th>Building</th><th class="num">Build</th><th class="num">Upkeep / month</th><th>Reach</th></tr>
+<tr><td>Road</td><td class="num">$5</td><td class="num">$0</td><td>—</td></tr>
+<tr><td>Home</td><td class="num">$50</td><td class="num">$0</td><td>holds 6 people</td></tr>
+<tr><td>Shop</td><td class="num">$80</td><td class="num">$5</td><td>4 jobs</td></tr>
+<tr><td>Workplace</td><td class="num">$100</td><td class="num">$5</td><td>8 jobs</td></tr>
+<tr><td>Power plant</td><td class="num">$300</td><td class="num">$20</td><td>power within 6 tiles</td></tr>
+<tr><td>Water pump</td><td class="num">$200</td><td class="num">$15</td><td>water within 6 tiles</td></tr>
+<tr><td>Park</td><td class="num">$40</td><td class="num">$2</td><td>happiness within 3 tiles</td></tr>
+<tr><td>School</td><td class="num">$150</td><td class="num">$10</td><td>within 5 tiles</td></tr>
+<tr><td>Clinic</td><td class="num">$150</td><td class="num">$10</td><td>within 5 tiles</td></tr>
+<tr><td>Fire station</td><td class="num">$120</td><td class="num">$8</td><td>fire cover within 5 tiles</td></tr>
+<tr><td>Bulldoze</td><td class="num">$5</td><td class="num">—</td><td>clears one tile</td></tr>
+</table>
+<p class="small">Services belong near homes: a school, clinic, fire station or park only helps the homes inside its reach. A service built far from every home helps nobody — the coverage view shows exactly which homes each service reaches.</p>
+</div>
+</div>
+</section>
+
+<section id="recordSec">
+<h2>Your record — your towns, on this device only</h2>
+<p class="small">Every finished or given-up town writes one record here: its name, months played, population peak, treasury low and high, how it ended, and which settings were in play. Saved on this device only. Nothing is sent anywhere; there is no account.</p>
+<div id="recordBody"><p class="small">No towns recorded yet. Finish or give up a town and it will appear here.</p></div>
+<div class="row">
+  <button id="downloadRec" type="button">Tap to download your record as JSON</button>
+  <button id="forgetRec" type="button">Tap to forget — clears only the record</button>
+</div>
+</section>
+
+<footer>
+<p><b>About this game.</b> The city-building game is a documented form: in 1989 a landmark city simulator defined the genre — a grid, zones and buildings, power and water, taxes against upkeep, and citizens who arrive when a city works and leave when it doesn't. New Town is our own original work in that form: our own name, art, text and building designs, written from scratch. Nothing here copies that classic's name, art, or text.</p>
+<p>Copyleft: this page and its text are free to share and adapt under CC BY-SA 4.0; its code under GPL. Free — always free. No ads, ever.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var DEFS={
+ road:{name:"Road",icon:"🛣",cost:5,upkeep:0,blurb:"Connects buildings. Homes, shops and workplaces need a road beside them."},
+ home:{name:"Home",icon:"🏠",cost:50,upkeep:0,blurb:"Holds up to 6 people. Needs road, power, water, jobs nearby and decent happiness."},
+ shop:{name:"Shop",icon:"🏪",cost:80,upkeep:5,blurb:"4 jobs. Opens only with power, water, a road, and people living within 4 tiles."},
+ work:{name:"Workplace",icon:"🏭",cost:100,upkeep:5,blurb:"8 jobs. Needs power, water and a road."},
+ power:{name:"Power plant",icon:"⚡",cost:300,upkeep:20,blurb:"Powers every building within 6 tiles."},
+ water:{name:"Water pump",icon:"💧",cost:200,upkeep:15,blurb:"Waters every building within 6 tiles."},
+ park:{name:"Park",icon:"🌳",cost:40,upkeep:2,blurb:"Raises happiness of homes within 3 tiles."},
+ school:{name:"School",icon:"🏫",cost:150,upkeep:10,blurb:"Serves homes within 5 tiles. Raises happiness."},
+ clinic:{name:"Clinic",icon:"🏥",cost:150,upkeep:10,blurb:"Serves homes within 5 tiles. Raises happiness."},
+ fire:{name:"Fire station",icon:"🚒",cost:120,upkeep:8,blurb:"Fire cover for buildings within 5 tiles."},
+ bulldoze:{name:"Bulldoze",icon:"🚜",cost:5,upkeep:0,blurb:"Clears one tile — a building or rubble — for $5."}
+};
+var ORDER=["road","home","shop","work","power","water","park","school","clinic","fire","bulldoze"];
+var NAMES=["Millbrook","Fernhollow","Stonebridge","Little Acorn","New Bramble","Cedar Falls","Hollow Creek","Port Saffron","Emberfield","Lowmarsh","Tanglewood","Brightwater"];
+var MAPS={small:[10,8],standard:[14,10],large:[18,12]};
+var FUNDS={tight:500,standard:1000,comfortable:2000};
+
+var S=null, timer=null, selectedTool="home", viewMode="normal", teach="light";
+try{ teach=localStorage.getItem("newtown_teaching")||"light"; }catch(e){}
+if(["off","light","coach"].indexOf(teach)<0) teach="light";
+
+function $(id){return document.getElementById(id);}
+function money(n){return (n<0?"-$":"$")+Math.abs(Math.round(n));}
+function settings(){return {map:$("setMap").value, funds:$("setFunds").value, fire:$("setFire").value};}
+function isVariant(st){return st.map!=="standard"||st.funds!=="standard"||st.fire!=="on";}
+function variantText(st){var p=[];if(st.map!=="standard")p.push("map size: "+st.map);if(st.funds!=="standard")p.push("starting funds: "+st.funds+" ("+money(FUNDS[st.funds])+")");if(st.fire!=="on")p.push("disasters off");return p.join(" · ");}
+
+function newTown(){
+  var st=settings(), dims=MAPS[st.map];
+  S={cols:dims[0],rows:dims[1],grid:[],month:1,treasury:FUNDS[st.funds],playing:false,speed:1,
+     tax:10,closed:false,popPeak:0,treasLow:FUNDS[st.funds],treasHigh:FUNDS[st.funds],
+     lastBudget:null,happiness:null,flags:{},lightNotes:[],st:st};
+  for(var i=0;i<S.cols*S.rows;i++) S.grid.push(null);
+  stopTimer();
+  $("playBtn").textContent="▶ Tap to play — time runs month by month";
+  $("closedBanner").hidden=true;
+  updateVariant(); renderAll();
+  say("A fresh town. Start with a power plant and a water pump, roads beside them, then homes and a workplace inside their reach — the Coach below will read your town as you build.");
+}
+function idx(x,y){return y*S.cols+x;}
+function xy(i){return [i%S.cols, Math.floor(i/S.cols)];}
+function dist(a,b){var A=xy(a),B=xy(b);return Math.max(Math.abs(A[0]-B[0]),Math.abs(A[1]-B[1]));}
+function eachType(t,fn){for(var i=0;i<S.grid.length;i++){var c=S.grid[i];if(c&&c.type===t)fn(c,i);}}
+function countType(t){var n=0;eachType(t,function(){n++;});return n;}
+function nearType(i,t,r){var found=false;eachType(t,function(c,j){if(dist(i,j)<=r)found=true;});return found;}
+function hasRoad(i){var p=xy(i),dirs=[[1,0],[-1,0],[0,1],[0,-1]];for(var k=0;k<4;k++){var x=p[0]+dirs[k][0],y=p[1]+dirs[k][1];if(x<0||y<0||x>=S.cols||y>=S.rows)continue;var c=S.grid[idx(x,y)];if(c&&c.type==="road")return true;}return false;}
+function powered(i){return nearType(i,"power",6);}
+function watered(i){return nearType(i,"water",6);}
+function fireCovered(i){return nearType(i,"fire",5);}
+function homesNear(i,r,minPop){var n=0;eachType("home",function(c,j){if(dist(i,j)<=r&&c.occ>=(minPop||0))n++;});return n;}
+function shopOpen(i){var c=S.grid[i];return c&&hasRoad(i)&&powered(i)&&watered(i)&&homesNear(i,4,1)>0;}
+function workOpen(i){return hasRoad(i)&&powered(i)&&watered(i);}
+function totalJobs(){var j=0;eachType("shop",function(c,i){if(shopOpen(i))j+=4;});eachType("work",function(c,i){if(workOpen(i))j+=8;});return j;}
+function population(){var p=0;eachType("home",function(c){p+=c.occ;});return p;}
+function jobsNearHome(i){var ok=false;eachType("shop",function(c,j){if(dist(i,j)<=5&&shopOpen(j))ok=true;});eachType("work",function(c,j){if(dist(i,j)<=5&&workOpen(j))ok=true;});return ok;}
+
+function computeHappiness(){
+  var homes=countType("home"); if(!homes) return null;
+  var served=0,parked=0,occ=0;
+  eachType("home",function(c,i){occ+=c.occ;
+    var s=0; if(nearType(i,"school",5))s++; if(nearType(i,"clinic",5))s++; if(nearType(i,"fire",5))s++;
+    if(s>=2)served++; if(nearType(i,"park",3))parked++;});
+  var jobs=totalJobs(), pop=population();
+  var unemp = pop>0 ? Math.max(0,pop-jobs)/pop : 0;
+  var h=60 + (served/homes)*18 + (parked/homes)*10 - Math.max(0,S.tax-10)*2.2 + Math.max(0,10-S.tax)*0.8 - unemp*22;
+  if(occ===0) h=60 - Math.max(0,S.tax-10)*2.2 + Math.max(0,10-S.tax)*0.8;
+  return Math.max(5,Math.min(100,Math.round(h)));
+}
+function homeState(c,i){
+  if(c.occ===0&&c.emptyMonths>=3) return "abandoned";
+  if(!hasRoad(i)) return "no road";
+  if(!powered(i)) return "no power";
+  if(!watered(i)) return "no water";
+  if(!jobsNearHome(i)) return "no jobs nearby";
+  var h=computeHappiness();
+  if(h!==null&&h<40) return "unhappy";
+  if(c.occ>0) return "happy";
+  return "ready — waiting for residents";
+}
+
+function say(t){$("msg").textContent=t;}
+
+/* ---------- rendering ---------- */
+function buildToolbar(){
+  var tb=$("toolbar"); tb.innerHTML="";
+  ORDER.forEach(function(k){var d=DEFS[k];var b=document.createElement("button");b.type="button";b.className="tool"+(selectedTool===k?" sel":"");
+    b.setAttribute("data-tool",k);
+    b.innerHTML="<b>"+d.icon+" "+d.name+"</b><span class='cost'>Build "+money(d.cost)+(d.upkeep?" · upkeep "+money(d.upkeep)+"/month":" · no upkeep")+"</span><span class='cost'>Tap to select, then tap a tile to place</span>";
+    b.addEventListener("click",function(){selectedTool=k;buildToolbar();say(d.name+" selected. "+d.blurb+" Tap a tile on the map to place it.");});
+    tb.appendChild(b);});
+}
+function renderMap(){
+  var m=$("map"); m.style.gridTemplateColumns="repeat("+S.cols+",1fr)"; m.innerHTML="";
+  S.grid.forEach(function(c,i){
+    var cell=document.createElement("button"); cell.type="button"; cell.className="cell"+(c?" "+c.type:"");
+    cell.setAttribute("aria-label", c? DEFS[c.type].name+" — tap to inspect, hold for full explainer" : "Empty tile — tap to place");
+    if(c){ cell.textContent=DEFS[c.type].icon; if(c.type==="home"&&c.occ>0){var s=document.createElement("span");s.className="occ";s.textContent=c.occ;cell.appendChild(s);} }
+    if(c&&c.type==="home"&&viewMode==="coverage"){
+      var s2=0; if(nearType(i,"school",5))s2++; if(nearType(i,"clinic",5))s2++; if(nearType(i,"fire",5))s2++; if(nearType(i,"park",3))s2++;
+      cell.classList.add(s2>=3?"cov-good":(s2>=1?"cov-part":"cov-none"));
+    }
+    if(c&&viewMode==="power"&&c.type!=="road"){ cell.classList.add(powered(i)&&watered(i)?"pw-yes":"pw-no"); }
+    var pressTimer=null, held=false;
+    cell.addEventListener("pointerdown",function(){ held=false; pressTimer=setTimeout(function(){held=true; inspect(i,true);},600); });
+    cell.addEventListener("pointerup",function(){ if(pressTimer)clearTimeout(pressTimer); if(!held) tapTile(i); });
+    cell.addEventListener("pointerleave",function(){ if(pressTimer)clearTimeout(pressTimer); });
+    m.appendChild(cell);
+  });
+}
+function renderStats(){
+  $("stPop").textContent=population();
+  $("stMoney").textContent=money(S.treasury);
+  $("stMonth").textContent=S.month;
+  var h=computeHappiness(); $("stHappy").textContent=h===null?"—":h+" / 100";
+  $("stName").textContent=$("townName").value.trim()||"New Town";
+  $("taxLabel").textContent=S.tax+"%";
+}
+function renderBudget(){
+  var b=S.lastBudget, el=$("budgetBody"); if(!b){return;}
+  var rows="";
+  function line(label,n){return "<tr><td>"+label+"</td><td class='num'>"+money(n)+"</td></tr>";}
+  rows+="<tr><th colspan='2'>Income — month "+(S.month-1)+"</th></tr>";
+  rows+=line("Home taxes — "+b.pop+" residents at "+S.tax+"%", b.homeTax);
+  rows+=line("Shop taxes — "+b.shopsOpen+" open shops", b.shopTax);
+  rows+=line("Workplace taxes — "+b.worksOpen+" open workplaces", b.workTax);
+  rows+="<tr><td><b>Total income</b></td><td class='num'><b>"+money(b.income)+"</b></td></tr>";
+  rows+="<tr><th colspan='2'>Upkeep</th></tr>";
+  ORDER.forEach(function(k){ if(k==="bulldoze")return; var n=b.counts[k]||0; if(n>0&&DEFS[k].upkeep>0) rows+=line(DEFS[k].name+" upkeep — "+n+" × "+money(DEFS[k].upkeep), n*DEFS[k].upkeep); });
+  rows+=line("Buildings with no upkeep (roads, homes)",0);
+  rows+="<tr><td><b>Total upkeep</b></td><td class='num'><b>"+money(b.upkeep)+"</b></td></tr>";
+  rows+="<tr class='total'><td>Month total</td><td class='num'>"+money(b.income-b.upkeep)+"</td></tr>";
+  el.innerHTML="<table>"+rows+"</table><p class='small'>Treasury after the month: <b>"+money(S.treasury)+"</b>. Population now "+population()+", jobs open "+totalJobs()+".</p>";
+}
+function renderAll(){renderStats();renderMap();renderBudget();renderCoach();}
+
+/* ---------- inspector ---------- */
+function inspect(i,full){
+  var c=S.grid[i], el=$("inspector");
+  if(!c){ el.innerHTML="<b>Empty tile</b><p class='small' style='margin:.2rem 0'>Nothing here yet. Select a tool above and tap this tile to build. Placing costs are printed on every tool — no hidden numbers.</p>"; return; }
+  var d=DEFS[c.type], lines=[];
+  if(c.type==="rubble"){ el.innerHTML="<b>▓ Rubble</b><p>Bulldoze this tile ($5) before it can be used again.</p>"; return; }
+  if(c.type==="home"){
+    var st=homeState(c,i);
+    lines.push("State, in plain words: <b>"+st+"</b> — "+c.occ+" of 6 people live here.");
+    lines.push((hasRoad(i)?"✓":"✗")+" Road beside it: "+(hasRoad(i)?"yes":"no — build a road on a neighbouring tile."));
+    lines.push((powered(i)?"✓":"✗")+" Power: "+(powered(i)?"a power plant is within 6 tiles":"no power plant within 6 tiles — power comes before growth; nothing fills without it."));
+    lines.push((watered(i)?"✓":"✗")+" Water: "+(watered(i)?"a water pump is within 6 tiles":"no water pump within 6 tiles."));
+    lines.push((jobsNearHome(i)?"✓":"✗")+" Jobs within 5 tiles: "+(jobsNearHome(i)?"yes":"no open shop or workplace in reach — homes far from jobs empty out."));
+    var h=computeHappiness();
+    lines.push("Town happiness: "+(h===null?"—":h+" / 100")+" (homes need 40 or more to fill).");
+    lines.push("Services reaching this home: school "+(nearType(i,"school",5)?"yes":"no")+" · clinic "+(nearType(i,"clinic",5)?"yes":"no")+" · fire cover "+(nearType(i,"fire",5)?"yes":"no")+" · park "+(nearType(i,"park",3)?"yes":"no")+". Services belong near homes — a service outside its reach helps nobody.");
+    if(full){ lines.push("<b>Why is this home empty or unhappy?</b> Read the ✗ lines above top to bottom — the game checks them in that order: road, power, water, jobs, happiness. Fix the first ✗ and the next one becomes the problem worth solving."); }
+  } else if(c.type==="shop"){
+    lines.push("This shop is <b>"+(shopOpen(i)?"open":"closed")+"</b>.");
+    lines.push((hasRoad(i)?"✓":"✗")+" Road beside it · "+(powered(i)?"✓":"✗")+" Power · "+(watered(i)?"✓":"✗")+" Water");
+    lines.push("Homes with people within 4 tiles: "+homesNear(i,4,1)+". A shop with no homes nearby fails — it has no customers. Build homes inside its reach, inside power and water reach, and it opens.");
+  } else if(c.type==="work"){
+    lines.push("This workplace is <b>"+(workOpen(i)?"open — 8 jobs":"closed")+"</b>. It needs a road beside it, power and water within 6 tiles. Unlike a shop it needs no nearby customers.");
+  } else if(c.type==="power"){ lines.push("Powers every building within 6 tiles. Homes built beyond that ring sit dark — check the Power &amp; water view."); }
+  else if(c.type==="water"){ lines.push("Waters every building within 6 tiles."); }
+  else if(c.type==="park"||c.type==="school"||c.type==="clinic"||c.type==="fire"){
+    lines.push("Homes inside this building's reach: "+homesNear(i, c.type==="park"?3:5, 0)+". Services only help homes they can reach — the coverage view shades exactly that.");
+  } else if(c.type==="road"){ lines.push("Roads cost $5 to lay and nothing to keep. Every working building needs one beside it."); }
+  el.innerHTML="<b>"+d.icon+" "+d.name+"</b><p style='margin:.3rem 0'>"+lines.join("<br>")+"</p><p class='small'>Built for "+money(d.cost)+(d.upkeep?", upkeep "+money(d.upkeep)+" a month":"")+". To remove it: select Bulldoze, then tap this tile.</p>";
+}
+
+/* ---------- placement ---------- */
+function tapTile(i){
+  if(S.closed){ say("This town is closed. Start a new town to build again."); return; }
+  var c=S.grid[i];
+  if(selectedTool==="bulldoze"){
+    if(!c){ say("Nothing there to bulldoze."); return; }
+    if(S.treasury<5){ say("Bulldozing costs $5 and the treasury can't cover it."); return; }
+    S.treasury-=5; S.grid[i]=null; say("Cleared for $5."); renderAll(); return;
+  }
+  if(c){ inspect(i,false); return; }
+  var d=DEFS[selectedTool];
+  if(S.treasury<d.cost){ say("Not enough money: a "+d.name+" costs "+money(d.cost)+" and the treasury holds "+money(S.treasury)+"."); coachEvent("broke"); return; }
+  S.treasury-=d.cost;
+  S.grid[i]={type:selectedTool,occ:0,emptyMonths:0};
+  say(d.name+" placed for "+money(d.cost)+(d.upkeep?" · upkeep "+money(d.upkeep)+" a month":"")+".");
+  if(selectedTool==="home"&&!S.flags.firstHome){S.flags.firstHome=true; coachEvent("firstHome");}
+  renderAll();
+}
+
+/* ---------- the month ---------- */
+function tick(){
+  if(S.closed) return;
+  var events=[];
+  /* fires */
+  if(S.st.fire==="on"){
+    var fires=[];
+    for(var i=0;i<S.grid.length;i++){ var c=S.grid[i]; if(c&&c.type!=="road"&&!fireCovered(i)&&Math.random()<0.03) fires.push(i); }
+    fires.forEach(function(fi){
+      if(!S.grid[fi]||S.grid[fi].type==="rubble")return;
+      events.push("🔥 Fire! A "+DEFS[S.grid[fi].type].name+" burned — it had no fire station within 5 tiles. Bulldoze the rubble ($5) to reuse the tile.");
+      S.grid[fi]={type:"rubble",occ:0,emptyMonths:0};
+      var p=xy(fi),dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+      dirs.forEach(function(dd){var x=p[0]+dd[0],y=p[1]+dd[1];if(x<0||y<0||x>=S.cols||y>=S.rows)return;var j=idx(x,y),n=S.grid[j];
+        if(n&&n.type!=="road"&&n.type!=="rubble"&&!fireCovered(j)&&Math.random()<0.4){ S.grid[j]={type:"rubble",occ:0,emptyMonths:0}; events.push("🔥 The fire spread to a neighbouring "+DEFS[n.type].name+"."); }});
+    });
+  }
+  /* homes */
+  var jobs=totalJobs(), usedJobs=0, leaving=false;
+  var happy=computeHappiness();
+  eachType("home",function(c,i){
+    var before=c.occ;
+    if(!hasRoad(i)||!powered(i)||!watered(i)){ c.occ=Math.max(0,c.occ-2); }
+    else if(!jobsNearHome(i)||usedJobs>=jobs){ c.occ=Math.max(0,c.occ-1); }
+    else if(happy!==null&&happy<40){ c.occ=Math.max(0,c.occ-1); }
+    else { c.occ=Math.min(6,c.occ+2); }
+    usedJobs+=c.occ;
+    if(c.occ===0)c.emptyMonths++; else c.emptyMonths=0;
+    if(before>0&&c.occ<before) leaving=true;
+    if(c.occ>0&&powered(i)&&!S.flags.firstPowered){S.flags.firstPowered=true;coachEvent("firstPowered");}
+  });
+  if(leaving&&!S.flags.firstLeaving){S.flags.firstLeaving=true;coachEvent("firstLeaving");}
+  /* money */
+  var pop=population(), counts={}; ORDER.forEach(function(k){counts[k]=countType(k);});
+  var shopsOpen=0,worksOpen=0;
+  eachType("shop",function(c,i){if(shopOpen(i))shopsOpen++;});
+  eachType("work",function(c,i){if(workOpen(i))worksOpen++;});
+  var rate=S.tax/10;
+  var homeTax=Math.round(pop*3*rate), shopTax=Math.round(shopsOpen*20*rate), workTax=Math.round(worksOpen*30*rate);
+  var income=homeTax+shopTax+workTax, upkeep=0;
+  ORDER.forEach(function(k){upkeep+=counts[k]*(DEFS[k].upkeep||0);});
+  S.treasury+=income-upkeep;
+  S.lastBudget={pop:pop,shopsOpen:shopsOpen,worksOpen:worksOpen,homeTax:homeTax,shopTax:shopTax,workTax:workTax,income:income,upkeep:upkeep,counts:counts};
+  S.month++;
+  var p2=population(); if(p2>S.popPeak)S.popPeak=p2;
+  if(S.treasury<S.treasLow)S.treasLow=S.treasury;
+  if(S.treasury>S.treasHigh)S.treasHigh=S.treasury;
+  if(S.treasury<150&&!S.flags.lowTreasury){S.flags.lowTreasury=true;coachEvent("lowTreasury");}
+  if(S.treasury>=150)S.flags.lowTreasury=false;
+  if(events.length) say(events.join(" "));
+  renderAll();
+}
+
+/* ---------- teaching ---------- */
+function coachEvent(kind){
+  if(teach==="off")return;
+  var notes={
+    firstHome:"<b>Coach — your first home.</b> A home fills only with a road beside it, power and water within 6 tiles, jobs within 5, and happiness at 40+. Power comes before growth: place the plant and pump first, then homes inside their reach.",
+    firstPowered:"<b>A first: a home with power and people in it.</b> That is the engine of the whole game — powered, watered homes near jobs pay the taxes that fund everything else.",
+    firstLeaving:"<b>A first: a family has left.</b> Tap their home in the Inspector — it names the reason in plain words (no power, no water, no road, no jobs nearby, or unhappy). Fix that one thing first.",
+    lowTreasury:"<b>Treasury running low.</b> Two honest levers: raise taxes (more income now, but happiness falls and people drift away) or cut upkeep (bulldoze a service you can't yet afford). There is no third lever — that tension is the game.",
+    broke:"<b>The treasury can't cover that.</b> Wait for tax months, or bulldoze something with upkeep. Building cheap-and-wide feels fast and bills you forever; compact building costs more road-free tiles up front and less upkeep later."
+  };
+  if(notes[kind]){ S.lightNotes.unshift(notes[kind]); if(S.lightNotes.length>4)S.lightNotes.pop(); renderCoach(); }
+}
+function analyse(){
+  var out=[], homes=countType("home"), pop=population(), jobs=totalJobs();
+  if(!homes){ out.push({cls:"",t:"Start with power, then homes",b:"Why power comes before growth: a home without power within 6 tiles can never fill — it only empties. Place a power plant ($300) and water pump ($200), a road beside each, then homes inside both rings, and a workplace inside 5 tiles of the homes."}); return out; }
+  var noPow=0,noWat=0,noRoad=0,noJobs=0,emptyShops=0;
+  eachType("home",function(c,i){ if(!powered(i))noPow++; if(!watered(i))noWat++; if(!hasRoad(i))noRoad++; if(!jobsNearHome(i))noJobs++; });
+  eachType("shop",function(c,i){ if(!shopOpen(i)&&homesNear(i,4,1)===0)emptyShops++; });
+  if(noPow) out.push({cls:"warn",t:noPow+" home(s) have no power",b:"Power comes before growth. Either move building toward the plant or add a plant — a second plant costs $300 plus $20 a month forever, so sprawl has a running price, not just a building price."});
+  if(noWat) out.push({cls:"warn",t:noWat+" home(s) have no water",b:"Same shape as power: pumps reach 6 tiles. Homes outside the ring empty out, 2 people a month."});
+  if(noRoad) out.push({cls:"warn",t:noRoad+" home(s) have no road beside them",b:"Roads are the cheapest fix in the game at $5. This is the one case with a single right answer: lay the road."});
+  if(noJobs) out.push({cls:"warn",t:noJobs+" home(s) have no jobs within reach",b:"Homes far from jobs empty out, 1 person a month. Two strategies: bring jobs to the homes (a workplace within 5 tiles — $100, 8 jobs) or accept a commuter edge and build the next homes beside the jobs you already have. The first costs money now; the second costs you the far homes."});
+  if(emptyShops) out.push({cls:"warn",t:emptyShops+" shop(s) have no customers",b:"Why a shop with no homes nearby fails: it needs people living within 4 tiles to open at all. Either grow homes beside it or bulldoze it and stop paying its $5 upkeep — a closed shop still bills you."});
+  if(jobs>0&&pop>jobs) out.push({cls:"warn",t:"More people than jobs ("+pop+" people, "+jobs+" jobs)",b:"Joblessness drags happiness down. Add a workplace (8 jobs) before more homes — homes added now will fill, then leave."});
+  if(S.tax>=14) out.push({cls:"",t:"Your taxes are high ("+S.tax+"%)",b:"The tax trade-off, your direction: high taxes fund services and fill the treasury, but every point above 10% costs happiness, and unhappy towns shrink. If people are leaving while money piles up, the rate — not the buildings — is the problem."});
+  if(S.tax<=6) out.push({cls:"",t:"Your taxes are low ("+S.tax+"%)",b:"The tax trade-off, your direction: low taxes please people and help homes fill, but the budget starves — upkeep is charged in full every month. Low-tax growth works only while the town is small; watch the treasury line, not the population line."});
+  if(S.treasury<150) out.push({cls:"bad",t:"Treasury is low ("+money(S.treasury)+")",b:"Options in plain words: raise taxes a point or two (income now, happiness cost), bulldoze your priciest upkeep (a school or clinic is $10 a month), or pause building and let tax months refill the town. All three are real strategies; which fits depends on whether people or money is your scarcer resource."});
+  var servedHomes=0; eachType("home",function(c,i){ if(nearType(i,"school",5)||nearType(i,"clinic",5)||nearType(i,"fire",5))servedHomes++; });
+  if(homes>=4&&servedHomes<homes/2) out.push({cls:"",t:"Most homes sit outside every service's reach",b:"Why services belong near homes: a school, clinic or fire station only helps homes within 5 tiles. Density versus sprawl, honestly: a compact town shares one of each service; a spread town needs two or three of each, and pays their upkeep forever. Compact costs more planning; sprawl costs more money, every month."});
+  if(pop>=20&&S.treasury>=300) out.push({cls:"",t:"The town is working — three honest ways onward",b:"<b>Compact, services-first:</b> fill gaps inside existing power, water and service rings before expanding — cheapest growth there is. <b>Cheap-and-wide sprawl:</b> new rings of homes are fast and feel big, but each ring wants its own plant, pump and services. <b>Low-tax growth:</b> drop the rate, let happiness pull people in, and grow the tax base instead of the rate — slower money, steadier people. None is the one right way; each trades a different thing."});
+  if(!out.length) out.push({cls:"",t:"Your town reads healthy",b:"Homes powered, watered, roaded and near jobs; money and people both moving the right way. The next honest question is density: grow inside the rings you already pay for before buying new ones."});
+  return out;
+}
+function renderCoach(){
+  var el=$("coachBody");
+  document.querySelectorAll("#teachSeg button").forEach(function(b){b.classList.toggle("sel",b.getAttribute("data-teach")===teach);});
+  if(teach==="off"){ el.innerHTML="<p class='small'>Teaching is off. The Coach is silent and no notes are kept. The rules and prices above still tell you everything the game does.</p>"; return; }
+  if(teach==="light"){
+    el.innerHTML= S.lightNotes.length? S.lightNotes.map(function(n){return "<div class='note'>"+n+"</div>";}).join("") : "<p class='small'>Light teaching: a short note lands here at the big moments only — your first powered home, the first family leaving and why, the treasury running low. Play on; this panel wakes up when one happens.</p>";
+    return;
+  }
+  var notes=analyse().map(function(n){return "<div class='note "+n.cls+"'><b>"+n.t+"</b>"+n.b+"</div>";}).join("");
+  el.innerHTML=notes+"<div class='note'><b>Pro tools, one tap away</b>Use the view buttons above the map: <b>Service coverage</b> shades which homes each service actually reaches, <b>Power &amp; water</b> rings every building that is missing either, and tapping any building opens its plain-words explainer — hold the tile for the full checklist.</div>";
+}
+
+/* ---------- record ---------- */
+function loadRecords(){ try{return JSON.parse(localStorage.getItem("newtown_records")||"[]");}catch(e){return [];} }
+function saveRecords(r){ try{localStorage.setItem("newtown_records",JSON.stringify(r));}catch(e){} }
+function endTown(ending){
+  if(S.closed){say("This town is already closed and recorded.");return;}
+  S.closed=true; S.playing=false; stopTimer();
+  var name=$("townName").value.trim()||"New Town";
+  var rec={town:name,months:S.month-1,populationPeak:S.popPeak,treasuryLow:Math.round(S.treasLow),treasuryHigh:Math.round(S.treasHigh),ending:ending,
+    settings:{map:S.st.map,funds:S.st.funds,disasters:S.st.fire==="on"?"on":"off"},variant:isVariant(S.st),date:new Date().toISOString().slice(0,10)};
+  var r=loadRecords(); r.push(rec); saveRecords(r);
+  $("closedBanner").hidden=false;
+  say("Town "+ending+". Its record is written below — "+rec.months+" months, peak population "+rec.populationPeak+(rec.variant?", labelled as a variant town":"")+".");
+  renderRecords(); renderStats();
+}
+function renderRecords(){
+  var r=loadRecords(), el=$("recordBody");
+  if(!r.length){ el.innerHTML="<p class='small'>No towns recorded yet. Finish or give up a town and it will appear here.</p>"; return; }
+  var rows=r.map(function(x){return "<tr><td>"+x.town.replace(/</g,"&lt;")+"</td><td class='num'>"+x.months+"</td><td class='num'>"+x.populationPeak+"</td><td class='num'>"+money(x.treasuryLow)+" – "+money(x.treasuryHigh)+"</td><td>"+x.ending+(x.variant?" (variant: "+x.settings.map+" map, "+x.settings.funds+" funds, disasters "+x.settings.disasters+")":" (standard)")+"</td><td>"+x.date+"</td></tr>";}).join("");
+  var lessons=[];
+  var best=r.reduce(function(a,b){return b.populationPeak>a.populationPeak?b:a;},r[0]);
+  lessons.push("Your biggest town so far is <b>"+best.town.replace(/</g,"&lt;")+"</b>, peaking at "+best.populationPeak+" people over "+best.months+" months.");
+  var finished=r.filter(function(x){return x.ending==="finished";}), given=r.filter(function(x){return x.ending==="given up";});
+  if(finished.length&&given.length){ var avg=function(a){return Math.round(a.reduce(function(s,x){return s+x.populationPeak;},0)/a.length);};
+    lessons.push("Towns you finished peaked at "+avg(finished)+" people on average; towns you gave up on peaked at "+avg(given)+". Your own record's lesson: the towns you stayed with grew bigger — services and jobs placed early are what make a town worth staying with."); }
+  var long=r.filter(function(x){return x.months>=12;}), short=r.filter(function(x){return x.months<12;});
+  if(long.length&&short.length){ lessons.push("Towns played 12 months or longer peaked higher on average in your record — a town's second dozen months is where a working layout compounds."); }
+  if(r.some(function(x){return x.treasuryLow<0;})) lessons.push("At least one of your towns went below $0. In your record, the fix that exists is boring and real: fewer upkeep buildings early, or one more point of tax until the base grows.");
+  el.innerHTML="<table><tr><th>Town</th><th class='num'>Months</th><th class='num'>Pop. peak</th><th class='num'>Treasury low – high</th><th>Ending &amp; settings</th><th>Date</th></tr>"+rows+"</table><h3>Lessons from your own record</h3>"+lessons.map(function(l){return "<div class='note'>"+l+"</div>";}).join("");
+}
+
+/* ---------- wiring ---------- */
+function stopTimer(){ if(timer){clearInterval(timer);timer=null;} }
+function startTimer(){ stopTimer(); timer=setInterval(function(){ if(S.playing) tick(); }, S.speed===1?1200:(S.speed===2?600:300)); }
+$("playBtn").addEventListener("click",function(){ if(S.closed)return; S.playing=true; this.textContent="▶ Playing — tap Pause to stop time"; startTimer(); say("Time is running. Watch the budget after each month — every line is named."); });
+$("pauseBtn").addEventListener("click",function(){ S.playing=false; $("playBtn").textContent="▶ Tap to play — time runs month by month"; say("Paused at month "+S.month+"."); });
+$("stepBtn").addEventListener("click",function(){ tick(); });
+$("speedSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; S.speed=+b.getAttribute("data-speed"); document.querySelectorAll("#speedSeg button").forEach(function(x){x.classList.toggle("sel",x===b);}); if(S.playing)startTimer(); });
+$("taxRate").addEventListener("input",function(){ S.tax=+this.value; renderStats(); if(teach==="coach")renderCoach(); });
+$("viewSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; viewMode=b.getAttribute("data-view"); document.querySelectorAll("#viewSeg button").forEach(function(x){x.classList.toggle("sel",x===b);}); renderMap(); });
+$("teachSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return; teach=b.getAttribute("data-teach"); try{localStorage.setItem("newtown_teaching",teach);}catch(err){} renderCoach(); say("Teaching set to "+teach+". Saved on this device only."); });
+$("randomName").addEventListener("click",function(){ $("townName").value=NAMES[Math.floor(Math.random()*NAMES.length)]; renderStats(); });
+$("townName").addEventListener("input",renderStats);
+$("newTownBtn").addEventListener("click",function(){ newTown(); });
+$("finishBtn").addEventListener("click",function(){ endTown("finished"); });
+$("giveUpBtn").addEventListener("click",function(){ endTown("given up"); });
+["setMap","setFunds","setFire"].forEach(function(id){ $(id).addEventListener("change",updateVariant); });
+function updateVariant(){ var st=settings(), v=isVariant(st); $("variantBanner").hidden=!v; if(v)$("variantText").textContent=variantText(st)+"."; }
+$("downloadRec").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify(loadRecords(),null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="new-town-record.json"; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+$("forgetRec").addEventListener("click",function(){ saveRecords([]); renderRecords(); say("Record forgotten. Only the record was cleared — your town and settings are untouched."); });
+$("offlineBtn").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"}); var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="new-town.html"; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+
+buildToolbar();
+newTown();
+renderRecords();
+updateVariant();
+})();
+</script>
+</body>
+</html>
