@@ -1,0 +1,1648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Clinic — Doctor Simulator</title>
+<style>
+:root{
+  --bg:#eef3f1; --surface:#ffffff; --surface2:#e3ece9; --ink:#1b2a2c; --ink2:#43565a;
+  --accent:#0d6b66; --accent-ink:#ffffff; --danger:#b02a20; --danger-bg:#fbeae8;
+  --amber:#8a5d00; --amber-bg:#fdf3da; --ok:#1e6b34; --ok-bg:#e6f4e9;
+  --line:#c4d2ce; --chip:#dce8e4; --shadow:0 2px 10px rgba(20,40,40,.12);
+  --bar:#123c3a;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1517; --surface:#182527; --surface2:#1f3234; --ink:#e7f0ec; --ink2:#a9bcb6;
+    --accent:#3fb3a8; --accent-ink:#062622; --danger:#ff8d80; --danger-bg:#3d1d1a;
+    --amber:#f0c35c; --amber-bg:#3a2f14; --ok:#7fd79a; --ok-bg:#173526;
+    --line:#33504c; --chip:#23403d; --shadow:0 2px 10px rgba(0,0,0,.5);
+    --bar:#0a2a28;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;padding-bottom:96px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:.4em 0}
+h1{font-size:1.9rem}
+h2{font-size:1.35rem}
+h3{font-size:1.1rem}
+p{margin:.5em 0}
+button,[role="button"],select,input:not([type="checkbox"]){min-height:44px;font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:.55rem .9rem}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.dangerbtn{background:var(--danger);color:#fff;border-color:var(--danger);font-weight:700}
+button:disabled{opacity:.45;cursor:default}
+button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+a{color:var(--accent)}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+.freeline{background:var(--bar);color:#eafaf5;padding:10px 16px;text-align:center;font-weight:600}
+.freeline a{color:#ffe9a8;text-decoration:underline;font-weight:800}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+.limits{border:3px solid var(--danger);background:var(--danger-bg);border-radius:12px;padding:16px;margin:14px 0}
+.limits h2{color:var(--danger);margin-top:0}
+.small{font-size:.88rem;color:var(--ink2)}
+.gesture{font-size:.78rem;color:var(--ink2);display:block;margin-top:2px}
+.chip{display:inline-block;background:var(--chip);border-radius:999px;padding:2px 10px;font-size:.8rem;margin:2px 4px 2px 0;font-weight:600}
+.chip.red{background:var(--danger-bg);color:var(--danger)}
+.chip.green{background:var(--ok-bg);color:var(--ok)}
+.chip.amber{background:var(--amber-bg);color:var(--amber)}
+.banner{background:var(--amber-bg);border:1.5px solid var(--amber);border-radius:10px;padding:10px 14px;margin:12px 0;font-weight:600}
+.fold{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--surface);overflow:hidden}
+.fold>button{width:100%;text-align:left;border:none;border-radius:0;background:var(--surface2);font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.fold .foldbody{padding:6px 16px 14px;display:none}
+.fold.open .foldbody{display:block}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;font-size:.92rem}
+th{background:var(--surface2)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.qbtn{width:100%;text-align:left}
+.qbtn .ans{display:block;font-weight:400;margin-top:6px;background:var(--surface2);border-radius:8px;padding:8px 10px}
+.coach{background:var(--amber-bg);border-left:5px solid var(--amber);border-radius:0 10px 10px 0;padding:10px 14px;margin:8px 0}
+.coach b{color:var(--amber)}
+.lightnote{background:var(--ok-bg);border-left:5px solid var(--ok);border-radius:0 10px 10px 0;padding:8px 12px;margin:8px 0;font-size:.94rem}
+.rfalert{background:var(--danger-bg);border:2px solid var(--danger);border-radius:10px;padding:10px 14px;margin:8px 0;font-weight:600}
+.vital{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:8px 2px;flex-wrap:wrap}
+.vital b{font-size:1.05rem}
+.abn{color:var(--danger);font-weight:800}
+.stagebar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.stagebar span{border:1.5px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.85rem;font-weight:600}
+.stagebar span.now{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stagebar span.done{background:var(--ok-bg);color:var(--ok)}
+.budgetbar{height:14px;background:var(--surface2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.budgetbar i{display:block;height:100%;background:var(--accent)}
+.grade{font-size:1.25rem;font-weight:800}
+.critfail{background:var(--danger);color:#fff;border-radius:12px;padding:16px;margin:12px 0}
+.critfail h2{color:#fff}
+input[type="text"]{border:1px solid var(--line);border-radius:10px;padding:.55rem .8rem;background:var(--surface);color:var(--ink);width:100%}
+select{border:1px solid var(--line);border-radius:10px;padding:.5rem;background:var(--surface);color:var(--ink)}
+label.ctl{display:block;margin:10px 0;font-weight:600}
+label.ctl .small{font-weight:400}
+.casebtn{width:100%;text-align:left;display:flex;justify-content:space-between;gap:10px;align-items:center}
+#compass{position:fixed;left:0;right:0;bottom:0;background:var(--bar);color:#eafaf5;display:flex;z-index:50;padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,.3)}
+#compass .cell{flex:1;display:flex}
+#compass button{flex:1;background:transparent;border:none;color:#eafaf5;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:.72rem;font-weight:700;padding:6px 2px;min-height:56px;border-radius:8px}
+#compass button .ic{font-size:1.35rem;line-height:1}
+#compass button.on{background:rgba(255,255,255,.16)}
+#compass .center{flex:1.2}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:none;align-items:flex-end;justify-content:center}
+.sheet.open{display:flex}
+.sheet .panel{background:var(--surface);color:var(--ink);width:100%;max-width:860px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px}
+.sheet a.door{display:block;padding:14px 10px;border-bottom:1px solid var(--line);font-weight:700;text-decoration:none;color:var(--ink);min-height:44px}
+.sheet a.door .small{display:block}
+#holdbar{position:fixed;left:12px;right:12px;bottom:104px;z-index:70;background:var(--surface);border:2px solid var(--amber);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);display:none}
+#holdbar.open{display:block}
+.toast{background:var(--surface2);border-radius:10px;padding:10px 14px;margin:10px 0}
+ul.tight{margin:.3em 0;padding-left:1.2em}
+ul.tight li{margin:.25em 0}
+.kicker{font-size:.8rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+@media (max-width:560px){ h1{font-size:1.55rem} .card{padding:13px} }
+</style>
+</head>
+<body>
+
+<div class="freeline">Free — always free. <a href="#" id="dlDoor">Download this page to use offline</a> · no ads · no account · nothing leaves your device</div>
+
+<div class="wrap">
+
+  <!-- ============ HOME VIEW ============ -->
+  <section id="view-home">
+    <p class="kicker" style="margin-top:16px">A clinical reasoning simulator</p>
+    <h1>The Clinic</h1>
+    <p>A patient walks in with a story. You ask the questions, read the vital signs, examine, order tests, build a list of what it <em>could</em> be, commit to what it most likely <em>is</em> — and decide what happens next. Every case teaches the reasoning underneath: why that question, why that test, what each answer rules in or out.</p>
+
+    <div class="limits" id="limitsPanel">
+      <h2>⚠ Read this first — honest limits, at full size</h2>
+      <p><strong>EDUCATIONAL ONLY.</strong> This game teaches <em>how doctors reason</em>. It is <strong>NOT medical advice</strong>, it does <strong>NOT diagnose any real person</strong>, and it is <strong>NOT medical training or a qualification</strong>.</p>
+      <p><strong>Real symptoms mean a real clinician. Emergencies mean emergency services — now.</strong> If anything on the red-flag shelf below is happening to a real person, stop reading and get emergency help.</p>
+      <p>The cases are <strong>teaching simplifications</strong> of real medicine — real presentations, deliberately tidied. Real patients are messier, and real diagnosis belongs to real clinicians with the real person in front of them. Each case write-up labels its simplifications.</p>
+      <p class="small">This panel stays reachable from every screen: tap <strong>Limits</strong> in any case to come back to it.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Who is playing?</h2>
+      <label class="ctl">Display name — any name you like, or leave it blank and play as Guest
+        <input type="text" id="aliasInput" maxlength="30" placeholder="Guest" />
+      </label>
+      <p class="small">No claimed name is ever required. Your name and record are <strong>saved on this device only</strong> — nothing is sent anywhere, and one tap on Forget (in your Record) wipes them.</p>
+      <div class="row">
+        <button class="primary" id="saveAliasBtn">Save name — tap</button>
+        <span id="aliasSaved" class="small" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <div id="variantBannerHome"></div>
+
+    <div class="card">
+      <h2 style="margin-top:0">The waiting room</h2>
+      <p class="small">Cases run from common and clear to genuinely tricky. Finished cases show your grade. <span id="orderNote"></span></p>
+      <div class="stack" id="caseList"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="nextCaseBtn">Start the next case — tap</button>
+        <button id="learnBtnHome">Open the teaching shelves — tap</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">How a case works</h2>
+      <ol class="tight">
+        <li><strong>Story</strong> — the patient tells it in their own words.</li>
+        <li><strong>History</strong> — ask questions from a menu. Each costs from your budget. Some are red-flag screens; the game remembers whether you asked.</li>
+        <li><strong>Vitals</strong> — the vital signs, with normal ranges beside them.</li>
+        <li><strong>Examination</strong> — focused checks, each costing budget.</li>
+        <li><strong>Tests</strong> — bloods, dips, ECGs, scans. Each result says what it does and doesn't prove.</li>
+        <li><strong>Diagnosis</strong> — first cast wide: build the list of what it could be. Then commit to one.</li>
+        <li><strong>Plan</strong> — treat, refer on, reassure with safety-netting, or escalate to EMERGENCY now.</li>
+      </ol>
+      <p><strong>Grading is honest and plain:</strong> right / close / wrong diagnosis; questions and tests you needed vs wasted; red flags caught vs missed. <strong>Missing a red flag — or sending a true emergency home — is the worst outcome on this page</strong>, and it is named plainly, with why it kills. Dangerous choices are called dangerous.</p>
+      <p class="small">Teaching dial: <strong>Off</strong> (no notes while you play), <strong>Light</strong> (short notes at key moments — the standard), <strong>Coach</strong> (the full why under every answer, result, and vital sign). Set it in Page settings on the compass bar below. Default: Light. Saved on this device.</p>
+      <p class="small">Gestures on this page say what they do: folds read “Tap to open / Tap to close”. Where a control has more to say, <strong>hold it</strong> (or hover with a mouse) and it explains itself and offers more.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">The stakes here are people</h2>
+      <p><strong>There is no money in this game — there never was.</strong> Nothing is priced, billed, or bought. What you win or lose is <strong>patients helped or harmed</strong>, and <strong>your standing in the clinic</strong> — the trust of your patients and colleagues. <strong>Patients helped is the score that matters.</strong></p>
+      <p>Your <strong>standing</strong> (shown in your Record) rises when patients are helped well — right diagnosis, economical questions, red flags caught, honest safety-netting — and falls when they are harmed, wasted on, or sent away wrong. Every move of it is named with its reason in the case write-up. The question/test budget is <strong>time and attention — the patient's time, and yours</strong>; the cost of over-testing is delay, false positives, and a patient's worry, never a bill.</p>
+      <h3>Shifts, triage, and capacity</h3>
+      <p>You work in <strong>shifts</strong>. Each shift, the waiting room holds a set of patients and you can only take so many — <strong>the capacity is stated on the shift panel before the shift starts</strong>. Choosing who to take, and in what order, is <strong>triage</strong>, and it is a real strategy with honest trade-offs:</p>
+      <table><tr><th>Triage strategy</th><th>The upside</th><th>The trade-off</th></tr>
+      <tr><td><strong>Sickest first</strong></td><td>The dangerous cases get your freshest attention.</td><td>Their stories don't announce themselves — a quiet-looking patient can be the dangerous one, and a loud one can be safe. Triage from a waiting-room glimpse is a bet.</td></tr>
+      <tr><td><strong>Quickest wins first</strong></td><td>More patients helped per shift; simple cases stop clogging the room.</td><td>The complex patient waits — and waiting is sometimes the injury (see the appendicitis outcomes).</td></tr>
+      <tr><td><strong>First come, first served</strong></td><td>Fair, simple, no favouritism.</td><td>Ignores need entirely. Fairness of order is not the same as fairness of outcome.</td></tr></table>
+      <p>Patients you don't take have <strong>honest outcomes, stated plainly</strong> at the end of the shift — some get seen elsewhere, some get worse. No melodrama, and no hiding it.</p>
+      <h3>The ramp</h3>
+      <p>The work gets harder on purpose, and the page says so: <strong>Shift 1</strong> is common-and-clear presentations. Later shifts mix in the tricky ones — the anchoring traps, the fork cases, the emergencies hiding inside ordinary stories. Within a shift the order is yours (that's the triage); across shifts, the ramp is the design.</p>
+      <h3>Your own energy</h3>
+      <p>You have an <strong>energy level</strong>, and it is a real mechanic, not a poster. Working drains it. As it falls: your time-and-attention budget per case shrinks (a tired clinician has less to give), questions start costing more (everything takes longer), Coach's notes get shorter and are marked as tired, and the game will flag when you nearly miss something. Push past empty and <strong>the game sends you home</strong> — kindly, plainly, and your waiting patient is handed to a colleague. <strong>Resting</strong> (on the shift panel) restores energy — but the waiting room waits while you rest: patients' clocks keep moving, and a patient who waits through your rests may fare worse. Rest is triage too. A wrecked clinician is a dangerous clinician; the game practises that, it doesn't just say it.</p>
+    </div>
+
+    <div id="shiftPanel"></div>
+
+    <div id="shelvesHome"></div>
+
+    <p class="small" style="margin:22px 0 6px">Copyleft — this page and its cases are free to share and adapt with credit: <strong>CC BY-SA 4.0</strong>. Derivatives carry the same freedom. The cases, names, and text are original to this page.</p>
+  </section>
+
+  <!-- ============ LEARN VIEW ============ -->
+  <section id="view-learn" hidden>
+    <h1 style="margin-top:16px">The teaching shelves</h1>
+    <p>The whole method, standing on its own — read it before, during, or after cases. This is the knowledge the game is built on.</p>
+    <div id="shelvesLearn"></div>
+    <button id="learnBackBtn">Back to the waiting room — tap</button>
+  </section>
+
+  <!-- ============ CASE VIEW ============ -->
+  <section id="view-case" hidden>
+    <div class="row" style="margin-top:12px;justify-content:space-between">
+      <button id="quitCaseBtn">← Leave this case — tap</button>
+      <button id="limitsBtnCase">⚠ Limits — tap to open</button>
+    </div>
+    <div id="variantBannerCase"></div>
+    <div id="clockRow" class="small" hidden>Case clock: <b id="clockText">0:00</b> (variant rule — standard play is untimed; thinking is the skill)</div>
+    <h2 id="caseTitle"></h2>
+    <p id="casePatient" class="small"></p>
+    <div class="stagebar" id="stageBar"></div>
+    <div class="row"><span><strong>Time &amp; attention left:</strong> <b id="budgetText"></b></span><span class="small">This budget is the patient's time, and yours — never money. Questions &amp; exams cost 1 · tests cost 2</span></div>
+    <div class="row small"><span><strong>Your energy:</strong> <b id="energyText"></b></span><span id="energyWarn"></span></div>
+    <div class="budgetbar" aria-hidden="true"><i id="budgetFill"></i></div>
+    <div id="stageBody" style="margin-top:14px"></div>
+  </section>
+
+  <!-- ============ WRITE-UP VIEW ============ -->
+  <section id="view-writeup" hidden>
+    <div class="row" style="margin-top:12px;justify-content:space-between">
+      <span></span>
+      <button id="limitsBtnWriteup">⚠ Limits — tap to open</button>
+    </div>
+    <div id="writeupBody"></div>
+    <div class="row" style="margin:16px 0">
+      <button class="primary" id="writeupNextBtn">Next case — tap</button>
+      <button id="writeupHomeBtn">Back to the waiting room — tap</button>
+      <button id="writeupRecordBtn">See your record — tap</button>
+    </div>
+  </section>
+
+  <!-- ============ RECORD VIEW ============ -->
+  <section id="view-record" hidden>
+    <h1 style="margin-top:16px">Your record</h1>
+    <p><span class="chip">saved on this device only</span> <span class="small">Nothing is sent anywhere. Export it to keep a copy; Forget wipes it from this device.</span></p>
+    <div id="recordBody"></div>
+    <div class="row" style="margin:14px 0">
+      <button id="exportJsonBtn">Export record as JSON — tap to download</button>
+      <button id="exportCsvBtn">Export record as CSV — tap to download</button>
+    </div>
+    <div class="row">
+      <button class="dangerbtn" id="forgetBtn">Forget everything — tap to wipe this device's record</button>
+      <span id="forgetMsg" class="small" aria-live="polite"></span>
+    </div>
+    <p style="margin-top:14px"><button id="recordBackBtn">Back to the waiting room — tap</button></p>
+  </section>
+</div>
+
+<!-- ============ HOLD-EXPLAIN BAR ============ -->
+<div id="holdbar" role="status"></div>
+
+<!-- ============ NAVIGATE SHEET ============ -->
+<div class="sheet" id="navSheet" role="dialog" aria-label="Navigate to other pages">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Navigate</h2><button id="navCloseBtn">Close — tap</button></div>
+    <p class="small">Other pages open in their own view (a new tab). Ordered: start pages first, then serious pages, then Tools, then For fun.</p>
+    <p class="kicker">Start here</p>
+    <a class="door" href="https://thethrivingplan.github.io/" target="_blank" rel="noopener">Start Page<span class="small">The front door of the whole project</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/" target="_blank" rel="noopener">The Thriving Plan<span class="small">The plan itself — what all of this is for</span></a>
+    <p class="kicker">Serious pages</p>
+    <a class="door" href="https://thethrivingplan.github.io/psychic-training.html" target="_blank" rel="noopener">The Quiet Room — psychic training, honestly graded<span class="small">Scores graded against chance, with the math shown</span></a>
+    <p class="kicker">Tools</p>
+    <a class="door" href="https://thethrivingplan.github.io/sleep-sounds.html" target="_blank" rel="noopener">Drift — sleep sounds, meditations &amp; ASMR<span class="small">Synthesised live, free, nothing locked</span></a>
+    <p class="kicker">For fun</p>
+    <a class="door" href="https://thethrivingplan.github.io/wheel-of-words.html" target="_blank" rel="noopener">Wheel of Words<span class="small">Spin, buy vowels, solve</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/the-answer-board.html" target="_blank" rel="noopener">The Answer Board<span class="small">Answers first, questions second</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/word-tiles.html" target="_blank" rel="noopener">Word Tiles<span class="small">Letter-tile crossword game</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/matching.html" target="_blank" rel="noopener">Pairs<span class="small">The matching game, with an honest bot</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/mahjong.html" target="_blank" rel="noopener">Mahjong<span class="small">Tile-matching solitaire</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/jigsaw.html" target="_blank" rel="noopener">Jigsaw<span class="small">Original-art puzzles</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/escape-room.html" target="_blank" rel="noopener">Escape Room<span class="small">Three rooms, every solution findable inside</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/crosswords.html" target="_blank" rel="noopener">Crosswords<span class="small">Original puzzles, every clue kind taught</span></a>
+    <a class="door" href="https://thethrivingplan.github.io/idle-game.html" target="_blank" rel="noopener">The Long Game<span class="small">An idle game with the math printed</span></a>
+  </div>
+</div>
+
+<!-- ============ SETTINGS SHEET ============ -->
+<div class="sheet" id="settingsSheet" role="dialog" aria-label="Page settings">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Page settings</h2><button id="settingsCloseBtn">Close — tap</button></div>
+    <p class="small">Settings are <strong>saved on this device only</strong>. Rules you change away from standard are <strong>banner-labelled as variants</strong> — on screen while you play, and in your record.</p>
+    <label class="ctl">Teaching dial
+      <select id="setTeaching">
+        <option value="off">Off — no notes while you play</option>
+        <option value="light">Light — short notes at key moments (standard)</option>
+        <option value="coach">Coach — the full why under everything</option>
+      </select>
+      <span class="small">How much teaching rides along while you work a case. The end-of-case write-up is always full, whatever you pick.</span>
+    </label>
+    <label class="ctl">Case order
+      <select id="setOrder">
+        <option value="ladder">Ladder — common and clear first (standard)</option>
+        <option value="shuffled">Shuffled draw — a random order (variant)</option>
+      </select>
+    </label>
+    <label class="ctl">Per-case clock
+      <select id="setClock">
+        <option value="off">Off — untimed; thinking is the skill (standard)</option>
+        <option value="on">On — a running clock on each case (variant)</option>
+      </select>
+    </label>
+    <label class="ctl">Question &amp; test budget
+      <select id="setBudget">
+        <option value="standard">Standard budget (standard)</option>
+        <option value="generous">Generous budget (variant)</option>
+      </select>
+      <span class="small">Standard: 14 points of time and attention a case. Generous: 24. Questions and exams cost 1, tests cost 2. (Time and attention — never money; this game has none.)</span>
+    </label>
+    <div id="settingsVariantNote"></div>
+    <p class="small">Display name is set on the home screen. Your record lives in the Record view on the compass bar.</p>
+  </div>
+</div>
+
+<!-- ============ COMPASS BAR ============ -->
+<nav id="compass" aria-label="Compass">
+  <div class="cell"><button id="cmpLearn" data-explain="Opens the teaching shelves: the method, the red flags, the vitals, how tests prove things, and the traps — the whole why, standing on its own."><span class="ic">📖</span>Learn</button></div>
+  <div class="cell"><button id="cmpCases" data-explain="Back to the waiting room: the case ladder, your name, and the honest-limits panel."><span class="ic">🩺</span>Cases</button></div>
+  <div class="cell center"><button id="cmpNav" data-explain="Opens the Navigate sheet: doors to the other pages — Start Page and The Thriving Plan first, then serious pages, then Tools, then For fun. Each opens in its own view."><span class="ic">🧭</span>Navigate</button></div>
+  <div class="cell"><button id="cmpRecord" data-explain="Your on-device record: cases worked, accuracy, red flags caught and missed, and per-case rows. Export it or wipe it with Forget. Saved on this device only."><span class="ic">📋</span>Record</button></div>
+  <div class="cell"><button id="cmpSettings" data-explain="Page settings: the teaching dial (Off / Light / Coach) and the rules — case order, clock, budget. Anything changed from standard is labelled a variant, in play and in your record."><span class="ic">⚙️</span>Settings</button></div>
+</nav>
+
+<script>
+"use strict";
+/* ================= storage: clean shelf shape ================= */
+var SET_KEY = "clinic_settings_v1";
+var REC_KEY = "clinic_record_v1";
+function loadJSON(k, fb){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }catch(e){ return fb; } }
+function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+var settings = loadJSON(SET_KEY, null) || { name:"", teaching:"light", order:"ladder", clock:false, budget:"standard" };
+if(!settings.teaching) settings.teaching = "light";
+var record = loadJSON(REC_KEY, null) || { rows: [] };
+if(!record.rows) record.rows = [];
+function saveSettings(){ saveJSON(SET_KEY, settings); }
+function saveRecord(){ saveJSON(REC_KEY, record); }
+function displayName(){ return (settings.name && settings.name.trim()) ? settings.name.trim() : "Guest"; }
+function variantLabels(){
+  var v = [];
+  if(settings.order === "shuffled") v.push("Shuffled draw");
+  if(settings.clock) v.push("Clock on");
+  if(settings.budget === "generous") v.push("Generous budget");
+  return v;
+}
+function variantText(){
+  var v = variantLabels();
+  return v.length ? ("Variant rules in play: " + v.join(" · ")) : "Standard rules";
+}
+function budgetMax(){ return settings.budget === "generous" ? 24 : 14; }
+
+/* ================= teaching shelves (shared markup) ================= */
+function foldHTML(id, title, body){
+  return '<div class="fold" data-fold="'+id+'"><button type="button" aria-expanded="false"><span>'+title+'</span><span class="gesture">Tap to open</span></button><div class="foldbody">'+body+'</div></div>';
+}
+var SHELVES = "";
+SHELVES += foldHTML("method", "The method — cast wide, then narrow",
+  '<p><strong>Differential diagnosis</strong> is the clinician\'s core move, and it is a method, not a gift:</p>'+
+  '<ol class="tight"><li><strong>Cast wide first.</strong> From the story alone, list everything it <em>could</em> be — the common, the serious, and the "must not miss". A list made early can be narrowed; a list never made can\'t.</li>'+
+  '<li><strong>Ask questions that move the list.</strong> Every answer should push some possibilities up and others down. A question whose answer changes nothing is a wasted question.</li>'+
+  '<li><strong>Examine and test to separate the survivors.</strong> Tests narrow the list; they rarely decide alone.</li>'+
+  '<li><strong>Commit, then plan for being wrong.</strong> The plan includes a safety-net: what to watch for, and when to come back.</li></ol>'+
+  '<p>That is the shape of every case in this game — and of real practice.</p>');
+SHELVES += foldHTML("history", "The history framework — how questions earn their keep",
+  '<p>A good history is not small talk. Clinicians run a symptom through a plain framework — the same shelf every time, so nothing is missed:</p>'+
+  '<table><tr><th>Ask</th><th>Plain words</th><th>Why it earns its keep</th></tr>'+
+  '<tr><td>Onset</td><td>When did it start — suddenly or gradually?</td><td>Sudden onset points to events (a bleed, a clot, a blockage); gradual onset points to processes (infection building, a gland failing).</td></tr>'+
+  '<tr><td>Site</td><td>Where exactly is it? Point with one finger.</td><td>Location narrows the anatomy, and anatomy narrows the list.</td></tr>'+
+  '<tr><td>Character</td><td>What does it feel like — sharp, dull, burning, crushing?</td><td>Different tissues complain differently: burning suggests nerve or acid; crushing suggests a squeezed heart.</td></tr>'+
+  '<tr><td>Radiation</td><td>Does it spread anywhere?</td><td>Spread follows wiring: heart pain travels to arm and jaw; gallbladder pain to the shoulder blade.</td></tr>'+
+  '<tr><td>Associations</td><td>What came with it — fever, sweating, nausea, breathlessness?</td><td>The companions often name the culprit better than the main symptom does.</td></tr>'+
+  '<tr><td>Timing</td><td>How long, how often, constant or coming and going?</td><td>Patterns separate spasm from blockage, and attacks from steady disease.</td></tr>'+
+  '<tr><td>Exacerbating / relieving</td><td>What makes it better or worse — food, movement, breathing, rest?</td><td>Exertion making pain worse points at supply problems (heart, muscle); food and position point at the gut.</td></tr>'+
+  '<tr><td>Severity</td><td>How bad, 0 to 10 — and what has it stopped you doing?</td><td>Severity is a triage signal, and "worst ever" is a red-flag phrase in its own right.</td></tr></table>'+
+  '<p>Then come the <strong>red-flag screens</strong>: a small set of questions asked even when the story sounds harmless, because the cost of missing the answer is a life. You will meet them in every case here — the game tracks whether you asked.</p>');
+SHELVES += foldHTML("vitals", "Vital signs — what each one is, and what high and low mean",
+  '<table><tr><th>Sign</th><th>Usual range (adult, at rest)</th><th>High can mean</th><th>Low can mean</th></tr>'+
+  '<tr><td>Temperature</td><td>36.1–37.2 °C</td><td>Fever: the body\'s thermostat turned up, usually by infection or inflammation.</td><td>Low: exposure, or a body too overwhelmed to mount a fever — worrying in the very ill.</td></tr>'+
+  '<tr><td>Pulse (heart rate)</td><td>60–100 / min</td><td>Fast: fever, pain, anxiety, blood loss, a heart working harder to deliver the same oxygen.</td><td>Slow: fitness, some medicines — or the heart\'s wiring failing.</td></tr>'+
+  '<tr><td>Blood pressure</td><td>about 90/60 to 120/80</td><td>High, long-term: strain on heart, kidneys, brain. Rarely an emergency by itself.</td><td>Low: not enough pressure to perfuse organs — bleeding, severe infection, anaphylaxis.</td></tr>'+
+  '<tr><td>Breathing rate</td><td>12–20 / min</td><td>Fast: lungs struggling, acid building in the blood, fever, panic. The most under-watched danger sign.</td><td>Slow: sedation, exhaustion in a severe asthma attack — a body giving up.</td></tr>'+
+  '<tr><td>Oxygen saturation (SpO₂)</td><td>95–100%</td><td>—</td><td>Low: oxygen not crossing into the blood — lungs, airways, or circulation failing.</td></tr></table>'+
+  '<p>Vital signs are the body\'s headline numbers. One abnormal sign is a clue; a pattern of them is the body saying which system is failing. In play here, abnormal vitals are never decoration — Coach will name what they are pointing at.</p>');
+SHELVES += foldHTML("tests", "Tests — what a test can and cannot prove",
+  '<p><strong>The one-line version: a test narrows the list; it rarely decides alone.</strong></p>'+
+  '<p>Two plain-words ideas run all test choice:</p>'+
+  '<ul class="tight"><li><strong>Sensitivity</strong> — of everyone who truly has the condition, how many does the test catch? A highly sensitive test that comes back <em>negative</em> is good at <strong>ruling out</strong>: "if it were there, this test would almost certainly have found it." (Example: a negative D-dimer argues strongly against a clot.)</li>'+
+  '<li><strong>Specificity</strong> — of everyone who truly does <em>not</em> have it, how many does the test correctly clear? A highly specific test that comes back <em>positive</em> is good at <strong>ruling in</strong>.</li></ul>'+
+  '<p><strong>Rule-out vs rule-in is the trade that matters.</strong> A D-dimer can argue <em>against</em> a clot but can never <em>prove</em> one — it rises in pregnancy, after surgery, with inflammation. Proving the clot takes the picture: an ultrasound or scan. Ordering a rule-in test when you needed a rule-out (or the reverse) is how confident wrong answers happen.</p>'+
+  '<p><strong>Why not order everything?</strong> Three honest costs: <em>false positives</em> (every test cries wolf sometimes, and each wolf starts a chase), <em>delay</em> (the scan queue is time the real emergency doesn\'t have), and <em>harm</em> (radiation, needles, and the treatments false results trigger). Test economy is a clinical skill, and this game grades it.</p>'+
+  '<p><strong>Before any test, ask:</strong> what will I do differently for each possible result? If the answer is "nothing", the test is decoration.</p>');
+SHELVES += foldHTML("redflags", "🔴 RED FLAGS — the symptoms that mean emergency",
+  '<p><strong>Any of these, in a real person, means emergency help now — not a game, not a search engine.</strong></p>'+
+  '<ul class="tight">'+
+  '<li><strong>Crushing or radiating chest pain</strong> — pressure in the centre of the chest, spreading to arm, jaw, or back, especially with sweating or nausea: a heart attack until proven otherwise.</li>'+
+  '<li><strong>Worst-ever thunderclap headache</strong> — a headache that hits maximum in seconds, "the worst of my life": possible bleeding around the brain.</li>'+
+  '<li><strong>Face / arm / speech stroke signs</strong> — face drooping, arm weakness, speech slurred: a stroke. Time is brain — minutes decide outcomes.</li>'+
+  '<li><strong>A rash that doesn\'t fade under a pressed glass</strong> — press a clear glass against the rash; if the spots stay visible through it, that is a meningitis warning sign.</li>'+
+  '<li><strong>Lips or tongue swelling, or struggling to breathe</strong> — anaphylaxis or a closing airway. Adrenaline first, emergency call alongside.</li>'+
+  '<li><strong>Pain moving to the right lower belly, with fever</strong> — the appendicitis pattern; delay risks a burst appendix.</li>'+
+  '<li><strong>Confusion with fever and a stiff neck</strong> — infection reaching the coverings of the brain.</li>'+
+  '<li><strong>Too breathless to finish a sentence, a quiet chest, exhaustion</strong> in asthma — a severe attack tipping over.</li></ul>'+
+  '<p>Red flags are why clinicians ask "annoying" extra questions about harmless-sounding problems. The screen costs a minute; the miss costs a life. This game grades red flags separately, at full weight.</p>');
+SHELVES += foldHTML("traps", "The honest traps — thinking strategies and their trade-offs",
+  '<p>Experienced clinicians are not immune to these; they just know their names. Each is a strategy with a genuine upside and a real cost — the skill is knowing which you are using.</p>'+
+  '<table><tr><th>Strategy / trap</th><th>The honest upside</th><th>The trade-off — how it bites</th></tr>'+
+  '<tr><td><strong>Anchoring</strong> — locking onto the first idea</td><td>Speed: a first idea organises your questions.</td><td>Every later answer gets bent to fit the anchor. "Chest pain after a big meal" anchors on indigestion — and the heart questions never get asked.</td></tr>'+
+  '<tr><td><strong>Premature closure</strong> — stopping once you have <em>an</em> answer</td><td>Efficiency: most first answers are right.</td><td>The list was never finished, so the deadly alternative was never on it. Closure should come after the red-flag screens, not before.</td></tr>'+
+  '<tr><td><strong>"Horses, not zebras"</strong> — common things are common</td><td>A good default: base rates are real, and most sore throats are viruses.</td><td>Rare-but-deadly still happens, on schedule. The default is safe only when paired with red-flag screening — common <em>first</em>, deadly <em>checked</em>.</td></tr>'+
+  '<tr><td><strong>Availability</strong> — judging by the last similar case you saw</td><td>Experience is real data; pattern memory is how experts get fast.</td><td>One vivid recent case warps the odds. Last week\'s migraine makes this week\'s bleed look like a migraine.</td></tr>'+
+  '<tr><td><strong>Search satisficing</strong> — stopping the search when something is found</td><td>Saves time when there is one problem.</td><td>Patients can have two problems. Finding the sprain doesn\'t clear the fracture.</td></tr></table>'+
+  '<p><strong>The counter-moves, as strategies:</strong> cast wide before narrowing (costs a minute, buys the deadly diagnoses a place on the list); ask the red-flag screens even when you\'re "sure" (costs a few questions, buys survival); and before closing, ask "what else could this be — and what would I expect to see if it were the worst one?" Every case write-up names which of these you used, and which used you.</p>');
+document.getElementById("shelvesHome").innerHTML = SHELVES;
+document.getElementById("shelvesLearn").innerHTML = SHELVES;
+
+/* folds: tap to open / close, labelled in plain words */
+document.addEventListener("click", function(e){
+  var b = e.target.closest(".fold > button");
+  if(!b) return;
+  var f = b.parentElement, open = f.classList.toggle("open");
+  b.setAttribute("aria-expanded", open ? "true" : "false");
+  var g = b.querySelector(".gesture");
+  if(g) g.textContent = open ? "Tap to close" : "Tap to open";
+});
+
+/* ================= hold (or hover) explains ================= */
+var holdTimer = null, holdBar = document.getElementById("holdbar");
+function showExplain(el){
+  var t = el.getAttribute("data-explain");
+  if(!t) return;
+  holdBar.innerHTML = "<strong>What this does:</strong> " + t + '<span class="gesture">You held (or hovered) to hear this. Tap the control itself to use it. Tap anywhere to dismiss this note.</span>';
+  holdBar.classList.add("open");
+}
+document.addEventListener("pointerdown", function(e){
+  var el = e.target.closest("[data-explain]");
+  if(!el) return;
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(function(){ showExplain(el); }, 550);
+});
+document.addEventListener("pointerup", function(){ clearTimeout(holdTimer); });
+document.addEventListener("pointercancel", function(){ clearTimeout(holdTimer); });
+document.addEventListener("mouseover", function(e){
+  if(window.matchMedia && window.matchMedia("(hover: hover)").matches){
+    var el = e.target.closest("[data-explain]");
+    if(el){ clearTimeout(holdTimer); holdTimer = setTimeout(function(){ showExplain(el); }, 900); }
+  }
+});
+document.addEventListener("click", function(e){
+  if(holdBar.classList.contains("open") && !e.target.closest("[data-explain]")) holdBar.classList.remove("open");
+});
+
+/* ================= offline download door ================= */
+document.getElementById("dlDoor").addEventListener("click", function(e){
+  e.preventDefault();
+  var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+  var blob = new Blob([html], {type:"text/html"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "the-clinic.html";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+
+/* ================= views ================= */
+var VIEWS = ["view-home","view-learn","view-case","view-writeup","view-record"];
+function showView(id){
+  VIEWS.forEach(function(v){ document.getElementById(v).hidden = (v !== id); });
+  ["cmpLearn","cmpCases","cmpRecord"].forEach(function(b){ document.getElementById(b).classList.remove("on"); });
+  if(id === "view-learn") document.getElementById("cmpLearn").classList.add("on");
+  if(id === "view-home") document.getElementById("cmpCases").classList.add("on");
+  if(id === "view-record") document.getElementById("cmpRecord").classList.add("on");
+  window.scrollTo(0,0);
+}
+function goLimits(){ showView("view-home"); var p = document.getElementById("limitsPanel"); p.scrollIntoView(); p.style.outline = "4px solid var(--amber)"; setTimeout(function(){ p.style.outline = ""; }, 1600); }
+document.getElementById("limitsBtnCase").addEventListener("click", goLimits);
+document.getElementById("limitsBtnWriteup").addEventListener("click", goLimits);
+
+/* ================= compass ================= */
+document.getElementById("cmpLearn").addEventListener("click", function(){ showView("view-learn"); });
+document.getElementById("cmpCases").addEventListener("click", function(){ renderHome(); showView("view-home"); });
+document.getElementById("cmpRecord").addEventListener("click", function(){ renderRecord(); showView("view-record"); });
+document.getElementById("cmpNav").addEventListener("click", function(){ document.getElementById("navSheet").classList.add("open"); });
+document.getElementById("navCloseBtn").addEventListener("click", function(){ document.getElementById("navSheet").classList.remove("open"); });
+document.getElementById("cmpSettings").addEventListener("click", function(){ syncSettingsUI(); document.getElementById("settingsSheet").classList.add("open"); });
+document.getElementById("settingsCloseBtn").addEventListener("click", function(){ document.getElementById("settingsSheet").classList.remove("open"); renderHome(); });
+document.querySelectorAll(".sheet").forEach(function(s){
+  s.addEventListener("click", function(e){ if(e.target === s) s.classList.remove("open"); });
+});
+document.getElementById("learnBtnHome").addEventListener("click", function(){ showView("view-learn"); });
+document.getElementById("learnBackBtn").addEventListener("click", function(){ renderHome(); showView("view-home"); });
+document.getElementById("recordBackBtn").addEventListener("click", function(){ renderHome(); showView("view-home"); });
+
+/* ================= settings ================= */
+function syncSettingsUI(){
+  document.getElementById("setTeaching").value = settings.teaching;
+  document.getElementById("setOrder").value = settings.order;
+  document.getElementById("setClock").value = settings.clock ? "on" : "off";
+  document.getElementById("setBudget").value = settings.budget;
+  var v = variantLabels();
+  document.getElementById("settingsVariantNote").innerHTML = v.length
+    ? '<div class="banner">Variant rules active: ' + v.join(" · ") + '. These are labelled as variants in play and in your record.</div>'
+    : '<div class="toast">Standard rules are active: ladder order, no clock, standard budget.</div>';
+}
+document.getElementById("setTeaching").addEventListener("change", function(){ settings.teaching = this.value; saveSettings(); syncSettingsUI(); });
+document.getElementById("setOrder").addEventListener("change", function(){ settings.order = this.value; saveSettings(); shuffledOrder = null; syncSettingsUI(); renderHome(); });
+document.getElementById("setClock").addEventListener("change", function(){ settings.clock = (this.value === "on"); saveSettings(); syncSettingsUI(); });
+document.getElementById("setBudget").addEventListener("change", function(){ settings.budget = this.value; saveSettings(); syncSettingsUI(); });
+
+/* alias */
+document.getElementById("saveAliasBtn").addEventListener("click", function(){
+  settings.name = document.getElementById("aliasInput").value.trim();
+  saveSettings();
+  document.getElementById("aliasSaved").textContent = "Saved — you are playing as " + displayName() + ".";
+});
+</script>
+
+<script>
+"use strict";
+/* ================= THE CASES — all original, classic presentations =================
+   k: "key" = the question/exam/test that moves the list · "ok" = reasonable · "waste" = costs time, moves nothing
+   rf: true = a red-flag screen — the game tracks whether you asked it.                        */
+var CASES = [
+{ id:"cold", n:1, rung:"Rung 1 · Common and clear",
+  title:"“I've got a stinking cold”",
+  patient:"Maya, 26 — office worker, no long-term conditions, no regular medicines.",
+  story:"“Two days now. Blocked nose, sneezing all over the office, bit of a sore throat. I feel rough but I'm here because my manager wants a note — and maybe antibiotics, they sorted my cousin right out.”",
+  hist:[
+    {q:"How long has this been going on, and how did it start?", a:"“Started Monday with a scratchy throat, then the sneezing and blocked nose yesterday. Two days all in.”", w:"Onset and timing: a 2-day build of nose-and-throat symptoms is the classic viral cold arc. Sudden whole-body illness would point elsewhere.", k:"key"},
+    {q:"Do you have a fever, or have you felt hot and shivery?", a:"“No, I feel fine temperature-wise. Bit tired, that's all.”", w:"Fever is a fork: its absence argues against flu and bacterial infection; a high fever with this story would move flu up the list.", k:"key"},
+    {q:"Is your throat pain severe — can you swallow, and is there any drooling or voice change?", a:"“It's sore but I can swallow fine. Voice is normal, just bunged up.”", w:"Red-flag screen for throat emergencies: inability to swallow, drooling, or a muffled voice can mean a swollen epiglottis or abscess — an airway problem, not a cold.", k:"key", rf:true},
+    {q:"Are you breathless, wheezing, or coughing anything up?", a:"“Bit of a dry cough at night. Not breathless. Nothing coming up.”", w:"Screens the chest: breathlessness or a productive cough would move pneumonia or asthma onto the list.", k:"key"},
+    {q:"Any ear pain, facial pain, or pain over your cheeks and forehead?", a:"“Face feels a bit full when I bend down, but no real pain.”", w:"Mild facial fullness fits a cold; severe one-sided facial pain with fever after 10+ days is the sinusitis pattern — timing is what separates them.", k:"ok"},
+    {q:"What medicines have you tried, and do you take anything regularly?", a:"“Just paracetamol and a honey drink. Nothing regular.”", w:"Always ask: it explains symptoms, prevents doubling up, and sometimes the medicine is the story.", k:"ok"},
+    {q:"Have you had anything like this turn into a chest infection before?", a:"“No, colds just come and go with me.”", w:"Reasonable background, but with this clear a picture it moves nothing — a low-yield question here.", k:"waste"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.8 °C", r:"36.1–37.2 °C", abn:false, note:"No fever — fits a simple cold; argues against flu."},
+    {n:"Pulse", v:"76 /min", r:"60–100 /min", abn:false, note:"Normal."},
+    {n:"Blood pressure", v:"116/74", r:"about 90/60–120/80", abn:false, note:"Normal."},
+    {n:"Breathing rate", v:"14 /min", r:"12–20 /min", abn:false, note:"Normal — the chest is not working hard."},
+    {n:"Oxygen (SpO₂)", v:"99%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Look in the throat", f:"Throat mildly red. Tonsils normal size, no white spots (exudate).", w:"Exudate and big tonsils are strep features; their absence supports a viral cause.", k:"key"},
+    {n:"Feel the neck glands", f:"Small, soft, non-tender glands — normal reactive glands.", w:"Large, tender front-of-neck glands are a Centor feature for strep; these are not.", k:"key"},
+    {n:"Listen to the chest", f:"Clear throughout, no wheeze or crackles.", w:"Crackles would suggest chest infection; a clear chest closes that door.", k:"ok"},
+    {n:"Look in the ears", f:"Both eardrums normal.", w:"Low yield in an adult cold with no ear pain — thorough, but it moves nothing here.", k:"waste"}
+  ],
+  tests:[
+    {n:"Rapid strep test (throat swab)", r:"Negative.", p:"A negative rapid strep test argues against strep throat — but with no strep features at all, the pre-test chance was already tiny. It confirms; it didn't decide.", k:"ok"},
+    {n:"COVID / flu swab", r:"Negative for both.", p:"Useful when it changes isolation or antiviral decisions; here it changes nothing about her care.", k:"ok"},
+    {n:"Blood tests (full blood count, CRP)", r:"All normal.", p:"Bloods in a well person with a 2-day cold almost never change the plan — this is ordering everything, and it cost time and a needle for nothing.", k:"waste"},
+    {n:"Chest X-ray", r:"Normal.", p:"Radiation and a queue, ordered on a clear chest and normal oxygen. A test that cannot change the plan is decoration.", k:"waste"}
+  ],
+  dx:["Common cold (viral upper respiratory infection)","Strep throat","Influenza","Bacterial sinusitis","Allergic rhinitis (hay fever)","COVID-19"],
+  ans:0, close:[], trap:1, trapName:"Strep throat — and the antibiotic that comes with it",
+  plans:[
+    {t:"Reassure, explain it's a virus, and safety-net: fluids, rest, pain relief; come back if fever develops, breathing gets hard, or it's not improving after 10 days", g:"right", note:"Exactly right. A cold is self-limiting; the clinical skill here is the explanation and the safety-net, not a prescription."},
+    {t:"Prescribe antibiotics 'just in case', since she asked", g:"wrong", note:"The trap, fallen into. Antibiotics do nothing to viruses, carry side effects, and breed resistance — and 'the patient asked' is not an indication. This is how a harmless cold becomes a harmed patient."},
+    {t:"Refer to ear, nose and throat clinic", g:"wrong", note:"A 2-day cold needs no referral. It spends her time and the clinic's on a self-limiting illness."},
+    {t:"Escalate to EMERGENCY now", g:"wrong", note:"Nothing here is an emergency — no airway, breathing, or fever red flags. Over-escalation has its own costs: panic, and an emergency department not seeing someone who needs it."}
+  ],
+  truth:"A common cold — a viral upper respiratory infection. Two days of sneezing, blocked nose and mild sore throat, no fever, normal vitals, no strep features.",
+  clues:["Two-day build, nose first — the viral arc","No fever, and normal temperature measured","No cough-with-fever flu pattern, no tonsil exudate, no tender glands","Every red-flag screen (swallowing, breathing) came back clean"],
+  realDo:"A real clinician often orders nothing here at all: history, a quick look, reassurance, and a clear safety-net. The safety-net is the medicine — it converts 'go away' into 'here is exactly what should bring you back'.",
+  strat:[["Treat the story, not the request","She asked for antibiotics; the skill is explaining why they would harm, not help — most patients accept a good explanation.","Trade-off: it takes longer than writing the prescription. Time spent explaining is this case's real budget."],
+         ["Test to confirm vs test to decide","A strep swab here only confirms a picture that was already clear.","Trade-off: testing buys certainty and patient confidence, at the price of time and a small false-positive risk."]],
+  simp:"Simplification: real colds occasionally ride along with other problems, and real clinicians also ask about immune suppression and medicines in more depth. The presentation here is the classic textbook one.",
+  untaken:"Maya was seen at another clinic the next day, told it was a cold, and recovered in a week — as colds do.",
+  untakenBad:"Maya waited, felt worse for the waiting, and was seen elsewhere two days later. It was still a cold, and she still recovered — but she remembers the wait, not the diagnosis."
+},
+{ id:"strep", n:2, rung:"Rung 2 · Common and clear",
+  title:"“My throat is killing me”",
+  patient:"Leo, 14 — school student, usually well.",
+  story:"“It started yesterday. My throat hurts so much it hurts to swallow. Mum says I've been hot. I just want it to stop hurting.”",
+  hist:[
+    {q:"Do you have a cough or a runny nose?", a:"“No cough at all. Nose is fine. It's just my throat.”", w:"The 'no cough' question is a Centor feature: strep throat classically has NO cough. A cough points back toward viruses.", k:"key"},
+    {q:"Have you had a fever?", a:"“Yes — 38.9 at home last night. Shivery too.”", w:"Fever is Centor feature two. Fever + sore throat + no cough is the strep pattern taking shape.", k:"key"},
+    {q:"Can you swallow okay? Any drooling, or trouble opening your mouth fully?", a:"“Swallowing hurts but I can do it. Mouth opens fine, no drooling.”", w:"Red-flag screen: drooling, inability to open the mouth (trismus), or a one-sided swollen throat can mean a peritonsillar abscess (quinsy) — a surgical problem, not simple strep.", k:"key", rf:true},
+    {q:"Has anyone at school or home had strep throat or scarlet fever?", a:"“Two kids in my class were off with it last week.”", w:"Exposure raises the pre-test chance — strep spreads in classrooms. Base rates are evidence.", k:"ok"},
+    {q:"Any rash, tummy pain, or headache with it?", a:"“Bit of a headache and my tummy aches a bit.”", w:"Headache and abdominal pain are common fellow-travellers of strep in children and teenagers — they support rather than distract.", k:"ok"},
+    {q:"Are you allergic to any antibiotics?", a:"“No allergies that we know of.”", w:"Asked before any prescription is even considered — the question that prevents a second emergency.", k:"ok"},
+    {q:"How is your appetite and schoolwork generally this term?", a:"“Fine, normal.”", w:"Background colour that moves nothing in an acute sore throat.", k:"waste"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"38.8 °C", r:"36.1–37.2 °C", abn:true, note:"Fever — Centor feature, and a sign the body is fighting a real infection."},
+    {n:"Pulse", v:"104 /min", r:"60–100 /min", abn:true, note:"Slightly fast — fever alone does this; each degree of fever adds roughly 10 beats."},
+    {n:"Blood pressure", v:"112/70", r:"about 90/60–120/80", abn:false, note:"Normal."},
+    {n:"Breathing rate", v:"16 /min", r:"12–20 /min", abn:false, note:"Normal — airway and chest are fine."},
+    {n:"Oxygen (SpO₂)", v:"99%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Look in the throat", f:"Both tonsils enlarged and red, with white spots (exudate) on them.", w:"Tonsil exudate is Centor feature three — the visible one.", k:"key"},
+    {n:"Feel the neck glands", f:"Tender, enlarged glands at the front of the neck, both sides.", w:"Tender front neck glands complete the Centor set: fever, no cough, exudate, tender glands. Four out of four.", k:"key"},
+    {n:"Check the ears", f:"Eardrums normal.", w:"Ear pain often rides along or refers from the throat; normal here, low yield.", k:"ok"},
+    {n:"Listen to the chest", f:"Clear.", w:"No cough and a clear chest keep the problem in the throat — reasonable, low yield.", k:"ok"}
+  ],
+  tests:[
+    {n:"Rapid strep test (throat swab)", r:"POSITIVE for group A streptococcus.", p:"This is the narrowing test doing its job: with all four Centor features, the chance was already high, and a positive specific test rules strep IN. A negative here would have needed a second look, because no test is perfect.", k:"key"},
+    {n:"Blood tests", r:"White cell count raised; CRP raised.", p:"Consistent with bacterial infection, but they don't name the germ — the swab did the deciding. Bloods added time, not direction.", k:"waste"},
+    {n:"Glandular fever (monospot) test", r:"Negative.", p:"A fair thought in a teenager with a sore throat — glandular fever is the main mimic — but the Centor picture plus positive strep test already settled it.", k:"ok"}
+  ],
+  dx:["Strep throat (group A streptococcal tonsillitis)","Viral sore throat (viral pharyngitis)","Glandular fever (infectious mononucleosis)","Common cold","Peritonsillar abscess (quinsy)","Hand, foot and mouth disease"],
+  ans:0, close:[1], trap:5, trapName:"Quinsy — the dramatic option, with none of its signs present",
+  plans:[
+    {t:"Treat: a course of antibiotics active against strep (penicillin-class), pain relief, fluids, and safety-netting about swallowing problems or one-sided swelling", g:"right", note:"Right. Strep is bacterial and antibiotics shorten it, reduce spread, and prevent complications like rheumatic fever. The allergy question you asked first is what makes prescribing safe."},
+    {t:"Reassure and send home with pain relief only — 'most sore throats are viruses'", g:"wrong", note:"'Horses, not zebras' misapplied: this horse has four Centor features and a positive test. Undertreating confirmed strep risks complications and days of needless pain."},
+    {t:"Escalate to EMERGENCY now", g:"wrong", note:"He can swallow, breathe, and open his mouth — no emergency features. Treat in clinic."},
+    {t:"Refer routinely to ear, nose and throat", g:"wrong", note:"Uncomplicated strep needs treatment today, not a referral queue."}
+  ],
+  truth:"Strep throat. All four Centor features — fever, absence of cough, tonsil exudate, tender front neck glands — plus a positive rapid strep test.",
+  clues:["Fever 38.8–38.9 °C","NO cough — the quiet clue that separates strep from viruses","White exudate on enlarged tonsils","Tender front-of-neck glands","Classroom exposure raised the starting odds"],
+  realDo:"Scores the Centor features, swabs when the score is middling-to-high, treats positives with a penicillin-class antibiotic, and safety-nets for quinsy signs (drooling, one-sided swelling, can't open the mouth).",
+  strat:[["Score first, then test (Centor)","The score sets the odds; the swab then confirms or overturns. Testing everyone with any sore throat wastes swabs and manufactures false positives.","Trade-off: in very high scores some clinicians treat without swabbing; in low scores, don't swab at all."],
+         ["Treat the confirmed, not the possible","Waiting for the swab result costs an hour; treating every sore throat 'just in case' costs resistance and side effects across thousands of patients.","Trade-off: a short wait for a much cleaner decision."]],
+  simp:"Simplification: real guidelines vary by country on when to swab and treat, and viral features can overlap. The Centor features and the swab's role here are the standard teaching version.",
+  untaken:"Leo was seen elsewhere the next day, swabbed, and treated — a day later and a day sorer than he needed to be.",
+  untakenBad:"Leo waited two more days before being seen elsewhere. The strep was treated, but he missed four days of school and his mother lost two shifts of work."
+},
+{ id:"flu", n:3, rung:"Rung 3 · Common, whole-body",
+  title:"“I feel like I've been hit by a bus”",
+  patient:"Priya, 45 — teacher, usually well, no regular medicines.",
+  story:"“Yesterday morning I was fine. By lunch I was shivering, and by evening everything ached — my back, my legs, even my eyes. I'm wiped out. Half my class is off with the same thing.”",
+  hist:[
+    {q:"How quickly did this come on?", a:"“Really fast. Fine at breakfast, floored by the evening. Less than a day.”", w:"Abrupt onset is flu's signature. Colds creep; flu ambushes. Timing is a diagnostic instrument.", k:"key"},
+    {q:"Where do you ache, and how bad is the exhaustion?", a:"“Everywhere — muscles all over. I'm exhausted just walking to the bathroom.”", w:"Whole-body muscle ache and prostration point to a systemic viral illness — flu — rather than a nose-and-throat cold.", k:"key"},
+    {q:"Do you have a cough? Is it dry or bringing anything up?", a:"“Dry cough, started today. Nothing coming up.”", w:"A dry cough fits flu. A productive cough with breathlessness would move pneumonia up the list.", k:"key"},
+    {q:"Are you breathless at rest, or do you have chest pain?", a:"“No. Bit tight when I cough, but breathing's okay.”", w:"Red-flag screen: breathlessness at rest or chest pain in flu can mean pneumonia or a heart complication — the things that make flu dangerous.", k:"key", rf:true},
+    {q:"When exactly did the fever start — how many hours ago?", a:"“About 30 hours ago now.”", w:"This question has a deadline inside it: antivirals for flu work best within 48 hours of symptoms starting. Ask it early or the option quietly expires.", k:"key"},
+    {q:"Are you in any higher-risk group — asthma, diabetes, pregnancy, immune problems?", a:"“No, none of those. Generally fit.”", w:"Risk group decides how hard you push antivirals and how tight the safety-net is. Low-risk and well changes the plan toward supportive care.", k:"ok"},
+    {q:"Have you taken your temperature?", a:"“39.4 last night. 38.9 this morning.”", w:"High fever fits flu over cold — and gives you a number to trend.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"39.1 °C", r:"36.1–37.2 °C", abn:true, note:"High fever — flu-grade, not cold-grade."},
+    {n:"Pulse", v:"108 /min", r:"60–100 /min", abn:true, note:"Fast, tracking the fever."},
+    {n:"Blood pressure", v:"118/76", r:"about 90/60–120/80", abn:false, note:"Normal."},
+    {n:"Breathing rate", v:"18 /min", r:"12–20 /min", abn:false, note:"Upper-normal — worth watching, not yet a danger sign."},
+    {n:"Oxygen (SpO₂)", v:"97%", r:"95–100%", abn:false, note:"Normal — the lungs are coping."}
+  ],
+  exams:[
+    {n:"Listen to the chest", f:"A few scattered crackle-free sounds; air entry good, no focal crackles.", w:"Focal crackles would suggest pneumonia settling in one place; a clear-ish chest supports uncomplicated flu.", k:"key"},
+    {n:"Look in the throat", f:"Mildly red, no exudate.", w:"Argues against strep — flu throats are red, not spotted.", k:"ok"},
+    {n:"Check hydration — skin, mouth, urine colour", f:"Mouth a bit dry; urine darker than usual. Skin turgor normal.", w:"Fever burns fluid. Mild dehydration changes the advice (push fluids) even when it doesn't change the diagnosis.", k:"ok"},
+    {n:"Examine the ears", f:"Normal.", w:"Low yield here.", k:"waste"}
+  ],
+  tests:[
+    {n:"Flu swab (rapid influenza test)", r:"POSITIVE for influenza A.", p:"Confirms flu and can support an antiviral decision inside the window. It doesn't measure severity — the vitals do that.", k:"key"},
+    {n:"Chest X-ray", r:"No pneumonia; lungs clear.", p:"With normal oxygen and no focal signs, this was unlikely to change anything — ordered to be safe, it bought reassurance at the price of radiation and a queue.", k:"ok"},
+    {n:"Blood tests", r:"White cells normal-low; CRP mildly raised.", p:"A viral pattern, consistent — but it decided nothing the story hadn't. Bloods grade severity poorly in flu.", k:"waste"}
+  ],
+  dx:["Influenza","Common cold","COVID-19","Pneumonia","Viral gastroenteritis","Meningitis"],
+  ans:0, close:[2], trap:3, trapName:"Pneumonia — the complication, present in worry but not in the chest",
+  plans:[
+    {t:"Supportive care: rest, fluids, fever relief — plus safety-netting in plain words (breathlessness, chest pain, coughing blood, or fever beyond 5 days means come back the same day). Note she is inside the 48-hour antiviral window and discuss it honestly: benefit is modest in low-risk patients", g:"right", note:"Right — and honest. For a low-risk, well patient, supportive care plus a tight safety-net is the standard. Antivirals shorten flu by roughly a day when started within 48 hours; the honest conversation names that modest benefit rather than overselling or hiding it."},
+    {t:"Prescribe antibiotics for the flu", g:"wrong", note:"Flu is a virus. Antibiotics treat none of it and add side effects — the cold case's trap in a new coat."},
+    {t:"Send her home with no safety-net — 'it's just flu'", g:"wrong", note:"Flu kills through its complications, and the safety-net is how a deteriorating patient gets back in time. 'Just flu' with no return instructions is how pneumonia gets found late."},
+    {t:"Escalate to EMERGENCY now", g:"wrong", note:"Breathing is fine, oxygen normal, no red flags. Emergency is a resource; spending it here takes it from someone else."}
+  ],
+  truth:"Influenza A. Abrupt onset inside a day, high fever, whole-body aches, exhaustion, dry cough — during a classroom outbreak.",
+  clues:["Onset in hours, not days — flu ambushes","Aches everywhere + exhaustion out of proportion","Fever 39+ °C","Half the class off with the same — base rates talking","Dry cough, clear chest, normal oxygen: uncomplicated"],
+  realDo:"Confirms with a swab when it changes management, checks the clock for the 48-hour antiviral window, grades risk, and writes the safety-net like it matters — because with flu, the return visit is where lives are saved.",
+  strat:[["Supportive care + tight safety-net","For low-risk flu this is the evidence-backed plan.","Trade-off: it depends on the patient acting on the net — so the net must be specific ('breathless at rest', not 'if worse')."],
+         ["Antiviral inside the window","Oseltamivir-class antivirals shorten illness modestly if started within ~48 hours, and matter more for high-risk patients.","Trade-off: side effects (nausea is common) for about a day less illness in low-risk patients — an honest either-way conversation."]],
+  simp:"Simplification: antiviral guidance varies by country and season, and flu and COVID overlap heavily in real life. The 48-hour window and supportive-care backbone are the stable teaching points.",
+  untaken:"Priya rode it out at home for five rough days and recovered fully — she was low-risk and lucky in the ordinary way.",
+  untakenBad:"Priya waited, developed a secondary chest infection on day four, and needed hospital care before recovering. Flu's danger is often its second act."
+},
+{ id:"cystitis", n:4, rung:"Rung 4 · The fork case",
+  title:"“It burns when I pee”",
+  patient:"Danielle, 32 — retail worker, not pregnant, no long-term conditions.",
+  story:"“Since yesterday it stings like mad when I pee, and I need to go every half hour — then hardly anything comes out. It's doing my head in.”",
+  hist:[
+    {q:"Do you have pain in your back or side, up under your ribs (flank pain)?", a:"“No — the pain is all low down, when I pee.”", w:"THE FORK QUESTION. Flank pain moves the infection from bladder (cystitis) up to kidney (pyelonephritis) — a different severity, different treatment, different urgency. Ask it on every urinary story.", k:"key", rf:true},
+    {q:"Do you have a fever, shivering, or feeling sick?", a:"“No fever. I feel fine apart from the stinging.”", w:"The fork's second tine: fever + flank pain = kidney infection until proven otherwise. Fever absent keeps this in the bladder — for now.", k:"key", rf:true},
+    {q:"How often are you going, and is there urgency — having to rush?", a:"“Every half hour, and yes, when I need to go I NEED to go.”", w:"Frequency + urgency + burning (the classic triad) is cystitis's calling card.", k:"key"},
+    {q:"Have you seen any blood in your urine?", a:"“It looked a bit pink once yesterday.”", w:"Blood in urine happens in cystitis from bladder inflammation — but it is also a flag that must not be waved past if it persists after treatment.", k:"ok"},
+    {q:"Any vaginal discharge or irritation?", a:"“No, nothing like that.”", w:"Discharge would move vaginal causes (thrush, STIs) up the list — their absence keeps the bladder at the top.", k:"ok"},
+    {q:"Could you be pregnant, and when was your last period?", a:"“Definitely not — period finished last week, and I have a coil.”", w:"Pregnancy changes which antibiotics are safe and how hard you treat — asked before prescribing, always.", k:"ok"},
+    {q:"Have you had this before, and did antibiotics clear it?", a:"“Once, two years ago. Cleared in a couple of days.”", w:"Useful background — recurrence patterns matter — but it changes little about today's decision.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.9 °C", r:"36.1–37.2 °C", abn:false, note:"Normal — no fever. A kidney infection would usually declare itself here."},
+    {n:"Pulse", v:"78 /min", r:"60–100 /min", abn:false, note:"Normal."},
+    {n:"Blood pressure", v:"120/78", r:"about 90/60–120/80", abn:false, note:"Normal."},
+    {n:"Breathing rate", v:"14 /min", r:"12–20 /min", abn:false, note:"Normal."},
+    {n:"Oxygen (SpO₂)", v:"99%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Press the lower belly (suprapubic tenderness)", f:"Tender low over the bladder.", w:"Bladder tenderness supports cystitis — the organ that hurts is the organ that's infected.", k:"key"},
+    {n:"Tap over the kidney angles in the back (costovertebral tenderness)", f:"No pain either side.", w:"The examination twin of the fork question: kidney tenderness would flip this case to pyelonephritis.", k:"key"},
+    {n:"Check for feverish signs — flushed, shivering", f:"Comfortable, not flushed.", w:"Supports the vitals: no systemic illness.", k:"ok"}
+  ],
+  tests:[
+    {n:"Urine dipstick", r:"Nitrites POSITIVE, leukocytes POSITIVE, trace of blood.", p:"The dip is the decider here: nitrites are produced by the usual bladder bacteria, and leukocytes show inflammation. Together in this story, they rule cystitis in well enough to treat. A dip can't say which antibiotic the germ fears — that takes a culture.", k:"key"},
+    {n:"Urine culture (sent to lab)", r:"Grew E. coli, sensitive to the standard first-line antibiotic.", p:"Culture names the germ and its weaknesses — it confirms and guides if treatment fails, but results take days; treatment starts on the dip and the story.", k:"ok"},
+    {n:"Blood tests", r:"Normal.", p:"In afebrile, well cystitis, bloods almost never change the plan.", k:"waste"},
+    {n:"Kidney ultrasound", r:"Normal kidneys, no obstruction.", p:"Imaging is for the fork's other road — fever, flank pain, or failing treatment. Here it answered a question nobody was asking.", k:"waste"}
+  ],
+  dx:["Cystitis (bladder infection / lower UTI)","Pyelonephritis (kidney infection)","Sexually transmitted infection","Thrush (vaginal candidiasis)","Kidney stone","Overactive bladder"],
+  ans:0, close:[], trap:1, trapName:"Pyelonephritis — the fork not taken, because its signs weren't there",
+  plans:[
+    {t:"Treat: a short course of a first-line antibiotic for cystitis, fluids, pain relief — and safety-net: fever, flank/back pain, vomiting, or not better in 48 hours means come straight back (that's the fork, watched for)", g:"right", note:"Right. Bladder-level infection, bladder-level treatment, and a safety-net that names exactly the fork signs — so if it climbs to the kidney, she comes back in time."},
+    {t:"Treat as kidney infection: strong broad antibiotics and urgent hospital referral", g:"wrong", note:"Over-reading the fork. No fever, no flank pain, no kidney tenderness — escalating a bladder infection to hospital care spends her day and the hospital's beds on the wrong road."},
+    {t:"Reassure only — 'drink cranberry juice and it'll pass'", g:"wrong", note:"A positive dip with this triad is a bacterial infection worth treating; reassurance alone leaves her stinging for days and risks the climb to the kidney."},
+    {t:"Escalate to EMERGENCY now", g:"wrong", note:"Well, afebrile, no red flags. Treat in clinic."}
+  ],
+  truth:"Cystitis — a bladder infection. The classic triad (burning, frequency, urgency), blood-tinged urine, positive dip — and crucially, NO fever and NO flank pain, so the infection has not climbed to the kidney.",
+  clues:["Burning + frequency + urgency: the cystitis triad","No flank pain and no fever — the fork stayed on the bladder road","Kidney angles non-tender on examination","Dip: nitrites + leukocytes positive"],
+  realDo:"Asks the fork questions on every urinary presentation, dips the urine, treats the bladder infection with a short first-line course, and safety-nets with the fork signs named out loud.",
+  strat:[["Treat on story + dip, culture as back-up","Fast, targeted, and the culture catches you if you're wrong.","Trade-off: a small number will have resistant germs — which is exactly what the 48-hour safety-net is for."],
+         ["Fork discipline","Every urinary case gets the kidney questions, even when the story sounds simple.","Trade-off: two questions' worth of time, every time — against never missing the climb. Cheap insurance."]],
+  simp:"Simplification: real guidelines sometimes treat uncomplicated cystitis on symptoms alone without a dip, and antibiotic choice varies by region and resistance patterns. The fork — bladder vs kidney — is the durable lesson.",
+  untaken:"Danielle bought pain relief, drank water for three miserable days, and it slowly settled — this time. She was told nothing about the signs that should have brought her back.",
+  untakenBad:"Danielle waited. On day three the infection climbed: fever, flank pain, vomiting — a kidney infection, treated in hospital. The fork arrived; nobody had asked about it in time."
+},
+{ id:"appendicitis", n:5, rung:"Rung 5 · The moving pain",
+  title:"“My stomach ache moved”",
+  patient:"Tom, 19 — student, usually fit and well.",
+  story:"“It started last night around my belly button, just a dull ache, and I went off my food. This morning it's moved — it's down here now, low on the right, and it hurts to walk.”",
+  hist:[
+    {q:"Where did the pain start, and where is it now?", a:"“Started around my belly button last night. Now it's right down here, low right side. It moved.”", w:"THE signature question. Pain that starts vague around the navel and migrates to the right lower belly over hours is appendicitis's classic path — the pain follows the appendix's story as inflammation reaches the abdominal wall.", k:"key"},
+    {q:"Have you lost your appetite — did the pain come before or after any sickness?", a:"“Gone off food completely. Felt sick after the pain started, was sick once.”", w:"Sequence is evidence: in appendicitis, pain comes FIRST, then appetite loss and nausea. Vomiting before pain points more to gastroenteritis.", k:"key"},
+    {q:"Do you have a fever?", a:"“Felt hot this morning — 38.2 at home.”", w:"Low-grade fever fits an inflaming appendix. High fever with rigors would widen the list.", k:"key"},
+    {q:"Does it hurt more when you move, cough, or go over bumps?", a:"“Yes — coughing is awful, and the bus ride here was horrible.”", w:"Pain worsened by movement and coughing means the abdominal lining (peritoneum) is irritated — the inflammation is no longer contained inside the appendix.", k:"key", rf:true},
+    {q:"Any diarrhoea, constipation, or urinary symptoms?", a:"“Bit constipated. Weeing fine, no burning.”", w:"Diarrhoea would argue for gastroenteritis; urinary burning for a UTI. Their absence keeps the appendix at the top.", k:"ok"},
+    {q:"When did you last eat?", a:"“Yesterday lunchtime. Nothing since.”", w:"Practical and clinical: if surgery is coming, an empty stomach matters for anaesthesia — and appetite loss is itself a clue.", k:"ok"},
+    {q:"Have you ever had pain like this before?", a:"“Never.”", w:"A first episode fits; recurrent identical episodes would widen the list. Low yield here.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"38.3 °C", r:"36.1–37.2 °C", abn:true, note:"Low-grade fever — inflammation, declaring itself."},
+    {n:"Pulse", v:"102 /min", r:"60–100 /min", abn:true, note:"Just fast — pain and fever together."},
+    {n:"Blood pressure", v:"122/76", r:"about 90/60–120/80", abn:false, note:"Normal — he is compensating well, for now."},
+    {n:"Breathing rate", v:"16 /min", r:"12–20 /min", abn:false, note:"Normal."},
+    {n:"Oxygen (SpO₂)", v:"99%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Examine the belly — where is it most tender?", f:"Maximal tenderness at McBurney's point (low right, between navel and hip bone). He guards — tenses — when you press there.", w:"McBurney's point tenderness is the examination landmark of appendicitis, and guarding shows the abdominal wall is protecting something inflamed beneath it.", k:"key"},
+    {n:"Press slowly and release quickly on the right side (rebound)", f:"Sharp pain on release — rebound tenderness.", w:"Rebound means the peritoneum is inflamed. This belly is a surgical belly until a surgeon says otherwise.", k:"key"},
+    {n:"Ask him to cough while you watch his face", f:"He winces and clutches the right side.", w:"The cough test: peritoneal irritation without laying a hand on him.", k:"ok"},
+    {n:"Listen to the bowel sounds", f:"Quiet.", w:"A quiet belly fits an abdomen shutting down around inflammation — supportive, not decisive.", k:"ok"}
+  ],
+  tests:[
+    {n:"Blood tests (white cell count, CRP)", r:"White cells raised; CRP raised.", p:"Consistent with inflammation — they support the story but cannot locate it. Normal bloods would NOT have cleared this belly; the examination outranks them.", k:"ok"},
+    {n:"Urine dipstick", r:"Trace leukocytes only; no nitrites, no blood.", p:"Done to exclude the urinary mimic. A trace of white cells can ride along with an appendix sitting near the bladder — the dip doesn't overturn the examination.", k:"key"},
+    {n:"CT scan of the abdomen", r:"Inflamed, swollen appendix; no perforation yet.", p:"Imaging confirms and helps the surgeon plan — but note the order of events: the referral decision was made on story + examination. In a classic presentation, waiting hours for a scan before referring is delay wearing a lab coat.", k:"ok"},
+    {n:"Abdominal X-ray", r:"No clear abnormality.", p:"Plain X-rays rarely show appendicitis. Time and radiation spent on a test that can't answer the question.", k:"waste"}
+  ],
+  dx:["Appendicitis","Gastroenteritis","Kidney stone","Urinary tract infection","Constipation","Muscle strain"],
+  ans:0, close:[], trap:1, trapName:"Gastroenteritis — the comfortable answer the sequence contradicts",
+  plans:[
+    {t:"EMERGENCY / urgent surgical referral now: nil by mouth, pain relief, straight to the surgical team today", g:"right", note:"Right. Appendicitis is a clock: the appendix can perforate, spilling infection into the abdomen. Every hour of delay raises that risk. This is what 'refer on, urgently' means."},
+    {t:"Send home with painkillers — 'see how it goes overnight'", g:"danger", note:"DANGEROUS. This is how appendixes burst. A migrating pain, fever, McBurney's tenderness and rebound is not a 'wait and see' belly — overnight delay is the named danger in this condition."},
+    {t:"Treat as gastroenteritis with fluids and reassurance", g:"wrong", note:"The trap diagnosis driving the wrong plan: pain BEFORE sickness, no diarrhoea, and that migration — the story was never gastroenteritis."},
+    {t:"Routine (non-urgent) outpatient referral next week", g:"wrong", note:"Right destination, lethal timetable. Appendicitis is measured in hours."}
+  ],
+  truth:"Appendicitis. Pain migrating from navel to right lower belly, appetite gone, low fever, McBurney's point tenderness with rebound — the classic sequence, in order.",
+  clues:["Migration of pain — navel to right lower belly over hours","Pain BEFORE nausea; appetite vanished","Movement and coughing hurt — peritoneal irritation","McBurney's tenderness + rebound on examination","Low-grade fever with raised inflammatory markers"],
+  realDo:"Recognises the pattern from story and examination, keeps him nil by mouth, gives pain relief (which does NOT 'mask' the diagnosis — that myth is retired), and refers to surgery the same hour.",
+  strat:[["Pattern + examination decides; tests support","The classic presentation is a clinical diagnosis; bloods and scans back it up.","Trade-off: a small number of normal appendixes get removed in real practice — accepted, because the cost of a missed perforation is far worse."],
+         ["Refer before you're certain","Surgical referral is asking the surgeon to share the decision, not confessing failure.","Trade-off: some referrals come back 'not appendicitis' — that is the system working, not waste."]],
+  simp:"Simplification: real appendicitis is famously variable, especially in children, older adults, and pregnancy, and scoring systems and scans play a bigger role there. This case is the classic central presentation.",
+  untaken:"Tom was seen at an urgent-care centre that evening and sent straight to surgery — appendix out, unburst, home in two days. The system caught him, later than it should have.",
+  untakenBad:"Tom waited overnight. The appendix perforated; he needed a bigger operation, a week in hospital, and a month to recover. Delay was the whole difference."
+},
+{ id:"reflux", n:6, rung:"Rung 6 · The anchoring trap",
+  title:"“Chest pain after a huge meal”",
+  patient:"George, 52 — lorry driver, overweight, smoker, on blood pressure tablets.",
+  story:"“Had a massive curry last night, woke at 2 a.m. with this pain in my chest. Frightened me, to be honest. It's eased off now. Probably just the curry, right?”",
+  hist:[
+    {q:"Does the pain spread anywhere — arm, jaw, back?", a:"“No, it stays right in the middle, behind my breastbone.”", w:"HEART RULE-OUT, question one. Radiation to arm or jaw is heart-pain wiring. Its absence helps — but one 'no' never clears a heart.", k:"key", rf:true},
+    {q:"Were you sweating, sick, or breathless with it?", a:"“None of that. Just the pain and feeling a bit sick from the curry, no actual vomiting.”", w:"HEART RULE-OUT, question two. Sweating, nausea and breathlessness are the heart's travelling companions; their absence lowers — does not erase — the danger.", k:"key", rf:true},
+    {q:"Does anything bring it on — walking, climbing stairs, exertion?", a:"“No. Walking's fine. It was after the meal, lying in bed.”", w:"HEART RULE-OUT, question three. Exertional pain is the heart asking for more oxygen than it can get. Pain after food, lying flat, is the stomach's timetable, not the heart's.", k:"key", rf:true},
+    {q:"What does the pain feel like — burning, or pressure/crushing?", a:"“Burning, mostly. Like bad heartburn, which I get.”", w:"Character: burning points to acid; crushing pressure points to heart. But character alone never decides — patients describe heart attacks as 'indigestion' every day, which is why the other questions and the ECG exist.", k:"key"},
+    {q:"Do you get heartburn often? Does it wake you, and do antacids help?", a:"“Heartburn a few times a week, worse lying flat. Antacids settle it, yes.”", w:"The positive case for reflux: frequent, posture-linked, antacid-responsive heartburn. Building the alternative properly is what makes the conclusion worth anything.", k:"key"},
+    {q:"Any family history of heart disease, and do you know your cholesterol?", a:"“Dad had a heart attack at 60. Cholesterol 'borderline', they said.”", w:"Risk factors raise the stakes of the rule-out: a smoker with hypertension and family history gets the full heart work-up even when the story smells of curry.", k:"ok"},
+    {q:"How much do you smoke and drink?", a:"“Twenty a day. A few beers most nights.”", w:"Both feed reflux AND heart risk — relevant to advice either way. It doesn't separate today's two suspects.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.7 °C", r:"36.1–37.2 °C", abn:false, note:"Normal."},
+    {n:"Pulse", v:"82 /min", r:"60–100 /min", abn:false, note:"Normal and regular."},
+    {n:"Blood pressure", v:"138/86", r:"about 90/60–120/80", abn:true, note:"A bit high — his known hypertension. A risk factor, not today's emergency."},
+    {n:"Breathing rate", v:"14 /min", r:"12–20 /min", abn:false, note:"Normal."},
+    {n:"Oxygen (SpO₂)", v:"98%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Press the upper belly and chest wall", f:"Mild tenderness high in the belly; chest wall not tender.", w:"Chest-wall tenderness would suggest muscle; upper-belly tenderness mildly supports a stomach source. Neither clears the heart.", k:"ok"},
+    {n:"Listen to the heart and lungs", f:"Heart sounds normal, no murmurs; lungs clear.", w:"A new murmur or crackles would change everything; normal here is one more brick, not the wall.", k:"ok"},
+    {n:"Check pulses in both arms", f:"Equal and strong.", w:"Unequal arm pulses with tearing chest pain would flag a torn aorta — the third suspect in chest pain. Equal here.", k:"ok"}
+  ],
+  tests:[
+    {n:"ECG (heart tracing)", r:"Normal tracing — no heart attack pattern, no strain pattern.", p:"THE rule-out test for this case. A normal ECG during/after chest pain substantially lowers the heart's place on the list. It doesn't make a heart attack impossible — early tracings can be normal — which is why the history questions came first and the safety-net comes after.", k:"key"},
+    {n:"Troponin blood test (heart damage marker)", r:"Normal (not raised).", p:"Troponin rises when heart muscle is damaged. A normal result, timed after the pain, backs the ECG. Ordered together, ECG + troponin + history is the rule-out — no single one of them is.", k:"key"},
+    {n:"Chest X-ray", r:"Normal.", p:"Useful if the story suggested lung causes; here it added little beyond completeness.", k:"ok"},
+    {n:"Endoscopy referral test — 'just scope him'", r:"(Would be booked routinely, weeks away.)", p:"Scoping the stomach may come later for recurrent reflux — but it must never jump the queue ahead of the heart rule-out. Order of operations is the whole lesson of this case.", k:"waste"}
+  ],
+  dx:["Reflux / indigestion (gastro-oesophageal reflux)","Heart attack (myocardial infarction)","Angina","Muscle strain of the chest wall","Gallbladder pain","Anxiety / panic attack"],
+  ans:0, close:[2], trap:0, trapName:"(the trap here is the road, not the answer — see write-up)",
+  plans:[
+    {t:"Treat the reflux (acid suppression, lifestyle advice on meals, weight, smoking) AND safety-net in plain words: crushing pain, pain spreading to arm or jaw, sweating or breathlessness means emergency help immediately — because hearts can still surprise", g:"right", note:"Right — IF the rule-out was done (see your grade). Treating reflux after a proper heart rule-out, with a safety-net that names the heart symptoms, is exactly real practice."},
+    {t:"Reassure: 'it's just the curry' — no ECG, no further questions needed", g:"danger", note:"DANGEROUS ROAD, whatever the truth turned out to be. In a 52-year-old smoker with chest pain, settling on indigestion without the heart rule-out is anchoring in its purest form. Today the anchor happened to hold. The method was still wrong — and the next George's pain will be his heart."},
+    {t:"Escalate to EMERGENCY / admit as a heart attack", g:"close", note:"Over-cautious once a full rule-out (history + ECG + troponin) is negative: understandable caution, but it spends an emergency admission the evidence no longer supports. If you escalated BEFORE ruling out, that was right; after, it's the safety-net's job."},
+    {t:"Refer to cardiology routinely, no treatment for the reflux meanwhile", g:"wrong", note:"Leaves the actual problem untreated for weeks and still doesn't do today's rule-out — the ECG belonged to today."}
+  ],
+  truth:"Reflux (gastro-oesophageal reflux disease). Burning pain after a huge meal, lying flat, in a man with frequent antacid-responsive heartburn — and a heart rule-out that was done properly: no radiation, no sweating, not exertional, normal ECG, normal troponin.",
+  clues:["Burning character, after food, lying flat — the stomach's timetable","Frequent heartburn, antacid-responsive","No radiation, no sweating, no breathlessness","Not exertional — walking is fine","Normal ECG and normal troponin, in a man whose risk factors demanded both"],
+  realDo:"Works the rule-out FIRST — radiation, sweating, exertion, ECG, troponin — precisely because the patient (and the story) are begging him to anchor on the curry. Only then treats the reflux, and safety-nets with the heart symptoms named.",
+  strat:[["Rule out the deadly, then treat the likely","The order is the strategy: heart first because it's the one that kills tonight.","Trade-off: it spends an ECG, a blood test, and twenty minutes on what is usually indigestion. That is the correct price."],
+         ["Anchor, but verify","A first impression is a fine servant — it organised the reflux questions — and a terrible master.","Trade-off: none worth naming. Verification is cheap; the miss is not."]],
+  simp:"Simplification: real chest-pain pathways use timed troponin protocols and risk scores, and some patients are observed for hours. The sequence — history screens, ECG, troponin, then settle — is the true shape of it.",
+  untaken:"George was seen at a walk-in centre, had the ECG he needed, and went home with reflux treatment and good advice.",
+  untakenBad:"George waited, the pain settled, and he never had the ECG. This time it was reflux. Nothing checked means nothing learned — for him or for the record."
+},
+{ id:"stemi", n:7, rung:"Rung 7 · The critical case",
+  title:"“Crushing pain in my chest”",
+  patient:"Robert, 61 — retired builder, smoker, on tablets for blood pressure and cholesterol.",
+  story:"“It came on about forty minutes ago, carrying shopping in. Like an elephant sitting on my chest. It's going into my left arm and my jaw. I'm sweating buckets and I feel sick. It isn't easing off.”",
+  hist:[
+    {q:"Does the pain spread anywhere — arm, jaw, back?", a:"“Left arm, and up into my jaw. Heavy, aching arm.”", w:"Radiation to arm and jaw is the heart's wiring diagram. This answer alone should raise your heart rate.", k:"key", rf:true},
+    {q:"What does it feel like — and is it there at rest, right now?", a:"“Crushing. Like a weight. Yes, it's here now, sitting still.”", w:"Crushing central pain AT REST means the heart is starving now, not just on exertion. Rest pain is a siren.", k:"key", rf:true},
+    {q:"Are you sweaty, sick, or short of breath?", a:"“Sweating through my shirt. Feel like I'll vomit. Bit short of breath, yes.”", w:"The heart attack's entourage: cold sweat, nausea, breathlessness. Each one present adds weight.", k:"key", rf:true},
+    {q:"How long has it lasted, and is it easing at all?", a:"“Forty minutes. Not easing one bit.”", w:"Duration separates an attack from a twinge: heart pain that persists past 15–20 minutes at rest is a heart attack until the ECG and troponin say otherwise — and you don't wait for troponin.", k:"key"},
+    {q:"Have you had angina or heart problems before?", a:"“Angina, yes — but that always went with rest and my spray. This is different. This won't go.”", w:"'Different from my usual angina, and not settling' is a patient telling you the diagnosis. Listen to the comparison, not just the complaint.", k:"ok"},
+    {q:"Are you allergic to aspirin or any medicines?", a:"“No allergies.”", w:"Asked because aspirin is part of emergency treatment — the allergy question rides along with the emergency, never instead of it.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.5 °C", r:"36.1–37.2 °C", abn:false, note:"Normal — heart attacks don't need fever."},
+    {n:"Pulse", v:"96 /min", r:"60–100 /min", abn:false, note:"High-normal — pain, fear, and a struggling heart."},
+    {n:"Blood pressure", v:"104/68", r:"about 90/60–120/80", abn:true, note:"Lower than his usual — the heart's pumping is compromised. A falling BP in chest pain is ominous."},
+    {n:"Breathing rate", v:"22 /min", r:"12–20 /min", abn:true, note:"Fast — breathlessness is part of this picture."},
+    {n:"Oxygen (SpO₂)", v:"94%", r:"95–100%", abn:true, note:"Just low — the heart isn't delivering, and the lungs are feeling it."}
+  ],
+  exams:[
+    {n:"Look at him — colour, sweat, distress", f:"Pale, grey, sweating heavily, restless, clutching the centre of his chest.", w:"The 'look' is a test: a grey, sweaty, restless patient with central chest pain is a heart attack in front of your eyes before any machine agrees.", k:"key"},
+    {n:"Listen to the heart and lungs", f:"Heart sounds present, no new murmur; a few crackles at the lung bases.", w:"Basal crackles = fluid backing up because the heart is failing to clear it. Supports, and raises urgency.", k:"ok"},
+    {n:"Feel the pulses", f:"Pulse a little thready; equal in both arms.", w:"Equal arm pulses argue against a torn aorta (the great mimic); thready fits a struggling heart.", k:"ok"}
+  ],
+  tests:[
+    {n:"ECG (heart tracing) — immediately", r:"ST ELEVATION in the front leads — the pattern of a major heart attack (STEMI) in progress.", p:"The ECG is the decider and the trigger: ST elevation means a coronary artery is blocked NOW, and the treatment clock (reopen the artery) starts from this tracing. This is the one test in medicine where minutes are muscle.", k:"key"},
+    {n:"Troponin blood test", r:"Raised — heart muscle is damaged/dying.", p:"Troponin confirms heart muscle death — but in a STEMI you never wait for it. It rises over hours; the ECG already told you. Troponin's job here is confirmation and later care, not permission.", k:"key"},
+    {n:"Chest X-ray", r:"Mild fluid on the lungs; heart size normal.", p:"Done in parallel in real care to check for complications — it must never delay the emergency pathway. Ordered instead of escalating, it would be a lethal delay.", k:"ok"},
+    {n:"Bloods — cholesterol, full panel", r:"Sent; results pending.", p:"Useful for his later care. Irrelevant to the next ten minutes. Know which tests are for NOW and which are for LATER.", k:"waste"}
+  ],
+  dx:["Heart attack — STEMI (ST-elevation myocardial infarction)","Angina (stable)","Reflux / indigestion","Muscle strain","Panic attack","Torn aorta (aortic dissection)"],
+  ans:0, close:[], trap:2, trapName:"Reflux — the anchor that kills in this case",
+  emergency:true,
+  plans:[
+    {t:"EMERGENCY NOW: emergency call, aspirin (if not allergic), keep him resting and monitored, straight onto the heart-attack pathway to reopen the artery", g:"right", note:"Right — and fast is part of right. In STEMI, 'time is muscle': every 30 minutes of delay costs heart muscle he never gets back. Aspirin, emergency services, catheter lab pathway."},
+    {t:"Send him home with antacids — 'sounds like indigestion, see how it settles'", g:"critical", note:"CRITICAL FAIL — the worst outcome on this page. This man is having a major heart attack. Sent home, he can die on his own doorstep, and deaths like this are exactly what the red-flag screens exist to prevent. Crushing pain + radiation + sweat + nausea at rest is never 'see how it settles'."},
+    {t:"Reassure and book a routine GP review next week", g:"critical", note:"CRITICAL FAIL. A week is a geological age in a STEMI — the artery is blocked now. Routine anything, for this patient, is abandonment with paperwork."},
+    {t:"Treat in clinic with pain relief and observe for a few hours first", g:"danger", note:"DANGEROUS DELAY. Observation is not treatment for a blocked artery. The clinic cannot reopen it; the clock runs while you watch."}
+  ],
+  truth:"A STEMI — a major heart attack, a coronary artery fully blocked. Crushing central pain radiating to arm and jaw, cold sweat, nausea, pain at rest for 40 minutes, ST elevation on the ECG, raised troponin.",
+  clues:["Crushing central pain, at rest, unremitting for 40 minutes","Radiation to left arm and jaw","Cold sweat + nausea + breathlessness","'Different from my angina — this won't go'","ST elevation on ECG; troponin raised; BP sagging, oxygen dipping"],
+  realDo:"Doesn't finish the paperwork first. ECG within minutes, aspirin, emergency call, catheter-lab pathway — while someone else takes the bloods. In this diagnosis the plan IS speed.",
+  strat:[["Act on the pattern, confirm in parallel","STEMI is recognised from story + ECG; troponin confirms later. Waiting for every result before acting trades muscle for certainty.","Trade-off: a small number of false activations of the emergency pathway — accepted everywhere, because the reverse error is a funeral."],
+         ["Never let the anchor sail","His story contains no curry, no burning, no relief — nothing to anchor on except the heart. Compare Case 6: same opening words 'chest pain', opposite discipline.","Trade-off: none. The rule-out questions take two minutes."]],
+  simp:"Simplification: real STEMI care involves specific drug doses, ECG lead patterns, and transfer protocols that vary by region. The pattern recognition and the emergency-first sequence taught here are exact.",
+  untaken:"Robert's wife drove him to the emergency department, where the ECG was done in the doorway. The artery was reopened; he survived with a weakened heart.",
+  untakenBad:"Robert waited at home for three hours before anyone called for help. The artery was reopened too late to save much of the muscle. He survived — with heart failure, breathless on stairs, for the rest of his life. The wait was the injury."
+},
+{ id:"sah", n:8, rung:"Rung 8 · The thunderclap",
+  title:"“The worst headache of my life”",
+  patient:"Sarah, 47 — marketing manager, has migraines 'once or twice a year'.",
+  story:"“I was making tea and it just — bang. Like being hit in the back of the head with a bat. Worst headache of my life, no contest. It was at full blast in seconds. I was sick twice. It hasn't eased.”",
+  hist:[
+    {q:"How fast did it reach its worst — seconds, minutes, hours?", a:"“Seconds. One second I was fine, the next it was full blast.”", w:"THE question of this case. A headache at maximum within seconds is a THUNDERCLAP headache — the signature of bleeding around the brain. Migraines build over tens of minutes to hours. Onset speed is the diagnosis's hinge.", k:"key", rf:true},
+    {q:"Is it the worst headache you've ever had?", a:"“By a mile. Nothing is close.”", w:"'Worst ever' is a red-flag phrase in its own right. Patients calibrate; believe the calibration.", k:"key", rf:true},
+    {q:"How does it compare with your usual migraines?", a:"“Nothing like them. Those creep up, I get sparkly vision first, and I can sleep them off. This was instant and sleep is impossible.”", w:"The availability trap lives here: she HAS migraines, so 'migraine' is the easy reach. The comparison question is the counter-move — different onset, no aura, no relief.", k:"key"},
+    {q:"Have you been sick, or does your neck feel stiff? Does light hurt?", a:"“Sick twice. Neck feels stiff, yes. Light's not great.”", w:"Vomiting + neck stiffness after a thunderclap fits blood irritating the coverings of the brain (meninges).", k:"key"},
+    {q:"What were you doing when it struck — exertion, straining, sex?", a:"“Just making tea. Nothing strenuous.”", w:"Bleeds often strike during exertion or straining, but they also strike making tea. A 'nothing' answer never clears a thunderclap.", k:"ok"},
+    {q:"Any weakness, speech change, vision loss, or have you blacked out?", a:"“No weakness or speech trouble. Didn't black out. Just the pain.”", w:"Screens for the bleed's companions and complications. Their absence is good news, not clearance.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.9 °C", r:"36.1–37.2 °C", abn:false, note:"Normal — no infection driving this."},
+    {n:"Pulse", v:"88 /min", r:"60–100 /min", abn:false, note:"Normal."},
+    {n:"Blood pressure", v:"158/94", r:"about 90/60–120/80", abn:true, note:"High — pain does this, and so does bleeding inside the skull raising the pressure. Either way, it fits the emergency, not the migraine."},
+    {n:"Breathing rate", v:"18 /min", r:"12–20 /min", abn:false, note:"Normal."},
+    {n:"Oxygen (SpO₂)", v:"98%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Neurological check — pupils, eye movements, limb power, speech", f:"Pupils equal and reacting; power and speech normal; she is alert but in obvious severe pain.", w:"A normal neuro exam does NOT clear a bleed — early bleeds often have no signs. The history (thunderclap) outranks the examination here.", k:"key"},
+    {n:"Check neck stiffness — can she put chin to chest?", f:"Clearly stiff; she can't get near her chest and it hurts to try.", w:"Meningeal irritation from blood in the fluid around the brain. Another brick for the bleed.", k:"key"},
+    {n:"Look in the eyes with the ophthalmoscope (fundoscopy)", f:"No swelling of the optic discs seen.", w:"Disc swelling takes time to develop; its absence at this early hour means nothing either way. Low yield at this stage.", k:"ok"}
+  ],
+  tests:[
+    {n:"CT scan of the head — immediately", r:"Blood visible in the fluid spaces around the brain — a subarachnoid haemorrhage.", p:"The decider, and time-critical: CT catches nearly all bleeds in the first hours. This scan is the plan's trigger — neurosurgery and intensive care follow from it.", k:"key"},
+    {n:"Blood tests", r:"Mildly raised white cells; clotting normal.", p:"Background for the teams who take over. They neither made nor could have unmade this diagnosis.", k:"ok"},
+    {n:"Lumbar puncture (spinal tap)", r:"(Not done — the CT already showed the blood.)", p:"The lumbar puncture is the back-up when a thunderclap story meets a NORMAL CT: blood breakdown products in the spinal fluid can prove a bleed the scan missed. Knowing the back-up exists is part of the craft.", k:"ok"},
+    {n:"Migraine diary review / 'try her usual migraine tablets and review in a week'", r:"—", p:"Not a test: a trap wearing a diary. Her usual tablets and a week's wait, applied to a bleed, is how this patient dies at home.", k:"waste"}
+  ],
+  dx:["Bleeding around the brain (subarachnoid haemorrhage)","Migraine","Tension headache","Cluster headache","Meningitis","High blood pressure headache"],
+  ans:0, close:[], trap:1, trapName:"Migraine — her own history, weaponised by availability",
+  emergency:true,
+  plans:[
+    {t:"EMERGENCY NOW: emergency transfer to hospital for immediate CT and neurosurgical care; keep her still, nothing to eat or drink, pain and sickness relief en route", g:"right", note:"Right. A thunderclap headache is a bleed until a scan proves otherwise, and bleeds re-bleed — the second bleed is often the fatal one. Speed and a scan: that is the whole plan."},
+    {t:"Send home with her usual migraine treatment — 'sleep it off, come back if it doesn't settle'", g:"critical", note:"CRITICAL FAIL. This is the trap with a body count. A subarachnoid haemorrhage sent home can re-bleed and kill her tonight. Her migraine history is precisely what makes this miss so easy — and so unforgivable once you know the onset question."},
+    {t:"Reassure: blood pressure is up because of pain; review next week", g:"critical", note:"CRITICAL FAIL. 'Review next week' for a thunderclap headache gambles her life on the hope that the worst headache of her life is nothing. It is not a plan; it is an abdication."},
+    {t:"Book a routine outpatient head scan in the next few weeks", g:"danger", note:"DANGEROUS DELAY. Right test, lethal timetable. This scan belongs to the next hour."}
+  ],
+  truth:"A subarachnoid haemorrhage — bleeding into the fluid around the brain, typically from a burst aneurysm. Thunderclap onset in seconds, worst-ever severity, vomiting, neck stiffness, high blood pressure.",
+  clues:["Maximum pain within SECONDS — the thunderclap","'Worst headache of my life' — her own calibration","Nothing like her migraines: no build-up, no aura, can't sleep it off","Vomiting + neck stiffness: blood irritating the meninges","Normal neurology — which clears nothing"],
+  realDo:"Asks the onset question of every severe headache, and treats 'seconds' as a siren: emergency transfer, immediate CT, neurosurgery informed. He does not let her migraine history vote.",
+  strat:[["Onset speed as a first-class clue","Seconds = event (bleed, clot); hours = process (migraine building). One question, enormous separation.","Trade-off: none — it costs five seconds."],
+         ["Beware the patient's own label","A known migraineur can still bleed. Past diagnoses are history, not verdicts.","Trade-off: you will scan some migraines on thunderclap-like stories. Correct price."]],
+  simp:"Simplification: a minority of thunderclap headaches have other causes, and CT timing and lumbar puncture protocols vary. The rule taught — thunderclap means scan now — is universal.",
+  untaken:"Sarah's partner called emergency services when she vomited again; the scan found the bleed and neurosurgery treated the aneurysm. She survived, with months of recovery.",
+  untakenBad:"Sarah waited at home, treating it as a migraine. The aneurysm re-bled that night. She survived the second bleed — many don't — with lasting damage the first scan could have prevented."
+},
+{ id:"asthma", n:9, rung:"Rung 9 · The known condition, tipping",
+  title:"“My asthma's flared up”",
+  patient:"Chloe, 23 — barista, asthma since childhood, uses a blue reliever inhaler.",
+  story:"“The café's new cleaning spray set me off yesterday and it's not settling. I'm wheezing, my blue inhaler's barely touching it — I've had ten puffs today. Talking's hard work.”",
+  hist:[
+    {q:"How breathless are you — can you finish a full sentence in one breath?", a:"“(In short bursts) Two… three words… then I need… a breath.”", w:"THE severity question. Speech is a measuring instrument: sentences = mild, phrases = moderate, single words = severe. She is speaking in phrases — this attack is not mild, whatever the word 'flare' suggests.", k:"key", rf:true},
+    {q:"How much reliever have you used, and is it working?", a:"“Ten puffs today. Each one helps for maybe twenty minutes, then it's back.”", w:"Reliever use is a severity gauge: needing it constantly, with shrinking benefit, is an attack outrunning its treatment.", k:"key"},
+    {q:"Have you ever been in hospital, or intensive care, with your asthma?", a:"“Hospital once, two years ago, overnight. Never intensive care.”", w:"Past severity predicts future severity — a previous admission moves this patient up the caution scale.", k:"ok"},
+    {q:"What set it off, and is that exposure still around you?", a:"“The new cleaning spray at work. I'm off shift now, so away from it.”", w:"Triggers matter twice: removing the trigger is treatment, and ongoing exposure explains failure to settle.", k:"key"},
+    {q:"Are you waking at night with it, and can you lie flat?", a:"“Woke three times last night. Lying flat makes it worse.”", w:"Night waking and breathlessness lying flat grade the attack's grip — and mark a patient who has been deteriorating for a day, not an hour.", k:"ok"},
+    {q:"Do you feel exhausted, or is the wheeze getting quieter?", a:"“I'm tired, yeah. Wheeze's still loud though.”", w:"Two end-stage warnings hide in this question: exhaustion and a QUIET chest mean air is barely moving — the most dangerous sound in asthma is silence. Today: tired but still wheezing — watch her closely.", k:"key", rf:true}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.8 °C", r:"36.1–37.2 °C", abn:false, note:"Normal — no infection driving this flare."},
+    {n:"Pulse", v:"118 /min", r:"60–100 /min", abn:true, note:"Fast — hard breathing work, plus ten puffs of reliever (a known side effect). Both point the same way: this is a real attack."},
+    {n:"Blood pressure", v:"124/78", r:"about 90/60–120/80", abn:false, note:"Normal."},
+    {n:"Breathing rate", v:"26 /min", r:"12–20 /min", abn:true, note:"Fast — her breathing muscles are working hard to move air through narrowed tubes."},
+    {n:"Oxygen (SpO₂)", v:"93%", r:"95–100%", abn:true, note:"Low — air is moving poorly enough that oxygen is falling. In asthma, 93% means this attack needs treatment now and a low threshold to escalate."}
+  ],
+  exams:[
+    {n:"Listen to the chest", f:"Wheeze throughout, both sides; air entry reduced but present.", w:"Wheeze = narrowed airways with air still moving. The finding to fear is the opposite: a quiet chest. Hers is loud — air is moving — for now.", k:"key"},
+    {n:"Watch her breathe — accessory muscles, posture", f:"Sitting forward, shoulders hunched, neck muscles working with each breath.", w:"Accessory muscle use is the body recruiting help — a visible severity grade before any number.", k:"key"},
+    {n:"Peak flow meter (blow test)", f:"210 L/min — about 50% of her known best of 420.", w:"Peak flow turns 'how bad' into a number: 50% of best = a moderate-to-severe attack. Numbers let you track whether treatment is winning.", k:"key"}
+  ],
+  tests:[
+    {n:"Repeat oxygen + peak flow after a nebuliser", r:"SpO₂ up to 96%; peak flow 300 (about 70% of best).", p:"The re-measurement IS the test that matters in an attack: response to treatment separates 'treat and watch' from 'escalate now'.", k:"key"},
+    {n:"Chest X-ray", r:"Lungs over-inflated; no infection, no collapsed lung.", p:"Useful to exclude the complications (pneumonia, pneumothorax) — done here because she was slow to respond. It doesn't grade the attack; peak flow and oxygen do.", k:"ok"},
+    {n:"Blood gas (arterial blood sample)", r:"Oxygen low-normal; carbon dioxide LOW (she's blowing it off).", p:"The feared pattern is a NORMAL or HIGH carbon dioxide in a severe attack — it means she's too tired to blow it off. Low CO₂ here is reassuring; know which direction frightens you before you order it.", k:"ok"},
+    {n:"Allergy blood tests", r:"(Would take days; dust mite strongly positive, eventually.)", p:"Interesting for her long-term care. Useless in the next hour. Timing is a test property too.", k:"waste"}
+  ],
+  dx:["Asthma attack (acute exacerbation)","Chest infection (pneumonia)","Panic attack","Anaphylaxis","Collapsed lung (pneumothorax)","Common cold"],
+  ans:0, close:[], trap:2, trapName:"Panic attack — 'she's young and anxious', said about a woman who can't finish a sentence",
+  plans:[
+    {t:"Treat now: nebulised bronchodilator, a course of steroid tablets started today, re-measure oxygen and peak flow — and escalate to hospital if she doesn't respond or dips again", g:"right", note:"Right. Treat the attack in front of you, measure the response, and hold the escalation door open with your hand on it. The re-measurement is what makes this safe rather than hopeful."},
+    {t:"Reassure — 'it's just your asthma, take your blue inhaler and rest at home'", g:"danger", note:"DANGEROUS. Speech in phrases, oxygen 93%, peak flow at half her best, ten puffs already failing — sending this home untreated is how asthma still kills young people. 'Just your asthma' is the sound of familiarity breeding contempt."},
+    {t:"Treat it as panic: breathing exercises and reassurance", g:"danger", note:"DANGEROUS MISREAD. Anxiety rides along with real breathlessness — of course she's frightened; she can't breathe. Wheeze, trigger, reliever overuse and 93% oxygen are not a panic attack."},
+    {t:"Antibiotics for a chest infection", g:"wrong", note:"No fever, no focal signs, a clear trigger and a wheeze — the infection story doesn't fit, and antibiotics don't open airways."}
+  ],
+  truth:"An acute asthma attack — moderate-to-severe: speech in phrases, breathing rate 26, oxygen 93%, peak flow 50% of her best, triggered by a cleaning spray, outrunning her reliever.",
+  clues:["Speech in phrases — the sentence test failed","Oxygen 93% and breathing rate 26","Peak flow 50% of her best — a number, not an impression","Ten reliever puffs with shrinking benefit","Wheeze present (air still moving) — and the write-up's warning: the quiet chest is worse"],
+  realDo:"Grades severity with speech, oxygen, and peak flow before treating; gives nebulised bronchodilator plus steroids; re-measures; and keeps the escalation threshold low. He also writes down her best peak flow — today's number is only meaningful against it.",
+  strat:[["Measure, treat, re-measure","In attacks, the trend is the diagnosis of severity. One reading is a photograph; two are a film.","Trade-off: re-measuring costs minutes — spent exactly where the danger lives."],
+         ["Know the danger sounds","Loud wheeze = air moving. Quiet chest + exhaustion = air stopping. The reassuring direction is the opposite of instinct.","Trade-off: none. This is pure pattern knowledge, and it saves lives."]],
+  simp:"Simplification: severity bands and drug doses vary by guideline, and real attacks are re-graded continuously. The sentence test, the peak-flow comparison, and the quiet-chest warning are exact.",
+  untaken:"Chloe's flatmate took her to the emergency department that evening, where she was treated and kept overnight. She recovered fully — and got a proper asthma plan out of it.",
+  untakenBad:"Chloe waited, using her reliever through the night. By morning she was exhausted and barely wheezing — the quiet chest. She survived intensive care. The silence was the emergency."
+},
+{ id:"meningitis", n:10, rung:"Rung 10 · The glass test",
+  title:"“He's feverish and the light hurts his eyes”",
+  patient:"Josh, 18 — first-year university student, brought in by his flatmate.",
+  story:"Flatmate: “He was fine yesterday. This morning he's burning up, says his neck is stiff, the light hurts his eyes, and he's just not right — drowsy, confused. And there's this rash on his legs that wasn't there last night.”",
+  hist:[
+    {q:"Tell me about the rash — and has anyone pressed a glass against it?", a:"“Purple-red spots. We did the glass thing — they DON'T fade. You can see them right through the glass.”", w:"THE GLASS TEST, and it is positive: a rash that doesn't blanch under pressure (non-blanching) in a feverish patient is meningococcal disease until proven otherwise. Blood leaking under the skin from a bloodstream infection. This answer ends the diagnostic phase — treatment and emergency transfer start.", k:"key", rf:true},
+    {q:"Is he confused, drowsy, or hard to rouse?", a:"“Drowsy and muddled. Knows his name, but he's not himself.”", w:"Confusion with fever means the infection is affecting the brain or the whole system is septic. A severity siren.", k:"key", rf:true},
+    {q:"Neck stiffness — can he put his chin to his chest? And the light?", a:"“Can't get close. Says the light stabs his eyes.”", w:"Neck stiffness + photophobia + fever is the meningitis triad: inflamed coverings of the brain protesting at movement and light.", k:"key"},
+    {q:"Has he had a headache, vomiting, or seizures?", a:"“Bad headache, vomited twice. No seizures.”", w:"Raised pressure inside the skull announcing itself. Vomiting + headache + fever + stiff neck: the pattern is complete.", k:"ok"},
+    {q:"How fast has this come on?", a:"“Fine yesterday. Ill this morning, rash by lunchtime, worse every hour.”", w:"Speed is a clue and a warning: meningococcal disease can kill within hours of the first symptom. The timetable is part of the emergency.", k:"key"},
+    {q:"Any recent illness, travel, or sick contacts — anyone in halls ill?", a:"“A fresher on his corridor had 'flu' last week, that's all.”", w:"Meningococcal disease spreads in close quarters — halls of residence are its classic ground. Useful for the public-health follow-up, secondary to saving him.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"39.6 °C", r:"36.1–37.2 °C", abn:true, note:"High fever — a serious infection is raging."},
+    {n:"Pulse", v:"122 /min", r:"60–100 /min", abn:true, note:"Fast — fever plus a circulation under septic strain."},
+    {n:"Blood pressure", v:"102/64", r:"about 90/60–120/80", abn:true, note:"Drifting low for a fit 18-year-old — sepsis is starting to win against his circulation. An ominous direction."},
+    {n:"Breathing rate", v:"22 /min", r:"12–20 /min", abn:true, note:"Fast — the body compensating for a bloodstream infection."},
+    {n:"Oxygen (SpO₂)", v:"97%", r:"95–100%", abn:false, note:"Normal — the one system not yet failing. Do not let it reassure you."}
+  ],
+  exams:[
+    {n:"Examine the rash properly — press a glass on it yourself", f:"Non-blanching purple-red spots (purpura) on legs and trunk — they do NOT fade under the glass.", w:"Confirming the glass test with your own eyes is the examination of this case. Non-blanching + fever = treat as meningococcal disease now.", k:"key"},
+    {n:"Test neck stiffness and response to light", f:"Marked neck stiffness; he shields his eyes from the light.", w:"The meningism signs, present and obvious.", k:"key"},
+    {n:"Check consciousness level (alert / voice / pain / unresponsive)", f:"Responds to voice, drowsy, muddled answers.", w:"A falling consciousness level in meningitis/sepsis grades how fast he is losing. It will be re-checked constantly from here.", k:"key"},
+    {n:"Capillary refill — press a fingertip and time the colour's return", f:"3 seconds — slow.", w:"Slow refill = circulation struggling (sepsis). Another brick in the emergency wall.", k:"ok"}
+  ],
+  tests:[
+    {n:"Blood tests + blood cultures", r:"White cells very high; cultures later grow meningococcus.", p:"Taken — but note the law of this case: bloods are drawn AROUND the antibiotics, never before them in sequence. Cultures identify the germ for later care and public health; they do not gate treatment.", k:"key"},
+    {n:"Lumbar puncture (spinal tap)", r:"(DELAYED — correctly. He is too unstable; it is done later, in hospital, when safe.)", p:"The LP confirms meningitis and names the germ — but in a drowsy, septic patient it can be dangerous and must never delay antibiotics. A test postponed for the patient's safety is good medicine, not a missed step.", k:"ok"},
+    {n:"CT head before anything else", r:"(Not done first — correctly.)", p:"Scanning first is the classic delay error in this presentation. The antibiotics and the ambulance outrank the picture.", k:"waste"}
+  ],
+  dx:["Meningitis with meningococcal sepsis","Influenza","Migraine","Viral rash illness","Food poisoning","Heat stroke"],
+  ans:0, close:[], trap:1, trapName:"Influenza — the 'fresher flu' story, believed one hour too long",
+  emergency:true,
+  plans:[
+    {t:"EMERGENCY NOW: immediate antibiotics given HERE, before transfer (per emergency protocol), emergency ambulance to hospital — do not delay antibiotics for scans or spinal taps", g:"right", note:"Right — and the detail that saves him: in suspected meningococcal disease, the antibiotic is given at first contact, before the journey. Every hour's delay measurably worsens survival. This is the case where 'treat first, confirm later' is not a style choice but the standard of care."},
+    {t:"Send home with paracetamol — 'probably fresher flu, rest and fluids'", g:"critical", note:"CRITICAL FAIL — the deadliest sentence available in this game. Fever + stiff neck + photophobia + a non-blanching rash is meningococcal disease, which can kill a healthy 18-year-old within hours. Sent home, Josh may not see another morning."},
+    {t:"Book bloods and review him in clinic tomorrow", g:"critical", note:"CRITICAL FAIL. Tomorrow is not a timescale this disease respects. Review appointments are for illnesses measured in days; this one is measured in hours."},
+    {t:"Refer to hospital routinely, antibiotics to be started after the spinal tap there", g:"danger", note:"DANGEROUS DELAY. The referral is right; the sequence is wrong. Antibiotics first, tap later — reversing them spends the hour that decides whether he lives."}
+  ],
+  truth:"Meningococcal meningitis with sepsis. Fever, neck stiffness, photophobia, confusion — and a non-blanching (glass-test-positive) purpuric rash: the bloodstream infection's signature on the skin.",
+  clues:["The rash that does NOT fade under a pressed glass — the glass test, positive","Fever + stiff neck + light hurting the eyes: the meningitis triad","Confusion and drowsiness — the brain and the whole system involved","Speed: fine yesterday, critically ill by lunchtime","Vitals drifting the septic way: pulse up, blood pressure down, refill slow"],
+  realDo:"Recognises the rash for what it is, gives the antibiotic immediately at first contact, calls the ambulance, and lets the hospital do the confirming. He also knows the glass test's limits: it matters most on lighter skin where a rash is visible — in any feverish, stiff-necked, confused patient he treats the whole picture, rash or no rash.",
+  strat:[["Treat first, confirm later","When the disease is fast and the treatment is time-critical, sequence beats certainty.","Trade-off: some treated patients will turn out to have something else. Accepted — the antibiotic's cost is trivial next to the hour's value."],
+         ["The glass test, taught at full size","Press a clear glass to the rash: fading = blood still inside vessels (less worrying); staying visible = blood leaked out (meningococcal warning).","Trade-off: the test is a screen, not a verdict — meningitis exists without any rash. Never let 'no rash' overrule fever + stiff neck + confusion."]],
+  simp:"Simplification: antibiotic choice and pre-hospital protocols vary by country, and not every meningitis has the rash — viral meningitis is usually milder. This case is the bacterial emergency in its classic form, because that is the one that must never be missed.",
+  untaken:"Josh's flatmate called emergency services an hour later when the rash spread. Antibiotics in hospital saved his life; he kept the hearing loss in one ear as the price of the hour.",
+  untakenBad:"Josh waited overnight, 'sleeping off the flu'. He was found unrousable in the morning. He survived intensive care with amputations to both feet — meningococcal sepsis takes tissue as well as time. The glass test, done at lunchtime, was the door nobody walked through."
+},
+{ id:"dvt", n:11, rung:"Rung 11 · The anchor in the leg",
+  title:"“One leg has swollen up”",
+  patient:"Margaret, 58 — administrator, returned three days ago from visiting family in Australia.",
+  story:"“My left calf aches and the leg's swollen — look, it's bigger than the other. Came on over the last two days. My daughter says it's probably an infection. I did just fly home — 22 hours, all told.”",
+  hist:[
+    {q:"Tell me about the flight and what you've done since landing", a:"“22 hours in a middle seat, barely got up. Since then I've been mostly on the sofa with jet lag.”", w:"Immobility is the clot's best friend: blood that sits still in the deep veins clots. A long flight + sofa days is Virchow's recipe — stasis — served plainly.", k:"key", rf:true},
+    {q:"Is the leg red, hot, or is there any broken skin, bite, or injury?", a:"“A bit pink, maybe. No bite, no cut, no injury. Not especially hot.”", w:"The cellulitis cross-examination: infection needs a door (broken skin) and usually brings heat and spreading redness. Asking is how you test the anchor instead of marrying it.", k:"key"},
+    {q:"Any fever, or feeling unwell in yourself?", a:"“No fever. I feel fine, just the leg.”", w:"Fever would feed the infection theory; its absence starves it. Well patient + one swollen leg + long flight = clot thinking.", k:"key"},
+    {q:"Any chest pain or new breathlessness since the flight?", a:"“No… well, I was a bit puffed on the stairs yesterday, but I put that down to jet lag.”", w:"THE red-flag screen of this case: a leg clot can break off and travel to the lungs (pulmonary embolism). New breathlessness after a flight must be asked about directly — and this 'a bit puffed' answer upgrades the urgency on the spot.", k:"key", rf:true},
+    {q:"Have you had a clot before, or cancer, or recent surgery? Are you on the pill or HRT?", a:"“No clots before. No cancer. I am on HRT, yes.”", w:"Risk stacking: HRT adds clotting tendency on top of immobility. Each risk factor raises the pre-test chance the tests are read against.", k:"ok"},
+    {q:"Where exactly is the ache, and what does it feel like?", a:"“Deep in the calf. A heavy ache, worse standing.”", w:"Deep calf ache (not surface, not joint) is the clot's address. Character and site, doing their framework jobs.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.8 °C", r:"36.1–37.2 °C", abn:false, note:"No fever — against infection, quietly important."},
+    {n:"Pulse", v:"84 /min", r:"60–100 /min", abn:false, note:"Normal."},
+    {n:"Blood pressure", v:"128/80", r:"about 90/60–120/80", abn:false, note:"Normal."},
+    {n:"Breathing rate", v:"15 /min", r:"12–20 /min", abn:false, note:"Normal at rest — her stair breathlessness still stands as a warning to respect."},
+    {n:"Oxygen (SpO₂)", v:"97%", r:"95–100%", abn:false, note:"Normal at rest."}
+  ],
+  exams:[
+    {n:"Measure both calves and compare", f:"Left calf 4 cm bigger than the right; mild swelling (oedema) that pits when pressed.", w:"Objective asymmetry: ONE swollen leg is a short list (clot, infection, injury, blockage). Measuring turns 'looks bigger' into evidence.", k:"key"},
+    {n:"Feel the calf and look for a tender deep vein track; check for heat and redness", f:"Deep calf tenderness; only faint pinkness; no real heat, no spreading red edge.", w:"The cellulitis signs are mostly absent while the clot signs are present. Examinations are allowed to argue with daughters.", k:"key"},
+    {n:"Check the foot pulses and skin", f:"Pulses fine, skin healthy, no ulcer or break.", w:"No door for infection, and the circulation in is fine — the problem is the drainage: veins.", k:"ok"}
+  ],
+  tests:[
+    {n:"D-dimer blood test", r:"POSITIVE (raised).", p:"The rule-OUT test, read correctly: a NEGATIVE D-dimer would have argued strongly against a clot. A POSITIVE one proves nothing by itself — it rises with infection, inflammation, after surgery, in pregnancy. Positive here means: the ultrasound must decide. Anyone who 'diagnoses DVT' from a D-dimer alone has misunderstood the tool.", k:"key"},
+    {n:"Ultrasound scan of the leg veins", r:"A clot is seen in the deep veins of the left calf, extending into the thigh vein.", p:"THE decider — the rule-in test. The picture settles what the blood test could only raise. This is the sensitivity/specificity lesson with legs: D-dimer screens, ultrasound proves.", k:"key"},
+    {n:"Blood tests (white cells, CRP)", r:"White cells normal; CRP mildly raised.", p:"Normal white cells argue quietly against cellulitis. The mild CRP fits a clot's inflammation too — a number that serves both stories settles neither.", k:"ok"},
+    {n:"Skin swab of the pink area", r:"No growth.", p:"Swabbing unbroken skin hunts for an infection the examination didn't find. Low yield.", k:"waste"}
+  ],
+  dx:["Deep vein thrombosis (DVT)","Cellulitis","Muscle strain / torn calf muscle","Baker's cyst","Varicose veins flare","Lymphoedema"],
+  ans:0, close:[], trap:1, trapName:"Cellulitis — the daughter's diagnosis, and the anchor",
+  plans:[
+    {t:"Treat + refer: start anticoagulation (blood-thinning treatment) today, same-day referral for ultrasound confirmation and hospital assessment — and tell her plainly: new chest pain or breathlessness means emergency help immediately (the travelling-clot warning)", g:"right", note:"Right. Anticoagulate on the evidence, confirm with the decider test, and safety-net for the embolism — the complication that kills. Her stair breathlessness makes same-day, not next-week, the tempo."},
+    {t:"Treat as cellulitis: antibiotics and review in a few days", g:"danger", note:"DANGEROUS ANCHOR. Antibiotics do nothing to a clot, and 'a few days' is time for it to extend or travel to her lungs. The infection story was tested and failed: no fever, no heat, no broken skin, one leg, after 22 hours in a seat."},
+    {t:"Reassure — 'it's just the flight, it'll settle; keep it up on a cushion'", g:"danger", note:"DANGEROUS. Elevation is comfort, not treatment. An untreated DVT's risks are extension and pulmonary embolism — the second of which can kill in an afternoon."},
+    {t:"Order the D-dimer and, if positive, diagnose DVT and finish — no scan needed", g:"wrong", note:"The test lesson failed at the final step: a positive D-dimer cannot prove a clot. Without the ultrasound you are treating a suspicion as a fact — and committing her to months of blood thinners on a maybe."}
+  ],
+  truth:"A deep vein thrombosis. One leg swollen and aching after 22 hours of immobility plus sofa days, on HRT — with no fever, no heat, and no broken skin to feed the cellulitis story. D-dimer positive (a screen doing its job), ultrasound positive (the decider doing its).",
+  clues:["ONE leg — asymmetry is the headline","22 hours immobile + days on the sofa: stasis","HRT stacking the clotting risk","No fever, no heat, no broken skin — cellulitis's evidence missing","'A bit puffed on the stairs' — the embolism screen, asked and answered","D-dimer positive → ultrasound positive: screen, then decider"],
+  realDo:"Measures both calves, cross-examines the infection story, screens for chest symptoms, uses D-dimer as the rule-out it is, and gets the ultrasound as the decider — starting anticoagulation the same day rather than after a leisurely confirmation.",
+  strat:[["Screen, then decide (D-dimer → ultrasound)","Sensitive test first to rule out; specific test to rule in. The two-test relay is the standard shape of honest diagnosis.","Trade-off: two steps cost a day of logistics — bought back by not anticoagulating people who merely have raised D-dimers."],
+         ["Cross-examine the anchor","The daughter's cellulitis was a hypothesis, and hypotheses get questions, not loyalty.","Trade-off: it can feel like arguing with the family. Done kindly, it reads as thoroughness — because it is."]],
+  simp:"Simplification: real pathways use a clinical score (Wells) to decide whether D-dimer is even appropriate, and some low-risk patients skip straight to scan or home. The screen-then-decide logic is the durable core.",
+  untaken:"Margaret's daughter drove her to hospital two days later when the swelling spread. The clot was confirmed and treated; no embolism. The delay was luck, not management.",
+  untakenBad:"Margaret waited a week on antibiotics for 'cellulitis'. The clot travelled: she collapsed with a pulmonary embolism and was resuscitated in the emergency department. The leg was never the dangerous part — the journey was."
+},
+{ id:"diabetes", n:12, rung:"Rung 12 · The slow flood",
+  title:"“Always thirsty, always weeing, losing weight”",
+  patient:"Ahmed, 54 — taxi driver, overweight, father had 'sugar diabetes'.",
+  story:"“For about three months: I'm drinking litres and still thirsty, up three times a night to wee, and I've lost nearly a stone without trying. I'm tired all the time. My eyes go blurry some days. My dad had the sugar diabetes — is this that?”",
+  hist:[
+    {q:"How much are you drinking and weeing — and is the thirst worst at night?", a:"“Four, five litres a day. Up three times a night, every night.”", w:"Quantity turns a symptom into a syndrome: thirst (polydipsia) + large urine volumes (polyuria) + night-time weeing is the diabetes triad in action — sugar spilling into urine drags water with it.", k:"key"},
+    {q:"The weight loss — over how long, and are you eating normally?", a:"“Nearly a stone in three months. Eating the same, maybe more — I'm hungry a lot.”", w:"Weight loss DESPITE eating is the metabolic signature: his body can't use the sugar in his blood, so it burns fat and muscle while sugar pours out in urine. Losing weight while hungry narrows the list hard.", k:"key"},
+    {q:"Any infections that keep coming back — thrush, skin boils, urine infections?", a:"“Thrush twice this year. And a boil that took ages.”", w:"Sugar-rich tissues feed germs: recurrent thrush and slow-healing skin infections are diabetes's calling cards.", k:"ok"},
+    {q:"Any numbness, tingling, or pain in your feet?", a:"“Feet tingle a bit at night, actually. Thought it was the driving.”", w:"Nerve damage (neuropathy) can already be present at diagnosis — type 2 diabetes often runs silently for years before the thirst starts. Asking finds the complication clock's true start.", k:"ok"},
+    {q:"How is your vision, and have you had your eyes tested?", a:"“Blurry some days, clears other days. Not tested in years.”", w:"Fluctuating blur fits sugar swelling the lens as glucose swings — and eyes are a long-term target organ. Both a clue now and a referral for later.", k:"ok"},
+    {q:"Any vomiting, tummy pain, deep fast breathing, or drowsiness?", a:"“No, none of that. Just tired.”", w:"The emergency screen for diabetes: those signs would mean ketoacidosis — a metabolic emergency (more typical of type 1, but the screen is cheap and the miss is catastrophic). Clear here.", k:"key", rf:true},
+    {q:"What do you eat and drink on a shift, honestly?", a:"“Fizzy drinks, mostly. Takeaways. Long hours sitting.”", w:"Not a moral question — a mechanism one: the lifestyle half of the treatment plan is written from this answer.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.7 °C", r:"36.1–37.2 °C", abn:false, note:"Normal."},
+    {n:"Pulse", v:"80 /min", r:"60–100 /min", abn:false, note:"Normal."},
+    {n:"Blood pressure", v:"142/88", r:"about 90/60–120/80", abn:true, note:"Raised — hypertension travels with type 2 diabetes so often they're managed as one risk. It will be part of his plan."},
+    {n:"Breathing rate", v:"14 /min", r:"12–20 /min", abn:false, note:"Normal — no ketoacidosis breathing pattern."},
+    {n:"Oxygen (SpO₂)", v:"99%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"Check the feet — sensation, skin, pulses", f:"Reduced feeling to light touch in both feet; skin dry; pulses present.", w:"The tingling confirmed: early neuropathy. Feet are where diabetes does its quiet damage — examined at diagnosis, not after the first ulcer.", k:"key"},
+    {n:"BMI and waist measurement", f:"BMI 33 — in the obese range.", w:"Part of the mechanism (insulin resistance rises with weight) and part of the treatment target. Measured, not guessed.", k:"ok"},
+    {n:"Look at the skin — neck folds, healing of the boil", f:"Dark, velvety thickening in the neck folds (acanthosis nigricans); the old boil healed slowly.", w:"Acanthosis is insulin resistance written on the skin — a visible clue that predates the diagnosis by years.", k:"ok"}
+  ],
+  tests:[
+    {n:"Finger-prick glucose (random)", r:"17.8 mmol/L — well above the normal range (roughly 4–7).", p:"A very high random glucose in a symptomatic patient is powerful evidence on the spot. It doesn't grade the last three months — that's the next test's job.", k:"key"},
+    {n:"HbA1c blood test (3-month average sugar)", r:"76 mmol/mol (9.2%) — diabetes range is 48 mmol/mol (6.5%) and above.", p:"THE confirming test for type 2 diabetes: it averages blood sugar over ~3 months, so one bad day can't fake it and one good day can't hide it. Diagnosis + baseline in a single number.", k:"key"},
+    {n:"Urine dipstick", r:"Glucose strongly positive; ketones NEGATIVE.", p:"Sugar in urine confirms the spill; negative ketones argue against ketoacidosis — the emergency version. Both halves of the dip earned their place.", k:"key"},
+    {n:"Kidney function + cholesterol bloods", r:"Kidneys working normally; cholesterol raised.", p:"Not diagnostic — they're the complication survey: kidneys, fats, and (with the BP) his total cardiovascular risk, which is the real long-term battleground.", k:"ok"}
+  ],
+  dx:["Type 2 diabetes (new diagnosis)","Type 1 diabetes","Diabetes insipidus (water diabetes)","Overactive thyroid","Urinary tract infection","Kidney disease"],
+  ans:0, close:[], trap:2, trapName:"Diabetes insipidus — the name-alike: it shares the thirst and the weeing but not the sugar, the weight loss pattern, or these tests",
+  plans:[
+    {t:"Treat + refer + teach: start first-line diabetes treatment (metformin-class, per guideline), refer into diabetes care and eye screening, and build the lifestyle plan with him — sugary drinks first — with a review date booked", g:"right", note:"Right, and complete: type 2 diabetes is managed on three legs — medicine, structured care/referral, and the daily-life changes that address the mechanism. His father's history and his shift patterns make the teaching half the treatment, not an extra."},
+    {t:"Reassure — 'your dad had it, it's probably just your age; cut down on sugar and come back in a year'", g:"wrong", note:"A year of glucose at these levels is a year of eye, kidney, nerve and artery damage accruing silently. The HbA1c is a diagnosis, not a lifestyle hint."},
+    {t:"Start insulin immediately, today", g:"wrong", note:"Insulin is type 1's lifeline and sometimes needed later in type 2 — but with no ketones, no acidosis, and a classic type 2 picture, guidelines start with first-line tablets and lifestyle. Right drug family, wrong opening move."},
+    {t:"Escalate to EMERGENCY now", g:"wrong", note:"No ketones, no vomiting, no deep breathing, alert and well: this is urgent-in-days, not emergency-in-minutes. The screen you ran is what lets you say that safely."}
+  ],
+  truth:"New type 2 diabetes. Three months of thirst, polyuria, night-time weeing, and weight loss despite eating — with a random glucose of 17.8 and an HbA1c of 9.2% (76 mmol/mol), plus early foot neuropathy and insulin-resistance skin signs already present.",
+  clues:["The triad: thirst + huge urine volumes + up three times nightly","Weight loss WHILE eating more — the metabolic signature","Recurrent thrush and a slow boil — sugar feeding germs","Random glucose 17.8; HbA1c 9.2% — diagnosis confirmed two ways","Tingling feet and neck-fold darkening: the disease predates the symptoms"],
+  realDo:"Confirms with HbA1c, screens for the emergency (ketones — negative), surveys the target organs (feet, eyes, kidneys, BP, cholesterol), and starts the three-legged plan: medicine, referral, and an honest lifestyle conversation built on the patient's actual life — night shifts and fizzy drinks included.",
+  strat:[["Confirm with the average, not the moment (HbA1c)","A single glucose can be a spike; HbA1c is three months of truth.","Trade-off: HbA1c takes a lab visit and can't help in a same-hour emergency — which is why the finger-prick and the ketone screen came first."],
+         ["Treat the mechanism, not just the number","Drinks, weight, and activity are causes in type 2, so they're treatment, not garnish.","Trade-off: lifestyle change is slow and hard; medicine is fast and partial. The honest plan needs both, said plainly."]],
+  simp:"Simplification: thresholds, first-line drugs, and screening intervals vary by guideline and country; glucose units differ (mmol/L here; mg/dL in the US — 17.8 mmol/L ≈ 320 mg/dL). The triad, the HbA1c logic, and the ketone screen are universal.",
+  untaken:"Ahmed was picked up at a pharmacy health check two months later — same diagnosis, two more months of damage quietly banked, now being undone.",
+  untakenBad:"Ahmed waited a year. By the time he was diagnosed, the eye screening found early diabetic eye disease and the foot tingling had become pain. Diabetes charges interest on every month it's ignored."
+},
+{ id:"stroke", n:13, rung:"Rung 13 · Time is brain",
+  title:"“Her face has dropped on one side”",
+  patient:"Eileen, 72 — retired librarian, on tablets for blood pressure; her husband is with her.",
+  story:"Husband: “We were having breakfast, about forty minutes ago, and her face just went — dropped on the right side. Her right arm's gone weak, and her words are coming out slurred, like she's drunk. She hasn't touched a drop. What's happening to her?”",
+  hist:[
+    {q:"When exactly did it start — and was she completely normal just before?", a:"“Forty minutes ago, at breakfast. One minute normal, the next — this.”", w:"THE clock question, and in stroke it is the treatment question: clot-dissolving and clot-retrieval treatments live inside time windows measured from this minute. 'When did it start' is asked before almost everything else.", k:"key", rf:true},
+    {q:"Show me: can she smile? Raise both arms? Repeat a simple sentence?", a:"“Smile's lopsided. Right arm drifts down. Speech is slurred and muddled.”", w:"This is FAST done aloud — Face, Arms, Speech, Time. All three positive plus a known start time is a stroke activation, not a consultation.", k:"key", rf:true},
+    {q:"Any headache, seizure, fall, or head injury before it started?", a:"“None. She just… went, mid-sentence.”", w:"Screens the mimics and the other cause: a bleed can bring headache and vomiting; a seizure or injury would rewrite the story. Clean here.", k:"ok"},
+    {q:"Does she take blood thinners, or has she had a stroke or heart rhythm problems (atrial fibrillation)?", a:"“No thinners. She was told her heart rhythm was 'a bit irregular' once, years ago.”", w:"An irregular rhythm (AF) is a clot factory for the brain — and blood thinners change what hospital treatment is safe. Both answers steer the receiving team.", k:"ok"},
+    {q:"Has anything like this happened before and worn off in minutes?", a:"“Last month her hand went weak for ten minutes. We didn't think much of it.”", w:"That was very likely a mini-stroke (TIA) — the warning shot. TIAs are the brain's telegram: 'a big one is coming.' It changes her aftercare completely.", k:"ok"},
+    {q:"Is she diabetic — could this be low blood sugar?", a:"“No, not diabetic.”", w:"Low blood sugar is the great stroke mimic — cheap to check with a finger-prick, catastrophic to miss in either direction. The question is asked even mid-emergency.", k:"key"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.6 °C", r:"36.1–37.2 °C", abn:false, note:"Normal."},
+    {n:"Pulse", v:"88 /min, irregular", r:"60–100 /min, regular", abn:true, note:"IRREGULAR — the atrial fibrillation clue, felt at the wrist: a rhythm that throws clots to the brain."},
+    {n:"Blood pressure", v:"168/92", r:"about 90/60–120/80", abn:true, note:"High — common in acute stroke; the hospital team manages it carefully, because lowering it wrongly can starve the struggling brain."},
+    {n:"Breathing rate", v:"16 /min", r:"12–20 /min", abn:false, note:"Normal."},
+    {n:"Oxygen (SpO₂)", v:"97%", r:"95–100%", abn:false, note:"Normal."}
+  ],
+  exams:[
+    {n:"FAST assessment, done formally", f:"Face: right-sided droop. Arms: right arm cannot stay raised. Speech: slurred, words muddled. Time: onset 40 minutes ago.", w:"Face-Arms-Speech-Time, all positive. This IS the examination that activates the stroke pathway — everything else is commentary until the ambulance is moving.", k:"key"},
+    {n:"Check limb power and sensation both sides", f:"Right arm and leg weak; left side normal.", w:"One-sided weakness localises the problem to the opposite side of the brain — the pattern fits a blocked artery, not a whole-body cause.", k:"key"},
+    {n:"Finger-prick glucose", f:"6.4 mmol/L — normal.", w:"The mimic excluded in thirty seconds. A normal glucose means this weakness is the brain itself, not its fuel supply.", k:"key"}
+  ],
+  tests:[
+    {n:"CT scan of the head — on arrival, immediately", r:"No bleeding seen; early signs of a blocked artery (ischaemic stroke) in the left middle cerebral artery territory.", p:"The CT's first job in stroke is to EXCLUDE bleeding — because clot-busting treatment given into a bleed is catastrophic. No bleed + inside the window = treatment can proceed. The scan is the gatekeeper, and the gate is timed.", k:"key"},
+    {n:"ECG (heart tracing)", r:"Atrial fibrillation — an irregular rhythm with no pattern.", p:"Names the likely source: a heart rhythm that lets clots form and fling to the brain. It decides her long-term prevention (anticoagulation) after the emergency hour.", k:"key"},
+    {n:"Blood tests", r:"Clotting normal; no blood thinners on board.", p:"Safety checks for the treatment decision — run in parallel, never in series, with the clock.", k:"ok"},
+    {n:"Carotid ultrasound (neck arteries)", r:"(Booked for the following days.)", p:"Part of the work-up for cause — correctly NOT part of the first hour. Knowing which tests belong to which hour is the skill.", k:"ok"}
+  ],
+  dx:["Stroke — ischaemic (blocked artery)","Stroke — haemorrhagic (bleed in the brain)","Mini-stroke (TIA) that will wear off","Low blood sugar episode","Migraine with aura","Bell's palsy (facial nerve weakness)"],
+  ans:0, close:[2], trap:5, trapName:"Bell's palsy — it explains a drooping face and nothing else: not the arm, not the speech, not the clock",
+  emergency:true,
+  plans:[
+    {t:"EMERGENCY NOW: emergency call, note the exact onset time, nil by mouth, straight to a stroke unit for CT and time-window treatment", g:"right", note:"Right. 'Time is brain': around 1.9 million brain cells die per minute in an untreated large stroke. Forty minutes in, she is inside the treatment windows — every further minute of delay is brain she doesn't get back. Your onset time is the most valuable fact the hospital receives."},
+    {t:"Reassure the husband — 'it may wear off like last time; rest her and see how she is at lunchtime'", g:"critical", note:"CRITICAL FAIL. Last month's ten-minute episode was the warning; this is the event. 'See how she is at lunchtime' spends the entire treatment window on hope. Strokes do not reward waiting."},
+    {t:"Book a same-week GP review and start aspirin at home", g:"critical", note:"CRITICAL FAIL. Aspirin before a CT is a gamble — if this were a bleed, it worsens it — and a week is not a stroke timescale. The CT comes first, in a hospital, now."},
+    {t:"Refer routinely to neurology outpatients", g:"danger", note:"DANGEROUS DELAY. Right specialty, wrong universe of timing. Stroke care is measured in minutes from onset — the number you were given at the start of this case."}
+  ],
+  truth:"An ischaemic stroke — a blocked artery in the left side of the brain, most likely a clot thrown from an irregular heart rhythm (atrial fibrillation, felt in her pulse and confirmed on ECG). Face, arm, and speech all involved; onset 40 minutes ago; CT shows no bleed, so time-window treatment is on the table.",
+  clues:["FAST: face droop + arm weakness + slurred speech, all at once","Onset timed to the minute — 40 minutes ago, mid-breakfast","Sudden, maximal at onset: an event, not a process","Irregular pulse → atrial fibrillation → the clot's source","Last month's ten-minute weak hand: the TIA warning shot","Normal glucose: the great mimic excluded"],
+  realDo:"Runs FAST, starts the clock from the husband's answer, excludes the sugar mimic with a finger-prick, and has her in an ambulance to a stroke unit while the history is still being written down. He knows the sentence that governs the case: time is brain.",
+  strat:[["Activate on FAST, investigate in motion","The pathway (ambulance, CT, stroke team) starts on the clinical pattern; the cause-hunt rides along behind it.","Trade-off: some activations will be mimics — Bell's palsy, low sugar. The system accepts them gladly; the reverse error is a disabled life."],
+         ["The onset time is a treatment","Asking 'when exactly' is not clerical — it opens or closes the treatment windows. No time, no thrombolysis.","Trade-off: none. It is the highest-value question in the case."]],
+  simp:"Simplification: treatment windows and options (thrombolysis, thrombectomy) vary by patient, hospital, and hours since onset, and are evolving. The FAST pattern, the mimic check, and 'time is brain' are exact and stable.",
+  untaken:"Eileen's husband called emergency services himself twenty minutes later. She received treatment inside the window and recovered most of her speech and arm strength over the following months.",
+  untakenBad:"Eileen waited until lunchtime, as advised by no one in particular. Outside every window, the stroke completed its work: permanent right-sided weakness and severe speech difficulty. The forty-minute version of this story and the four-hour version are different lives."
+},
+{ id:"anaphylaxis", n:14, rung:"Rung 14 · Minutes, not hours",
+  title:"“His lips are swelling — he just ate peanuts”",
+  patient:"Sam, 26 — office worker, no known allergies; his colleague brought him in, frightened.",
+  story:"Colleague: “We had birthday snacks — he ate a handful of peanuts maybe ten minutes ago. His lips have blown up, his tongue feels thick, he's itching all over and his voice sounds funny. He's never had this before. He's struggling a bit with his breathing.”",
+  hist:[
+    {q:"What did he eat, and exactly how long ago?", a:"“Peanuts, about ten minutes ago. It started within minutes.”", w:"Timing is the diagnosis's spine: symptoms within minutes of a food = an allergic emergency pattern. Anaphylaxis is a minutes disease; asking 'when' is asking 'how fast is this moving'.", k:"key", rf:true},
+    {q:"Is his breathing affected — wheeze, tightness, struggling?", a:"“Yes — wheezy and tight, and getting harder.”", w:"Breathing involvement moves allergy into anaphylaxis territory and grades the danger: airways close. This answer should already have your hand moving toward adrenaline.", k:"key", rf:true},
+    {q:"Is his tongue or throat swelling? Is his voice changing?", a:"“Tongue's swelling, voice is croaky, he says his throat feels tight.”", w:"Swelling in the tongue and throat is the airway closing from the inside — the mechanism that kills in anaphylaxis. Voice change is the audible warning.", k:"key", rf:true},
+    {q:"Does he feel faint, dizzy, or has he collapsed?", a:"“Dizzy when he stood. Hasn't collapsed. Looks pale.”", w:"Circulation is anaphylaxis's second front: blood pressure can crash as vessels leak and dilate. Dizziness on standing is the early tremor of that collapse.", k:"key"},
+    {q:"Has he ever reacted to any food, sting, or medicine before?", a:"“Never. No allergies at all, far as he knows.”", w:"First reactions are common — 'no known allergy' never argues against anaphylaxis when the pattern is in front of you. The pattern outranks the history.", k:"ok"},
+    {q:"Has he taken anything — antihistamine, his own inhaler, anything?", a:"“A antihistamine tablet from someone's bag, five minutes ago. Not helping.”", w:"Useful — and the setup for the case's central trap: the tablet's failure is information. Antihistamines are slow, weak, and do not open airways or raise blood pressure.", k:"ok"}
+  ],
+  vitals:[
+    {n:"Temperature", v:"36.6 °C", r:"36.1–37.2 °C", abn:false, note:"Normal — this is not infection; it's the immune system firing everything at once."},
+    {n:"Pulse", v:"124 /min", r:"60–100 /min", abn:true, note:"Fast — the heart racing to compensate for leaking, dilating vessels."},
+    {n:"Blood pressure", v:"92/58", r:"about 90/60–120/80", abn:true, note:"Low and falling — anaphylactic shock beginning: the circulation is losing pressure."},
+    {n:"Breathing rate", v:"26 /min", r:"12–20 /min", abn:true, note:"Fast and laboured — swollen airway above, wheezing airways below."},
+    {n:"Oxygen (SpO₂)", v:"93%", r:"95–100%", abn:true, note:"Low — two airway problems at once are throttling his oxygen."}
+  ],
+  exams:[
+    {n:"Look in the mouth — tongue and lips", f:"Lips grossly swollen; tongue enlarged, pushing against the teeth.", w:"Visible, advancing airway swelling. This examination takes two seconds and decides the next sixty.", k:"key"},
+    {n:"Listen to the chest and the neck", f:"Wheeze in the chest; a harsh crowing sound (stridor) from the throat on breathing in.", w:"Two sounds, two narrowings: wheeze = lower airways in spasm; stridor = the upper airway swelling shut. Stridor is the sound of a closing door.", k:"key"},
+    {n:"Look at the skin", f:"Raised itchy hives (urticaria) across neck, chest and arms; flushed.", w:"The skin is the visible third of the reaction — helpful when present, but remember: anaphylaxis can kill with no rash at all. Breathing + circulation are the fronts that matter.", k:"ok"}
+  ],
+  tests:[
+    {n:"(In the emergency) Response to adrenaline — re-checked vitals at 5 minutes", r:"After intramuscular adrenaline: breathing easing, voice clearer, BP 108/66, SpO₂ 96%.", p:"The only 'test' that matters in the first minutes is the response to treatment. Adrenaline is diagnosis and therapy in one syringe: it opens airways, constricts vessels, and buys the time everything else needs.", k:"key"},
+    {n:"Blood tryptase (taken during/after the emergency)", r:"Raised — confirming a major allergic reaction occurred.", p:"Tryptase is for AFTER: it confirms the event for the allergy clinic and his future safety. Taken during the resuscitation, interpreted later — its timing is its lesson.", k:"ok"},
+    {n:"Allergy blood tests / skin-prick tests", r:"(Booked at the allergy clinic weeks later: peanut strongly positive.)", p:"These build his long-term protection — avoidance plan, auto-injector training. They have no role in the next ten minutes and must never delay adrenaline.", k:"ok"},
+    {n:"ECG and chest X-ray 'to be thorough first'", r:"—", p:"Thoroughness in the wrong order. Machines later; adrenaline now. Every minute spent 'completing the work-up' is a minute his airway spends closing.", k:"waste"}
+  ],
+  dx:["Anaphylaxis (severe allergic reaction)","Mild food allergy — 'a bit of a reaction'","Asthma attack","Panic attack","Angioedema from a blood-pressure tablet","Food poisoning"],
+  ans:0, close:[], trap:1, trapName:"'A mild reaction' — and the antihistamine-and-wait plan it invites",
+  emergency:true,
+  plans:[
+    {t:"EMERGENCY NOW: adrenaline (epinephrine) into the thigh muscle IMMEDIATELY, emergency call, lie him flat with legs raised (don't stand him up), repeat adrenaline at 5 minutes if not improving, oxygen and hospital transfer", g:"right", note:"Right — and the order is the medicine. Adrenaline FIRST: it is the only treatment that reverses the airway swelling and the collapsing circulation. Antihistamines and steroids are supporting cast that arrive later. In anaphylaxis, the drug you give second is the apology."},
+    {t:"Give an antihistamine and observe for half an hour — 'see if it settles'", g:"critical", note:"CRITICAL FAIL — the named trap of this case, and a real-world killer. Antihistamines take an hour to peak, do not open a swelling airway, and do not raise a crashing blood pressure. 'Observe' a closing airway for thirty minutes and you may observe it close. Adrenaline is first-line; there is no second first-line."},
+    {t:"Send him home with antihistamines and advice to avoid peanuts", g:"critical", note:"CRITICAL FAIL. He is wheezy, stridorous, dizzy, with a falling blood pressure, ten minutes into his first anaphylaxis. Home is not a treatment setting; it is where this reaction would finish, unwitnessed."},
+    {t:"Call emergency services but wait for them before giving anything", g:"danger", note:"DANGEROUS DELAY. The call matters — make it — but adrenaline is in the building and his airway is closing now. Waiting for permission or for paramedics, with the drug in your hand, spends the minutes that decide this."}
+  ],
+  truth:"Anaphylaxis to peanut — a severe, whole-body allergic reaction within minutes of eating: lips and tongue swelling, stridor and wheeze (airway closing at both levels), hives, and a falling blood pressure.",
+  clues:["Minutes after peanuts — the timing is the trigger's signature","Tongue swelling + croaky voice + stridor: the upper airway closing","Wheeze: the lower airways in spasm at the same time","Blood pressure falling, pulse racing: the circulation failing too","An antihistamine already given — and already failing, as expected"],
+  realDo:"Gives adrenaline into the thigh immediately — before the full assessment is finished — calls emergency services, lies him flat, repeats adrenaline at five minutes if needed, and only then reaches for the supporting medicines. Afterwards: allergy referral, an auto-injector prescribed and taught, because the second exposure is rarely announced.",
+  strat:[["Adrenaline first, everything else second","One drug reverses all three failing systems — airway, vessels, heart. Nothing else does.","Trade-off: adrenaline feels dramatic for a 'maybe' — and the cost of a false alarm is a racing heart for twenty minutes, against the cost of a late one. The asymmetry decides it."],
+         ["Pattern over history","'No known allergies' is a fact about the past. The swollen tongue is a fact about now. Treat the now.","Trade-off: none. First reactions are how many allergies introduce themselves."]],
+  simp:"Simplification: doses, auto-injector brands, and observation times vary by guideline, and a second ('biphasic') reaction hours later is why hospital observation follows. Adrenaline-first is universal and exact.",
+  untaken:"Sam's colleague called emergency services from the office; paramedics gave adrenaline in the kitchen and he was talking normally by the time he reached hospital. The colleague's phone call was the treatment that mattered most.",
+  untakenBad:"Sam waited in the office with an antihistamine 'to see if it settled'. It did not settle. He was intubated in intensive care after his airway closed — and survived, because a colleague eventually called. The tablet was never going to save him; the syringe was."
+}
+];
+</script>
+
+<script>
+"use strict";
+/* ================= record shape: stakes are people, never money ================= */
+if(typeof record.standing !== "number") record.standing = 50;
+if(typeof record.energy !== "number") record.energy = 100;
+if(!record.shift) record.shift = { n:1, doneIds:[], rests:0 };
+if(!record.skipped) record.skipped = [];
+saveRecord();
+
+var SHIFT_SIZES = [3,4,4,3];
+var shuffledOrder = null;
+function orderArray(){
+  var idx = CASES.map(function(c,i){ return i; });
+  if(settings.order === "shuffled"){
+    if(!shuffledOrder){
+      shuffledOrder = idx.slice();
+      for(var i = shuffledOrder.length-1; i > 0; i--){ var j = Math.floor(Math.random()*(i+1)); var t = shuffledOrder[i]; shuffledOrder[i] = shuffledOrder[j]; shuffledOrder[j] = t; }
+    }
+    return shuffledOrder;
+  }
+  return idx;
+}
+function shiftCaseIdx(n){
+  var ord = orderArray(), start = 0;
+  for(var s = 1; s < n; s++) start += SHIFT_SIZES[s-1];
+  return ord.slice(start, start + SHIFT_SIZES[n-1]);
+}
+function caseById(id){ for(var i=0;i<CASES.length;i++) if(CASES[i].id===id) return CASES[i]; return null; }
+function latestRow(id){ for(var i=record.rows.length-1;i>=0;i--) if(record.rows[i].caseId===id) return record.rows[i]; return null; }
+function isSkipped(id){ for(var i=0;i<record.skipped.length;i++) if(record.skipped[i].id===id) return record.skipped[i]; return null; }
+function standingTier(){
+  var s = record.standing;
+  if(s >= 85) return "Deeply trusted — patients ask for you by name";
+  if(s >= 65) return "Trusted — the clinic leans on you";
+  if(s >= 45) return "Settling in — trust is being earned";
+  if(s >= 25) return "Shaky — colleagues are double-checking your work";
+  return "On thin ice — one more bad outcome from being supervised on everything";
+}
+function patientsHelped(){ return record.rows.filter(function(r){ return r.helped; }).length; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+/* ================= home / shift panel ================= */
+var shiftMsg = "";
+function renderHome(){
+  document.getElementById("aliasInput").value = settings.name || "";
+  var vb = '<div class="banner">' + esc(variantText()) + (variantLabels().length ? ' — variant rules are labelled here, in play, and in your record.' : ' — ladder order, no clock, standard time-and-attention budget.') + '</div>';
+  document.getElementById("variantBannerHome").innerHTML = vb;
+  document.getElementById("orderNote").textContent = settings.order === "shuffled" ? "Order: shuffled draw (variant)." : "Order: the ladder, easiest first.";
+  /* case list */
+  var ord = orderArray(), html = "";
+  ord.forEach(function(ci){
+    var c = CASES[ci], row = latestRow(c.id), sk = isSkipped(c.id), st;
+    if(row) st = '<span class="chip ' + (row.planGrade==="critical" ? "red" : row.dxGrade==="right" ? "green" : "amber") + '">' + esc(row.grade) + '</span>';
+    else if(sk) st = '<span class="chip">Not seen by you — outcome in Record</span>';
+    else st = '<span class="chip">Waiting</span>';
+    html += '<button class="casebtn" data-case="'+c.id+'" data-explain="Take this patient: work the case in stages — story, history, vitals, examination, tests, diagnosis, plan. Working costs your energy; the diagnosis work is the game."><span><strong>Case '+c.n+': '+esc(c.title)+'</strong><br><span class="small">'+esc(c.patient.split(" — ")[0])+' · '+esc(c.rung)+'</span></span>'+st+'</button>';
+  });
+  document.getElementById("caseList").innerHTML = html;
+  document.querySelectorAll("#caseList [data-case]").forEach(function(b){
+    b.addEventListener("click", function(){ startCase(b.getAttribute("data-case")); });
+  });
+  renderShift();
+}
+function renderShift(){
+  var el = document.getElementById("shiftPanel"), n = record.shift.n;
+  if(n > SHIFT_SIZES.length){
+    el.innerHTML = '<div class="card"><h2 style="margin-top:0">All shifts complete</h2><p>You have worked the whole ladder, <strong>'+esc(displayName())+'</strong>. Patients helped: <strong>'+patientsHelped()+'</strong> of '+record.rows.length+' cases worked. Standing: <strong>'+record.standing+' / 100</strong> — '+esc(standingTier())+'.</p><p class="small">Any case can be replayed from the waiting-room list above — replays still write to your record and still move your standing and energy. Rest below if you need it.</p>'+restRowHTML()+'</div>';
+    wireShiftButtons();
+    return;
+  }
+  var idxs = shiftCaseIdx(n);
+  var waiting = idxs.map(function(i){ return CASES[i]; }).filter(function(c){ return record.shift.doneIds.indexOf(c.id) < 0 && !isSkipped(c.id); });
+  var doneCount = idxs.length - waiting.length;
+  var rampNote = n === 1 ? "Shift 1 of 4 — common and clear. The ramp starts gentle on purpose." :
+                 n === 2 ? "Shift 2 of 4 — the fork case and the moving pain join the room." :
+                 n === 3 ? "Shift 3 of 4 — the anchoring trap, the thunderclap, and the glass test. The emergencies are hiding in ordinary stories now." :
+                           "Shift 4 of 4 — the slow flood, 'time is brain', and the minutes case. The top of the ramp.";
+  var w = "";
+  waiting.forEach(function(c){
+    w += '<button class="casebtn" data-take="'+c.id+'" data-explain="Take this patient now. You are choosing order, not just a case — that choice is triage. Their story is all you get before you commit."><span><strong>'+esc(c.title)+'</strong><br><span class="small">'+esc(c.patient)+'</span></span><span class="chip">In the waiting room</span></button>';
+  });
+  el.innerHTML = '<div class="card"><h2 style="margin-top:0">Your shift</h2>'+
+    '<p><strong>'+esc(rampNote)+'</strong></p>'+
+    '<p><strong>Capacity, stated plainly before the shift starts:</strong> this shift\'s waiting room holds <strong>'+idxs.length+' patients</strong>, and the shift ends when all of them are resolved — seen by you, or handed on when the shift closes. <strong>'+doneCount+' of '+idxs.length+' resolved.</strong> Who you take first is triage: sickest-first, quickest-wins, and first-come all have honest trade-offs (they\'re laid out in the card above).</p>'+
+    (shiftMsg ? '<div class="toast"><strong>'+esc(shiftMsg)+'</strong></div>' : '')+
+    '<p><strong>Standing:</strong> '+record.standing+' / 100 — '+esc(standingTier())+' · <strong>Patients helped:</strong> '+patientsHelped()+' · <strong>Your energy:</strong> '+Math.round(record.energy)+' / 100</p>'+
+    '<div class="budgetbar" aria-hidden="true"><i style="width:'+Math.max(0,Math.min(100,record.energy))+'%"></i></div>'+
+    '<p class="small">Energy drains as you work and changes the work itself: below 60 your time-and-attention budget shrinks; below 30 questions cost double and teaching notes come tired and short; at empty, you are sent home and your patient is handed over.</p>'+
+    (waiting.length ? '<h3>Waiting room — tap a patient to take them</h3><div class="stack">'+w+'</div>' : '<p><strong>Waiting room empty — shift complete.</strong></p>')+
+    restRowHTML()+
+    '<div class="row" style="margin-top:10px"><button id="endShiftBtn">End the shift — tap<span class="gesture">Anyone still waiting is handed on, with their outcome stated plainly</span></button></div>'+
+    '</div>';
+  wireShiftButtons();
+}
+function restRowHTML(){
+  return '<div class="row" style="margin-top:10px"><button id="restBtn" data-explain="Rest restores 35 energy. The trade-off is real: the waiting room waits while you rest — patients\' clocks keep moving, and anyone who waits through your rests may fare worse when the shift closes. Rest is triage too.">Rest — tap to recover energy<span class="gesture">+35 energy · the waiting room waits</span></button><span class="small">Rests taken this shift: '+record.shift.rests+'</span></div>';
+}
+function wireShiftButtons(){
+  document.querySelectorAll("[data-take]").forEach(function(b){ b.addEventListener("click", function(){ startCase(b.getAttribute("data-take")); }); });
+  var rb = document.getElementById("restBtn");
+  if(rb) rb.addEventListener("click", function(){
+    record.energy = Math.min(100, record.energy + 35);
+    record.shift.rests++;
+    shiftMsg = "You rested. Energy now " + Math.round(record.energy) + ". The waiting room waited — " + record.shift.rests + " rest(s) this shift, and patients' clocks kept moving.";
+    saveRecord(); renderHome();
+  });
+  var eb = document.getElementById("endShiftBtn");
+  if(eb) eb.addEventListener("click", endShift);
+}
+function endShift(){
+  var n = record.shift.n;
+  if(n > SHIFT_SIZES.length) return;
+  var idxs = shiftCaseIdx(n), notes = [];
+  idxs.forEach(function(i){
+    var c = CASES[i];
+    if(record.shift.doneIds.indexOf(c.id) >= 0 || isSkipped(c.id)) return;
+    var worse = record.shift.rests > 0 && c.untakenBad;
+    var outcome = worse ? c.untakenBad : c.untaken;
+    record.skipped.push({ id:c.id, shift:n, outcome:outcome, waitedThroughRest: !!worse });
+    notes.push(c.title + " — " + outcome);
+  });
+  record.shift = { n:n+1, doneIds:[], rests:0 };
+  shiftMsg = notes.length ? ("Shift " + n + " closed. Handed on: " + notes.join(" · ")) : ("Shift " + n + " closed — everyone was seen.");
+  saveRecord(); renderHome();
+  window.scrollTo(0,0);
+}
+
+/* ================= play state ================= */
+var P = null, clockInt = null;
+var STAGES = ["Story","History","Vitals","Examination","Tests","Diagnosis","Plan"];
+function qCost(){ return (P && P.energyStart < 30) ? 2 : 1; }
+function tCost(){ return (P && P.energyStart < 30) ? 3 : 2; }
+function startCase(id){
+  var c = caseById(id);
+  if(!c) return;
+  if(record.energy < 10){
+    record.energy = 70;
+    var inShift = record.shift.n <= SHIFT_SIZES.length && shiftCaseIdx(record.shift.n).map(function(i){ return CASES[i].id; }).indexOf(id) >= 0;
+    if(inShift && record.shift.doneIds.indexOf(id) < 0 && !isSkipped(id)){
+      record.skipped.push({ id:id, shift:record.shift.n, outcome:"Taken over by a colleague: you were sent home to rest before you could see this patient. The patient was seen — by someone with something left to give.", waitedThroughRest:false });
+      shiftMsg = "You were running on empty, so the game sent you home — kindly, and plainly: a wrecked clinician is a dangerous clinician. " + c.title + " was handed to a colleague. Energy restored to 70.";
+    } else {
+      shiftMsg = "You were running on empty, so the game sent you home to rest before that case. Energy restored to 70 — try again now if you like.";
+    }
+    saveRecord(); renderHome(); showView("view-home");
+    return;
+  }
+  var tiredCut = record.energy < 30 ? 5 : (record.energy < 60 ? 3 : 0);
+  P = { c:c, stage:0, budget: Math.max(4, budgetMax() - tiredCut), budget0: Math.max(4, budgetMax() - tiredCut),
+        asked:{}, exams:{}, tests:{}, list:{}, dx:null, energyStart: record.energy, seconds:0 };
+  document.getElementById("caseTitle").textContent = "Case " + c.n + " — " + c.title;
+  document.getElementById("casePatient").textContent = c.patient + " · " + c.rung;
+  document.getElementById("variantBannerCase").innerHTML = '<div class="banner">' + esc(variantText()) + (tiredCut ? ' · You started this case tired (energy ' + Math.round(P.energyStart) + '): your time-and-attention budget is reduced by ' + tiredCut + (P.energyStart < 30 ? ', and questions and tests cost more' : '') + '.' : '') + '</div>';
+  document.getElementById("clockRow").hidden = !settings.clock;
+  clearInterval(clockInt);
+  if(settings.clock){ clockInt = setInterval(function(){ if(P){ P.seconds++; var m = Math.floor(P.seconds/60), s = P.seconds%60; document.getElementById("clockText").textContent = m + ":" + (s<10?"0":"") + s; } }, 1000); }
+  showView("view-case");
+  renderStage();
+}
+document.getElementById("quitCaseBtn").addEventListener("click", function(){
+  clearInterval(clockInt); P = null; shiftMsg = "You left that case midway — the patient was handed back to the waiting room, unresolved. No record was written; your energy stays spent.";
+  renderHome(); showView("view-home");
+});
+function spend(cost, energyDrain){
+  P.budget = Math.max(0, P.budget - cost);
+  record.energy = Math.max(0, record.energy - energyDrain);
+  saveRecord();
+  document.getElementById("budgetText").textContent = P.budget + " of " + P.budget0 + " left";
+  document.getElementById("budgetFill").style.width = (P.budget0 ? (P.budget/P.budget0*100) : 0) + "%";
+  document.getElementById("energyText").textContent = Math.round(record.energy) + " / 100" + (P.energyStart < 30 ? " (started tired — everything costs more)" : "");
+  document.getElementById("energyWarn").textContent = record.energy < 10 ? "You are nearly empty. Finish or hand over soon — push past empty and you will be sent home mid-shift." : "";
+}
+function stageBarHTML(){
+  return STAGES.map(function(s,i){
+    var cls = i === P.stage ? "now" : (i < P.stage ? "done" : "");
+    return '<span class="'+cls+'">'+(i+1)+'. '+s+'</span>';
+  }).join("");
+}
+function teachWhy(text){
+  if(settings.teaching === "off") return "";
+  if(settings.teaching === "light") return "";
+  if(P.energyStart < 30){
+    var first = text.split(". ")[0] + ".";
+    return '<div class="coach"><b>Coach (tired — the short version):</b> ' + esc(first) + ' <em>The full why is in the end-of-case write-up; a tired coach is a real cost of working empty.</em></div>';
+  }
+  return '<div class="coach"><b>Coach — why this earns its keep:</b> ' + esc(text) + '</div>';
+}
+function lightNote(html){ return settings.teaching === "light" ? '<div class="lightnote">'+html+'</div>' : ""; }
+function navButtons(backLabel, nextLabel){
+  return '<div class="row" style="margin-top:16px">' + (backLabel ? '<button data-nav="back">'+backLabel+'</button>' : '') + '<button class="primary" data-nav="next">'+nextLabel+'</button></div>';
+}
+function renderStage(){
+  document.getElementById("stageBar").innerHTML = stageBarHTML();
+  spend(0,0);
+  var body = document.getElementById("stageBody"), c = P.c;
+  if(P.stage === 0){
+    body.innerHTML = '<div class="card"><h3 style="margin-top:0">1 · The story, in their own words</h3><p style="font-size:1.08rem">“'+esc(c.story)+'”</p><p class="small">'+esc(c.patient)+'</p>'+
+      lightNote("Light note: before any questions, your mind is already casting the wide list. That is the method working — hold the list loosely.")+
+      (settings.teaching === "coach" ? '<div class="coach"><b>Coach:</b> Read the story twice. First for the facts; second for what is <em>missing</em> — the companion symptoms not mentioned are tomorrow\'s questions.</div>' : '')+
+      navButtons(null, "Begin the history — tap")+'</div>';
+  }
+  else if(P.stage === 1){
+    var h = '<div class="card"><h3 style="margin-top:0">2 · History — ask what moves the list</h3><p class="small">Each question costs '+qCost()+' time-and-attention'+(P.energyStart<30?' (double — you are working tired)':'')+'. Questions marked as screens are the red-flag checks — the game remembers whether you asked them. '+(settings.teaching==="coach" ? "Coach shows the why under every answer." : settings.teaching==="light" ? "Light shows a note when an answer matters most." : "Teaching is Off — answers only.")+'</p><div class="stack">';
+    c.hist.forEach(function(q,i){
+      if(P.asked[i]){
+        h += '<div class="qbtn" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>'+esc(q.q)+'</strong><span class="ans" style="display:block;margin-top:6px;background:var(--surface2);border-radius:8px;padding:8px 10px">'+esc(q.a)+'</span>'+
+          (q.rf ? '<div class="rfalert">🔴 Red-flag screen — asked. Good. This is the question that keeps people alive.</div>' : '')+
+          teachWhy(q.w)+'</div>';
+      } else {
+        h += '<button class="qbtn" data-q="'+i+'" '+(P.budget < qCost() ? "disabled" : "")+' data-explain="Ask this question. It costs '+qCost()+' time-and-attention and 2 energy. The answer is consistent with what is really wrong — and in Coach mode, the why rides underneath it."><strong>'+esc(q.q)+'</strong><span class="gesture">Tap to ask · costs '+qCost()+'</span></button>';
+      }
+    });
+    h += '</div>' + (P.budget < qCost() ? '<p class="small"><strong>Out of time and attention for questions.</strong> Work with what you have — that, too, is the job.</p>' : '') + navButtons(null, "On to the vital signs — tap") + '</div>';
+    body.innerHTML = h;
+    body.querySelectorAll("[data-q]").forEach(function(b){ b.addEventListener("click", function(){ P.asked[b.getAttribute("data-q")] = true; spend(qCost(), 2); renderStage(); }); });
+  }
+  else if(P.stage === 2){
+    var v = '<div class="card"><h3 style="margin-top:0">3 · Vital signs</h3><p class="small">Free to read — the machine already took them. Normal ranges beside every number. Abnormal signs are never decoration.</p>';
+    c.vitals.forEach(function(vt){
+      v += '<div class="vital"><span>'+esc(vt.n)+'</span><span><b class="'+(vt.abn?"abn":"")+'">'+esc(vt.v)+'</b> <span class="small">('+esc(vt.r)+')</span></span></div>';
+      if(vt.abn && settings.teaching === "coach") v += '<div class="coach"><b>Coach:</b> '+esc(vt.note)+'</div>';
+      if(vt.abn && settings.teaching === "light") v += '<div class="lightnote"><strong>Abnormal — and it matters:</strong> '+esc(vt.note)+'</div>';
+      if(!vt.abn && settings.teaching === "coach") v += '<p class="small" style="margin:2px 0 8px">'+esc(vt.note)+'</p>';
+    });
+    v += navButtons(null, "On to the examination — tap") + '</div>';
+    body.innerHTML = v;
+  }
+  else if(P.stage === 3){
+    var e = '<div class="card"><h3 style="margin-top:0">4 · Examination — focused checks</h3><p class="small">Each examination costs '+qCost()+' time-and-attention. Examine to separate the survivors on your list, not to fill the chart.</p><div class="stack">';
+    c.exams.forEach(function(x,i){
+      if(P.exams[i]){
+        e += '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>'+esc(x.n)+'</strong><span style="display:block;margin-top:6px;background:var(--surface2);border-radius:8px;padding:8px 10px">'+esc(x.f)+'</span>'+teachWhy(x.w)+'</div>';
+      } else {
+        e += '<button class="qbtn" data-x="'+i+'" '+(P.budget < qCost() ? "disabled" : "")+' data-explain="Do this examination. It costs '+qCost()+' time-and-attention and 2 energy, and the finding is consistent with the true condition."><strong>'+esc(x.n)+'</strong><span class="gesture">Tap to examine · costs '+qCost()+'</span></button>';
+      }
+    });
+    e += '</div>' + navButtons(null, "On to the tests — tap") + '</div>';
+    body.innerHTML = e;
+    body.querySelectorAll("[data-x]").forEach(function(b){ b.addEventListener("click", function(){ P.exams[b.getAttribute("data-x")] = true; spend(qCost(), 2); renderStage(); }); });
+  }
+  else if(P.stage === 4){
+    var t = '<div class="card"><h3 style="margin-top:0">5 · Tests — a test narrows the list; it rarely decides alone</h3><p class="small">Each test costs '+tCost()+' time-and-attention. Before ordering, ask: what will I do differently for each result? Every result carries what it does and doesn\'t prove.</p><div class="stack">';
+    c.tests.forEach(function(x,i){
+      if(P.tests[i]){
+        t += '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px"><strong>'+esc(x.n)+'</strong><span style="display:block;margin-top:6px;background:var(--surface2);border-radius:8px;padding:8px 10px"><strong>Result:</strong> '+esc(x.r)+'</span><p style="margin:8px 0 0"><strong>What it does and doesn\'t prove:</strong> '+esc(x.p)+'</p>'+(settings.teaching==="light" ? '<div class="lightnote">Light note: file this under "narrows the list" — check it against your working list before you commit.</div>' : '')+'</div>';
+      } else {
+        t += '<button class="qbtn" data-t="'+i+'" '+(P.budget < tCost() ? "disabled" : "")+' data-explain="Order this test. It costs '+tCost()+' time-and-attention and 3 energy. Ordering everything is its own failure — false positives, delay, and the patient\'s worry — so order what separates your list."><strong>'+esc(x.n)+'</strong><span class="gesture">Tap to order · costs '+tCost()+'</span></button>';
+      }
+    });
+    t += '</div>' + navButtons(null, "On to the diagnosis — tap") + '</div>';
+    body.innerHTML = t;
+    body.querySelectorAll("[data-t]").forEach(function(b){ b.addEventListener("click", function(){ P.tests[b.getAttribute("data-t")] = true; spend(tCost(), 3); renderStage(); }); });
+  }
+  else if(P.stage === 5){
+    var d = '<div class="card"><h3 style="margin-top:0">6 · Diagnosis — cast wide, then commit</h3>'+
+      (P.energyStart < 30 ? '<div class="rfalert">⚠ Running on empty, you nearly closed this case from memory without re-checking your list. The game caught it — a real corridor at 3 a.m. might not. This is what tired costs.</div>' : '')+
+      '<p><strong>Step 1 — cast wide.</strong> Tap everything it could still honestly be. A list made now can be narrowed; a list never made can\'t.</p><div class="stack">';
+    c.dx.forEach(function(name,i){
+      d += '<button data-list="'+i+'" class="'+(P.list[i]?"sel":"")+'" data-explain="Toggle this possibility on your working list. Casting wide is cheap now and expensive to skip: the diagnosis you never listed is the one you cannot choose — or catch yourself missing.">'+esc(name)+'<span class="gesture">'+(P.list[i]?"On your list — tap to remove":"Tap to add to your list")+'</span></button>';
+    });
+    d += '</div><p style="margin-top:14px"><strong>Step 2 — commit.</strong> Tap the single most likely diagnosis.</p><div class="stack">';
+    c.dx.forEach(function(name,i){
+      d += '<button data-dx="'+i+'" class="'+(P.dx===i?"sel":"")+'">'+esc(name)+'<span class="gesture">'+(P.dx===i?"Your committed diagnosis":"Tap to commit to this one")+'</span></button>';
+    });
+    d += '</div>' + (P.dx === null ? '<p class="small">Commit to a diagnosis to continue.</p>' : '') +
+      '<div class="row" style="margin-top:16px"><button class="primary" data-nav="next" '+(P.dx===null?"disabled":"")+'>On to the plan — tap</button></div></div>';
+    body.innerHTML = d;
+    body.querySelectorAll("[data-list]").forEach(function(b){ b.addEventListener("click", function(){ var i = b.getAttribute("data-list"); P.list[i] = !P.list[i]; renderStage(); }); });
+    body.querySelectorAll("[data-dx]").forEach(function(b){ b.addEventListener("click", function(){ P.dx = parseInt(b.getAttribute("data-dx"),10); renderStage(); }); });
+  }
+  else if(P.stage === 6){
+    var pl = '<div class="card"><h3 style="margin-top:0">7 · The plan — what happens to this patient now</h3><p>Your committed diagnosis: <strong>'+esc(c.dx[P.dx])+'</strong>. Choose the plan. Treat, refer, reassure with safety-netting, or escalate — graded against the truth, and dangerous choices are called dangerous.</p><div class="stack">';
+    c.plans.forEach(function(pn,i){
+      pl += '<button class="qbtn" data-plan="'+i+'" data-explain="Choose this plan. Plans are graded against what was really wrong: the right treatment for the wrong diagnosis is still the wrong plan, and sending a true emergency home is the worst outcome on this page."><strong>'+esc(pn.t)+'</strong><span class="gesture">Tap to choose this plan</span></button>';
+    });
+    pl += '</div></div>';
+    body.innerHTML = pl;
+    body.querySelectorAll("[data-plan]").forEach(function(b){ b.addEventListener("click", function(){ finishCase(parseInt(b.getAttribute("data-plan"),10)); }); });
+  }
+  var nb = body.querySelector('[data-nav="next"]');
+  if(nb && P.stage !== 5) nb.addEventListener("click", function(){ P.stage++; renderStage(); window.scrollTo(0,0); });
+  if(nb && P.stage === 5) nb.addEventListener("click", function(){ P.stage = 6; renderStage(); window.scrollTo(0,0); });
+}
+
+/* ================= grading & write-up ================= */
+function finishCase(planIdx){
+  var c = P.c, plan = c.plans[planIdx];
+  var dxGrade = P.dx === c.ans ? "right" : (c.close.indexOf(P.dx) >= 0 ? "close" : "wrong");
+  var rfIdx = [], rfTotal = 0, rfCaught = 0;
+  c.hist.forEach(function(q,i){ if(q.rf){ rfTotal++; if(P.asked[i]) rfCaught++; } });
+  var qKey = 0, qWaste = 0, qAsked = 0, tKey = 0, tWaste = 0, tUsed = 0;
+  c.hist.forEach(function(q,i){ if(P.asked[i]){ qAsked++; if(q.k==="key") qKey++; if(q.k==="waste") qWaste++; } });
+  c.exams.forEach(function(x,i){ if(P.exams[i]){ if(x.k==="key") qKey++; if(x.k==="waste") qWaste++; } });
+  c.tests.forEach(function(x,i){ if(P.tests[i]){ tUsed++; if(x.k==="key") tKey++; if(x.k==="waste") tWaste++; } });
+  var critical = plan.g === "critical";
+  var roadUnsafe = false;
+  if(c.id === "reflux"){
+    var heartQs = [0,1,2].every(function(i){ return P.asked[i]; });
+    var ecg = !!P.tests[0];
+    roadUnsafe = !(heartQs && ecg);
+  }
+  var score = 0;
+  score += dxGrade === "right" ? 3 : dxGrade === "close" ? 1.5 : 0;
+  score += plan.g === "right" ? 3 : plan.g === "close" ? 1.5 : plan.g === "wrong" ? 0 : -2;
+  if(rfTotal > 0) score += (rfCaught === rfTotal) ? 1 : -1;
+  if(qWaste + tWaste >= 3) score -= 0.5;
+  if(roadUnsafe) score -= 2;
+  var grade = critical ? "Critical fail" : score >= 6.5 ? "A — helped, and helped well" : score >= 5 ? "B — helped" : score >= 3.5 ? "C — helped, with gaps" : score >= 2 ? "D — barely helped" : "Poor — this patient was not helped";
+  /* standing */
+  var dStand = 0, reasons = [];
+  if(dxGrade === "right"){ dStand += 5; reasons.push("+5 right diagnosis"); } else if(dxGrade === "close"){ dStand += 2; reasons.push("+2 close diagnosis"); } else { dStand -= 5; reasons.push("−5 wrong diagnosis"); }
+  if(plan.g === "right"){ dStand += 4; reasons.push("+4 right plan"); } else if(plan.g === "close"){ dStand += 1; reasons.push("+1 defensible plan"); } else if(plan.g === "wrong"){ dStand -= 3; reasons.push("−3 wrong plan"); } else if(plan.g === "danger"){ dStand -= 8; reasons.push("−8 dangerous plan"); } else if(plan.g === "critical"){ dStand -= 15; reasons.push("−15 critical fail — a true emergency sent away"); }
+  if(rfTotal > 0){ if(rfCaught === rfTotal){ dStand += 3; reasons.push("+3 every red-flag screen asked"); } else { dStand -= 4; reasons.push("−4 red-flag screen(s) missed ("+rfCaught+" of "+rfTotal+" asked)"); } }
+  if(qWaste + tWaste >= 3){ dStand -= 2; reasons.push("−2 wasteful working — "+(qWaste+tWaste)+" questions/tests that moved nothing, spent from the patient's time"); }
+  if(roadUnsafe){ dStand -= 6; reasons.push("−6 the heart rule-out was not completed before settling on reflux — right answer, unsafe road"); }
+  record.standing = Math.max(0, Math.min(100, record.standing + dStand));
+  record.energy = Math.max(0, record.energy - 4);
+  var helped = !critical && dxGrade !== "wrong" && (plan.g === "right" || plan.g === "close");
+  var row = { date:new Date().toISOString(), caseId:c.id, title:c.title, player:displayName(),
+    dxGiven:c.dx[P.dx], dxGrade:dxGrade, grade:grade, rfCaught:rfCaught, rfTotal:rfTotal,
+    plan:plan.t, planGrade:plan.g, qAsked:qAsked, qKey:qKey, qWasted:qWaste, tUsed:tUsed, tWasted:tWaste,
+    standingDelta:dStand, standingAfter:record.standing, energyAfter:Math.round(record.energy), helped:helped,
+    seconds: settings.clock ? P.seconds : null, variant: variantText() };
+  record.rows.push(row);
+  if(record.shift.n <= SHIFT_SIZES.length && shiftCaseIdx(record.shift.n).map(function(i){ return CASES[i].id; }).indexOf(c.id) >= 0 && record.shift.doneIds.indexOf(c.id) < 0) record.shift.doneIds.push(c.id);
+  saveRecord();
+  clearInterval(clockInt);
+  renderWriteup(c, plan, row, { dxGrade:dxGrade, rfCaught:rfCaught, rfTotal:rfTotal, qKey:qKey, qWaste:qWaste, tKey:tKey, tWaste:tWaste, critical:critical, roadUnsafe:roadUnsafe, reasons:reasons, score:score });
+  P = null;
+  showView("view-writeup");
+}
+function renderWriteup(c, plan, row, g){
+  var fellTrap = (c.trap >= 0 && c.trap !== c.ans && row.dxGiven === c.dx[c.trap]);
+  var askedWhys = "", missedWhys = "";
+  c.hist.forEach(function(q,i){
+    var line = '<li><strong>'+esc(q.q)+'</strong><br><span class="small">Answer: '+esc(q.a)+'</span><br><span class="small"><em>Why it earns its keep:</em> '+esc(q.w)+'</span>'+(q.rf ? ' <span class="chip red">red-flag screen</span>' : '')+'</li>';
+    if(row && lastAsked(i)) askedWhys += line; else missedWhys += line;
+  });
+  function lastAsked(i){ return lastPlay.asked[i]; }
+  var w = "";
+  if(g.critical){
+    w += '<div class="critfail"><h2>⛔ CRITICAL FAIL</h2><p><strong>'+esc(plan.note)+'</strong></p><p>Sending a true emergency home is the worst outcome on this page — worse than any wrong diagnosis — because the diagnosis can be corrected by a colleague, but the patient who has gone home cannot be. This is named plainly because in real clinics it is named in incident reports and inquests.</p></div>';
+  }
+  w += '<div class="card"><p class="kicker">Case '+c.n+' · '+esc(c.rung)+'</p><h2 style="margin-top:0">'+esc(c.title)+'</h2>'+
+    '<p class="grade">Grade: '+esc(row.grade)+'</p>'+
+    '<p><strong>Diagnosis:</strong> you said <strong>'+esc(row.dxGiven)+'</strong> — '+(g.dxGrade==="right" ? '<span class="chip green">right</span>' : g.dxGrade==="close" ? '<span class="chip amber">close — a near neighbour of the truth</span>' : '<span class="chip red">wrong</span>')+'</p>'+
+    '<p><strong>Plan:</strong> <span class="chip '+(row.planGrade==="right"?"green":row.planGrade==="close"?"amber":"red")+'">'+esc(row.planGrade)+'</span> '+esc(plan.note)+'</p>'+
+    (row.rfTotal ? '<p><strong>Red flags:</strong> '+row.rfCaught+' of '+row.rfTotal+' screens asked'+(row.rfCaught < row.rfTotal ? ' — <strong>missed screens are how emergencies walk out of clinics</strong>' : ' — every screen asked; that is the discipline')+'.</p>' : '<p><strong>Red flags:</strong> this case carried no red-flag screen questions.</p>')+
+    '<p><strong>Question economy:</strong> '+row.qAsked+' history questions asked ('+g.qKey+' that moved the list, counting key examinations; '+g.qWaste+' wasted). <strong>Test economy:</strong> '+row.tUsed+' tests ('+g.tKey+' key, '+g.tWaste+' wasted). Waste is measured in the patient\'s time and worry — never money.</p>'+
+    (g.roadUnsafe ? '<div class="rfalert">⚠ <strong>The road mattered:</strong> you reached the right answer (reflux) without completing the heart rule-out — the radiation, sweating, and exertion screens plus the ECG. Right answer, unsafe road. In Case 6 the grade rides on the road, because the next patient with this story will be having the heart attack.</div>' : '')+
+    '<p><strong>Standing:</strong> '+(row.standingDelta >= 0 ? "+" : "")+row.standingDelta+' → now '+row.standingAfter+' / 100 ('+esc(g.reasons.join(" · "))+'). <strong>'+(row.helped ? "This patient was helped." : "This patient was not helped.")+'</strong> Patients helped is the score that matters.</p>'+
+    '<p><strong>Your energy:</strong> '+row.energyAfter+' / 100 after this case. '+(row.energyAfter < 30 ? "You are in the tired zone — budgets shrink and notes shorten from here. Rest is triage too." : row.energyAfter < 60 ? "Tired territory begins below 60: your next budget is already smaller." : "Still fresh enough for full budgets.")+'</p>'+
+    '</div>';
+  w += '<div class="card"><h3 style="margin-top:0">What it actually was</h3><p>'+esc(c.truth)+'</p><h3>The clues that mattered — and why</h3><ul class="tight">'+c.clues.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join("")+'</ul>'+
+    '<h3>The trap in this case</h3><p>'+esc(c.trapName)+'. '+(fellTrap ? '<strong>You fell into it</strong> — your committed diagnosis was the trap. That is not a character flaw; it is the trap working as designed, on a pattern every clinician meets. Naming it is how it loses power.' : '<strong>You did not fall into it</strong> — whether by method or by luck, the write-up\'s job is to make it method next time.')+'</p>'+
+    '<h3>What a real clinician would do, and why</h3><p>'+esc(c.realDo)+'</p></div>';
+  w += '<div class="card"><h3 style="margin-top:0">Every history question, graded — the full why</h3><p class="small">This shelf appears whatever your teaching dial was set to. The write-up is where the teaching completes.</p><h3>Questions you asked</h3><ul class="tight">'+(askedWhys || '<li><em>None — you worked this case without asking. The list below is what the questions would have bought.</em></li>')+'</ul><h3>Questions you didn\'t ask</h3><ul class="tight">'+(missedWhys || '<li><em>None — you asked the whole menu.</em></li>')+'</ul></div>';
+  w += '<div class="card"><h3 style="margin-top:0">The strategy shelf for this case</h3><table><tr><th>Strategy</th><th>How it works here</th></tr>'+c.strat.map(function(s){ return '<tr><td><strong>'+esc(s[0])+'</strong></td><td>'+esc(s[1])+'<br><em>'+esc(s[2])+'</em></td></tr>'; }).join("")+'</table>'+
+    '<p class="small"><strong>Honest simplification note:</strong> '+esc(c.simp)+'</p>'+
+    (c.emergency ? '<p class="small"><strong>Red-flag recap:</strong> this was one of the emergency cases. The standing shelf — crushing or radiating chest pain; worst-ever thunderclap headache; face/arm/speech stroke signs; a rash that doesn\'t fade under a pressed glass; lips/tongue swelling or struggling to breathe; pain moving to the right lower belly with fever; confusion with fever and a stiff neck — is in the Learn shelves, at full size, always.</p>' : '')+
+    '</div>';
+  document.getElementById("writeupBody").innerHTML = w;
+}
+/* keep the last play's asked-set for the write-up after P is cleared */
+var lastPlay = { asked:{} };
+var _finish = finishCase;
+finishCase = function(planIdx){ lastPlay = { asked: Object.assign({}, P.asked) }; _finish(planIdx); };
+
+document.getElementById("writeupHomeBtn").addEventListener("click", function(){ renderHome(); showView("view-home"); });
+document.getElementById("writeupRecordBtn").addEventListener("click", function(){ renderRecord(); showView("view-record"); });
+document.getElementById("writeupNextBtn").addEventListener("click", function(){
+  if(record.shift.n <= SHIFT_SIZES.length){
+    var waiting = shiftCaseIdx(record.shift.n).map(function(i){ return CASES[i]; }).filter(function(c){ return record.shift.doneIds.indexOf(c.id) < 0 && !isSkipped(c.id); });
+    if(waiting.length){ startCase(waiting[0].id); return; }
+  }
+  renderHome(); showView("view-home");
+});
+document.getElementById("nextCaseBtn").addEventListener("click", function(){
+  if(record.shift.n <= SHIFT_SIZES.length){
+    var waiting = shiftCaseIdx(record.shift.n).map(function(i){ return CASES[i]; }).filter(function(c){ return record.shift.doneIds.indexOf(c.id) < 0 && !isSkipped(c.id); });
+    if(waiting.length){ startCase(waiting[0].id); return; }
+  }
+  var ord = orderArray();
+  for(var k=0;k<ord.length;k++){ if(!latestRow(CASES[ord[k]].id)){ startCase(CASES[ord[k]].id); return; } }
+  startCase(CASES[ord[0]].id);
+});
+
+/* ================= record view, export, forget ================= */
+function renderRecord(){
+  var rows = record.rows;
+  var el = document.getElementById("recordBody");
+  if(!rows.length && !record.skipped.length){
+    el.innerHTML = '<div class="card"><p>No cases worked yet. Your record — cases, accuracy, red flags, standing, energy — will stand here, <strong>saved on this device only</strong>.</p></div>';
+    return;
+  }
+  var right = rows.filter(function(r){ return r.dxGrade==="right"; }).length;
+  var close = rows.filter(function(r){ return r.dxGrade==="close"; }).length;
+  var rfC = rows.reduce(function(a,r){ return a + r.rfCaught; },0), rfT = rows.reduce(function(a,r){ return a + r.rfTotal; },0);
+  var plansRight = rows.filter(function(r){ return r.planGrade==="right"; }).length;
+  var plansBad = rows.filter(function(r){ return r.planGrade==="danger" || r.planGrade==="critical"; }).length;
+  var avgWaste = rows.length ? (rows.reduce(function(a,r){ return a + r.qWasted + r.tWasted; },0) / rows.length).toFixed(1) : "0";
+  var trend = rows.map(function(r){ return (r.standingDelta >= 0 ? "+" : "") + r.standingDelta; }).join(" → ");
+  var h = '<div class="card"><h3 style="margin-top:0">The standing of '+esc(displayName())+'</h3>'+
+    '<p><strong>Patients helped: '+patientsHelped()+'</strong> of '+rows.length+' cases worked — the score that matters. No money appears anywhere in this record, because none exists in this game.</p>'+
+    '<p><strong>Standing (trust):</strong> '+record.standing+' / 100 — '+esc(standingTier())+'<br><span class="small">Trend: '+(trend || "no cases yet")+'</span></p>'+
+    '<p><strong>Your energy now:</strong> '+Math.round(record.energy)+' / 100</p>'+
+    '<p><strong>Diagnosis accuracy:</strong> '+right+' right, '+close+' close, '+(rows.length-right-close)+' wrong of '+rows.length+'.</p>'+
+    '<p><strong>Red flags:</strong> '+rfC+' caught, '+(rfT-rfC)+' missed, of '+rfT+' screens.</p>'+
+    '<p><strong>Plans:</strong> '+plansRight+' right of '+rows.length+'; '+plansBad+' dangerous or critical.</p>'+
+    '<p><strong>Question economy:</strong> average ' + avgWaste + ' wasted questions/tests per case.</p></div>';
+  h += '<h3>Per-case history</h3><div class="stack">';
+  rows.slice().reverse().forEach(function(r){
+    h += '<div class="card" style="margin:0"><strong>'+esc(r.title)+'</strong> <span class="chip '+(r.planGrade==="critical"?"red":r.dxGrade==="right"?"green":"amber")+'">'+esc(r.grade)+'</span><br>'+
+      '<span class="small">You said: '+esc(r.dxGiven)+' ('+esc(r.dxGrade)+') · Red flags '+r.rfCaught+'/'+r.rfTotal+' · Plan: '+esc(r.planGrade)+' · Questions '+r.qAsked+' ('+r.qWasted+' wasted) · Tests '+r.tUsed+' ('+r.tWasted+' wasted) · Standing '+(r.standingDelta>=0?"+":"")+r.standingDelta+' → '+r.standingAfter+' · Energy after: '+r.energyAfter+' · '+(r.helped?"Patient helped":"Patient not helped")+' · '+esc(r.variant)+(r.seconds != null ? ' · Clock: '+Math.floor(r.seconds/60)+':'+("0"+(r.seconds%60)).slice(-2) : '')+' · '+esc(new Date(r.date).toLocaleString())+'</span><br><span class="small">Plan chosen: '+esc(r.plan)+'</span></div>';
+  });
+  h += '</div>';
+  if(record.skipped.length){
+    h += '<h3>Patients you did not see — their outcomes, stated plainly</h3><div class="stack">';
+    record.skipped.forEach(function(s){
+      var c = caseById(s.id);
+      h += '<div class="card" style="margin:0"><strong>'+esc(c ? c.title : s.id)+'</strong> <span class="small">(shift '+s.shift+(s.waitedThroughRest ? ', waited through your rest' : '')+')</span><br><span class="small">'+esc(s.outcome)+'</span></div>';
+    });
+    h += '</div>';
+  }
+  el.innerHTML = h;
+}
+function download(name, text, type){
+  var blob = new Blob([text], {type:type});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+document.getElementById("exportJsonBtn").addEventListener("click", function(){
+  download("clinic-record.json", JSON.stringify({ player: displayName(), exported: new Date().toISOString(), standing: record.standing, energy: Math.round(record.energy), patientsHelped: patientsHelped(), rows: record.rows, notSeen: record.skipped }, null, 2), "application/json");
+});
+document.getElementById("exportCsvBtn").addEventListener("click", function(){
+  var head = "date,case,diagnosis given,diagnosis grade,grade,red flags caught,red flags total,plan grade,plan,questions asked,questions wasted,tests used,tests wasted,standing delta,standing after,energy after,patient helped,variant\n";
+  var csv = head + record.rows.map(function(r){
+    return [r.date, r.title, r.dxGiven, r.dxGrade, r.grade, r.rfCaught, r.rfTotal, r.planGrade, r.plan, r.qAsked, r.qWasted, r.tUsed, r.tWasted, r.standingDelta, r.standingAfter, r.energyAfter, r.helped, r.variant].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(",");
+  }).join("\n");
+  download("clinic-record.csv", csv, "text/csv");
+});
+document.getElementById("forgetBtn").addEventListener("click", function(){
+  record = { rows: [], standing: 50, energy: 100, shift: { n:1, doneIds: [], rests: 0 }, skipped: [] };
+  saveRecord();
+  document.getElementById("forgetMsg").textContent = "Forgotten. This device now holds a clean record: standing 50, energy 100, shift 1, no cases.";
+  renderRecord(); renderHome();
+});
+
+/* ================= boot ================= */
+renderHome();
+showView("view-home");
+</script>
+</body>
+</html>
