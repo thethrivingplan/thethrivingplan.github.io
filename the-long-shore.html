@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Long Shore</title>
+<style>
+  :root{
+    --bg:#edf0e6; --bg2:#e2e7d6; --panel:#f7f8f1; --panel2:#eef1e3;
+    --ink:#1e2b24; --ink2:#43544a; --line:#b9c4ab;
+    --teal:#0d6a58; --teal-ink:#ffffff; --ember:#bc5518; --ember-soft:#f3ddc9;
+    --danger:#a52a1c; --good:#2e7d46; --gold:#8a6d1f;
+    --shadow:0 2px 10px rgba(30,43,36,.14);
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1714; --bg2:#131f1a; --panel:#182420; --panel2:#1d2c26;
+      --ink:#e4ece2; --ink2:#a9bcb0; --line:#33473c;
+      --teal:#3fae94; --teal-ink:#0b1512; --ember:#e08a4a; --ember-soft:#3a2a1c;
+      --danger:#e07a68; --good:#7cc491; --gold:#d3b25e;
+      --shadow:0 2px 12px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;font-size:16px}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:8px;padding:.45rem .8rem}
+  button:hover{border-color:var(--teal)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--teal);color:var(--teal-ink);border-color:var(--teal);font-weight:600}
+  button.ember{background:var(--ember);color:#fff;border-color:var(--ember);font-weight:600}
+  @media (prefers-color-scheme: dark){button.ember{color:#181008}}
+  select,input[type="text"]{font:inherit;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:.4rem .6rem}
+  a{color:var(--teal)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 14px 48px}
+  .freeline{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;justify-content:space-between;
+    background:var(--teal);color:var(--teal-ink);padding:.55rem 14px;font-size:.95rem}
+  .freeline strong{letter-spacing:.01em}
+  .freeline button{background:transparent;color:inherit;border-color:currentColor;font-size:.9rem;min-height:2.25rem}
+  nav.compass{display:flex;flex-wrap:wrap;gap:.25rem .9rem;padding:.6rem 2px;border-bottom:2px solid var(--line);
+    font-size:.95rem}
+  nav.compass a{color:var(--ink);text-decoration:none;padding:.35rem .2rem;display:inline-block;min-height:2rem}
+  nav.compass a:hover{color:var(--teal);text-decoration:underline}
+  h1{font-family:"Iowan Old Style",Palatino,Palatino Linotype,Georgia,serif;font-size:2rem;
+    line-height:1.15;margin:.9rem 0 .3rem;font-weight:700}
+  h2{font-family:"Iowan Old Style",Palatino,Palatino Linotype,Georgia,serif;font-size:1.35rem;margin:1.6rem 0 .5rem}
+  h3{font-size:1.05rem;margin:.9rem 0 .35rem}
+  .lede{color:var(--ink2);max-width:65ch;margin:.2rem 0 .6rem}
+  .scope-note{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);
+    padding:.7rem .9rem;font-size:.93rem;max-width:75ch}
+  /* ---------- game layout ---------- */
+  .game-grid{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start;margin-top:.6rem}
+  @media (max-width:860px){.game-grid{grid-template-columns:1fr}}
+  .stage{background:#0c1a17;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);position:relative}
+  canvas#view{display:block;width:100%;height:auto;touch-action:none}
+  .variant-banner{display:none;background:var(--ember-soft);border:1px solid var(--ember);color:var(--ink);
+    border-radius:8px;padding:.45rem .8rem;font-size:.92rem;margin-top:10px}
+  .variant-banner.show{display:block}
+  .hud{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:.7rem .85rem;box-shadow:var(--shadow)}
+  .hud h3{margin-top:0}
+  .clockrow{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;flex-wrap:wrap}
+  .clock{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.1rem}
+  .phase{color:var(--ink2);font-size:.9rem}
+  .meter{margin:.45rem 0}
+  .meter label{display:flex;justify-content:space-between;font-size:.88rem;color:var(--ink2)}
+  .meter label b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .bar{height:12px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .bar i{display:block;height:100%;width:100%;transition:width .3s}
+  .bar .h{background:var(--good)} .bar .f{background:#c98a1e} .bar .t{background:#2e7fc4} .bar .w{background:var(--ember)}
+  .bar.low i{background:var(--danger)!important}
+  .inv{display:flex;flex-wrap:wrap;gap:.35rem .8rem;font-size:.93rem;margin-top:.4rem}
+  .inv span b{font-variant-numeric:tabular-nums}
+  .tools{font-size:.9rem;color:var(--ink2);margin-top:.3rem}
+  /* controls */
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;margin-top:12px}
+  .dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:4px}
+  .dpad button{font-size:1.15rem;padding:0;min-height:52px;user-select:none;-webkit-user-select:none;touch-action:none}
+  .dpad .sp{visibility:hidden}
+  .actions{display:flex;flex-direction:column;gap:8px;flex:1;min-width:210px}
+  .actions .row{display:flex;flex-wrap:wrap;gap:8px}
+  .actions button{flex:1;min-height:52px;font-size:1rem}
+  #btnAction{font-weight:700}
+  .keys-hint{font-size:.88rem;color:var(--ink2);margin-top:.4rem}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;
+    padding:.05rem .4rem;font-family:inherit;font-size:.85em}
+  .tipbar{display:none;margin-top:10px;background:var(--panel);border:1px solid var(--gold);
+    border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem}
+  .tipbar.show{display:block}
+  .tipbar .who{font-weight:700;color:var(--gold);font-size:.82rem;letter-spacing:.04em;text-transform:uppercase}
+  .log{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:.55rem .85rem;margin-top:10px;font-size:.92rem;max-height:132px;overflow:auto}
+  .log p{margin:.15rem 0}
+  .log .dim{color:var(--ink2)}
+  /* panels below game */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:860px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:.85rem 1rem;box-shadow:var(--shadow)}
+  .card h2,.card h3{margin-top:.1rem}
+  .craft{display:flex;justify-content:space-between;gap:.6rem;align-items:center;
+    padding:.5rem 0;border-bottom:1px solid var(--line)}
+  .craft:last-child{border-bottom:none}
+  .craft .what{font-size:.94rem}
+  .craft .cost{color:var(--ink2);font-size:.87rem}
+  .craft button{white-space:nowrap}
+  .owned{color:var(--good);font-weight:600;font-size:.9rem}
+  .strat{border-top:1px solid var(--line);padding:.55rem 0}
+  .strat:first-of-type{border-top:none}
+  .strat b{display:block}
+  .strat .vs{color:var(--ink2);font-size:.92rem}
+  .field{margin:.55rem 0}
+  .field label{display:block;font-size:.9rem;color:var(--ink2);margin-bottom:.2rem}
+  .field select,.field input{width:100%}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button[aria-pressed="true"]{background:var(--teal);color:var(--teal-ink);border-color:var(--teal);font-weight:600}
+  table.rec{width:100%;border-collapse:collapse;font-size:.92rem}
+  table.rec th,table.rec td{padding:.4rem .45rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  table.rec th{color:var(--ink2);font-weight:600}
+  .end-escaped{color:var(--good);font-weight:600}
+  .end-gone{color:var(--danger);font-weight:600}
+  .end-going{color:var(--gold);font-weight:600}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:.7rem}
+  .overlay-end{display:none;background:var(--panel);border:2px solid var(--teal);border-radius:12px;
+    padding:1rem 1.1rem;margin-top:12px;box-shadow:var(--shadow)}
+  .overlay-end.show{display:block}
+  .overlay-end h2{margin-top:0}
+  footer{margin-top:2.2rem;border-top:2px solid var(--line);padding-top:.8rem;color:var(--ink2);font-size:.9rem}
+  .small{font-size:.9rem;color:var(--ink2)}
+  canvas#mini{border:1px solid var(--line);border-radius:8px;background:#0c1a17;max-width:100%}
+</style>
+</head>
+<body>
+<div class="freeline">
+  <span><strong>Free — always free.</strong> No ads, no account, nothing to buy. Your game and record stay on this device only.</span>
+  <button id="btnDownload" type="button">Save an offline copy — tap to download this page</button>
+</div>
+<div class="wrap">
+  <nav class="compass" aria-label="Compass">
+    <a href="#play">Play</a>
+    <a href="#craft">Crafting ladder</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#watch">Watch it done</a>
+    <a href="#settings">Settings</a>
+    <a href="#record">Your record</a>
+    <a href="#scope">Scope &amp; basis</a>
+  </nav>
+
+  <h1>The Long Shore</h1>
+  <p class="lede">You wash up on an island that has never heard of you. Walk it, learn it, feed yourself,
+  keep warm through the night — and when you are ready, build a raft and leave it behind.
+  Surviving is the game. Escaping is the win.</p>
+  <p class="scope-note"><strong>Real scope, plainly:</strong> one survivor on one procedurally grown island,
+  drawn top-down on a single page. Four needs to manage, six rungs of crafting, passive wildlife and one
+  biting hazard, a full day-and-night cycle. A run takes roughly 20–40 minutes; you can leave mid-run and
+  resume — the run is saved on this device. No multiplayer, no accounts, no network play, nothing leaves your device.</p>
+
+  <section id="play" aria-label="Game">
+    <div class="variant-banner" id="variantBanner" role="status"></div>
+    <div class="game-grid">
+      <div>
+        <div class="stage">
+          <canvas id="view" width="720" height="540" aria-label="The island, seen from above. Use the direction pad or arrow keys to walk."></canvas>
+        </div>
+        <div class="controls" aria-label="Controls">
+          <div class="dpad" role="group" aria-label="Direction pad — hold a button to keep walking">
+            <span class="sp"></span>
+            <button type="button" data-dir="up" aria-label="Walk north — hold to keep walking">▲</button>
+            <span class="sp"></span>
+            <button type="button" data-dir="left" aria-label="Walk west — hold to keep walking">◀</button>
+            <button type="button" data-dir="down" aria-label="Walk south — hold to keep walking">▼</button>
+            <button type="button" data-dir="right" aria-label="Walk east — hold to keep walking">▶</button>
+            <span class="sp"></span>
+            <span class="sp"></span>
+            <span class="sp"></span>
+          </div>
+          <div class="actions">
+            <div class="row">
+              <button type="button" id="btnAction" class="primary">Look around — tap or press E</button>
+            </div>
+            <div class="row">
+              <button type="button" id="btnEat">Eat berries — tap or press F</button>
+              <button type="button" id="btnDrink">Drink — tap or press Q</button>
+            </div>
+            <div class="row">
+              <button type="button" id="btnRest">Rest until morning — tap or press R</button>
+              <button type="button" id="btnPause">Pause — tap or press P</button>
+            </div>
+            <p class="keys-hint">Keys: <kbd>W A S D</kbd> or arrow keys walk (a tap steps, a hold keeps walking) · <kbd>E</kbd> do the thing in front of you ·
+            <kbd>F</kbd> eat · <kbd>Q</kbd> drink · <kbd>R</kbd> rest · <kbd>P</kbd> pause.
+            On touch: hold a direction to keep walking; every button says what a tap does.
+            You can also tap the island itself to walk toward that spot.</p>
+          </div>
+        </div>
+        <div class="tipbar" id="tipbar" role="status"><span class="who" id="tipWho">Field note</span><div id="tipText"></div></div>
+        <div class="overlay-end" id="endPanel">
+          <h2 id="endTitle">The run has ended</h2>
+          <p id="endText"></p>
+          <div class="btnrow">
+            <button type="button" id="btnNewRun2" class="primary">Start a new run — tap</button>
+            <a href="#record"><button type="button">See your record — tap</button></a>
+          </div>
+        </div>
+        <div class="log" id="log" aria-label="Island log"></div>
+      </div>
+
+      <aside class="hud" aria-label="Survivor status">
+        <div class="clockrow">
+          <span class="clock" id="clock">Day 1 · 08:00</span>
+          <span class="phase" id="phase">Morning</span>
+        </div>
+        <div class="meter"><label>Health <b id="vHealth">100</b></label><div class="bar" id="barHealth"><i class="h"></i></div></div>
+        <div class="meter"><label>Hunger <b id="vHunger">100</b></label><div class="bar" id="barHunger"><i class="f"></i></div></div>
+        <div class="meter"><label>Thirst <b id="vThirst">100</b></label><div class="bar" id="barThirst"><i class="t"></i></div></div>
+        <div class="meter"><label>Warmth <b id="vWarmth">100</b></label><div class="bar" id="barWarmth"><i class="w"></i></div></div>
+        <h3>Pack</h3>
+        <div class="inv" id="inv"></div>
+        <div class="tools" id="toolsLine">Bare hands. Stone and wood are a start.</div>
+        <h3>Island map</h3>
+        <canvas id="mini" width="264" height="264" aria-label="Small map of the island with your position marked"></canvas>
+        <p class="small">Gold dot is you. Blue ring is fresh water — the only safe drink on the island.
+        The sea will not save your thirst.</p>
+        <div id="coachPanel">
+          <h3>Coach</h3>
+          <div id="coachText" class="small" style="color:var(--ink)"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="craft">
+    <h2>The crafting ladder</h2>
+    <p class="lede">Six rungs, in the order survivors have always climbed them: a tool, a fire, a roof,
+    a way to carry water, better tools, a way off. Each rung makes the next one reachable. Costs are paid from your pack when you tap Craft.</p>
+    <div class="card" id="craftList"></div>
+  </section>
+
+  <section id="strategies">
+    <h2>Strategies — more than one honest way</h2>
+    <p class="lede">There is no single right way to survive this island. These are the real forks, with what each side costs you.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Where to camp</h3>
+        <div class="strat"><b>Coastal camp</b><span class="vs">Fire and shelter near the beach. The raft will be built here,
+        so no long haul at the end, and the shore breeze keeps snakes scarce. Cost: the coast is the coldest
+        ground at night and far from the inland pond — every drink is a walk.</span></div>
+        <div class="strat"><b>Inland camp</b><span class="vs">Camp by the pond in the trees. Water at your door,
+        wood all around, warmer nights. Cost: snakes live in that grass, and when the raft is ready you must
+        carry the plan back across the island to the shore.</span></div>
+      </div>
+      <div class="card">
+        <h3>How to play the run</h3>
+        <div class="strat"><b>Escape fast</b><span class="vs">Axe, fire, raft — skip the shelter and the fine tools.
+        Fewest days exposed, and every day survived is a day something can go wrong. Cost: thin margins —
+        one cold night or one bite can end a run that had no shelter and no stored food.</span></div>
+        <div class="strat"><b>Settle strong</b><span class="vs">Build everything: shelter, waterskin, spear.
+        Slower, but each night gets safer and each day easier. Cost: hunger and thirst keep their own schedule —
+        a long build is a long time for the meters to grind you down.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="watch">
+    <h2>Watch it done — the real skills, on video</h2>
+    <p class="lede">The game teaches the order of survival; these videos teach the hands. Each one is a real
+    how-to for a skill this island asks of you, opened and checked on its own watch page before it was printed
+    here. Titles and channel credits are printed exactly as confirmed there — where a credit could not be
+    confirmed, none is printed.</p>
+    <div class="card">
+      <div class="strat"><b>Shelter building</b>
+        <span class="vs"><a href="https://www.youtube.com/watch?v=tzUpH0Zft5c" target="_blank" rel="noopener">“5 Survival Shelters Everyone Should Know”</a>
+        — Survival Lilly (YouTube). Five shelter shapes and when each earns its effort — the real version of the lean-to rung.</span></div>
+      <div class="strat"><b>Finding and making drinking water</b>
+        <span class="vs"><a href="https://www.youtube.com/watch?v=L438GO_804Q" target="_blank" rel="noopener">“Finding &amp; Making Drinking Water in the Wild | Marine &amp; Bushcraft Pro Tips | Millbank Bag”</a>
+        — Hidden Valley Bushcraft (YouTube). Why water comes before food, and how to make wild water safe — the game's first lesson, taught properly.</span></div>
+      <div class="strat"><b>Raft building and lashing</b>
+        <span class="vs"><a href="https://www.youtube.com/watch?v=yDSr_P50EZs" target="_blank" rel="noopener">“HOW TO MAKE A SURVIVAL RAFT”</a>
+        — Billy Rioux (YouTube). Logs, lashings, and whether it floats — the last rung of the ladder, done for real.</span></div>
+      <div class="strat"><b>Fire starting — the bow drill</b>
+        <span class="vs"><a href="https://www.youtube.com/watch?v=HI9kXvv_Lo8" target="_blank" rel="noopener">“How To Make A Bow Drill Spindle And Fireboard”</a>
+        — YouTube. The link and title were confirmed on the watch page; its channel name could not be confirmed
+        there, so no channel credit is printed rather than a guessed one. Friction fire from two pieces of wood —
+        the honest ancestor of the game's campfire rung.</span></div>
+    </div>
+  </section>
+
+  <section id="settings">
+    <h2>Settings — rules are yours to change</h2>
+    <p class="lede">Standard rules are the default. Change any of these and a banner above the island says so,
+    plainly — a variant run's record is labelled with its variant, never dressed up as standard.
+    Settings apply to the next new run.</p>
+    <div class="cols">
+      <div class="card">
+        <div class="field"><label for="selSize">Island size</label>
+          <select id="selSize">
+            <option value="small">Small — a short walk across, fewer resources</option>
+            <option value="standard" selected>Standard</option>
+            <option value="large">Large — more island, longer walks, more of everything</option>
+          </select></div>
+        <div class="field"><label for="selHazard">Hazard level</label>
+          <select id="selHazard">
+            <option value="calm">Calm — snakes are rare and their bite is mild</option>
+            <option value="standard" selected>Standard — snakes in the grass, a real bite</option>
+            <option value="wild">Wild — snakes are common and bite hard</option>
+          </select></div>
+        <div class="field"><label for="selSeason">Starting season</label>
+          <select id="selSeason">
+            <option value="spring">Spring — mild days, cool nights</option>
+            <option value="summer" selected>Summer — hot days drain thirst, warm nights</option>
+            <option value="autumn">Autumn — cooling days, cold nights coming</option>
+            <option value="winter">Winter — warmth is the whole game</option>
+          </select></div>
+        <div class="field"><label for="aliasInput">Play as — optional, any name you like, or leave it blank</label>
+          <input type="text" id="aliasInput" maxlength="24" placeholder="No name needed — blank plays fine" />
+          <p class="small">No claimed name is ever required here. An alias is just the name written on your own record, on this device.</p></div>
+      </div>
+      <div class="card">
+        <h3>Teaching</h3>
+        <p class="small">How much the island teaches while you play. Real survival priorities, in the moment:
+        water before food, fire before nightfall, shelter where it counts.</p>
+        <div class="seg" role="group" aria-label="Teaching level — tap to choose">
+          <button type="button" data-teach="off" aria-pressed="false">Off — tap</button>
+          <button type="button" data-teach="light" aria-pressed="true">Light — tap</button>
+          <button type="button" data-teach="coach" aria-pressed="false">Coach — tap</button>
+        </div>
+        <p class="small" id="teachDesc">Light: a short field note when something matters. Coach: a standing
+        coach panel beside your meters, reading your situation and naming your best next move — and the alternative, with its trade-off.</p>
+        <h3>The run</h3>
+        <div class="btnrow">
+          <button type="button" id="btnNewRun" class="ember">Start a new run with these settings — tap</button>
+          <button type="button" id="btnResume">Resume the saved run — tap</button>
+        </div>
+        <p class="small" id="saveNote">Your run saves itself on this device as you play.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="record">
+    <h2>Your record</h2>
+    <p class="lede">Every run, written in one clean shape: days survived, what you crafted, and how it ended.
+    It lives on this device only. Take it with you, or forget it in one tap.</p>
+    <div class="card">
+      <div id="recordBody"><p class="small">No runs recorded yet. Your first run is already being written above as you play.</p></div>
+      <div class="btnrow">
+        <button type="button" id="btnExportJson">Download record as JSON — tap</button>
+        <button type="button" id="btnExportCsv">Download record as CSV — tap</button>
+        <button type="button" id="btnForget">Forget everything — tap</button>
+      </div>
+      <p class="small" id="forgetNote">Forget clears the record, the saved run, and your settings from this device. Nothing was ever sent anywhere, so there is nothing else to clear.</p>
+    </div>
+  </section>
+
+  <section id="scope">
+    <h2>Scope &amp; basis</h2>
+    <div class="card">
+      <h3>What this game is built on</h3>
+      <p>The Long Shore is an original work in the <strong>survival game</strong> — a documented kind of game with a
+      long public record: a lone figure in a wild place, needs that run down like clocks (hunger, thirst, cold),
+      gathering by hand, and a ladder of made things — tool, fire, shelter, better tool, escape — each unlocking the next.
+      Games in this shape have been played and written about for decades, in print, on boards, and on screens.
+      This page takes that documented shape and nothing else: the name, the island, the art drawn on its canvas,
+      and every word of writing are original to this page. No assets, names, art, or designs come from any existing game.</p>
+      <h3>What it honestly is — and is not</h3>
+      <p>It is a complete, playable survival run on one page: a procedurally grown island (different every run),
+      four meters, wildlife that minds its own business and one hazard that does not, day and night, weather of
+      seasons, crafting, and a raft that ends the story. It is not a boundless open world, has no other players,
+      no voice or video, and no physics beyond walking and gathering. The real survival teaching in it — water
+      before food, fire before dark, shelter against the cold — is the genuine order of priorities, simplified
+      to fit a game; it is a game, not a survival manual.</p>
+      <h3>How the record is shaped</h3>
+      <p>Each run is one entry: <em>game, run id, alias, started, days survived, crafts made, ending
+      (escaped / still going / didn't make it), and the settings it was played under</em> — the same shape for
+      every run, so the record can be read, exported, and compared honestly, variant runs labelled as variants.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>The Long Shore</strong> — free, always free, no ads. Copyleft: this page's writing and design are
+    shared under CC BY-SA 4.0 and its code under GPL — take it, change it, pass it on under the same freedom.
+    The name stays with the house. Everything on this page was made for this page.</p>
+  </footer>
+</div>
+<script>
+(function(){
+"use strict";
+/* ================= utilities ================= */
+function $(id){return document.getElementById(id);}
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function mulberry(seed){var t=seed>>>0;return function(){t+=0x6D2B79F5;var r=Math.imul(t^t>>>15,1|t);r^=r+Math.imul(r^r>>>7,61|r);return((r^r>>>14)>>>0)/4294967296;};}
+function download(name,text,type){
+  var blob=new Blob([text],{type:type||"text/plain"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+}
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},
+  del:function(k){try{localStorage.removeItem(k);}catch(e){}}
+};
+var K_PREFS="tls_prefs_v1", K_SAVE="tls_save_v1", K_REC="tls_record_v1";
+
+/* ================= prefs ================= */
+var prefs=store.get(K_PREFS,{teach:"light",size:"standard",hazard:"standard",season:"summer",alias:""});
+if(!prefs.teach)prefs.teach="light";
+function savePrefs(){store.set(K_PREFS,prefs);}
+
+/* ================= crafting ladder ================= */
+var CRAFTS=[
+ {id:"axe",name:"Stone axe",cost:{stone:2,wood:1},desc:"Chops wood twice as fast and fells a tree in fewer swings. The first tool every survivor makes."},
+ {id:"fire",name:"Campfire",cost:{wood:3,stone:2},desc:"Warmth after dark, light against the night, and the only place meat becomes safe to eat. Placed where you stand."},
+ {id:"shelter",name:"Lean-to shelter",cost:{wood:6,fibre:3},desc:"A roof of boughs. Sleeping under it restores you properly, and its walls blunt the night cold. Placed where you stand."},
+ {id:"skin",name:"Waterskin",cost:{fibre:2,wood:1},desc:"Carry the pond with you. Fill it at fresh water; drink from it anywhere."},
+ {id:"spear",name:"Fishing spear",cost:{wood:3,stone:3,fibre:2},desc:"The better tool: rabbits stop outrunning you, and gathering bites deeper. Requires the stone axe first.",needs:"axe"},
+ {id:"raft",name:"Raft",cost:{wood:12,fibre:6},desc:"Lashed logs and nerve. Craft it standing at the shoreline, then board it to leave the island — and win. Requires the stone axe.",needs:"axe",shore:true}
+];
+var RESNAME={wood:"wood",stone:"stone",fibre:"fibre",berry:"berries",meat:"raw meat",cooked:"cooked meat"};
+
+/* ================= world generation ================= */
+var TILE={SEA:0,SAND:1,GRASS:2,FOREST:3,POND:4};
+var SIZES={small:44,standard:60,large:78};
+var HAZ={calm:{snakes:0.35,bite:6,label:"Calm"},standard:{snakes:1,bite:12,label:"Standard"},wild:{snakes:1.9,bite:20,label:"Wild"}};
+var SEASONS={
+ spring:{name:"Spring",nightCold:0.55,thirst:1.0,warmthStart:85},
+ summer:{name:"Summer",nightCold:0.3,thirst:1.3,warmthStart:100},
+ autumn:{name:"Autumn",nightCold:0.8,thirst:0.9,warmthStart:75},
+ winter:{name:"Winter",nightCold:1.35,thirst:0.8,warmthStart:60}
+};
+
+var S=null; /* run state */
+function genWorld(seed,sizeKey,hazardKey,seasonKey){
+  var n=SIZES[sizeKey]||60;
+  var rnd=mulberry(seed);
+  var tiles=new Uint8Array(n*n);
+  var cx=n/2,cy=n/2,rx=n*0.40,ry=n*0.36;
+  /* a few soft noise bumps so the coast is not a perfect ellipse */
+  var bumps=[];for(var i=0;i<7;i++)bumps.push({x:rnd()*n,y:rnd()*n,r:6+rnd()*10,a:(rnd()-0.5)*0.5});
+  for(var y=0;y<n;y++)for(var x=0;x<n;x++){
+    var dx=(x-cx)/rx,dy=(y-cy)/ry,d=Math.sqrt(dx*dx+dy*dy);
+    for(var b=0;b<bumps.length;b++){var bb=bumps[b];var bd=Math.sqrt((x-bb.x)*(x-bb.x)+(y-bb.y)*(y-bb.y));if(bd<bb.r)d+=bb.a*(1-bd/bb.r);}
+    var t;
+    if(d>1)t=TILE.SEA; else if(d>0.90)t=TILE.SAND; else if(d>0.55&&rnd()<0.55)t=TILE.FOREST; else t=TILE.GRASS;
+    tiles[y*n+x]=t;
+  }
+  /* fresh-water pond: a small blob inland */
+  var px=0,py=0,tries=0;
+  do{px=4+Math.floor(rnd()*(n-8));py=4+Math.floor(rnd()*(n-8));tries++;}
+  while(tiles[py*n+px]===TILE.SEA&&tries<200);
+  var pondCells=[];
+  for(var oy=-1;oy<=1;oy++)for(var ox=-1;ox<=1;ox++){
+    if(Math.abs(ox)+Math.abs(oy)>2)continue;
+    var X=px+ox,Y=py+oy;
+    if(X>1&&Y>1&&X<n-1&&Y<n-1&&tiles[Y*n+X]!==TILE.SEA){tiles[Y*n+X]=TILE.POND;pondCells.push({x:X,y:Y});}
+  }
+  /* resource nodes */
+  var nodes=[];
+  function scatter(type,count,tileOk){
+    var placedN=0,guard=0;
+    while(placedN<count&&guard++<count*40){
+      var X=Math.floor(rnd()*n),Y=Math.floor(rnd()*n),tt=tiles[Y*n+X];
+      if(!tileOk(tt))continue;
+      if(Math.abs(X-px)<=2&&Math.abs(Y-py)<=2)continue;
+      nodes.push({type:type,x:X+0.5,y:Y+0.5,hp:type==="tree"?3:(type==="rock"?3:2),max:type==="tree"?3:(type==="rock"?3:2),regrow:0});
+      placedN++;
+    }
+  }
+  var scale=n/60;
+  scatter("tree",Math.round(90*scale),function(t){return t===TILE.FOREST||t===TILE.GRASS;});
+  scatter("rock",Math.round(38*scale),function(t){return t===TILE.GRASS||t===TILE.SAND||t===TILE.FOREST;});
+  scatter("bush",Math.round(46*scale),function(t){return t===TILE.GRASS||t===TILE.FOREST;});
+  /* animals */
+  var hz=HAZ[hazardKey]||HAZ.standard;
+  var animals=[];
+  function addAnimal(kind,count){
+    for(var i2=0;i2<count;i2++){
+      var X,Y,g=0;
+      do{X=2+rnd()*(n-4);Y=2+rnd()*(n-4);g++;}while(tiles[Math.floor(Y)*n+Math.floor(X)]===TILE.SEA&&g<60);
+      animals.push({kind:kind,x:X,y:Y,dir:rnd()*6.283,speed:0,cool:0,hp:kind==="snake"?1:1});
+    }
+  }
+  addAnimal("rabbit",Math.round(9*scale));
+  addAnimal("crab",Math.round(7*scale));
+  addAnimal("snake",Math.round(11*hz.snakes*scale));
+  /* spawn: on sand near south shore */
+  var sx=cx,sy=n-3;
+  while(sy>0&&tiles[Math.floor(sy)*n+Math.floor(sx)]===TILE.SEA)sy-=0.5;
+  return {n:n,tiles:tiles,nodes:nodes,animals:animals,pond:{x:px,y:py},
+    player:{x:sx,y:sy+0.5},seed:seed,size:sizeKey,hazard:hazardKey,season:seasonKey};
+}
+
+/* ================= run lifecycle ================= */
+var DAY_LEN=150; /* real seconds per full day */
+function newRun(){
+  var seed=(Math.random()*1e9)|0;
+  var w=genWorld(seed,prefs.size,prefs.hazard,prefs.season);
+  var season=SEASONS[prefs.season];
+  S={
+    runId:"run-"+Date.now().toString(36),
+    startedAt:new Date().toISOString(),
+    alias:prefs.alias||"",
+    settings:{size:prefs.size,hazard:prefs.hazard,season:prefs.season},
+    world:w, day:1, hour:8, over:false, ending:"still going",
+    meters:{health:100,hunger:82,thirst:78,warmth:season.warmthStart},
+    inv:{wood:0,stone:0,fibre:0,berry:2,meat:0,cooked:0,water:0},
+    hasSkin:false, craftsMade:[], placed:[], paused:false,
+    stats:{gathered:0,bites:0,nights:0}
+  };
+  logClear();
+  log("You wash up on the Long Shore. Day 1. The island does not care — yet.","dim");
+  tip("start",true);
+  upsertRecord(); saveRun(); renderAll();
+}
+function tileAt(x,y){
+  if(!S)return TILE.SEA;var n=S.world.n;
+  var X=Math.floor(x),Y=Math.floor(y);
+  if(X<0||Y<0||X>=n||Y>=n)return TILE.SEA;
+  return S.world.tiles[Y*n+X];
+}
+function walkable(x,y){
+  var t=tileAt(x,y);return t!==TILE.SEA;
+}
+function nearTile(type,dist){
+  var p=S.world.player;
+  for(var dy=-Math.ceil(dist);dy<=Math.ceil(dist);dy++)for(var dx=-Math.ceil(dist);dx<=Math.ceil(dist);dx++){
+    if(tileAt(p.x+dx,p.y+dy)===type&&Math.sqrt(dx*dx+dy*dy)<=dist+0.6)return true;
+  }return false;
+}
+function nearestNode(maxD){
+  var p=S.world.player,best=null,bd=1e9;
+  S.world.nodes.forEach(function(nd){
+    if(nd.hp<=0)return;
+    var d=Math.hypot(nd.x-p.x,nd.y-p.y);if(d<bd){bd=d;best=nd;}
+  });
+  return bd<=maxD?best:null;
+}
+function nearestPlaced(type,maxD){
+  var p=S.world.player,best=null,bd=1e9;
+  S.placed.forEach(function(pl){if(pl.type!==type)return;var d=Math.hypot(pl.x-p.x,pl.y-p.y);if(d<bd){bd=d;best=pl;}});
+  return bd<=maxD?best:null;
+}
+function nearestAnimal(kind,maxD){
+  var p=S.world.player,best=null,bd=1e9;
+  S.world.animals.forEach(function(a){if(kind&&a.kind!==kind)return;var d=Math.hypot(a.x-p.x,a.y-p.y);if(d<bd){bd=d;best=a;}});
+  return bd<=maxD?best:null;
+}
+
+/* ================= save / record ================= */
+function saveRun(){
+  if(!S)return;
+  store.set(K_SAVE,{v:1,savedAt:Date.now(),state:{
+    runId:S.runId,startedAt:S.startedAt,alias:S.alias,settings:S.settings,
+    day:S.day,hour:S.hour,over:S.over,ending:S.ending,meters:S.meters,inv:S.inv,
+    hasSkin:S.hasSkin,craftsMade:S.craftsMade,placed:S.placed,stats:S.stats,
+    world:{n:S.world.n,tiles:Array.from(S.world.tiles),nodes:S.world.nodes,animals:S.world.animals,
+      pond:S.world.pond,player:S.world.player,seed:S.world.seed,size:S.world.size,hazard:S.world.hazard,season:S.world.season}
+  }});
+  var el=$("saveNote");if(el)el.textContent="Saved on this device · "+new Date().toLocaleTimeString();
+}
+function loadRun(){
+  var sv=store.get(K_SAVE,null);
+  if(!sv||!sv.state)return false;
+  var st=sv.state;
+  st.world.tiles=Uint8Array.from(st.world.tiles);
+  S=st;S.paused=false;
+  if(S.over){
+    var t=$("endTitle"),x=$("endText");
+    if(S.ending==="escaped"){t.textContent="You made it off the Long Shore.";x.textContent="This saved run already ended — you escaped on day "+S.day+". Start a new run below whenever you are ready.";}
+    else{t.textContent="The island keeps you.";x.textContent="This saved run already ended on day "+S.day+". Its record stands below; a new run starts smarter.";}
+    $("endPanel").classList.add("show");
+  }
+  logClear();log("Run resumed — Day "+S.day+" on the Long Shore. Pick up where you left off.","dim");
+  renderAll();return true;
+}
+function recordEntry(){
+  return {game:"the-long-shore",runId:S.runId,alias:S.alias||"(no name given)",
+    startedAt:S.startedAt,daysSurvived:S.day,craftsMade:S.craftsMade.slice(),
+    craftsCount:S.craftsMade.length,ending:S.ending,
+    settings:{islandSize:S.settings.size,hazardLevel:S.settings.hazard,startingSeason:S.settings.season},
+    gathered:S.stats.gathered,bites:S.stats.bites};
+}
+function upsertRecord(){
+  if(!S)return;
+  var rec=store.get(K_REC,[]);
+  var e=recordEntry(),found=false;
+  for(var i=0;i<rec.length;i++)if(rec[i].runId===e.runId){rec[i]=e;found=true;break;}
+  if(!found)rec.push(e);
+  store.set(K_REC,rec);renderRecord();
+}
+function endRun(ending){
+  if(S.over)return;
+  S.over=true;S.ending=ending;upsertRecord();saveRun();
+  var t=$("endTitle"),x=$("endText"),p=$("endPanel");
+  if(ending==="escaped"){
+    t.textContent="You made it off the Long Shore.";
+    x.textContent="The raft holds. "+S.day+(S.day===1?" day":" days")+" on the island, "+S.craftsMade.length+
+      " things crafted, and the shore getting smaller behind you. Surviving was the game — you played it to the end.";
+    log("The raft carries you clear of the shore. Escaped on day "+S.day+".");
+  }else{
+    t.textContent="The island keeps you.";
+    x.textContent="Day "+S.day+". The record above says what you built and how far you got — "+
+      S.craftsMade.length+" crafts, "+S.stats.gathered+" gatherings. Every survivor's first island ends this way more often than not. The next run starts smarter.";
+    log("You didn't make it. The run ends on day "+S.day+".");
+  }
+  p.classList.add("show");tip(ending==="escaped"?"escaped":"gone",true);
+}
+
+/* ================= logging & tips ================= */
+var logEl=null;
+function log(msg,cls){
+  if(!logEl)logEl=$("log");if(!logEl)return;
+  var p=document.createElement("p");if(cls)p.className=cls;p.textContent=msg;
+  logEl.appendChild(p);while(logEl.children.length>40)logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop=logEl.scrollHeight;
+}
+function logClear(){if(!logEl)logEl=$("log");if(logEl)logEl.innerHTML="";}
+var tipShown={};
+function tip(key,force){
+  if(prefs.teach==="off")return;
+  if(!force&&tipShown[key])return;
+  var TIPS={
+    start:"First hours decide everything. Thirst runs out before hunger does — find the pond (blue ring on your map) before you need it. Then wood and stone for an axe.",
+    thirst:"Thirst is your fastest clock. You can go days without food; you cannot go long without water. Drink first, plan second.",
+    hunger:"Berries keep you going, but cooked meat is the real meal — and meat needs a fire. Hunger is a slow problem; solve it before it becomes a fast one.",
+    dusk:"The light is going. Fire before nightfall is the oldest rule there is: warmth, light, and cooked food all come from the same flames. No fire by dark means a cold, dangerous night.",
+    night:"Night on the island is cold and the snakes are harder to see. Stay near your fire or under your shelter until dawn.",
+    cold:"You are losing warmth. Get to a fire, get under shelter, or both — cold drains health as surely as hunger.",
+    fire:"A fire changes everything: warmth through the night and meat made safe. Keep it between you and the dark.",
+    shelter:"Shelter placement matters: inland by the pond is warm and watered but snake country; the coast is safer from bites and colder at night. You chose your ground — now you know its price.",
+    axe:"With an axe the island opens up. Next rung: a fire before tonight, then a roof.",
+    raftReady:"The raft is built. Everything else was rehearsal. Board it at the shore when you are ready to leave — there is no coming back to this run.",
+    bite:"Snakebite. Health drops fast — eat, drink, rest by a fire, and watch the grass. Snakes favour the inland green; the sand is safer walking.",
+    escaped:"Escaped. The record below holds the whole run — days, crafts, and all.",
+    gone:"The run is in your record, honestly ended. What it teaches is yours to keep: the order never changes — water, fire, shelter, tools, raft."
+  };
+  var msg=TIPS[key];if(!msg)return;
+  tipShown[key]=true;
+  var bar=$("tipbar");$("tipText").textContent=msg;
+  $("tipWho").textContent=prefs.teach==="coach"?"Coach":"Field note";
+  bar.classList.add("show");
+}
+function coach(){
+  var box=$("coachText"),panel=$("coachPanel");
+  if(prefs.teach!=="coach"){panel.style.display="none";return;}
+  panel.style.display="";
+  if(!S||S.over){box.textContent="Start a run and I will read the island with you.";return;}
+  var m=S.meters,lines=[];
+  var night=S.hour>=18.5||S.hour<5.5;
+  if(m.thirst<45)lines.push("Priority one: water. Thirst at "+Math.round(m.thirst)+" and falling fastest of all your meters. "+(nearTile(TILE.POND,2)?"You are at the pond — drink now.":"Head for the pond on your map before anything else."));
+  else if(m.hunger<35)lines.push("Priority: food. Berries now, or meat if you have a fire. Hunger is slow — but it compounds.");
+  else if(night&&!nearestPlaced("fire",3)&&!S.craftsMade.includes("fire"))lines.push("Priority: fire before full dark. Three wood, two stone. A night without fire costs warmth you may not have.");
+  else if(m.warmth<45)lines.push("Priority: warmth. "+(nearestPlaced("fire",3)?"You are near your fire — stay in its light.":"Get to fire or shelter; cold is quietly taking health."));
+  else if(!S.craftsMade.includes("axe"))lines.push("Priority: the stone axe — 2 stone, 1 wood. Everything after it is faster. Gather stone from grey rocks, wood from trees.");
+  else if(!S.craftsMade.includes("raft")){
+    var next=CRAFTS.filter(function(c){return !S.craftsMade.includes(c.id);})[0];
+    if(next)lines.push("Next rung: "+next.name.toLowerCase()+". "+next.desc);
+  } else lines.push("The raft waits at the shore. When you are ready, board it.");
+  /* camp reading */
+  var p=S.world.player,coastDist=1e9;
+  for(var a=0;a<6.3;a+=0.3){var d=0;while(d<40&&tileAt(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d)!==TILE.SEA)d++;if(d<coastDist)coastDist=d;}
+  var pondD=Math.hypot(p.x-S.world.pond.x,p.y-S.world.pond.y);
+  if(pondD<7)lines.push("Ground report: you are inland, by the water — warm, wooded, watered. Trade-off you accepted: snakes in this grass, and a long walk to the shore when the raft is ready.");
+  else if(coastDist<6)lines.push("Ground report: you are on the coast — raft ground, fewer snakes. Trade-off you accepted: cold nights and a walk for every drink.");
+  box.innerHTML="";
+  lines.forEach(function(L){var pp=document.createElement("p");pp.style.margin=".3rem 0";pp.textContent=L;box.appendChild(pp);});
+}
+
+/* ================= actions ================= */
+function gather(node){
+  var tool=S.craftsMade.includes("spear")?3:(S.craftsMade.includes("axe")&&node.type==="tree"?2:1);
+  node.hp-=tool;S.stats.gathered++;
+  if(node.type==="tree"){S.inv.wood++;log("Wood +1 ("+S.inv.wood+" in pack).");}
+  else if(node.type==="rock"){S.inv.stone++;log("Stone +1 ("+S.inv.stone+" in pack).");}
+  else{ /* bush: berries or fibre */
+    if(Math.random()<0.55){S.inv.berry++;log("Berries +1. A handful now beats a feast later.");}
+    else{S.inv.fibre++;log("Fibre +1 — stripped bark and vine. Raft lashings and shelter roofs are made of this.");}
+  }
+  if(node.hp<=0){node.regrow=90;log(node.type==="tree"?"The tree comes down.":node.type==="rock"?"The rock is picked clean.":"The bush is stripped bare.");}
+  tip("axeHint");renderHUD();
+}
+function doAction(){
+  if(!S||S.over)return;
+  var p=S.world.player;
+  /* raft boarding */
+  var raft=nearestPlaced("raft",2.2);
+  if(raft){endRun("escaped");return;}
+  /* pond drink */
+  if(nearTile(TILE.POND,1.8)){drink(true);return;}
+  /* cook at fire */
+  var fire=nearestPlaced("fire",2.2);
+  if(fire&&S.inv.meat>0){S.inv.meat--;S.inv.cooked++;log("Meat cooked over the fire. Cooked food restores far more than raw.");renderHUD();return;}
+  /* hunt rabbit */
+  var rab=nearestAnimal("rabbit",1.5);
+  if(rab){
+    var chance=S.craftsMade.includes("spear")?0.85:0.4;
+    if(Math.random()<chance){
+      S.world.animals.splice(S.world.animals.indexOf(rab),1);S.inv.meat++;
+      log("Caught. Raw meat +1 — cook it at a fire before you trust it.");renderHUD();
+    }else{rab.dir=Math.atan2(rab.y-p.y,rab.x-p.x);rab.speed=3.4;log("It bolts. A spear makes this far more reliable.");}
+    return;
+  }
+  /* gather */
+  var node=nearestNode(1.9);
+  if(node){gather(node);return;}
+  log("Nothing to hand here. Walk to a tree, a grey rock, or a berry bush — or to the pond to drink.");
+}
+function drink(fromPond){
+  if(!S||S.over)return;
+  if(fromPond||nearTile(TILE.POND,1.8)){
+    S.meters.thirst=100;
+    if(S.hasSkin){S.inv.water=1;log("You drink deep, and fill the waterskin.");}
+    else log("You drink from the pond. Fresh water — the island's one true kindness.");
+  }else if(S.hasSkin&&S.inv.water>0){
+    S.inv.water=0;S.meters.thirst=clamp(S.meters.thirst+55,0,100);log("You drink from the waterskin. It is empty now — refill at the pond.");
+  }else{
+    log("Nothing to drink. Fresh water is the pond (blue ring on the map)"+(S.hasSkin?" or your waterskin.":". The sea only looks like mercy."));
+    tip("thirst",true);return;
+  }
+  renderHUD();
+}
+function eat(){
+  if(!S||S.over)return;
+  if(S.inv.cooked>0){S.inv.cooked--;S.meters.hunger=clamp(S.meters.hunger+55,0,100);S.meters.health=clamp(S.meters.health+6,0,100);log("Cooked meat. That is a real meal — hunger well back, health steadied.");}
+  else if(S.inv.berry>0){S.inv.berry--;S.meters.hunger=clamp(S.meters.hunger+18,0,100);log("Berries. Not a feast, but the clock slows.");}
+  else if(S.inv.meat>0){S.inv.meat--;S.meters.hunger=clamp(S.meters.hunger+22,0,100);S.meters.health=clamp(S.meters.health-5,0,100);log("Raw meat, eaten desperate. It fills you and sits badly — cook meat when you can.");}
+  else{log("Nothing to eat. Berry bushes dot the grass — look for the green mounds with red fruit.");tip("hunger",true);return;}
+  renderHUD();
+}
+function rest(){
+  if(!S||S.over)return;
+  var shelter=nearestPlaced("shelter",2.6),fire=nearestPlaced("fire",2.6);
+  if(!shelter&&!fire){log("Resting in the open is poor sleep and worse warmth. Build a fire or a shelter first.");tip("dusk",true);return;}
+  /* advance to 06:30 next morning */
+  var add=(24-S.hour)+6.5;if(S.hour<6.5)add=6.5-S.hour;
+  var hours=add;
+  S.hour+=add;while(S.hour>=24){S.hour-=24;S.day++;}
+  S.stats.nights++;
+  var hungerCost=hours*2.6,thirstCost=hours*3.4;
+  S.meters.hunger=clamp(S.meters.hunger-hungerCost,0,100);
+  S.meters.thirst=clamp(S.meters.thirst-thirstCost,0,100);
+  var quality=shelter?1:0.55;
+  S.meters.warmth=clamp(55+35*quality,0,100);
+  if(S.meters.hunger>15&&S.meters.thirst>10)S.meters.health=clamp(S.meters.health+14*quality,0,100);
+  log("You sleep "+(shelter?"under the lean-to":"by the fire")+" and wake on day "+S.day+". Night cost you food and water, as every night does.");
+  if(S.meters.health<=0){endRun("didn't make it");return;}
+  upsertRecord();saveRun();renderAll();
+}
+function craft(id){
+  if(!S||S.over)return;
+  var c=null;CRAFTS.forEach(function(x){if(x.id===id)c=x;});
+  if(!c||S.craftsMade.includes(id)&&id!=="fire")return;
+  if(c.needs&&!S.craftsMade.includes(c.needs)){log("You need the "+(c.needs==="axe"?"stone axe":"")+" first. The ladder is climbed in order.");return;}
+  if(c.shore&&!nearTile(TILE.SEA,2.2)){log("A raft is built at the shoreline. Stand where the sand meets the sea.");return;}
+  for(var k in c.cost)if((S.inv[k]||0)<c.cost[k]){log("Not enough "+RESNAME[k]+". Need "+c.cost[k]+", have "+(S.inv[k]||0)+".");return;}
+  for(var k2 in c.cost)S.inv[k2]-=c.cost[k2];
+  var p=S.world.player;
+  if(id==="fire"){S.placed.push({type:"fire",x:p.x,y:p.y});if(!S.craftsMade.includes("fire"))S.craftsMade.push("fire");log("The fire catches. Warmth, light, cooked food — the island just got smaller.");tip("fire",true);}
+  else if(id==="shelter"){S.placed.push({type:"shelter",x:p.x+0.8,y:p.y});S.craftsMade.push("shelter");log("Lean-to raised. This ground is your camp now.");tip("shelter",true);}
+  else if(id==="raft"){S.placed.push({type:"raft",x:p.x,y:p.y});S.craftsMade.push("raft");log("The raft floats. It is, honestly, a door.");tip("raftReady",true);}
+  else if(id==="skin"){S.hasSkin=true;S.craftsMade.push("skin");log("Waterskin made. Fill it at the pond; drink anywhere.");}
+  else{S.craftsMade.push(id);log("Crafted: "+c.name+". "+c.desc);if(id==="axe")tip("axe",true);}
+  upsertRecord();saveRun();renderAll();
+}
+
+/* ================= simulation ================= */
+var keys={},pad={},tapTarget=null;
+var lastT=0,saveTimer=0,hudTimer=0;
+function step(dt){
+  if(!S||S.over||S.paused)return;
+  var p=S.world.player;
+  /* movement */
+  var mx=0,my=0;
+  if(keys["arrowup"]||keys["w"]||pad.up)my-=1;
+  if(keys["arrowdown"]||keys["s"]||pad.down)my+=1;
+  if(keys["arrowleft"]||keys["a"]||pad.left)mx-=1;
+  if(keys["arrowright"]||keys["d"]||pad.right)mx+=1;
+  if(mx===0&&my===0&&tapTarget){
+    var dx=tapTarget.x-p.x,dy=tapTarget.y-p.y,dd=Math.hypot(dx,dy);
+    if(dd<0.25)tapTarget=null;else{mx=dx/dd;my=dy/dd;}
+  }
+  if(mx||my){
+    var L=Math.hypot(mx,my);mx/=L;my/=L;
+    var sp=3.1,nx=p.x+mx*sp*dt,ny=p.y+my*sp*dt;
+    if(walkable(nx,p.y))p.x=nx;
+    if(walkable(p.x,ny))p.y=ny;
+    p.x=clamp(p.x,0.5,S.world.n-0.5);p.y=clamp(p.y,0.5,S.world.n-0.5);
+  }
+  /* clock */
+  var prevHour=S.hour;
+  S.hour+=dt*(24/DAY_LEN);
+  if(S.hour>=24){S.hour-=24;S.day++;log("Day "+S.day+" breaks over the Long Shore.");upsertRecord();}
+  if(prevHour<17.5&&S.hour>=17.5)tip("dusk");
+  if(prevHour<19&&S.hour>=19)tip("night");
+  /* meters — rates per real second */
+  var m=S.meters,season=SEASONS[S.settings.season],hz=HAZ[S.settings.hazard];
+  var nightF=(S.hour>=18.5||S.hour<6)?1:0.25;
+  m.thirst=clamp(m.thirst-dt*0.30*season.thirst,0,100);
+  m.hunger=clamp(m.hunger-dt*0.20,0,100);
+  var fire=nearestPlaced("fire",2.8),shelter=nearestPlaced("shelter",2.4);
+  var coldRate=dt*(0.24*season.nightCold*(0.4+0.6*nightF));
+  if(fire)m.warmth=clamp(m.warmth+dt*3.2,0,100);
+  else if(shelter&&nightF===1)m.warmth=clamp(m.warmth-coldRate*0.3,0,100);
+  else m.warmth=clamp(m.warmth-coldRate,0,100);
+  if(S.hour>=10&&S.hour<=16&&!fire)m.warmth=clamp(m.warmth+dt*0.35,0,100);
+  var drain=0;
+  if(m.thirst<=0)drain+=0.85; if(m.hunger<=0)drain+=0.5; if(m.warmth<=0)drain+=0.7;
+  if(drain>0)m.health=clamp(m.health-dt*drain,0,100);
+  else if(m.hunger>30&&m.thirst>25&&m.warmth>25)m.health=clamp(m.health+dt*0.14,0,100);
+  if(m.thirst<30)tip("thirst");
+  if(m.hunger<25)tip("hunger");
+  if(m.warmth<30)tip("cold");
+  if(m.health<=0){endRun("didn't make it");return;}
+  /* nodes regrow */
+  S.world.nodes.forEach(function(nd){if(nd.hp<=0){nd.regrow-=dt;if(nd.regrow<=0)nd.hp=nd.max;}});
+  /* animals */
+  var rnd=Math.random;
+  S.world.animals.forEach(function(a){
+    a.cool-=dt;
+    var pd=Math.hypot(a.x-p.x,a.y-p.y);
+    if(a.kind==="rabbit"){
+      if(pd<2.2){a.dir=Math.atan2(a.y-p.y,a.x-p.x);a.speed=3.2;}
+      else if(a.cool<=0){a.dir=rnd()*6.283;a.speed=rnd()<0.5?0.7:0;a.cool=1+rnd()*2;}
+    }else if(a.kind==="crab"){
+      if(a.cool<=0){a.dir=rnd()*6.283;a.speed=0.5;a.cool=2+rnd()*3;}
+      if(tileAt(a.x,a.y)!==TILE.SAND&&tileAt(a.x,a.y)!==TILE.GRASS)a.speed=0;
+    }else if(a.kind==="snake"){
+      a.speed=0.45;
+      if(a.cool<=0){a.dir=rnd()*6.283;a.cool=2+rnd()*3;}
+      if(pd<1.05&&a.cool<=0.2){
+        a.cool=4;S.stats.bites++;
+        m.health=clamp(m.health-hz.bite,0,100);
+        log("A shore viper strikes from the grass — "+hz.bite+" health. That is the island's one true hazard.");tip("bite",true);
+        if(m.health<=0)endRun("didn't make it");
+      }
+    }
+    if(a.speed>0){
+      var ax=a.x+Math.cos(a.dir)*a.speed*dt,ay=a.y+Math.sin(a.dir)*a.speed*dt;
+      if(walkable(ax,a.y))a.x=ax;else a.dir+=2.4;
+      if(walkable(a.x,ay))a.y=ay;else a.dir+=2.4;
+    }
+  });
+  /* timers */
+  saveTimer+=dt;hudTimer+=dt;
+  if(saveTimer>5){saveTimer=0;saveRun();upsertRecord();}
+  if(hudTimer>0.2){hudTimer=0;renderHUD();coach();}
+}
+
+/* ================= rendering ================= */
+var cv=$("view"),ctx=cv.getContext("2d");
+var mini=$("mini"),mctx=mini.getContext("2d");
+var TS=34; /* tile px at base resolution */
+function seasonPalette(){
+  var dark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+  var base={
+    sea:"#1d5f73",seaDeep:"#174c5e",sand:"#d9c184",grass:"#6f9e4e",forest:"#4c7d3d",pond:"#3f9db8"
+  };
+  if(S&&S.settings.season==="autumn"){base.grass="#8f9a44";base.forest="#7a6a2f";}
+  if(S&&S.settings.season==="winter"){base.grass="#a9bfae";base.forest="#5d7a63";base.sand="#e3ddc8";}
+  if(S&&S.settings.season==="spring"){base.grass="#79b657";base.forest="#549247";}
+  return base;
+}
+function darkness(){
+  if(!S)return 0;
+  var h=S.hour;
+  if(h>=6&&h<=17.5)return 0;
+  if(h>17.5&&h<20)return (h-17.5)/2.5*0.72;
+  if(h>=20||h<=4.5)return 0.72;
+  return 0.72-(h-4.5)/1.5*0.72;
+}
+function draw(){
+  if(!S)return;
+  var W=cv.width,H=cv.height,p=S.world.player,pal=seasonPalette();
+  var camX=clamp(p.x-W/TS/2,0,Math.max(0,S.world.n-W/TS));
+  var camY=clamp(p.y-H/TS/2,0,Math.max(0,S.world.n-H/TS));
+  ctx.fillStyle=pal.seaDeep;ctx.fillRect(0,0,W,H);
+  var x0=Math.floor(camX),y0=Math.floor(camY),x1=Math.min(S.world.n,x0+Math.ceil(W/TS)+1),y1=Math.min(S.world.n,y0+Math.ceil(H/TS)+1);
+  for(var y=y0;y<y1;y++)for(var x=x0;x<x1;x++){
+    var t=S.world.tiles[y*S.world.n+x];
+    var px=(x-camX)*TS,py=(y-camY)*TS;
+    ctx.fillStyle=t===TILE.SEA?pal.sea:t===TILE.SAND?pal.sand:t===TILE.GRASS?pal.grass:t===TILE.FOREST?pal.forest:pal.pond;
+    ctx.fillRect(px,py,TS+1,TS+1);
+    if(t===TILE.FOREST){ctx.fillStyle="rgba(0,0,0,0.10)";ctx.fillRect(px,py+TS-5,TS,5);}
+    if(t===TILE.POND){ctx.fillStyle="rgba(255,255,255,0.20)";ctx.fillRect(px+4,py+5,TS-14,3);}
+  }
+  function SX(wx){return (wx-camX)*TS;} function SY(wy){return (wy-camY)*TS;}
+  /* placed things */
+  S.placed.forEach(function(pl){
+    var px=SX(pl.x),py=SY(pl.y);
+    if(px<-60||py<-60||px>W+60||py>H+60)return;
+    if(pl.type==="fire"){
+      ctx.fillStyle="#5a4632";ctx.fillRect(px-13,py+4,26,5);
+      var fl=4+Math.sin(Date.now()/90+pl.x)*2.5;
+      ctx.fillStyle="#e07b24";ctx.beginPath();ctx.ellipse(px,py-2,8,12+fl,0,0,6.3);ctx.fill();
+      ctx.fillStyle="#f5c542";ctx.beginPath();ctx.ellipse(px,py,5,7+fl*0.5,0,0,6.3);ctx.fill();
+    }else if(pl.type==="shelter"){
+      ctx.strokeStyle="#6b4a2a";ctx.lineWidth=5;ctx.beginPath();
+      ctx.moveTo(px-18,py+14);ctx.lineTo(px,py-16);ctx.lineTo(px+18,py+14);ctx.stroke();
+      ctx.strokeStyle="#4c7d3d";ctx.lineWidth=3;ctx.beginPath();
+      ctx.moveTo(px-14,py+2);ctx.lineTo(px+2,py-12);ctx.moveTo(px-6,py+8);ctx.lineTo(px+12,py-6);ctx.stroke();
+    }else if(pl.type==="raft"){
+      ctx.fillStyle="#8a6238";
+      for(var i=-2;i<=2;i++)ctx.fillRect(px-20,py+i*8-3,40,6);
+      ctx.strokeStyle="#d9c184";ctx.lineWidth=2;ctx.strokeRect(px-20,py-19,40,38);
+    }
+  });
+  /* nodes */
+  S.world.nodes.forEach(function(nd){
+    if(nd.hp<=0)return;
+    var px=SX(nd.x),py=SY(nd.y);
+    if(px<-50||py<-50||px>W+50||py>H+50)return;
+    if(nd.type==="tree"){
+      ctx.fillStyle="#6b4a2a";ctx.fillRect(px-3,py+2,6,12);
+      ctx.fillStyle=S.settings.season==="autumn"?"#a8722a":"#2f6b2f";
+      ctx.beginPath();ctx.arc(px,py-6,13,0,6.3);ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.15)";ctx.beginPath();ctx.arc(px-4,py-10,5,0,6.3);ctx.fill();
+    }else if(nd.type==="rock"){
+      ctx.fillStyle="#8d9291";ctx.beginPath();
+      ctx.moveTo(px-12,py+10);ctx.lineTo(px-6,py-6);ctx.lineTo(px+4,py-10);ctx.lineTo(px+12,py+4);ctx.lineTo(px+10,py+10);ctx.closePath();ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,0.25)";ctx.beginPath();ctx.arc(px-2,py-4,3.4,0,6.3);ctx.fill();
+    }else{
+      ctx.fillStyle="#3e7a34";ctx.beginPath();ctx.arc(px,py+3,11,0,6.3);ctx.fill();
+      ctx.fillStyle="#c93a2e";
+      ctx.beginPath();ctx.arc(px-5,py,2.4,0,6.3);ctx.arc(px+4,py+4,2.4,0,6.3);ctx.arc(px+1,py-4,2.4,0,6.3);ctx.fill();
+    }
+  });
+  /* animals */
+  S.world.animals.forEach(function(a){
+    var px=SX(a.x),py=SY(a.y);
+    if(px<-40||py<-40||px>W+40||py>H+40)return;
+    if(a.kind==="rabbit"){
+      ctx.fillStyle="#e8e2d4";ctx.beginPath();ctx.ellipse(px,py,7,5,0,0,6.3);ctx.fill();
+      ctx.beginPath();ctx.ellipse(px+5,py-5,2,5,0.5,0,6.3);ctx.fill();
+      ctx.fillStyle="#222";ctx.fillRect(px+6,py-2,1.8,1.8);
+    }else if(a.kind==="crab"){
+      ctx.fillStyle="#c9562e";ctx.beginPath();ctx.ellipse(px,py,6,4.4,0,0,6.3);ctx.fill();
+      ctx.beginPath();ctx.arc(px-8,py-3,3,0,6.3);ctx.arc(px+8,py-3,3,0,6.3);ctx.fill();
+    }else{
+      ctx.strokeStyle="#7a7d2a";ctx.lineWidth=4;ctx.beginPath();
+      ctx.moveTo(px-9,py+4);ctx.quadraticCurveTo(px,py-7,px+9,py+3);ctx.stroke();
+      ctx.fillStyle="#5d6020";ctx.beginPath();ctx.arc(px+9,py+3,3.6,0,6.3);ctx.fill();
+      ctx.fillStyle="#e33";ctx.fillRect(px+11,py+2,3,1.4);
+    }
+  });
+  /* player */
+  var px=SX(p.x),py=SY(p.y);
+  ctx.fillStyle="rgba(0,0,0,0.25)";ctx.beginPath();ctx.ellipse(px,py+11,9,3.4,0,0,6.3);ctx.fill();
+  ctx.fillStyle="#20455e";ctx.fillRect(px-6,py-2,12,13);
+  ctx.fillStyle="#e8b98a";ctx.beginPath();ctx.arc(px,py-8,6,0,6.3);ctx.fill();
+  ctx.fillStyle="#bc5518";ctx.fillRect(px-6,py-13,12,3.4);
+  if(S.craftsMade.includes("axe")){ctx.strokeStyle="#8a6238";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(px+8,py+8);ctx.lineTo(px+13,py-4);ctx.stroke();ctx.fillStyle="#9aa0a0";ctx.fillRect(px+11,py-8,6,5);}
+  /* night */
+  var dk=darkness();
+  if(dk>0.02){
+    ctx.fillStyle="rgba(8,14,34,"+dk+")";ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.globalCompositeOperation="lighter";
+    function glow(gx,gy,r,a){
+      var g=ctx.createRadialGradient(gx,gy,4,gx,gy,r);
+      g.addColorStop(0,"rgba(255,190,90,"+a+")");g.addColorStop(1,"rgba(255,190,90,0)");
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(gx,gy,r,0,6.3);ctx.fill();
+    }
+    glow(px,py,52,0.20);
+    S.placed.forEach(function(pl){if(pl.type==="fire")glow(SX(pl.x),SY(pl.y),95,0.5);});
+    ctx.restore();
+  }
+  drawMini(camX,camY);
+}
+function drawMini(){
+  if(!S)return;
+  var n=S.world.n,sz=mini.width,cell=sz/n,pal=seasonPalette();
+  mctx.fillStyle=pal.seaDeep;mctx.fillRect(0,0,sz,sz);
+  for(var y=0;y<n;y++)for(var x=0;x<n;x++){
+    var t=S.world.tiles[y*n+x];if(t===TILE.SEA)continue;
+    mctx.fillStyle=t===TILE.SAND?pal.sand:t===TILE.GRASS?pal.grass:t===TILE.FOREST?pal.forest:pal.pond;
+    mctx.fillRect(x*cell,y*cell,cell+0.6,cell+0.6);
+  }
+  mctx.strokeStyle="#7fd4ea";mctx.lineWidth=2;
+  mctx.beginPath();mctx.arc(S.world.pond.x*cell,S.world.pond.y*cell,9,0,6.3);mctx.stroke();
+  S.placed.forEach(function(pl){
+    mctx.fillStyle=pl.type==="fire"?"#f5a623":pl.type==="raft"?"#ffffff":"#ffd97f";
+    mctx.fillRect(pl.x*cell-2.4,pl.y*cell-2.4,4.8,4.8);
+  });
+  var p=S.world.player;
+  mctx.fillStyle="#ffcf3f";mctx.strokeStyle="#000";mctx.lineWidth=1.2;
+  mctx.beginPath();mctx.arc(p.x*cell,p.y*cell,4.4,0,6.3);mctx.fill();mctx.stroke();
+}
+function phaseName(h){
+  if(h<5)return "Deep night"; if(h<7)return "Dawn"; if(h<11.5)return "Morning";
+  if(h<14.5)return "Midday"; if(h<17.5)return "Afternoon"; if(h<19.5)return "Dusk"; if(h<22)return "Evening"; return "Night";
+}
+function fmtHour(h){var H=Math.floor(h),M=Math.floor((h-H)*60);return (H<10?"0":"")+H+":"+(M<10?"0":"")+M;}
+function actionLabel(){
+  if(!S||S.over)return "Start a run below";
+  if(nearestPlaced("raft",2.2))return "Board the raft — tap or press E";
+  if(nearTile(TILE.POND,1.8))return "Drink from the pond — tap or press E";
+  var fire=nearestPlaced("fire",2.2);
+  if(fire&&S.inv.meat>0)return "Cook the meat — tap or press E";
+  if(nearestAnimal("rabbit",1.5))return (S.craftsMade.includes("spear")?"Spear the rabbit":"Try to catch the rabbit")+" — tap or press E";
+  var node=nearestNode(1.9);
+  if(node)return (node.type==="tree"?"Chop the tree":node.type==="rock"?"Work the rock":"Search the bush")+" — tap or press E";
+  return "Look around — tap or press E";
+}
+function renderHUD(){
+  if(!S)return;
+  var m=S.meters;
+  $("clock").textContent="Day "+S.day+" · "+fmtHour(S.hour);
+  $("phase").textContent=phaseName(S.hour)+" · "+SEASONS[S.settings.season].name+" · "+HAZ[S.settings.hazard].label+" hazards";
+  function bar(id,vid,val){
+    var b=$(id);b.querySelector("i").style.width=clamp(val,0,100)+"%";
+    b.classList.toggle("low",val<30);$(vid).textContent=Math.round(val);
+  }
+  bar("barHealth","vHealth",m.health);bar("barHunger","vHunger",m.hunger);
+  bar("barThirst","vThirst",m.thirst);bar("barWarmth","vWarmth",m.warmth);
+  var inv=S.inv,parts=[];
+  parts.push("<span>Wood <b>"+inv.wood+"</b></span>","<span>Stone <b>"+inv.stone+"</b></span>",
+    "<span>Fibre <b>"+inv.fibre+"</b></span>","<span>Berries <b>"+inv.berry+"</b></span>",
+    "<span>Raw meat <b>"+inv.meat+"</b></span>","<span>Cooked meat <b>"+inv.cooked+"</b></span>");
+  if(S.hasSkin)parts.push("<span>Waterskin <b>"+(inv.water?"full":"empty")+"</b></span>");
+  $("inv").innerHTML=parts.join("");
+  var tools=[];
+  if(S.craftsMade.includes("axe"))tools.push("stone axe");
+  if(S.craftsMade.includes("spear"))tools.push("fishing spear");
+  if(nearestPlaced("fire",99))tools.push("a fire burns");
+  if(S.placed.some(function(x){return x.type==="shelter";}))tools.push("a shelter stands");
+  if(S.placed.some(function(x){return x.type==="raft";}))tools.push("the raft waits");
+  $("toolsLine").textContent=tools.length?("You have: "+tools.join(" · ")+"."):"Bare hands. Stone and wood are a start.";
+  $("btnAction").textContent=actionLabel();
+  var rb=$("btnRest");
+  rb.disabled=!(nearestPlaced("shelter",2.6)||nearestPlaced("fire",2.6));
+  rb.textContent=rb.disabled?"Rest — needs a fire or shelter nearby":"Rest until morning — tap or press R";
+  $("btnPause").textContent=S.paused?"Resume — tap or press P":"Pause — tap or press P";
+}
+function costText(c){return Object.keys(c.cost).map(function(k){return c.cost[k]+" "+RESNAME[k];}).join(" · ");}
+var craftSig="";
+function renderCrafts(){
+  if(!S)return;
+  var sig=JSON.stringify([S.inv,S.craftsMade,S.over]);
+  if(sig===craftSig)return;
+  craftSig=sig;
+  var host=$("craftList");host.innerHTML="";
+  CRAFTS.forEach(function(c){
+    var row=document.createElement("div");row.className="craft";
+    var owned=S&&S.craftsMade.includes(c.id)&&c.id!=="fire";
+    var left=document.createElement("div");left.className="what";
+    left.innerHTML="<b>"+c.name+"</b> — "+c.desc+"<br><span class='cost'>Costs: "+costText(c)+
+      (c.needs?" · needs the stone axe first":"")+(c.shore?" · build at the shoreline":"")+"</span>";
+    row.appendChild(left);
+    if(owned){var s=document.createElement("span");s.className="owned";s.textContent="Made ✓";row.appendChild(s);}
+    else{
+      var b=document.createElement("button");b.type="button";b.textContent="Craft "+c.name.toLowerCase()+" — tap";
+      b.setAttribute("data-craft",c.id);
+      var afford=S&&Object.keys(c.cost).every(function(k){return (S.inv[k]||0)>=c.cost[k];});
+      var needOk=!c.needs||(S&&S.craftsMade.includes(c.needs));
+      b.disabled=!S||S.over||!afford||!needOk;
+      b.addEventListener("click",function(){craft(c.id);});
+      row.appendChild(b);
+    }
+    host.appendChild(row);
+  });
+}
+function renderRecord(){
+  var rec=store.get(K_REC,[]);
+  var host=$("recordBody");
+  if(!rec.length){host.innerHTML="<p class='small'>No runs recorded yet. Your first run is already being written above as you play.</p>";return;}
+  var html="<table class='rec'><thead><tr><th>Run</th><th>Days</th><th>Crafts</th><th>Ending</th><th>Settings</th></tr></thead><tbody>";
+  rec.slice().reverse().forEach(function(e){
+    var cls=e.ending==="escaped"?"end-escaped":(e.ending==="still going"?"end-going":"end-gone");
+    html+="<tr><td>"+e.alias+"<br><span class='small'>"+new Date(e.startedAt).toLocaleDateString()+"</span></td>"+
+      "<td>"+e.daysSurvived+"</td><td>"+(e.craftsMade.length?e.craftsMade.join(", "):"—")+"</td>"+
+      "<td class='"+cls+"'>"+e.ending+"</td>"+
+      "<td class='small'>"+e.settings.islandSize+" island · "+e.settings.hazardLevel+" hazards · "+e.settings.startingSeason+"</td></tr>";
+  });
+  host.innerHTML=html+"</tbody></table>";
+}
+function variantText(){
+  var parts=[];
+  if(!S)return "";
+  if(S.settings.size!=="standard")parts.push(S.settings.size==="small"?"Small island":"Large island");
+  if(S.settings.hazard!=="standard")parts.push(HAZ[S.settings.hazard].label+" hazards");
+  if(S.settings.season!=="summer")parts.push(SEASONS[S.settings.season].name+" start");
+  return parts.length?("Variant rules in play: "+parts.join(" · ")+" — this run's record is labelled with its variant, not dressed as standard."):"";
+}
+function renderAll(){
+  renderHUD();renderCrafts();renderRecord();
+  var vb=$("variantBanner"),vt=variantText();
+  vb.textContent=vt;vb.classList.toggle("show",!!vt);
+  coach();
+}
+var renderTimer=0;
+function loop(ts){
+  var dt=Math.min(0.05,(ts-lastT)/1000||0);lastT=ts;
+  step(dt);draw();
+  renderTimer+=dt;
+  if(renderTimer>0.5){renderTimer=0;renderCrafts();}
+  requestAnimationFrame(loop);
+}
+
+/* ================= input ================= */
+function stepOnce(dx,dy){
+  if(!S||S.over||S.paused)return;
+  var p=S.world.player,nx=p.x+dx*0.38,ny=p.y+dy*0.38;
+  if(walkable(nx,p.y))p.x=clamp(nx,0.5,S.world.n-0.5);
+  if(walkable(p.x,ny))p.y=clamp(ny,0.5,S.world.n-0.5);
+  tapTarget=null;renderHUD();
+}
+document.addEventListener("keydown",function(e){
+  var k=e.key.toLowerCase();
+  if(["arrowup","arrowdown","arrowleft","arrowright"," "].indexOf(k)>=0)e.preventDefault();
+  if(!e.repeat){
+    if(k==="arrowup"||k==="w")stepOnce(0,-1);
+    else if(k==="arrowdown"||k==="s")stepOnce(0,1);
+    else if(k==="arrowleft"||k==="a")stepOnce(-1,0);
+    else if(k==="arrowright"||k==="d")stepOnce(1,0);
+  }
+  keys[k]=true;
+  if(k==="e"||k===" ")doAction();
+  else if(k==="f")eat();
+  else if(k==="q")drink(false);
+  else if(k==="r")rest();
+  else if(k==="p"&&S){S.paused=!S.paused;renderHUD();}
+});
+document.addEventListener("keyup",function(e){keys[e.key.toLowerCase()]=false;});
+document.querySelectorAll(".dpad button[data-dir]").forEach(function(b){
+  var dir=b.getAttribute("data-dir");
+  function on(e){e.preventDefault();pad[dir]=true;tapTarget=null;
+    stepOnce(dir==="left"?-1:dir==="right"?1:0,dir==="up"?-1:dir==="down"?1:0);}
+  function off(){pad[dir]=false;}
+  b.addEventListener("pointerdown",on);
+  b.addEventListener("pointerup",off);b.addEventListener("pointerleave",off);b.addEventListener("pointercancel",off);
+});
+cv.addEventListener("pointerdown",function(e){
+  if(!S)return;
+  var r=cv.getBoundingClientRect();
+  var wx=(e.clientX-r.left)/r.width*cv.width/TS, wy=(e.clientY-r.top)/r.height*cv.height/TS;
+  var p=S.world.player;
+  var camX=clamp(p.x-cv.width/TS/2,0,Math.max(0,S.world.n-cv.width/TS));
+  var camY=clamp(p.y-cv.height/TS/2,0,Math.max(0,S.world.n-cv.height/TS));
+  tapTarget={x:camX+wx,y:camY+wy};
+});
+$("btnAction").addEventListener("click",doAction);
+$("btnEat").addEventListener("click",eat);
+$("btnDrink").addEventListener("click",function(){drink(false);});
+$("btnRest").addEventListener("click",rest);
+$("btnPause").addEventListener("click",function(){if(S){S.paused=!S.paused;renderHUD();}});
+
+/* ================= settings & page wiring ================= */
+function syncSettingsUI(){
+  $("selSize").value=prefs.size;$("selHazard").value=prefs.hazard;$("selSeason").value=prefs.season;
+  $("aliasInput").value=prefs.alias||"";
+  document.querySelectorAll("[data-teach]").forEach(function(b){
+    b.setAttribute("aria-pressed",b.getAttribute("data-teach")===prefs.teach?"true":"false");
+  });
+  $("tipbar").classList.toggle("show",prefs.teach!=="off"&&!!$("tipText").textContent);
+  coach();
+}
+$("selSize").addEventListener("change",function(){prefs.size=this.value;savePrefs();});
+$("selHazard").addEventListener("change",function(){prefs.hazard=this.value;savePrefs();});
+$("selSeason").addEventListener("change",function(){prefs.season=this.value;savePrefs();});
+$("aliasInput").addEventListener("change",function(){prefs.alias=this.value.trim();savePrefs();});
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click",function(){
+    prefs.teach=b.getAttribute("data-teach");savePrefs();syncSettingsUI();
+    $("teachDesc").textContent=prefs.teach==="off"?"Off: no notes, no coach. The island keeps its counsel.":
+      prefs.teach==="coach"?"Coach: a standing coach panel beside your meters, reading your situation and naming your best next move — and the alternative, with its trade-off.":
+      "Light: a short field note when something matters. Coach adds the standing panel beside your meters.";
+    if(prefs.teach!=="off")tip("start",true);
+  });
+});
+function startFresh(){
+  prefs.alias=$("aliasInput").value.trim();savePrefs();
+  $("endPanel").classList.remove("show");
+  tipShown={};newRun();
+  document.getElementById("play").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("btnNewRun").addEventListener("click",startFresh);
+$("btnNewRun2").addEventListener("click",startFresh);
+$("btnResume").addEventListener("click",function(){
+  if(loadRun()){document.getElementById("play").scrollIntoView({behavior:"smooth"});}
+  else log("No saved run on this device yet.");
+});
+$("btnDownload").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  download("the-long-shore.html",html,"text/html");
+});
+$("btnExportJson").addEventListener("click",function(){
+  download("the-long-shore-record.json",JSON.stringify(store.get(K_REC,[]),null,2),"application/json");
+});
+$("btnExportCsv").addEventListener("click",function(){
+  var rec=store.get(K_REC,[]);
+  var rows=["game,runId,alias,startedAt,daysSurvived,craftsMade,craftsCount,ending,islandSize,hazardLevel,startingSeason,gathered,bites"];
+  rec.forEach(function(e){
+    rows.push([e.game,e.runId,"\""+String(e.alias).replace(/"/g,"\"\"")+"\"",e.startedAt,e.daysSurvived,
+      "\""+e.craftsMade.join("; ")+"\"",e.craftsCount,e.ending,e.settings.islandSize,e.settings.hazardLevel,e.settings.startingSeason,e.gathered,e.bites].join(","));
+  });
+  download("the-long-shore-record.csv",rows.join("\n"),"text/csv");
+});
+var forgetArmed=false;
+$("btnForget").addEventListener("click",function(){
+  if(!forgetArmed){forgetArmed=true;this.textContent="Tap again to confirm — this clears the record, the saved run, and settings";return;}
+  store.del(K_REC);store.del(K_SAVE);store.del(K_PREFS);
+  prefs={teach:"light",size:"standard",hazard:"standard",season:"summer",alias:""};
+  forgetArmed=false;this.textContent="Forget everything — tap";
+  $("forgetNote").textContent="Forgotten. This device now holds nothing of your runs. A fresh run has been started below.";
+  tipShown={};syncSettingsUI();newRun();
+});
+document.addEventListener("visibilitychange",function(){if(document.hidden)saveRun();});
+
+/* ================= boot ================= */
+window.TLS={get state(){return S;},newRun:startFresh,craft:craft,action:doAction,eat:eat,drink:drink,rest:rest,CRAFTS:CRAFTS};
+logEl=$("log");
+syncSettingsUI();
+if(!loadRun()){newRun();}
+else{renderAll();}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
