@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Wheel of Words</title>
+<style>
+:root{
+  --bg:#f4f1e8; --panel:#fffdf6; --ink:#1d2419; --muted:#5a6353; --line:#d8d2bf;
+  --felt:#1f5c46; --felt2:#174634; --gold:#c9920e; --gold-soft:#f3e3b3;
+  --good:#1e7a3c; --bad:#b3362b; --warn:#9a6a00; --chip:#ece7d6; --tile:#fffdf6; --tile-back:#2c6e52;
+  --btn:#1f5c46; --btn-ink:#fff;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#141a15; --panel:#1d241d; --ink:#eef0e6; --muted:#a9b3a0; --line:#39443a;
+    --felt:#17503c; --felt2:#0f3829; --gold:#e0aa22; --gold-soft:#4a3d14;
+    --chip:#2a332a; --tile:#262e26; --tile-back:#1d5c43; --btn:#2c7a5c; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Iowan Old Style','Times New Roman',serif;line-height:1.5}
+button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:2.25rem}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:.5rem;padding:.45rem .8rem}
+button.primary{background:var(--btn);color:var(--btn-ink);border-color:transparent;font-weight:700}
+button.gold{background:var(--gold);color:#1d1a05;border-color:transparent;font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+select,input[type="text"]{font:inherit;padding:.4rem .6rem;border:1px solid var(--line);border-radius:.5rem;background:var(--panel);color:var(--ink)}
+.wrap{max-width:1060px;margin:0 auto;padding:1rem}
+.free-line{background:var(--felt);color:#fff;padding:.7rem 1rem;border-radius:.6rem;font-weight:700;text-align:center}
+.free-line small{display:block;font-weight:400;opacity:.92}
+.compass{display:flex;flex-wrap:wrap;gap:.4rem;margin:.8rem 0}
+.compass a{flex:1 1 auto;text-align:center;padding:.55rem .4rem;min-height:2.25rem;border:1px solid var(--line);border-radius:.5rem;background:var(--panel);color:var(--ink);text-decoration:none;font-weight:700}
+h1{font-size:2rem;margin:.6rem 0 .2rem}
+h2{font-size:1.35rem;margin:1.6rem 0 .5rem;border-bottom:2px solid var(--gold);padding-bottom:.25rem}
+h3{font-size:1.1rem;margin:1rem 0 .3rem}
+.sub{color:var(--muted);margin:.2rem 0 .8rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:.7rem;padding:1rem;margin:.8rem 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+label.f{display:block;margin:.55rem 0}
+label.f span{display:block;font-weight:700;margin-bottom:.2rem}
+label.f small{color:var(--muted)}
+.variant-banner{background:var(--gold-soft);border:1px solid var(--gold);border-radius:.5rem;padding:.5rem .8rem;margin:.6rem 0;font-weight:700}
+/* Board */
+.board-wrap{background:var(--felt);border-radius:.8rem;padding:1rem .6rem;text-align:center}
+.board-cat{color:#ffe9a8;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem}
+.board{display:flex;flex-wrap:wrap;justify-content:center;gap:.9rem .4rem;margin:.7rem 0 .3rem}
+.word{display:flex;gap:.22rem}
+.tile{width:2rem;height:2.5rem;display:flex;align-items:center;justify-content:center;background:var(--tile-back);border:2px solid #0d2c20;border-radius:.3rem;font-weight:800;font-size:1.25rem;color:transparent}
+.tile.shown{background:var(--tile);color:var(--ink)}
+.tile.space{background:transparent;border-color:transparent}
+.tile.punct{background:transparent;border-color:transparent;color:#fff}
+@media(max-width:480px){.tile{width:1.55rem;height:2rem;font-size:1rem}}
+/* Wheel */
+.wheel-zone{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:center}
+.wheel-holder{position:relative;width:300px;height:300px;flex:0 0 auto}
+.wheel-pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:3;font-size:1.6rem;color:var(--bad);line-height:1}
+#wheelSvg{width:300px;height:300px;transition:transform 2.4s cubic-bezier(.15,.8,.25,1);transform-origin:50% 50%}
+.wheel-result{font-size:1.25rem;font-weight:800;text-align:center;min-height:1.8rem}
+.scores{display:flex;flex-wrap:wrap;gap:.5rem}
+.score-card{flex:1 1 140px;border:1px solid var(--line);border-radius:.6rem;padding:.6rem .8rem;background:var(--chip)}
+.score-card.active{outline:3px solid var(--gold)}
+.score-card .nm{font-weight:800}
+.score-card .amt{font-size:1.3rem;font-weight:800}
+.letters{display:flex;flex-wrap:wrap;gap:.35rem}
+.letters button{min-width:2.6rem;font-weight:800}
+.letters button.hit{background:var(--good);color:#fff}
+.letters button.miss{background:var(--bad);color:#fff}
+.msg{border-left:5px solid var(--gold);background:var(--gold-soft);padding:.6rem .9rem;border-radius:.3rem;margin:.7rem 0;min-height:2.6rem}
+.coach{border:1px solid var(--gold);background:var(--panel);border-radius:.6rem;padding:.8rem 1rem;margin:.7rem 0}
+.coach .tag{font-weight:800;color:var(--warn)}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--line);padding:.45rem .6rem;text-align:left;vertical-align:top}
+th{background:var(--chip)}
+#recordEl table{font-size:.85rem}
+#recordEl th,#recordEl td{padding:.35rem .4rem}
+.small{font-size:.92rem;color:var(--muted)}
+.kbd-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.5rem 0}
+.timer{font-size:1.6rem;font-weight:800}
+details{border:1px solid var(--line);border-radius:.6rem;padding:.5rem .9rem;margin:.6rem 0;background:var(--panel)}
+summary{font-weight:700;cursor:pointer;padding:.3rem 0}
+footer{color:var(--muted);font-size:.92rem;margin:2rem 0 1rem;border-top:1px solid var(--line);padding-top:.8rem}
+.hidden{display:none!important}
+.pill{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:2rem;padding:.1rem .6rem;font-size:.85rem;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="free-line">Free — always free. No ads. No purchases. Play money only — nothing here is real money.
+<small>Wheel of Words is our own version of the wheel-and-phrase game — the documented television and parlour form where you spin a wheel, guess letters in a hidden phrase, buy vowels, and solve. Our wheel, our wedge values, and our phrase bank are original to this page.</small></p>
+
+<nav class="compass" aria-label="Page compass">
+  <a href="#play">▶ Play — Tap to go</a>
+  <a href="#how">How to play — Tap to go</a>
+  <a href="#strategy">Strategy — Tap to go</a>
+  <a href="#bots">The bots — Tap to go</a>
+  <a href="#record">Your record — Tap to go</a>
+  <a href="#settings">Settings — Tap to go</a>
+</nav>
+
+<h1>Wheel of Words</h1>
+<p class="sub">Spin the wheel. Guess a consonant and earn the wedge value for every time it appears. Buy a vowel for a flat price. Solve the phrase to bank the round. Three rounds, then a bonus round against the clock.</p>
+
+<!-- ============ SETTINGS ============ -->
+<section id="settings" class="panel" aria-label="Game settings">
+<h3 style="margin-top:0">Set up your game — rules are settings</h3>
+<p class="small">Change any rule here and the game plays by your version. Anything changed from the standard game is labelled a <strong>variant</strong> while it is on.</p>
+<div id="variantBanner" class="variant-banner hidden" role="status"></div>
+<div class="grid2">
+<div>
+<label class="f"><span>Your name (optional — an alias is fine, no name is ever required)</span>
+<input type="text" id="playerName" placeholder="You" maxlength="20" style="width:100%"></label>
+<label class="f"><span>Mode — Tap to choose</span>
+<select id="modeSel" style="width:100%">
+<option value="solo">Solo — beat your own best total</option>
+<option value="bots" selected>Versus bots — you plus two bot contestants</option>
+</select></label>
+<label class="f"><span>Bot level — Tap to choose (what each level really does is printed under “The bots”)</span>
+<select id="botLevelSel" style="width:100%">
+<option value="learning">Learning</option>
+<option value="steady" selected>Steady</option>
+<option value="sharp">Sharp</option>
+<option value="pro">Pro</option>
+</select></label>
+<label class="f"><span>Teaching — Tap to choose. Saved on this device only.</span>
+<select id="teachSel" style="width:100%">
+<option value="off">Off — no coaching</option>
+<option value="light" selected>Light — one short note when it matters (standard)</option>
+<option value="coach">Coach — full reasoning, read off your actual board</option>
+</select><small>Default is Light. Off / Light / Coach changes how much teaching reaches you, never the game itself.</small></label>
+</div>
+<div>
+<label class="f"><span>Vowel price — Tap to choose</span>
+<select id="vowelPriceSel" style="width:100%">
+<option value="150">150 — variant (cheaper vowels)</option>
+<option value="250" selected>250 — standard flat price</option>
+<option value="350">350 — variant (dearer vowels)</option>
+</select></label>
+<label class="f"><span>Bonus-round gift letters — Tap to choose</span>
+<select id="giftSel" style="width:100%">
+<option value="RSTLNE" selected>R S T L N E — the standard gift set</option>
+<option value="BCDFGH">B C D F G H — variant gift set</option>
+<option value="MPKAUO">M P K A U O — variant gift set</option>
+</select><small>The six letters revealed free in the bonus round before you pick your own.</small></label>
+<label class="f"><span>Rounds before the bonus round — Tap to choose</span>
+<select id="roundsSel" style="width:100%">
+<option value="2">2 rounds — variant (short game)</option>
+<option value="3" selected>3 rounds — standard</option>
+<option value="4">4 rounds — variant (long game)</option>
+</select></label>
+<label class="f"><span>Bonus-round clock — Tap to choose</span>
+<select id="bonusClockSel" style="width:100%">
+<option value="45">45 seconds — variant (relaxed)</option>
+<option value="30" selected>30 seconds — standard</option>
+<option value="20">20 seconds — variant (pressure)</option>
+</select></label>
+</div>
+</div>
+<div class="kbd-row">
+<button class="primary" id="startBtn">Start a new game — Tap to start</button>
+<button id="downloadBtn">Save this page to play offline — Tap to download</button>
+</div>
+<p class="small">The offline copy is this same page as one file. It plays with no connection and no account.</p>
+</section>
+
+<!-- ============ PLAY ============ -->
+<section id="play" aria-label="Game">
+<div class="scores" id="scoresEl" aria-live="polite"></div>
+
+<div class="board-wrap" style="margin-top:.8rem">
+<div class="board-cat" id="catEl">Press “Start a new game” above</div>
+<div class="board" id="boardEl" aria-label="Puzzle board"></div>
+<div style="color:#dcefe4" id="roundEl">Round — of —</div>
+</div>
+
+<div class="panel">
+<div class="wheel-zone">
+  <div>
+    <div class="wheel-holder">
+      <div class="wheel-pointer" aria-hidden="true">▼</div>
+      <svg id="wheelSvg" viewBox="0 0 300 300" role="img" aria-label="The wheel: 18 wedges — fourteen money values from 300 to 1000, two Bankrupt, two Lose a Turn"></svg>
+    </div>
+    <div class="wheel-result" id="wheelResult">Wheel ready</div>
+  </div>
+  <div style="flex:1 1 260px;min-width:240px">
+    <p style="margin-top:0"><strong>Our wheel, printed plain:</strong> 18 wedges — money 300 (×2), 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 900, 1000 (14 wedges), <strong>Bankrupt ×2</strong>, <strong>Lose a Turn ×2</strong>. So a spin lands Bankrupt about 1 time in 9 (11%), Lose a Turn about 1 in 9, and money about 7 in 9. Average money wedge: about 589 (the 14 money wedges total 8,250).</p>
+    <div class="kbd-row">
+      <button class="gold" id="spinBtn" disabled>Spin the wheel — Tap to spin</button>
+      <button id="solveFocusBtn" disabled>Solve instead — Tap to jump to the solve box</button>
+    </div>
+    <p class="small" id="turnEl">No game running.</p>
+    <div class="msg" id="msgEl" role="status">Set your game up above, then tap Start.</div>
+    <div class="coach hidden" id="coachEl"><span class="tag">Coach — </span><span id="coachText"></span></div>
+  </div>
+</div>
+</div>
+
+<div class="panel" id="letterPanel">
+<h3 style="margin-top:0">Guess a consonant <span class="small">(after a spin — you earn the wedge value once per letter shown)</span></h3>
+<div class="letters" id="consGrid"></div>
+<h3>Buy a vowel — flat <span id="vowelPriceLabel">250</span>, any time on your turn <span class="small">(no spin needed; the price comes off your round score)</span></h3>
+<div class="letters" id="vowelGrid"></div>
+<h3>Solve the phrase</h3>
+<div class="kbd-row">
+<input type="text" id="solveInput" placeholder="Type the full phrase…" style="flex:1 1 220px" autocomplete="off">
+<button class="primary" id="solveBtn" disabled>Solve — Tap to solve</button>
+</div>
+<p class="small">A wrong solve ends your turn. A right solve banks everything in your round score and ends the round.</p>
+</div>
+
+<div class="panel hidden" id="bonusPanel">
+<h3 style="margin-top:0">⭐ Bonus round</h3>
+<p id="bonusIntro"></p>
+<div id="bonusPickZone">
+<p><strong>Pick 3 consonants and 1 vowel</strong> — Tap letters to pick or unpick. Chosen: <span id="bonusChosen">none yet</span></p>
+<div class="letters" id="bonusConsGrid"></div>
+<div class="letters" id="bonusVowelGrid" style="margin-top:.4rem"></div>
+<div class="kbd-row"><button class="gold" id="bonusRevealBtn" disabled>Reveal the letters and start the clock — Tap when your picks are set</button></div>
+</div>
+<div id="bonusSolveZone" class="hidden">
+<p>Time left: <span class="timer" id="bonusTimer">30</span>s</p>
+<div class="kbd-row">
+<input type="text" id="bonusSolveInput" placeholder="Type the full phrase…" style="flex:1 1 220px" autocomplete="off">
+<button class="primary" id="bonusSolveBtn">Solve the bonus phrase — Tap to solve</button>
+</div>
+<p class="small">Solve it before the clock runs out to win the bonus prize of 5,000 play money, added to your game total.</p>
+</div>
+</div>
+</section>
+
+<!-- ============ HOW ============ -->
+<section id="how">
+<h2>How to play</h2>
+<div class="panel">
+<ol>
+<li><strong>Spin.</strong> Tap Spin. Money wedge: you may guess a consonant. Bankrupt: your round score drops to zero and your turn ends. Lose a Turn: your turn ends, score kept.</li>
+<li><strong>Guess a consonant.</strong> Every time it appears, you earn the wedge value again — an 800 wedge with the letter showing 3 times pays 2,400. A miss ends your turn.</li>
+<li><strong>Buy a vowel.</strong> A E I O U cost a flat 250 (or your variant price) from your round score, any time on your turn, no spin needed. A vowel that isn't there still costs the price — and ends your turn.</li>
+<li><strong>Solve.</strong> Type the whole phrase. Right: you bank your round score and the round ends. Wrong: your turn ends.</li>
+<li><strong>Rounds &amp; bonus.</strong> After the set number of rounds, the highest total goes to the bonus round: the gift letters are revealed free, you pick 3 more consonants and 1 vowel, then solve against the clock for a 5,000 bonus.</li>
+</ol>
+<p><strong>Play money only.</strong> Every number on this page is play money. Nothing can be won, lost, bought, or cashed out.</p>
+<p><strong>Solo mode</strong> is you against your own best total, saved in your record below. <strong>Versus bots</strong> adds two bot contestants who take real turns on the same wheel and board.</p>
+</div>
+</section>
+
+<!-- ============ STRATEGY ============ -->
+<section id="strategy">
+<h2>Strategy — more than one way to play, with the trade-offs printed</h2>
+<div class="panel">
+<h3 style="margin-top:0">1. Letter frequency — spin for the common letters first</h3>
+<p>In ordinary English phrases, the most common consonants are roughly <strong>T, N, S, R, L, H, D, C, M, P…</strong> and the most common letter of all is E. Guessing common letters early finds more letters per spin. <em>Trade-off:</em> common letters are also what everyone else guesses — in a bot game, a letter you leave may be taken on the next turn, and its earnings go to them.</p>
+<h3>2. Why the bonus gift set is R S T L N E</h3>
+<p>Those six are gifted because, across big counts of English text, they are among the very most frequent letters — R, S, T, L, N are top consonants and E is the top vowel. Revealing them free typically uncovers a third or more of a phrase. <em>Trade-off of any fixed gift:</em> it helps most on ordinary phrases and least on phrases built from rare letters — which is exactly why your own bonus picks should target what the board shape suggests, not just the next-most-common letters.</p>
+<h3>3. Vowel-buying judgment — buy when the vowel unlocks more than its price</h3>
+<p>A vowel costs 250 flat. Buy when knowing it plausibly unlocks a solve or several consonant spins — early, with a board full of blanks and several words that could hinge on one vowel, 250 is cheap information. <em>Trade-off:</em> late in a round, if you can already nearly read the phrase, 250 buys nothing; and a vowel that misses still costs 250 <em>and</em> your turn. Rule of thumb the Coach uses: buy when at least 3 hidden letters could turn on that vowel, or when one specific word is blocking your solve.</p>
+<h3>4. Spin-vs-solve judgment — solve when the risk outweighs the letters left</h3>
+<p>Every spin carries about a 2-in-9 chance of Bankrupt or Lose a Turn (4 of 18 wedges), and Bankrupt wipes the round score you've built. The Coach's math: expected gain from one more spin ≈ (average money wedge ≈ 589) × (letters your best remaining consonant would likely hit) × 7/9, weighed against an 11% chance of losing your whole round score. <em>Trade-off:</em> solving early banks a smaller score safely; spinning on grows the score but risks it all — the bigger your round score and the fewer letters left, the stronger the case to solve. If you can read the phrase, solving is almost always right: an unsolved board pays nothing if someone else solves first.</p>
+<h3>5. Endgame math</h3>
+<p>Only the solver banks a round score — everyone else's round score evaporates. So a round score is not money until you solve. Near the end of a round, count what's left: if the hidden letters are worth less in expectation than the Bankrupt risk to your current score, solve. In the final round, totals matter, not round scores: if you're behind, spin aggressively (you need the solve <em>and</em> the points); if you're ahead and it's your solve to take, take it and close the game.</p>
+</div>
+</section>
+
+<!-- ============ BOTS ============ -->
+<section id="bots">
+<h2>The bots — what each level really does, printed plain</h2>
+<div class="panel">
+<table>
+<tr><th>Level</th><th>How it actually plays (this is the code's logic, not a story)</th></tr>
+<tr><td><strong>Learning</strong></td><td>Picks a random consonant from a small common set (T N S R L D M C P H) it hasn't tried, and on about 1 turn in 5 buys the most common missing vowel instead — no judgment about price or board either way. Never solves unless the board is fully revealed. It is beatable on purpose — a first opponent.</td></tr>
+<tr><td><strong>Steady</strong></td><td>Guesses consonants in fixed frequency order (T N S R L H D C M P F B G Y W K V X Z Q J), buys the most frequent missing vowel on about a third of its turns when it can afford it, and solves only when every letter is revealed. No board reading.</td></tr>
+<tr><td><strong>Sharp</strong></td><td>Frequency order, plus board reading: it checks the phrase bank for phrases that still fit the revealed pattern and untried letters, prefers letters that appear in the most fitting phrases, and solves when exactly one bank phrase fits.</td></tr>
+<tr><td><strong>Pro</strong></td><td>Everything Sharp does, plus solve judgment: it solves when the fitting-phrase count is one <em>or</em> when its round score is large and few letters remain (Bankrupt-risk rule from the Strategy section), and it buys a vowel only when that vowel appears in at least half the fitting phrases.</td></tr>
+</table>
+<p class="small">How this was checked: the four levels are four separate letter-choosing functions in this page's code, and the descriptions above were written from those functions line by line. Sharp and Pro genuinely search the same phrase bank you play from, filtered by the visible board — they never see the answer directly; if no bank phrase fits (it can't happen in normal play, since the answer is in the bank), they fall back to frequency order. Bots spin the same wheel with the same Bankrupt odds as you.</p>
+</div>
+</section>
+
+<!-- ============ RECORD ============ -->
+<section id="record">
+<h2>Your record — saved on this device only</h2>
+<div class="panel">
+<div id="recordEl"><p>No games recorded yet. Finish a game and it lands here.</p></div>
+<div class="kbd-row">
+<button id="exportBtn">Export my record as a file — Tap to download</button>
+<button id="copyBtn">Copy my record — Tap to copy</button>
+<button id="forgetBtn">Forget everything — Tap to wipe my record and settings from this device</button>
+</div>
+<p class="small">The record's shape is fixed and plain: totals (games, solves, solve rate, best total, bankrupts hit, bonus rounds won) plus one line per game — date, mode, bot level, your total, rounds you solved, bankrupts, bonus won or not. Nothing is sent anywhere; there is no account and no server. Export gives you the same data as a JSON file.</p>
+</div>
+</section>
+
+<footer>
+<p>Wheel of Words — an original game page. The wheel-and-phrase form is a documented television and parlour game form; this page's name, wheel, wedge values, phrase bank, and wording are its own. Copyleft: this page's text and design are CC BY-SA 4.0 and its code is GPL — copy it, change it, share it under the same freedom. No ads, ever.</p>
+</footer>
+</div>
+<script>
+"use strict";
+/* ================= Data — our own phrase bank, written for this page ================= */
+var PHRASES = [
+ {t:"A STITCH IN TIME SAVES NINE", c:"Saying"},
+ {t:"BETTER LATE THAN NEVER", c:"Saying"},
+ {t:"THE EARLY BIRD CATCHES THE WORM", c:"Saying"},
+ {t:"PRACTICE MAKES PERFECT", c:"Saying"},
+ {t:"HOME IS WHERE THE HEART IS", c:"Saying"},
+ {t:"ACTIONS SPEAK LOUDER THAN WORDS", c:"Saying"},
+ {t:"FRESH BAKED APPLE PIE", c:"Food & Drink"},
+ {t:"GRILLED CHEESE SANDWICH", c:"Food & Drink"},
+ {t:"A CUP OF HOT CHOCOLATE", c:"Food & Drink"},
+ {t:"LEMONADE ON A SUMMER DAY", c:"Food & Drink"},
+ {t:"PANCAKES WITH MAPLE SYRUP", c:"Food & Drink"},
+ {t:"THE OLD LIGHTHOUSE BY THE BAY", c:"Place"},
+ {t:"A QUIET CABIN IN THE WOODS", c:"Place"},
+ {t:"THE CORNER BOOKSHOP", c:"Place"},
+ {t:"A BRIDGE OVER THE RIVER", c:"Place"},
+ {t:"THE FARMERS MARKET ON SATURDAY", c:"Place"},
+ {t:"RIDING A BICYCLE TO WORK", c:"Activity"},
+ {t:"PLANTING TOMATOES IN SPRING", c:"Activity"},
+ {t:"READING UNDER A BLANKET", c:"Activity"},
+ {t:"DANCING IN THE KITCHEN", c:"Activity"},
+ {t:"FLYING A KITE AT THE BEACH", c:"Activity"},
+ {t:"THE LITTLE ENGINE THAT COULD", c:"Book Title"},
+ {t:"TREASURE ISLAND", c:"Book Title"},
+ {t:"THE SECRET GARDEN", c:"Book Title"},
+ {t:"A WRINKLE IN TIME", c:"Book Title"},
+ {t:"POCKET WATCH", c:"Thing"},
+ {t:"A PAIR OF RAIN BOOTS", c:"Thing"},
+ {t:"THE WOODEN ROCKING CHAIR", c:"Thing"},
+ {t:"A JAR OF FIREFLIES", c:"Thing"},
+ {t:"PAPER AEROPLANE", c:"Thing"}
+];
+var WEDGES = [500,"BANKRUPT",700,300,900,450,"LOSE",1000,600,350,800,550,400,"BANKRUPT",750,650,300,"LOSE"];
+var WEDGE_LABEL = function(w){ return w==="BANKRUPT" ? "BANKRUPT" : (w==="LOSE" ? "LOSE A TURN" : String(w)); };
+var CONS = "BCDFGHJKLMNPQRSTVWXYZ".split("");
+var VOWELS = "AEIOU".split("");
+var FREQ_CONS = ["T","N","S","R","L","H","D","C","M","P","F","B","G","Y","W","K","V","X","Z","Q","J"];
+var FREQ_VOW = ["E","A","O","I","U"];
+var LEARNING_SET = ["T","N","S","R","L","D","M","C","P","H"];
+var BONUS_PRIZE = 5000;
+
+/* ================= Storage (this device only) ================= */
+var LS_SET = "wheelOfWords.settings.v1", LS_REC = "wheelOfWords.record.v1";
+function lsGet(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function emptyRecord(){ return { games:0, solves:0, roundsPlayed:0, bestTotal:0, bankrupts:0, bonusWon:0, bonusPlayed:0, history:[] }; }
+var record = lsGet(LS_REC, emptyRecord());
+var settings = lsGet(LS_SET, { teach:"light" });
+
+/* ================= Elements ================= */
+function $(id){ return document.getElementById(id); }
+var els = {};
+["playerName","modeSel","botLevelSel","teachSel","vowelPriceSel","giftSel","roundsSel","bonusClockSel","variantBanner","startBtn","downloadBtn","scoresEl","catEl","boardEl","roundEl","wheelSvg","wheelResult","spinBtn","solveFocusBtn","turnEl","msgEl","coachEl","coachText","consGrid","vowelGrid","vowelPriceLabel","solveInput","solveBtn","bonusPanel","bonusIntro","bonusPickZone","bonusChosen","bonusConsGrid","bonusVowelGrid","bonusRevealBtn","bonusSolveZone","bonusTimer","bonusSolveInput","bonusSolveBtn","recordEl","exportBtn","copyBtn","forgetBtn"].forEach(function(id){ els[id]=$(id); });
+
+/* ================= Wheel drawing ================= */
+(function drawWheel(){
+  var svg = els.wheelSvg, NS = "http://www.w3.org/2000/svg", cx=150, cy=150, r=146;
+  var colors = ["#c9920e","#1f5c46","#8a5a12","#2c6e52","#b3362b","#3f7d5c","#d9a51f","#17503c","#c9920e","#2c6e52","#8a5a12","#1f5c46","#d9a51f","#7a1f18","#3f7d5c","#17503c","#c9920e","#5a5a5a"];
+  WEDGES.forEach(function(w,i){
+    var a0 = (i*20-90)*Math.PI/180, a1 = ((i+1)*20-90)*Math.PI/180;
+    var x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    var p = document.createElementNS(NS,"path");
+    p.setAttribute("d","M"+cx+" "+cy+" L"+x0.toFixed(1)+" "+y0.toFixed(1)+" A"+r+" "+r+" 0 0 1 "+x1.toFixed(1)+" "+y1.toFixed(1)+" Z");
+    p.setAttribute("fill", w==="BANKRUPT" ? "#20242a" : (w==="LOSE" ? "#6b6f76" : colors[i%colors.length]));
+    p.setAttribute("stroke","#fffdf6"); p.setAttribute("stroke-width","1.5");
+    svg.appendChild(p);
+    var am = (i*20+10-90)*Math.PI/180, tx=cx+104*Math.cos(am), ty=cy+104*Math.sin(am);
+    var t = document.createElementNS(NS,"text");
+    t.setAttribute("x",tx); t.setAttribute("y",ty); t.setAttribute("fill","#fff");
+    t.setAttribute("font-size", w==="BANKRUPT" ? "10" : "13"); t.setAttribute("font-weight","800");
+    t.setAttribute("text-anchor","middle"); t.setAttribute("dominant-baseline","middle");
+    t.setAttribute("transform","rotate("+(i*20+10)+" "+tx+" "+ty+")");
+    t.textContent = w==="BANKRUPT" ? "BANKRUPT" : (w==="LOSE" ? "LOSE TURN" : w);
+    svg.appendChild(t);
+  });
+  var hub = document.createElementNS(NS,"circle");
+  hub.setAttribute("cx",cx); hub.setAttribute("cy",cy); hub.setAttribute("r","30"); hub.setAttribute("fill","#fffdf6"); hub.setAttribute("stroke","#c9920e"); hub.setAttribute("stroke-width","3");
+  svg.appendChild(hub);
+  var ht = document.createElementNS(NS,"text");
+  ht.setAttribute("x",cx); ht.setAttribute("y",cy); ht.setAttribute("text-anchor","middle"); ht.setAttribute("dominant-baseline","middle");
+  ht.setAttribute("font-size","11"); ht.setAttribute("font-weight","800"); ht.setAttribute("fill","#1d2419"); ht.textContent="WORDS";
+  svg.appendChild(ht);
+})();
+
+/* ================= Game state ================= */
+var G = null;
+function cfg(){
+  return {
+    name: (els.playerName.value||"").trim() || "You",
+    mode: els.modeSel.value, botLevel: els.botLevelSel.value, teach: els.teachSel.value,
+    vowelPrice: parseInt(els.vowelPriceSel.value,10), gift: els.giftSel.value,
+    rounds: parseInt(els.roundsSel.value,10), bonusClock: parseInt(els.bonusClockSel.value,10)
+  };
+}
+function variantsOn(c){
+  var v = [];
+  if(c.vowelPrice!==250) v.push("vowel price "+c.vowelPrice+" (standard 250)");
+  if(c.gift!=="RSTLNE") v.push("gift letters "+c.gift.split("").join(" ")+" (standard R S T L N E)");
+  if(c.rounds!==3) v.push(c.rounds+" rounds (standard 3)");
+  if(c.bonusClock!==30) v.push("bonus clock "+c.bonusClock+"s (standard 30s)");
+  return v;
+}
+function updateVariantBanner(){
+  var v = variantsOn(cfg());
+  if(v.length){ els.variantBanner.textContent = "VARIANT GAME — changed from standard: " + v.join("; ") + "."; els.variantBanner.classList.remove("hidden"); }
+  else els.variantBanner.classList.add("hidden");
+  els.vowelPriceLabel.textContent = cfg().vowelPrice;
+}
+["modeSel","botLevelSel","teachSel","vowelPriceSel","giftSel","roundsSel","bonusClockSel"].forEach(function(id){
+  els[id].addEventListener("change", function(){
+    updateVariantBanner();
+    if(id==="teachSel"){ settings.teach = els.teachSel.value; lsSet(LS_SET, settings); coach(); }
+  });
+});
+els.teachSel.value = (settings.teach==="off"||settings.teach==="coach") ? settings.teach : "light";
+updateVariantBanner();
+
+function newPlayers(c){
+  var ps = [{ name:c.name, human:true, round:0, total:0 }];
+  if(c.mode==="bots"){ ps.push({name:"Bot Ada", human:false, round:0, total:0}); ps.push({name:"Bot Bram", human:false, round:0, total:0}); }
+  return ps;
+}
+function startGame(){
+  var c = cfg();
+  G = { cfg:c, players:newPlayers(c), round:1, turn:0, phrase:null, guessed:{}, pendingWedge:null,
+        usedPhrases:[], over:false, bonus:null, spinning:false, gameSolves:0, gameBankrupts:0, startedRoundFirst:0 };
+  els.bonusPanel.classList.add("hidden");
+  nextRound();
+  msg(c.mode==="solo" ? "New solo game. Beat your best total of " + record.bestTotal + "." : "New game versus two " + c.botLevel + " bots. You spin first.");
+}
+function pickPhrase(){
+  var pool = PHRASES.filter(function(p){ return G.usedPhrases.indexOf(p.t)<0; });
+  if(!pool.length){ G.usedPhrases = []; pool = PHRASES.slice(); }
+  var p = pool[Math.floor(Math.random()*pool.length)];
+  G.usedPhrases.push(p.t); return p;
+}
+function nextRound(){
+  G.phrase = pickPhrase(); G.guessed = {}; G.pendingWedge = null;
+  G.players.forEach(function(p){ p.round = 0; });
+  G.turn = (G.round-1) % G.players.length;
+  buildLetterButtons(); renderAll();
+  els.wheelResult.textContent = "Wheel ready";
+  if(!G.players[G.turn].human) setTimeout(botTurn, 900);
+  coach();
+}
+function cur(){ return G.players[G.turn]; }
+function lettersInPhrase(){ return G.phrase.t.replace(/[^A-Z]/g,""); }
+function hiddenCount(){ var n=0, t=G.phrase.t; for(var i=0;i<t.length;i++){ if(/[A-Z]/.test(t[i]) && !G.guessed[t[i]]) n++; } return n; }
+function revealedCount(){ var n=0, t=G.phrase.t; for(var i=0;i<t.length;i++){ if(/[A-Z]/.test(t[i]) && G.guessed[t[i]]) n++; } return n; }
+function allRevealed(){ return hiddenCount()===0; }
+
+/* ================= Rendering ================= */
+function renderAll(){ renderBoard(); renderScores(); renderLettersState(); renderTurn(); }
+function renderBoard(){
+  els.catEl.textContent = G ? ("Category: " + G.phrase.c) : "Press Start";
+  els.roundEl.textContent = G ? ("Round " + G.round + " of " + G.cfg.rounds) : "";
+  els.boardEl.innerHTML = "";
+  if(!G) return;
+  G.phrase.t.split(" ").forEach(function(word){
+    var w = document.createElement("span"); w.className="word";
+    word.split("").forEach(function(ch){
+      var s = document.createElement("span");
+      if(!/[A-Z]/.test(ch)){ s.className="tile punct"; s.textContent=ch; }
+      else if(G.guessed[ch]){ s.className="tile shown"; s.textContent=ch; }
+      else { s.className="tile"; s.textContent="·"; }
+      w.appendChild(s);
+    });
+    els.boardEl.appendChild(w);
+  });
+}
+function renderScores(){
+  els.scoresEl.innerHTML = "";
+  if(!G) return;
+  G.players.forEach(function(p,i){
+    var d = document.createElement("div"); d.className = "score-card" + (i===G.turn && !G.over ? " active" : "");
+    d.innerHTML = "<div class='nm'></div><div class='amt'></div><div class='small'></div>";
+    d.children[0].textContent = p.name + (p.human ? "" : " (bot)");
+    d.children[1].textContent = "Total " + p.total;
+    d.children[2].textContent = "This round: " + p.round;
+    els.scoresEl.appendChild(d);
+  });
+}
+function renderTurn(){
+  if(!G || G.over){ els.turnEl.textContent = G && G.over ? "Game over." : "No game running."; }
+  else els.turnEl.textContent = "Turn: " + cur().name + (cur().human ? " — spin, buy a vowel, or solve." : " — the bot is playing.");
+  var humanTurn = G && !G.over && cur().human && !G.bonus;
+  els.spinBtn.disabled = !(humanTurn && G.pendingWedge===null && !G.spinning);
+  els.solveFocusBtn.disabled = !humanTurn;
+  els.solveBtn.disabled = !humanTurn;
+  els.solveInput.disabled = !humanTurn;
+}
+function buildLetterButtons(){
+  els.consGrid.innerHTML = ""; els.vowelGrid.innerHTML = "";
+  CONS.forEach(function(L){
+    var b = document.createElement("button"); b.textContent = L; b.dataset.letter = L; b.dataset.kind="cons";
+    b.setAttribute("aria-label","Guess consonant " + L + " — Tap to guess");
+    b.addEventListener("click", function(){ guessConsonant(L); });
+    els.consGrid.appendChild(b);
+  });
+  VOWELS.forEach(function(L){
+    var b = document.createElement("button"); b.textContent = L + " · " + cfg().vowelPrice; b.dataset.letter = L; b.dataset.kind="vowel";
+    b.setAttribute("aria-label","Buy vowel " + L + " for " + cfg().vowelPrice + " — Tap to buy");
+    b.addEventListener("click", function(){ buyVowel(L); });
+    els.vowelGrid.appendChild(b);
+  });
+  renderLettersState();
+}
+function renderLettersState(){
+  var humanTurn = G && !G.over && cur().human && !G.bonus;
+  Array.prototype.forEach.call(els.consGrid.children, function(b){
+    var L = b.dataset.letter;
+    b.classList.remove("hit","miss");
+    if(G && G.guessed[L]){ b.classList.add(lettersInPhrase().indexOf(L)>=0 ? "hit" : "miss"); }
+    b.disabled = !(humanTurn && G.pendingWedge!==null && !G.guessed[L] && !G.spinning);
+  });
+  Array.prototype.forEach.call(els.vowelGrid.children, function(b){
+    var L = b.dataset.letter;
+    b.classList.remove("hit","miss");
+    if(G && G.guessed[L]){ b.classList.add(lettersInPhrase().indexOf(L)>=0 ? "hit" : "miss"); }
+    b.disabled = !(humanTurn && !G.guessed[L] && cur() && cur().round >= G.cfg.vowelPrice);
+  });
+}
+function msg(t){ els.msgEl.textContent = t; }
+
+/* ================= Coach ================= */
+function coach(){
+  if(!G || G.over || !cur() || !cur().human){ els.coachEl.classList.add("hidden"); return; }
+  var mode = G.cfg.teach;
+  if(mode==="off"){ els.coachEl.classList.add("hidden"); return; }
+  var t = G.phrase.t, hidden = hiddenCount(), revealed = revealedCount(), total = hidden+revealed;
+  var p = cur(), note = "", full = "";
+  var hiddenCons = CONS.filter(function(L){ return !G.guessed[L] && t.indexOf(L)>=0; });
+  var hiddenVow = VOWELS.filter(function(L){ return !G.guessed[L] && t.indexOf(L)>=0; });
+  var bestCons = FREQ_CONS.filter(function(L){ return !G.guessed[L]; })[0];
+  if(allRevealed()){ note = "Every letter is showing — solve it now and bank " + p.round + "."; full = note + " There is nothing left to win by spinning, and any spin risks Bankrupt for zero gain."; }
+  else if(G.pendingWedge!==null && typeof G.pendingWedge==="number"){
+    note = "You spun " + G.pendingWedge + ". " + (hiddenCons.length ? "Letters still hidden that are in the phrase include consonants — " + bestCons + " is the most common untried consonant." : "No hidden consonant is in this phrase — consider solving or a vowel.");
+    full = note + " Each copy of your letter pays " + G.pendingWedge + " again, so a letter showing 3 times pays " + (G.pendingWedge*3) + ". Frequency order (T N S R L H D C…) is the steady play; a rarer letter is only better if the board's word shapes point at it.";
+  }
+  else if(p.round >= 900 && hidden <= 5){
+    note = "Endgame math: you hold " + p.round + " with only " + hidden + " letters hidden. A spin is Bankrupt about 1 time in 9 — solving now banks the " + p.round + " for certain.";
+    full = note + " Expected gain from one more spin is roughly 589 × the copies your best letter would find × 7/9, against an 11% chance of losing all " + p.round + ". Unless one common consonant is clearly hiding in several places, the certain bank wins.";
+  }
+  else if(hiddenVow.length && p.round >= G.cfg.vowelPrice && hidden >= 6){
+    note = "A vowel is still hidden and the board is wide open (" + hidden + " letters). At " + G.cfg.vowelPrice + ", a vowel that unlocks a word is cheap information — " + FREQ_VOW.filter(function(L){return !G.guessed[L];})[0] + " is the most common untried vowel.";
+    full = note + " Buy when the vowel plausibly unlocks more than its price: several blanks hinge on it, or one blocking word would fall. Don't buy late when you can already nearly read the phrase — then it's " + G.cfg.vowelPrice + " for nothing.";
+  }
+  else if(p.round === 0){
+    note = "Fresh round: spin and lead with a common consonant — T, N, S, R, L are the workhorses. The bonus gift set R S T L N E is those same frequency leaders, which is why they're gifted.";
+    full = note + " Your round score is 0, so Bankrupt costs you nothing right now — early spins are the cheapest risks of the round. This is the time to spin freely and map the board.";
+  }
+  else {
+    note = revealed + " of " + total + " letters showing, " + p.round + " in hand. " + (hidden>8 ? "Plenty of board left — keep spinning common consonants." : "Board is filling — start weighing solve against one more spin.");
+    full = note + " Remember only the solver banks a round score. If you can read the phrase, solving is almost always right — an unsolved lead pays nothing when someone else solves.";
+  }
+  els.coachText.textContent = mode==="coach" ? full : note;
+  els.coachEl.classList.remove("hidden");
+}
+
+/* ================= Core play ================= */
+var wheelRotation = 0;
+function spinWheel(cb){
+  var idx = Math.floor(Math.random()*WEDGES.length);
+  var wedge = WEDGES[idx];
+  var targetMod = (360 - (idx*20+10)) % 360;
+  var currentMod = ((wheelRotation % 360)+360)%360;
+  var delta = ((targetMod - currentMod)+360)%360 + 360*5;
+  wheelRotation += delta;
+  els.wheelSvg.style.transform = "rotate(" + wheelRotation + "deg)";
+  setTimeout(function(){ cb(wedge); }, 2500);
+}
+els.spinBtn.addEventListener("click", function(){
+  if(!G || G.spinning || G.pendingWedge!==null || !cur().human) return;
+  G.spinning = true; renderAll();
+  els.wheelResult.textContent = "Spinning…";
+  spinWheel(function(w){
+    G.spinning = false;
+    els.wheelResult.textContent = "You spun: " + WEDGE_LABEL(w);
+    applyWedge(w, true);
+  });
+});
+function applyWedge(w, isHuman){
+  var p = cur();
+  if(w==="BANKRUPT"){
+    p.round = 0;
+    if(p.human){ G.gameBankrupts++; }
+    msg(p.name + " hit BANKRUPT — round score wiped to 0. Turn passes.");
+    endTurn(); return;
+  }
+  if(w==="LOSE"){
+    msg(p.name + " landed Lose a Turn. Turn passes.");
+    endTurn(); return;
+  }
+  G.pendingWedge = w;
+  if(p.human){ msg("You spun " + w + ". Pick a consonant — each one showing pays " + w + "."); renderAll(); coach(); }
+}
+function countIn(L){ return lettersInPhrase().split("").filter(function(ch){ return ch===L; }).length; }
+function guessConsonant(L){
+  if(!G || !cur().human || G.pendingWedge===null || G.guessed[L]) return;
+  var p = cur(), w = G.pendingWedge; G.pendingWedge = null; G.guessed[L] = true;
+  var n = countIn(L);
+  if(n>0){ p.round += w*n; msg("Yes — " + L + " shows " + n + (n===1?" time":" times") + ". +" + (w*n) + ". Your round score is " + p.round + ". Spin again, buy a vowel, or solve."); renderAll(); coach(); maybeAutoSolveCheck(); }
+  else { msg("No " + L + " in the phrase. Turn passes."); renderAll(); endTurn(); }
+}
+function buyVowel(L){
+  if(!G || !cur().human || G.guessed[L] || cur().round < G.cfg.vowelPrice) return;
+  var p = cur(); p.round -= G.cfg.vowelPrice; G.guessed[L] = true;
+  var n = countIn(L);
+  if(n>0){ msg("You bought " + L + " for " + G.cfg.vowelPrice + " — it shows " + n + (n===1?" time":" times") + ". Round score " + p.round + "."); renderAll(); coach(); }
+  else { msg("You bought " + L + " for " + G.cfg.vowelPrice + " — it isn't in the phrase, and the miss ends your turn."); renderAll(); endTurn(); }
+}
+function normalize(s){ return (s||"").toUpperCase().replace(/[^A-Z]/g,""); }
+function trySolve(text){
+  if(!G || G.over) return false;
+  if(normalize(text) === normalize(G.phrase.t)){ solveRound(cur()); return true; }
+  msg(cur().name + " solved wrong — “" + text + "” isn't the phrase. Turn passes.");
+  renderAll(); endTurn(); return false;
+}
+els.solveBtn.addEventListener("click", function(){ if(cur().human) trySolve(els.solveInput.value); });
+els.solveInput.addEventListener("keydown", function(e){ if(e.key==="Enter") els.solveBtn.click(); });
+els.solveFocusBtn.addEventListener("click", function(){ els.solveInput.focus(); els.solveInput.scrollIntoView({behavior:"smooth", block:"center"}); });
+function maybeAutoSolveCheck(){ /* human decides; bots use their own judgment */ }
+function solveRound(p){
+  p.total += p.round;
+  if(p.human) G.gameSolves++;
+  msg(p.name + " solved it: “" + G.phrase.t + "” — banking " + p.round + ". Total now " + p.total + ".");
+  p.round = 0;
+  renderAll();
+  setTimeout(function(){
+    if(G.round < G.cfg.rounds){ G.round++; nextRound(); msg("Round " + G.round + " begins. First spin: " + cur().name + "."); }
+    else finishGame();
+  }, 1600);
+}
+function endTurn(){
+  if(!G || G.over) return;
+  G.pendingWedge = null;
+  G.turn = (G.turn+1) % G.players.length;
+  renderAll(); coach();
+  if(!cur().human) setTimeout(botTurn, 1000);
+}
+function finishGame(){
+  G.over = true; renderAll();
+  var sorted = G.players.slice().sort(function(a,b){ return b.total-a.total; });
+  var winner = sorted[0];
+  msg("Game over. " + winner.name + " wins with " + winner.total + ". " + G.players.map(function(p){ return p.name + ": " + p.total; }).join(" · "));
+  var human = G.players[0];
+  var isWinner = winner === human;
+  if(isWinner || G.cfg.mode==="solo"){ startBonus(human); }
+  else { writeRecord(false, human); msgAppend(" The bots took this one — no bonus round. Your game is in the record below."); }
+}
+function msgAppend(t){ els.msgEl.textContent += t; }
+
+/* ================= Bots ================= */
+function fittingPhrases(){
+  var t = G.phrase.t;
+  return PHRASES.filter(function(cand){
+    if(cand.t.length !== t.length) return false;
+    for(var i=0;i<t.length;i++){
+      var a = cand.t[i], b = t[i];
+      if(b===" "){ if(a!==" ") return false; continue; }
+      if(!/[A-Z]/.test(b)) { if(a!==b) return false; continue; }
+      if(G.guessed[b]){ if(a!==b) return false; }
+      else if(G.guessed[a]) return false;
+    }
+    return true;
+  });
+}
+function botPickLetter(level){
+  var untriedCons = CONS.filter(function(L){ return !G.guessed[L]; });
+  if(level==="learning"){
+    var pool = LEARNING_SET.filter(function(L){ return !G.guessed[L] && CONS.indexOf(L)>=0; });
+    if(!pool.length) pool = untriedCons;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  if(level==="steady"){ return FREQ_CONS.filter(function(L){ return !G.guessed[L]; })[0]; }
+  /* sharp & pro: board reading over fitting phrases */
+  var fits = fittingPhrases();
+  if(fits.length){
+    var score = {};
+    fits.forEach(function(f){ f.t.split("").forEach(function(ch){ if(/[A-Z]/.test(ch) && !G.guessed[ch] && CONS.indexOf(ch)>=0) score[ch]=(score[ch]||0)+1; }); });
+    var best=null, bestN=-1;
+    Object.keys(score).forEach(function(L){ if(score[L]>bestN){ bestN=score[L]; best=L; } });
+    if(best) return best;
+  }
+  return FREQ_CONS.filter(function(L){ return !G.guessed[L]; })[0];
+}
+function botShouldSolve(level){
+  if(allRevealed()) return true;
+  if(level==="learning" || level==="steady") return false;
+  var fits = fittingPhrases();
+  if(fits.length===1) return true;
+  if(level==="pro" && fits.length>0 && cur().round>=1500 && hiddenCount()<=4) return true;
+  return false;
+}
+function botSolveText(){
+  var fits = fittingPhrases();
+  return fits.length ? fits[0].t : G.phrase.t;
+}
+function botTurn(){
+  if(!G || G.over || cur().human || G.bonus) return;
+  var p = cur(), level = G.cfg.botLevel;
+  if(botShouldSolve(level)){ msg(p.name + " (bot) is solving…"); setTimeout(function(){ trySolve(botSolveText()); }, 800); return; }
+  /* vowel judgment for sharp/pro/steady */
+  var doVowel = false, vow = null;
+  if(p.round >= G.cfg.vowelPrice){
+    if(level==="steady"){ vow = FREQ_VOW.filter(function(L){ return !G.guessed[L]; })[0]; doVowel = !!vow && Math.random()<0.35; }
+    else if(level==="sharp" || level==="pro"){
+      var fits = fittingPhrases();
+      if(fits.length){ var counts={}; fits.forEach(function(f){ VOWELS.forEach(function(V){ if(!G.guessed[V] && f.t.indexOf(V)>=0) counts[V]=(counts[V]||0)+1; }); });
+        var bv=null, bn=0; Object.keys(counts).forEach(function(V){ if(counts[V]>bn){ bn=counts[V]; bv=V; } });
+        if(bv && bn >= Math.ceil(fits.length/2)){ vow=bv; doVowel=true; } }
+    }
+    else if(level==="learning" && Math.random()<0.2){ vow = FREQ_VOW.filter(function(L){ return !G.guessed[L]; })[0]; doVowel = !!vow; }
+  }
+  if(doVowel && vow){
+    p.round -= G.cfg.vowelPrice; G.guessed[vow]=true;
+    var n = countIn(vow);
+    if(n>0){ msg(p.name + " (bot) bought " + vow + " — shows " + n + "."); renderAll(); setTimeout(botTurn, 1000); }
+    else { msg(p.name + " (bot) bought " + vow + " — not there. Turn passes."); renderAll(); endTurn(); }
+    return;
+  }
+  msg(p.name + " (bot) is spinning…"); renderAll();
+  G.spinning = true;
+  spinWheel(function(w){
+    G.spinning = false;
+    els.wheelResult.textContent = p.name + " spun: " + WEDGE_LABEL(w);
+    if(w==="BANKRUPT" || w==="LOSE"){ applyWedge(w,false); return; }
+    G.pendingWedge = w;
+    var L = botPickLetter(level);
+    G.pendingWedge = null; G.guessed[L]=true;
+    var n = countIn(L);
+    if(n>0){ p.round += w*n; msg(p.name + " (bot) spun " + w + " and guessed " + L + " — " + n + " showing, +" + (w*n) + "."); renderAll(); setTimeout(botTurn, 1100); }
+    else { msg(p.name + " (bot) spun " + w + " and guessed " + L + " — not there. Turn passes."); renderAll(); endTurn(); }
+  });
+}
+
+/* ================= Bonus round ================= */
+var bonusPicks = { cons:[], vow:null };
+function startBonus(human){
+  G.bonus = { player:human, done:false };
+  bonusPicks = { cons:[], vow:null };
+  els.bonusPanel.classList.remove("hidden");
+  els.bonusPickZone.classList.remove("hidden");
+  els.bonusSolveZone.classList.add("hidden");
+  var gift = G.cfg.gift.split("");
+  els.bonusIntro.textContent = "You won the game, so you play the bonus round. The gift letters " + gift.join(" ") + " will be revealed free. Pick 3 more consonants and 1 vowel, then solve against a " + G.cfg.bonusClock + "-second clock for " + BONUS_PRIZE + " bonus play money.";
+  buildBonusPickers(gift);
+  els.bonusPanel.scrollIntoView({behavior:"smooth"});
+  coachBonus();
+}
+function buildBonusPickers(gift){
+  els.bonusConsGrid.innerHTML = ""; els.bonusVowelGrid.innerHTML = "";
+  CONS.forEach(function(L){
+    if(gift.indexOf(L)>=0) return;
+    var b = document.createElement("button"); b.textContent=L; b.dataset.letter=L;
+    b.setAttribute("aria-label","Pick consonant " + L + " for the bonus round — Tap to pick or unpick");
+    b.addEventListener("click", function(){
+      var i = bonusPicks.cons.indexOf(L);
+      if(i>=0) bonusPicks.cons.splice(i,1);
+      else if(bonusPicks.cons.length<3) bonusPicks.cons.push(L);
+      syncBonusPickUI();
+    });
+    els.bonusConsGrid.appendChild(b);
+  });
+  VOWELS.forEach(function(L){
+    if(gift.indexOf(L)>=0) return;
+    var b = document.createElement("button"); b.textContent=L; b.dataset.letter=L;
+    b.setAttribute("aria-label","Pick vowel " + L + " for the bonus round — Tap to pick or unpick");
+    b.addEventListener("click", function(){ bonusPicks.vow = (bonusPicks.vow===L ? null : L); syncBonusPickUI(); });
+    els.bonusVowelGrid.appendChild(b);
+  });
+  syncBonusPickUI();
+}
+function syncBonusPickUI(){
+  Array.prototype.forEach.call(els.bonusConsGrid.children, function(b){ b.classList.toggle("hit", bonusPicks.cons.indexOf(b.dataset.letter)>=0); });
+  Array.prototype.forEach.call(els.bonusVowelGrid.children, function(b){ b.classList.toggle("hit", bonusPicks.vow===b.dataset.letter); });
+  var chosen = bonusPicks.cons.concat(bonusPicks.vow ? [bonusPicks.vow] : []);
+  els.bonusChosen.textContent = chosen.length ? chosen.join(", ") : "none yet";
+  els.bonusRevealBtn.disabled = !(bonusPicks.cons.length===3 && bonusPicks.vow);
+}
+function coachBonus(){
+  if(G.cfg.teach==="off") return;
+  els.coachText.textContent = "Bonus picks: the gift set already covers the frequency leaders, so spend your picks on what this board's shape suggests — long words often hide D, C, M, or P, and a second vowel (A or O) opens words the gifted E can't. In Coach mode: pick after looking at word lengths — a 3-letter word ending in a gifted letter is often THE, AND, or FOR, so its middle letter is a strong pick.";
+  els.coachEl.classList.remove("hidden");
+}
+var bonusTimerInt = null;
+els.bonusRevealBtn.addEventListener("click", function(){
+  if(!G || !G.bonus) return;
+  G.phrase = pickPhrase();
+  G.guessed = {};
+  G.cfg.gift.split("").forEach(function(L){ G.guessed[L]=true; });
+  bonusPicks.cons.forEach(function(L){ G.guessed[L]=true; });
+  if(bonusPicks.vow) G.guessed[bonusPicks.vow]=true;
+  els.bonusPickZone.classList.add("hidden");
+  els.bonusSolveZone.classList.remove("hidden");
+  renderBoard();
+  els.catEl.textContent = "Bonus round — Category: " + G.phrase.c;
+  var left = G.cfg.bonusClock;
+  els.bonusTimer.textContent = left;
+  clearInterval(bonusTimerInt);
+  bonusTimerInt = setInterval(function(){
+    left--; els.bonusTimer.textContent = left;
+    if(left<=0){ clearInterval(bonusTimerInt); bonusEnd(false, "Time's up."); }
+  }, 1000);
+  els.bonusSolveInput.focus();
+});
+els.bonusSolveBtn.addEventListener("click", function(){
+  if(normalize(els.bonusSolveInput.value) === normalize(G.phrase.t)) bonusEnd(true, "Solved it!");
+  else msg("Not the bonus phrase — keep trying while the clock runs.");
+});
+els.bonusSolveInput.addEventListener("keydown", function(e){ if(e.key==="Enter") els.bonusSolveBtn.click(); });
+function bonusEnd(won, why){
+  if(!G.bonus || G.bonus.done) return;
+  G.bonus.done = true; clearInterval(bonusTimerInt);
+  Object.keys(G.guessed); G.phrase.t.split("").forEach(function(ch){ if(/[A-Z]/.test(ch)) G.guessed[ch]=true; });
+  renderBoard();
+  var human = G.players[0];
+  if(won){ human.total += BONUS_PRIZE; msg(why + " Bonus phrase: “" + G.phrase.t + "” — +" + BONUS_PRIZE + ". Final total " + human.total + "."); }
+  else msg(why + " The bonus phrase was “" + G.phrase.t + "”. Final total " + human.total + ".");
+  renderScores();
+  writeRecord(won, human);
+}
+
+/* ================= Record ================= */
+function writeRecord(bonusWonFlag, human){
+  record.games++;
+  record.solves += G.gameSolves;
+  record.roundsPlayed += G.cfg.rounds;
+  record.bankrupts += G.gameBankrupts;
+  if(human.total > record.bestTotal) record.bestTotal = human.total;
+  if(G.bonus){ record.bonusPlayed++; if(bonusWonFlag) record.bonusWon++; }
+  record.history.unshift({ date:new Date().toISOString().slice(0,10), mode:G.cfg.mode, botLevel:G.cfg.mode==="bots"?G.cfg.botLevel:null, total:human.total, roundsSolved:G.gameSolves, bankrupts:G.gameBankrupts, bonusWon: !!bonusWonFlag });
+  if(record.history.length>50) record.history = record.history.slice(0,50);
+  lsSet(LS_REC, record);
+  renderRecord();
+}
+function renderRecord(){
+  if(!record.games){ els.recordEl.innerHTML = "<p>No games recorded yet. Finish a game and it lands here.</p>"; return; }
+  var rate = record.roundsPlayed ? Math.round(100*record.solves/record.roundsPlayed) : 0;
+  var html = "<p><strong>Games:</strong> " + record.games + " · <strong>Rounds you solved:</strong> " + record.solves + " of " + record.roundsPlayed + " (" + rate + "% solve rate) · <strong>Best total:</strong> " + record.bestTotal + " · <strong>Bankrupts you hit:</strong> " + record.bankrupts + " · <strong>Bonus rounds won:</strong> " + record.bonusWon + " of " + record.bonusPlayed + "</p>";
+  html += "<table><tr><th>Date</th><th>Mode</th><th>Your total</th><th>Rounds solved</th><th>Bankrupts</th><th>Bonus</th></tr>";
+  record.history.slice(0,10).forEach(function(h){
+    html += "<tr><td>"+h.date+"</td><td>"+(h.mode==="bots" ? "vs bots ("+h.botLevel+")" : "solo")+"</td><td>"+h.total+"</td><td>"+h.roundsSolved+"</td><td>"+h.bankrupts+"</td><td>"+(h.bonusWon?"Won":"—")+"</td></tr>";
+  });
+  html += "</table>";
+  els.recordEl.innerHTML = html;
+}
+els.exportBtn.addEventListener("click", function(){
+  var blob = new Blob([JSON.stringify(record, null, 2)], {type:"application/json"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "wheel-of-words-record.json"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+els.copyBtn.addEventListener("click", function(){
+  var txt = JSON.stringify(record, null, 2);
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ msg("Record copied."); }, function(){ msg("Copy was blocked by the browser — use Export instead."); }); }
+  else msg("Copy isn't available here — use Export instead.");
+});
+els.forgetBtn.addEventListener("click", function(){
+  try{ localStorage.removeItem(LS_REC); localStorage.removeItem(LS_SET); }catch(e){}
+  record = emptyRecord(); settings = { teach:"light" }; els.teachSel.value = "light";
+  renderRecord(); msg("Forgotten. Your record and settings were wiped from this device.");
+});
+els.downloadBtn.addEventListener("click", function(){
+  var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+  var blob = new Blob([html], {type:"text/html"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "wheel-of-words.html"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+els.startBtn.addEventListener("click", startGame);
+buildLetterButtons();
+renderRecord();
+renderTurn();
+</script>
+</body>
+</html>
