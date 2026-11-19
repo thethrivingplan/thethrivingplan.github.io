@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>The Music Player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#f6f6f4; --surface:#ffffff; --surface2:#ececea; --ink:#17191d; --ink2:#4c5158;
+        --line:#d8d8d2; --accent:#c94f16; --accent-ink:#ffffff; --accent-soft:#fbe9df;
+        --good:#1e7a3c; --warn:#9a6206; --bad:#b3261e; --live:#c0272d;
+        --shadow:0 1px 2px rgba(20,20,20,.06),0 8px 24px rgba(20,20,20,.06);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#121316; --surface:#1b1d21; --surface2:#26282e; --ink:#eceae5; --ink2:#b6b3ab;
+          --line:#34363d; --accent:#ff8a50; --accent-ink:#1c1005; --accent-soft:#3a2417;
+          --good:#5cc97e; --warn:#e0aa4e; --bad:#ff7a70; --live:#ff5a52;
+          --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{
+        margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size:17px; line-height:1.55;
+      }
+      .mono{ font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .wrap{ max-width:1060px; margin:0 auto; padding:0 16px 64px; }
+      a{ color:var(--accent); }
+      button, .btn{
+        font:inherit; cursor:pointer; border:1px solid var(--line); background:var(--surface);
+        color:var(--ink); border-radius:10px; padding:10px 16px; min-height:44px;
+        display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+      }
+      button:hover, .btn:hover{ border-color:var(--ink2); }
+      button:focus-visible, .btn:focus-visible, input:focus-visible, summary:focus-visible{
+        outline:3px solid var(--accent); outline-offset:2px;
+      }
+      button[aria-pressed="true"]{ background:var(--accent-soft); border-color:var(--accent); color:var(--ink); }
+      .btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700; }
+      .btn-primary:hover{ border-color:var(--accent); filter:brightness(1.07); }
+
+      /* top strip */
+      .freebar{
+        background:var(--ink); color:var(--bg); padding:12px 16px;
+      }
+      .freebar .in{ max-width:1060px; margin:0 auto; display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between; }
+      .freebar strong{ font-size:1.02rem; }
+      .freebar .btn{ min-height:40px; padding:8px 14px; background:transparent; color:var(--bg); border-color:var(--bg); font-size:.95rem; }
+      .compass{ display:flex; flex-wrap:wrap; gap:6px; margin:18px 0 6px; }
+      .compass a{
+        color:var(--ink); text-decoration:none; border:1px solid var(--line); background:var(--surface);
+        padding:9px 14px; border-radius:999px; font-size:.95rem; min-height:40px; display:inline-flex; align-items:center;
+      }
+      .compass a:hover{ border-color:var(--ink2); }
+
+      h1{ font-size:2rem; line-height:1.15; margin:14px 0 6px; font-weight:800; letter-spacing:-.01em; }
+      .lede{ color:var(--ink2); max-width:44em; margin:0 0 8px; }
+      h2{ font-size:1.35rem; margin:0 0 4px; font-weight:800; }
+      h3{ font-size:1.08rem; margin:22px 0 6px; font-weight:700; }
+      .sec{ margin-top:40px; }
+      .sec-head p{ color:var(--ink2); margin:0 0 14px; max-width:46em; }
+      .gesture-note{ font-size:.86rem; color:var(--ink2); }
+      .gesture{ display:block; font-size:.8rem; color:var(--ink2); font-weight:500; margin-top:2px; }
+
+      /* player deck */
+      .deck{
+        background:var(--surface); border:1px solid var(--line); border-radius:16px;
+        box-shadow:var(--shadow); padding:20px; margin-top:18px;
+      }
+      .np-source{ font-size:.82rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2); font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .live-dot{ width:10px; height:10px; border-radius:50%; background:var(--live); display:none; }
+      .live-dot.on{ display:inline-block; animation:pulse 1.6s ease-in-out infinite; }
+      @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+      @media (prefers-reduced-motion: reduce){
+        .live-dot.on{ animation:none; }
+        html{ scroll-behavior:auto; }
+      }
+      .np-name{ font-size:1.55rem; font-weight:800; line-height:1.2; margin:6px 0 2px; }
+      .np-detail{ color:var(--ink2); margin:0; }
+      .np-status{ margin:10px 0 0; font-size:.98rem; }
+      .np-status.ok{ color:var(--good); }
+      .np-status.warn{ color:var(--warn); }
+      .np-status.bad{ color:var(--bad); }
+      .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; margin-top:16px; }
+      .ctl{ flex-direction:column; gap:0; padding:8px 14px; }
+      .ctl .ic{ font-size:1.25rem; line-height:1.2; }
+      .ctl-play{
+        background:var(--accent); border-color:var(--accent); color:var(--accent-ink);
+        min-width:132px; font-weight:800;
+      }
+      .ctl-play .gesture{ color:var(--accent-ink); opacity:.85; }
+      .ctl-play:hover{ border-color:var(--accent); filter:brightness(1.07); }
+      .volrow{ display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center; margin-top:18px; }
+      .volrow label{ font-weight:600; }
+      input[type="range"]{ accent-color:var(--accent); width:min(260px, 60vw); min-height:36px; }
+      .timerrow{ margin-top:18px; border-top:1px solid var(--line); padding-top:16px; }
+      .timerrow .t{ font-weight:700; margin-bottom:8px; }
+      .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+      .chip{ border-radius:999px; padding:8px 14px; min-height:40px; }
+      #timerReadout{ margin-top:8px; }
+
+      /* station grid */
+      .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap:14px; }
+      .card{
+        background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px;
+        display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow);
+      }
+      .card.playing-now{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), var(--shadow); }
+      .card h3{ margin:0; font-size:1.12rem; }
+      .card .from{ color:var(--ink2); font-size:.92rem; margin:0; }
+      .card .blurb{ margin:0; flex:1; }
+      .tags{ display:flex; flex-wrap:wrap; gap:6px; }
+      .tag{ font-size:.8rem; border:1px solid var(--line); border-radius:999px; padding:3px 10px; color:var(--ink2); background:var(--surface2); }
+      .card .row{ display:flex; gap:8px; flex-wrap:wrap; }
+      .card .row button{ flex:1; }
+      .fav-btn[aria-pressed="true"]{ background:var(--accent-soft); border-color:var(--accent); }
+
+      /* your music + favourites */
+      .panel{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:var(--shadow); }
+      .honest{ background:var(--surface2); border-radius:10px; padding:12px 14px; margin:12px 0; }
+      .honest p{ margin:6px 0; }
+      .playlist{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:8px; }
+      .playlist li{
+        display:flex; flex-wrap:wrap; gap:8px; align-items:center; border:1px solid var(--line);
+        border-radius:10px; padding:8px 10px;
+      }
+      .playlist .fname{ flex:1 1 180px; overflow-wrap:anywhere; }
+      .playlist li.now{ border-color:var(--accent); background:var(--accent-soft); }
+      .playlist button{ min-height:40px; padding:6px 12px; }
+      .empty{ color:var(--ink2); }
+      .favlist{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:8px; }
+      .favlist li{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+      .favlist .fname{ flex:1 1 160px; }
+      .favlist button{ min-height:40px; padding:6px 12px; }
+      .nameform{ display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-top:6px; }
+      .nameform label{ font-weight:600; display:block; margin-bottom:4px; }
+      input[type="text"]{
+        font:inherit; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+        background:var(--surface); color:var(--ink); min-height:44px; min-width:min(280px, 78vw);
+      }
+
+      /* why folds */
+      details{ border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:4px 16px; margin:10px 0; }
+      summary{ cursor:pointer; font-weight:700; padding:12px 0; min-height:44px; display:flex; align-items:center; }
+      details p{ max-width:46em; }
+      footer{ margin-top:48px; border-top:1px solid var(--line); padding-top:16px; color:var(--ink2); font-size:.94rem; }
+      footer p{ margin:6px 0; }
+
+      #toast{
+        position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:50;
+        background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:12px;
+        max-width:min(92vw, 480px); box-shadow:var(--shadow); font-size:.98rem; display:none;
+      }
+      #toast.show{ display:block; }
+      .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+    </style>
+  </head>
+  <body>
+    <div class="freebar">
+      <div class="in">
+        <strong>Free — always free. No ads, no account, nothing to buy.</strong>
+        <a class="btn" href="index.html" download="the-music-player.html">Tap to download this page for offline reading</a>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <nav class="compass" aria-label="On this page">
+        <a href="#radio">Live radio</a>
+        <a href="#your-music">Your own music</a>
+        <a href="#favourites">Favourites</a>
+        <a href="#why">How streaming works</a>
+        <a href="#this-copy">This copy</a>
+      </nav>
+
+      <h1>The Music Player</h1>
+      <p class="lede">Real radio stations that publish their streams openly for players like this one, plus the music files already on your device — played right here, in this page. Nothing you pick is ever uploaded anywhere.</p>
+
+      <!-- PLAYER DECK -->
+      <section class="deck" aria-label="Player">
+        <div class="np-source"><span class="live-dot" id="liveDot" aria-hidden="true"></span><span id="npSource">Nothing playing yet</span></div>
+        <p class="np-name" id="npName">Pick a station below, or add your own music</p>
+        <p class="np-detail" id="npDetail">The player will always tell you what is playing and where it is coming from.</p>
+        <p class="np-status" id="npStatus" role="status">Ready when you are.</p>
+
+        <div class="controls">
+          <button type="button" class="ctl" id="prevBtn" data-explain="Goes back: the previous station on the shelf, or the previous song in your own-music list.">
+            <span class="ic" aria-hidden="true">⏮</span><span>Previous</span><span class="gesture">Tap to go back</span>
+          </button>
+          <button type="button" class="ctl ctl-play" id="playBtn" data-explain="Starts or pauses the sound. On live radio, pausing disconnects you — when you press play again you rejoin the station live, not where you left off. Radio is always happening now.">
+            <span class="ic" id="playIcon" aria-hidden="true">▶</span><span id="playLabel">Play</span><span class="gesture" id="playGesture">Tap to play</span>
+          </button>
+          <button type="button" class="ctl" id="nextBtn" data-explain="Goes forward: the next station on the shelf, or the next song in your own-music list.">
+            <span class="ic" aria-hidden="true">⏭</span><span>Next</span><span class="gesture">Tap to skip ahead</span>
+          </button>
+        </div>
+
+        <div class="volrow">
+          <label for="volSlider">Volume</label>
+          <input type="range" id="volSlider" min="0" max="100" step="1" value="80" data-explain="Drag to set how loud the player is. Your setting is remembered on this device only." />
+          <span class="mono" id="volReadout">80%</span>
+          <span class="gesture-note">Hold any button on this page to hear what it does.</span>
+        </div>
+
+        <div class="timerrow">
+          <p class="t" id="sleepTitle">Sleep timer — music stops on its own</p>
+          <div class="chips" role="group" aria-labelledby="sleepTitle">
+            <button type="button" class="chip timer-chip" data-min="0" aria-pressed="true">Off<span class="gesture">Tap to turn off</span></button>
+            <button type="button" class="chip timer-chip" data-min="15" aria-pressed="false">15 min<span class="gesture">Tap to set</span></button>
+            <button type="button" class="chip timer-chip" data-min="30" aria-pressed="false">30 min<span class="gesture">Tap to set</span></button>
+            <button type="button" class="chip timer-chip" data-min="45" aria-pressed="false">45 min<span class="gesture">Tap to set</span></button>
+            <button type="button" class="chip timer-chip" data-min="60" aria-pressed="false">60 min<span class="gesture">Tap to set</span></button>
+            <button type="button" class="chip timer-chip" data-min="90" aria-pressed="false">90 min<span class="gesture">Tap to set</span></button>
+          </div>
+          <p class="np-status mono" id="timerReadout" role="status"></p>
+        </div>
+      </section>
+
+      <!-- LIVE RADIO -->
+      <section class="sec" id="radio">
+        <div class="sec-head">
+          <h2>Live radio</h2>
+          <p>Every station below publishes its stream link openly, for players exactly like this one — that is the only kind of stream this page will ever carry. Each one was loaded and listened to when this page was built. Stations can still move or end a stream later; if one stops answering, the player above says so plainly instead of spinning forever.</p>
+        </div>
+        <div class="chips" role="group" aria-label="Filter stations by kind" id="filterChips" style="margin-bottom:14px;">
+          <button type="button" class="chip filter-chip" data-kind="all" aria-pressed="true">All stations</button>
+          <button type="button" class="chip filter-chip" data-kind="ambient" aria-pressed="false">Ambient &amp; chill</button>
+          <button type="button" class="chip filter-chip" data-kind="jazz" aria-pressed="false">Jazz &amp; lounge</button>
+          <button type="button" class="chip filter-chip" data-kind="mix" aria-pressed="false">A bit of everything</button>
+          <button type="button" class="chip filter-chip" data-kind="rock" aria-pressed="false">Rock, roots &amp; metal</button>
+          <button type="button" class="chip filter-chip" data-kind="electronic" aria-pressed="false">Electronic</button>
+          <button type="button" class="chip filter-chip" data-kind="classical" aria-pressed="false">Classical</button>
+          <button type="button" class="chip filter-chip" data-kind="talk" aria-pressed="false">News &amp; talk</button>
+        </div>
+        <div class="grid" id="stationGrid"></div>
+      </section>
+
+      <!-- YOUR OWN MUSIC -->
+      <section class="sec" id="your-music">
+        <div class="sec-head">
+          <h2>Your own music</h2>
+          <p>Play songs that are already on this device — your own files, your own library. They play right here in the page.</p>
+        </div>
+        <div class="panel">
+          <label class="btn btn-primary" for="filePicker" style="min-height:48px;">Tap to pick music files from this device</label>
+          <input class="sr-only" type="file" id="filePicker" accept="audio/*" multiple />
+          <div class="honest">
+            <p><strong>Never uploaded.</strong> Picked files are played in place, straight from your device. Nothing is sent anywhere, copied anywhere, or kept by this page.</p>
+            <p><strong>The honest limit:</strong> browsers are not allowed to remember which files you picked. Your list below lasts while this page is open — if you reload or close the page, you will need to pick the files again. That is the browser protecting your files, and this page will not pretend otherwise.</p>
+          </div>
+          <p class="empty" id="queueEmpty">No files picked yet. Pick some above and they will line up here as a playlist for this visit.</p>
+          <ol class="playlist" id="queueList"></ol>
+        </div>
+      </section>
+
+      <!-- FAVOURITES -->
+      <section class="sec" id="favourites">
+        <div class="sec-head">
+          <h2>Favourites</h2>
+          <p>Tap the star on any station to keep it here. Favourites are saved on this device only — never sent anywhere, no account — and one tap forgets them.</p>
+        </div>
+        <div class="panel">
+          <p class="empty" id="favEmpty">No favourites yet. Star a station above and it will wait for you here.</p>
+          <ul class="favlist" id="favList"></ul>
+          <div class="row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" id="forgetFavs" data-explain="Removes every favourite station from this device, right away. The stations themselves stay on the shelf above.">Forget all favourites<span class="gesture">Tap to forget</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- THIS COPY -->
+      <section class="sec" id="this-copy">
+        <div class="sec-head">
+          <h2>This copy is yours</h2>
+          <p>Call yourself whatever you like here. Your name, your volume, and your favourites are saved on this device only, in this browser — nothing is sent anywhere, and there is no account.</p>
+        </div>
+        <div class="panel">
+          <form class="nameform" id="nameForm">
+            <div>
+              <label for="aliasInput">Name on this copy (optional)</label>
+              <input type="text" id="aliasInput" autocomplete="off" placeholder="Any name you like" />
+            </div>
+            <button type="submit" class="btn-primary">Save name<span class="gesture">Tap to save</span></button>
+          </form>
+          <p class="np-status" id="aliasStatus" role="status"></p>
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" id="forgetAll" data-explain="Clears everything this page has saved on this device: your name, your volume, and your favourites. Nothing else on your device is touched.">Forget everything this page saved<span class="gesture">Tap to forget all</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- THE FULL WHY -->
+      <section class="sec" id="why">
+        <div class="sec-head">
+          <h2>How streaming radio works — the full why</h2>
+          <p>Short answers, in plain words. Tap a question to open it.</p>
+        </div>
+
+        <details>
+          <summary>What is a stream, exactly? — Tap to open</summary>
+          <p>A music file sits still on a device until you play it. A stream is the opposite: the station's computer chops its broadcast into tiny pieces of sound and sends them to you one after another, a few seconds ahead of what you are hearing. Your player plays each piece as it arrives and throws it away. Nothing is saved, nothing piles up — it is a river, not a lake. That is also why this page has no download or record button for radio: a stream was never a file, and turning it into one would be copying music that is not ours to copy.</p>
+        </details>
+
+        <details>
+          <summary>What does bitrate mean — for sound, and for your data? — Tap to open</summary>
+          <p>Bitrate is how much sound-data travels per second, written as kbps (thousands of bits per second). More bits describe the sound more fully, so higher usually sounds better — 128 kbps is honest FM-radio quality, 192 kbps is a step finer, and past about 256 kbps most ears on most speakers cannot hear the difference. The trade is data: a 128 kbps stream uses about 58 megabytes per hour, and 192 kbps about 86 megabytes per hour. On home Wi-Fi that is nothing. On a capped phone plan it adds up — roughly a gigabyte every 12 to 17 hours of listening. Every station on the shelf prints its bitrate, so the choice is yours with the numbers in front of you.</p>
+        </details>
+
+        <details>
+          <summary>Why does a stream pause, stutter, or “buffer”? — Tap to open</summary>
+          <p>Your player keeps a small cushion — a buffer — of a few seconds of sound it has received but not yet played. If your connection slows down (a weak signal, a busy network, a train tunnel), the player spends the cushion while it waits for more. If the cushion runs dry before more sound arrives, the music stops until it refills. A stall is almost never the station's fault or your device's fault — it is the road between them narrowing for a moment. Moving closer to the router, or dropping from a 192 kbps station to a 128 kbps one, genuinely helps: fewer bits per second fit through a narrower road.</p>
+        </details>
+
+        <details>
+          <summary>Why do these stations let a page like this play them? — Tap to open</summary>
+          <p>Because they say so, in public. Stations like SomaFM, Radio Paradise, Radio France, and public broadcasters publish their stream links openly so that any player — a phone app, a smart speaker, a web page — can tune in. More listeners is the point of radio. The licences those stations hold cover their broadcast reaching you through a player; the player adds nothing and takes nothing. What this page will never do: record a stream, save it, re-host it, or strip out a station's own announcements. We link to the river; we do not bottle it.</p>
+        </details>
+
+        <details>
+          <summary>What happens when a station stops answering? — Tap to open</summary>
+          <p>Stations move servers, change links, and occasionally go off the air — sometimes for an hour, sometimes for good. When that happens, the player above tells you plainly that the station could not be reached, rather than spinning forever or quietly playing nothing. Try again later, or pick another station; the shelf was built so no single station is the only door to its kind of music.</p>
+        </details>
+      </section>
+
+      <footer>
+        <p><strong>Copyleft:</strong> this page is free to copy and share — writings and design under CC BY-SA 4.0, code under GPL. The music belongs to the stations and the artists; this page only ever points at streams the stations themselves publish.</p>
+        <p>No ads. No tracking. No account. Favourites, volume, and your name live on this device only.</p>
+        <p>Station shelf verified at build time by loading every stream. Stations can move or end streams after that — when one stops answering, this player says so.</p>
+      </footer>
+    </div>
+
+    <div id="toast" role="status"></div>
+    <audio id="audioEl" preload="none"></audio>
+
+    <script>
+      (function(){
+        "use strict";
+
+        /* ---------- Verified station shelf (every stream loaded & checked at build time) ---------- */
+        var STATIONS = [
+          { id:"groovesalad", name:"Groove Salad", from:"SomaFM · San Francisco", kind:"Ambient beats", group:"ambient", kbps:128, url:"https://ice1.somafm.com/groovesalad-128-mp3", blurb:"Ambient beats and grooves, nicely chilled — SomaFM's flagship chill channel." },
+          { id:"dronezone", name:"Drone Zone", from:"SomaFM · San Francisco", kind:"Deep ambient", group:"ambient", kbps:128, url:"https://ice1.somafm.com/dronezone-128-mp3", blurb:"Deep, slow space ambient. Few beats, long horizons — made for focus and for sleep." },
+          { id:"lush", name:"Lush", from:"SomaFM · San Francisco", kind:"Chill vocals", group:"ambient", kbps:128, url:"https://ice1.somafm.com/lush-128-mp3", blurb:"Mellow, mostly female vocals with an electronic tint. Sensuous and warm." },
+          { id:"sonicuniverse", name:"Sonic Universe", from:"SomaFM · San Francisco", kind:"Jazz", group:"jazz", kbps:128, url:"https://ice1.somafm.com/sonicuniverse-128-mp3", blurb:"Nu-jazz and avant-garde European jazz — tradition, taken somewhere new." },
+          { id:"tsfjazz", name:"TSF Jazz", from:"Paris, France", kind:"Jazz", group:"jazz", kbps:128, url:"https://tsfjazz.ice.infomaniak.ch/tsfjazz-high.mp3", blurb:"A Paris jazz station: standards, new releases, and live sessions, around the clock." },
+          { id:"secretagent", name:"Secret Agent", from:"SomaFM · San Francisco", kind:"Lounge", group:"jazz", kbps:128, url:"https://ice1.somafm.com/secretagent-128-mp3", blurb:"The soundtrack for a stylish, mysterious, dangerous life: lounge, spy jazz, and exotica." },
+          { id:"radioparadise", name:"Radio Paradise", from:"Listener-supported · California", kind:"Eclectic mix", group:"mix", kbps:192, url:"https://stream.radioparadise.com/mp3-192", blurb:"A DJ-curated blend of rock, pop, world, and jazz — commercial-free, listener-supported." },
+          { id:"fip", name:"FIP", from:"Radio France · Paris", kind:"Eclectic mix", group:"mix", kbps:128, url:"https://icecast.radiofrance.fr/fip-midfi.mp3", blurb:"Paris's beloved eclectic station: jazz, chanson, world, and rock, with few interruptions." },
+          { id:"kexp", name:"KEXP 90.3", from:"Public radio · Seattle", kind:"Alternative & indie", group:"rock", kbps:128, url:"https://kexp-mp3-128.streamguys1.com/kexp128.mp3", blurb:"Real DJs playing alternative and indie music, famous for live in-studio sessions." },
+          { id:"seventies", name:"Left Coast 70s", from:"SomaFM · San Francisco", kind:"70s album rock", group:"rock", kbps:128, url:"https://ice1.somafm.com/seventies-128-mp3", blurb:"Mellow album rock from the seventies. Yacht friendly." },
+          { id:"bootliquor", name:"Boot Liquor", from:"SomaFM · San Francisco", kind:"Americana & roots", group:"rock", kbps:128, url:"https://ice1.somafm.com/bootliquor-128-mp3", blurb:"Americana roots music for cowhands and cowpokes: country, folk, and the twang in between." },
+          { id:"metal", name:"Metal Detector", from:"SomaFM · San Francisco", kind:"Metal", group:"rock", kbps:128, url:"https://ice1.somafm.com/metal-128-mp3", blurb:"From black to doom, prog to sludge, thrash to post-metal, punk to industrial." },
+          { id:"defcon", name:"DEF CON Radio", from:"SomaFM · San Francisco", kind:"Electronic", group:"electronic", kbps:128, url:"https://ice1.somafm.com/defcon-128-mp3", blurb:"Electronic music from the DEF CON hacker conference, broadcasting all year round." },
+          { id:"fluid", name:"Fluid", from:"SomaFM · San Francisco", kind:"Instrumental hip-hop", group:"electronic", kbps:128, url:"https://ice1.somafm.com/fluid-128-mp3", blurb:"Instrumental hip-hop, future soul, and liquid trap. Drown in it." },
+          { id:"francemusique", name:"France Musique", from:"Radio France · Paris", kind:"Classical", group:"classical", kbps:128, url:"https://icecast.radiofrance.fr/francemusique-midfi.mp3", blurb:"Classical music around the clock from France's public classical station." },
+          { id:"wnyc", name:"WNYC-FM", from:"Public radio · New York", kind:"News & talk", group:"talk", kbps:96, url:"https://fm939.wnyc.org/wnycfm-tunein", blurb:"New York public radio: news, interviews, and culture — in English." },
+          { id:"dlf", name:"Deutschlandfunk", from:"Public radio · Germany", kind:"News & culture", group:"talk", kbps:128, url:"https://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3", blurb:"Germany's national public news and culture station — broadcast in German." }
+        ];
+        var stationById = {};
+        STATIONS.forEach(function(s){ stationById[s.id] = s; });
+
+        /* ---------- On-device storage (this browser only, nothing sent anywhere) ---------- */
+        var store = {
+          get:function(k, d){ try { var v = localStorage.getItem("music-player:"+k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+          set:function(k, v){ try { localStorage.setItem("music-player:"+k, JSON.stringify(v)); } catch(e){} },
+          del:function(k){ try { localStorage.removeItem("music-player:"+k); } catch(e){} }
+        };
+        var favourites = {};
+        (store.get("favourites", []) || []).forEach(function(id){ if (stationById[id]) favourites[id] = true; });
+        function saveFavourites(){
+          var ids = Object.keys(favourites).filter(function(id){ return favourites[id]; });
+          store.set("favourites", ids);
+        }
+
+        /* ---------- Elements ---------- */
+        var audio = document.getElementById("audioEl");
+        var npSource = document.getElementById("npSource");
+        var npName = document.getElementById("npName");
+        var npDetail = document.getElementById("npDetail");
+        var npStatus = document.getElementById("npStatus");
+        var liveDot = document.getElementById("liveDot");
+        var playBtn = document.getElementById("playBtn");
+        var playIcon = document.getElementById("playIcon");
+        var playLabel = document.getElementById("playLabel");
+        var playGesture = document.getElementById("playGesture");
+        var grid = document.getElementById("stationGrid");
+
+        function setStatus(text, cls){
+          npStatus.textContent = text;
+          npStatus.className = "np-status" + (cls ? " " + cls : "");
+        }
+
+        /* ---------- Player state ---------- */
+        var mode = null;            // "radio" | "files" | null
+        var currentStation = null;  // station object when mode === "radio"
+        var queue = [];             // [{name, url}] object URLs for picked files
+        var queueIndex = -1;
+        var wantPlay = false;
+
+        function markPlayingCard(){
+          var cards = grid.querySelectorAll(".card");
+          cards.forEach(function(c){
+            c.classList.toggle("playing-now", mode === "radio" && currentStation && c.getAttribute("data-id") === currentStation.id);
+          });
+          var rows = document.getElementById("queueList").children;
+          for (var i = 0; i < rows.length; i++){
+            rows[i].classList.toggle("now", mode === "files" && i === queueIndex);
+          }
+        }
+
+        function showNowPlaying(){
+          if (mode === "radio" && currentStation){
+            npSource.textContent = "Live radio · " + currentStation.from;
+            npName.textContent = currentStation.name;
+            npDetail.textContent = currentStation.kind + " · " + currentStation.kbps + " kbps stream, published openly by the station for players.";
+          } else if (mode === "files" && queueIndex >= 0 && queue[queueIndex]){
+            npSource.textContent = "Your own music · played from this device, never uploaded";
+            npName.textContent = queue[queueIndex].name;
+            npDetail.textContent = "Song " + (queueIndex + 1) + " of " + queue.length + " in the list you picked for this visit.";
+          }
+          markPlayingCard();
+        }
+
+        function tryPlay(){
+          wantPlay = true;
+          var p = audio.play();
+          if (p && p.catch){ p.catch(function(){ /* status handled by events below */ }); }
+        }
+
+        function playStation(id){
+          var s = stationById[id];
+          if (!s) return;
+          mode = "radio"; currentStation = s; queueIndex = -1;
+          audio.src = s.url;
+          showNowPlaying();
+          setStatus("Connecting to " + s.name + "…", "warn");
+          tryPlay();
+        }
+
+        function playQueueItem(i){
+          if (i < 0 || i >= queue.length) return;
+          mode = "files"; currentStation = null; queueIndex = i;
+          audio.src = queue[i].url;
+          showNowPlaying();
+          setStatus("Loading your file…", "warn");
+          tryPlay();
+        }
+
+        function togglePlay(){
+          if (!mode){
+            if (STATIONS.length) playStation(STATIONS[0].id);
+            return;
+          }
+          if (audio.paused){ tryPlay(); }
+          else { audio.pause(); }
+        }
+
+        function step(dir){
+          if (mode === "files" && queue.length){
+            var n = queueIndex + dir;
+            if (n < 0) n = queue.length - 1;
+            if (n >= queue.length) n = 0;
+            playQueueItem(n);
+          } else if (STATIONS.length){
+            var idx = currentStation ? STATIONS.indexOf(currentStation) : 0;
+            var m = idx + dir;
+            if (m < 0) m = STATIONS.length - 1;
+            if (m >= STATIONS.length) m = 0;
+            playStation(STATIONS[m].id);
+          }
+        }
+
+        /* ---------- Audio events: the readout tells the truth ---------- */
+        audio.addEventListener("playing", function(){
+          liveDot.classList.add("on");
+          playIcon.textContent = "⏸"; playLabel.textContent = "Pause"; playGesture.textContent = "Tap to pause";
+          if (mode === "radio" && currentStation) setStatus("Playing now — live from " + currentStation.name + ". Radio is always happening now; there is no rewind.", "ok");
+          else setStatus("Playing now — from your device.", "ok");
+        });
+        audio.addEventListener("pause", function(){
+          liveDot.classList.remove("on");
+          playIcon.textContent = "▶"; playLabel.textContent = "Play"; playGesture.textContent = "Tap to play";
+          if (audio.error) return; /* a failed stream already told the truth — don't paper over it with "Paused" */
+          if (mode) setStatus("Paused." + (mode === "radio" ? " Live radio keeps going without you — pressing play rejoins it live." : ""), "");
+        });
+        audio.addEventListener("waiting", function(){
+          if (mode) setStatus("Buffering — the player is refilling its few seconds of cushion. A slow or busy connection is the usual cause.", "warn");
+        });
+        audio.addEventListener("error", function(){
+          liveDot.classList.remove("on");
+          if (!mode) return;
+          if (mode === "radio" && currentStation){
+            setStatus(currentStation.name + " could not be reached. The station may have moved or ended this stream, or the connection failed. Try again in a bit, or pick another station — nothing here will spin forever pretending.", "bad");
+          } else {
+            setStatus("That file could not be played. It may be a format this browser does not know.", "bad");
+          }
+        });
+        audio.addEventListener("ended", function(){
+          if (mode === "files" && queue.length){
+            if (queueIndex < queue.length - 1) playQueueItem(queueIndex + 1);
+            else setStatus("End of your list. Pick more files, or press play to hear the last song again.", "");
+          }
+        });
+
+        playBtn.addEventListener("click", togglePlay);
+        document.getElementById("prevBtn").addEventListener("click", function(){ step(-1); });
+        document.getElementById("nextBtn").addEventListener("click", function(){ step(1); });
+
+        /* ---------- Volume (saved on this device only) ---------- */
+        var volSlider = document.getElementById("volSlider");
+        var volReadout = document.getElementById("volReadout");
+        var savedVol = store.get("volume", 80);
+        if (typeof savedVol === "number" && savedVol >= 0 && savedVol <= 100){
+          volSlider.value = savedVol;
+        }
+        function applyVolume(){
+          var v = parseInt(volSlider.value, 10);
+          audio.volume = v / 100;
+          volReadout.textContent = v + "%";
+          store.set("volume", v);
+        }
+        volSlider.addEventListener("input", applyVolume);
+        applyVolume();
+
+        /* ---------- Sleep timer ---------- */
+        var timerId = null, tickId = null, timerEnd = 0;
+        var timerReadout = document.getElementById("timerReadout");
+        function clearTimer(silent){
+          if (timerId) { clearTimeout(timerId); timerId = null; }
+          if (tickId) { clearInterval(tickId); tickId = null; }
+          if (!silent) timerReadout.textContent = "";
+          document.querySelectorAll(".timer-chip").forEach(function(c){
+            c.setAttribute("aria-pressed", c.getAttribute("data-min") === "0" ? "true" : "false");
+          });
+        }
+        function setTimer(min){
+          clearTimer(true);
+          document.querySelectorAll(".timer-chip").forEach(function(c){
+            c.setAttribute("aria-pressed", c.getAttribute("data-min") === String(min) ? "true" : "false");
+          });
+          if (!min){ timerReadout.textContent = "Sleep timer is off."; return; }
+          timerEnd = Date.now() + min * 60 * 1000;
+          function tick(){
+            var left = Math.max(0, Math.round((timerEnd - Date.now()) / 1000));
+            var m = Math.floor(left / 60), s = left % 60;
+            timerReadout.textContent = "Music stops in " + m + ":" + (s < 10 ? "0" : "") + s + " — tap Off above to cancel.";
+          }
+          tick();
+          tickId = setInterval(tick, 1000);
+          timerId = setTimeout(function(){
+            clearTimer(true);
+            document.querySelectorAll(".timer-chip").forEach(function(c){
+              c.setAttribute("aria-pressed", c.getAttribute("data-min") === "0" ? "true" : "false");
+            });
+            audio.pause();
+            timerReadout.textContent = "";
+            if (mode) setStatus("The sleep timer stopped the music. Sleep well — press play any time to listen again.", "ok");
+          }, min * 60 * 1000);
+          timerReadout.textContent = "Sleep timer set: music stops in " + min + " minutes.";
+        }
+        document.querySelectorAll(".timer-chip").forEach(function(c){
+          c.addEventListener("click", function(){ setTimer(parseInt(c.getAttribute("data-min"), 10)); });
+        });
+
+        /* ---------- Station cards ---------- */
+        function starLabel(on){ return on ? "★ Saved as a favourite" : "☆ Save as a favourite"; }
+        function renderStations(){
+          grid.innerHTML = "";
+          STATIONS.forEach(function(s){
+            var card = document.createElement("article");
+            card.className = "card";
+            card.setAttribute("data-id", s.id);
+            card.setAttribute("data-group", s.group);
+
+            var h = document.createElement("h3"); h.textContent = s.name;
+            var from = document.createElement("p"); from.className = "from"; from.textContent = s.from;
+            var tags = document.createElement("div"); tags.className = "tags";
+            var t1 = document.createElement("span"); t1.className = "tag"; t1.textContent = s.kind;
+            var t2 = document.createElement("span"); t2.className = "tag mono"; t2.textContent = s.kbps + " kbps";
+            tags.appendChild(t1); tags.appendChild(t2);
+            var blurb = document.createElement("p"); blurb.className = "blurb"; blurb.textContent = s.blurb;
+
+            var row = document.createElement("div"); row.className = "row";
+            var play = document.createElement("button");
+            play.type = "button"; play.className = "btn-primary";
+            play.innerHTML = "▶ Play<span class=\"gesture\">Tap to play this station</span>";
+            play.setAttribute("data-explain", "Plays " + s.name + " live. The sound comes straight from the station's own published stream — this page adds nothing and records nothing.");
+            play.addEventListener("click", function(){ playStation(s.id); window.scrollTo({ top: 0, behavior: "smooth" }); });
+
+            var fav = document.createElement("button");
+            fav.type = "button"; fav.className = "fav-btn";
+            fav.setAttribute("aria-pressed", favourites[s.id] ? "true" : "false");
+            fav.innerHTML = starLabel(!!favourites[s.id]) + "<span class=\"gesture\">Tap to save or unsave</span>";
+            fav.setAttribute("data-explain", "Saves " + s.name + " to your favourites, on this device only. Tap again to unsave it.");
+            fav.addEventListener("click", function(){
+              favourites[s.id] = !favourites[s.id];
+              if (!favourites[s.id]) delete favourites[s.id];
+              saveFavourites();
+              renderStations(); renderFavourites();
+            });
+
+            row.appendChild(play); row.appendChild(fav);
+            card.appendChild(h); card.appendChild(from); card.appendChild(tags); card.appendChild(blurb); card.appendChild(row);
+            grid.appendChild(card);
+          });
+          markPlayingCard();
+        }
+
+        /* filter chips */
+        document.querySelectorAll(".filter-chip").forEach(function(chip){
+          chip.addEventListener("click", function(){
+            document.querySelectorAll(".filter-chip").forEach(function(c){ c.setAttribute("aria-pressed", "false"); });
+            chip.setAttribute("aria-pressed", "true");
+            var kind = chip.getAttribute("data-kind");
+            grid.querySelectorAll(".card").forEach(function(card){
+              card.style.display = (kind === "all" || card.getAttribute("data-group") === kind) ? "" : "none";
+            });
+          });
+        });
+
+        /* ---------- Favourites shelf ---------- */
+        var favList = document.getElementById("favList");
+        var favEmpty = document.getElementById("favEmpty");
+        function renderFavourites(){
+          favList.innerHTML = "";
+          var ids = Object.keys(favourites).filter(function(id){ return favourites[id] && stationById[id]; });
+          favEmpty.style.display = ids.length ? "none" : "";
+          ids.forEach(function(id){
+            var s = stationById[id];
+            var li = document.createElement("li");
+            var nm = document.createElement("span"); nm.className = "fname";
+            nm.textContent = s.name + " — " + s.kind + " · " + s.kbps + " kbps";
+            var play = document.createElement("button");
+            play.type = "button"; play.textContent = "▶ Play — Tap to play";
+            play.addEventListener("click", function(){ playStation(id); window.scrollTo({ top: 0, behavior: "smooth" }); });
+            var un = document.createElement("button");
+            un.type = "button"; un.textContent = "Forget — Tap to remove";
+            un.addEventListener("click", function(){
+              delete favourites[id]; saveFavourites(); renderStations(); renderFavourites();
+            });
+            li.appendChild(nm); li.appendChild(play); li.appendChild(un);
+            favList.appendChild(li);
+          });
+        }
+        document.getElementById("forgetFavs").addEventListener("click", function(){
+          favourites = {}; saveFavourites(); renderStations(); renderFavourites();
+          setStatus("All favourites forgotten on this device.", "");
+        });
+
+        /* ---------- Your own music ---------- */
+        var picker = document.getElementById("filePicker");
+        var queueList = document.getElementById("queueList");
+        var queueEmpty = document.getElementById("queueEmpty");
+        function renderQueue(){
+          queueList.innerHTML = "";
+          queueEmpty.style.display = queue.length ? "none" : "";
+          queue.forEach(function(item, i){
+            var li = document.createElement("li");
+            var nm = document.createElement("span"); nm.className = "fname"; nm.textContent = (i + 1) + ". " + item.name;
+            var play = document.createElement("button");
+            play.type = "button"; play.textContent = "▶ Play — Tap to play";
+            play.addEventListener("click", function(){ playQueueItem(i); window.scrollTo({ top: 0, behavior: "smooth" }); });
+            var rm = document.createElement("button");
+            rm.type = "button"; rm.textContent = "Remove — Tap to remove";
+            rm.addEventListener("click", function(){
+              URL.revokeObjectURL(queue[i].url);
+              queue.splice(i, 1);
+              if (queueIndex === i){ queueIndex = -1; }
+              else if (queueIndex > i){ queueIndex--; }
+              renderQueue();
+            });
+            li.appendChild(nm); li.appendChild(play); li.appendChild(rm);
+            queueList.appendChild(li);
+          });
+          markPlayingCard();
+        }
+        picker.addEventListener("change", function(){
+          var files = Array.prototype.slice.call(picker.files || []);
+          files.forEach(function(f){
+            queue.push({ name: f.name.replace(/\.[a-z0-9]{2,5}$/i, ""), url: URL.createObjectURL(f) });
+          });
+          picker.value = "";
+          renderQueue();
+          if (files.length){
+            setStatus(files.length + (files.length === 1 ? " song" : " songs") + " added to your list for this visit. Nothing was uploaded — the files never leave this device.", "ok");
+            if (mode !== "files") playQueueItem(queue.length - files.length);
+          }
+        });
+
+        /* ---------- This copy: name + forget everything ---------- */
+        var aliasInput = document.getElementById("aliasInput");
+        var aliasStatus = document.getElementById("aliasStatus");
+        var savedName = store.get("alias", "");
+        if (savedName) { aliasInput.value = savedName; aliasStatus.textContent = "This copy answers to “" + savedName + "”. Saved on this device only."; }
+        document.getElementById("nameForm").addEventListener("submit", function(ev){
+          ev.preventDefault();
+          var v = aliasInput.value.trim();
+          if (v){ store.set("alias", v); aliasStatus.textContent = "Saved. This copy answers to “" + v + "” — on this device only."; }
+          else { store.del("alias"); aliasStatus.textContent = "Name cleared."; }
+        });
+        document.getElementById("forgetAll").addEventListener("click", function(){
+          favourites = {}; saveFavourites();
+          store.del("alias"); store.del("volume");
+          aliasInput.value = ""; aliasStatus.textContent = "Everything forgotten: name, volume, and favourites are cleared from this device.";
+          volSlider.value = 80; applyVolume(); store.del("volume");
+          renderStations(); renderFavourites();
+        });
+
+        /* ---------- Hold to explain (hover explains too) ---------- */
+        var toast = document.getElementById("toast");
+        var toastTimer = null;
+        function showToast(text){
+          toast.textContent = text; toast.classList.add("show");
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 4200);
+        }
+        var holdTimer = null, suppressEl = null;
+        document.addEventListener("pointerdown", function(ev){
+          var el = ev.target.closest ? ev.target.closest("[data-explain]") : null;
+          if (!el) return;
+          holdTimer = setTimeout(function(){
+            showToast(el.getAttribute("data-explain"));
+            suppressEl = el;
+          }, 550);
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach(function(evt){
+          document.addEventListener(evt, function(){ if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } });
+        });
+        document.addEventListener("click", function(ev){
+          if (suppressEl && ev.target.closest && ev.target.closest("[data-explain]") === suppressEl){
+            /* the hold already explained this control — swallow the click that follows it */
+            ev.stopPropagation();
+            ev.preventDefault();
+            suppressEl = null;
+          }
+        }, true);
+        document.addEventListener("mouseover", function(ev){
+          var el = ev.target.closest ? ev.target.closest("[data-explain]") : null;
+          if (el && window.matchMedia && window.matchMedia("(hover: hover)").matches){
+            el.title = el.getAttribute("data-explain");
+          }
+        });
+
+        renderStations();
+        renderFavourites();
+        renderQueue();
+      })();
+    </script>
+  </body>
+</html>
