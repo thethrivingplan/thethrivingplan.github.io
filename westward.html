@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Westward — A Trail Journey Game</title>
+<style>
+:root{
+  --bg:#f5efe1; --card:#fffcf3; --card2:#efe6d0; --ink:#2a2417; --muted:#6b5f45;
+  --line:#d8cbae; --rust:#9a3f1f; --rust-ink:#fff7ec; --sage:#59682f; --sage-ink:#f4f6e8;
+  --gold:#b07d1e; --bad:#a12622; --good:#3f6b2f; --shadow:0 2px 10px rgba(60,45,10,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#1c1912; --card:#28231a; --card2:#322b1e; --ink:#f0e7d2; --muted:#c2b28d;
+  --line:#4c4330; --rust:#d97a4a; --rust-ink:#1c1208; --sage:#a9bc6e; --sage-ink:#141806;
+  --gold:#e0aa3e; --bad:#ef8a84; --good:#9ccb7d; --shadow:0 2px 10px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55;font-size:17px}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:.2em 0 .4em}
+h1{font-size:2.1rem} h2{font-size:1.55rem;border-bottom:2px solid var(--line);padding-bottom:.3rem} h3{font-size:1.15rem}
+main{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:44px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px}
+button:hover{border-color:var(--rust)}
+button.primary{background:var(--rust);color:var(--rust-ink);border-color:var(--rust);font-weight:700}
+button.sage{background:var(--sage);color:var(--sage-ink);border-color:var(--sage);font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.small{min-height:40px;padding:6px 12px;font-size:.95rem}
+.gesture{display:block;font-size:.78rem;font-weight:400;opacity:.85;margin-top:2px}
+.freebar{background:var(--sage);color:var(--sage-ink);padding:12px 16px;font-weight:700}
+.freebar .wrap{max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.freebar p{margin:0}
+.hero{padding:28px 0 8px}
+.hero .lede{font-size:1.13rem;max-width:44em}
+.homage{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:.95rem}
+nav.compass{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:2px solid var(--line);padding:8px 0;display:flex;gap:8px;flex-wrap:wrap}
+nav.compass a{color:var(--ink);text-decoration:none;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:10px 14px;min-height:44px;display:inline-flex;align-items:center;font-weight:600}
+section{padding:22px 0 6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:760px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:1fr 1fr 1fr}}
+.shoprow{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border-bottom:1px dashed var(--line);padding:12px 0}
+.shoprow:last-child{border-bottom:none}
+.shoprow .info{flex:1}
+.shoprow .name{font-weight:700}
+.tradeoff{font-size:.9rem;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:44px;height:44px;font-size:1.2rem;padding:0}
+.qty .n{min-width:2ch;text-align:center;font-weight:800;font-size:1.1rem}
+.statbar{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:760px){.statbar{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--card2);border-radius:12px;padding:10px 12px;border:1px solid var(--line)}
+.stat .v{font-size:1.35rem;font-weight:800;font-family:Georgia,serif}
+.stat .k{font-size:.82rem;color:var(--muted)}
+.person{display:flex;gap:12px;align-items:flex-start;border-bottom:1px dashed var(--line);padding:10px 0}
+.person:last-child{border-bottom:none}
+.person .face{font-size:1.7rem;line-height:1}
+.person .pname{font-weight:700}
+.healthbar{height:10px;background:var(--card2);border:1px solid var(--line);border-radius:99px;overflow:hidden;flex:1;min-width:90px}
+.healthbar i{display:block;height:100%;background:var(--good)}
+.person.dead{opacity:.55}
+.badge{display:inline-block;border-radius:99px;padding:2px 10px;font-size:.8rem;font-weight:700;border:1px solid var(--line);background:var(--card2)}
+.badge.sick{background:#f3d9a4;color:#5b4300}
+@media (prefers-color-scheme: dark){.badge.sick{background:#5b4300;color:#ffe9ad}}
+label.field{display:block;font-weight:700;margin:10px 0 4px}
+input[type=text],select{width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+input[type=range]{width:100%;min-height:44px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button[aria-pressed=true]{background:var(--rust);color:var(--rust-ink);border-color:var(--rust);font-weight:700}
+#log{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 16px;max-height:340px;overflow:auto}
+#log li{margin:8px 0}
+#eventBox{border:2.5px solid var(--rust);border-radius:14px;background:var(--card);padding:18px;box-shadow:var(--shadow)}
+#eventBox .choices{display:grid;gap:10px;margin-top:12px}
+@media(min-width:760px){#eventBox .choices{grid-template-columns:1fr 1fr}}
+.teach{background:var(--card2);border-radius:10px;padding:10px 14px;font-size:.95rem;margin-top:10px}
+.teach .tk{font-weight:800;color:var(--rust)}
+body[data-teach="0"] .teach{display:none}
+body[data-teach="1"] .teach-deep{display:none}
+details.shelf{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 16px;margin:12px 0;box-shadow:var(--shadow)}
+details.shelf summary{cursor:pointer;font-family:Georgia,serif;font-size:1.2rem;font-weight:700;padding:12px 0;min-height:48px}
+.src{font-size:.88rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;margin-top:10px}
+footer{border-top:2px solid var(--line);margin-top:36px;padding-top:16px;font-size:.92rem;color:var(--muted)}
+svg text{font-family:Georgia,serif}
+.hidden{display:none!important}
+.arrived{font-size:1.1rem}
+.kicker{font-weight:800;letter-spacing:.02em;color:var(--rust);font-size:.9rem;text-transform:none}
+a{color:var(--rust)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-teach="2">
+
+<div class="freebar"><div class="wrap">
+  <p>Free — always free. No ads, no account, no paywall. Your journey record stays in this page, on this device.</p>
+  <button type="button" id="offlineBtn">⬇ Save a copy for offline<span class="gesture">Tap to download this page</span></button>
+</div></div>
+
+<main>
+<header class="hero">
+  <h1>Westward</h1>
+  <p class="lede">Outfit a wagon, name your people, and walk them roughly 2,000 miles from Independence, Missouri, to Oregon's Willamette Valley — at the speed of oxen, through the country and the calendar that decided who arrived. There is no score here that matters more than <strong>who arrives</strong>.</p>
+  <div class="homage"><strong>A note of homage:</strong> Generations of schoolchildren learned this journey from an early educational trail game, and this page borrows that <em>shape</em> — outfit, travel in legs, meet the trail's events — because it works. Everything here is our own: our name, our words, our drawn trail, our events. The history underneath is the documented record, and it is harsher and more interesting than the legend: the trail's great killer was disease, not drama.</div>
+</header>
+
+<nav class="compass" aria-label="Compass — jump to a part of the page">
+  <a href="#party">🧑‍🤝‍🧑 Party</a><a href="#outfit">🧺 Outfit</a><a href="#trail">🗺️ Trail</a><a href="#camp">🔥 Camp</a><a href="#shelves">📚 History shelves</a><a href="#record">📜 Your record</a>
+</nav>
+
+<section id="party">
+  <h2>1 · Your party — named people, not points</h2>
+  <p>Five people ride and walk with you. Their health is the game. When someone sickens, the wagon slows for them or it doesn't — that choice is yours, and the trail will remember it in the log. You may rename anyone (alias freedom: use your family's names, your friends', or invented ones — the trail treats them the same).</p>
+  <div class="card">
+    <label class="field" for="aliasInput">Your trail name (the name the log calls you by)</label>
+    <input type="text" id="aliasInput" value="Captain of the wagon" maxlength="40">
+    <div id="partyList"></div>
+  </div>
+  <div class="teach teach-deep"><span class="tk">Why names?</span> Emigrant companies were neighbours, kin, and hired hands travelling together for four to six months. Diaries record deaths by name, often with a verse or a psalm. A game that turns people into a single “health” number loses the thing the diaries insist on: it was always <em>someone</em>.</div>
+</section>
+
+<section id="outfit">
+  <h2>2 · Outfit the wagon — every pound is a decision</h2>
+  <p>You start with <strong>$420 in game money of the era</strong> (1840s–50s dollars — roughly a farm family's stake; a real outfit commonly cost $400–$600 of the time). A loaded wagon could carry about <strong>2,000 lb of cargo</strong> before the load itself began killing oxen and snapping axles. Buy with the trade-off in mind, not the price tag alone.</p>
+  <div class="statbar" role="status" aria-live="polite">
+    <div class="stat"><div class="v" id="statMoney">$420</div><div class="k">Era dollars left</div></div>
+    <div class="stat"><div class="v" id="statWeight">0 lb</div><div class="k">Cargo weight (limit 2,000 lb)</div></div>
+    <div class="stat"><div class="v" id="statFood">0 lb</div><div class="k">Food aboard</div></div>
+    <div class="stat"><div class="v" id="statOxen">0</div><div class="k">Oxen (need at least 4)</div></div>
+  </div>
+  <div class="card" id="shop"></div>
+  <div class="teach"><span class="tk">The real arithmetic:</span> Guidebooks of the era advised roughly 200 lb of flour, 30 lb of pilot bread, 75 lb of bacon, 10 lb of coffee, 25 lb of sugar, 15 lb of dried fruit, plus salt and cornmeal <em>per adult</em> — near half a ton of food for a family, before a single tool. Wagons were chronically overloaded at the start and the trail east of Fort Laramie was littered with abandoned goods: stoves, trunks, even pianos, jettisoned as oxen tired.</div>
+  <p id="outfitMsg" role="status" aria-live="polite"></p>
+  <button type="button" class="primary" id="departBtn">Start west — leave Independence<span class="gesture">Tap to begin the journey</span></button>
+</section>
+
+<section id="trail">
+  <h2>3 · The trail</h2>
+  <div class="card">
+    <svg id="trailSvg" viewBox="0 0 960 240" width="100%" role="img" aria-label="Drawn map of the trail from Independence, Missouri to the Willamette Valley, with waypoints">
+      <path d="M40,190 C180,120 260,200 380,140 S600,60 700,110 S880,60 925,80" fill="none" stroke="var(--gold)" stroke-width="5" stroke-dasharray="10 7" stroke-linecap="round"/>
+      <g id="trailDots"></g>
+      <text id="wagonMark" x="40" y="165" font-size="30" text-anchor="middle">🐂</text>
+    </svg>
+    <p id="trailCaption" style="margin:.2em 0 0">Independence, Missouri — April. The grass is coming up, which is why everyone leaves now: oxen eat the prairie, they don't carry it.</p>
+  </div>
+  <div class="statbar" role="status" aria-live="polite">
+    <div class="stat"><div class="v" id="statDay">—</div><div class="k">Day of journey</div></div>
+    <div class="stat"><div class="v" id="statMiles">0 mi</div><div class="k">Miles travelled of ~2,000</div></div>
+    <div class="stat"><div class="v" id="statWhere">Independence</div><div class="k">Where you are</div></div>
+    <div class="stat"><div class="v" id="statWagon">Sound</div><div class="k">Wagon &amp; team</div></div>
+  </div>
+
+  <div id="eventBox" class="hidden" role="alertdialog" aria-labelledby="eventTitle">
+    <p class="kicker">The trail decides something</p>
+    <h3 id="eventTitle"></h3>
+    <p id="eventText"></p>
+    <div class="choices" id="eventChoices"></div>
+    <div class="teach hidden" id="eventTeach"></div>
+    <button type="button" class="primary hidden" id="eventDoneBtn">Carry on<span class="gesture">Tap after you have read the outcome</span></button>
+  </div>
+
+  <p style="margin-top:16px">
+    <button type="button" class="primary" id="travelBtn" disabled>Travel the next leg<span class="gesture">Tap to walk to the next landmark</span></button>
+  </p>
+  <h3>The log</h3>
+  <ul id="log"><li>Your journey has not begun. Outfit the wagon above, then tap “Start west.”</li></ul>
+</section>
+
+<section id="camp">
+  <h2>4 · Camp — pace, rations, and the evening choices</h2>
+  <div class="grid two">
+    <div class="card">
+      <h3>Pace</h3>
+      <div class="seg" role="group" aria-label="Pace">
+        <button type="button" data-pace="steady" aria-pressed="true">Steady · ~15 mi/day<span class="gesture">Tap to choose</span></button>
+        <button type="button" data-pace="hurried" aria-pressed="false">Hurried · ~20 mi/day<span class="gesture">Tap to choose</span></button>
+        <button type="button" data-pace="grueling" aria-pressed="false">Gruelling · ~25 mi/day<span class="gesture">Tap to choose</span></button>
+      </div>
+      <div class="teach"><span class="tk">Why pace ate the oxen:</span> An ox walks about two miles an hour and needs hours each day to graze and chew cud, or it loses condition no grain can replace on the trail. Pushing miles borrowed against the team's bodies. Companies that raced early often walked <em>into</em> the mountains in autumn with starved teams — the calendar, not the distance, was the real enemy: snow closed the passes, so the race was real too. That tension — hurry and starve, dawdle and freeze — is the trail's central problem, and no pace solves it cleanly.</div>
+      <h3>Rations</h3>
+      <div class="seg" role="group" aria-label="Rations">
+        <button type="button" data-rations="full" aria-pressed="true">Full · 3 lb/person/day<span class="gesture">Tap to choose</span></button>
+        <button type="button" data-rations="half" aria-pressed="false">Half · 2 lb/person/day<span class="gesture">Tap to choose</span></button>
+        <button type="button" data-rations="bare" aria-pressed="false">Bare bones · 1¼ lb/person/day<span class="gesture">Tap to choose</span></button>
+      </div>
+      <div class="teach teach-deep"><span class="tk">Half rations are not half as safe:</span> Trail work — walking 15 miles, herding, hauling water — burns enormous energy. Chronic short rations show up first as weakness and slow healing, then as scurvy when fresh food runs out: old wounds reopening, gums bleeding, men carried in the wagon who had walked out of Missouri. Diaries treat “the scurvy” as a season, arriving late in the journey like weather.</div>
+    </div>
+    <div class="card">
+      <h3>Evening actions</h3>
+      <p><button type="button" id="huntBtn" disabled>Hunt (uses 5 cartridges)<span class="gesture">Tap to try for game — meat if you are lucky and a fair shot</span></button></p>
+      <p><button type="button" id="restBtn" disabled>Rest a day<span class="gesture">Tap to graze the oxen and let the sick mend — costs a day and food</span></button></p>
+      <p><button type="button" id="tradeBtn" class="hidden">Trade at this post<span class="gesture">Tap to buy 100 lb of food for $30 era dollars — fort prices</span></button></p>
+      <div class="teach"><span class="tk">Hunting, honestly:</span> Buffalo were plentiful on the central plains early in the migration years and emigrants did shoot them — sometimes wastefully, taking tongues and leaving carcasses, a fact Indigenous nations and later travellers both recorded with anger. By the later years the herds near the trail were thinned and a hunt was a gamble, not a grocery. Antelope and small game fed more families than the famous buffalo ever did.</div>
+    </div>
+  </div>
+  <div class="card">
+    <label class="field" for="teachDial">Teaching dial — how much history rides along <span id="teachLabel">(Deep: every shelf-note shows)</span></label>
+    <input type="range" id="teachDial" min="0" max="2" step="1" value="2" aria-describedby="teachLabel">
+    <p style="margin:.3em 0 0;font-size:.92rem;color:var(--muted)">0 · Quiet — just the game &nbsp;·&nbsp; 1 · Standard — the key lesson per event &nbsp;·&nbsp; 2 · Deep — every note, every shelf open to read. The game never withholds an outcome for the dial; it only changes how much is explained.</p>
+  </div>
+</section>
+
+<section id="shelves">
+  <h2>5 · History shelves — the documented record, one tap down</h2>
+  <p>Each shelf states what is documented, and labels the <em>character</em> of its sources — whose words, gathered how, and where the numbers are estimates rather than counts.</p>
+
+  <details class="shelf" id="shelf-death">
+    <summary>What actually killed people on the trail — in honest order (Tap to open)</summary>
+    <p><strong>Disease first, by a wide margin.</strong> Cholera was the trail's great killer, especially 1849–1852, spread through contaminated water at crowded crossings and campsites; it could take a healthy adult from first cramps to death in a day. Dysentery and “mountain fever” (likely tick-borne and typhoid-like illnesses) ground people down more slowly. Scurvy weakened the late legs of the journey.</p>
+    <p><strong>Then accidents.</strong> Drownings at river crossings; firearm accidents — often while pulling a loaded rifle from a wagon muzzle-first; children falling under wagon wheels; wagon and animal accidents on descents.</p>
+    <p><strong>Violence was real but far rarer than the movies taught.</strong> Emigrant-on-emigrant violence and attacks by Native nations both occurred, but historians' counts put killings by Native people well below deaths from disease — and emigrants killed Native people too, a part of the record older tellings left out. The trail crossed Indigenous homelands; Native people also traded with, guided, and rescued emigrant parties, including at river crossings where their ferries and knowledge saved lives.</p>
+    <p>Overall mortality is commonly estimated around <strong>4–6% of the roughly 350,000–400,000 emigrants</strong> who travelled the overland trails in the peak decades — on the order of 20,000 deaths, with graves so frequent along some stretches that diarists wrote of passing several a day.</p>
+    <p class="src"><strong>Source character:</strong> emigrant diaries and letters (primary, firsthand, uneven); grave counts and trail registers (partial counts); U.S. National Park Service trail histories (agency synthesis); modern historians' demographic estimates (secondary — figures are ranges, not censuses, and are labelled as estimates here accordingly).</p>
+  </details>
+
+  <details class="shelf" id="shelf-river">
+    <summary>What a river ford really risked (Tap to open)</summary>
+    <p>A loaded emigrant wagon weighed over a ton. Fording meant driving oxen into current over an unseen bottom: a wheel in a hole could pitch the wagon, a soft bank could mire the team mid-stream, and a wagon that tipped spilled a family's entire food supply into the river — a loss that could kill more surely in October than the drowning risk did in June. Drowning itself was common enough that crossings were among the trail's most feared places, and the victims were often strong swimmers caught by current, cold, and heavy clothing.</p>
+    <p>The alternatives each had a price: caulking the wagon box with tar or clay and floating it across (slow, and everything got wet if the seal failed), ferries run by traders or Native operators (safer, but queues of days and fees that rose with the water), or waiting for the river to fall (safe, and the calendar charged interest). At the Green River and the Snake, ferries and toll bridges became businesses — the trail's danger, monetised.</p>
+    <p class="src"><strong>Source character:</strong> emigrant diaries describing specific crossings and losses (primary); ferry and toll records (commercial records, partial); National Park Service and state historic-site interpretation at preserved crossings (agency synthesis of the above).</p>
+  </details>
+
+  <details class="shelf" id="shelf-oxen">
+    <summary>Why the oxen decided everything (Tap to open)</summary>
+    <p>Oxen were preferred over horses and mules for plain reasons: cheaper to buy, calmer, less likely to be stolen, able to live on prairie grass, and — at the end of everything — edible. But an ox is a ruminant: it must spend hours grazing and chewing cud daily, and a team driven long hours on short grass loses flesh steadily. Emigrants watched their teams' ribs the way you watch a fuel gauge. Dead oxen along the trail were a landmark diarists recorded by the mile in bad stretches, particularly the forty-mile desert crossings of Nevada and the dry reaches before the Cascades, where water and grass, not distance, set the day's march.</p>
+    <p class="src"><strong>Source character:</strong> emigrant diaries and guidebooks of the era (primary — guidebooks sold advice, so their claims are read with that in mind); later veterinary and agricultural knowledge applied retrospectively (modern, labelled as such); National Park Service synthesis.</p>
+  </details>
+
+  <details class="shelf" id="shelf-who">
+    <summary>Who was actually on the trail (Tap to open)</summary>
+    <p>Mostly families — the Oregon migration was famously a family migration, with women and children a large share of many companies, which is one reason its diaries are so rich: literate women wrote a great deal of the record we have. Alongside them: single men bound for California gold after 1849, hired teamsters, Black emigrants both free and enslaved (Oregon's exclusion laws awaited some of them — the valley's welcome was not equal), Mormon companies on their own road to Utah, missionaries, and the Indigenous nations whose lands every mile crossed, whose trade, ferries, food, and diplomacy the emigrants depended on far more than the legend admits.</p>
+    <p class="src"><strong>Source character:</strong> census and company rosters (partial records); women's diaries and letters, many published by historical societies (primary); tribal histories and oral traditions (primary for Indigenous experience of the migration); modern demographic scholarship (secondary synthesis).</p>
+  </details>
+</section>
+
+<section id="record">
+  <h2>6 · Your record</h2>
+  <div class="card">
+    <p id="recordSummary">No journey yet. Your record — the party, the choices, who arrived — is kept in this page while it is open, and you can export it as a file that is yours.</p>
+    <p>
+      <button type="button" id="exportBtn">Export my journey record<span class="gesture">Tap to download a text file of this journey</span></button>
+      <button type="button" id="forgetBtn">Forget this journey<span class="gesture">Tap to clear the record and start over</span></button>
+    </p>
+    <p id="forgetMsg" role="status" aria-live="polite"></p>
+  </div>
+  <div id="endBox" class="card hidden"></div>
+</section>
+
+<footer>
+  <p><strong>Copyleft:</strong> Westward's words, design, and code are shared under CC BY-SA 4.0 (writings and design) and GPL (code) — copy it, teach with it, build on it, keep it free. No ads, ever. Nothing you type here is sent anywhere; the record lives in this page and in any file you export.</p>
+  <p>Homage, plainly: the journey-game shape was proven by an early educational classic. This is an independent work — not affiliated with, and using no text, art, or name from, that or any other game.</p>
+</footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+/* ---------- Data ---------- */
+var WAYPOINTS=[
+ {name:"Independence, Missouri",miles:0,note:"April. The grass is coming up, which is why everyone leaves now: oxen eat the prairie, they don't carry it."},
+ {name:"Kansas River Crossing",miles:102,river:true,note:"The Kaw (Kansas) River. First real water, first real decision."},
+ {name:"Fort Kearny",miles:290,fort:true,note:"A U.S. Army post on the Platte. Mail, blacksmith, and prices that know you're captive."},
+ {name:"Chimney Rock",miles:560,note:"The most-drawn landmark of the trail — a clay spire visible for a day's walk. You're a quarter done."},
+ {name:"Fort Laramie",miles:640,fort:true,note:"Trading post turned army fort. Sioux country begins; so do the hills. Halfway in miles, not in hardship."},
+ {name:"South Pass",miles:900,note:"A broad, gentle saddle over the Continental Divide — so gentle some diarists missed the moment. The Pacific slope begins."},
+ {name:"Fort Bridger",miles:1030,fort:true,note:"Jim Bridger's post. Last good chance to trade, repair, and argue about cutoffs. Most cutoffs were gambles wearing a shortcut's clothes."},
+ {name:"Fort Hall & the Snake River",miles:1250,river:true,note:"The Snake winds in a canyon. Crossings here — and the dry reaches after — broke many parties."},
+ {name:"The Blue Mountains",miles:1650,note:"Timber, grades, and early snow if you're late. The calendar is now visible in the sky."},
+ {name:"The Willamette Valley, Oregon",miles:2000,note:"Rain, timber, river bottomland — and the end of the road."}
+];
+var SHOP=[
+ {id:"flour",name:"Flour (10 lb sack)",cost:2,wt:10,food:10,blurb:"The staff of the trail. Cheap calories — but a wet sack is a ruined sack."},
+ {id:"bacon",name:"Bacon (10 lb)",cost:5,wt:10,food:10,blurb:"Dense, keeps without ice, fries into everything. Heavy for its price, worth it."},
+ {id:"coffee",name:"Coffee & sugar (5 lb)",cost:4,wt:5,food:5,blurb:"Morale in a sack. Diaries mention coffee like a relative — the sugar in it is real food, the coffee is real comfort."},
+ {id:"fruit",name:"Dried fruit (5 lb)",cost:4,wt:5,food:5,blurb:"Expensive — and the cheapest scurvy insurance on this list. Buy some."},
+ {id:"medicine",name:"Medicine kit",cost:12,wt:3,food:0,blurb:"Laudanum, quinine, bandages, salts. Era medicine helped some things and poisoned others — still better than nothing for fevers and flux."},
+ {id:"wheel",name:"Spare wagon wheel",cost:14,wt:55,food:0,blurb:"55 lb of insurance. A broken wheel without a spare means carpentry at trail speed — or abandoning the wagon."},
+ {id:"axle",name:"Spare axle & tools",cost:10,wt:40,food:0,blurb:"Axles snapped on rock and rut. Heavy. So is walking to Oregon."},
+ {id:"clothes",name:"Clothing & blankets (set)",cost:9,wt:18,food:0,blurb:"Cold kills quietly, in the mountains and in river crossings. Wool keeps some warmth wet."},
+ {id:"ammo",name:"Cartridges (box of 20)",cost:3,wt:2,food:0,blurb:"Hunting, signalling, and — rarely — defence. Most shots fired on the trail were at game or at nothing."},
+ {id:"ox",name:"Ox (one)",cost:25,wt:0,food:0,blurb:"Your engine. Four minimum; six pulls easier and gives you a spare life. Each eats grass, not cargo."}
+];
+var NAMES=[
+ {name:"Mara Ellison",age:34,role:"Mother of two; keeps the diary",emoji:"👩"},
+ {name:"Jonah Ellison",age:37,role:"Farmer; drives the team",emoji:"👨"},
+ {name:"Ruth Ellison",age:12,role:"Daughter; walks most miles beside the wagon",emoji:"👧"},
+ {name:"Silas Ellison",age:8,role:"Son; gathers buffalo chips for the fire",emoji:"👦"},
+ {name:"Amos Reed",age:61,role:"Grandfather; knows weather and mending",emoji:"👴"}
+];
+
+/* ---------- State ---------- */
+var S=null;
+function freshState(){
+ return {
+  phase:"outfit", money:420, inv:{}, day:0, leg:0, miles:0,
+  pace:"steady", rations:"full", wagon:100, started:false, over:false,
+  party:NAMES.map(function(p){return {name:p.name,age:p.age,role:p.role,emoji:p.emoji,health:100,alive:true,cond:"Well"};}),
+  log:[]
+ };
+}
+function reset(){ S=freshState(); SHOP.forEach(function(i){S.inv[i.id]=0;}); S.inv.ox=4; S.inv.flour=14; S.inv.bacon=4; S.inv.coffee=2; S.inv.fruit=2; S.inv.ammo=2; renderAll(); }
+function foodLb(){ var f=0; SHOP.forEach(function(i){f+=(S.inv[i.id]||0)*(i.food||0);}); return f; }
+function weightLb(){ var w=0; SHOP.forEach(function(i){w+=(S.inv[i.id]||0)*(i.wt||0);}); return w; }
+function spent(){ var s=0; SHOP.forEach(function(i){s+=(S.inv[i.id]||0)*i.cost;}); return s; }
+function aliveCount(){ return S.party.filter(function(p){return p.alive;}).length; }
+function log(msg){ S.log.push("Day "+Math.max(S.day,1)+": "+msg); renderLog(); }
+function renderLog(){ $("log").innerHTML=S.log.length?S.log.map(function(l){return "<li>"+esc(l)+"</li>";}).join(""):"<li>Your journey has not begun.</li>"; }
+
+/* ---------- Render ---------- */
+function renderShop(){
+ $("shop").innerHTML=SHOP.map(function(i){
+  return '<div class="shoprow"><div class="info"><div class="name">'+i.name+' — $'+i.cost+' · '+i.wt+' lb</div><div class="tradeoff">'+i.blurb+'</div></div>'+
+  '<div class="qty"><button type="button" data-shop="'+i.id+'" data-d="-1" aria-label="Remove one '+i.name+'">−</button><span class="n" id="qty-'+i.id+'">'+(S.inv[i.id]||0)+'</span><button type="button" data-shop="'+i.id+'" data-d="1" aria-label="Add one '+i.name+'">+</button></div></div>';
+ }).join("");
+ Array.prototype.forEach.call(document.querySelectorAll("[data-shop]"),function(b){
+  b.addEventListener("click",function(){
+   if(S.phase!=="outfit"){ $("outfitMsg").textContent="The outfitting is done — the trail keeps what you bought."; return; }
+   var id=b.getAttribute("data-shop"), d=+b.getAttribute("data-d");
+   var item=SHOP.filter(function(x){return x.id===id;})[0];
+   var next=(S.inv[id]||0)+d; if(next<0) return;
+   if(d>0 && spent()+item.cost>420){ $("outfitMsg").textContent="Not enough era dollars left for that."; return; }
+   if(d>0 && weightLb()+item.wt>2000){ $("outfitMsg").textContent="That would pass 2,000 lb — the wagon (and the oxen) refuse."; return; }
+   S.inv[id]=next; $("outfitMsg").textContent=""; renderAll();
+  });
+ });
+}
+function renderParty(){
+ $("partyList").innerHTML=S.party.map(function(p,idx){
+  return '<div class="person'+(p.alive?"":" dead")+'"><div class="face">'+p.emoji+'</div><div style="flex:1"><span class="pname">'+esc(p.name)+'</span>, '+p.age+' — '+esc(p.role)+'<br>'+
+  (p.alive?'<span class="badge'+(p.cond!=="Well"?" sick":"")+'">'+p.cond+'</span>':'<span class="badge">Died on the trail — remembered in the log</span>')+
+  '</div>'+(p.alive?'<div class="healthbar" aria-label="Health of '+p.name+'"><i style="width:'+Math.max(p.health,0)+'%"></i></div><strong>'+Math.round(p.health)+'</strong>':'')+
+  (S.phase==="outfit"?'<button type="button" class="small" data-rename="'+idx+'">Rename<span class="gesture">Tap to rename</span></button>':"")+'</div>';
+ }).join("");
+ Array.prototype.forEach.call(document.querySelectorAll("[data-rename]"),function(b){
+  b.addEventListener("click",function(){
+   var idx=+b.getAttribute("data-rename");
+   var wrap=b.parentNode; var old=S.party[idx].name;
+   wrap.insertAdjacentHTML("beforeend","");
+   var inp=document.createElement("input"); inp.type="text"; inp.value=old; inp.maxLength=30; inp.setAttribute("aria-label","New name");
+   var save=document.createElement("button"); save.type="button"; save.className="small primary"; save.textContent="Save name";
+   wrap.appendChild(inp); wrap.appendChild(save); inp.focus();
+   save.addEventListener("click",function(){ var v=inp.value.trim(); if(v){ S.party[idx].name=v; } renderAll(); });
+  });
+ });
+}
+function renderStats(){
+ $("statMoney").textContent="$"+(420-spent()+(S.moneyBonus||0));
+ $("statWeight").textContent=weightLb()+" lb";
+ $("statFood").textContent=foodLb()+" lb";
+ $("statOxen").textContent=(S.inv.ox||0)-(S.oxenLost||0);
+ $("statDay").textContent=S.started?S.day:"—";
+ $("statMiles").textContent=S.miles+" mi";
+ $("statWhere").textContent=WAYPOINTS[S.leg].name.split(",")[0];
+ $("statWagon").textContent=S.wagon>70?"Sound":S.wagon>40?"Worn ("+Math.round(S.wagon)+")":"Failing ("+Math.round(S.wagon)+")";
+ var dots=$("trailDots"); var html="";
+ WAYPOINTS.forEach(function(w,i){
+  var x=40+i*(885/(WAYPOINTS.length-1)); var y=[190,150,175,120,140,95,115,80,100,80][i];
+  html+='<circle cx="'+x+'" cy="'+y+'" r="'+(i===S.leg?10:6)+'" fill="'+(i<S.leg?"var(--sage)":i===S.leg?"var(--rust)":"var(--card)")+'" stroke="var(--ink)" stroke-width="1.5"><title>'+w.name+'</title></circle>';
+  var anchor=i===0?"start":(i===WAYPOINTS.length-1?"end":"middle");
+  var short=w.name.split(",")[0].replace("Fort ","Ft. ").replace("The Willamette Valley","Willamette Valley");
+  html+='<text x="'+x+'" y="'+(y-16)+'" font-size="11.5" text-anchor="'+anchor+'" fill="var(--ink)">'+short+'</text>';
+ });
+ dots.innerHTML=html;
+ var wx=40+S.leg*(885/(WAYPOINTS.length-1)); var wy=[190,150,175,120,140,95,115,80,100,80][S.leg];
+ var wm=$("wagonMark"); wm.setAttribute("x",wx); wm.setAttribute("y",wy+34);
+ $("trailCaption").textContent=WAYPOINTS[S.leg].name+" — "+WAYPOINTS[S.leg].note;
+ $("tradeBtn").classList.toggle("hidden",!(S.started&&WAYPOINTS[S.leg].fort&&!S.over));
+ $("huntBtn").disabled=$("restBtn").disabled=!S.started||S.over;
+ $("travelBtn").disabled=!S.started||S.over||pendingEvent;
+}
+function renderAll(){ renderShop(); renderParty(); renderStats(); renderLog(); renderRecord(); }
+function renderRecord(){
+ var alive=S.party.filter(function(p){return p.alive;}).map(function(p){return p.name;});
+ var dead=S.party.filter(function(p){return !p.alive;}).map(function(p){return p.name;});
+ $("recordSummary").textContent=!S.started?"No journey yet. Your record — the party, the choices, who arrived — is kept in this page while it is open, and you can export it as a file that is yours.":
+  "Party of "+S.party.length+". Still travelling or arrived: "+(alive.join(", ")||"none")+"."+(dead.length?" Lost on the trail: "+dead.join(", ")+".":" Nobody lost — so far.")+" Day "+S.day+", "+S.miles+" miles.";
+}
+
+/* ---------- Outfit / depart ---------- */
+$("departBtn").addEventListener("click",function(){
+ if(S.phase!=="outfit") return;
+ if((S.inv.ox||0)<4){ $("outfitMsg").textContent="You need at least 4 oxen to pull a loaded wagon. Add oxen above."; return; }
+ if(foodLb()<200){ $("outfitMsg").textContent="Only "+foodLb()+" lb of food aboard. The trail is 2,000 miles — take at least 200 lb (guidebooks said far more per person)."; return; }
+ if(weightLb()>2000){ $("outfitMsg").textContent="Over 2,000 lb. Sell something back with the − buttons."; return; }
+ S.phase="trail"; S.started=true; S.day=1; S.moneyBonus=0;
+ log("Left Independence under "+($("aliasInput").value.trim()||"the captain")+". "+aliveCount()+" souls, "+(S.inv.ox)+" oxen, "+foodLb()+" lb of food, $"+(420-spent())+" left in the purse.");
+ $("outfitMsg").textContent="You are on the trail. Set pace and rations at Camp, then travel the first leg.";
+ renderAll(); document.getElementById("trail").scrollIntoView({behavior:"smooth"});
+});
+
+/* ---------- Pace & rations ---------- */
+function segWire(attr,fn){ Array.prototype.forEach.call(document.querySelectorAll("[data-"+attr+"]"),function(b){ b.addEventListener("click",function(){ Array.prototype.forEach.call(document.querySelectorAll("[data-"+attr+"]"),function(x){x.setAttribute("aria-pressed","false");}); b.setAttribute("aria-pressed","true"); fn(b.getAttribute("data-"+attr)); }); }); }
+segWire("pace",function(v){ S.pace=v; });
+segWire("rations",function(v){ S.rations=v; });
+
+/* ---------- Travel ---------- */
+var pendingEvent=false;
+var PACE={steady:{mi:15,wear:2,ox:1},hurried:{mi:20,wear:4,ox:3},grueling:{mi:25,wear:7,ox:6}};
+var RATION={full:3,half:2,bare:1.25};
+var EVENTS=[
+ {id:"cholera",title:"Sickness in camp — the flux",text:"Two of the party are purging and cramping before noon, and the water at the last camp was shared with forty wagons. This is how the trail's worst killer usually arrived: not with a war cry, but in a water barrel.",teach:"<span class='tk'>The documented reality:</span> Cholera and dysentery — spread by contaminated water at crowded camps — killed more emigrants than every other cause combined. There was no germ theory on the trail and no effective treatment; nursing, clean water, and rest were the whole medicine chest.",choices:[
+   {label:"Halt a day, boil water, nurse the sick",sub:"Tap to choose — costs a day and food",run:function(){ hurt(null,6,"Rest helped"); return "You halt. Boiled water and rest pull the worst of it back — this time. The day is gone, and the calendar notices."; }},
+   {label:"Push on — the calendar won't wait",sub:"Tap to choose — the sick ride in the wagon",run:function(){ hurt(null,16,"Rode sick in the wagon"); return "You push on. The sick bounce in the wagon bed over every rut. It costs them more than it costs the schedule."; }}]},
+ {id:"wheel",title:"A crack from the running gear",text:"A rear wheel is working loose and an axle groans on every rock. The wagon carries your whole life; its wood and iron are now the weakest members of the party.",teach:"<span class='tk'>The documented reality:</span> Breakdowns were routine, not dramatic: shrinking wooden wheels in dry air (fixed by soaking them in creeks overnight), snapped axles, worn ox shoes. A party without spares or skills did carpentry at trail speed — or unloaded and walked.",choices:[
+   {label:"Stop and repair properly",sub:"Tap to choose — costs a day",run:function(){ S.day+=1; eatDay(); S.wagon=Math.min(100,S.wagon+8); return "A day of wedges, soaking, and grease. The wheel runs true again — and the oxen grazed while you worked, which is its own repair."; }},
+   {label:"Shim it and roll on",sub:"Tap to choose — saves the day, risks the wagon",run:function(){ S.wagon-=18; return "The shim holds — for now. Everyone can hear the groan. The wagon's condition is worse, and the mountains have not yet had their say."; }}]},
+ {id:"storm",title:"A plains storm",text:"The sky goes the colour of a bruise by mid-afternoon: hail, wind that flattens the grass in waves, and oxen that want to turn their rumps to it and stand.",teach:"<span class='tk'>The documented reality:</span> Plains storms drenched bedding and flour, stampeded stock, and turned creeks into overnight rivers. More journeys were set back by weather and its mud — wagons mired to the hubs for days — than by any human enemy.",choices:[
+   {label:"Make camp early and ride it out",sub:"Tap to choose — costs half a day",run:function(){ S.day+=1; eatDay(); return "You camp in the lee of the wagon, everything lashed and covered. Wet, cold, intact."; }},
+   {label:"Travel through it",sub:"Tap to choose — miles now, misery priced in",run:function(){ hurt(null,7,"Storm exposure"); if((S.inv.clothes||0)>=1){ return "Wool and blankets earn their weight: miserable miles, but the party comes through mostly sound."; } return "No proper clothing sets aboard — the cold gets into everyone. Miles gained; health spent."; }}]},
+ {id:"snake",title:"A rattlesnake at the wood pile",text:"Silas nearly steps on it gathering fuel. It is coiled, rattling, and entirely uninterested in your schedule.",teach:"<span class='tk'>The documented reality:</span> Snakebite appears in diaries regularly and killed occasionally — children and stock were most at risk. Era treatments (whiskey, poultices, suction) ranged from useless to harmful; rest and luck did most of the curing that happened.",choices:[
+   {label:"Back everyone off and go around",sub:"Tap to choose — costs an hour, nothing else",run:function(){ return "You give the snake its wood pile. It keeps the wood pile. Fair trade, honestly made."; }},
+   {label:"Try to kill it with a spade",sub:"Tap to choose — a small risk, taken daily on the trail",run:function(){ if(Math.random()<0.35){ hurt(S.party.filter(function(p){return p.alive;})[0],14,"Snakebite — resting it off"); return "The spade misses once. A bite, swelling, a frightening night — and then, as most bites went, slow improvement. Not every gamble on the trail was at a river."; } return "One clean blow. The camp eats with one eye on the ground tonight."; }}]}
+];
+function hurt(who,amt,cond){
+ var targets=who?[who]:S.party.filter(function(p){return p.alive;});
+ if(!targets.length) return;
+ var p=targets[Math.floor(Math.random()*targets.length)];
+ p.health-=amt; if(cond&&p.health<70)p.cond=cond;
+ if(p.health<=0){ p.alive=false; p.health=0; log(p.name+" has died. The party digs at evening, reads a psalm, and marks the place as well as it can. The trail is measured in such places."); }
+ else if(p.health<45){ p.cond=cond||"Weak"; }
+}
+function eatDay(){
+ var need=RATION[S.rations]*aliveCount();
+ var have=foodLb();
+ var use=Math.min(need,have);
+ // consume food items in order flour, bacon, fruit, coffee
+ var order=["flour","bacon","fruit","coffee"]; var left=use;
+ for(var k=0;k<order.length&&left>0;k++){ var item=SHOP.filter(function(x){return x.id===order[k];})[0]; var avail=(S.inv[item.id]||0)*item.food; if(avail<=0)continue; var take=Math.min(avail,left); var units=take/item.food; S.inv[item.id]=Math.max(0,(S.inv[item.id]||0)-Math.ceil(units)); left-=take; }
+ if(have<need){ hurt(null,8,"Hungry"); }
+ if(S.rations==="bare"){ hurt(null,4,"Short rations"); }
+ if(S.rations==="full"){ S.party.forEach(function(p){ if(p.alive&&p.health<100&&p.cond==="Well")p.health=Math.min(100,p.health+2); }); }
+}
+var riverPending=false;
+function showEvent(ev){
+ pendingEvent=true; riverPending=(ev.id==="river");
+ $("eventBox").classList.remove("hidden");
+ $("eventTitle").textContent=ev.title; $("eventText").textContent=ev.text;
+ var t=$("eventTeach"); t.innerHTML=ev.teach; t.classList.remove("hidden");
+ $("eventDoneBtn").classList.add("hidden");
+ var ch=$("eventChoices"); ch.innerHTML="";
+ ev.choices.forEach(function(c){
+  var b=document.createElement("button"); b.type="button"; b.innerHTML=c.label+'<span class="gesture">'+c.sub+'</span>';
+  b.addEventListener("click",function(){
+   var out=c.run(); ch.innerHTML=""; $("eventText").textContent=out; log(ev.title+" — "+out);
+   $("eventDoneBtn").classList.remove("hidden"); renderAll();
+  });
+  ch.appendChild(b);
+ });
+ renderStats();
+ document.getElementById("eventBox").scrollIntoView({behavior:"smooth",block:"center"});
+}
+$("eventDoneBtn").addEventListener("click",function(){ pendingEvent=false; $("eventBox").classList.add("hidden"); checkEnd(); renderAll(); });
+
+function riverEvent(){
+ return {id:"river",title:"The river is up",text:"Meltwater and rain have the river running high and brown. The ford that last week's parties waded is now over the wagon bed. Your food, your tools, your children's dry clothes — everything you own is in that wagon box.",teach:"<span class='tk'>What a ford really risked:</span> not just drowning — a tipped wagon meant a family's whole food supply in the current, which could kill in October more surely than the water killed in June. See the river shelf below for the documented record.",choices:[
+  {label:"Ford it now, chained wagon to wagon",sub:"Tap to choose — fastest, and the river votes",run:function(){ if(Math.random()<0.45){ S.inv.flour=Math.max(0,(S.inv.flour||0)-3); S.wagon-=10; return "Mid-stream the lead wagon tips, hangs, and rights itself — minus three sacks of flour, now feeding the river. Everyone lives. The food ledger does not."; } return "Chains creak, oxen swim a few strokes where the bottom drops — and you are across, soaked and grinning like fools."; }},
+  {label:"Caulk the wagon box and float it across",sub:"Tap to choose — a day of work, gentler odds",run:function(){ S.day+=1; eatDay(); if(Math.random()<0.25){ S.inv.bacon=Math.max(0,(S.inv.bacon||0)-2); return "The seal weeps. You cross safely but the bacon took water and some will spoil. A day spent, a lesson sealed in tar."; } return "Tar, clay, and bedding-bars: the wagon becomes a clumsy boat and ferries everything across dry. A day well spent — diarists describe exactly this, with pride."; }},
+  {label:"Pay the ferry — $8 era dollars",sub:"Tap to choose — money for safety, if you kept any",run:function(){ if(420-spent()+(S.moneyBonus||0)>=8){ S.moneyBonus=(S.moneyBonus||0)-8; return "The ferryman — who has read this river for years — takes you across one wagon at a time. The safest crossing on this page costs eight dollars. Local knowledge usually did."; } return "Your purse can't cover the fee. The ferryman shrugs toward the ford. (You ford it, carefully, and come through wet but whole.)"; }},
+  {label:"Wait for the water to fall",sub:"Tap to choose — two days, and the calendar charges interest",run:function(){ S.day+=2; eatDay(); eatDay(); return "Two days of watching sticks you set at the waterline. The river falls a hand's breadth, then another. You cross at dawn on a gravel bar, wondering what the mountains are doing with your two days."; }}]};
+}
+
+$("travelBtn").addEventListener("click",function(){
+ if(!S.started||S.over||pendingEvent) return;
+ var from=S.leg, to=S.leg+1; if(to>=WAYPOINTS.length) return;
+ var dist=WAYPOINTS[to].miles-WAYPOINTS[from].miles;
+ var days=Math.max(2,Math.round(dist/PACE[S.pace].mi));
+ for(var d=0;d<days;d++){ S.day++; eatDay(); }
+ S.miles=WAYPOINTS[to].miles; S.leg=to;
+ S.wagon-=PACE[S.pace].wear;
+ // pace eats oxen
+ if(S.pace!=="steady"&&Math.random()<0.3){ hurt(null,5,"Worn by the pace"); }
+ if(S.pace==="grueling"&&Math.random()<0.3){ S.oxenLost=(S.oxenLost||0)+1; log("An ox gives out on the road — worn to the bone by the pace. The team is down to "+((S.inv.ox||0)-(S.oxenLost||0))+". This is what 'grueling' buys."); if((S.inv.ox||0)-(S.oxenLost||0)<2){ endJourney(false,"With fewer than two oxen the wagon cannot move. The journey ends where the team did — the fate the pace shelf below describes."); renderAll(); return; } }
+ if((S.inv.medicine||0)>0){ S.party.forEach(function(p){ if(p.alive&&p.cond!=="Well"){ p.health=Math.min(100,p.health+6); if(p.health>60)p.cond="Well"; } }); }
+ log("Travelled to "+WAYPOINTS[to].name+" — "+dist+" miles in "+days+" days. Food left: "+foodLb()+" lb.");
+ renderAll();
+ if(to===WAYPOINTS.length-1){ endJourney(true); return; }
+ if(WAYPOINTS[to].river){ showEvent(riverEvent()); return; }
+ if(Math.random()<0.62){ showEvent(EVENTS[Math.floor(Math.random()*EVENTS.length)]); return; }
+ checkEnd();
+});
+function checkEnd(){ if(aliveCount()===0){ endJourney(false,"No one is left to drive the wagon. The trail keeps the names — the log above is their record."); } renderAll(); }
+function endJourney(arrived,why){
+ if(S.over) return; S.over=true;
+ var alive=S.party.filter(function(p){return p.alive;}), dead=S.party.filter(function(p){return !p.alive;});
+ var box=$("endBox"); box.classList.remove("hidden");
+ box.innerHTML="<h3>"+(arrived?"The Willamette Valley":"The journey ends")+"</h3>"+
+ "<p class='arrived'>"+(arrived?"After "+S.day+" days and "+S.miles+" miles:":"")+"</p>"+
+ "<p><strong>Who arrived:</strong> "+(alive.length?alive.map(function(p){return esc(p.name)+" ("+Math.round(p.health)+" health)";}).join(", "):"no one")+".</p>"+
+ (dead.length?"<p><strong>Who did not:</strong> "+dead.map(function(p){return esc(p.name);}).join(", ")+". Their names stay in the log — that was always the record that mattered.</p>":"<p><strong>Everyone arrived.</strong> The diaries call that the true victory, and they are right.</p>")+
+ (why?"<p>"+esc(why)+"</p>":"")+
+ "<p><button type='button' class='primary' onclick='document.getElementById(\"forgetBtn\").click()'>Start a new journey<span class='gesture'>Tap to clear and outfit again</span></button></p>";
+ log(arrived?"Arrived in the Willamette Valley on day "+S.day+". Who arrived: "+alive.map(function(p){return p.name;}).join(", ")+".":(why||"The journey ended."));
+ renderAll(); box.scrollIntoView({behavior:"smooth"});
+}
+
+/* ---------- Camp actions ---------- */
+$("huntBtn").addEventListener("click",function(){
+ if(!S.started||S.over||pendingEvent) return;
+ S.hunts=(S.hunts||0)+1;
+ var shots=(S.inv.ammo||0)*20-(S.hunts-1)*5;
+ if(shots<5){ log("Not enough cartridges to hunt."); S.hunts--; renderAll(); return; }
+ if(S.hunts%4===0){ S.inv.ammo=Math.max(0,(S.inv.ammo||0)-1); }
+ if(Math.random()<0.6){ var gain=20+Math.floor(Math.random()*35); S.inv.flour=S.inv.flour; // meat tracked as food via bacon-equivalent:
+   S.inv.bacon=(S.inv.bacon||0)+Math.round(gain/10); log("A good hunt: about "+gain+" lb of meat brought in (added as salted meat). The camp eats well tonight."); }
+ else log("Tracks, effort, and no meat. The trail's hunting was a gamble, not a grocery — as the camp note says.");
+ renderAll();
+});
+$("restBtn").addEventListener("click",function(){
+ if(!S.started||S.over||pendingEvent) return;
+ S.day++; eatDay();
+ S.party.forEach(function(p){ if(p.alive){ p.health=Math.min(100,p.health+9); if(p.health>65)p.cond="Well"; } });
+ S.wagon=Math.min(100,S.wagon+3);
+ log("Rested a day. Oxen grazed properly, the sick mended, small repairs made. Rest was a supply, spent like flour.");
+ renderAll();
+});
+$("tradeBtn").addEventListener("click",function(){
+ var money=420-spent()+(S.moneyBonus||0);
+ if(money<30){ log("The post's prices are firm: $30 for 100 lb of food. Your purse says no."); renderAll(); return; }
+ S.moneyBonus=(S.moneyBonus||0)-30; S.inv.flour=(S.inv.flour||0)+10;
+ log("Traded at "+WAYPOINTS[S.leg].name+": 100 lb of flour for $30 — fort prices, roughly triple Independence. Captive markets are older than the trail.");
+ renderAll();
+});
+
+/* ---------- Teaching dial ---------- */
+$("teachDial").addEventListener("input",function(){
+ var v=+$("teachDial").value; document.body.setAttribute("data-teach",v);
+ $("teachLabel").textContent=v===0?"(Quiet: just the game)":v===1?"(Standard: the key lesson per event)":"(Deep: every shelf-note shows)";
+});
+
+/* ---------- Offline, export, forget ---------- */
+$("offlineBtn").addEventListener("click",function(){
+ var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+ var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="westward-offline.html"; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+$("exportBtn").addEventListener("click",function(){
+ var lines=["WESTWARD — JOURNEY RECORD","","Trail name: "+($("aliasInput").value.trim()||"Captain of the wagon"),"Party: "+S.party.map(function(p){return p.name+" ("+(p.alive?"arrived/travelling, health "+Math.round(p.health):"died on the trail")+")";}).join("; "),"Day "+S.day+" · "+S.miles+" miles · at "+(WAYPOINTS[S.leg]?WAYPOINTS[S.leg].name:"—"),"","LOG:"].concat(S.log);
+ var blob=new Blob([lines.join("\n")],{type:"text/plain"});
+ var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="westward-journey-record.txt"; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+ if(!forgetArmed){ forgetArmed=true; $("forgetBtn").firstChild.textContent="Tap again to confirm forgetting "; $("forgetMsg").textContent="This clears the party, the outfit, and the log held in this page. Export first if you want to keep it."; return; }
+ forgetArmed=false; reset(); $("endBox").classList.add("hidden");
+ $("forgetMsg").textContent="Forgotten. A fresh wagon, a fresh party, an empty trail.";
+ window.scrollTo({top:0,behavior:"smooth"});
+});
+
+reset();
+})();
+</script>
+</body>
+</html>
