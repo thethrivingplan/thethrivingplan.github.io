@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Long Game — an idle game about patience</title>
+<style>
+  :root{
+    --bg:#f2f5ee; --card:#ffffff; --card2:#eef3e6; --ink:#1c2a1c; --ink2:#43543f;
+    --line:#cfdcc4; --accent:#2e6b34; --accent-ink:#ffffff; --amber:#a86e0d;
+    --amber-bg:#fdf3da; --good:#2e6b34; --warn-bg:#fdeeda; --chip:#e4edda;
+    --shadow:0 1px 3px rgba(28,42,28,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10160f; --card:#1a2417; --card2:#212d1e; --ink:#e9f0e2; --ink2:#b3c2a8;
+      --line:#3a4a35; --accent:#79b96c; --accent-ink:#10160f; --amber:#e2ac45;
+      --amber-bg:#2c2410; --good:#79b96c; --warn-bg:#2c2410; --chip:#2a3826;
+      --shadow:0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0 0 .4rem}
+  p{margin:.4rem 0}
+  a{color:var(--accent)}
+  button,select,input{font:inherit;color:inherit}
+  button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:2.75rem}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 14px 48px}
+
+  .freeline{background:var(--accent);color:var(--accent-ink);padding:10px 14px;
+    font-weight:700;text-align:center;font-size:1.02rem}
+  .freeline .sub{font-weight:400;font-size:.88rem;display:block}
+  .freeline button{margin-top:6px;background:var(--accent-ink);color:var(--accent);
+    border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;min-height:2.75rem}
+
+  header.hero{padding:22px 0 6px}
+  header.hero h1{font-size:2.1rem}
+  header.hero .lede{color:var(--ink2);max-width:44rem}
+
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  nav.compass a{display:inline-flex;align-items:center;min-height:2.75rem;padding:6px 14px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;
+    text-decoration:none;font-weight:600;box-shadow:var(--shadow)}
+
+  .banner{display:none;background:var(--warn-bg);border:2px solid var(--amber);
+    border-radius:10px;padding:12px 14px;margin:14px 0;font-weight:600}
+  .banner.show{display:block}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:14px}
+  @media (min-width:900px){ .grid{grid-template-columns:1.25fr 1fr} }
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+  .card h2{font-size:1.3rem}
+  .card h3{font-size:1.05rem;margin-top:14px}
+
+  .balance{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .persec{color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tapwrap{text-align:center;padding:10px 0 4px}
+  #tapBtn{width:min(280px,84vw);height:min(280px,84vw);max-width:280px;border-radius:50%;
+    border:4px solid var(--accent);background:var(--card2);color:var(--ink);
+    font-size:1.25rem;font-weight:800;cursor:pointer;box-shadow:var(--shadow);padding:18px}
+  #tapBtn:active{transform:scale(.97)}
+  #tapBtn .small{display:block;font-size:.9rem;font-weight:600;color:var(--ink2);margin-top:6px}
+  .floatnum{position:relative;height:0}
+  .floatnum span{position:absolute;left:50%;top:-150px;font-weight:800;color:var(--accent);
+    animation:rise 1s ease-out forwards;pointer-events:none}
+  @keyframes rise{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-70px)}}
+  @media (prefers-reduced-motion: reduce){ .floatnum span{animation:none;opacity:0} }
+
+  .prod{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--line);padding:12px 0}
+  .prod:first-of-type{border-top:0}
+  .prod .art{font-size:2rem;line-height:1;flex:0 0 auto;width:52px;text-align:center}
+  .prod .info{flex:1 1 auto;min-width:0}
+  .prod .name{font-weight:800}
+  .prod .count{font-weight:800;font-size:1.3rem;color:var(--accent)}
+  .prod .desc{color:var(--ink2);font-size:.92rem}
+  .prod .math{font-size:.9rem;font-variant-numeric:tabular-nums}
+  .buybtn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;
+    padding:10px 14px;font-weight:800;cursor:pointer;min-width:118px}
+  .buybtn:disabled{background:var(--chip);color:var(--ink2);cursor:not-allowed}
+  .buybtn .cost{display:block;font-size:.85rem;font-weight:600}
+
+  .upg{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding:10px 0}
+  .upg:first-of-type{border-top:0}
+  .upg .info{flex:1}
+  .owned{color:var(--good);font-weight:800}
+
+  .coach{background:var(--amber-bg);border:1px solid var(--amber);border-radius:12px;padding:16px;margin-bottom:16px}
+  .coach h2{font-size:1.25rem}
+  #coachNote{font-size:1.02rem}
+  .strat{border-top:1px solid var(--line);padding:10px 0}
+  .strat:first-of-type{border-top:0}
+  .strat .sname{font-weight:800}
+  .tag{display:inline-block;background:var(--chip);border-radius:999px;padding:2px 10px;
+    font-size:.8rem;font-weight:700;margin-left:6px;vertical-align:middle}
+  .rowline{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px dotted var(--line);
+    font-variant-numeric:tabular-nums;font-size:.95rem}
+  .rowline:first-of-type{border-top:0}
+  .muted{color:var(--ink2)}
+  .small{font-size:.9rem}
+  .btn{background:var(--card2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 14px;font-weight:700;cursor:pointer}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn.danger{background:transparent;border-color:#b3402e;color:#b3402e}
+  @media (prefers-color-scheme: dark){ .btn.danger{color:#e08a7a;border-color:#e08a7a} }
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  label.field{display:block;margin:12px 0}
+  label.field span{display:block;font-weight:700;margin-bottom:4px}
+  select,input[type="text"]{width:100%;padding:10px;border:1px solid var(--line);
+    border-radius:8px;background:var(--card)}
+  details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;background:var(--card)}
+  summary{cursor:pointer;font-weight:800;min-height:2.75rem;display:flex;align-items:center}
+  .offline{display:none;background:var(--card2);border:2px solid var(--accent);border-radius:12px;padding:16px;margin:14px 0}
+  .offline.show{display:block}
+  footer{border-top:1px solid var(--line);margin-top:26px;padding-top:14px;color:var(--ink2);font-size:.92rem}
+  .kbd{font-variant-numeric:tabular-nums;font-weight:700}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="freeline">
+  Free — always free. No purchases, no ads, no pay-to-skip, ever.
+  <span class="sub">The whole game is on this one page. Waiting is the game here, not a paywall.</span>
+  <button type="button" id="downloadBtn">Tap to download this page and play offline</button>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <h1>The Long Game</h1>
+    <p class="lede">An idle game about patience and compound growth. Tap to earn your first
+    marks, hire little enterprises that earn while you do nothing, buy upgrades, and watch
+    small numbers become large ones — honestly, on an exponential curve you can check.</p>
+  </header>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#play">▶ Play</a>
+    <a href="#coach">The Math</a>
+    <a href="#prestige">Prestige</a>
+    <a href="#record">Your Record</a>
+    <a href="#settings">Settings</a>
+    <a href="#about">About &amp; the Honest Print</a>
+  </nav>
+
+  <div class="banner" id="variantBanner" role="status"></div>
+
+  <div class="offline" id="offlinePanel" role="status">
+    <h2>While you were away</h2>
+    <p id="offlineText"></p>
+    <div class="btnrow">
+      <button type="button" class="btn primary" id="offlineClaim">Tap to collect</button>
+      <button type="button" class="btn" id="offlineDismiss">Tap to leave it</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <section class="card" id="play" aria-label="Play">
+        <div class="balance"><span id="coins">0</span> marks</div>
+        <div class="persec">
+          <span id="perSec">0</span> marks per second ·
+          <span id="tapPowerLine">each tap earns 1</span>
+          <span id="starBonusLine"></span>
+        </div>
+        <div class="tapwrap">
+          <div class="floatnum" id="floatNum"></div>
+          <button type="button" id="tapBtn">Tap to earn
+            <span class="small" id="tapBtnSub">+1 mark</span>
+          </button>
+        </div>
+        <p class="muted small" id="runLine"></p>
+      </section>
+
+      <section class="card" aria-label="Producers">
+        <h2>Producers — they earn while you wait</h2>
+        <p class="muted small">Every next one costs 1.15× the last. That gentle-looking
+        1.15 is the whole game: it compounds into a wall, and upgrades and prestige are
+        how you climb it.</p>
+        <div id="prodList"></div>
+      </section>
+
+      <section class="card" aria-label="Upgrades">
+        <h2>Upgrades — one-time, permanent (until prestige)</h2>
+        <div id="upgList"></div>
+      </section>
+
+      <section class="card" id="prestige" aria-label="Prestige">
+        <h2>Prestige — trade the run for a lasting edge</h2>
+        <div id="prestigeBody"></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="coach" id="coach" aria-label="Coach">
+        <h2>Coach <span class="tag" id="dialTag">Teaching: Light</span></h2>
+        <div id="coachOff" class="hidden">
+          <p>Teaching is off. Your producers still show their prices; the math lessons,
+          payback figures, and strategy table are resting. Turn the dial in Settings
+          whenever you want them back.</p>
+        </div>
+        <div id="coachOn">
+          <p id="coachNote">Your coach is watching your numbers…</p>
+          <div class="btnrow">
+            <button type="button" class="btn" id="coachNext">Tap for another note</button>
+          </div>
+          <div id="coachFull" class="hidden">
+            <h3>Three honest ways to spend — your numbers, right now</h3>
+            <div id="stratPanel"></div>
+            <h3>The cost curve, on your own board</h3>
+            <p id="curveNote"></p>
+            <h3>Pro tools — where your income actually comes from</h3>
+            <div id="proTools"></div>
+            <h3>Test the clock</h3>
+            <p class="small">Offline earnings use this exact math: your per-second rate ×
+            the time away, capped at your offline cap (<span id="capEcho">8</span> hours).
+            These buttons grant a practice payout using that same capped math, so you can
+            see the cap bite.</p>
+            <div class="btnrow">
+              <button type="button" class="btn" data-clocktest="1">Tap: pretend 1 hour away</button>
+              <button type="button" class="btn" data-clocktest="8">Tap: pretend 8 hours away</button>
+              <button type="button" class="btn" data-clocktest="24">Tap: pretend 24 hours away</button>
+            </div>
+            <p class="small muted" id="clockTestNote"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="record" aria-label="Your record">
+        <h2>Your record — kept on this device only</h2>
+        <p class="small muted">Nothing is sent anywhere. No account, no name required —
+        play under any alias you like, or none. This record is written in one clean,
+        consistent shape so it can feed the money test bench: growth strategies get
+        compared on recorded numbers, not on opinions.</p>
+        <div id="recordBody"></div>
+        <div class="btnrow">
+          <button type="button" class="btn" id="exportJson">Tap to download record (JSON)</button>
+          <button type="button" class="btn" id="exportCsv">Tap to download purchases (CSV)</button>
+          <button type="button" class="btn danger" id="forgetBtn">Tap to forget my record</button>
+        </div>
+        <p class="small muted" id="forgetNote"></p>
+      </section>
+
+      <section class="card" id="settings" aria-label="Settings">
+        <h2>Settings — rules are settings</h2>
+        <label class="field">
+          <span>Teaching dial</span>
+          <select id="setTeaching">
+            <option value="off">Off — just the game</option>
+            <option value="light" selected>Light — payback figures and a note now and then</option>
+            <option value="coach">Coach — full math, strategy table, pro tools</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Offline earnings cap</span>
+          <select id="setCap">
+            <option value="2">2 hours</option>
+            <option value="4">4 hours</option>
+            <option value="8" selected>8 hours</option>
+            <option value="12">12 hours</option>
+            <option value="24">24 hours</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Prestige rule</span>
+          <select id="setPrestige">
+            <option value="on" selected>Standard rules — prestige ON</option>
+            <option value="off">Variant — prestige OFF (banner-labelled)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Play as (optional alias — never required, stays on this device)</span>
+          <input type="text" id="setAlias" maxlength="24" placeholder="Leave blank if you like" />
+        </label>
+        <div class="btnrow">
+          <button type="button" class="btn danger" id="hardReset">Tap to reset the whole game</button>
+        </div>
+        <p class="small muted" id="resetNote"></p>
+      </section>
+
+      <section class="card" id="about" aria-label="About">
+        <h2>About &amp; the honest print</h2>
+        <h3>The genre's worst feature, named</h3>
+        <p>Idle games learned a bad trick: <strong>monetized waiting</strong>. The game
+        slows down on purpose, then sells you the skip — gems, boosts, "limited offers" —
+        so the waiting you were enjoying becomes a toll booth. This page answers it the
+        plain way: <strong>no purchases, no ads, no pay-to-skip, ever.</strong> There is
+        nothing to buy and nothing watching you. Waiting is the game here, not a paywall,
+        and the numbers grow at exactly the speed printed on them.</p>
+        <h3>Where this form comes from</h3>
+        <p>The incremental game is a documented form with a short, public history. Around
+        2010 a satirical browser toy about clicking a cow showed that clicking itself
+        could be the joke and the game. By 2013 the form had flowered: a browser game
+        about clicking one big cookie became a phenomenon, candy- and cosmos-themed
+        clickers followed, and a text-only incremental about lighting a fire in a dark
+        room proved the loop worked with no pictures at all. The shared skeleton those
+        games settled — tap to earn, buy producers that earn on their own, prices rising
+        on an exponential curve, upgrades that multiply, and prestige: resetting for a
+        permanent bonus — is the documented standard form, and it is the form this page
+        follows. Where this page departs from it, the departure is labelled on the spot
+        (the prestige-off variant is the one deliberate departure, and it wears a banner).</p>
+        <h3>Offline earnings, in plain words</h3>
+        <p>When you come back, the game pays your per-second rate for the real time you
+        were gone — <strong>capped at <span id="capEcho2">8</span> hours</strong>, your
+        setting, printed here and in Settings. Away for a weekend? You get the cap, not
+        the weekend. The cap is not a punishment; it is what keeps "check in twice a day"
+        from becoming the optimal strategy in a game about patience.</p>
+        <details>
+          <summary>How the math works <span class="muted small js-foldhint">(Tap to open)</span></summary>
+          <p>Each producer's next price is its base price × 1.15<sup>owned</sup>, rounded
+          up. 1.15 looks small; it is not. Ten purchases multiply a price by about 4,
+          twenty by about 16, fifty by over 1,000. Meanwhile each producer pays a flat
+          rate per second, multiplied by your upgrades and your prestige bonus
+          (+3% per Patience Star, added together, not compounded). A purchase's
+          <em>payback period</em> — price ÷ the income it adds per second — tells you how
+          long that purchase takes to earn its own price back. Short payback is not
+          always right: a dearer producer can pay back slower yet carry you further,
+          which is exactly the argument the Coach keeps having with you, using your
+          numbers.</p>
+        </details>
+        <details>
+          <summary>What is saved, and where <span class="muted small js-foldhint">(Tap to open)</span></summary>
+          <p>Your game, your settings, and your record are saved in this browser, on this
+          device only, so the game can continue and pay offline earnings. Nothing leaves
+          the device. The Forget button in Your Record wipes the record with one more
+          confirming tap; the reset button in Settings wipes the game itself.</p>
+        </details>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>Copyleft.</strong> The Long Game — text and design CC BY-SA 4.0, code GPL.
+    Take it, change it, share it alike. The name stays with the seed; the game is yours.</p>
+    <p>An original game: name, producers, art, and words were made for this page. No ads. No tracking.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ============ Data (all original) ============ */
+var PRODUCERS = [
+  {id:"sprout",  name:"Sprout Pot",          art:"🌱", base:15,       rate:0.1,  desc:"A clay pot on a sill. It grows whether you watch or not — that is the whole idea, in miniature."},
+  {id:"window",  name:"Window Garden",       art:"🪴", base:100,      rate:1,    desc:"Herbs and beans in every sunny window. Small, steady, honest work."},
+  {id:"orchard", name:"Orchard Row",         art:"🌳", base:1100,     rate:8,    desc:"Trees planted years before they pay. The Long Game in its natural shape."},
+  {id:"mill",    name:"Mill & Press",        art:"⚙️", base:12000,    rate:47,   desc:"Water turns the wheel; the wheel turns grain to flour while you sleep."},
+  {id:"dam",     name:"River Dam",           art:"🌊", base:130000,   rate:260,  desc:"A river, persuaded. Power around the clock, rain or shine."},
+  {id:"market",  name:"Town Market",         art:"🏪", base:1400000,  rate:1400, desc:"Stalls, scales, and a bell at dawn. The town trades; you take a fair share."},
+  {id:"rail",    name:"Rail Depot",          art:"🚂", base:20000000, rate:7800, desc:"Trains keep timetables you don't have to. Freight pays by the ton-mile."},
+  {id:"light",   name:"Lighthouse Network",  art:"🗼", base:330000000,rate:44000,desc:"Lights that never go out, guiding ships you'll never see. Fees arrive anyway."},
+  {id:"clock",   name:"Clocktower Works",    art:"🕰️", base:5100000000,rate:260000,desc:"It sells the one thing this game is made of: measured time, beautifully kept."},
+  {id:"archive", name:"The Long Archive",    art:"📚", base:75000000000,rate:1600000,desc:"Every record, kept forever, rented by the question. Patience, catalogued."}
+];
+var UPGRADES = [
+  {id:"tap1",  name:"Stronger Hands",     cost:200,        desc:"Your taps earn ×2.", apply:"tap", mult:2},
+  {id:"all1",  name:"Better Ledgers",     cost:5000,       desc:"All producers earn ×2.", apply:"all", mult:2},
+  {id:"tap2",  name:"A Rhythm of Your Own",cost:50000,     desc:"Your taps earn ×3 more.", apply:"tap", mult:3},
+  {id:"all2",  name:"Compound Habits",    cost:250000,     desc:"All producers earn ×2 more.", apply:"all", mult:2},
+  {id:"all3",  name:"The Patient Method", cost:10000000,   desc:"All producers earn ×3 more.", apply:"all", mult:3},
+  {id:"tap3",  name:"One Good Tap",       cost:500000000,  desc:"Your taps earn ×5 more.", apply:"tap", mult:5}
+];
+var GROWTH = 1.15, STAR_BONUS = 0.03;
+
+/* ============ State ============ */
+var SAVE_KEY="tlg_save_v1", REC_KEY="tlg_record_v1", SET_KEY="tlg_settings_v1";
+function nowISO(){ return new Date().toISOString(); }
+function defaultSave(){ return { coins:0, totalEarnedRun:0, totalEarnedAll:0, taps:0,
+  producers:{}, upgrades:[], stars:0, runNumber:1, runStartedAt:Date.now(),
+  lastSeen:Date.now(), timePlayedSec:0, sessionEarned:0 }; }
+function defaultRecord(){ return { game:"the-long-game", version:1, createdAt:nowISO(),
+  sessions:0, runs:[], purchases:[],
+  totals:{ totalEarnedAll:0, totalTaps:0, totalPurchases:0, totalPrestiges:0, timePlayedSec:0 },
+  strategyCounts:{ "cheapest-first":0, "payback-first":0, "both":0, "own-call":0 } }; }
+function defaultSettings(){ return { teaching:"light", capH:8, prestigeOn:true, alias:"" }; }
+function load(key, dflt){ try{ var raw=localStorage.getItem(key); if(!raw) return dflt;
+  var o=JSON.parse(raw); if(!o||typeof o!=="object") return dflt; return o; }catch(e){ return dflt; } }
+function store(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+var S = load(SAVE_KEY, defaultSave());
+var R = load(REC_KEY, defaultRecord());
+var SET = load(SET_KEY, defaultSettings());
+PRODUCERS.forEach(function(p){ if(typeof S.producers[p.id]!=="number") S.producers[p.id]=0; });
+if(!Array.isArray(S.upgrades)) S.upgrades=[];
+R.sessions += 1;
+var sessionStart = Date.now();
+var pendingOffline = 0;
+
+/* ============ Math ============ */
+function prodCost(p){ return Math.ceil(p.base * Math.pow(GROWTH, S.producers[p.id])); }
+function tapMult(){ var m=1; UPGRADES.forEach(function(u){ if(u.apply==="tap"&&S.upgrades.indexOf(u.id)>=0) m*=u.mult; }); return m; }
+function allMult(){ var m=1; UPGRADES.forEach(function(u){ if(u.apply==="all"&&S.upgrades.indexOf(u.id)>=0) m*=u.mult; }); return m; }
+function prestigeMult(){ return SET.prestigeOn ? (1 + S.stars*STAR_BONUS) : 1; }
+function tapPower(){ return 1 * tapMult() * prestigeMult(); }
+function prodRate(p){ return p.rate * allMult() * prestigeMult(); }
+function perSec(){ var t=0; PRODUCERS.forEach(function(p){ t += S.producers[p.id]*prodRate(p); }); return t; }
+function payback(p){ var r=prodRate(p); return r>0 ? prodCost(p)/r : Infinity; }
+function pendingStars(){ return Math.floor(Math.sqrt(S.totalEarnedRun/10000)); }
+function fmt(n){ if(!isFinite(n)) return "∞"; if(n<0) return "-"+fmt(-n);
+  if(n<1000){ var v=Math.round(n*10)/10; return (v%1===0)? String(Math.round(v)) : String(v); }
+  var units=["K","M","B","T","Qa","Qi","Sx","Sp"]; var u=-1; var x=n;
+  while(x>=1000 && u<units.length-1){ x/=1000; u++; }
+  return (Math.round(x*100)/100)+" "+units[u]; }
+function fmtTime(sec){ if(!isFinite(sec)) return "never"; if(sec<1) return "under a second";
+  if(sec<60) return Math.round(sec)+"s"; if(sec<3600) return Math.round(sec/60)+" min";
+  if(sec<86400) return (Math.round(sec/360)/10)+" hrs"; return (Math.round(sec/8640)/10)+" days"; }
+function $(id){ return document.getElementById(id); }
+
+/* ============ Record helpers ============ */
+/* The record keeps its OWN totals, accumulated as events happen — so Forget
+   genuinely clears everything the record panel shows. */
+function classifyPurchase(kind, id){
+  if(kind==="upgrade") return "own-call";
+  var cheapest=null, bestPay=null;
+  PRODUCERS.forEach(function(p){ var c=prodCost(p), pb=payback(p);
+    if(!cheapest||c<cheapest.cost) cheapest={id:p.id,cost:c};
+    if(!bestPay||pb<bestPay.pb) bestPay={id:p.id,pb:pb}; });
+  var isC = cheapest && cheapest.id===id, isP = bestPay && bestPay.id===id;
+  if(isC&&isP) return "both"; if(isP) return "payback-first"; if(isC) return "cheapest-first";
+  return "own-call"; }
+function logPurchase(kind, id, name, cost, pb){
+  var strat = classifyPurchase(kind, id);
+  R.purchases.push({ at:nowISO(), run:S.runNumber, kind:kind, item:name,
+    cost:Math.round(cost*100)/100, paybackSec:(pb&&isFinite(pb))?Math.round(pb):null, strategy:strat });
+  if(R.strategyCounts[strat]!==undefined) R.strategyCounts[strat]++;
+  R.totals.totalPurchases++;
+  store(REC_KEY,R); }
+function saveAll(){ S.lastSeen=Date.now(); store(SAVE_KEY,S); store(REC_KEY,R); store(SET_KEY,SET); }
+
+/* ============ Coach ============ */
+var coachIdx = 0;
+function coachNotes(){
+  var notes=[], ps=perSec(), coins=S.coins;
+  var cheapest=null, bestPay=null, biggest=null;
+  PRODUCERS.forEach(function(p){ var c=prodCost(p), pb=payback(p);
+    if(!cheapest||c<cheapest.cost) cheapest={p:p,cost:c,pb:pb};
+    if(!bestPay||pb<bestPay.pb) bestPay={p:p,cost:c,pb:pb};
+    if(!biggest||p.rate>biggest.p.rate) biggest={p:p,cost:c,pb:pb}; });
+  var owned = PRODUCERS.reduce(function(a,p){return a+S.producers[p.id];},0);
+  if(owned===0){
+    notes.push("Start with your hands: each tap earns "+fmt(tapPower())+" mark"+(tapPower()===1?"":"s")+
+      ". The first "+cheapest.p.name+" costs "+fmt(cheapest.cost)+" and then pays "+fmt(prodRate(cheapest.p))+
+      " per second forever — its payback is "+fmtTime(cheapest.pb)+" of its own production. After that, it is pure profit, and it earns while you read this.");
+  } else {
+    notes.push("Your board right now: "+fmt(ps)+" marks/sec from "+owned+" producer"+(owned===1?"":"s")+
+      ". At that rate you earn "+fmt(ps*3600)+" an hour without touching anything. That is the game in one line: buy the rate, then let time do the work.");
+  }
+  if(cheapest && bestPay && cheapest.p.id!==bestPay.p.id){
+    notes.push("Here is where the two simple strategies split — on YOUR numbers. Cheapest-first says buy the "+
+      cheapest.p.name+" next ("+fmt(cheapest.cost)+" marks, payback "+fmtTime(cheapest.pb)+"). Payback-first says buy the "+
+      bestPay.p.name+" ("+fmt(bestPay.cost)+" marks, payback "+fmtTime(bestPay.pb)+"). Cheapest-first keeps cash moving and never strands you; payback-first grows your rate faster per mark spent, but can leave you saving while cheaper producers sit unbought. Neither is 'the answer' — they disagree because they optimise different things.");
+  } else if(bestPay){
+    notes.push("Right now the cheapest buy and the best payback are the same producer — the "+
+      bestPay.p.name+" at "+fmt(bestPay.cost)+" marks, paying its price back in "+fmtTime(bestPay.pb)+
+      ". When the two simple strategies agree, the decision is easy; they will start disagreeing as your board grows, and that disagreement is where strategy lives.");
+  }
+  var mostOwned=null; PRODUCERS.forEach(function(p){ if(!mostOwned||S.producers[p.id]>S.producers[mostOwned.id]) mostOwned=p; });
+  if(mostOwned && S.producers[mostOwned.id]>=3){
+    var n=S.producers[mostOwned.id];
+    notes.push("The cost curve, felt on your own board: you own "+n+" × "+mostOwned.name+". The next costs "+
+      fmt(prodCost(mostOwned))+". Ten more would cost "+fmt(Math.ceil(mostOwned.base*Math.pow(GROWTH,n+10)))+
+      " each at the end of that run — because every price is the last × 1.15, and 1.15 fifty times over is more than ×1,000. Producers pay flat; prices compound. That gap is the engine of every idle game ever made.");
+  }
+  if(ps>0 && biggest && biggest.cost>coins){
+    var wait=(biggest.cost-coins)/ps;
+    if(wait>60 && wait<86400) notes.push("When does saving for the big one win? Your biggest tier, the "+biggest.p.name+
+      ", costs "+fmt(biggest.cost)+" — at "+fmt(ps)+"/sec that's "+fmtTime(wait)+" of pure saving. Saving wins when the big producer's payback ("+
+      fmtTime(biggest.pb)+") beats what the same marks would earn spread over small buys — and when you won't spend the saved pile in a weak moment. The trade-off is real: while you save, your rate stands still.");
+  }
+  var upNext=null; UPGRADES.forEach(function(u){ if(S.upgrades.indexOf(u.id)<0 && (!upNext||u.cost<upNext.cost)) upNext=u; });
+  if(upNext && ps>0){
+    var before=ps, after=ps*(upNext.apply==="all"?upNext.mult:1);
+    if(upNext.apply==="all") notes.push("Upgrade math: "+upNext.name+" costs "+fmt(upNext.cost)+" and multiplies ALL producer income ×"+upNext.mult+
+      " — your rate would jump from "+fmt(before)+" to "+fmt(after)+"/sec. It pays for itself in "+fmtTime(upNext.cost/(after-before))+
+      " of the extra income alone. Multipliers beat flat producers late, because they multiply everything you already own.");
+    else notes.push("Upgrade math: "+upNext.name+" costs "+fmt(upNext.cost)+" and multiplies your tap ×"+upNext.mult+
+      " (to "+fmt(tapPower()*upNext.mult)+" per tap). Tap upgrades only pay if you actually tap — producers pay while you sleep. Choose based on how you honestly play, not how you plan to.");
+  }
+  if(SET.prestigeOn && pendingStars()>=1){
+    notes.push("Prestige is on the table: resetting now banks "+pendingStars()+" Patience Star"+(pendingStars()===1?"":"s")+
+      ", a permanent +"+(pendingStars()*3)+"% to everything, forever, across all future runs. The trade-off is the whole run's board for a percentage. Early prestiges feel terrible and compound beautifully; late prestiges feel safe and add little. The genre's veterans prestige earlier than feels comfortable.");
+  }
+  notes.push("A bench note from your own record: so far your purchases split — cheapest-first ×"+R.strategyCounts["cheapest-first"]+
+    ", payback-first ×"+R.strategyCounts["payback-first"]+", both-at-once ×"+R.strategyCounts["both"]+", your own call ×"+R.strategyCounts["own-call"]+
+    ". The test bench compares strategies on records like this one. There is no grade here — but there is a pattern, and it's yours.");
+  return notes;
+}
+function renderCoach(){
+  var mode=SET.teaching;
+  $("dialTag").textContent = "Teaching: "+(mode==="off"?"Off":mode==="coach"?"Coach":"Light");
+  $("coachOff").classList.toggle("hidden", mode!=="off");
+  $("coachOn").classList.toggle("hidden", mode==="off");
+  if(mode==="off") return;
+  var notes=coachNotes();
+  $("coachNote").textContent = notes[coachIdx % notes.length];
+  $("coachFull").classList.toggle("hidden", mode!=="coach");
+  if(mode==="coach") renderCoachFull();
+}
+function renderCoachFull(){
+  var coins=S.coins, ps=perSec();
+  var cheapest=null, bestPay=null, saver=null;
+  PRODUCERS.forEach(function(p){ var c=prodCost(p), pb=payback(p);
+    if(!cheapest||c<cheapest.cost) cheapest={p:p,cost:c,pb:pb};
+    if(!bestPay||pb<bestPay.pb) bestPay={p:p,cost:c,pb:pb};
+    if(c<=coins+ps*600 && (!saver||p.rate>saver.p.rate)) saver={p:p,cost:c,pb:pb}; });
+  function affordLine(x){ return x.cost<=coins ? "affordable now" : (ps>0 ? "yours in "+fmtTime((x.cost-coins)/ps)+" at your current rate" : "not yet — no income rate"); }
+  var html="";
+  function stratRow(name, x, trade){ if(!x) return "";
+    return '<div class="strat"><span class="sname">'+name+':</span> '+x.p.name+
+      ' — '+fmt(x.cost)+' marks, payback '+fmtTime(x.pb)+', '+affordLine(x)+
+      '<div class="small muted">'+trade+'</div></div>'; }
+  html += stratRow("Cheapest-first", cheapest, "Trade-off: never strands your cash and compounds steadily, but spends marks on slow paybacks when a better rate was one save away.");
+  html += stratRow("Payback-first", bestPay, "Trade-off: the fastest rate growth per mark, but it can park your marks in one big save while cheap producers sit unbought.");
+  html += stratRow("Save-for-the-big-one", saver, "Trade-off: the biggest single rate jump you can reach within ~10 minutes of saving — but your rate stands still the whole time you save.");
+  $("stratPanel").innerHTML = html || '<p class="muted">Buy your first producer and the strategy table wakes up.</p>';
+  var mostOwned=null; PRODUCERS.forEach(function(p){ if(!mostOwned||S.producers[p.id]>S.producers[mostOwned.id]) mostOwned=p; });
+  if(mostOwned && S.producers[mostOwned.id]>0){ var n=S.producers[mostOwned.id];
+    $("curveNote").textContent = "Your "+mostOwned.name+": owned "+n+", next costs "+fmt(prodCost(mostOwned))+
+      " marks. Because price = base × 1.15^owned, the one after that costs ×1.15 again. Prices multiply; the producer's pay does not. Upgrades and prestige exist to close exactly that gap.";
+  } else $("curveNote").textContent = "Every producer's price is its base × 1.15^owned. Buy one and this note will redo the math on your own board.";
+  var rows="", total=ps||1;
+  PRODUCERS.forEach(function(p){ var c=S.producers[p.id]; if(c>0){ var r=c*prodRate(p);
+    rows += '<div class="rowline"><span>'+p.name+' ×'+c+'</span><span>'+fmt(r)+'/s · '+Math.round(r/total*100)+'%</span></div>'; } });
+  rows += '<div class="rowline"><span><strong>Session earned</strong></span><span>'+fmt(S.sessionEarned)+' marks</span></div>';
+  rows += '<div class="rowline"><span><strong>Time played (all sessions)</strong></span><span>'+fmtTime(S.timePlayedSec)+'</span></div>';
+  $("proTools").innerHTML = rows || '<p class="muted">No producers yet — the breakdown appears with your first purchase.</p>';
+  $("capEcho").textContent = SET.capH;
+}
+
+/* ============ Rendering ============ */
+function render(){
+  $("coins").textContent = fmt(S.coins);
+  $("perSec").textContent = fmt(perSec());
+  $("tapPowerLine").textContent = "each tap earns "+fmt(tapPower());
+  $("tapBtnSub").textContent = "+"+fmt(tapPower())+" mark"+(tapPower()===1?"":"s");
+  $("starBonusLine").textContent = (SET.prestigeOn && S.stars>0) ? "· prestige bonus +"+(S.stars*3)+"% ("+S.stars+" stars)" : "";
+  $("runLine").textContent = "Run "+S.runNumber+" · this run has earned "+fmt(S.totalEarnedRun)+" marks · all-time "+fmt(S.totalEarnedAll)+
+    (SET.alias ? " · playing as "+SET.alias : "");
+  var teaching = SET.teaching!=="off";
+  var ph="";
+  PRODUCERS.forEach(function(p){ var c=prodCost(p), n=S.producers[p.id], pb=payback(p);
+    var afford = S.coins>=c;
+    ph += '<div class="prod"><div class="art" aria-hidden="true">'+p.art+'</div><div class="info">'+
+      '<div><span class="name">'+p.name+'</span> <span class="count">×'+n+'</span></div>'+
+      '<div class="desc">'+p.desc+'</div>'+
+      '<div class="math">Each earns '+fmt(prodRate(p))+'/s'+(n>0?' · together '+fmt(n*prodRate(p))+'/s':'')+'</div>'+
+      (teaching ? '<div class="math muted">Payback on the next one: '+fmtTime(pb)+' of its own output'+
+        (perSec()>0 && c>S.coins ? ' · yours in '+fmtTime((c-S.coins)/perSec()) : '')+'</div>' : '')+
+      '</div><button type="button" class="buybtn" data-buy="'+p.id+'" '+(afford?"":"disabled")+'>Tap to buy<span class="cost">'+fmt(c)+' marks</span></button></div>'; });
+  $("prodList").innerHTML = ph;
+  var uh="";
+  UPGRADES.forEach(function(u){ var owned=S.upgrades.indexOf(u.id)>=0;
+    uh += '<div class="upg"><div class="info"><strong>'+u.name+'</strong><div class="small muted">'+u.desc+'</div></div>'+
+      (owned ? '<span class="owned">Owned</span>' :
+        '<button type="button" class="buybtn" data-upg="'+u.id+'" '+(S.coins>=u.cost?"":"disabled")+'>Tap to buy<span class="cost">'+fmt(u.cost)+' marks</span></button>')+'</div>'; });
+  $("upgList").innerHTML = uh || "";
+  renderPrestige(); renderCoach(); renderRecord();
+  document.querySelectorAll("[data-buy]").forEach(function(b){ b.addEventListener("click", function(){ buyProducer(b.getAttribute("data-buy")); }); });
+  document.querySelectorAll("[data-upg]").forEach(function(b){ b.addEventListener("click", function(){ buyUpgrade(b.getAttribute("data-upg")); }); });
+}
+function renderPrestige(){
+  var el=$("prestigeBody");
+  if(!SET.prestigeOn){ el.innerHTML = '<p><strong>Variant rules are in play: prestige is OFF.</strong> '+
+    'Under standard rules prestige is on — it is the genre\'s documented standard form. With it off, this run simply grows until the curve wins. Turn it back on in Settings any time; your stars are kept.</p>'+
+    (S.stars>0 ? '<p class="muted">You hold '+S.stars+' Patience Stars from earlier runs (inactive while the variant is on).</p>' : '');
+    return; }
+  var pend=pendingStars();
+  el.innerHTML = '<p>Patience Stars banked: <strong>'+S.stars+'</strong> (permanent +'+(S.stars*3)+'% to taps and producers).</p>'+
+    '<p>This run has earned '+fmt(S.totalEarnedRun)+' marks. Resetting now would bank <strong>'+pend+' new star'+(pend===1?"":"s")+'</strong>'+
+    ' (stars = √(marks earned this run ÷ 10,000), rounded down — so the thresholds run 10,000, 40,000, 90,000, 160,000…: to double your stars you must earn four times as much, which is what keeps prestige itself on a curve).</p>'+
+    '<p class="small muted">Prestige clears your marks, producers, and upgrades. Stars, settings, and your record stay.</p>'+
+    '<div class="btnrow"><button type="button" class="btn primary" id="prestigeBtn" '+(pend>=1?"":"disabled")+'>Tap to prestige — reset for '+pend+' star'+(pend===1?"":"s")+'</button></div>'+
+    (pend<1 ? '<p class="small muted">First star at 10,000 marks earned in this run. You are at '+fmt(S.totalEarnedRun)+'.</p>' : '');
+  var btn=$("prestigeBtn"); if(btn) btn.addEventListener("click", doPrestige);
+}
+function renderRecord(){
+  var t=R.totals, sc=R.strategyCounts;
+  var lastRuns = R.runs.slice(-3).reverse();
+  var html = '<div class="rowline"><span>Sessions</span><span>'+R.sessions+'</span></div>'+
+    '<div class="rowline"><span>Total earned (all time)</span><span>'+fmt(t.totalEarnedAll)+' marks</span></div>'+
+    '<div class="rowline"><span>Total taps</span><span>'+fmt(t.totalTaps)+'</span></div>'+
+    '<div class="rowline"><span>Total purchases logged</span><span>'+t.totalPurchases+'</span></div>'+
+    '<div class="rowline"><span>Prestiges</span><span>'+t.totalPrestiges+'</span></div>'+
+    '<div class="rowline"><span>Time played</span><span>'+fmtTime(t.timePlayedSec)+'</span></div>'+
+    '<h3>Strategy split (from your logged purchases)</h3>'+
+    '<div class="rowline"><span>Cheapest-first</span><span>'+sc["cheapest-first"]+'</span></div>'+
+    '<div class="rowline"><span>Payback-first</span><span>'+sc["payback-first"]+'</span></div>'+
+    '<div class="rowline"><span>Both at once</span><span>'+sc["both"]+'</span></div>'+
+    '<div class="rowline"><span>Your own call / upgrades</span><span>'+sc["own-call"]+'</span></div>';
+  if(lastRuns.length){ html += '<h3>Recent finished runs</h3>';
+    lastRuns.forEach(function(r){ html += '<div class="rowline"><span>Run '+r.run+' — '+r.endedBy+'</span><span>'+fmt(r.earned)+' marks · '+r.purchases+' buys · '+r.starsGained+' stars</span></div>'; }); }
+  if(R.purchases.length){ var last=R.purchases[R.purchases.length-1];
+    html += '<p class="small muted">Last logged purchase: '+last.item+' for '+fmt(last.cost)+' marks'+
+      (last.paybackSec!=null ? ', payback '+fmtTime(last.paybackSec) : '')+' — tagged '+last.strategy+'.</p>'; }
+  $("recordBody").innerHTML = html;
+}
+
+/* ============ Actions ============ */
+function earn(amount){ S.coins+=amount; S.totalEarnedRun+=amount; S.totalEarnedAll+=amount; S.sessionEarned+=amount; R.totals.totalEarnedAll+=amount; }
+$("tapBtn").addEventListener("click", function(){
+  var p=tapPower(); earn(p); S.taps++; R.totals.totalTaps++;
+  var f=$("floatNum"); var s=document.createElement("span"); s.textContent="+"+fmt(p);
+  f.appendChild(s); setTimeout(function(){ s.remove(); }, 1000);
+  render(); });
+function buyProducer(id){ var p=null; PRODUCERS.forEach(function(x){ if(x.id===id) p=x; }); if(!p) return;
+  var c=prodCost(p); if(S.coins<c) return; var pb=payback(p);
+  S.coins-=c; S.producers[id]++; logPurchase("producer", id, p.name, c, pb); coachIdx=0; saveAll(); render(); }
+function buyUpgrade(id){ var u=null; UPGRADES.forEach(function(x){ if(x.id===id) u=x; }); if(!u) return;
+  if(S.coins<u.cost || S.upgrades.indexOf(id)>=0) return;
+  S.coins-=u.cost; S.upgrades.push(id); logPurchase("upgrade", id, u.name, u.cost, null); coachIdx=0; saveAll(); render(); }
+function doPrestige(){ var pend=pendingStars(); if(pend<1) return;
+  var buys = R.purchases.filter(function(x){ return x.run===S.runNumber; }).length;
+  R.runs.push({ run:S.runNumber, endedAt:nowISO(), earned:Math.round(S.totalEarnedRun*100)/100,
+    purchases:buys, starsGained:pend, endedBy:"prestige" });
+  R.totals.totalPrestiges++; S.stars+=pend;
+  var keepStars=S.stars, keepRun=S.runNumber+1, keepAll=S.totalEarnedAll, keepTaps=S.taps, keepTime=S.timePlayedSec;
+  S=defaultSave(); S.stars=keepStars; S.runNumber=keepRun; S.totalEarnedAll=keepAll; S.taps=keepTaps; S.timePlayedSec=keepTime;
+  coachIdx=0; saveAll(); render(); }
+$("coachNext").addEventListener("click", function(){ coachIdx++; renderCoach(); });
+document.querySelectorAll("[data-clocktest]").forEach(function(b){ b.addEventListener("click", function(){
+  var hrs=parseFloat(b.getAttribute("data-clocktest")); var ps=perSec();
+  if(ps<=0){ $("clockTestNote").textContent="No rate yet — buy a producer first, then the clock has something to pay."; return; }
+  var eff=Math.min(hrs, SET.capH); var gain=ps*eff*3600; earn(gain);
+  $("clockTestNote").textContent = "Pretended "+hrs+" hour"+(hrs===1?"":"s")+" away: the cap allows "+eff+
+    " hour"+(eff===1?"":"s")+" × your "+fmt(ps)+"/s = +"+fmt(gain)+" marks"+(hrs>SET.capH ? " — the cap bit off the rest, exactly as printed." : ".");
+  saveAll(); render(); }); });
+
+/* Offline claim */
+$("offlineClaim").addEventListener("click", function(){ if(pendingOffline>0){ earn(pendingOffline); pendingOffline=0; } $("offlinePanel").classList.remove("show"); saveAll(); render(); });
+$("offlineDismiss").addEventListener("click", function(){ pendingOffline=0; $("offlinePanel").classList.remove("show"); });
+
+/* Export + forget */
+function download(name, text, type){ var blob=new Blob([text],{type:type||"text/plain"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400); }
+$("exportJson").addEventListener("click", function(){ download("the-long-game-record.json", JSON.stringify(R,null,2), "application/json"); });
+$("exportCsv").addEventListener("click", function(){ var lines=["at,run,kind,item,cost,paybackSec,strategy"];
+  R.purchases.forEach(function(p){ lines.push([p.at,p.run,p.kind,'"'+String(p.item).replace(/"/g,'""')+'"',p.cost,(p.paybackSec==null?"":p.paybackSec),p.strategy].join(",")); });
+  download("the-long-game-purchases.csv", lines.join("\n"), "text/csv"); });
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click", function(){
+  if(!forgetArmed){ forgetArmed=true; this.textContent="Tap again to wipe the record for good";
+    $("forgetNote").textContent="One more tap wipes the whole record — sessions, totals, runs, purchases, and strategy counts. Your current game keeps going.";
+    setTimeout(function(){ forgetArmed=false; $("forgetBtn").textContent="Tap to forget my record"; }, 6000); return; }
+  R=defaultRecord(); R.sessions=1;
+  forgetArmed=false; this.textContent="Tap to forget my record";
+  $("forgetNote").textContent="Forgotten. The record starts fresh from this moment."; store(REC_KEY,R); render(); });
+$("hardReset").addEventListener("click", function(){
+  var stars=S.stars; S=defaultSave(); S.stars=0;
+  $("resetNote").textContent="Game reset — marks, producers, upgrades, and stars cleared. Your record was left as it stands; use Forget there if you want that gone too.";
+  saveAll(); render(); });
+
+/* Download-the-page door */
+$("downloadBtn").addEventListener("click", function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  download("the-long-game.html", html, "text/html"); });
+
+/* Settings */
+function applySettingsUI(){ $("setTeaching").value=SET.teaching; $("setCap").value=String(SET.capH);
+  $("setPrestige").value=SET.prestigeOn?"on":"off"; $("setAlias").value=SET.alias||"";
+  $("capEcho2").textContent=SET.capH;
+  var b=$("variantBanner");
+  if(!SET.prestigeOn){ b.textContent="Variant rules in play: Prestige OFF. Standard rules for The Long Game — the genre's documented standard form — have prestige ON. Everything else is unchanged."; b.classList.add("show"); }
+  else { b.classList.remove("show"); b.textContent=""; } }
+$("setTeaching").addEventListener("change", function(){ SET.teaching=this.value; store(SET_KEY,SET); render(); });
+$("setCap").addEventListener("change", function(){ SET.capH=parseInt(this.value,10)||8; store(SET_KEY,SET); applySettingsUI(); render(); });
+$("setPrestige").addEventListener("change", function(){ SET.prestigeOn=(this.value==="on"); store(SET_KEY,SET); applySettingsUI(); render(); });
+$("setAlias").addEventListener("change", function(){ SET.alias=this.value.trim().slice(0,24); store(SET_KEY,SET); render(); });
+
+/* Fold hints: Tap to open / Tap to close */
+document.querySelectorAll("details").forEach(function(d){ d.addEventListener("toggle", function(){
+  var h=d.querySelector(".js-foldhint"); if(h) h.textContent = d.open ? "(Tap to close)" : "(Tap to open)"; }); });
+
+/* ============ Offline earnings on arrival ============ */
+(function(){ var elapsed=(Date.now()-(S.lastSeen||Date.now()))/1000; var ps=perSec();
+  if(elapsed>=120 && ps>0){ var eff=Math.min(elapsed, SET.capH*3600); pendingOffline=ps*eff;
+    $("offlineText").textContent = "You were away "+fmtTime(elapsed)+". Your producers kept working at "+fmt(ps)+
+      "/s, capped at "+SET.capH+" hours as printed: "+fmt(pendingOffline)+" marks are waiting.";
+    $("offlinePanel").classList.add("show"); } })();
+
+/* ============ Main loop ============ */
+var lastTick=Date.now();
+setInterval(function(){ var t=Date.now(); var dt=(t-lastTick)/1000; lastTick=t;
+  var ps=perSec(); if(ps>0 && dt>0) earn(ps*dt);
+  S.timePlayedSec+=dt; R.totals.timePlayedSec+=dt;
+  $("coins").textContent=fmt(S.coins); $("perSec").textContent=fmt(ps);
+  document.querySelectorAll("[data-buy]").forEach(function(b){ var p=null;
+    PRODUCERS.forEach(function(x){ if(x.id===b.getAttribute("data-buy")) p=x; });
+    if(p) b.disabled = S.coins<prodCost(p); });
+  document.querySelectorAll("[data-upg]").forEach(function(b){ var u=null;
+    UPGRADES.forEach(function(x){ if(x.id===b.getAttribute("data-upg")) u=x; });
+    if(u) b.disabled = S.coins<u.cost; });
+}, 200);
+setInterval(function(){ saveAll(); }, 5000);
+setInterval(function(){ renderCoach(); renderRecord(); }, 20000);
+window.addEventListener("beforeunload", saveAll);
+document.addEventListener("visibilitychange", function(){ if(document.hidden) saveAll(); });
+
+applySettingsUI();
+render();
+</script>
+</body>
+</html>
