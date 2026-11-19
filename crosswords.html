@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Crosswords</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+    </style>
+    <style>
+      :root {
+        --paper: #faf8f1;
+        --paper-2: #f1ecdd;
+        --ink: #1c1a15;
+        --ink-soft: #4c463a;
+        --line: #d8d0ba;
+        --cell: #ffffff;
+        --cell-line: #2a271e;
+        --black: #211e17;
+        --accent: #9a2a1b;
+        --accent-ink: #ffffff;
+        --hl-word: #f7e3a1;
+        --hl-cell: #f3c94f;
+        --wrong-bg: #f6c9c2;
+        --wrong-ink: #8f1d10;
+        --rev-bg: #dde5da;
+        --ok-bg: #dcebd8;
+        --panel: #ffffff;
+        --shadow: 0 1px 3px rgba(28, 26, 21, 0.18);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #17181c;
+          --paper-2: #1f2026;
+          --ink: #ece7d9;
+          --ink-soft: #b8b1a0;
+          --line: #3a3b44;
+          --cell: #26272e;
+          --cell-line: #0c0c0e;
+          --black: #060607;
+          --accent: #e0684f;
+          --accent-ink: #17181c;
+          --hl-word: #5c4d1e;
+          --hl-cell: #8a6d1f;
+          --wrong-bg: #5e2620;
+          --wrong-ink: #ffb4a3;
+          --rev-bg: #2e4034;
+          --ok-bg: #2e4630;
+          --panel: #1f2026;
+          --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        line-height: 1.45;
+        padding-bottom: 4.5rem;
+      }
+      h1, h2, h3, .serif { font-family: Georgia, "Times New Roman", serif; }
+      main { max-width: 1100px; margin: 0 auto; padding: 0 1rem; }
+      a { color: var(--accent); }
+
+      .freebar {
+        border-bottom: 3px double var(--ink);
+        padding: 0.7rem 0 0.55rem;
+        display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: baseline;
+      }
+      .freebar .free { font-family: Georgia, serif; font-size: 1.35rem; font-weight: 700; }
+      .freebar .dl {
+        font: inherit; background: none; border: none; padding: 0.2rem 0;
+        color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 1rem;
+      }
+      .masthead { padding: 0.9rem 0 0.2rem; }
+      .masthead h1 { font-size: 2.3rem; margin: 0; letter-spacing: 0.01em; }
+      .masthead p { margin: 0.35rem 0 0; color: var(--ink-soft); max-width: 62ch; }
+      .rule { border: none; border-top: 1px solid var(--ink); margin: 0.8rem 0; }
+
+      section { margin: 1.4rem 0; }
+      h2 { font-size: 1.45rem; margin: 0 0 0.5rem; border-bottom: 2px solid var(--ink); padding-bottom: 0.25rem; }
+      h3 { font-size: 1.1rem; margin: 1rem 0 0.35rem; }
+      .small { font-size: 0.88rem; color: var(--ink-soft); }
+      .note { color: var(--ink-soft); max-width: 68ch; }
+
+      .picker { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+      .pick {
+        text-align: left; background: var(--panel); border: 1.5px solid var(--ink);
+        border-radius: 6px; padding: 0.8rem 0.9rem; cursor: pointer; box-shadow: var(--shadow);
+        font: inherit; color: var(--ink); width: 100%;
+      }
+      .pick .pname { font-family: Georgia, serif; font-size: 1.2rem; font-weight: 700; display: block; }
+      .pick .pmeta { color: var(--ink-soft); display: block; margin-top: 0.2rem; font-size: 0.95rem; }
+      .pick .pgo { color: var(--accent); display: block; margin-top: 0.45rem; font-size: 0.9rem; }
+      .pick[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+      .variant {
+        display: none; border: 1.5px solid var(--accent); color: var(--accent);
+        background: var(--paper-2); border-radius: 6px; padding: 0.5rem 0.8rem; font-weight: 600;
+      }
+      .variant.on { display: block; }
+
+      .playhead { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; align-items: baseline; }
+      .playhead .ptitle { font-family: Georgia, serif; font-size: 1.3rem; font-weight: 700; }
+      .timer { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+      .layout { display: grid; gap: 1.2rem; grid-template-columns: 1fr; }
+      @media (min-width: 860px) {
+        .layout { grid-template-columns: minmax(320px, 460px) 1fr; align-items: start; }
+      }
+
+      .gridwrap { width: min(100%, 460px); margin: 0 auto; }
+      .grid {
+        display: grid; gap: 0; border: 2.5px solid var(--black);
+        background: var(--black); width: 100%;
+      }
+      .cell {
+        position: relative; aspect-ratio: 1 / 1; border: 0.5px solid var(--cell-line);
+        background: var(--cell); padding: 0; cursor: pointer; font: inherit;
+        display: flex; align-items: center; justify-content: center;
+        min-height: 0; color: var(--ink);
+      }
+      .cell.black { background: var(--black); cursor: default; }
+      .cell .num {
+        position: absolute; top: 1px; left: 2px; font-size: 0.58rem; line-height: 1;
+        font-family: system-ui, sans-serif; color: var(--ink-soft); pointer-events: none;
+      }
+      .cell .ltr {
+        font-family: Georgia, serif; font-weight: 700; font-size: clamp(1rem, 5.2vw, 1.55rem);
+        line-height: 1; pointer-events: none; text-transform: uppercase;
+      }
+      .cell.inword { background: var(--hl-word); }
+      .cell.sel { background: var(--hl-cell); box-shadow: inset 0 0 0 2.5px var(--accent); }
+      .cell.wrong { background: var(--wrong-bg); }
+      .cell.wrong .ltr { color: var(--wrong-ink); text-decoration: line-through; }
+      .cell.revealed { background: var(--rev-bg); }
+      .cell.revealed .ltr { font-style: italic; }
+      .cell.checkedok { background: var(--ok-bg); }
+
+      .curclue {
+        margin-top: 0.7rem; border: 1.5px solid var(--ink); border-radius: 6px;
+        background: var(--panel); padding: 0.6rem 0.8rem; box-shadow: var(--shadow);
+      }
+      .curclue .cc-head { font-weight: 700; font-family: Georgia, serif; }
+      .curclue .cc-text { margin-top: 0.15rem; }
+      .row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+      .btn {
+        font: inherit; border: 1.5px solid var(--ink); background: var(--panel); color: var(--ink);
+        border-radius: 6px; padding: 0.45rem 0.7rem; cursor: pointer; box-shadow: var(--shadow);
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn .b-sub { display: block; font-size: 0.78rem; color: var(--ink-soft); font-weight: 400; }
+      .btn .b-main { font-weight: 700; }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .btn.primary .b-sub { color: var(--accent-ink); opacity: 0.85; }
+      .btn[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+      .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.6rem; }
+      .tools .btn { padding: 0.4rem 0.3rem; }
+
+      .nudge-out, .coach, .whybox, .statusline {
+        margin-top: 0.6rem; border-radius: 6px; padding: 0.6rem 0.8rem;
+      }
+      .nudge-out { border: 1.5px dashed var(--ink-soft); background: var(--paper-2); display: none; }
+      .nudge-out.on { display: block; }
+      .coach { border: 1.5px solid var(--ink); background: var(--panel); display: none; box-shadow: var(--shadow); }
+      .coach.on { display: block; }
+      .coach h3 { margin-top: 0; }
+      .coach ul { margin: 0.3rem 0 0.3rem 1.1rem; padding: 0; }
+      .whybox { border: 1.5px solid var(--accent); background: var(--paper-2); display: none; }
+      .whybox.on { display: block; }
+      .statusline { min-height: 1.4rem; color: var(--ink-soft); padding-left: 0; padding-right: 0; }
+
+      .done {
+        display: none; border: 2.5px solid var(--accent); border-radius: 8px;
+        background: var(--panel); padding: 0.9rem 1rem; margin-top: 0.8rem; box-shadow: var(--shadow);
+      }
+      .done.on { display: block; }
+      .done .d-title { font-family: Georgia, serif; font-size: 1.35rem; font-weight: 700; }
+
+      .keyboard { margin-top: 0.7rem; user-select: none; }
+      .kb-row { display: flex; gap: 0.32rem; justify-content: center; margin-top: 0.32rem; }
+      .key {
+        flex: 1 1 0; max-width: 3rem; min-height: 2.9rem; font: inherit; font-weight: 700;
+        font-size: 1.05rem; border: 1.5px solid var(--ink); border-radius: 6px;
+        background: var(--panel); color: var(--ink); cursor: pointer; box-shadow: var(--shadow);
+        padding: 0;
+      }
+      .key.wide { flex: 1.6 1 0; max-width: 5.2rem; font-size: 0.85rem; }
+
+      .clues { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+      @media (min-width: 560px) { .clues { grid-template-columns: 1fr 1fr; } }
+      .clues h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.2rem; }
+      .clue {
+        display: block; width: 100%; text-align: left; font: inherit; color: var(--ink);
+        background: none; border: none; border-radius: 4px; padding: 0.32rem 0.4rem; cursor: pointer;
+      }
+      .clue .cn { font-weight: 700; margin-right: 0.35rem; }
+      .clue.cur { background: var(--hl-word); }
+      .clue.solved { color: var(--ink-soft); }
+      .clue.solved .ct { text-decoration: line-through; }
+
+      .rec-list { display: grid; gap: 0.5rem; }
+      .rec {
+        border: 1px solid var(--line); border-left: 4px solid var(--ink); border-radius: 4px;
+        background: var(--panel); padding: 0.55rem 0.8rem;
+      }
+      .rec .r-head { font-weight: 700; }
+      .rec .r-sub { color: var(--ink-soft); font-size: 0.92rem; }
+
+      .setgrid { display: grid; gap: 0.9rem; }
+      .setrow { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 0.7rem 0.9rem; }
+      .setrow .s-name { font-weight: 700; font-family: Georgia, serif; }
+      .setrow .s-desc { color: var(--ink-soft); font-size: 0.92rem; margin-top: 0.15rem; }
+      .seg { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+      input[type="text"] {
+        font: inherit; padding: 0.45rem 0.6rem; border: 1.5px solid var(--ink);
+        border-radius: 6px; background: var(--panel); color: var(--ink); width: min(100%, 320px);
+      }
+
+      details.fold { border: 1.5px solid var(--ink); border-radius: 6px; background: var(--panel); box-shadow: var(--shadow); }
+      details.fold > summary {
+        cursor: pointer; font-family: Georgia, serif; font-weight: 700; font-size: 1.15rem;
+        padding: 0.7rem 0.9rem; list-style: none;
+      }
+      details.fold > summary::-webkit-details-marker { display: none; }
+      details.fold .fold-body { padding: 0 0.9rem 0.9rem; }
+      details.fold .fold-body p, details.fold .fold-body li { max-width: 68ch; }
+      details.fold ul { margin: 0.3rem 0 0.6rem 1.1rem; padding: 0; }
+
+      footer { border-top: 3px double var(--ink); margin-top: 2rem; padding: 0.8rem 0 1.2rem; color: var(--ink-soft); font-size: 0.9rem; }
+      .dock {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+        background: var(--paper-2); border-top: 2px solid var(--ink);
+        display: flex; justify-content: space-around; padding: 0.35rem 0.2rem calc(0.35rem + env(safe-area-inset-bottom));
+      }
+      .dock a {
+        color: var(--ink); text-decoration: none; font-size: 0.82rem; font-weight: 600;
+        padding: 0.3rem 0.4rem; text-align: center;
+      }
+      .dock a span { display: block; font-size: 0.68rem; font-weight: 400; color: var(--ink-soft); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="freebar">
+        <span class="free">Free — always free.</span>
+        <button class="dl" id="dlBtn" type="button">available offline — tap to download this page and play anywhere</button>
+      </div>
+
+      <div class="masthead">
+        <h1>Crosswords</h1>
+        <p>Original crossword puzzles, built for this page. The published crossword begins in 1913, when Arthur Wynne's “word-cross” appeared in the <em>New York World</em> — every grid and every clue here is new, written for this page, in that tradition.</p>
+      </div>
+      <hr class="rule" />
+
+      <section id="picker-sec" aria-label="Choose a puzzle">
+        <h2>Pick a puzzle</h2>
+        <div class="picker" id="picker"></div>
+        <p class="small">Moving to another puzzle saves the attempt you leave behind to your record as unfinished, with its time and tool counts. A puzzle you come back to in the same visit keeps its letters.</p>
+      </section>
+
+      <section id="play" aria-label="Play">
+        <div class="variant" id="variantBanner" role="status"></div>
+        <div class="playhead" style="margin-top:0.6rem;">
+          <span class="ptitle" id="puzzleTitle"></span>
+          <span class="timer" id="timer" aria-label="Time taken"></span>
+          <span class="small" id="solverName"></span>
+        </div>
+
+        <div class="layout" style="margin-top:0.7rem;">
+          <div>
+            <div class="gridwrap"><div class="grid" id="grid" role="grid" aria-label="Crossword grid"></div></div>
+
+            <div class="curclue" aria-live="polite">
+              <span class="cc-head" id="ccHead"></span>
+              <div class="cc-text" id="ccText"></div>
+              <div class="row">
+                <button class="btn" id="dirBtn" type="button"><span class="b-main" id="dirBtnMain">Across</span><span class="b-sub">Tap to switch direction</span></button>
+                <button class="btn" id="nudgeBtn" type="button" style="display:none;"><span class="b-main">Nudge</span><span class="b-sub">Tap for a hint about this clue</span></button>
+              </div>
+              <div class="nudge-out" id="nudgeOut"></div>
+            </div>
+
+            <div class="tools" role="group" aria-label="Help tools — every use is counted in your record">
+              <button class="btn tool" data-tool="checkL" type="button"><span class="b-main">Check letter</span><span class="b-sub">Tap to check this letter</span></button>
+              <button class="btn tool" data-tool="checkW" type="button"><span class="b-main">Check word</span><span class="b-sub">Tap to check this word</span></button>
+              <button class="btn tool" data-tool="checkP" type="button"><span class="b-main">Check puzzle</span><span class="b-sub">Tap to check every letter</span></button>
+              <button class="btn tool" data-tool="revL" type="button"><span class="b-main">Reveal letter</span><span class="b-sub">Tap to reveal this letter</span></button>
+              <button class="btn tool" data-tool="revW" type="button"><span class="b-main">Reveal word</span><span class="b-sub">Tap to reveal this word</span></button>
+              <button class="btn tool" data-tool="revP" type="button"><span class="b-main">Reveal puzzle</span><span class="b-sub">Tap to reveal every letter</span></button>
+            </div>
+            <p class="small" style="margin-top:0.35rem;">Every check and reveal is counted in your record, honestly — a finish that used reveals is recorded as “finished with reveals”, never as a clean solve.</p>
+
+            <div class="statusline" id="statusLine" aria-live="polite"></div>
+
+            <div class="coach" id="coachPanel" aria-live="polite"></div>
+            <div class="whybox" id="whyBox" aria-live="polite"></div>
+
+            <div class="done" id="donePanel" aria-live="polite"></div>
+
+            <div class="keyboard" id="keyboard" aria-label="On-screen keyboard"></div>
+          </div>
+
+          <div class="clues">
+            <div>
+              <h3>Across — tap a clue to jump to its word</h3>
+              <div id="acrossList"></div>
+            </div>
+            <div>
+              <h3>Down — tap a clue to jump to its word</h3>
+              <div id="downList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="record" aria-label="Your record">
+        <h2>Your record <span class="small" id="recName"></span></h2>
+        <p class="note">Kept only on this device, in this browser — nothing is sent anywhere. An attempt is written here when you finish a puzzle, or when you move to another puzzle part-way through.</p>
+        <div class="rec-list" id="recList"></div>
+        <div class="row">
+          <button class="btn" id="recDownload" type="button"><span class="b-main">Download</span><span class="b-sub">Tap to save your record as a JSON file</span></button>
+          <button class="btn" id="recForget" type="button"><span class="b-main">Forget</span><span class="b-sub">Tap to erase your record — this alone, nothing else</span></button>
+        </div>
+        <p class="small" id="recMsg" aria-live="polite"></p>
+      </section>
+
+      <section id="settings" aria-label="Page settings">
+        <h2>Page settings</h2>
+        <p class="note">Settings are saved on this device only. Standard play is the default everywhere; anything non-standard is labelled, and a banner above the grid says when a variant is in play.</p>
+        <div class="setgrid">
+          <div class="setrow">
+            <div class="s-name">Teaching</div>
+            <div class="s-desc">How much teaching reaches you. Off: none. Light: a Nudge button that names the kind of clue you're looking at. Coach: the full teaching layer — clue-type lessons, crossing strategy, and a “Why that works” after every solved word.</div>
+            <div class="seg" role="group" aria-label="Teaching level">
+              <button class="btn teach" data-teach="off" type="button"><span class="b-main">Off</span><span class="b-sub">Tap to choose — no teaching</span></button>
+              <button class="btn teach" data-teach="light" type="button"><span class="b-main">Light</span><span class="b-sub">Tap to choose — nudges only</span></button>
+              <button class="btn teach" data-teach="coach" type="button"><span class="b-main">Coach</span><span class="b-sub">Tap to choose — the full coach</span></button>
+            </div>
+          </div>
+          <div class="setrow">
+            <div class="s-name">Check-as-you-go</div>
+            <div class="s-desc">A non-standard option. OFF is standard: letters are only judged when you use a Check tool. ON flags a wrong letter the moment you type it — and turns the variant banner on above the grid.</div>
+            <div class="seg">
+              <button class="btn" id="caygBtn" type="button"><span class="b-main" id="caygMain">Check-as-you-go: OFF (standard)</span><span class="b-sub">Tap to change this setting</span></button>
+            </div>
+          </div>
+          <div class="setrow">
+            <div class="s-name">Timer</div>
+            <div class="s-desc">Show or hide the clock above the grid. The timer runs for your record either way — hiding it is display-only.</div>
+            <div class="seg">
+              <button class="btn" id="timerBtn" type="button"><span class="b-main" id="timerMain">Timer: shown</span><span class="b-sub">Tap to change this setting</span></button>
+            </div>
+          </div>
+          <div class="setrow">
+            <div class="s-name">Your display name (optional)</div>
+            <div class="s-desc">An alias if you'd like one — never required to play, never sent anywhere. It simply labels your record on this device.</div>
+            <div class="seg">
+              <input type="text" id="nameInput" maxlength="30" placeholder="Optional — leave blank if you like" aria-label="Your display name, optional" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how" aria-label="How crosswords work">
+        <details class="fold">
+          <summary>How crosswords work — tap to open</summary>
+          <div class="fold-body">
+            <h3>The bargain of a crossword</h3>
+            <p>Every answer is crossed by other answers, so every letter you earn in one word is a free letter in another. That is the whole engine of solving: work the crossings, and the grid fills itself. Every clue below is one of a handful of kinds — learn to spot the kind, and you know how to attack it.</p>
+            <h3>The clue kinds used on this page</h3>
+            <ul>
+              <li><strong>Straight definition.</strong> The clue just describes the answer: “The organ that pumps blood around the body” (HEART). Attack it by thinking of synonyms and near-matches, then testing them against the crossing letters.</li>
+              <li><strong>Fill-in-the-blank.</strong> A phrase with a gap: “'_____ of the matter'” (HEART). Say the phrase aloud — your ear usually knows the missing word before your eyes do. These are the friendliest clues in any grid and a good place to start.</li>
+              <li><strong>Abbreviation.</strong> The answer is a shortened form, and the clue says so with “for short”: “Northeast, for short” (NE), “Ukulele, for short” (UKE), “A short life story, for short” (BIO). Compass points, shortened instruments and life stories are the regulars.</li>
+              <li><strong>Anagram (wordplay).</strong> A definition plus letters to scramble. Words like <em>broken, wild, mixed, stirred, scrambled</em> or <em>gone wrong</em> signal the scrambling: “Warning wail, broken, becomes sticky tree sap” — SIREN, broken, becomes RESIN. Attack it by writing the letters in a circle and turning them until a word jumps out.</li>
+              <li><strong>Container.</strong> One piece goes inside another. Signals: <em>in, inside, holding, around, swallowing</em>. “L put inside GOD makes this precious yellow metal” — L inside GOD builds GOLD.</li>
+              <li><strong>Charade.</strong> Parts added in order, like a sum: “A tear after T” — T + REND (a tear) = TREND; “Ail after P” — P + AIL = PAIL. Signals: <em>after, before, on, with, plus</em>.</li>
+              <li><strong>Sounds-like (homophone).</strong> The wordplay is in the ear: “Stitch cloth together — it sounds like 'so'” (SEW). Signals: <em>sounds like, we hear, reportedly, spoken</em>.</li>
+              <li><strong>Hidden word.</strong> The answer hides inside a longer word in the clue: “Frozen water, found inside dice” — d-ICE. Signals: <em>found in, inside, part of, some of</em>. Attack it by reading the clue's longer words letter by letter.</li>
+              <li><strong>Double definition.</strong> Two definitions of the same word, side by side: “Highest card in the pack — or a serve nobody touches” (ACE). If a clue seems to describe two unrelated things, suspect this kind.</li>
+            </ul>
+            <h3>Conventions worth knowing</h3>
+            <ul>
+              <li><strong>“For short”</strong> always means the answer is an abbreviation or shortening.</li>
+              <li><strong>Anagram signals</strong> are words of damage or disorder: broken, wild, mixed, stirred, scrambled, drunk, mad, wrong.</li>
+              <li><strong>Container signals</strong> are words of holding: in, inside, holding, around, gripping, swallowing.</li>
+              <li><strong>A question mark</strong> at the end of a clue means the setter is joking — read the clue sideways, not straight.</li>
+              <li><strong>The definition in a wordplay clue</strong> sits at the very start or the very end of the clue — the middle is machinery.</li>
+            </ul>
+            <h3>Solving strategy, with the trade-offs stated</h3>
+            <ul>
+              <li><strong>Crossings first.</strong> Before sweating over a hard clue, look at the words crossing it: one solved crossing can hand you two or three certain letters. Trade-off: it takes you away from the clue you wanted — but a certain letter beats a hopeful guess every time.</li>
+              <li><strong>Start with fill-in-the-blanks and short answers.</strong> They fall fastest and seed the grid with letters. Trade-off: the easy corner is not always where the hard words are — sooner or later you must face the long ones.</li>
+              <li><strong>Collect the regulars.</strong> Short answers repeat across all crosswords: ANI, OLIO, EKE, NE, UKE and their kin. Learning them is pure profit. Trade-off: a “usual suspect” that doesn't fit the crossings is still wrong — the grid always outranks memory.</li>
+              <li><strong>Guess in pencil, not in pen.</strong> A likely letter, lightly held, lets crossings confirm or kill it. Trade-off: a wrong guess you forget you made will poison every word through it — which is what the Check tools are for.</li>
+              <li><strong>Read the clue's grammar.</strong> The answer matches the clue's tense and number: a clue ending in “-ed” wants an answer ending in “-ed”; a plural clue wants a plural answer. Free letters, just for noticing.</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+
+      <footer>
+        <p>Copyleft: the writings and design of this page are shared under CC BY-SA 4.0, and its code under the GPL — free to share and adapt, with credit, under the same freedom. No ads, no trackers, no accounts. Every puzzle on this page is an original construction.</p>
+      </footer>
+    </main>
+
+    <nav class="dock" aria-label="Page compass">
+      <a href="#picker-sec">Puzzles<span>tap to choose</span></a>
+      <a href="#play">Play<span>tap to play</span></a>
+      <a href="#record">Record<span>tap to view</span></a>
+      <a href="#settings">Settings<span>tap to change</span></a>
+      <a href="#how">How it works<span>tap to learn</span></a>
+      <a href="https://thethrivingplan.github.io/">Games shelf<span>tap to open</span></a>
+    </nav>
+
+    <script>
+    "use strict";
+    /* ============ Puzzle data — every grid and clue is an original construction ============ */
+    var TYPE_INFO = {
+      definition: { name: "a straight definition",
+        short: "The clue simply describes the answer in other words.",
+        attack: "Think of two or three synonyms for the clue's meaning, then test each against the letters the crossings have already given you.",
+        trade: "Synonyms can lead you astray — the crossing letters always have the final say." },
+      fill: { name: "a fill-in-the-blank clue",
+        short: "A familiar phrase with the answer missing, shown by the gap.",
+        attack: "Say the whole phrase aloud, pausing at the gap. The word your ear supplies first is usually right — then let the crossings confirm it.",
+        trade: "Your ear can be too confident: a phrase may take more than one word, so check the length and crossings." },
+      abbreviation: { name: "an abbreviation clue",
+        short: "The answer is a shortened form, and the clue flags it with the words 'for short'.",
+        attack: "Name the long form first, then its standard shortening. Compass points, titles and everyday objects all have set short forms worth learning as a set.",
+        trade: "Some shortenings have rivals (a biography is a BIO, never a BIOG) — the crossings settle which one the setter meant." },
+      anagram: { name: "an anagram (wordplay) clue",
+        short: "One part of the clue defines the answer; the rest is a word whose letters scramble to make it, flagged by a word like 'broken', 'wild' or 'mixed'.",
+        attack: "Find the definition — it sits at the very start or the very end of the clue. Write the other word's letters in a circle and shuffle them until a word matching the definition appears.",
+        trade: "Scrambling takes a minute and the eye invents words that aren't there — always check the result against the crossings before trusting it." },
+      container: { name: "a container (wordplay) clue",
+        short: "One piece of the answer is placed inside another, flagged by words like 'in', 'inside', 'holding' or 'around', with a definition at one end.",
+        attack: "Split the clue into a short filling and a longer crust. Put the filling inside the crust, letter by letter, and see whether what comes out matches the definition.",
+        trade: "There may be several places the filling could sit — the definition tells you which result is a real word worth having." },
+      charade: { name: "a charade (wordplay) clue",
+        short: "The answer is built by adding parts in order, like a sum, with a definition at one end.",
+        attack: "Break the clue into pieces in the order they come — a letter, then a short word, then another — and add them up. Then check the total against the definition.",
+        trade: "The pieces are clued loosely on purpose; if the sum is not a word, try the pieces the other way round." },
+      homophone: { name: "a sounds-like (wordplay) clue",
+        short: "The wordplay works by ear: something in the clue sounds exactly like the answer, flagged by 'sounds like' or 'we hear'.",
+        attack: "Say the clue's key word out loud and listen for a different word with the same sound but a different spelling and meaning.",
+        trade: "Accents differ — a pair that sounds alike in one voice may not in another. The crossings are the referee." },
+      hidden: { name: "a hidden-word (wordplay) clue",
+        short: "The answer hides, letter after letter, inside a longer word in the clue — flagged by 'found in', 'inside' or 'part of' — with a definition at one end.",
+        attack: "Read the clue's longer words slowly, letter by letter. The answer is sitting in a row inside one of them, wearing it as a coat.",
+        trade: "Not every long word in the clue is the hiding place — if one word runs dry, move to the next." },
+      double: { name: "a double definition clue",
+        short: "Two separate definitions of the same word stand side by side. There is no wordplay machinery at all.",
+        attack: "Treat each half as its own clue and look for a word that satisfies both at once. That double fit is what confirms it.",
+        trade: "One half alone will fit several words — it is the second half that does the real narrowing." }
+    };
+
+    var PUZZLES = [
+      {
+        id: "mini5", name: "First Mini", size: 5,
+        meta: "5 × 5 grid · Gentle — a small starter with friendly clues and a little wordplay",
+        grid: ["HEART", "EMBER", "ABUSE", "RESIN", "TREND"],
+        clues: {
+          "1A": { t: "The organ that pumps blood around the body", type: "definition",
+                  why: "HEART is the body's pump. The same word also names the centre of things — 'the heart of the matter' — which is why it turns up in so many phrases." },
+          "6A": { t: "A small glowing piece of coal or wood left in a dying fire", type: "definition",
+                  why: "An ember is the last glowing stage of a fire before ash — small and orange, yet still hot enough to start a new flame." },
+          "7A": { t: "Cruel treatment — or, as a verb, to misuse", type: "double",
+                  why: "Two definitions, one word: ABUSE is the cruel treatment itself (a noun) and, as a verb, to misuse something. Double-definition clues give you two doors into the same answer." },
+          "8A": { t: "Warning wail, broken, becomes sticky tree sap", type: "anagram",
+                  why: "The wordplay: 'broken' tells you to scramble the letters of SIREN (a warning wail), and SIREN scrambled gives RESIN. The definition is 'sticky tree sap' — every anagram clue is a definition plus a scramble." },
+          "9A": { t: "A tear after T — it's the direction fashion is heading", type: "charade",
+                  why: "A charade adds parts in order: T + REND (a tear) builds TREND. The definition half is 'the direction fashion is heading'." },
+          "1D": { t: "“_____ of the matter” — the most important part", type: "fill",
+                  why: "Say the phrase aloud: 'the heart of the matter'. Fill-in-the-blank clues quote a phrase with the answer missing, and your ear often knows the word before your eyes do." },
+          "2D": { t: "Small glowing coal found inside November", type: "hidden",
+                  why: "A hidden-word clue: the answer sits inside another word in the clue. NOV-EMBER — EMBER is hiding in NOVEMBER, and 'found inside' told you where to look." },
+          "3D": { t: "To treat a person or animal cruelly, over and over", type: "definition",
+                  why: "This is the verb sense of ABUSE. Its other job — the noun, cruel treatment — is clued at 7-Across. Crosswords love a word that works two ways." },
+          "4D": { t: "Sticky stuff that oozes from a pine tree and hardens", type: "definition",
+                  why: "RESIN is what pine trees leak to seal a wound; given ages, it can fossilise into amber. Its anagram partner SIREN is at work in the 8-Across clue." },
+          "5D": { t: "What the line on a graph shows, over time", type: "definition",
+                  why: "A trend is a general direction of change. Forecasters and fashion-watchers both earn their living by spotting one early." }
+        }
+      },
+      {
+        id: "seven7", name: "Second Helping", size: 7,
+        meta: "7 × 7 grid · Steady — a bigger grid with wordplay mixed through it",
+        grid: ["SUN#PIG", "EKE#ACE", "WE#DIET", "##OIL##", "GOLD#MY", "ANI#TEA", "BIO#OHM"],
+        clues: {
+          "1A": { t: "The star that lights and warms the Earth", type: "definition",
+                  why: "Our nearest star. SUN also works as a verb — to sun yourself — which is why it turns up in clues about beaches and lizards too." },
+          "4A": { t: "Farm animal that loves mud and says oink", type: "definition",
+                  why: "A plain definition. Short farm words like PIG, COW and HEN are crossword regulars — worth knowing on sight." },
+          "7A": { t: "Squeeze out a living, with “out”", type: "definition",
+                  why: "You almost always meet EKE with its partner: to 'eke out' is to make something last, or to scrape a living from very little. The clue quoted the partner to point you there." },
+          "8A": { t: "Highest card in the pack — or a serve nobody touches", type: "double",
+                  why: "Two definitions: an ace is the top card in the pack, and in tennis a serve the receiver cannot touch. It is also a word for an expert — a flying ace." },
+          "9A": { t: "You and I, together", type: "definition",
+                  why: "WE is the word a speaker uses for themselves plus at least one other person. Two-letter answers are the glue of a grid — English has only a few dozen, and they repeat constantly." },
+          "10A": { t: "The food a person usually eats — or a plan to eat less of it", type: "double",
+                  why: "Two definitions again: your diet is everything you normally eat, while 'a diet' is the plan that limits it. In a few countries a Diet is also a parliament — a third meaning worth filing away." },
+          "11A": { t: "Slippery liquid that comes from olives, seeds or wells", type: "definition",
+                  why: "OIL covers cooking oils and crude oil alike. Its letters are common ones, so it crosses kindly — which is why constructors reach for it so often." },
+          "12A": { t: "L put inside GOD makes this precious yellow metal", type: "container",
+                  why: "A container clue: put the letter L inside GOD and you build GOLD — G-O-L-D. Words like 'inside', 'holding' and 'around' in a clue are the usual sign that one piece goes inside another." },
+          "14A": { t: "“_____ house, my rules” — the possessive word for the second gap", type: "fill",
+                  why: "Fill-in-the-blank: the saying only works with MY in the gap. Small possessive words — MY, OUR, ITS — are tiny but mighty in a grid." },
+          "16A": { t: "Long-tailed black bird of the cuckoo family, found in the Americas", type: "definition",
+                  why: "The ani is a real bird — a glossy black relative of the cuckoo that lives in groups in warm parts of the Americas. Unusual short words like ANI are constructor favourites because their letters are so useful." },
+          "17A": { t: "Hot drink made by soaking leaves in water", type: "definition",
+                  why: "A plain definition — and one of the most common three-letter answers in crosswords everywhere." },
+          "18A": { t: "A short life story, for short", type: "abbreviation",
+                  why: "BIO is short for biography. 'For short' in a clue is the standard signal that the answer is a shortened form." },
+          "19A": { t: "The unit of electrical resistance, named after a German physicist", type: "definition",
+                  why: "The ohm is named for Georg Ohm. Units named after people — ohm, watt, volt — form a small family of answers worth learning together." },
+          "1D": { t: "Stitch cloth together — it sounds like “so”", type: "homophone",
+                  why: "A sounds-like clue: SEW is pronounced exactly like SO. Words such as 'sounds like', 'we hear' and 'reportedly' warn you the wordplay is in the ear, not the eye." },
+          "2D": { t: "Ukulele, for short", type: "abbreviation",
+                  why: "UKE is the everyday shortening of ukulele. 'For short' flags an abbreviation, just as it did for BIO at 18-Across." },
+          "3D": { t: "Northeast, for short — the compass point between north and east", type: "abbreviation",
+                  why: "Compass points are usually clued as abbreviations: NE, SW, NNE and friends. Learn the set once and they are free letters forever after." },
+          "4D": { t: "Ail — feel unwell — after P, gives you a bucket", type: "charade",
+                  why: "A charade: P + AIL (to feel unwell) builds PAIL. The definition is at the end of the clue: 'a bucket'." },
+          "5D": { t: "Frozen water, found inside dice", type: "hidden",
+                  why: "A hidden word: ICE sits inside DICE — d-ICE. 'Found inside' is the giveaway phrase for this clue kind." },
+          "6D": { t: "Come to have; receive", type: "definition",
+                  why: "GET is one of English's hardest-working verbs — get a letter, get the joke, get going. Short verbs are clued plainly because their letters cross so many other words." },
+          "10D": { t: "“_____ you see that?” — past tense of do", type: "fill",
+                  why: "Fill-in-the-blank again: your ear supplies DID before you have thought about it. These clues are the friendliest place to start any grid." },
+          "11D": { t: "A medley — a mixture of many different things", type: "definition",
+                  why: "OLIO is an old word for a miscellaneous mixture — it began as the name of a stew. Short words ending in a vowel are gold for constructors, so OLIO and its kin turn up often." },
+          "12D": { t: "Talk on and on, informally", type: "definition",
+                  why: "To gab is to chatter away. 'Informally' in a clue warns you the answer is a casual word rather than a formal one." },
+          "13D": { t: "A demon or ogre in Japanese folk tales", type: "definition",
+                  why: "Oni are the horned ogres of Japanese stories. Short words English has borrowed — ONI, ANI, OLIO — are worth collecting; constructors reach for them constantly." },
+          "14D": { t: "A word that means “I don't care much; so what?”", type: "definition",
+                  why: "MEH is a whole shrug in three letters — a modern interjection that dictionaries now list for expressing indifference." },
+          "15D": { t: "Orange-fleshed vegetable, sweeter than a potato", type: "definition",
+                  why: "The yam of the shops is a sweet potato with orange flesh. Food words are crossword staples." },
+          "17D": { t: "“_____ and fro” — back and forth", type: "fill",
+                  why: "The phrase 'to and fro' means moving back and forth. Two-letter answers like TO, IN, ON and OF are the mortar of every grid." }
+        }
+      }
+    ];
+
+    /* ============ Settings & record (this device only) ============ */
+    var SET_KEY = "crosswords.settings.v1", REC_KEY = "crosswords.record.v1";
+    function loadJSON(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
+    function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    var settings = loadJSON(SET_KEY, null) || { teaching: "light", checkAsYouGo: false, timerShow: true, name: "" };
+    if (["off", "light", "coach"].indexOf(settings.teaching) < 0) settings.teaching = "light";
+    var record = loadJSON(REC_KEY, []);
+    if (!Array.isArray(record)) record = [];
+
+    /* ============ Model ============ */
+    function buildModel(p) {
+      var size = p.size, cells = [], r, c, ch;
+      for (r = 0; r < size; r++) { cells.push([]); for (c = 0; c < size; c++) { ch = p.grid[r][c]; cells[r].push({ r: r, c: c, black: ch === "#", sol: ch }); } }
+      function white(r, c) { return r >= 0 && c >= 0 && r < size && c < size && !cells[r][c].black; }
+      function startsA(r, c) { return white(r, c) && !white(r, c - 1) && white(r, c + 1); }
+      function startsD(r, c) { return white(r, c) && !white(r - 1, c) && white(r + 1, c); }
+      var num = 0, numbers = {}, words = [], byCell = {};
+      for (r = 0; r < size; r++) for (c = 0; c < size; c++) {
+        if (!white(r, c)) continue;
+        var sa = startsA(r, c), sd = startsD(r, c);
+        if (sa || sd) { num++; numbers[r + "," + c] = num; }
+        if (sa) { var wc = [], cc = c; while (white(r, cc)) { wc.push({ r: r, c: cc }); cc++; }
+          words.push({ num: num, dir: "A", cells: wc, answer: wc.map(function (x) { return cells[x.r][x.c].sol; }).join("") }); }
+        if (sd) { var wr = [], rr = r; while (white(rr, c)) { wr.push({ r: rr, c: c }); rr++; }
+          words.push({ num: num, dir: "D", cells: wr, answer: wr.map(function (x) { return cells[x.r][x.c].sol; }).join("") }); }
+      }
+      words.forEach(function (w) {
+        w.id = w.num + w.dir;
+        w.clue = p.clues[w.id] || { t: "", type: "definition", why: "" };
+        w.cells.forEach(function (x) { var k = x.r + "," + x.c; byCell[k] = byCell[k] || {}; byCell[k][w.dir] = w; });
+      });
+      return { puzzle: p, size: size, cells: cells, numbers: numbers, words: words, byCell: byCell };
+    }
+    var models = {};
+    PUZZLES.forEach(function (p) { models[p.id] = buildModel(p); });
+
+    /* ============ Attempts ============ */
+    function newAttempt(model) {
+      return { letters: {}, locked: {}, wrong: {}, ok: {}, counts: { checkL: 0, checkW: 0, checkP: 0, revL: 0, revW: 0, revP: 0 },
+               sel: null, dir: "A", accum: 0, runningSince: Date.now(), finished: false, recordedUnfinished: false,
+               solvedShown: {}, lastWhy: null, dirty: false };
+    }
+    var attempts = {}, currentId = null, M = null, A = null;
+    function key(r, c) { return r + "," + c; }
+    function letterAt(r, c) { return A.letters[key(r, c)] || ""; }
+    function elapsedSecs() { if (!A) return 0; var run = A.finished ? 0 : (Date.now() - A.runningSince) / 1000; return Math.floor(A.accum + run); }
+    function fmtTime(s) { var m = Math.floor(s / 60), ss = s % 60; return m + ":" + (ss < 10 ? "0" : "") + ss; }
+    function totalCounts(kind) { return A.counts[kind + "L"] + A.counts[kind + "W"] + A.counts[kind + "P"]; }
+
+    function currentWord() {
+      if (!A || !A.sel) return null;
+      var bc = M.byCell[key(A.sel.r, A.sel.c)];
+      if (!bc) return null;
+      return bc[A.dir] || bc[A.dir === "A" ? "D" : "A"] || null;
+    }
+    function wordFilledCorrect(w) { return w.cells.every(function (x) { return letterAt(x.r, x.c) === M.cells[x.r][x.c].sol; }); }
+
+    /* ============ Record ============ */
+    function pushRecord(finishedFlag) {
+      var secs = elapsedSecs();
+      var entry = {
+        puzzle: M.puzzle.name, size: M.puzzle.size + " × " + M.puzzle.size,
+        finished: finishedFlag,
+        result: finishedFlag ? (totalCounts("rev") > 0 ? "finished with reveals" : "clean solve") : "not finished",
+        seconds: secs,
+        checks: { letter: A.counts.checkL, word: A.counts.checkW, puzzle: A.counts.checkP },
+        reveals: { letter: A.counts.revL, word: A.counts.revW, puzzle: A.counts.revP },
+        when: new Date().toISOString()
+      };
+      record.push(entry); saveJSON(REC_KEY, record); renderRecord();
+      return entry;
+    }
+    function renderRecord() {
+      var list = document.getElementById("recList");
+      document.getElementById("recName").textContent = settings.name ? "— " + settings.name : "";
+      if (!record.length) { list.innerHTML = '<div class="rec"><span class="r-sub">No attempts recorded yet. Finish a puzzle — or leave one part-way — and it will be written here.</span></div>'; return; }
+      var html = "";
+      for (var i = record.length - 1; i >= 0; i--) {
+        var e = record[i];
+        var head = e.puzzle + " · " + e.size + " — " + (e.finished ? (e.result === "clean solve" ? "Finished, clean solve" : "Finished with reveals") : "Not finished");
+        var sub = "Time " + fmtTime(e.seconds || 0) +
+          " · Checks: letter " + e.checks.letter + ", word " + e.checks.word + ", puzzle " + e.checks.puzzle +
+          " · Reveals: letter " + e.reveals.letter + ", word " + e.reveals.word + ", puzzle " + e.reveals.puzzle +
+          " · " + new Date(e.when).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+        html += '<div class="rec"><div class="r-head">' + head + '</div><div class="r-sub">' + sub + "</div></div>";
+      }
+      list.innerHTML = html;
+    }
+
+    /* ============ Rendering ============ */
+    var $ = function (id) { return document.getElementById(id); };
+    function renderPicker() {
+      var html = "";
+      PUZZLES.forEach(function (p) {
+        html += '<button class="pick" type="button" data-pick="' + p.id + '" aria-pressed="' + (p.id === currentId) + '">' +
+          '<span class="pname">' + p.name + '</span><span class="pmeta">' + p.meta + '</span>' +
+          '<span class="pgo">Tap to open this puzzle</span></button>';
+      });
+      $("picker").innerHTML = html;
+      Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) {
+        b.addEventListener("click", function () { openPuzzle(b.getAttribute("data-pick")); });
+      });
+    }
+    function renderGrid() {
+      var g = $("grid"), size = M.size, html = "";
+      g.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
+      var w = currentWord();
+      var inWord = {};
+      if (w) w.cells.forEach(function (x) { inWord[key(x.r, x.c)] = true; });
+      for (var r = 0; r < size; r++) for (var c = 0; c < size; c++) {
+        var cell = M.cells[r][c], k = key(r, c);
+        if (cell.black) { html += '<div class="cell black" aria-hidden="true"></div>'; continue; }
+        var cls = "cell";
+        if (inWord[k]) cls += " inword";
+        if (A.sel && A.sel.r === r && A.sel.c === c) cls += " sel";
+        if (A.wrong[k]) cls += " wrong";
+        if (A.locked[k]) cls += " revealed";
+        else if (A.ok[k]) cls += " checkedok";
+        var num = M.numbers[k] ? '<span class="num">' + M.numbers[k] + "</span>" : "";
+        html += '<button type="button" class="' + cls + '" data-cell="' + k + '" role="gridcell" aria-label="Square ' + (r + 1) + "," + (c + 1) + (M.numbers[k] ? ", clue " + M.numbers[k] : "") + '">' + num + '<span class="ltr">' + (A.letters[k] || "") + "</span></button>";
+      }
+      g.innerHTML = html;
+      Array.prototype.forEach.call(g.querySelectorAll("[data-cell]"), function (b) {
+        b.addEventListener("click", function () { var p = b.getAttribute("data-cell").split(","); tapCell(+p[0], +p[1]); });
+      });
+    }
+    function renderClues() {
+      var w = currentWord();
+      ["A", "D"].forEach(function (dir) {
+        var html = "";
+        M.words.filter(function (x) { return x.dir === dir; }).forEach(function (x) {
+          var cls = "clue" + (w && x.id === w.id ? " cur" : "") + (wordFilledCorrect(x) ? " solved" : "");
+          html += '<button type="button" class="' + cls + '" data-clue="' + x.id + '"><span class="cn">' + x.num + '.</span><span class="ct">' + x.clue.t + "</span></button>";
+        });
+        $(dir === "A" ? "acrossList" : "downList").innerHTML = html;
+      });
+      Array.prototype.forEach.call(document.querySelectorAll("[data-clue]"), function (b) {
+        b.addEventListener("click", function () {
+          var id = b.getAttribute("data-clue");
+          var word = M.words.filter(function (x) { return x.id === id; })[0];
+          if (!word) return;
+          A.dir = word.dir; A.sel = { r: word.cells[0].r, c: word.cells[0].c };
+          clearNudge(); render();
+        });
+      });
+    }
+    function renderHead() {
+      $("puzzleTitle").textContent = M.puzzle.name + " — " + M.puzzle.size + " × " + M.puzzle.size;
+      $("solverName").textContent = settings.name ? "Solving as " + settings.name : "";
+      $("timer").style.display = settings.timerShow ? "" : "none";
+      $("timer").textContent = "Time: " + fmtTime(elapsedSecs());
+      var b = $("variantBanner");
+      if (settings.checkAsYouGo) { b.textContent = "Variant in play: check-as-you-go is ON — wrong letters are flagged as you type."; b.className = "variant on"; }
+      else { b.textContent = ""; b.className = "variant"; }
+      var w = currentWord();
+      if (w) {
+        $("ccHead").textContent = w.num + " " + (w.dir === "A" ? "Across" : "Down") + " · " + w.cells.length + " letters";
+        $("ccText").textContent = w.clue.t;
+        $("dirBtnMain").textContent = w.dir === "A" ? "Across" : "Down";
+      }
+      $("nudgeBtn").style.display = settings.teaching === "off" ? "none" : "";
+      document.querySelectorAll(".teach").forEach(function (btn) {
+        btn.setAttribute("aria-pressed", btn.getAttribute("data-teach") === settings.teaching ? "true" : "false");
+      });
+      $("caygMain").textContent = "Check-as-you-go: " + (settings.checkAsYouGo ? "ON (variant)" : "OFF (standard)");
+      $("timerMain").textContent = "Timer: " + (settings.timerShow ? "shown" : "hidden — it still runs for your record");
+    }
+    function renderDone() {
+      var d = $("donePanel");
+      if (!A.finished) { d.className = "done"; d.innerHTML = ""; return; }
+      var rev = totalCounts("rev"), chk = totalCounts("check");
+      d.className = "done on";
+      d.innerHTML = '<div class="d-title">Finished!</div>' +
+        "<p>" + (rev > 0 ? "You finished <strong>with reveals</strong> — " + rev + " reveal" + (rev === 1 ? "" : "s") + " used, and your record says so, plainly." : "A <strong>clean solve</strong> — no reveals used.") + "</p>" +
+        "<p>Time: <strong>" + fmtTime(elapsedSecs()) + "</strong> · Checks used: " + chk + " · Reveals used: " + rev + "</p>" +
+        '<div class="row"><button class="btn primary" id="againBtn" type="button"><span class="b-main">Play again</span><span class="b-sub">Tap to restart this puzzle</span></button>' +
+        '<a class="btn" href="#picker-sec" style="text-decoration:none;"><span class="b-main">Pick another puzzle</span><span class="b-sub">Tap to go to the picker</span></a></div>';
+      $("againBtn").addEventListener("click", function () { attempts[currentId] = newAttempt(M); A = attempts[currentId]; initSel(); setStatus("Fresh grid. Good luck."); render(); });
+    }
+    function renderWhy() {
+      var box = $("whyBox");
+      if (settings.teaching === "coach" && A.lastWhy) {
+        box.className = "whybox on";
+        box.innerHTML = "<strong>Why that works — " + A.lastWhy.id + ":</strong> " + A.lastWhy.why;
+      } else { box.className = "whybox"; box.innerHTML = ""; }
+    }
+    function renderCoach() {
+      var panel = $("coachPanel");
+      if (settings.teaching !== "coach") { panel.className = "coach"; panel.innerHTML = ""; return; }
+      var w = currentWord();
+      panel.className = "coach on";
+      if (!w) { panel.innerHTML = "<h3>Coach</h3><p>Tap a square or a clue and the Coach will teach on it.</p>"; return; }
+      var info = TYPE_INFO[w.clue.type] || TYPE_INFO.definition;
+      var html = "<h3>Coach — " + w.num + " " + (w.dir === "A" ? "Across" : "Down") + "</h3>";
+      if (wordFilledCorrect(w)) {
+        html += "<p><strong>This word is solved.</strong> Its story is in the “Why that works” box below the Coach.</p>";
+      }
+      html += "<p><strong>Clue kind: " + info.name + ".</strong> " + info.short + "</p>";
+      html += "<p><strong>How to attack it:</strong> " + info.attack + "</p>";
+      /* Crossings analysis on the live grid */
+      var crosses = [];
+      w.cells.forEach(function (x, i) {
+        var bc = M.byCell[key(x.r, x.c)];
+        var perp = bc[w.dir === "A" ? "D" : "A"];
+        if (!perp) return;
+        var filled = 0;
+        perp.cells.forEach(function (y) { if (letterAt(y.r, y.c)) filled++; });
+        crosses.push({ perp: perp, filled: filled, total: perp.cells.length, idx: i, empty: !letterAt(x.r, x.c) });
+      });
+      var useful = crosses.filter(function (cr) { return cr.empty && !wordFilledCorrect(cr.perp); });
+      html += "<h3>Strategy for this word</h3><ul>";
+      if (useful.length) {
+        useful.sort(function (a, b) { return (b.filled / b.total) - (a.filled / a.total) || b.filled - a.filled; });
+        var best = useful[0];
+        html += "<li><strong>Crossings first:</strong> " + best.perp.num + " " + (best.perp.dir === "A" ? "Across" : "Down") +
+          " has " + best.filled + " of its " + best.total + " letters in place — it is the crossing closest to done. Finishing it would hand you letter " + (best.idx + 1) +
+          " of this word for certain. <em>Trade-off: it takes you away from this clue for a while — but a certain letter beats a hopeful guess.</em></li>";
+        if (useful.length > 1) {
+          var second = useful[1];
+          html += "<li><strong>Or work another crossing:</strong> " + second.perp.num + " " + (second.perp.dir === "A" ? "Across" : "Down") +
+            " (" + second.filled + " of " + second.total + " letters in) would give you letter " + (second.idx + 1) +
+            ". <em>Trade-off: less far along, so slower — but its clue may be one you already half-see.</em></li>";
+        }
+      } else if (crosses.length) {
+        html += "<li><strong>Crossings first:</strong> every crossing letter of this word is already in place — the grid has done its helping here, so this one is down to the clue itself. <em>Trade-off: none left to weigh; trust the letters you have.</em></li>";
+      }
+      if (w.clue.type === "fill") {
+        html += "<li><strong>Fill-in-the-blanks are friendly starts:</strong> this is one of the easiest clue kinds in the grid — a good word to bank early. <em>Trade-off: banking the easy words first can leave the hard corner for last, with fewer crossings to help there.</em></li>";
+      }
+      if (w.cells.length <= 3) {
+        html += "<li><strong>Short answers are regulars:</strong> three letters and under, the same small cast — ANI, OLIO, EKE, ORE, ALE and kin — appears in grid after grid. <em>Trade-off: memory proposes, but the crossings dispose — a regular that clashes with a crossing letter is simply wrong.</em></li>";
+      }
+      html += "<li><strong>Read the clue's grammar:</strong> tense and number must match the answer — a clue phrased in the past tense wants a past-tense answer. <em>Trade-off: none; this check is free.</em></li>";
+      html += "</ul>";
+      html += "<p class='small'>" + info.trade + "</p>";
+      panel.innerHTML = html;
+    }
+    function render() { renderPicker(); renderHead(); renderGrid(); renderClues(); renderCoach(); renderWhy(); renderDone(); }
+
+    /* ============ Interaction ============ */
+    function setStatus(msg) { $("statusLine").textContent = msg; }
+    function clearNudge() { var n = $("nudgeOut"); n.className = "nudge-out"; n.innerHTML = ""; }
+    function initSel() {
+      var first = M.words.filter(function (w) { return w.dir === "A"; })[0] || M.words[0];
+      A.dir = first.dir; A.sel = { r: first.cells[0].r, c: first.cells[0].c };
+    }
+    function tapCell(r, c) {
+      if (A.finished) { setStatus("This puzzle is finished — play again or pick another."); return; }
+      var bc = M.byCell[key(r, c)]; if (!bc) return;
+      if (A.sel && A.sel.r === r && A.sel.c === c) {
+        var other = A.dir === "A" ? "D" : "A";
+        if (bc[other]) { A.dir = other; }
+      } else {
+        A.sel = { r: r, c: c };
+        if (!bc[A.dir]) A.dir = bc.A ? "A" : "D";
+      }
+      clearNudge(); render();
+    }
+    function moveInWord(delta) {
+      var w = currentWord(); if (!w) return;
+      var idx = w.cells.findIndex(function (x) { return x.r === A.sel.r && x.c === A.sel.c; });
+      var n = idx + delta;
+      if (n >= 0 && n < w.cells.length) { A.sel = { r: w.cells[n].r, c: w.cells[n].c }; }
+    }
+    function afterChange() {
+      /* word-solved detection for the Why line */
+      M.words.forEach(function (w) {
+        var solved = wordFilledCorrect(w);
+        if (solved && !A.solvedShown[w.id]) {
+          A.solvedShown[w.id] = true;
+          A.lastWhy = { id: w.num + " " + (w.dir === "A" ? "Across" : "Down") + " (" + w.answer + ")", why: w.clue.why };
+        } else if (!solved && A.solvedShown[w.id]) {
+          delete A.solvedShown[w.id];
+        }
+      });
+      if (!A.finished && M.words.every(function (w) { return wordFilledCorrect(w); })) {
+        A.finished = true; A.accum = elapsedSecs();
+        var e = pushRecord(true);
+        setStatus(e.result === "clean solve" ? "Finished — a clean solve, and written to your record." : "Finished with reveals — and your record says exactly that.");
+      }
+      render();
+    }
+    function typeLetter(L) {
+      if (A.finished) { setStatus("This puzzle is finished — play again or pick another."); return; }
+      if (!A.sel) return;
+      var k = key(A.sel.r, A.sel.c);
+      if (A.locked[k]) { moveInWord(1); render(); return; }
+      A.letters[k] = L; A.dirty = true;
+      delete A.wrong[k]; delete A.ok[k];
+      if (settings.checkAsYouGo && L !== M.cells[A.sel.r][A.sel.c].sol) A.wrong[k] = true;
+      moveInWord(1);
+      afterChange();
+    }
+    function backspace() {
+      if (A.finished || !A.sel) return;
+      var k = key(A.sel.r, A.sel.c);
+      if (A.letters[k] && !A.locked[k]) { delete A.letters[k]; delete A.wrong[k]; delete A.ok[k]; A.dirty = true; afterChange(); return; }
+      var w = currentWord(); if (!w) return;
+      var idx = w.cells.findIndex(function (x) { return x.r === A.sel.r && x.c === A.sel.c; });
+      if (idx > 0) {
+        var prev = w.cells[idx - 1], pk = key(prev.r, prev.c);
+        A.sel = { r: prev.r, c: prev.c };
+        if (A.letters[pk] && !A.locked[pk]) { delete A.letters[pk]; delete A.wrong[pk]; delete A.ok[pk]; A.dirty = true; }
+        afterChange();
+      }
+    }
+    function markChecked(cells) {
+      var wrongCount = 0, rightCount = 0;
+      cells.forEach(function (x) {
+        var k = key(x.r, x.c), L = letterAt(x.r, x.c);
+        if (!L) return;
+        if (L === M.cells[x.r][x.c].sol) { rightCount++; delete A.wrong[k]; if (!A.locked[k]) A.ok[k] = true; }
+        else { wrongCount++; A.wrong[k] = true; delete A.ok[k]; }
+      });
+      return { wrong: wrongCount, right: rightCount };
+    }
+    function doTool(tool) {
+      if (A.finished) { setStatus("This puzzle is finished — its record is written. Play again or pick another."); return; }
+      var w = currentWord(); if (!w || !A.sel) return;
+      var k = key(A.sel.r, A.sel.c);
+      if (tool === "checkL") {
+        var target = A.sel;
+        if (!letterAt(target.r, target.c)) {
+          var w2 = currentWord(), idx2 = w2 ? w2.cells.findIndex(function (x) { return x.r === A.sel.r && x.c === A.sel.c; }) : -1;
+          if (idx2 > 0 && letterAt(w2.cells[idx2 - 1].r, w2.cells[idx2 - 1].c)) {
+            target = w2.cells[idx2 - 1]; A.sel = { r: target.r, c: target.c };
+          } else { setStatus("That square is empty — nothing to check yet."); return; }
+        }
+        A.counts.checkL++; A.dirty = true;
+        var res = markChecked([target]);
+        setStatus(res.wrong ? "That letter is wrong — it is marked. The check is counted in your record." : "That letter is right. The check is counted in your record.");
+      } else if (tool === "checkW") {
+        if (!w.cells.some(function (x) { return letterAt(x.r, x.c); })) { setStatus("This word has no letters yet — nothing to check."); return; }
+        A.counts.checkW++; A.dirty = true;
+        var r2 = markChecked(w.cells);
+        setStatus(r2.wrong ? r2.wrong + " letter" + (r2.wrong === 1 ? " is" : "s are") + " wrong in this word — marked. The check is counted." : "Every letter you have in this word is right so far. The check is counted.");
+      } else if (tool === "checkP") {
+        var any = M.words.some(function (x) { return x.cells.some(function (y) { return letterAt(y.r, y.c); }); });
+        if (!any) { setStatus("The grid is empty — nothing to check yet."); return; }
+        A.counts.checkP++; A.dirty = true;
+        var all = []; M.words.forEach(function (x) { x.cells.forEach(function (y) { var kk = key(y.r, y.c); if (!all.some(function (z) { return z.r === y.r && z.c === y.c; })) all.push(y); }); });
+        var r3 = markChecked(all);
+        setStatus(r3.wrong ? r3.wrong + " wrong letter" + (r3.wrong === 1 ? "" : "s") + " in the puzzle — marked. The check is counted." : "Every letter in the grid is right so far. The check is counted.");
+      } else if (tool === "revL") {
+        if (A.locked[k] && letterAt(A.sel.r, A.sel.c) === M.cells[A.sel.r][A.sel.c].sol) { setStatus("That letter is already revealed."); return; }
+        A.counts.revL++; A.dirty = true;
+        A.letters[k] = M.cells[A.sel.r][A.sel.c].sol; A.locked[k] = true; delete A.wrong[k]; delete A.ok[k];
+        setStatus("Letter revealed — and counted in your record as a reveal.");
+        afterChange(); return;
+      } else if (tool === "revW") {
+        var changedW = 0;
+        w.cells.forEach(function (x) { var kk = key(x.r, x.c); if (!A.locked[kk] || letterAt(x.r, x.c) !== M.cells[x.r][x.c].sol) changedW++; });
+        if (!changedW) { setStatus("This word is already fully revealed."); return; }
+        A.counts.revW++; A.dirty = true;
+        w.cells.forEach(function (x) { var kk = key(x.r, x.c); A.letters[kk] = M.cells[x.r][x.c].sol; A.locked[kk] = true; delete A.wrong[kk]; delete A.ok[kk]; });
+        setStatus("Word revealed — and counted in your record as a reveal.");
+        afterChange(); return;
+      } else if (tool === "revP") {
+        var changedP = 0;
+        M.words.forEach(function (x) { x.cells.forEach(function (y) { var kk = key(y.r, y.c); if (!A.locked[kk] || letterAt(y.r, y.c) !== M.cells[y.r][y.c].sol) changedP++; }); });
+        if (!changedP) { setStatus("The whole puzzle is already revealed."); return; }
+        A.counts.revP++; A.dirty = true;
+        M.words.forEach(function (x) { x.cells.forEach(function (y) { var kk = key(y.r, y.c); A.letters[kk] = M.cells[y.r][y.c].sol; A.locked[kk] = true; delete A.wrong[kk]; delete A.ok[kk]; }); });
+        setStatus("Whole puzzle revealed — and counted in your record as a reveal.");
+        afterChange(); return;
+      }
+      render();
+    }
+
+    function openPuzzle(id) {
+      if (currentId && currentId !== id && A) {
+        A.accum = elapsedSecs();
+        if (!A.finished && A.dirty && !A.recordedUnfinished) { A.recordedUnfinished = true; pushRecord(false); }
+      }
+      currentId = id; M = models[id];
+      if (!attempts[id]) attempts[id] = newAttempt(M);
+      A = attempts[id];
+      A.runningSince = Date.now();
+      if (!A.sel) initSel();
+      clearNudge(); setStatus("");
+      render();
+    }
+
+    /* ============ Keyboard ============ */
+    function buildKeyboard() {
+      var rows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+      var html = "";
+      rows.forEach(function (rowStr, ri) {
+        html += '<div class="kb-row">';
+        rowStr.split("").forEach(function (L) {
+          html += '<button type="button" class="key" data-key="' + L + '" aria-label="Tap for letter ' + L + '">' + L + "</button>";
+        });
+        if (ri === 2) html += '<button type="button" class="key wide" data-key="DEL" aria-label="Tap to delete and step back">⌫ Delete</button>';
+        html += "</div>";
+      });
+      $("keyboard").innerHTML = html;
+      Array.prototype.forEach.call(document.querySelectorAll("[data-key]"), function (b) {
+        b.addEventListener("click", function () {
+          var k = b.getAttribute("data-key");
+          if (k === "DEL") backspace(); else typeLetter(k);
+        });
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      var t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (!A || !M) return;
+      if (/^[a-zA-Z]$/.test(e.key)) { typeLetter(e.key.toUpperCase()); }
+      else if (e.key === "Backspace") { e.preventDefault(); backspace(); }
+      else if (e.key.indexOf("Arrow") === 0) {
+        e.preventDefault();
+        var dr = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
+        var dc = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        var nr = A.sel.r + dr, nc = A.sel.c + dc;
+        if (nr >= 0 && nc >= 0 && nr < M.size && nc < M.size && !M.cells[nr][nc].black) {
+          A.sel = { r: nr, c: nc };
+          var bc = M.byCell[key(nr, nc)];
+          var want = dr !== 0 ? "D" : "A";
+          if (bc[want]) A.dir = want;
+          clearNudge(); render();
+        }
+      }
+    });
+
+    /* ============ Wiring ============ */
+    $("dirBtn").addEventListener("click", function () {
+      if (!A.sel) return;
+      var bc = M.byCell[key(A.sel.r, A.sel.c)];
+      var other = A.dir === "A" ? "D" : "A";
+      if (bc && bc[other]) { A.dir = other; clearNudge(); render(); }
+    });
+    $("nudgeBtn").addEventListener("click", function () {
+      var w = currentWord(); if (!w) return;
+      var info = TYPE_INFO[w.clue.type] || TYPE_INFO.definition;
+      var n = $("nudgeOut");
+      n.className = "nudge-out on";
+      n.innerHTML = "<strong>Nudge:</strong> this clue is <strong>" + info.name + "</strong>. " + info.short + " The Nudge names the kind of clue only — never the answer.";
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".tool"), function (b) {
+      b.addEventListener("click", function () { doTool(b.getAttribute("data-tool")); });
+    });
+    document.querySelectorAll(".teach").forEach(function (b) {
+      b.addEventListener("click", function () {
+        settings.teaching = b.getAttribute("data-teach"); saveJSON(SET_KEY, settings);
+        setStatus("Teaching set to " + settings.teaching + " — saved on this device.");
+        render();
+      });
+    });
+    $("caygBtn").addEventListener("click", function () {
+      settings.checkAsYouGo = !settings.checkAsYouGo; saveJSON(SET_KEY, settings);
+      setStatus(settings.checkAsYouGo ? "Variant in play: check-as-you-go is ON." : "Check-as-you-go is OFF — standard play.");
+      render();
+    });
+    $("timerBtn").addEventListener("click", function () {
+      settings.timerShow = !settings.timerShow; saveJSON(SET_KEY, settings);
+      setStatus(settings.timerShow ? "Timer shown." : "Timer hidden — it still runs for your record.");
+      render();
+    });
+    $("nameInput").addEventListener("input", function () {
+      settings.name = $("nameInput").value.trim(); saveJSON(SET_KEY, settings);
+      renderHead(); renderRecord();
+    });
+    $("recDownload").addEventListener("click", function () {
+      var blob = new Blob([JSON.stringify(record, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "crosswords-record.json";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+      $("recMsg").textContent = "Your record has been downloaded as a JSON file.";
+    });
+    $("recForget").addEventListener("click", function () {
+      record = []; saveJSON(REC_KEY, record); renderRecord();
+      $("recMsg").textContent = "Your record has been erased from this device. Settings and everything else are untouched.";
+    });
+    $("dlBtn").addEventListener("click", function () {
+      var blob = new Blob(["<!doctype html>\n" + document.documentElement.outerHTML], { type: "text/html" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "crosswords.html";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    });
+
+    /* ============ Go ============ */
+    $("nameInput").value = settings.name || "";
+    buildKeyboard();
+    renderRecord();
+    openPuzzle("mini5");
+    setInterval(function () { if (A && M && !A.finished) $("timer").textContent = "Time: " + fmtTime(elapsedSecs()); }, 500);
+    </script>
+  </body>
+</html>
