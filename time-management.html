@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>The Lunch Rush — a time management game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#edf1ec; --surface:#ffffff; --surface2:#f4f7f2; --ink:#1d2a25; --ink-soft:#43564d;
+        --line:#c9d4c9; --teal:#17604f; --teal-deep:#0f4638; --terra:#c2502a; --terra-soft:#fbe9e1;
+        --gold:#b97f14; --gold-soft:#fdf3d7; --good:#2e7d46; --warn:#b97f14; --bad:#b3362a;
+        --bar-bg:#dde5dc; --shadow:0 2px 10px rgba(20,40,32,.10);
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0f1714; --surface:#1a2621; --surface2:#212f29; --ink:#e9f0ea; --ink-soft:#a9bcb1;
+          --line:#33463c; --teal:#4cb597; --teal-deep:#8fd4bd; --terra:#e07a52; --terra-soft:#3a241c;
+          --gold:#e0aa3e; --gold-soft:#38300f; --good:#6fce8d; --warn:#e0aa3e; --bad:#ef8a7d;
+          --bar-bg:#2b3a33; --shadow:0 2px 10px rgba(0,0,0,.4);
+        }
+      }
+      *{box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,sans-serif;font-size:16px;line-height:1.5}
+      button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+      button{font:inherit;cursor:pointer;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:.45rem .8rem;font-weight:600}
+      button:hover{border-color:var(--teal)}
+      button:disabled{opacity:.45;cursor:default}
+      button.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+      @media (prefers-color-scheme: dark){button.primary{color:#0c1712}}
+      button.warnbtn{border-color:var(--terra);color:var(--terra)}
+      select,input[type="text"]{font:inherit;padding:.45rem .6rem;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+      a{color:var(--teal)}
+      .wrap{max-width:1120px;margin:0 auto;padding:0 1rem 3rem}
+      .freeline{background:var(--teal-deep);color:#eafaf2;padding:.55rem 1rem;display:flex;flex-wrap:wrap;gap:.4rem .9rem;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+      @media (prefers-color-scheme: dark){.freeline{color:#0d1a14}}
+      .freeline strong{font-size:1.02rem}
+      .freeline button{background:transparent;border-color:currentColor;color:inherit;font-size:.9rem;padding:.3rem .7rem}
+      header.top{padding:1.4rem 0 .4rem}
+      header.top .shelf{color:var(--terra);font-weight:700;font-size:.92rem;margin:0}
+      h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:2.6rem;line-height:1.05;margin:.25rem 0 .4rem}
+      .lede{font-size:1.08rem;color:var(--ink-soft);max-width:44rem;margin:.2rem 0 .6rem}
+      .compass{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:.5rem .8rem;box-shadow:var(--shadow);margin:.8rem 0 1.1rem}
+      .compass .cword{font-weight:700;color:var(--teal)}
+      .compass a{padding:.35rem .55rem;border-radius:8px;text-decoration:none;font-weight:600}
+      .compass a:hover{background:var(--surface2)}
+      h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.7rem;margin:1.6rem 0 .5rem}
+      h3{font-size:1.05rem;margin:.9rem 0 .35rem}
+      .card{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:1rem}
+      /* ---------- HUD ---------- */
+      .hud{display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem;margin-bottom:.7rem}
+      @media(min-width:640px){.hud{grid-template-columns:repeat(5,1fr)}}
+      .hud .stat{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:.5rem .7rem}
+      .hud .stat .k{font-size:.78rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+      .hud .stat .v{font-size:1.45rem;font-weight:700;line-height:1.15}
+      .hud .stat .v small{font-size:.85rem;font-weight:600;color:var(--ink-soft)}
+      .clockbar{height:10px;background:var(--bar-bg);border-radius:6px;overflow:hidden;margin-top:.3rem}
+      .clockbar>div{height:100%;background:var(--teal);width:100%}
+      .controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.6rem 0}
+      .dial{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
+      .dial button{border:0;border-radius:0;background:var(--surface);padding:.45rem .8rem}
+      .dial button[aria-pressed="true"]{background:var(--teal);color:#fff}
+      @media (prefers-color-scheme: dark){.dial button[aria-pressed="true"]{color:#0c1712}}
+      .dialwrap{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+      .dialwrap .lbl{font-weight:700}
+      .variant-banner{background:var(--gold-soft);border:1.5px solid var(--gold);border-radius:12px;padding:.55rem .85rem;font-weight:600;margin:.6rem 0;display:none}
+      .variant-banner.show{display:block}
+      .ticker{background:var(--surface2);border:1.5px dashed var(--line);border-radius:12px;padding:.5rem .85rem;min-height:2.6rem;display:flex;align-items:center;font-weight:600}
+      /* ---------- Floor layout ---------- */
+      .playgrid{display:grid;grid-template-columns:1fr;gap:1rem;align-items:start}
+      @media(min-width:920px){.playgrid{grid-template-columns:minmax(0,1fr) 330px}}
+      .floor{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:.9rem}
+      .zone-label{font-weight:700;font-size:.85rem;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin:.2rem 0 .45rem}
+      .queue{display:flex;flex-wrap:wrap;gap:.5rem;min-height:4.4rem}
+      .queue-empty{color:var(--ink-soft);font-style:italic;padding:.6rem 0}
+      .cust{display:flex;gap:.5rem;align-items:center;background:var(--surface2);border:1.5px solid var(--line);border-radius:12px;padding:.35rem .6rem .35rem .35rem;text-align:left;min-width:9.2rem}
+      .cust svg{width:34px;height:34px;flex:none}
+      .cust .who{font-weight:700;font-size:.9rem;line-height:1.2}
+      .cust .sub{font-size:.78rem;color:var(--ink-soft)}
+      .pbar{height:8px;background:var(--bar-bg);border-radius:5px;overflow:hidden;width:6.4rem;margin-top:.2rem}
+      .pbar>div{height:100%;background:var(--good)}
+      .pbar>div.mid{background:var(--warn)} .pbar>div.low{background:var(--bad)}
+      .tables{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin:.4rem 0 .8rem}
+      @media(min-width:560px){.tables{grid-template-columns:repeat(3,1fr)}}
+      .table{border:2px solid var(--line);border-radius:14px;background:var(--surface2);padding:.6rem;text-align:left;width:100%;display:block;font-weight:500}
+      .table .tnum{font-weight:700;font-size:.82rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+      .table .tbody{display:flex;gap:.55rem;align-items:center;margin-top:.3rem}
+      .table svg{width:40px;height:40px;flex:none}
+      .table .st{font-weight:700;line-height:1.25}
+      .table .st small{display:block;font-weight:500;color:var(--ink-soft)}
+      .table.clean{border-style:dashed}
+      .table.busy{border-color:var(--teal)}
+      .table.dirty{border-color:var(--terra);background:var(--terra-soft)}
+      .table.urgent{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad) inset}
+      .table .pbar{width:100%}
+      .kitchen{border-top:2px solid var(--line);padding-top:.7rem}
+      .tickets,.readyrow{display:flex;flex-wrap:wrap;gap:.5rem;min-height:3.4rem}
+      .ticket{border:1.5px solid var(--gold);background:var(--gold-soft);border-radius:10px;padding:.4rem .6rem;text-align:left;min-width:8.6rem}
+      .ticket .tk{font-weight:700;font-size:.92rem}
+      .ticket .ts{font-size:.78rem;color:var(--ink-soft);font-weight:600}
+      .ticket .pbar{width:100%}
+      .dish{display:flex;gap:.5rem;align-items:center;border:1.5px solid var(--teal);background:var(--surface2);border-radius:10px;padding:.4rem .6rem;text-align:left}
+      .dish svg{width:30px;height:30px;flex:none}
+      .hands{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;background:var(--surface2);border:1.5px solid var(--line);border-radius:12px;padding:.55rem .8rem;margin-top:.7rem}
+      .hands .h{font-weight:700}
+      .handitem{display:inline-flex;gap:.4rem;align-items:center;background:var(--surface);border:1.5px solid var(--teal);border-radius:999px;padding:.2rem .65rem;font-weight:600}
+      .handitem svg{width:20px;height:20px}
+      .emptyhand{color:var(--ink-soft);font-style:italic}
+      /* ---------- Coach ---------- */
+      .coach{border-color:var(--teal)}
+      .coach h3{margin-top:0}
+      .coach .note{background:var(--surface2);border-radius:10px;padding:.55rem .7rem;margin:.5rem 0}
+      .coach .note strong{color:var(--teal-deep)}
+      @media (prefers-color-scheme: dark){.coach .note strong{color:var(--teal)}}
+      .strat-opt{border:1.5px solid var(--line);border-radius:10px;padding:.55rem .7rem;margin:.5rem 0;background:var(--surface)}
+      .strat-opt .so-k{font-weight:700}
+      .strat-opt .trade{color:var(--ink-soft);font-size:.92rem}
+      .prostats{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-top:.6rem}
+      .prostats .ps{background:var(--surface2);border-radius:10px;padding:.45rem .6rem}
+      .prostats .ps .k{font-size:.75rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em}
+      .prostats .ps .v{font-size:1.15rem;font-weight:700}
+      .lightnote{display:none}
+      .lightnote.show{display:block}
+      .explainbar{display:none;background:var(--gold-soft);border:1.5px solid var(--gold);border-radius:12px;padding:.55rem .85rem;margin:.6rem 0;font-weight:600}
+      .explainbar.show{display:block}
+      /* ---------- Grade ---------- */
+      #grade{display:none}
+      #grade.show{display:block}
+      .gradeletter{font-family:"DM Serif Display",Georgia,serif;font-size:3.2rem;line-height:1;color:var(--teal)}
+      .gradelines{margin:.6rem 0}
+      .gradelines li{margin:.3rem 0}
+      /* ---------- Learn / settings / record ---------- */
+      .steps{counter-reset:step;padding-left:0;list-style:none}
+      .steps li{counter-increment:step;margin:.55rem 0;padding-left:2.3rem;position:relative}
+      .steps li::before{content:counter(step);position:absolute;left:0;top:.05rem;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--teal);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+      @media (prefers-color-scheme: dark){.steps li::before{color:#0c1712}}
+      .stratgrid{display:grid;grid-template-columns:1fr;gap:.7rem}
+      @media(min-width:760px){.stratgrid{grid-template-columns:1fr 1fr}}
+      .stratgrid .card h3{margin-top:0;color:var(--teal-deep)}
+      @media (prefers-color-scheme: dark){.stratgrid .card h3{color:var(--teal)}}
+      .stratgrid .trade{color:var(--ink-soft)}
+      .formgrid{display:grid;grid-template-columns:1fr;gap:.8rem}
+      @media(min-width:760px){.formgrid{grid-template-columns:1fr 1fr 1fr}}
+      .formgrid label{font-weight:700;display:block}
+      .formgrid label span{display:block;font-weight:500;color:var(--ink-soft);font-size:.9rem;margin-bottom:.25rem}
+      .recstats{display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem}
+      @media(min-width:640px){.recstats{grid-template-columns:repeat(4,1fr)}}
+      .recstats .stat{background:var(--surface2);border-radius:12px;padding:.6rem .75rem}
+      .recstats .stat .k{font-size:.78rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+      .recstats .stat .v{font-size:1.5rem;font-weight:700}
+      .dayslog{list-style:none;padding-left:0;margin:.6rem 0}
+      .dayslog li{border-top:1px solid var(--line);padding:.45rem 0}
+      footer{margin-top:2.2rem;border-top:2px solid var(--line);padding-top:1rem;color:var(--ink-soft);font-size:.93rem}
+      .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    </style>
+  </head>
+  <body>
+    <div class="freeline">
+      <span><strong>Free — always free.</strong> No ads, ever. No account, no claimed name needed.</span>
+      <button type="button" id="dlBtn">Tap to download this page for offline play</button>
+      <span>Your record saves on this device only.</span>
+    </div>
+    <div class="wrap">
+      <header class="top">
+        <p class="shelf">The house games shelf · Time management</p>
+        <h1>The Lunch Rush</h1>
+        <p class="lede">One server, one small café, one lunch rush. Seat people before their patience runs out, run the kitchen queue, carry dishes without wasting a trip, and clear tables so the next party can sit. The clock is always moving — so is everybody's patience.</p>
+      </header>
+
+      <nav class="compass" aria-label="Compass">
+        <span class="cword">Compass:</span>
+        <a href="#play">Play the day</a>
+        <a href="#learn">Learn the craft</a>
+        <a href="#settings">Settings &amp; variants</a>
+        <a href="#record">Your record</a>
+      </nav>
+
+      <main>
+        <section id="play" aria-label="Play">
+          <div class="hud" role="status" aria-label="Day status">
+            <div class="stat"><div class="k">Clock</div><div class="v"><span id="hudClock">—</span></div><div class="clockbar"><div id="clockFill"></div></div></div>
+            <div class="stat"><div class="k">Earnings</div><div class="v" id="hudMoney">$0</div></div>
+            <div class="stat"><div class="k">Served</div><div class="v"><span id="hudServed">0</span> <small id="hudHappy"></small></div></div>
+            <div class="stat"><div class="k">Walked out</div><div class="v" id="hudWalkouts">0</div></div>
+            <div class="stat"><div class="k">Chain</div><div class="v" id="hudChain">—</div></div>
+          </div>
+
+          <div class="controls">
+            <button type="button" class="primary" id="startBtn">Tap to start the day</button>
+            <button type="button" id="pauseBtn" disabled>Tap to pause</button>
+            <button type="button" class="warnbtn" id="closeBtn" disabled>Tap to close the café now</button>
+          </div>
+          <div class="dialwrap">
+            <span class="lbl" id="dialLabel">Teaching:</span>
+            <div class="dial" role="group" aria-labelledby="dialLabel">
+              <button type="button" data-teach="off" aria-pressed="false">Off</button>
+              <button type="button" data-teach="light" aria-pressed="true">Light</button>
+              <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+            </div>
+            <span id="dialHint">Light: a note when something matters. Hold the Coach panel heading for more.</span>
+          </div>
+
+          <div class="variant-banner" id="variantBanner" role="status"></div>
+          <div class="explainbar" id="explainBar" role="status"></div>
+          <p class="ticker" id="ticker">The café is quiet. Tap “Start the day” when you are ready — the first customer comes straight in.</p>
+
+          <div class="playgrid">
+            <div class="floor" id="floor">
+              <p class="zone-label">The door — waiting for a seat</p>
+              <div class="queue" id="queue"><span class="queue-empty">Nobody waiting yet.</span></div>
+
+              <p class="zone-label" style="margin-top:.8rem">Tables — tap a table to seat, serve, or clear</p>
+              <div class="tables" id="tables"></div>
+
+              <div class="kitchen">
+                <p class="zone-label">Kitchen — tap an order ticket to start it cooking</p>
+                <div class="tickets" id="tickets"><span class="queue-empty">No orders yet.</span></div>
+                <p class="zone-label" style="margin-top:.7rem">The pass — tap a ready dish to pick it up</p>
+                <div class="readyrow" id="readyRow"><span class="queue-empty">Nothing on the pass yet.</span></div>
+                <div class="hands" id="handsBar"><span class="h">Your hands:</span> <span class="emptyhand">empty — you can carry two dishes at once</span></div>
+              </div>
+            </div>
+
+            <aside class="card coach" id="coachPanel" aria-label="Coach">
+              <h3 id="coachHead" data-explain="The Coach watches your actual floor — who is waiting, whose patience is lowest, what is on the pass — and talks through the choice in front of you, with the trade-off of each way. It never plays for you.">Coach — tap a day to begin</h3>
+              <div id="coachBody">
+                <p>When a day is running, this panel reads your floor as it stands: who is closest to walking out, what is ready on the pass, where a trip is about to be wasted — and lays out the real options with their trade-offs.</p>
+                <p>Set Teaching to <strong>Coach</strong> for the full live read and the floor numbers. <strong>Light</strong> speaks only when something matters. <strong>Off</strong> is silence.</p>
+              </div>
+              <div class="prostats" id="proStats" hidden>
+                <div class="ps"><div class="k">Avg patience at serve</div><div class="v" id="psAvgPat">—</div></div>
+                <div class="ps"><div class="k">Best chain today</div><div class="v" id="psBestChain">—</div></div>
+                <div class="ps"><div class="k">Chain bonuses</div><div class="v" id="psChainMoney">$0</div></div>
+                <div class="ps"><div class="k">Dishes on the pass</div><div class="v" id="psPass">0</div></div>
+                <div class="ps"><div class="k">Waiting at the door</div><div class="v" id="psQueue">0</div></div>
+                <div class="ps"><div class="k">Wasted trips</div><div class="v" id="psTrips">0</div></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="grade" class="card" aria-label="Day grade" style="margin-top:1rem">
+          <h2 style="margin-top:0">Day grade</h2>
+          <div style="display:flex;gap:1.1rem;align-items:center;flex-wrap:wrap">
+            <div class="gradeletter" id="gradeLetter">—</div>
+            <p id="gradeHead" style="margin:0;font-weight:700;font-size:1.1rem"></p>
+          </div>
+          <ul class="gradelines" id="gradeLines"></ul>
+          <div class="controls">
+            <button type="button" class="primary" id="againBtn">Tap to play another day</button>
+          </div>
+        </section>
+
+        <section id="learn" aria-label="Learn the craft">
+          <h2>Learn the craft</h2>
+          <div class="card">
+            <h3 style="margin-top:0">How a day works — every move is a tap</h3>
+            <ol class="steps">
+              <li><strong>Seat.</strong> A customer arrives at the door with a patience meter. Tap a clean table to seat the person who has waited longest — or tap the customer to seat them at the first clean table.</li>
+              <li><strong>Order.</strong> Seated customers decide, then their order ticket appears in the kitchen. Tap the ticket to start it cooking. The ticket shows its progress while it cooks.</li>
+              <li><strong>Carry.</strong> A finished dish lands on the pass. Tap it to pick it up. Your hands hold two dishes — filling both before you cross the room is the oldest trick in this trade.</li>
+              <li><strong>Serve.</strong> Tap the table whose dish you are carrying. Serving while patience is still high earns a bigger tip, and a customer counts as <em>served happy</em> if their patience was at 40 or above when the dish landed.</li>
+              <li><strong>Clear.</strong> After eating, a customer pays and leaves the table dirty. Tap the dirty table to clear it so the next party can sit.</li>
+              <li><strong>Chains.</strong> Doing the same action several times in a row — seat, seat, seat; serve, serve — builds a chain. From the third in a row onward, each chained action pays a growing bonus. Breaking to a different action restarts the chain at one.</li>
+              <li><strong>Walkouts.</strong> If patience reaches zero — at the door or waiting for food — that customer leaves angry, pays nothing, and a seated walkout still leaves you a dirty table to clear.</li>
+            </ol>
+          </div>
+
+          <h3>Four strategies, honestly compared</h3>
+          <p>There is no single right way to run this floor. Each strategy below wins somewhere and costs somewhere; the Coach will point at the live moment where each one applies.</p>
+          <div class="stratgrid">
+            <div class="card">
+              <h3>Lowest patience first</h3>
+              <p>Always work on whoever is closest to walking out: serve their dish first, seat the longest-waiting first.</p>
+              <p class="trade"><strong>Trade-off:</strong> fewest walkouts and the steadiest tips — but it breaks chains, because you keep switching actions to chase emergencies, and it can leave easy wins sitting on the pass.</p>
+            </div>
+            <div class="card">
+              <h3>Finish the chain</h3>
+              <p>When you are two or three deep in one action — seating, serving, clearing — finish the run before switching, and let the chain bonus pay you.</p>
+              <p class="trade"><strong>Trade-off:</strong> the bonus money is real and adds up over a day — but every second spent finishing a chain is a second someone else's patience is falling. A chain is worth money; a walkout costs money <em>and</em> a customer.</p>
+            </div>
+            <div class="card">
+              <h3>Never cross empty-handed</h3>
+              <p>Batch your trips: pick up both dishes before crossing to the tables, clear a dirty table on your way back to the kitchen, start a ticket whenever you are standing at the pass.</p>
+              <p class="trade"><strong>Trade-off:</strong> the fewest wasted steps and the calmest floor — but waiting to batch can delay one urgent dish by a few seconds. Batch the routine trips; break the rule for a genuine emergency.</p>
+            </div>
+            <div class="card">
+              <h3>Seat fast, seat smart</h3>
+              <p>When a queue forms, seat people quickly — a seated customer’s patience drains no faster, and an empty clean table earns nothing. But keep one eye on the kitchen: seating four people at once creates four tickets at once.</p>
+              <p class="trade"><strong>Trade-off:</strong> fast seating stops door walkouts and starts orders sooner — but a flooded kitchen means longer waits for food, which is where seated patience dies. If the kitchen is backed up, clearing and cooking may matter more than seating the next person this second.</p>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:.8rem">
+            <h3 style="margin-top:0">Where this game comes from</h3>
+            <p>The time-management game is a documented form: it was defined by a diner game released in 2003, in which one server seated customers, took orders, ran the kitchen, served, collected payment, and cleared tables against a ticking clock, with patience meters and bonuses for repeating the same action in a chain. That shape — one pair of hands, too many jobs, every customer on a timer — has been a recognised kind of game ever since.</p>
+            <p><em>The Lunch Rush</em> is our own version of that documented shape: our name, our café, our menu, our words, our numbers. Nothing here is copied from any commercial game — no art, characters, names, or text. The form is the inheritance; everything on this page was made for this page.</p>
+          </div>
+        </section>
+
+        <section id="settings" aria-label="Settings and variants">
+          <h2>Settings — the rules are yours to set</h2>
+          <p>The standard day is 90 seconds, 4 tables, standard patience. Changing any of these makes the day a <strong>labelled variant</strong> — the banner above the floor says so while you play it, and the record keeps the label with the day. Changes apply from the next day.</p>
+          <div class="card">
+            <div class="formgrid">
+              <label>Day length
+                <span>How long the lunch rush lasts.</span>
+                <select id="setDayLen">
+                  <option value="short">Short day — 60 seconds (variant)</option>
+                  <option value="standard" selected>Standard day — 90 seconds</option>
+                  <option value="long">Long day — 120 seconds (variant)</option>
+                </select>
+              </label>
+              <label>Tables
+                <span>How many tables your café has.</span>
+                <select id="setTables">
+                  <option value="3">3 tables — cosy (variant)</option>
+                  <option value="4" selected>4 tables — standard</option>
+                  <option value="6">6 tables — big room (variant)</option>
+                </select>
+              </label>
+              <label>Patience speed
+                <span>How fast customers lose patience.</span>
+                <select id="setPatience">
+                  <option value="relaxed">Relaxed — slower patience (variant)</option>
+                  <option value="standard" selected>Standard patience</option>
+                  <option value="rush">Rush hour — fast patience (variant)</option>
+                </select>
+              </label>
+            </div>
+            <div style="margin-top:.9rem">
+              <label style="font-weight:700">Your name for the café board (optional)
+                <span style="display:block;font-weight:500;color:var(--ink-soft);font-size:.9rem;margin-bottom:.25rem">Alias freedom: play under any name you like, or none at all. Nothing here ever asks for a real or claimed name. Saved on this device only.</span>
+                <input type="text" id="aliasInput" maxlength="24" placeholder="e.g. Sam — or leave blank" autocomplete="off" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section id="record" aria-label="Your record">
+          <h2>Your record — on this device only</h2>
+          <p>Kept in one clean shape on this device, never sent anywhere, no account. Export it as a file whenever you like; forget it in one tap whenever you like.</p>
+          <div class="card">
+            <div class="recstats">
+              <div class="stat"><div class="k">Days played</div><div class="v" id="recDays">0</div></div>
+              <div class="stat"><div class="k">Customers served</div><div class="v" id="recServed">0</div></div>
+              <div class="stat"><div class="k">Walkouts</div><div class="v" id="recWalkouts">0</div></div>
+              <div class="stat"><div class="k">Best day</div><div class="v" id="recBest">$0</div></div>
+            </div>
+            <p id="recBestLine" style="margin:.6rem 0 0;color:var(--ink-soft)"></p>
+            <h3>Recent days</h3>
+            <ul class="dayslog" id="daysLog"><li style="border-top:0;color:var(--ink-soft)">No days played yet. Your first day will be written here the moment it ends.</li></ul>
+            <div class="controls">
+              <button type="button" id="exportBtn">Tap to export your record as a file</button>
+              <button type="button" class="warnbtn" id="forgetBtn">Tap to forget everything</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p><strong>Copyleft.</strong> This page and its text and design are shared under CC BY-SA 4.0; its code under the GPL. Take it, change it, pass it on under the same freedom. The name of the shelf stays ours; everything else is yours to reuse.</p>
+        <p>Free, always free, no ads — that is the whole business model. Works offline once downloaded.</p>
+      </footer>
+    </div>
+
+    <script>
+    (function(){
+      "use strict";
+      /* ================= Data ================= */
+      var MENU=[
+        {name:"Garden Salad", price:5, cook:2.4, food:"#5a9e4b"},
+        {name:"Tomato Soup", price:6, cook:3.2, food:"#c2502a"},
+        {name:"Grilled Cheese", price:8, cook:4.2, food:"#d99a26"},
+        {name:"Pasta Bowl", price:10, cook:5.2, food:"#8a5a2b"},
+        {name:"Berry Tart", price:7, cook:3.4, food:"#7a4a8c"}
+      ];
+      var SHIRTS=["#c2502a","#17604f","#2b5f9e","#b97f14","#7a4a8c","#4a7a3a","#a03a5c","#3a7a8c"];
+      var DAYLEN={short:{secs:60,label:"Short day — 60 seconds"},standard:{secs:90,label:"Standard day — 90 seconds"},long:{secs:120,label:"Long day — 120 seconds"}};
+      var PATS={relaxed:{secs:62,label:"Relaxed patience"},standard:{secs:44,label:"Standard patience"},rush:{secs:30,label:"Rush-hour patience"}};
+      var STORE_KEY="lunchRushRecordV1";
+      var SET_KEY="lunchRushSettingsV1";
+
+      function $(id){return document.getElementById(id);}
+      function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+      function personSVG(color){return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.6" r="3.3" fill="#e0aa7e"/><path d="M4.6 20.4c.8-4 3.7-6.2 7.4-6.2s6.6 2.2 7.4 6.2z" fill="'+color+'"/></svg>';}
+      function dishSVG(food){return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#e8ece8"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="#b9c4b9" stroke-width="1"/><circle cx="12" cy="12" r="4.6" fill="'+food+'"/></svg>';}
+      function dirtySVG(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="9" rx="6.4" ry="2.2" fill="#cbb9a0"/><ellipse cx="9" cy="14.5" rx="5" ry="1.8" fill="#b39d7f"/><ellipse cx="13.5" cy="19" rx="5.6" ry="1.9" fill="#9c8465"/></svg>';}
+      function emptySVG(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="#b9c4b9" stroke-width="1.6" stroke-dasharray="3 3"/></svg>';}
+      function patClass(p){return p<30?"low":(p<55?"mid":"");}
+      function fmtClock(s){s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2);}
+
+      /* ================= Settings & record ================= */
+      var settings={dayLen:"standard",tables:4,patience:"standard",teaching:"light"};
+      try{var s=JSON.parse(localStorage.getItem(SET_KEY)||"null");if(s){for(var k in settings){if(s[k]!==undefined)settings[k]=s[k];}}}catch(e){}
+      function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify(settings));}catch(e){}}
+
+      var record={game:"the-lunch-rush",version:1,alias:"",totals:{days:0,served:0,happy:0,walkouts:0,earnings:0,bestChain:0},bestDay:null,days:[]};
+      try{var r=JSON.parse(localStorage.getItem(STORE_KEY)||"null");if(r&&r.totals){record=r;}}catch(e){}
+      function saveRecord(){try{localStorage.setItem(STORE_KEY,JSON.stringify(record));}catch(e){}}
+      if(record.alias){$("aliasInput").value=record.alias;}
+
+      $("setDayLen").value=settings.dayLen;
+      $("setTables").value=String(settings.tables);
+      $("setPatience").value=settings.patience;
+      $("setDayLen").addEventListener("change",function(){settings.dayLen=this.value;saveSettings();noteSettings();});
+      $("setTables").addEventListener("change",function(){settings.tables=parseInt(this.value,10);saveSettings();noteSettings();});
+      $("setPatience").addEventListener("change",function(){settings.patience=this.value;saveSettings();noteSettings();});
+      $("aliasInput").addEventListener("change",function(){record.alias=this.value.trim();saveRecord();});
+      function noteSettings(){if(G&&G.running){say("Settings saved — they apply from the next day. Today keeps the rules it started with.");}}
+
+      /* Teaching dial */
+      function setTeaching(v){
+        settings.teaching=v;saveSettings();
+        var btns=document.querySelectorAll("[data-teach]");
+        for(var i=0;i<btns.length;i++){btns[i].setAttribute("aria-pressed",btns[i].getAttribute("data-teach")===v?"true":"false");}
+        $("dialHint").textContent = v==="off" ? "Off: no notes at all. The floor is yours." :
+          v==="light" ? "Light: a note when something matters. Hold the Coach panel heading for more." :
+          "Coach: the full live read of your floor, options with trade-offs, and the floor numbers.";
+        renderCoach(true);
+      }
+      var dialBtns=document.querySelectorAll("[data-teach]");
+      for(var di=0;di<dialBtns.length;di++){dialBtns[di].addEventListener("click",function(){setTeaching(this.getAttribute("data-teach"));});}
+
+      /* ================= Game state ================= */
+      var G=null;
+      var uid=1;
+      function newGame(){
+        var tabs=[];
+        for(var i=0;i<settings.tables;i++){tabs.push({id:i+1,state:"clean",cust:null});}
+        return {
+          running:true, paused:false, over:false,
+          cfg:{dayLen:settings.dayLen,tables:settings.tables,patience:settings.patience},
+          clock:DAYLEN[settings.dayLen].secs, daySecs:DAYLEN[settings.dayLen].secs,
+          overtime:0, spawnIn:0.5, elapsed:0,
+          queue:[], tables:tabs, tickets:[], hands:[],
+          money:0, served:0, happy:0, walkouts:0,
+          lastAction:null, chain:0, bestChain:0, chainMoney:0,
+          patAtServeSum:0, wastedTrips:0, servedWithFreeHand:0,
+          warnedCust:{}, lightCooldown:0, coachTick:0, dirty:false
+        };
+      }
+      function variantLabels(cfg){
+        var out=[];
+        if(cfg.dayLen!=="standard")out.push(DAYLEN[cfg.dayLen].label);
+        if(cfg.tables!==4)out.push(cfg.tables+" tables");
+        if(cfg.patience!=="standard")out.push(PATS[cfg.patience].label);
+        return out;
+      }
+      function say(msg){$("ticker").textContent=msg;}
+
+      function spawnCustomer(){
+        var dish=Math.floor(Math.random()*MENU.length);
+        var c={id:uid++, dish:dish, patience:100, shirt:SHIRTS[Math.floor(Math.random()*SHIRTS.length)], waited:0};
+        G.queue.push(c);
+        return c;
+      }
+      function freeTable(){for(var i=0;i<G.tables.length;i++){if(G.tables[i].state==="clean")return G.tables[i];}return null;}
+      function tableById(id){for(var i=0;i<G.tables.length;i++){if(G.tables[i].id===id)return G.tables[i];}return null;}
+      function ticketFor(custId){for(var i=0;i<G.tickets.length;i++){if(G.tickets[i].custId===custId)return G.tickets[i];}return null;}
+
+      function registerAction(type){
+        if(G.lastAction===type){G.chain++;}else{G.chain=1;G.lastAction=type;}
+        if(G.chain>G.bestChain)G.bestChain=G.chain;
+        var bonus=0;
+        if(G.chain>=3){bonus=Math.min(5,G.chain-2);G.money+=bonus;G.chainMoney+=bonus;}
+        return bonus;
+      }
+      var ACTION_NAME={seat:"Seating",cook:"Starting dishes",carry:"Picking up",serve:"Serving",clear:"Clearing"};
+
+      /* ================= Actions ================= */
+      function seatCustomer(cust,table){
+        var idx=G.queue.indexOf(cust);if(idx<0)return;
+        G.queue.splice(idx,1);
+        table.state="busy";
+        table.cust={id:cust.id,dish:cust.dish,patience:cust.patience,shirt:cust.shirt,phase:"ordering",phaseT:1.4,patienceAtServe:null};
+        var b=registerAction("seat");
+        say("Seated at Table "+table.id+" — they are choosing what to order."+(b?" Chain bonus +$"+b+".":""));
+        maybeLight("seat");
+      }
+      function startCooking(ticket){
+        ticket.state="cooking";ticket.progress=0;
+        var b=registerAction("cook");
+        say(MENU[ticket.dish].name+" for Table "+ticket.tableId+" is cooking."+(b?" Chain bonus +$"+b+".":""));
+      }
+      function pickUp(ticket){
+        if(G.hands.length>=2){say("Both hands are full. Serve something before picking up more.");return;}
+        /* batching check: picking one while another ready waits is fine; serving later with free hand is the waste */
+        ticket.state="carried";G.hands.push(ticket.id);
+        var b=registerAction("carry");
+        var others=readyTickets().filter(function(t){return t.id!==ticket.id;});
+        say("Picked up "+MENU[ticket.dish].name+" for Table "+ticket.tableId+"." +(others.length?" There is still a dish on the pass — your other hand is free.":"")+(b?" Chain bonus +$"+b+".":""));
+      }
+      function readyTickets(){return G.tickets.filter(function(t){return t.state==="ready";});}
+      function serveTable(table){
+        var ti=-1;
+        for(var i=0;i<G.hands.length;i++){var t=ticketById(G.hands[i]);if(t&&t.tableId===table.id){ti=i;break;}}
+        if(ti<0)return false;
+        var ticket=ticketById(G.hands[ti]);
+        G.hands.splice(ti,1);
+        removeTicket(ticket.id);
+        var cust=table.cust;
+        cust.phase="eating";cust.phaseT=4.5;cust.patienceAtServe=cust.patience;
+        G.patAtServeSum+=cust.patience;
+        /* wasted trip: crossed to serve while another ready dish sat on the pass and a hand was free */
+        if(G.hands.length<2 && readyTickets().length>0){G.wastedTrips++;}
+        var b=registerAction("serve");
+        say("Served Table "+table.id+" at "+Math.round(cust.patience)+"% patience."+(b?" Chain bonus +$"+b+".":""));
+        maybeLight("serve");
+        return true;
+      }
+      function clearTable(table){
+        table.state="clean";table.cust=null;
+        var b=registerAction("clear");
+        say("Table "+table.id+" cleared and ready."+(b?" Chain bonus +$"+b+".":""));
+        var ft=freeTable();
+        if(G.queue.length&&ft){maybeLight("clear");}
+      }
+      function removeTicket(id){G.tickets=G.tickets.filter(function(t){return t.id!==id;});var hi=G.hands.indexOf(id);if(hi>=0)G.hands.splice(hi,1);}
+      function ticketById(id){for(var i=0;i<G.tickets.length;i++){if(G.tickets[i].id===id)return G.tickets[i];}return null;}
+
+      function walkOut(cust,table){
+        G.walkouts++;
+        if(table){
+          var t=ticketFor(cust.id);if(t)removeTicket(t.id);
+          table.state="dirty";table.cust=null;
+          say("Table "+table.id+" walked out angry — and left the table dirty. Tap it to clear.");
+        }else{
+          var idx=-1;for(var i=0;i<G.queue.length;i++){if(G.queue[i].id===cust.id)idx=i;}
+          if(idx>=0)G.queue.splice(idx,1);
+          say("A customer at the door gave up and left angry. Seating faster — or clearing a table sooner — would have saved them.");
+        }
+        renderAll();
+      }
+
+      /* ================= Floor clicks (delegated) ================= */
+      $("queue").addEventListener("click",function(e){
+        if(!G||!G.running||G.paused)return;
+        var el=e.target.closest("[data-cust]");if(!el)return;
+        var id=parseInt(el.getAttribute("data-cust"),10);
+        var cust=null;for(var i=0;i<G.queue.length;i++){if(G.queue[i].id===id)cust=G.queue[i];}
+        if(!cust)return;
+        var ft=freeTable();
+        if(!ft){say("No clean table for them yet — clear a dirty table, or wait for someone to finish eating.");return;}
+        seatCustomer(cust,ft);renderAll();
+      });
+      $("tables").addEventListener("click",function(e){
+        if(!G||!G.running||G.paused)return;
+        var el=e.target.closest("[data-table]");if(!el)return;
+        var table=tableById(parseInt(el.getAttribute("data-table"),10));if(!table)return;
+        if(table.state==="clean"){
+          if(G.queue.length){seatCustomer(G.queue[0],table);}
+          else say("Table "+table.id+" is clean and waiting. Nobody is at the door right now.");
+        }else if(table.state==="dirty"){
+          clearTable(table);
+        }else if(table.state==="busy"){
+          var cust=table.cust;
+          if(cust.phase==="ordering"){say("Table "+table.id+" is still deciding. Their ticket appears in a moment.");}
+          else if(cust.phase==="waiting"){
+            if(!serveTable(table)){
+              var t=ticketFor(cust.id);
+              if(!t)say("Table "+table.id+" is waiting — their ticket is not in the kitchen yet.");
+              else if(t.state==="queued")say("Table "+table.id+" wants "+MENU[cust.dish].name+". Tap their ticket in the kitchen to start it cooking.");
+              else if(t.state==="cooking")say(MENU[cust.dish].name+" for Table "+table.id+" is still cooking — watch the ticket's bar.");
+              else if(t.state==="ready")say(MENU[cust.dish].name+" for Table "+table.id+" is on the pass. Tap it to pick it up, then tap this table.");
+              else say("You are carrying a dish, but not Table "+table.id+"'s. Theirs is "+MENU[cust.dish].name+".");
+            }
+          }
+          else if(cust.phase==="eating"){say("Table "+table.id+" is eating. They will pay and leave the table dirty when they finish.");}
+        }
+        renderAll();
+      });
+      $("tickets").addEventListener("click",function(e){
+        if(!G||!G.running||G.paused)return;
+        var el=e.target.closest("[data-ticket]");if(!el)return;
+        var t=ticketById(parseInt(el.getAttribute("data-ticket"),10));if(!t)return;
+        if(t.state==="queued")startCooking(t);
+        else if(t.state==="cooking")say(MENU[t.dish].name+" is already cooking — "+Math.ceil(MENU[t.dish].cook-t.progress)+"s to go.");
+        renderAll();
+      });
+      $("readyRow").addEventListener("click",function(e){
+        if(!G||!G.running||G.paused)return;
+        var el=e.target.closest("[data-ready]");if(!el)return;
+        var t=ticketById(parseInt(el.getAttribute("data-ready"),10));if(!t)return;
+        pickUp(t);renderAll();
+      });
+
+      /* ================= Tick ================= */
+      var timer=null;
+      function tick(){
+        if(!G||!G.running||G.paused||G.over)return;
+        var dt=0.2;G.elapsed+=dt;
+        if(G.lightCooldown>0)G.lightCooldown-=dt;
+        var patSecs=PATS[G.cfg.patience].secs;
+        var drain=100/patSecs*dt;
+
+        if(G.clock>0){
+          G.clock-=dt;
+          G.spawnIn-=dt;
+          if(G.spawnIn<=0){
+            if(G.queue.length<6){spawnCustomer();G.dirty=true;}
+            G.spawnIn=5+Math.random()*4.5;
+          }
+        }else{
+          G.overtime+=dt;
+        }
+        /* queue patience */
+        var qi=G.queue.length;
+        while(qi--){
+          var qc=G.queue[qi];qc.patience-=drain*1.1;qc.waited+=dt;
+          if(qc.patience<=0){walkOut(qc,null);}
+        }
+        /* tables */
+        for(var ti=0;ti<G.tables.length;ti++){
+          var tb=G.tables[ti];
+          if(tb.state!=="busy"||!tb.cust)continue;
+          var c=tb.cust;
+          if(c.phase==="ordering"){
+            c.phaseT-=dt;
+            if(c.phaseT<=0){c.phase="waiting";G.tickets.push({id:uid++,custId:c.id,tableId:tb.id,dish:c.dish,state:"queued",progress:0});G.dirty=true;}
+          }else if(c.phase==="waiting"){
+            c.patience-=drain;
+            if(c.patience<=0){walkOut(c,tb);continue;}
+          }else if(c.phase==="eating"){
+            c.phaseT-=dt;
+            if(c.phaseT<=0){
+              var price=MENU[c.dish].price;
+              var tip=Math.round(price*Math.max(0,c.patienceAtServe)/100*0.6);
+              G.money+=price+tip;G.served++;
+              if(c.patienceAtServe>=40)G.happy++;
+              say("Table "+tb.id+" paid $"+price+(tip?" + $"+tip+" tip":"")+" — patience at serve was "+Math.round(c.patienceAtServe)+"%. Table is dirty now; tap to clear.");
+              tb.state="dirty";tb.cust=null;G.dirty=true;
+            }
+          }
+        }
+        /* cooking */
+        for(var ki=0;ki<G.tickets.length;ki++){
+          var tk=G.tickets[ki];
+          if(tk.state==="cooking"){tk.progress+=dt;if(tk.progress>=MENU[tk.dish].cook){tk.state="ready";G.dirty=true;say(MENU[tk.dish].name+" for Table "+tk.tableId+" is ready on the pass. Tap it to pick it up.");}}
+        }
+        /* day end */
+        var anyBusy=G.tables.some(function(t){return t.state==="busy";});
+        if(G.clock<=0&&!anyBusy&&G.queue.length===0){endDay(false);return;}
+        if(G.overtime>25){endDay(true);return;}
+        if(G.dirty){G.dirty=false;renderAll();}
+        renderMeters();
+        G.coachTick+=dt;
+        if(G.coachTick>=1){G.coachTick=0;renderCoach(false);}
+      }
+
+      /* Lightweight per-tick updates: move bars and numbers in place,
+         never replacing nodes, so a tap in flight is never disturbed. */
+      function renderMeters(){
+        if(!G)return;
+        $("hudClock").textContent=G.clock>0?fmtClock(G.clock):(G.over?"0:00":"Close…");
+        $("clockFill").style.width=Math.max(0,G.clock/G.daySecs*100)+"%";
+        $("hudMoney").textContent="$"+G.money;
+        $("hudServed").textContent=G.served;
+        $("hudHappy").textContent=G.served?("("+G.happy+" happy)"):"";
+        $("hudWalkouts").textContent=G.walkouts;
+        $("hudChain").innerHTML=G.chain>=2?(ACTION_NAME[G.lastAction]+" ×"+G.chain):"—";
+        var i,el,fill,num;
+        var qb=$("queue").querySelectorAll("[data-cust]");
+        for(i=0;i<qb.length;i++){
+          var qc=null;for(var j=0;j<G.queue.length;j++){if(G.queue[j].id===parseInt(qb[i].getAttribute("data-cust"),10))qc=G.queue[j];}
+          if(!qc)continue;
+          fill=qb[i].querySelector(".pfill");num=qb[i].querySelector(".pnum");
+          if(fill){fill.style.width=Math.max(0,qc.patience)+"%";fill.className="pfill "+patClass(qc.patience);}
+          if(num)num.textContent=Math.round(Math.max(0,qc.patience));
+        }
+        var tbs=$("tables").querySelectorAll("[data-table]");
+        for(i=0;i<tbs.length;i++){
+          var tb=tableById(parseInt(tbs[i].getAttribute("data-table"),10));
+          if(!tb||tb.state!=="busy"||!tb.cust)continue;
+          fill=tbs[i].querySelector(".pfill");num=tbs[i].querySelector(".pnum");
+          if(fill){fill.style.width=Math.max(0,tb.cust.patience)+"%";fill.className="pfill "+patClass(tb.cust.patience);}
+          if(num)num.textContent=Math.round(Math.max(0,tb.cust.patience));
+          if(tb.cust.phase==="waiting"&&tb.cust.patience<30)tbs[i].classList.add("urgent");else tbs[i].classList.remove("urgent");
+        }
+        var tks=$("tickets").querySelectorAll("[data-ticket]");
+        for(i=0;i<tks.length;i++){
+          var tk=ticketById(parseInt(tks[i].getAttribute("data-ticket"),10));
+          if(!tk||tk.state!=="cooking")continue;
+          fill=tks[i].querySelector(".cfill");num=tks[i].querySelector(".cnum");
+          if(fill)fill.style.width=Math.min(100,tk.progress/MENU[tk.dish].cook*100)+"%";
+          if(num)num.textContent=Math.ceil(MENU[tk.dish].cook-tk.progress);
+        }
+      }
+
+      /* ================= Rendering ================= */
+      function renderAll(){
+        if(!G){renderIdleTables();return;}
+        /* HUD */
+        $("hudClock").textContent=G.clock>0?fmtClock(G.clock):(G.over?"0:00":"Close…");
+        $("clockFill").style.width=Math.max(0,G.clock/G.daySecs*100)+"%";
+        $("hudMoney").textContent="$"+G.money;
+        $("hudServed").textContent=G.served;
+        $("hudHappy").textContent=G.served?("("+G.happy+" happy)"):"";
+        $("hudWalkouts").textContent=G.walkouts;
+        $("hudChain").innerHTML=G.chain>=2?(ACTION_NAME[G.lastAction]+" ×"+G.chain):"—";
+        /* queue */
+        var qh="";
+        if(!G.queue.length)qh='<span class="queue-empty">Nobody waiting at the door.</span>';
+        for(var j=0;j<G.queue.length;j++){var cc=G.queue[j];
+          qh+='<button type="button" class="cust" data-cust="'+cc.id+'">'+personSVG(cc.shirt)+'<span><span class="who">Waiting · '+MENU[cc.dish].name+'</span><span class="pbar"><div class="pfill '+patClass(cc.patience)+'" style="width:'+Math.max(0,cc.patience)+'%"></div></span><span class="sub">Patience <span class="pnum">'+Math.round(Math.max(0,cc.patience))+'</span>% — tap to seat</span></span></button>';
+        }
+        $("queue").innerHTML=qh;
+        /* tables */
+        var th="";
+        for(var t=0;t<G.tables.length;t++){var tb=G.tables[t];
+          if(tb.state==="clean"){
+            th+='<button type="button" class="table clean" data-table="'+tb.id+'"><span class="tnum">Table '+tb.id+' · clean</span><span class="tbody">'+emptySVG()+'<span class="st">Empty<small>'+(G.queue.length?"Tap to seat the longest-waiting customer":"Ready for the next customer")+'</small></span></span></button>';
+          }else if(tb.state==="dirty"){
+            th+='<button type="button" class="table dirty" data-table="'+tb.id+'"><span class="tnum">Table '+tb.id+' · dirty</span><span class="tbody">'+dirtySVG()+'<span class="st">Needs clearing<small>Tap to clear it for the next party</small></span></span></button>';
+          }else{
+            var cu=tb.cust;var urg=cu.phase==="waiting"&&cu.patience<30;
+            var status=cu.phase==="ordering"?"Deciding…":cu.phase==="waiting"?"Waiting for "+MENU[cu.dish].name:"Eating "+MENU[cu.dish].name+"…";
+            var hint=cu.phase==="waiting"?"Tap to serve if you carry their dish":"";
+            th+='<button type="button" class="table busy'+(urg?" urgent":"")+'" data-table="'+tb.id+'"><span class="tnum">Table '+tb.id+'</span><span class="tbody">'+personSVG(cu.shirt)+'<span style="flex:1"><span class="st">'+status+'<small>'+hint+'</small></span>'+(cu.phase!=="eating"?'<span class="pbar"><div class="pfill '+patClass(cu.patience)+'" style="width:'+Math.max(0,cu.patience)+'%"></div></span><span class="sub" style="font-size:.78rem;color:var(--ink-soft)">Patience <span class="pnum">'+Math.round(Math.max(0,cu.patience))+'</span>%</span>':"")+'</span></span></button>';
+          }
+        }
+        $("tables").innerHTML=th;
+        /* tickets */
+        var kh="";
+        var active=G.tickets.filter(function(x){return x.state==="queued"||x.state==="cooking";});
+        if(!active.length)kh='<span class="queue-empty">No orders cooking or waiting.</span>';
+        for(var a=0;a<active.length;a++){var tk=active[a];
+          if(tk.state==="queued")kh+='<button type="button" class="ticket" data-ticket="'+tk.id+'"><span class="tk">'+MENU[tk.dish].name+' · Table '+tk.tableId+'</span><br><span class="ts">Tap to start cooking ('+MENU[tk.dish].cook+'s)</span></button>';
+          else kh+='<button type="button" class="ticket" data-ticket="'+tk.id+'"><span class="tk">'+MENU[tk.dish].name+' · Table '+tk.tableId+'</span><span class="pbar"><div class="cfill" style="width:'+Math.min(100,tk.progress/MENU[tk.dish].cook*100)+'%"></div></span><span class="ts">Cooking… <span class="cnum">'+Math.ceil(MENU[tk.dish].cook-tk.progress)+'</span>s left</span></button>';
+        }
+        $("tickets").innerHTML=kh;
+        /* ready */
+        var rh="";var rd=readyTickets();
+        if(!rd.length)rh='<span class="queue-empty">Nothing on the pass yet.</span>';
+        for(var b=0;b<rd.length;b++){rh+='<button type="button" class="dish" data-ready="'+rd[b].id+'">'+dishSVG(MENU[rd[b].dish].food)+'<span><strong>'+MENU[rd[b].dish].name+'</strong><br><span style="font-size:.8rem;color:var(--ink-soft)">for Table '+rd[b].tableId+' — tap to pick up</span></span></button>';}
+        $("readyRow").innerHTML=rh;
+        /* hands */
+        var hh='<span class="h">Your hands:</span> ';
+        if(!G.hands.length)hh+='<span class="emptyhand">empty — you can carry two dishes at once</span>';
+        for(var h=0;h<G.hands.length;h++){var ht=ticketById(G.hands[h]);if(ht)hh+='<span class="handitem">'+dishSVG(MENU[ht.dish].food)+MENU[ht.dish].name+' → Table '+ht.tableId+'</span>';}
+        if(G.hands.length===1)hh+='<span class="emptyhand">one hand free</span>';
+        $("handsBar").innerHTML=hh;
+        updateProStats();
+      }
+      function updateProStats(){
+        if(!G)return;
+        if(settings.teaching==="coach"){
+          $("proStats").hidden=false;
+          $("psAvgPat").textContent=G.served?Math.round(G.patAtServeSum/G.served)+"%":"—";
+          $("psBestChain").textContent=G.bestChain>=2?"×"+G.bestChain:"—";
+          $("psChainMoney").textContent="$"+G.chainMoney;
+          $("psPass").textContent=readyTickets().length;
+          $("psQueue").textContent=G.queue.length;
+          $("psTrips").textContent=G.wastedTrips;
+        }else{$("proStats").hidden=true;}
+      }
+      function renderIdleTables(){
+        var th="";
+        for(var i=1;i<=settings.tables;i++){th+='<div class="table clean"><span class="tnum">Table '+i+' · clean</span><span class="tbody">'+emptySVG()+'<span class="st">Empty<small>Start the day to open the café</small></span></span></div>';}
+        $("tables").innerHTML=th;
+      }
+
+      /* ================= Coach ================= */
+      function lowestPatienceWaiting(){
+        var best=null;
+        for(var i=0;i<G.tables.length;i++){var tb=G.tables[i];if(tb.state==="busy"&&tb.cust&&tb.cust.phase==="waiting"){if(!best||tb.cust.patience<best.cust.patience)best=tb;}}
+        return best;
+      }
+      function maybeLight(kind){
+        if(settings.teaching!=="light"||!G)return;
+        if(G.lightCooldown>0)return;
+        var low=lowestPatienceWaiting();
+        if(low&&low.cust.patience<32){lightNote("<strong>Coach (light):</strong> Table "+low.id+" is down to "+Math.round(low.cust.patience)+"% patience waiting for "+MENU[low.cust.dish].name+". They are your most urgent job right now — a walkout costs the meal, the tip, and your time.");G.lightCooldown=8;return;}
+        if(G.chain>=3){lightNote("<strong>Coach (light):</strong> Chain ×"+G.chain+" on "+ACTION_NAME[G.lastAction].toLowerCase()+" — the bonus is paying you now. It keeps paying while you repeat the same action, and resets the moment you switch.");G.lightCooldown=8;return;}
+        if(G.queue.length>=3){lightNote("<strong>Coach (light):</strong> "+G.queue.length+" people are waiting at the door and their patience drains fastest there. Seat them if a table is clean — a seated customer is a started order.");G.lightCooldown=8;}
+      }
+      var lastCoachHtml="";
+      function setCoachHtml(html){if(html!==lastCoachHtml){lastCoachHtml=html;$("coachBody").innerHTML=html;}}
+      function lightNote(html){
+        setCoachHtml('<div class="note">'+html+'</div><p style="color:var(--ink-soft)">Teaching is on Light: you will hear from the Coach when something matters. Switch to Coach for the full live read.</p>');
+      }
+      function renderCoach(force){
+        var body=$("coachBody");
+        if(settings.teaching==="off"){
+          setCoachHtml("<p>Teaching is off. The Coach is silent — no notes, no numbers. Switch to Light or Coach any time; the dial is yours.</p>");
+          $("proStats").hidden=true;return;
+        }
+        if(!G||!G.running){
+          if(force){setCoachHtml("<p>When a day is running, this panel reads your floor as it stands: who is closest to walking out, what is ready on the pass, where a trip is about to be wasted — and lays out the real options with their trade-offs.</p><p>Set Teaching to <strong>Coach</strong> for the full live read and the floor numbers. <strong>Light</strong> speaks only when something matters. <strong>Off</strong> is silence.</p>");}
+          updateProStats();return;
+        }
+        if(settings.teaching==="light"){updateProStats();return;}
+        /* COACH full read */
+        var low=lowestPatienceWaiting();
+        var rd=readyTickets();
+        var queued=G.tickets.filter(function(t){return t.state==="queued";});
+        var cooking=G.tickets.filter(function(t){return t.state==="cooking";});
+        var dirty=G.tables.filter(function(t){return t.state==="dirty";});
+        var clean=G.tables.filter(function(t){return t.state==="clean";});
+        var html='<div class="note"><strong>The floor right now:</strong> '+G.queue.length+' waiting at the door, '+clean.length+' clean table'+(clean.length===1?"":"s")+', '+dirty.length+' dirty, '+queued.length+' ticket'+(queued.length===1?"":"s")+' not started, '+cooking.length+' cooking, '+rd.length+' dish'+(rd.length===1?"":"es")+' on the pass. Your hands: '+(G.hands.length?G.hands.map(function(id){var t=ticketById(id);return t?MENU[t.dish].name+" (Table "+t.tableId+")":"?";}).join(", "):"empty")+'.</div>';
+
+        if(low&&low.cust.patience<35){
+          var lt=ticketFor(low.cust.id);
+          var lstat=!lt?"not ordered yet":lt.state==="queued"?"ticket not started":lt.state==="cooking"?"cooking, "+Math.ceil(MENU[lt.dish].cook-lt.progress)+"s left":lt.state==="ready"?"ready on the pass":"in your hands";
+          html+='<div class="note"><strong>Most urgent:</strong> Table '+low.id+' is at '+Math.round(low.cust.patience)+'% patience, waiting for '+MENU[low.cust.dish].name+' ('+lstat+').</div>';
+          html+='<div class="strat-opt"><span class="so-k">Option A — Lowest patience first.</span> Drop everything and get Table '+low.id+' served.<div class="trade">Trade-off: it likely breaks your current chain'+(G.chain>=2?" (×"+G.chain+" on "+ACTION_NAME[G.lastAction].toLowerCase()+")":"")+', and anything already cooking waits. But a walkout loses the whole meal and tip — the chain bonus never pays that much.</div></div>';
+          html+='<div class="strat-opt"><span class="so-k">Option B — Finish the chain first.</span> Complete the run you are on, then go to Table '+low.id+'.<div class="trade">Trade-off: you keep the bonus money, but at this patience level Table '+low.id+' has roughly '+Math.max(1,Math.round(low.cust.patience/(100/PATS[G.cfg.patience].secs)))+' seconds before they walk. Only take this if your chain finishes inside that window.</div></div>';
+        }else if(rd.length>=2&&G.hands.length===0){
+          html+='<div class="note"><strong>Batching moment:</strong> '+rd.length+' dishes are sitting on the pass and both your hands are empty.</div>';
+          html+='<div class="strat-opt"><span class="so-k">Option A — Never cross empty-handed.</span> Pick up both dishes, then cross the room once and serve both tables.<div class="trade">Trade-off: one trip does two jobs — but the second table waits a few extra seconds while you serve the first.</div></div>';
+          html+='<div class="strat-opt"><span class="so-k">Option B — Run the urgent one alone.</span> Take only the dish for the lowest-patience table.<div class="trade">Trade-off: fastest for that one customer, but you will cross the room again for the second dish — the exact wasted trip this trade tries to avoid.</div></div>';
+        }else if(G.queue.length>=2){
+          html+='<div class="note"><strong>A queue is forming:</strong> '+G.queue.length+' people at the door, patience draining faster there than anywhere.</div>';
+          html+='<div class="strat-opt"><span class="so-k">Option A — Seat fast.</span> '+(clean.length?"Seat them now — you have "+clean.length+" clean table"+(clean.length===1?"":"s")+".":"No clean table — clearing is your seating move right now.")+'<div class="trade">Trade-off: seating starts their orders sooner, but several new tickets land on the kitchen at once and food waits get longer.</div></div>';
+          html+='<div class="strat-opt"><span class="so-k">Option B — Clear and cook first.</span> '+(dirty.length?"Clear the "+dirty.length+" dirty table"+(dirty.length===1?"":"s")+" and start queued tickets before seating more.":"Start queued tickets before seating more.")+'<div class="trade">Trade-off: the kitchen catches up and seated customers get fed faster — but the door queue keeps draining, and door patience is the fastest drain in the room.</div></div>';
+        }else if(queued.length){
+          html+='<div class="note"><strong>Kitchen first:</strong> '+queued.length+' ticket'+(queued.length===1?" is":"s are")+' waiting to start. A dish that is not cooking is patience burning for nothing — tap the ticket.</div><div class="strat-opt"><span class="so-k">Batching note.</span> While you are at the pass, look at your hands: crossing to the tables with a free hand while a dish waits on the pass is a wasted trip. You have made '+G.wastedTrips+' so far today.<div class="trade">Trade-off of starting tickets immediately: none, unless a table is seconds from walking — starting a cook is the one action that is almost never wrong.</div></div>';
+        }else if(dirty.length&&G.queue.length){
+          html+='<div class="note"><strong>Clearing is seating:</strong> '+dirty.length+' dirty table'+(dirty.length===1?"":"s")+' and people waiting. Every cleared table is a party seated and an order started.</div>';
+        }else{
+          html+='<div class="note"><strong>Steady floor.</strong> Nothing is critical. '+(G.chain>=2?"You are on a "+ACTION_NAME[G.lastAction].toLowerCase()+" chain ×"+G.chain+" — repeating it keeps the bonus paying.":"Watch the pass and the door; the rush builds quietly, then all at once.")+'</div>';
+        }
+        if(G.wastedTrips>0&&!(rd.length>=2)){html+='<div class="note"><strong>Trips:</strong> you have crossed to serve with a free hand while a dish waited on the pass '+G.wastedTrips+' time'+(G.wastedTrips===1?"":"s")+' today. Each one is a trip you will make twice.</div>';}
+        setCoachHtml(html);
+        updateProStats();
+      }
+
+      /* ================= Day lifecycle ================= */
+      function startDay(){
+        if(timer)clearInterval(timer);
+        G=newGame();
+        $("grade").classList.remove("show");
+        var vl=variantLabels(G.cfg);
+        var vb=$("variantBanner");
+        if(vl.length){vb.textContent="Variant in play: "+vl.join(" · ")+". The record keeps this label with the day.";vb.classList.add("show");}
+        else{vb.textContent="";vb.classList.remove("show");}
+        spawnCustomer();
+        say("Doors open! A customer is at the door wanting "+MENU[G.queue[0].dish].name+". Tap a clean table to seat them.");
+        $("startBtn").disabled=true;$("startBtn").textContent="Day running…";
+        $("pauseBtn").disabled=false;$("closeBtn").disabled=false;
+        $("pauseBtn").textContent="Tap to pause";
+        renderAll();renderCoach(true);
+        timer=setInterval(tick,200);
+      }
+      function endDay(forced){
+        if(!G||G.over)return;
+        G.over=true;G.running=false;
+        if(timer)clearInterval(timer);timer=null;
+        if(forced){say("Closing time — the last customers head home. Here is the day.");}
+        /* write record */
+        var vl=variantLabels(G.cfg);
+        var dayRec={date:new Date().toISOString().slice(0,10),earnings:G.money,served:G.served,happy:G.happy,walkouts:G.walkouts,bestChain:G.bestChain,variant:vl.length?vl.join(" · "):"Standard day"};
+        record.totals.days++;record.totals.served+=G.served;record.totals.happy+=G.happy;record.totals.walkouts+=G.walkouts;record.totals.earnings+=G.money;
+        if(G.bestChain>record.totals.bestChain)record.totals.bestChain=G.bestChain;
+        if(!record.bestDay||G.money>record.bestDay.earnings)record.bestDay=dayRec;
+        record.days.unshift(dayRec);if(record.days.length>50)record.days.length=50;
+        saveRecord();renderRecord();
+        /* grade */
+        var par=Math.max(20,Math.round(G.daySecs/90*G.cfg.tables*16));
+        var ratio=G.money/par;
+        var letter,head;
+        if(ratio>=1.15&&G.walkouts===0){letter="S";head="A flawless rush — top of the trade.";}
+        else if(ratio>=0.95&&G.walkouts<=1){letter="A";head="A strong day. The floor ran well.";}
+        else if(ratio>=0.7){letter="B";head="A solid day, with money left on the table.";}
+        else if(ratio>=0.45){letter="C";head="The café survived. The craft is in the fixes below.";}
+        else{letter="D";head="A rough day — every server has them. The numbers below say exactly where it went.";}
+        $("gradeLetter").textContent=letter;
+        $("gradeHead").textContent=(record.alias?("Nice shift, "+record.alias+". "):"")+head;
+        var avgPat=G.served?Math.round(G.patAtServeSum/G.served):0;
+        var lines=[
+          "<strong>Earnings: $"+G.money+"</strong> — food prices, plus tips, plus $"+G.chainMoney+" in chain bonuses. A full standard day at this size usually lands near $"+par+"; your grade compares you to that, openly.",
+          "<strong>Served happy: "+G.happy+" of "+G.served+"</strong> — a customer counts as happy when their patience was at 40 or above as their dish landed. Your average patience at serve was "+(G.served?avgPat+"%":"—")+". Serve earlier and this number — and the tips — climb together.",
+          "<strong>Walked out angry: "+G.walkouts+"</strong> — each one is a meal unpaid, a tip ungiven, and time spent on a table that earned nothing. " +(G.walkouts===0?"None today: that is the hardest line on this page to earn.":"The Coach's lowest-patience-first option exists for exactly these."),
+          "<strong>Best chain: "+(G.bestChain>=2?"×"+G.bestChain:"none")+"</strong> — repeating one action pays from the third in a row. " +(G.wastedTrips?"You also made "+G.wastedTrips+" trip"+(G.wastedTrips===1?"":"s")+" with a free hand while a dish waited on the pass — batching those is the cheapest improvement on this page.":"And you never crossed with a wasted free hand while a dish waited — clean batching.")
+        ];
+        $("gradeLines").innerHTML=lines.map(function(l){return "<li>"+l+"</li>";}).join("");
+        $("grade").classList.add("show");
+        $("startBtn").disabled=false;$("startBtn").textContent="Tap to start the day";
+        $("pauseBtn").disabled=true;$("closeBtn").disabled=true;
+        setCoachHtml('<div class="note"><strong>Day over.</strong> Grade '+letter+'. The full read of your day is in the grade panel — earnings, happy serves, walkouts, and your best chain, each explained. Your record below has already been written on this device.</div>');
+        $("grade").scrollIntoView({behavior:"smooth",block:"nearest"});
+      }
+
+      $("startBtn").addEventListener("click",startDay);
+      $("againBtn").addEventListener("click",function(){startDay();window.scrollTo({top:0,behavior:"smooth"});});
+      $("pauseBtn").addEventListener("click",function(){
+        if(!G||!G.running)return;
+        G.paused=!G.paused;
+        this.textContent=G.paused?"Tap to resume":"Tap to pause";
+        say(G.paused?"Paused. The clock and every patience meter are frozen.":"Back to the rush.");
+      });
+      $("closeBtn").addEventListener("click",function(){
+        if(!G||!G.running)return;
+        endDay(true);
+      });
+
+      /* ================= Record UI ================= */
+      function renderRecord(){
+        $("recDays").textContent=record.totals.days;
+        $("recServed").textContent=record.totals.served;
+        $("recWalkouts").textContent=record.totals.walkouts;
+        $("recBest").textContent=record.bestDay?("$"+record.bestDay.earnings):"$0";
+        $("recBestLine").textContent=record.bestDay?("Best day: $"+record.bestDay.earnings+" on "+record.bestDay.date+" — "+record.bestDay.served+" served, "+record.bestDay.walkouts+" walkouts · "+record.bestDay.variant+". Lifetime earnings $"+record.totals.earnings+", best chain ×"+Math.max(0,record.totals.bestChain)+"."):"No days played yet.";
+        var ul=$("daysLog");
+        if(!record.days.length){ul.innerHTML='<li style="border-top:0;color:var(--ink-soft)">No days played yet. Your first day will be written here the moment it ends.</li>';return;}
+        ul.innerHTML=record.days.slice(0,8).map(function(d){
+          return "<li><strong>"+d.date+"</strong> · $"+d.earnings+" earned · "+d.served+" served ("+d.happy+" happy) · "+d.walkouts+" walkouts · best chain "+(d.bestChain>=2?"×"+d.bestChain:"—")+" · "+esc(d.variant)+"</li>";
+        }).join("");
+      }
+      $("exportBtn").addEventListener("click",function(){
+        var blob=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});
+        var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="the-lunch-rush-record.json";document.body.appendChild(a);a.click();
+        setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+        say("Record exported as the-lunch-rush-record.json — one clean file, yours to keep.");
+      });
+      var forgetArmed=false,forgetTimer=null;
+      $("forgetBtn").addEventListener("click",function(){
+        if(!forgetArmed){
+          forgetArmed=true;this.textContent="Tap again to forget everything — this cannot be undone";
+          forgetTimer=setTimeout(function(){forgetArmed=false;$("forgetBtn").textContent="Tap to forget everything";},4000);
+          return;
+        }
+        clearTimeout(forgetTimer);forgetArmed=false;this.textContent="Tap to forget everything";
+        record={game:"the-lunch-rush",version:1,alias:record.alias,totals:{days:0,served:0,happy:0,walkouts:0,earnings:0,bestChain:0},bestDay:null,days:[]};
+        saveRecord();renderRecord();
+        say("Forgotten. The record on this device is empty, as if the café had never opened.");
+      });
+
+      /* Offline download door */
+      $("dlBtn").addEventListener("click",function(){
+        var html="<!doctype html>\n"+document.documentElement.outerHTML;
+        var blob=new Blob([html],{type:"text/html"});
+        var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="the-lunch-rush.html";document.body.appendChild(a);a.click();
+        setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+      });
+
+      /* Hold-to-explain on the Coach heading (gesture law: hold explains) */
+      (function(){
+        var head=$("coachHead"),t=null;
+        function show(){var ex=head.getAttribute("data-explain");if(ex){var b=$("explainBar");b.textContent="Held note: "+ex;b.classList.add("show");}}
+        head.addEventListener("pointerdown",function(){t=setTimeout(show,550);});
+        ["pointerup","pointerleave","pointercancel"].forEach(function(ev){head.addEventListener(ev,function(){if(t)clearTimeout(t);});});
+        head.style.cursor="help";head.title="Hold to hear what the Coach does";
+      })();
+
+      /* Init */
+      setTeaching(settings.teaching||"light");
+      renderIdleTables();
+      renderRecord();
+      renderAll();
+    })();
+    </script>
+  </body>
+</html>
