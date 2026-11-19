@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Number Place</title>
+<style>
+  :root{
+    --bg:#faf8f2; --panel:#ffffff; --panel2:#f1ede1; --ink:#1d2420; --ink-soft:#4c564f;
+    --line:#d8d2c2; --line-strong:#8a8271;
+    --accent:#14604a; --accent-ink:#ffffff; --accent-soft:#dcefe6;
+    --warn:#b3401e; --warn-soft:#fbe7df; --gold:#a86e12; --gold-soft:#f7ecd2;
+    --given-bg:#efece2; --sel-bg:#cfe7db; --peer-bg:#eef3ee; --same-bg:#bfe0d0;
+    --coach-bg:#eef6f1; --shadow:0 1px 3px rgba(20,30,25,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121613; --panel:#1b211d; --panel2:#232a25; --ink:#e9ede9; --ink-soft:#aeb8b0;
+      --line:#39423b; --line-strong:#7d8a80;
+      --accent:#3fae85; --accent-ink:#0d1512; --accent-soft:#1e3a2f;
+      --warn:#ff9a7a; --warn-soft:#472419; --gold:#e3b34e; --gold-soft:#3d3216;
+      --given-bg:#262d28; --sel-bg:#274b3b; --peer-bg:#1f2721; --same-bg:#2c5a45;
+      --coach-bg:#18251e; --shadow:0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;font-size:16px}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style",Palatino,serif;line-height:1.2;margin:0 0 .4em}
+  h1{font-size:2rem}
+  h2{font-size:1.35rem;border-bottom:2px solid var(--accent);padding-bottom:.25em}
+  h3{font-size:1.08rem}
+  p{margin:.4em 0 .8em}
+  a{color:var(--accent);font-weight:600}
+  button,select,input[type="text"]{min-height:44px;font:inherit;color:var(--ink)}
+  button{cursor:pointer;border:1px solid var(--line-strong);background:var(--panel);border-radius:8px;padding:.45em .8em;box-shadow:var(--shadow)}
+  button:hover{border-color:var(--accent)}
+  button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+  button:disabled{opacity:.45;cursor:default}
+  select{background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:.4em .6em}
+  input[type="text"]{background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:.4em .6em;width:100%}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 48px}
+  .freebar{background:var(--accent);color:var(--accent-ink);padding:10px 16px;font-weight:600;text-align:center}
+  .freebar button{margin-left:10px;min-height:36px;background:transparent;color:inherit;border-color:currentColor;box-shadow:none;font-weight:700}
+  nav.compass{display:flex;flex-wrap:wrap;gap:6px;padding:12px 0 4px}
+  nav.compass a{display:inline-flex;align-items:center;min-height:36px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;text-decoration:none;background:var(--panel);font-size:.95rem}
+  header.hero{padding:10px 0 4px}
+  header.hero .sub{color:var(--ink-soft);max-width:65ch}
+  .layout{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:24px;align-items:start;margin-top:8px}
+  .layout > *{min-width:0}
+  select{max-width:100%}
+  #settings select{width:100%}
+  .row select{min-width:0;flex:1 1 180px}
+  .statusbar .badge{white-space:normal}
+  @media (max-width:860px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .panel + .panel{margin-top:20px}
+  section.block{margin-top:34px}
+  /* Board */
+  #board{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));width:100%;max-width:540px;aspect-ratio:1/1;
+    border:3px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--panel);touch-action:manipulation}
+  .cell{border:0;box-shadow:none;border-radius:0;min-height:0;min-width:0;padding:0;position:relative;
+    font-size:clamp(1.05rem,4.6vw,1.7rem);font-weight:500;background:var(--panel);color:var(--ink);
+    border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .cell:nth-child(3n){border-right:2px solid var(--ink)}
+  .cell:nth-child(9n){border-right:0}
+  .cell.br{border-bottom:2px solid var(--ink)}
+  .cell.lastrow{border-bottom:0}
+  .cell.given{background:var(--given-bg);font-weight:800}
+  .cell.peer{background:var(--peer-bg)}
+  .cell.given.peer{background:var(--given-bg)}
+  .cell.same{background:var(--same-bg)}
+  .cell.selected{background:var(--sel-bg);outline:3px solid var(--accent);outline-offset:-3px;z-index:1}
+  .cell.conflict,.cell.wrong{background:var(--warn-soft);color:var(--warn);font-weight:800}
+  .cell.hintcell{outline:3px solid var(--gold);outline-offset:-3px;background:var(--gold-soft)}
+  .notes{display:grid;grid-template-columns:repeat(3,1fr);width:88%;height:88%;pointer-events:none}
+  .notes span{font-size:clamp(.5rem,1.9vw,.72rem);line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-weight:600}
+  /* Pad */
+  .pad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:540px;margin-top:12px}
+  .pad button{min-height:52px;font-size:1.25rem;font-weight:700;min-width:0}
+  .pad button.small{font-size:.92rem;font-weight:600}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .row > *{margin:0}
+  .statusbar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+  .statusbar .big{font-size:1.15rem;font-weight:700}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--ink);font-size:.85rem;font-weight:700;border:1px solid var(--accent)}
+  .badge.gold{background:var(--gold-soft);border-color:var(--gold)}
+  #variantBanner{display:none;background:var(--gold-soft);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;margin:10px 0;font-weight:600}
+  #variantBanner.show{display:block}
+  #coachPanel{display:none;background:var(--coach-bg);border:1px solid var(--accent);border-radius:10px;padding:14px;margin-top:14px;max-width:540px}
+  #coachPanel.show{display:block}
+  #coachPanel h3{margin-bottom:.2em}
+  #coachPanel .trade{border-top:1px dashed var(--line-strong);padding-top:8px;margin-top:8px}
+  #winPanel{display:none;background:var(--accent-soft);border:2px solid var(--accent);border-radius:10px;padding:16px;margin-top:14px;max-width:540px}
+  #winPanel.show{display:block}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:9px;overflow:hidden}
+  .seg button{border:0;border-radius:0;box-shadow:none;min-height:44px}
+  .seg button + button{border-left:1px solid var(--line-strong)}
+  label.fld{display:block;font-weight:700;margin:12px 0 4px}
+  .hint-text{color:var(--ink-soft);font-size:.92rem}
+  details{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px;margin:10px 0}
+  summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer}
+  details .inside{padding-bottom:12px}
+  .strat{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--panel)}
+  .strat p{margin:.3em 0}
+  .strat .trade{color:var(--ink-soft)}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+  table.rec{width:100%;border-collapse:collapse;font-size:.95rem}
+  table.rec th,table.rec td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+  table.rec th{border-bottom:2px solid var(--line-strong)}
+  .recwrap{overflow-x:auto}
+  @media (max-width:560px){
+    table.rec thead{display:none}
+    table.rec tr{display:block;border:1px solid var(--line);border-radius:8px;margin:0 0 10px;padding:6px 8px}
+    table.rec td{display:block;border:0;padding:2px 0}
+    table.rec td::before{content:attr(data-l)": ";font-weight:700}
+  }
+  footer{margin-top:40px;border-top:1px solid var(--line);padding-top:14px;color:var(--ink-soft);font-size:.92rem}
+  #genMsg{font-weight:600}
+  .kbd{background:var(--panel2);border:1px solid var(--line-strong);border-radius:4px;padding:0 5px;font-size:.85em}
+</style>
+</head>
+<body>
+
+<div class="freebar">Free — always free. No ads, no account, and no name is ever required to play.
+  <button id="dlTop" type="button">Download this page — tap to save it for offline play</button>
+</div>
+
+<div class="wrap">
+  <nav class="compass" aria-label="Compass — the sections of this page">
+    <a href="#play">Play</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#record">Your record</a>
+    <a href="#settings">Settings &amp; rules</a>
+    <a href="#about">About this puzzle</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Number Place</h1>
+    <p class="sub">Fill the 9×9 grid so every row, every column, and every 3×3 box holds the digits 1–9 exactly once.
+    The dark numbers are given; the rest is yours to work out. Every puzzle here is made on this page, checked by its own
+    solver, and guaranteed to have <strong>exactly one solution</strong> before you ever see it.</p>
+  </header>
+
+  <div class="layout">
+    <div id="play">
+      <div class="row" role="group" aria-label="New puzzle controls">
+        <label for="diffSel" style="font-weight:700">Difficulty</label>
+        <select id="diffSel">
+          <option value="gentle">Gentle — singles only</option>
+          <option value="steady">Steady — pairs join in</option>
+          <option value="sharp">Sharp — pointing pairs needed</option>
+          <option value="expert">Expert — X-wing and beyond</option>
+        </select>
+        <button id="newBtn" class="primary" type="button">New puzzle — tap to start</button>
+      </div>
+      <p id="genMsg" aria-live="polite"></p>
+      <div id="variantBanner" role="status"></div>
+
+      <div class="statusbar">
+        <span class="big" id="timer">0:00</span>
+        <span id="gradeBadge" class="badge gold">Grade: —</span>
+        <span id="uniqueBadge" class="badge">Unique solution: checking…</span>
+        <span>Hints used: <strong id="hintCount">0</strong></span>
+        <span>Mistakes: <strong id="mistakeCount">0</strong></span>
+        <span>Filled: <strong id="fillCount">0 / 81</strong></span>
+      </div>
+
+      <div id="board" role="grid" aria-label="Number Place grid. Tap a square, then tap a number."></div>
+
+      <div class="pad" role="group" aria-label="Number pad. Tap a number to place it in the selected square.">
+        <button type="button" data-num="1">1</button>
+        <button type="button" data-num="2">2</button>
+        <button type="button" data-num="3">3</button>
+        <button type="button" data-num="4">4</button>
+        <button type="button" data-num="5">5</button>
+        <button type="button" data-num="6">6</button>
+        <button type="button" data-num="7">7</button>
+        <button type="button" data-num="8">8</button>
+        <button type="button" data-num="9">9</button>
+        <button type="button" id="eraseBtn" class="small">Erase — tap to clear the square</button>
+        <button type="button" id="notesBtn" class="small" aria-pressed="false">Notes: Off — tap to turn on</button>
+        <button type="button" id="undoBtn" class="small">Undo — tap to take back the last move</button>
+        <button type="button" id="fillNotesBtn" class="small">Fill all notes — tap to fill</button>
+        <button type="button" id="hintBtn" class="small">Hint — tap for help</button>
+        <button type="button" id="checkBtn" class="small">Check — tap to check for clashes</button>
+      </div>
+      <p class="hint-text">Tap a square to select it, then tap a number. With Notes on, numbers become small pencil
+      candidates instead of answers. On a keyboard: number keys place, <span class="kbd">N</span> toggles notes,
+      <span class="kbd">Delete</span> erases, arrow keys move.</p>
+
+      <div id="coachPanel" aria-live="polite"></div>
+
+      <div id="winPanel" aria-live="polite">
+        <h3>Solved — well played.</h3>
+        <p id="winText"></p>
+        <button id="winNewBtn" class="primary" type="button">Play another — tap to start a new puzzle</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" id="settings">
+        <h2>Settings &amp; rules</h2>
+
+        <label class="fld" id="teachLabel">Teaching — how much help the page gives</label>
+        <div class="seg" role="group" aria-labelledby="teachLabel">
+          <button type="button" data-teach="off" aria-pressed="false">Off</button>
+          <button type="button" data-teach="light" aria-pressed="true">Light</button>
+          <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+        </div>
+        <p class="hint-text" id="teachDesc"></p>
+        <p class="hint-text">Your Teaching choice is saved on this device only, so the page opens the way you left it.</p>
+
+        <label class="fld" for="feedbackSel">Mistake feedback — the rules in play</label>
+        <select id="feedbackSel">
+          <option value="standard">Standard — clashes are shown as you play</option>
+          <option value="strict">Variant: Strict — every wrong entry is flagged at once</option>
+          <option value="relaxed">Variant: Relaxed — nothing is flagged until you ask</option>
+        </select>
+        <p class="hint-text">Standard is the classic rule set. Strict and Relaxed are variants: when one is in play, a
+        banner says so above the grid, and games finished under it are labelled with the variant in your record —
+        a variant's results are never dressed up as standard results.</p>
+
+        <label class="fld" for="aliasInput">Your name for the record (optional)</label>
+        <input type="text" id="aliasInput" maxlength="24" placeholder="Leave blank to play as Guest — no name is ever required" />
+        <p class="hint-text">Alias freedom: play as Guest, as Player 1, or under any temporary name you like. A name here
+        is session-only — never claimed, registered, or checked — and it is written on a record entry only if you type one.</p>
+        <button type="button" id="randomAliasBtn">Give me a random alias — tap to pick one</button>
+      </div>
+
+      <div class="panel">
+        <h2>How difficulty is graded — honestly</h2>
+        <p>Difficulty here is <strong>not</strong> just a count of empty squares. Every generated puzzle is run through a
+        logical solver that only uses human techniques, in tiers:</p>
+        <ul>
+          <li><strong>Tier 1 — Singles:</strong> naked singles and hidden singles.</li>
+          <li><strong>Tier 2 — Pairs:</strong> naked pairs and hidden pairs join in.</li>
+          <li><strong>Tier 3 — Pointing:</strong> pointing pairs (box–line reductions) join in.</li>
+          <li><strong>Tier 4 — X-wing and beyond:</strong> an X-wing, or reasoning past everything above.</li>
+        </ul>
+        <p>The hardest tier a puzzle actually needs is its measured grade, and that grade is printed above the grid next to
+        the timer. The generator keeps making puzzles until one measures at the tier you asked for — most fresh puzzles grade
+        Tier 1 however many holes they have, so it also digs extra givens out of too-easy puzzles and re-grades them; if it settles for a
+        neighbour tier after honest trying, the badge tells you the measured truth rather than the label. Separately, a
+        backtracking solver counts solutions for every puzzle and only a puzzle with <strong>exactly one</strong> is ever shown.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="block" id="strategies">
+    <h2>The strategies the coach teaches</h2>
+    <p>These are the real, documented solving techniques for this puzzle — the same ones puzzle books teach. The Coach
+    looks for them <em>on your actual grid</em>, in this order, and explains the one it finds in plain words with its
+    trade-off. Where more than one road exists, both are named — there is rarely only one honest way forward.</p>
+    <div class="grid2">
+      <div class="strat"><h3>Naked single</h3>
+        <p><strong>What it is:</strong> a square whose row, column, and box leave it only one possible digit.</p>
+        <p class="trade"><strong>Trade-off:</strong> free progress with zero risk — but it only appears after other work has cleared the way, so hunting singles alone stalls on harder puzzles.</p></div>
+      <div class="strat"><h3>Hidden single</h3>
+        <p><strong>What it is:</strong> a digit that can only fit in one square of a row, column, or box, even though that square still shows several candidates.</p>
+        <p class="trade"><strong>Trade-off:</strong> just as certain as a naked single, but slower to spot — you scan digit by digit instead of square by square.</p></div>
+      <div class="strat"><h3>Naked pair</h3>
+        <p><strong>What it is:</strong> two squares in one row, column, or box holding the same two candidates — so those two digits belong to those squares, and can be erased everywhere else in that unit.</p>
+        <p class="trade"><strong>Trade-off:</strong> places nothing by itself; it pays off by shrinking neighbours' candidates. Pencil notes are essential — no notes, no pairs.</p></div>
+      <div class="strat"><h3>Hidden pair</h3>
+        <p><strong>What it is:</strong> two digits that can only live in the same two squares of a unit — so every other candidate in those two squares can be erased.</p>
+        <p class="trade"><strong>Trade-off:</strong> the mirror of the naked pair and harder to see, because the two squares look cluttered. Powerful cleanup, easy to walk past.</p></div>
+      <div class="strat"><h3>Pointing pair</h3>
+        <p><strong>What it is:</strong> inside one box, a digit's candidates all sit on a single row or column — so that digit must live in the box on that line, and can be erased from the rest of the line outside the box.</p>
+        <p class="trade"><strong>Trade-off:</strong> reaches across the grid where pairs cannot, but each use removes only one digit from a few squares — steady pressure, not a breakthrough.</p></div>
+      <div class="strat"><h3>X-wing (an introduction)</h3>
+        <p><strong>What it is:</strong> a digit whose candidates in two rows line up in the same two columns, forming a rectangle. The digit must occupy opposite corners, so it can be erased from those two columns everywhere else.</p>
+        <p class="trade"><strong>Trade-off:</strong> the first truly grid-wide pattern — rare, and it takes a full candidate grid to spot, but when it lands it can crack a puzzle that resisted everything simpler. This page teaches you to recognise it; deeper wings (Swordfish and beyond) build on the same rectangle idea.</p></div>
+    </div>
+    <p style="margin-top:12px"><strong>Two honest roads, most of the time:</strong> you can work square-first (fill notes everywhere,
+    then harvest singles) or digit-first (pick a digit and sweep its rows, columns, and boxes). Square-first is thorough but slow to
+    start; digit-first is fast early and easy to lose track of late. The Coach follows whichever technique your grid offers first —
+    and says which one it used, so your record shows how you actually solved it.</p>
+  </section>
+
+  <section class="block" id="record">
+    <h2>Your record — on this device only</h2>
+    <p>Every finished puzzle writes one entry: date, difficulty, measured technique tier, time, hints used, mistakes,
+    the techniques the coach used with you, the feedback rules in play, and the name you played under. The record lives
+    in this browser on this device — nothing is sent anywhere — and it is yours to export or erase.</p>
+    <p id="recordSummary" aria-live="polite"></p>
+    <div class="recwrap"><table class="rec" id="recordTable">
+      <thead><tr><th>Date</th><th>Difficulty</th><th>Measured tier</th><th>Time</th><th>Hints</th><th>Mistakes</th><th>Techniques coached</th><th>Rules</th><th>Played as</th></tr></thead>
+      <tbody id="recordBody"></tbody>
+    </table></div>
+    <p id="recordEmpty">No finished puzzles yet — your record starts with your first solve.</p>
+    <div class="row" style="margin-top:10px">
+      <button type="button" id="exportJsonBtn">Export record as JSON — tap to download</button>
+      <button type="button" id="exportCsvBtn">Export record as CSV — tap to download</button>
+      <button type="button" id="forgetBtn">Forget my record — tap to erase it from this device</button>
+    </div>
+    <p class="hint-text" id="forgetMsg" aria-live="polite"></p>
+  </section>
+
+  <section class="block" id="about">
+    <h2>About this puzzle</h2>
+    <details>
+      <summary>Where Number Place comes from — tap to open</summary>
+      <div class="inside">
+        <p>This puzzle first appeared in print in 1979, in Dell's <em>Pencil Puzzles and Word Games</em> magazine, under the
+        name <strong>Number Place</strong>, devised by Howard Garns. The same puzzle later travelled to Japan and came back
+        world-famous under another name — it is the puzzle widely called Sudoku. We use the original documented name,
+        Number Place, because the other name is a trademark in some places; the description here is ours, and so are the
+        words, the art, and the code on this page.</p>
+        <p>The rules have never changed: digits 1–9, once in every row, column, and 3×3 box, from a starting grid that
+        admits exactly one completion. Everything else — the tiers, the coach, the record — is this page's own teaching
+        built on top of those rules.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Playing on paper vs. here — tap to open</summary>
+      <div class="inside">
+        <p>On paper, nothing stops a wrong digit until the end. Here, the Standard rule shows clashes as you go; Strict and
+        Relaxed variants change that bargain, and the page labels them as variants whenever they are in play. Notes mode is
+        your pencil: candidates are yours to keep or erase, and the Coach's eliminations only ever touch notes you can see.</p>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p>Copyleft — this page and its text are free to share and adapt under CC BY-SA 4.0; its code is GPL. Derivatives carry the same freedom. No ads — ever.</p>
+    <p><button type="button" id="dlBottom">Download this page — tap to save the file and play offline, no connection needed</button></p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ============ Core grid maths ============ */
+var ROWS=[],COLS=[],BOXES=[],UNITS=[],PEERS=[];
+(function(){
+  var r,c,b,i,j;
+  for(r=0;r<9;r++){var row=[];for(c=0;c<9;c++)row.push(r*9+c);ROWS.push(row);UNITS.push(row);}
+  for(c=0;c<9;c++){var col=[];for(r=0;r<9;r++)col.push(r*9+c);COLS.push(col);UNITS.push(col);}
+  for(b=0;b<9;b++){var box=[],br=Math.floor(b/3)*3,bc=(b%3)*3;for(i=0;i<3;i++)for(j=0;j<3;j++)box.push((br+i)*9+bc+j);BOXES.push(box);UNITS.push(box);}
+  for(i=0;i<81;i++){var s={},ri=Math.floor(i/9),ci=i%9,bi=Math.floor(ri/3)*3+Math.floor(ci/3);
+    ROWS[ri].concat(COLS[ci]).concat(BOXES[bi]).forEach(function(x){if(x!==i)s[x]=1;});
+    PEERS.push(Object.keys(s).map(Number));}
+})();
+function boxOf(i){var r=Math.floor(i/9),c=i%9;return Math.floor(r/3)*3+Math.floor(c/3);}
+function popcnt(m){var n=0;while(m){m&=m-1;n++;}return n;}
+function bit(d){return 1<<d;} /* digits 1..9 -> bits 1..9 */
+function maskDigits(m){var out=[];for(var d=1;d<=9;d++)if(m&bit(d))out.push(d);return out;}
+
+/* Count solutions with backtracking (MRV). Returns count capped at limit. */
+function countSolutions(grid,limit){
+  var rowM=[0,0,0,0,0,0,0,0,0],colM=[0,0,0,0,0,0,0,0,0],boxM=[0,0,0,0,0,0,0,0,0],empties=[],i,v;
+  for(i=0;i<81;i++){v=grid[i];if(v){var r=Math.floor(i/9),c=i%9,b=boxOf(i);
+    if((rowM[r]&bit(v))||(colM[c]&bit(v))||(boxM[b]&bit(v)))return 0;
+    rowM[r]|=bit(v);colM[c]|=bit(v);boxM[b]|=bit(v);}else empties.push(i);}
+  var count=0, FULL=0x3FE;
+  function bt(){
+    if(count>=limit)return;
+    if(!empties.length){count++;return;}
+    var bi=-1,bm=0,bn=10,k;
+    for(k=0;k<empties.length;k++){var idx=empties[k],r=Math.floor(idx/9),c=idx%9,b=boxOf(idx);
+      var m=FULL&~(rowM[r]|colM[c]|boxM[b]),n=popcnt(m);
+      if(n===0)return;
+      if(n<bn){bn=n;bi=k;bm=m;if(n===1)break;}}
+    var idx2=empties[bi],r2=Math.floor(idx2/9),c2=idx2%9,b2=boxOf(idx2);
+    empties.splice(bi,1);
+    var ds=maskDigits(bm);
+    for(var t=0;t<ds.length;t++){var d=ds[t];
+      rowM[r2]|=bit(d);colM[c2]|=bit(d);boxM[b2]|=bit(d);
+      bt();
+      rowM[r2]&=~bit(d);colM[c2]&=~bit(d);boxM[b2]&=~bit(d);
+      if(count>=limit)break;}
+    empties.splice(bi,0,idx2);
+  }
+  bt();return count;
+}
+function solveOne(grid){
+  var g=grid.slice(),rowM=[0,0,0,0,0,0,0,0,0],colM=[0,0,0,0,0,0,0,0,0],boxM=[0,0,0,0,0,0,0,0,0],i,v;
+  for(i=0;i<81;i++){v=g[i];if(v){rowM[Math.floor(i/9)]|=bit(v);colM[i%9]|=bit(v);boxM[boxOf(i)]|=bit(v);}}
+  var FULL=0x3FE;
+  function bt(){
+    var bi=-1,bm=0,bn=10,k,idx=-1;
+    for(k=0;k<81;k++){if(!g[k]){var r=Math.floor(k/9),c=k%9,b=boxOf(k);
+      var m=FULL&~(rowM[r]|colM[c]|boxM[b]),n=popcnt(m);
+      if(n===0)return false;
+      if(n<bn){bn=n;bi=k;bm=m;idx=k;if(n===1)break;}}}
+    if(bi===-1)return true;
+    var r2=Math.floor(idx/9),c2=idx%9,b2=boxOf(idx),ds=maskDigits(bm);
+    for(var t=0;t<ds.length;t++){var d=ds[t];g[idx]=d;
+      rowM[r2]|=bit(d);colM[c2]|=bit(d);boxM[b2]|=bit(d);
+      if(bt())return true;
+      rowM[r2]&=~bit(d);colM[c2]&=~bit(d);boxM[b2]&=~bit(d);g[idx]=0;}
+    return false;
+  }
+  return bt()?g:null;
+}
+function shuffled(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function generateFull(){
+  var g=new Array(81).fill(0),rowM=[0,0,0,0,0,0,0,0,0],colM=[0,0,0,0,0,0,0,0,0],boxM=[0,0,0,0,0,0,0,0,0],FULL=0x3FE;
+  function bt(pos){
+    if(pos===81)return true;
+    var r=Math.floor(pos/9),c=pos%9,b=boxOf(pos),avail=FULL&~(rowM[r]|colM[c]|boxM[b]),ds=shuffled(maskDigits(avail));
+    for(var t=0;t<ds.length;t++){var d=ds[t];g[pos]=d;rowM[r]|=bit(d);colM[c]|=bit(d);boxM[b]|=bit(d);
+      if(bt(pos+1))return true;
+      rowM[r]&=~bit(d);colM[c]&=~bit(d);boxM[b]&=~bit(d);g[pos]=0;}
+    return false;
+  }
+  bt(0);return g;
+}
+
+/* ============ Technique engine (shared by grader, hint, coach) ============ */
+function initCand(vals){
+  var cand=new Array(81).fill(0),i;
+  for(i=0;i<81;i++){if(!vals[i]){var used=0;PEERS[i].forEach(function(p){if(vals[p])used|=bit(vals[p]);});cand[i]=0x3FE&~used;}}
+  return cand;
+}
+function findNakedSingle(vals,cand){
+  for(var i=0;i<81;i++)if(!vals[i]&&popcnt(cand[i])===1)return{type:"naked-single",tier:1,cells:[i],digit:maskDigits(cand[i])[0]};
+  return null;
+}
+function findHiddenSingle(vals,cand){
+  for(var u=0;u<UNITS.length;u++){var unit=UNITS[u];
+    for(var d=1;d<=9;d++){var spots=[];
+      for(var k=0;k<9;k++){var i=unit[k];if(!vals[i]&&(cand[i]&bit(d)))spots.push(i);}
+      if(spots.length===1&&popcnt(cand[spots[0]])>1)return{type:"hidden-single",tier:1,cells:spots,digit:d,unit:unit,unitKind:u<9?"row":(u<18?"column":"box")};}
+  }
+  return null;
+}
+function findNakedPair(vals,cand){
+  for(var u=0;u<UNITS.length;u++){var unit=UNITS[u],twos=[];
+    unit.forEach(function(i){if(!vals[i]&&popcnt(cand[i])===2)twos.push(i);});
+    for(var a=0;a<twos.length;a++)for(var b=a+1;b<twos.length;b++){
+      if(cand[twos[a]]===cand[twos[b]]){var elims=[];
+        unit.forEach(function(i){if(i!==twos[a]&&i!==twos[b]&&!vals[i]&&(cand[i]&cand[twos[a]]))elims.push({cell:i,mask:cand[i]&cand[twos[a]]});});
+        if(elims.length)return{type:"naked-pair",tier:2,cells:[twos[a],twos[b]],digits:maskDigits(cand[twos[a]]),elims:elims,unit:unit,unitKind:u<9?"row":(u<18?"column":"box")};}
+    }}
+  return null;
+}
+function findHiddenPair(vals,cand){
+  for(var u=0;u<UNITS.length;u++){var unit=UNITS[u];
+    for(var d1=1;d1<=9;d1++)for(var d2=d1+1;d2<=9;d2++){
+      var spots=[];
+      unit.forEach(function(i){if(!vals[i]&&((cand[i]&bit(d1))||(cand[i]&bit(d2))))spots.push(i);});
+      if(spots.length===2){
+        var ok=spots.every(function(i){return (cand[i]&bit(d1))||(cand[i]&bit(d2));});
+        var both=spots.every(function(i){return popcnt(cand[i]&~(bit(d1)|bit(d2)))>0;});
+        var present=spots.some(function(i){return !!(cand[i]&bit(d1));})&&spots.some(function(i){return !!(cand[i]&bit(d2));});
+        var elsewhere=unit.some(function(i){return spots.indexOf(i)===-1&&!vals[i]&&((cand[i]&bit(d1))||(cand[i]&bit(d2)));});
+        if(ok&&both&&present&&!elsewhere){
+          var elims=spots.map(function(i){return{cell:i,mask:cand[i]&~(bit(d1)|bit(d2))};}).filter(function(e){return e.mask;});
+          if(elims.length)return{type:"hidden-pair",tier:2,cells:spots.slice(),digits:[d1,d2],elims:elims,unit:unit,unitKind:u<9?"row":(u<18?"column":"box")};}
+      }}}
+  return null;
+}
+function findPointing(vals,cand){
+  for(var b=0;b<9;b++){var box=BOXES[b];
+    for(var d=1;d<=9;d++){var spots=box.filter(function(i){return !vals[i]&&(cand[i]&bit(d));});
+      if(spots.length>=2&&spots.length<=3){
+        var rows={},cols={};spots.forEach(function(i){rows[Math.floor(i/9)]=1;cols[i%9]=1;});
+        if(Object.keys(rows).length===1){var r=+Object.keys(rows)[0],elims=[];
+          ROWS[r].forEach(function(i){if(boxOf(i)!==b&&!vals[i]&&(cand[i]&bit(d)))elims.push({cell:i,mask:bit(d)});});
+          if(elims.length)return{type:"pointing-pair",tier:3,cells:spots,digit:d,elims:elims,line:"row "+(r+1),box:b};}
+        if(Object.keys(cols).length===1){var c=+Object.keys(cols)[0],elims2=[];
+          COLS[c].forEach(function(i){if(boxOf(i)!==b&&!vals[i]&&(cand[i]&bit(d)))elims2.push({cell:i,mask:bit(d)});});
+          if(elims2.length)return{type:"pointing-pair",tier:3,cells:spots,digit:d,elims:elims2,line:"column "+(c+1),box:b};}
+      }}}
+  return null;
+}
+function findXWing(vals,cand){
+  var d,r,c;
+  for(d=1;d<=9;d++){
+    var rowSpots=[];
+    for(r=0;r<9;r++){var s=[];for(c=0;c<9;c++){var i=r*9+c;if(!vals[i]&&(cand[i]&bit(d)))s.push(c);}rowSpots.push(s);}
+    for(var r1=0;r1<9;r1++)for(var r2=r1+1;r2<9;r2++){
+      if(rowSpots[r1].length===2&&rowSpots[r2].length===2&&rowSpots[r1][0]===rowSpots[r2][0]&&rowSpots[r1][1]===rowSpots[r2][1]){
+        var cols=rowSpots[r1],elims=[];
+        for(var rr=0;rr<9;rr++){if(rr!==r1&&rr!==r2)cols.forEach(function(cc){var i2=rr*9+cc;if(!vals[i2]&&(cand[i2]&bit(d)))elims.push({cell:i2,mask:bit(d)});});}
+        if(elims.length)return{type:"x-wing",tier:4,cells:[r1*9+cols[0],r1*9+cols[1],r2*9+cols[0],r2*9+cols[1]],digit:d,elims:elims,axis:"rows "+(r1+1)+" and "+(r2+1)};
+      }}
+    var colSpots=[];
+    for(c=0;c<9;c++){var s2=[];for(r=0;r<9;r++){var i3=r*9+c;if(!vals[i3]&&(cand[i3]&bit(d)))s2.push(r);}colSpots.push(s2);}
+    for(var c1=0;c1<9;c1++)for(var c2=c1+1;c2<9;c2++){
+      if(colSpots[c1].length===2&&colSpots[c2].length===2&&colSpots[c1][0]===colSpots[c2][0]&&colSpots[c1][1]===colSpots[c2][1]){
+        var rows2=colSpots[c1],elims3=[];
+        for(var cc2=0;cc2<9;cc2++){if(cc2!==c1&&cc2!==c2)rows2.forEach(function(rr2){var i4=rr2*9+cc2;if(!vals[i4]&&(cand[i4]&bit(d)))elims3.push({cell:i4,mask:bit(d)});});}
+        if(elims3.length)return{type:"x-wing",tier:4,cells:[rows2[0]*9+c1,rows2[1]*9+c1,rows2[0]*9+c2,rows2[1]*9+c2],digit:d,elims:elims3,axis:"columns "+(c1+1)+" and "+(c2+1)};
+      }}
+  }
+  return null;
+}
+var FINDERS=[findNakedSingle,findHiddenSingle,findNakedPair,findHiddenPair,findPointing,findXWing];
+function findAnyTechnique(vals,cand){
+  for(var k=0;k<FINDERS.length;k++){var f=FINDERS[k](vals,cand);if(f)return f;}
+  return null;
+}
+function placeDigit(vals,cand,i,d){
+  vals[i]=d;cand[i]=0;
+  PEERS[i].forEach(function(p){cand[p]&=~bit(d);});
+}
+/* Logical solver: returns {solved, maxTier}. Tier 5 = past the taught techniques. */
+function gradePuzzle(puzzle){
+  var vals=puzzle.slice(),cand=initCand(vals),maxTier=0,guard=0;
+  while(guard++<300){
+    var empty=vals.some(function(v){return !v;});
+    if(!empty)return{solved:true,maxTier:Math.max(maxTier,1)};
+    var bad=false;for(var i=0;i<81;i++)if(!vals[i]&&cand[i]===0)bad=true;
+    if(bad)return{solved:false,maxTier:5};
+    var f=findAnyTechnique(vals,cand);
+    if(!f)return{solved:false,maxTier:5};
+    maxTier=Math.max(maxTier,f.tier);
+    if(f.digit&&f.cells.length&&!f.elims)placeDigit(vals,cand,f.cells[0],f.digit);
+    else if(f.elims)f.elims.forEach(function(e){cand[e.cell]&=~e.mask;});
+    else return{solved:false,maxTier:5};
+  }
+  return{solved:false,maxTier:5};
+}
+
+/* ============ Generator: unique solution + measured tier ============ */
+function makePuzzle(targetGivens){
+  var sol=generateFull(),puz=sol.slice(),order=shuffled(Array.from({length:81},function(_,i){return i;}));
+  var givens=81;
+  for(var k=0;k<order.length&&givens>targetGivens;k++){
+    var i=order[k],bak=puz[i];puz[i]=0;
+    if(countSolutions(puz,2)!==1){puz[i]=bak;}else givens--;
+  }
+  return{puzzle:puz,solution:sol,givens:givens};
+}
+var DIFFS={
+  gentle:{label:"Gentle",givens:44,want:1,attempts:3,floor:44},
+  steady:{label:"Steady",givens:34,want:2,attempts:25,floor:24},
+  sharp:{label:"Sharp",givens:30,want:3,attempts:25,floor:22},
+  expert:{label:"Expert",givens:27,want:4,attempts:15,floor:21}
+};
+function tierDistance(tier,want){
+  if(want===4)return tier>=4?0:(4-tier);
+  return Math.abs(tier-want);
+}
+/* Most fresh puzzles grade Tier 1 whatever the hole count — singles chains do
+   the work. So when a puzzle grades below the wanted tier, keep digging:
+   remove more givens (uniqueness re-checked after every removal) and re-grade,
+   until the measured tier reaches the target or the floor is hit. */
+function digForTier(puzzle,want,floor){
+  var startTier=gradePuzzle(puzzle).maxTier;
+  var best={puzzle:puzzle.slice(),tier:startTier};
+  var bestDist=tierDistance(startTier,want);
+  if(bestDist===0)return best;
+  var cur=puzzle.slice(),curGivens=puzzle.filter(function(v){return !!v;}).length;
+  var filled=[];cur.forEach(function(v,i){if(v)filled.push(i);});
+  var order=shuffled(filled);
+  for(var k=0;k<order.length;k++){
+    if(curGivens<=floor||bestDist===0)break;
+    var i=order[k],bak=cur[i];cur[i]=0;
+    if(countSolutions(cur,2)!==1){cur[i]=bak;continue;}
+    curGivens--;
+    var t=gradePuzzle(cur).maxTier,dist=tierDistance(t,want);
+    if(dist<bestDist){best={puzzle:cur.slice(),tier:t};bestDist=dist;}
+  }
+  return best;
+}
+function generateFor(diffKey){
+  var cfg=DIFFS[diffKey],best=null,bestDist=99;
+  for(var a=0;a<cfg.attempts;a++){
+    var cand=makePuzzle(cfg.givens);
+    var dug=digForTier(cand.puzzle,cfg.want,cfg.floor);
+    var dist=tierDistance(dug.tier,cfg.want);
+    var givens=dug.puzzle.filter(function(v){return !!v;}).length;
+    if(dist<bestDist||(dist===bestDist&&best&&givens>best.givens)){
+      best={puzzle:dug.puzzle,solution:cand.solution,givens:givens,tier:dug.tier,solvedByLogic:dug.tier<5};
+      bestDist=dist;
+    }
+    if(dist===0)break;
+  }
+  return best;
+}
+
+/* ============ Page state ============ */
+var $=function(id){return document.getElementById(id);};
+var settings={teaching:"light",feedback:"standard"};
+try{var saved=JSON.parse(localStorage.getItem("number-place-settings-v1")||"null");if(saved){if(saved.teaching)settings.teaching=saved.teaching;if(saved.feedback)settings.feedback=saved.feedback;}}catch(e){}
+function saveSettings(){try{localStorage.setItem("number-place-settings-v1",JSON.stringify(settings));}catch(e){}}
+var record=[];
+try{record=JSON.parse(localStorage.getItem("number-place-record-v1")||"[]");if(!Array.isArray(record))record=[];}catch(e){record=[];}
+function saveRecord(){try{localStorage.setItem("number-place-record-v1",JSON.stringify(record));}catch(e){}}
+
+var game=null; /* {puzzle,solution,vals,notes,given,diffKey,tier,solvedByLogic,startMs,elapsed,hints,mistakes,techniques:Set,history:[],finished} */
+var selected=-1,notesMode=false,timerInt=null,hintCells=[],pendingHint=null;
+
+function cellName(i){return "row "+(Math.floor(i/9)+1)+", column "+(i%9+1);}
+function fmtTime(s){var m=Math.floor(s/60),ss=s%60;return m+":"+(ss<10?"0":"")+ss;}
+function tierLabel(t){
+  return t===1?"Tier 1 — singles only":t===2?"Tier 2 — pairs needed":t===3?"Tier 3 — pointing needed":t===4?"Tier 4 — X-wing needed":"Tier 4+ — past the taught techniques";
+}
+
+/* ---- Board DOM ---- */
+var boardEl=$("board"),cellEls=[];
+(function buildBoard(){
+  for(var i=0;i<81;i++){
+    var b=document.createElement("button");b.type="button";b.className="cell";b.setAttribute("role","gridcell");
+    var r=Math.floor(i/9),c=i%9;
+    if(r===2||r===5)b.classList.add("br");
+    if(r===8)b.classList.add("lastrow");
+    b.dataset.idx=i;
+    b.setAttribute("aria-label","Empty square, "+cellName(i)+". Tap to select.");
+    b.addEventListener("click",function(){selectCell(+this.dataset.idx);});
+    boardEl.appendChild(b);cellEls.push(b);
+  }
+})();
+function conflictsSet(){
+  var bad={},i,u,k;
+  if(!game)return bad;
+  for(u=0;u<UNITS.length;u++){var seen={};
+    UNITS[u].forEach(function(i){var v=game.vals[i];if(v){if(seen[v]!==undefined){bad[i]=1;bad[seen[v]]=1;}else seen[v]=i;}});}
+  return bad;
+}
+function render(){
+  if(!game)return;
+  var conf=(settings.feedback==="standard")?conflictsSet():{};
+  var filled=0;
+  for(var i=0;i<81;i++){
+    var el=cellEls[i],v=game.vals[i];
+    el.className="cell";
+    var r=Math.floor(i/9);
+    if(r===2||r===5)el.classList.add("br");
+    if(r===8)el.classList.add("lastrow");
+    if(game.given[i])el.classList.add("given");
+    if(selected>=0&&i!==selected){
+      if(Math.floor(i/9)===Math.floor(selected/9)||i%9===selected%9||boxOf(i)===boxOf(selected))el.classList.add("peer");
+      if(v&&game.vals[selected]&&v===game.vals[selected])el.classList.add("same");
+    }
+    if(i===selected)el.classList.add("selected");
+    if(hintCells.indexOf(i)>=0)el.classList.add("hintcell");
+    if(v){
+      filled++;
+      el.textContent=v;
+      if(conf[i])el.classList.add("conflict");
+      if(settings.feedback==="strict"&&!game.given[i]&&v!==game.solution[i])el.classList.add("wrong");
+      el.setAttribute("aria-label",(game.given[i]?"Given number ":"Number ")+v+", "+cellName(i)+". Tap to select.");
+    }else{
+      var ns=maskDigits(game.notes[i]);
+      if(ns.length){
+        var html='<span class="notes" aria-hidden="true">';
+        for(var d=1;d<=9;d++)html+="<span>"+(game.notes[i]&bit(d)?d:"")+"</span>";
+        html+="</span>";
+        el.innerHTML=html;
+      }else el.textContent="";
+      el.setAttribute("aria-label","Empty square, "+cellName(i)+(ns.length?", notes "+ns.join(" "):"")+". Tap to select.");
+    }
+  }
+  $("fillCount").textContent=filled+" / 81";
+  $("hintCount").textContent=game.hints;
+  $("mistakeCount").textContent=game.mistakes;
+}
+function selectCell(i){selected=i;render();}
+function pushHistory(){game.history.push({vals:game.vals.slice(),notes:game.notes.slice()});if(game.history.length>200)game.history.shift();}
+
+function startTimer(){
+  stopTimer();
+  timerInt=setInterval(function(){
+    if(!game||game.finished)return;
+    game.elapsed=Math.floor((Date.now()-game.startMs)/1000);
+    $("timer").textContent=fmtTime(game.elapsed);
+  },500);
+}
+function stopTimer(){if(timerInt)clearInterval(timerInt);timerInt=null;}
+
+function newGame(diffKey){
+  $("genMsg").textContent="Making your puzzle — the solver is checking it has exactly one solution and grading the techniques it needs…";
+  $("newBtn").disabled=true;
+  setTimeout(function(){
+    var made=generateFor(diffKey);
+    game={
+      puzzle:made.puzzle,solution:made.solution,
+      vals:made.puzzle.slice(),
+      notes:new Array(81).fill(0),
+      given:made.puzzle.map(function(v){return !!v;}),
+      diffKey:diffKey,tier:made.tier,solvedByLogic:made.solvedByLogic,
+      startMs:Date.now(),elapsed:0,hints:0,mistakes:0,techniques:{},history:[],finished:false,recorded:false
+    };
+    selected=-1;hintCells=[];pendingHint=null;
+    $("coachPanel").className="";$("coachPanel").innerHTML="";
+    $("winPanel").className="";
+    $("timer").textContent="0:00";
+    var cfg=DIFFS[diffKey],honestNote="";
+    if(tierDistance(made.tier,cfg.want)!==0)honestNote=" The generator tried for "+cfg.label+"'s tier and settled a step away — the badge shows the measured grade, which is the honest one.";
+    $("gradeBadge").textContent=cfg.label+" · measured "+tierLabel(made.tier)+" · "+made.givens+" givens";
+    $("uniqueBadge").textContent="Unique solution: verified by the solver ✓";
+    $("genMsg").textContent="New "+cfg.label+" puzzle ready — "+made.givens+" given numbers."+honestNote;
+    $("newBtn").disabled=false;
+    updateVariantBanner();
+    render();startTimer();
+  },30);
+}
+
+function placeNumber(d){
+  if(!game||game.finished||selected<0||game.given[selected])return;
+  pushHistory();
+  if(notesMode&&game.vals[selected]===0){
+    game.notes[selected]^=bit(d);
+    render();return;
+  }
+  if(game.vals[selected]===d){render();return;}
+  game.vals[selected]=d;game.notes[selected]=0;
+  PEERS[selected].forEach(function(p){game.notes[p]&=~bit(d);});
+  if(settings.feedback==="strict"&&d!==game.solution[selected]){
+    game.mistakes++;
+    showCoach("That square is flagged","Strict checking is on: the digit just placed does not match this puzzle's one solution, so it counts as a mistake. Standard rules would only flag it if it clashed with a neighbour.","Strict is a variant — it trades the thinking space of Standard for instant certainty.","",null);
+  }
+  render();checkWin();
+}
+function eraseSelected(){
+  if(!game||game.finished||selected<0||game.given[selected])return;
+  if(game.vals[selected]===0&&game.notes[selected]===0)return;
+  pushHistory();game.vals[selected]=0;game.notes[selected]=0;render();
+}
+function checkWin(){
+  if(!game||game.finished)return;
+  for(var i=0;i<81;i++)if(game.vals[i]!==game.solution[i])return;
+  game.finished=true;game.elapsed=Math.floor((Date.now()-game.startMs)/1000);stopTimer();
+  $("timer").textContent=fmtTime(game.elapsed);
+  var techs=Object.keys(game.techniques);
+  var alias=($("aliasInput").value||"").trim()||"Guest";
+  if(!game.recorded){
+    game.recorded=true;
+    record.push({
+      game:"number-place",date:new Date().toISOString(),
+      difficulty:DIFFS[game.diffKey].label,measuredTier:game.tier,tierLabel:tierLabel(game.tier),
+      timeSec:game.elapsed,hintsUsed:game.hints,mistakes:game.mistakes,
+      techniquesCoached:techs,variant:settings.feedback,playedAs:alias,result:"finished"
+    });
+    saveRecord();renderRecord();
+  }
+  $("winText").textContent="Finished in "+fmtTime(game.elapsed)+" at "+DIFFS[game.diffKey].label+" ("+tierLabel(game.tier)+"), with "+
+    game.hints+" hint"+(game.hints===1?"":"s")+" and "+game.mistakes+" mistake"+(game.mistakes===1?"":"s")+
+    (techs.length?". The coach worked with you on: "+techs.map(prettyTech).join(", ")+".":". No coaching was needed.")+
+    " The finish is written in your record below.";
+  $("winPanel").className="show";
+  render();
+}
+
+/* ============ Teaching: hints & coach ============ */
+var TECH_INFO={
+  "naked-single":{name:"Naked single",plain:"A square whose row, column, and box together rule out every digit but one.",trade:"Free and certain — but it only shows up after other work clears the way."},
+  "hidden-single":{name:"Hidden single",plain:"A digit that has only one square it can live in, inside one row, column, or box — even though that square still lists several candidates.",trade:"Just as certain as a naked single, but you find it by scanning digit by digit, which is slower."},
+  "naked-pair":{name:"Naked pair",plain:"Two squares in the same row, column, or box holding the same two candidates. Those two digits are spoken for, so they can be erased from every other square in that unit.",trade:"Places nothing itself — it pays by shrinking neighbours. It needs pencil notes to exist at all."},
+  "hidden-pair":{name:"Hidden pair",plain:"Two digits that can only live in the same two squares of a unit. Everything else pencilled in those two squares can be erased.",trade:"The naked pair's mirror — strong cleanup, but easy to miss because the two squares look cluttered."},
+  "pointing-pair":{name:"Pointing pair",plain:"Inside one box, every candidate for a digit sits on a single row or column. The digit must live in that box on that line, so it can be erased from the rest of the line outside the box.",trade:"Reaches across the grid where pairs cannot — steady pressure rather than a breakthrough."},
+  "x-wing":{name:"X-wing",plain:"A digit whose candidates in two rows line up in the same two columns, forming a rectangle. The digit must take opposite corners, so it can be erased from those two columns in every other row (the same works swapping rows and columns).",trade:"A grid-wide pattern — rare, and it needs a full set of notes to spot, but it can crack a grid that resisted everything simpler."}
+};
+function prettyTech(t){return TECH_INFO[t]?TECH_INFO[t].name:t;}
+function showCoach(title,body,trade,applyLabel,onApply){
+  var p=$("coachPanel");
+  var html="<h3>"+title+"</h3><p>"+body+"</p>";
+  if(trade)html+='<p class="trade"><strong>Trade-off:</strong> '+trade+"</p>";
+  if(applyLabel)html+='<p><button type="button" class="primary" id="coachApplyBtn">'+applyLabel+"</button></p>";
+  p.innerHTML=html;p.className="show";
+  if(applyLabel){$("coachApplyBtn").addEventListener("click",function(){onApply();});}
+}
+function requestHint(){
+  if(!game||game.finished)return;
+  if(settings.teaching==="off"){
+    showCoach("Teaching is Off","The Teaching dial is set to Off, so hints are off too. Turn the dial to Light or Coach in Settings & rules if you'd like help — it's your dial, saved on this device.","","",null);
+    return;
+  }
+  /* Conflicts first — fixing a clash beats any technique. */
+  var conf=conflictsSet(),confKeys=Object.keys(conf).map(Number);
+  if(confKeys.length){
+    game.hints++;
+    if(settings.teaching==="light"){
+      showCoach("Hint: fix a clash first","Two squares in one row, column, or box are holding the same digit. No technique helps until that clash is sorted — look for the doubled digit.","", "",null);
+    }else{
+      hintCells=confKeys;
+      showCoach("Coach: fix this clash first","The gold-ringed squares clash — the same digit appears twice in one row, column, or box. One of them has to change before any strategy can move the puzzle forward. Check each ringed square against its neighbours and erase the one that doesn't belong.","A clash left standing poisons every candidate around it — clearing it is always the first move.","",null);
+      render();
+    }
+    $("hintCount").textContent=game.hints;return;
+  }
+  var cand=initCand(game.vals);
+  var f=findAnyTechnique(game.vals,cand);
+  game.hints++;
+  $("hintCount").textContent=game.hints;
+  if(!f){
+    showCoach(settings.teaching==="coach"?"Coach: past the taught techniques":"Hint: past the taught techniques",
+      "No naked or hidden single, pair, pointing pair, or X-wing is available on this grid right now. Honest options: fill in all notes and look again, or work a square by careful what-if — try a candidate in pencil, follow the singles it forces, and backtrack if it clashes. Harder patterns (chains, Swordfish) build on the same ideas.",
+      "Guessing is a real technique of last resort — its cost is backtracking, and its virtue is that it always terminates.","","",null);
+    return;
+  }
+  game.techniques[f.type]=1;
+  var info=TECH_INFO[f.type];
+  if(settings.teaching==="light"){
+    hintCells=[];
+    showCoach("Hint: look for a "+info.name.toLowerCase(),
+      info.plain+" Somewhere on your grid, a "+info.name.toLowerCase()+" is waiting. That — and only that — is the Light hint: the technique's name and shape, never the square. Turn the dial to Coach for the worked version on your grid.","","",null);
+    render();return;
+  }
+  /* Coach: worked on the live position */
+  hintCells=f.cells.slice();
+  var body="";
+  if(f.type==="naked-single"){
+    body="Look at "+cellName(f.cells[0])+" (ringed in gold). Its row, column, and box already contain every digit except <strong>"+f.digit+"</strong> — so that square can only be "+f.digit+". "+info.plain;
+  }else if(f.type==="hidden-single"){
+    body="Follow the digit <strong>"+f.digit+"</strong> through its "+f.unitKind+". Every square in that "+f.unitKind+" is ruled out for "+f.digit+" except "+cellName(f.cells[0])+" (ringed in gold) — so "+f.digit+" belongs there, even though the square still shows other candidates. "+info.plain;
+  }else if(f.type==="naked-pair"){
+    body=cellName(f.cells[0])+" and "+cellName(f.cells[1])+" (ringed in gold) both hold exactly the candidates <strong>"+f.digits.join(" and ")+"</strong>. Between them they own both digits in this "+f.unitKind+", so "+f.digits.join(" and ")+" can be erased from the other squares of the "+f.unitKind+" — "+f.elims.map(function(e){return cellName(e.cell);}).join("; ")+". "+info.plain;
+  }else if(f.type==="hidden-pair"){
+    body="In this "+f.unitKind+", the digits <strong>"+f.digits.join(" and ")+"</strong> can only live in "+cellName(f.cells[0])+" and "+cellName(f.cells[1])+" (ringed in gold) — nowhere else. So those two squares belong to those two digits, and every other candidate pencilled in them can be erased. "+info.plain;
+  }else if(f.type==="pointing-pair"){
+    body="In the box containing "+cellName(f.cells[0])+", every candidate for the digit <strong>"+f.digit+"</strong> sits on "+f.line+". So "+f.digit+" must live in that box on that line — and can be erased from the rest of "+f.line+" outside the box: "+f.elims.map(function(e){return cellName(e.cell);}).join("; ")+". "+info.plain;
+  }else if(f.type==="x-wing"){
+    body="The digit <strong>"+f.digit+"</strong> forms a rectangle: in "+f.axis+", its only candidates sit in the same two lines, at the gold-ringed corners ("+f.cells.map(cellName).join("; ")+"). Whichever way round it lands, "+f.digit+" occupies those two lines — so it can be erased from them everywhere else: "+f.elims.map(function(e){return cellName(e.cell);}).join("; ")+". "+info.plain;
+  }
+  var isSingle=(f.type==="naked-single"||f.type==="hidden-single");
+  showCoach("Coach: "+info.name,body,info.trade,
+    "Apply the coach's move — tap to do it",
+    function(){
+      pushHistory();
+      if(isSingle){
+        selected=f.cells[0];
+        game.vals[f.cells[0]]=f.digit;game.notes[f.cells[0]]=0;
+        PEERS[f.cells[0]].forEach(function(p){game.notes[p]&=~bit(f.digit);});
+        hintCells=[];
+      }else{
+        var c2=initCand(game.vals);
+        for(var i=0;i<81;i++)if(!game.vals[i])game.notes[i]=c2[i];
+        f.elims.forEach(function(e){game.notes[e.cell]&=~e.mask;});
+        hintCells=[];
+      }
+      showCoach("Done","Applied. The record will note that the coach worked a "+info.name.toLowerCase()+" with you on this puzzle.","","",null);
+      render();checkWin();
+    });
+  render();
+}
+
+/* ============ Record UI ============ */
+function renderRecord(){
+  var tb=$("recordBody");tb.innerHTML="";
+  $("recordEmpty").style.display=record.length?"none":"block";
+  var sorted=record.slice().reverse();
+  sorted.forEach(function(e){
+    var tr=document.createElement("tr");
+    var cells=[
+      ["Date",new Date(e.date).toLocaleString()],
+      ["Difficulty",e.difficulty],
+      ["Measured tier",e.tierLabel||("Tier "+e.measuredTier)],
+      ["Time",fmtTime(e.timeSec)],
+      ["Hints",e.hintsUsed],
+      ["Mistakes",e.mistakes],
+      ["Techniques coached",(e.techniquesCoached&&e.techniquesCoached.length)?e.techniquesCoached.map(prettyTech).join(", "):"—"],
+      ["Rules",e.variant==="standard"?"Standard":"Variant: "+e.variant],
+      ["Played as",e.playedAs||"Guest"]
+    ];
+    cells.forEach(function(pair){var td=document.createElement("td");td.dataset.l=pair[0];td.textContent=pair[1];tr.appendChild(td);});
+    tb.appendChild(tr);
+  });
+  if(!record.length){$("recordSummary").textContent="";return;}
+  var best={};
+  record.forEach(function(e){if(best[e.difficulty]===undefined||e.timeSec<best[e.difficulty])best[e.difficulty]=e.timeSec;});
+  var totalHints=record.reduce(function(s,e){return s+(e.hintsUsed||0);},0);
+  var techCount={};
+  record.forEach(function(e){(e.techniquesCoached||[]).forEach(function(t){techCount[t]=(techCount[t]||0)+1;});});
+  var techStr=Object.keys(techCount).map(function(t){return prettyTech(t)+" ×"+techCount[t];}).join(", ")||"none yet";
+  $("recordSummary").innerHTML="<strong>"+record.length+"</strong> puzzle"+(record.length===1?"":"s")+" finished. Best times: "+
+    Object.keys(best).map(function(k){return k+" "+fmtTime(best[k]);}).join(" · ")+
+    ". Total hints used: "+totalHints+". Techniques the coach has used with you: "+techStr+".";
+}
+function download(name,content,type){
+  var blob=new Blob([content],{type:type});var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},400);
+}
+$("exportJsonBtn").addEventListener("click",function(){
+  download("number-place-record.json",JSON.stringify(record,null,2),"application/json");
+});
+$("exportCsvBtn").addEventListener("click",function(){
+  var head="date,difficulty,measuredTier,timeSec,hintsUsed,mistakes,techniquesCoached,variant,playedAs,result";
+  var lines=record.map(function(e){
+    return [e.date,e.difficulty,e.measuredTier,e.timeSec,e.hintsUsed,e.mistakes,'"'+(e.techniquesCoached||[]).join("; ")+'"',e.variant,'"'+(e.playedAs||"Guest")+'"',e.result].join(",");
+  });
+  download("number-place-record.csv",head+"\n"+lines.join("\n"),"text/csv");
+});
+var forgetArmed=false,forgetTimer=null;
+$("forgetBtn").addEventListener("click",function(){
+  if(!forgetArmed){
+    forgetArmed=true;this.textContent="Tap again to erase the whole record from this device";
+    $("forgetMsg").textContent="One more tap erases every record entry on this device. Export first if you want to keep a copy.";
+    forgetTimer=setTimeout(function(){forgetArmed=false;$("forgetBtn").textContent="Forget my record — tap to erase it from this device";$("forgetMsg").textContent="";},6000);
+    return;
+  }
+  clearTimeout(forgetTimer);forgetArmed=false;
+  record=[];saveRecord();renderRecord();
+  this.textContent="Forget my record — tap to erase it from this device";
+  $("forgetMsg").textContent="Forgotten. The record on this device is empty.";
+});
+
+/* ============ Settings UI ============ */
+var TEACH_DESC={
+  off:"Off: no hints, no coaching. The grid and your pencil are the whole game.",
+  light:"Light: the Hint button names the technique to look for — never the square. You still do the finding.",
+  coach:"Coach: the Hint button finds the technique on your actual grid, rings the squares in gold, walks through it in plain words with its trade-off, and can apply it for you."
+};
+function renderTeaching(){
+  document.querySelectorAll("[data-teach]").forEach(function(b){
+    b.setAttribute("aria-pressed",b.dataset.teach===settings.teaching?"true":"false");
+  });
+  $("teachDesc").textContent=TEACH_DESC[settings.teaching];
+}
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click",function(){settings.teaching=b.dataset.teach;saveSettings();renderTeaching();});
+});
+function updateVariantBanner(){
+  var b=$("variantBanner");
+  if(settings.feedback==="standard"){b.className="";b.textContent="";return;}
+  b.className="show";
+  b.textContent=settings.feedback==="strict"
+    ?"Variant in play: Strict checking — every wrong entry is flagged at once and counts as a mistake. Games finished now are recorded as the Strict variant."
+    :"Variant in play: Relaxed — nothing is flagged while you play; use the Check button when you want a verdict. Games finished now are recorded as the Relaxed variant.";
+}
+$("feedbackSel").value=settings.feedback;
+$("feedbackSel").addEventListener("change",function(){settings.feedback=this.value;saveSettings();updateVariantBanner();render();});
+$("diffSel").addEventListener("change",function(){/* difficulty applies on New puzzle */});
+$("newBtn").addEventListener("click",function(){newGame($("diffSel").value);});
+$("winNewBtn").addEventListener("click",function(){newGame($("diffSel").value);});
+
+/* ============ Pad & tools ============ */
+document.querySelectorAll(".pad [data-num]").forEach(function(b){
+  b.addEventListener("click",function(){placeNumber(+b.dataset.num);});
+});
+$("eraseBtn").addEventListener("click",eraseSelected);
+$("notesBtn").addEventListener("click",function(){
+  notesMode=!notesMode;
+  this.setAttribute("aria-pressed",notesMode?"true":"false");
+  this.textContent=notesMode?"Notes: On — tap to turn off":"Notes: Off — tap to turn on";
+});
+$("undoBtn").addEventListener("click",function(){
+  if(!game||!game.history.length||game.finished)return;
+  var s=game.history.pop();game.vals=s.vals;game.notes=s.notes;hintCells=[];render();
+});
+$("fillNotesBtn").addEventListener("click",function(){
+  if(!game||game.finished)return;
+  pushHistory();
+  var cand=initCand(game.vals);
+  for(var i=0;i<81;i++)if(!game.vals[i])game.notes[i]=cand[i];
+  render();
+});
+$("hintBtn").addEventListener("click",requestHint);
+$("checkBtn").addEventListener("click",function(){
+  if(!game||game.finished)return;
+  var conf=conflictsSet(),keys=Object.keys(conf);
+  if(keys.length){
+    hintCells=keys.map(Number);
+    showCoach("Check: a clash is showing","The gold-ringed squares hold a digit that already appears in their row, column, or box. Fix the clash and check again.","Checking costs nothing and counts as no hint — the verdict is yours to ask for.","","",null);
+  }else{
+    var left=game.vals.filter(function(v){return !v;}).length;
+    showCoach("Check: no clashes",left?("Every placed digit sits legally. "+left+" squares still to fill."):"Every square is filled with no clashes — that is a solve.","","",null);
+    hintCells=[];
+  }
+  render();
+});
+document.addEventListener("keydown",function(e){
+  if(!game||selected<0)return;
+  var tag=(e.target&&e.target.tagName)||"";
+  if(tag==="INPUT"||tag==="SELECT"||tag==="TEXTAREA")return;
+  if(e.key>="1"&&e.key<="9"){placeNumber(+e.key);}
+  else if(e.key==="Backspace"||e.key==="Delete"){eraseSelected();e.preventDefault();}
+  else if(e.key==="n"||e.key==="N"){$("notesBtn").click();}
+  else if(e.key.indexOf("Arrow")===0){
+    var r=Math.floor(selected/9),c=selected%9;
+    if(e.key==="ArrowUp")r=Math.max(0,r-1);if(e.key==="ArrowDown")r=Math.min(8,r+1);
+    if(e.key==="ArrowLeft")c=Math.max(0,c-1);if(e.key==="ArrowRight")c=Math.min(8,c+1);
+    selectCell(r*9+c);e.preventDefault();
+  }
+});
+
+/* ============ Alias & download doors ============ */
+var ALIASES=["Pencil Pro","Grid Walker","Quiet Nine","Box Three","Row Nine","The Patient One","Digit Gardener","Corner Fox"];
+$("randomAliasBtn").addEventListener("click",function(){
+  $("aliasInput").value=ALIASES[Math.floor(Math.random()*ALIASES.length)];
+});
+function downloadPage(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  download("number-place.html",html,"text/html");
+}
+$("dlTop").addEventListener("click",downloadPage);
+$("dlBottom").addEventListener("click",downloadPage);
+
+/* ============ Boot ============ */
+renderTeaching();
+updateVariantBanner();
+renderRecord();
+newGame("gentle");
+</script>
+</body>
+</html>
