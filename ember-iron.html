@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Ember &amp; Iron — A Smithing Game</title>
+<style>
+  :root{
+    --bg:#f6f1e7; --bg2:#efe6d4; --panel:#fffaf0; --panel2:#f3ead6;
+    --ink:#221a12; --ink2:#57493a; --line:#d8c9ab;
+    --ember:#b33c08; --ember2:#e05a10; --emberSoft:#fdeeda;
+    --iron:#3d4750; --ironSoft:#e8ebee;
+    --good:#1e6b2e; --goodBg:#e3f2e2; --warn:#8a5a00; --warnBg:#fdf0cd; --bad:#9c1c1c; --badBg:#fbe3e0;
+    --gold:#8a6508;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(60,35,5,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17120d; --bg2:#1e1710; --panel:#241c14; --panel2:#2c2216;
+      --ink:#f2e8d8; --ink2:#c9b99c; --line:#4a3a26;
+      --ember:#ff7a2e; --ember2:#ffa25e; --emberSoft:#3a2410;
+      --iron:#aeb9c2; --ironSoft:#2a3138;
+      --good:#7fd68c; --goodBg:#17301b; --warn:#f2c94c; --warnBg:#38300f; --bad:#ff9a8a; --badBg:#3a1712;
+      --gold:#e8b93e;
+      --shadow:0 2px 12px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;font-size:17px}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0 0 .4em}
+  h1{font-size:2.1rem}
+  h2{font-size:1.45rem;border-bottom:2px solid var(--ember);padding-bottom:.25em}
+  h3{font-size:1.12rem}
+  p{margin:.5em 0}
+  a{color:var(--ember)}
+  button,[role="button"],select,input,summary{min-height:44px}
+  button{font:inherit;font-weight:650;border:2px solid var(--iron);background:var(--panel);color:var(--ink);border-radius:10px;padding:.55em 1em;cursor:pointer}
+  button:hover{border-color:var(--ember)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--ember);border-color:var(--ember);color:#fff}
+  @media (prefers-color-scheme: dark){button.primary{color:#1c1106}}
+  button.primary:hover{filter:brightness(1.08)}
+  button.small{min-height:38px;padding:.35em .7em;font-size:.92rem}
+  select,input[type="text"]{font:inherit;padding:.5em .6em;border:2px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);width:100%}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+  .freeline{background:var(--ember);color:#fff;font-weight:750;text-align:center;padding:10px 14px;font-size:1.02rem}
+  @media (prefers-color-scheme: dark){.freeline{color:#1c1106}}
+  .freeline button{margin-left:10px;background:transparent;color:inherit;border-color:currentColor;min-height:36px;padding:.25em .7em}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0 4px}
+  nav.compass a{display:inline-flex;align-items:center;min-height:40px;padding:.4em .9em;border:2px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);font-weight:650;background:var(--panel)}
+  nav.compass a:hover{border-color:var(--ember)}
+  header.hero{padding:22px 0 6px}
+  .sub{font-size:1.08rem;color:var(--ink2);max-width:44em}
+  section{margin-top:34px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .grid2{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:860px){.grid2{grid-template-columns:1.5fr 1fr}}
+  .safety{border:3px solid var(--bad);background:var(--badBg);border-radius:var(--radius);padding:20px;font-size:1.05rem}
+  .safety h2{border-color:var(--bad);color:var(--bad)}
+  .variant-banner{display:none;border:2px dashed var(--gold);background:var(--warnBg);border-radius:10px;padding:10px 14px;font-weight:700;margin:12px 0}
+  .variant-banner.show{display:block}
+  .orders{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:700px){.orders{grid-template-columns:1fr 1fr}}
+  .order-card{border:2px solid var(--line);border-radius:12px;padding:14px;background:var(--panel2)}
+  .order-card h3{margin-bottom:.15em}
+  .meta{color:var(--ink2);font-size:.93rem}
+  .pill{display:inline-block;border:1.5px solid var(--iron);border-radius:999px;padding:.05em .6em;font-size:.82rem;font-weight:700;margin-right:6px}
+  .pill.hot{border-color:var(--ember);color:var(--ember)}
+  .stagebar{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+  .stagebar span{border:2px solid var(--line);border-radius:999px;padding:.3em .8em;font-weight:650;font-size:.9rem;color:var(--ink2)}
+  .stagebar span.on{border-color:var(--ember);color:var(--ember);background:var(--emberSoft)}
+  .stagebar span.done{border-color:var(--good);color:var(--good)}
+  .tempwrap{margin:14px 0}
+  .tempbar{height:30px;border-radius:8px;border:2px solid var(--iron);position:relative;overflow:hidden;background:linear-gradient(90deg,#2b2b2b 0%,#5a1305 22%,#a11d05 40%,#e05a10 58%,#f5a623 76%,#ffe98a 92%,#fff6c9 100%)}
+  .tempmarker{position:absolute;top:-2px;bottom:-2px;width:5px;background:#fff;border:1.5px solid #000;border-radius:3px}
+  .windowband{position:absolute;top:0;bottom:0;border-left:3px solid #fff;border-right:3px solid #fff;background:rgba(255,255,255,.22)}
+  .tempread{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .colourname{font-weight:750;color:var(--ember)}
+  .meter{height:18px;background:var(--ironSoft);border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+  .meter>div{height:100%;background:var(--ember2);width:0%;transition:width .25s}
+  .btnrow{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+  .choicegrid{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:640px){.choicegrid{grid-template-columns:repeat(3,1fr)}}
+  .choice{border:2px solid var(--line);border-radius:12px;padding:12px;background:var(--panel);text-align:left;width:100%}
+  .choice[aria-pressed="true"]{border-color:var(--ember);background:var(--emberSoft)}
+  .choice strong{display:block;margin-bottom:.2em}
+  .coach{border-left:6px solid var(--ember);background:var(--emberSoft);border-radius:0 12px 12px 0;padding:14px 16px}
+  .coach h3{margin-top:0}
+  .coach .note{margin:.45em 0}
+  table{border-collapse:collapse;width:100%;font-size:.96rem}
+  th,td{border:1px solid var(--line);padding:.5em .6em;text-align:left;vertical-align:top}
+  th{background:var(--panel2)}
+  .swatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,.4);vertical-align:-2px;margin-right:6px}
+  .gradebig{font-size:3rem;font-weight:900;font-family:Georgia,serif;line-height:1}
+  .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:640px){.statgrid{grid-template-columns:repeat(4,1fr)}}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel2);text-align:center}
+  .stat b{display:block;font-size:1.6rem}
+  .log{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--panel2);font-size:.94rem}
+  .log p{margin:.3em 0}
+  .videolist{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:700px){.videolist{grid-template-columns:1fr 1fr}}
+  .video{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+  .video a{font-weight:700}
+  .setrow{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:700px){.setrow{grid-template-columns:1fr 1fr 1fr}}
+  label.flabel{display:block;font-weight:700;margin-bottom:.3em}
+  .hint{font-size:.9rem;color:var(--ink2)}
+  footer{margin-top:44px;border-top:2px solid var(--line);padding-top:16px;color:var(--ink2);font-size:.95rem}
+  .hidden{display:none !important}
+  .flash{animation:flash .3s}
+  @keyframes flash{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion: reduce){.flash{animation:none} html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="freeline">Free — always free. No ads. No account. No purchases.
+  <button type="button" id="downloadBtn">Download this page — tap to save it for offline play</button>
+</div>
+
+<div class="wrap">
+
+<nav class="compass" aria-label="Compass">
+  <a href="#forge">🧭 Forge — tap to go</a>
+  <a href="#orders-sec">Orders — tap to go</a>
+  <a href="#learn">Learn the craft — tap to go</a>
+  <a href="#videos">Watch it done — tap to go</a>
+  <a href="#record">Your record — tap to go</a>
+  <a href="#settings">Settings — tap to go</a>
+  <a href="#safety">Safety — tap to go</a>
+</nav>
+
+<header class="hero">
+  <h1>Ember &amp; Iron</h1>
+  <p class="sub">A smithing game built on the real, documented craft of blacksmithing. Take an order, choose your steel, heat it and read its colour, hammer it to shape while it is hot, quench it, temper it, and hand it over. Your grade comes from how the work actually went — the heat you kept, the strikes you landed in the window, and the moment you chose to quench. Nothing here is dressed up: a cold strike is a cold strike.</p>
+  <p class="sub"><strong>Documented basis:</strong> smithing as the documented craft itself — the sequence, colours, and heat treatment on this page follow how blacksmiths have worked and taught the trade for centuries, written here in our own words.</p>
+</header>
+
+<section class="safety" id="safety" aria-labelledby="safety-h">
+  <h2 id="safety-h">Safety — read this at full size, because it is full size in real life</h2>
+  <p><strong>Real forges burn.</strong> Steel at forging heat looks almost like cold steel in bright light, and it will burn you to the bone before you feel it properly. Smiths treat every piece of metal in the shop as hot until they have proved otherwise.</p>
+  <p><strong>Real quench oil catches fire.</strong> Plunging hot steel into oil can flare, splash burning oil, and set a bucket alight. Real smiths quench with a lid within reach, never lean over the bucket, and keep water far away from hot oil — water in hot oil erupts.</p>
+  <p><strong>Real hammering throws scale and sparks</strong> that can blind. Eye protection is not optional at a real anvil, hot scale on skin burns, and a real shop needs ventilation, a fire extinguisher, and training from a person standing next to you.</p>
+  <p><strong>The honest limit:</strong> this game teaches the ideas, the order of the work, and the judgement calls. It cannot teach your hands. If you take up real smithing, learn in person from an experienced smith, in a real shop, with real safety gear. No score on this page qualifies you to light a forge.</p>
+</section>
+
+<div class="variant-banner" id="variantBanner" role="status"></div>
+
+<section id="orders-sec" aria-labelledby="orders-h">
+  <h2 id="orders-h">The order board</h2>
+  <p>Work fills the board. The ladder grows as you prove yourself: horseshoes first, then knives and tools, and swords when your record shows the grades to be trusted with one. Filled orders and grades live in <a href="#record">your record</a> below.</p>
+  <div class="orders" id="orderBoard"></div>
+  <p class="hint" id="dayLine"></p>
+</section>
+
+<section id="forge" aria-labelledby="forge-h">
+  <h2 id="forge-h">The forge</h2>
+
+  <div class="stagebar" id="stageBar" aria-label="Stages of the work">
+    <span data-stage="stock">1 · Choose stock</span>
+    <span data-stage="heat">2 · Heat</span>
+    <span data-stage="forge">3 · Hammer to shape</span>
+    <span data-stage="quench">4 · Quench</span>
+    <span data-stage="temper">5 · Temper &amp; finish</span>
+  </div>
+
+  <div class="grid2">
+    <div class="panel" id="workPanel">
+      <div id="noOrder">
+        <h3>No piece on the anvil</h3>
+        <p>Take an order from the board above — tap an order's button — and your steel, heat, and hammer work will happen here.</p>
+      </div>
+
+      <div id="stageStock" class="hidden">
+        <h3>Choose your stock</h3>
+        <p>The steel you start with decides what the finished piece can be. Each stock has a trade-off; there is no free best.</p>
+        <div class="choicegrid" id="stockChoices"></div>
+        <div class="btnrow"><button type="button" class="primary" id="confirmStockBtn" disabled>Confirm stock &amp; light the forge — tap to start heating</button></div>
+      </div>
+
+      <div id="stageWork" class="hidden">
+        <h3 id="workTitle">At the forge</h3>
+        <p id="workGoal" class="meta"></p>
+
+        <div class="tempwrap">
+          <div><span class="tempread" id="tempRead">20°C</span> · <span class="colourname" id="colourName">Cold — black</span></div>
+          <div class="tempbar" aria-hidden="true"><div class="windowband" id="windowBand"></div><div class="tempmarker" id="tempMarker" style="left:1%"></div></div>
+          <p class="hint" id="windowHint"></p>
+        </div>
+
+        <div>
+          <p style="margin-bottom:.2em"><strong>Shape:</strong> <span id="shapeRead">0%</span> shaped</p>
+          <div class="meter"><div id="shapeMeter"></div></div>
+          <p class="hint" id="strikeRead">Strikes: 0 · in the window: 0 · cold: 0 · burning hot: 0 · reheats: 0</p>
+        </div>
+
+        <div id="approachBox">
+          <p><strong>Your approach</strong> — pick one before the hammer work. Both are real ways smiths work; each buys something and costs something.</p>
+          <div class="choicegrid" style="grid-template-columns:1fr 1fr" id="approachChoices">
+            <button type="button" class="choice" data-approach="fast" aria-pressed="true"><strong>Work hot &amp; fast</strong>Fewer, heavier strikes while the heat is high. Buys: speed, less scale loss, fewer reheats. Costs: easier to overshoot the shape or strike past the window as it cools.</button>
+            <button type="button" class="choice" data-approach="careful" aria-pressed="false"><strong>Slow &amp; careful</strong>Lighter, checked strikes, shape measured often. Buys: control, cleaner lines, fewer ruined pieces. Costs: more heats, more time, more scale — and scale is metal lost.</button>
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <button type="button" class="primary" id="heatBtn">Heat the steel — tap to heat</button>
+          <button type="button" class="primary" id="hammerBtn">Strike with the hammer — tap to strike</button>
+          <button type="button" id="coolBtn">Let it cool — tap to wait</button>
+        </div>
+        <div class="btnrow">
+          <button type="button" class="primary hidden" id="toQuenchBtn">Shape is done — tap to move to the quench</button>
+          <button type="button" class="primary hidden" id="quenchBtn">Quench now — tap to plunge it</button>
+        </div>
+        <p class="hint">Gestures on this page: <strong>tap</strong> does the thing named on the button. <strong>Hold</strong> any work button (or hover with a mouse) to hear the Coach explain it before you commit.</p>
+        <div class="log" id="workLog" aria-live="polite"></div>
+      </div>
+
+      <div id="stageTemper" class="hidden">
+        <h3>Temper &amp; finish</h3>
+        <p id="quenchResult"></p>
+        <p>Quenching made the steel hard — and brittle as glass. Tempering reheats it gently to trade a little hardness for a lot of toughness. Where you stop is a real decision, and the right answer depends on the order.</p>
+        <div class="choicegrid" id="temperChoices">
+          <button type="button" class="choice" data-temper="low" aria-pressed="false"><strong>Low temper — straw colour (~220°C)</strong>Keeps the most hardness and edge. Costs: stays brittle; a pry or a twist can snap it. Right for: a knife that must stay keen.</button>
+          <button type="button" class="choice" data-temper="mid" aria-pressed="true"><strong>Medium temper — purple-brown (~270°C)</strong>The working middle: good edge, real toughness. Costs: neither the hardest nor the toughest. Right for: tools and general blades.</button>
+          <button type="button" class="choice" data-temper="high" aria-pressed="false"><strong>High temper — blue (~310°C)</strong>Maximum toughness and spring; the piece bends instead of breaking. Costs: the edge dulls faster. Right for: horseshoes, springs, and anything struck or flexed.</button>
+        </div>
+        <p style="margin-top:14px"><strong>Quench medium</strong> was chosen at the plunge — for the record, the two real options and their trade-off:</p>
+        <div class="choicegrid" style="grid-template-columns:1fr 1fr" id="quenchChoices">
+          <button type="button" class="choice" data-quench="oil" aria-pressed="true"><strong>Oil quench</strong>Slower, gentler cooling. Buys: far fewer cracks and warps. Costs: slightly less peak hardness — and real oil can catch fire (see Safety).</button>
+          <button type="button" class="choice" data-quench="water" aria-pressed="false"><strong>Water quench</strong>Faster, harder cooling. Buys: maximum hardness on plain steels. Costs: real crack and warp risk, worst on thin or high-carbon pieces.</button>
+        </div>
+        <div class="btnrow"><button type="button" class="primary" id="finishBtn">Temper, finish &amp; hand it over — tap to grade the piece</button></div>
+      </div>
+
+      <div id="stageGrade" class="hidden">
+        <h3>How the piece graded</h3>
+        <p><span class="gradebig" id="gradeLetter">–</span> <span id="gradeWord" style="font-weight:750;font-size:1.2rem"></span></p>
+        <div id="gradeExplain"></div>
+        <div class="btnrow">
+          <button type="button" class="primary" id="nextOrderBtn">Back to the order board — tap to take the next order</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel" aria-labelledby="coach-h">
+      <h3 id="coach-h">The Coach</h3>
+      <label class="flabel" for="teachDial">Teaching dial — how much teaching reaches you</label>
+      <select id="teachDial">
+        <option value="off">Off — no teaching, just the work</option>
+        <option value="light" selected>Light — one plain tip at each step</option>
+        <option value="coach">Coach — the full craft, taught on your actual piece</option>
+      </select>
+      <p class="hint">Saved on this device only. The dial is yours: the teaching is built as deep as we can make it; how much of it lands is your call.</p>
+      <div class="coach" id="coachBox">
+        <p class="note" id="coachNote">Take an order and the Coach will work beside you on that piece.</p>
+        <div id="coachExtra"></div>
+        <div class="btnrow"><button type="button" class="small" id="coachAskBtn">Ask the Coach about this piece — tap for a note</button></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section id="learn" aria-labelledby="learn-h">
+  <h2 id="learn-h">Learn the craft — the knowledge under the game</h2>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Reading heat by colour</h3>
+      <p>For most of smithing history there was no thermometer on the forge. There still mostly isn't — the smith reads the steel's colour, and the colour <em>is</em> the temperature. Learn this table and you can play the whole game by eye, the way it is really done.</p>
+      <table>
+        <thead><tr><th>Colour</th><th>About</th><th>What it means for the work</th></tr></thead>
+        <tbody>
+          <tr><td><span class="swatch" style="background:#26221f"></span>Black</td><td>under 500°C</td><td>Cold for forging. Hammering now does almost nothing and can crack the steel. Heat it.</td></tr>
+          <tr><td><span class="swatch" style="background:#7a1d05"></span>Dull red</td><td>~600°C</td><td>First visible glow in a dark shop. Still too cold to move metal well.</td></tr>
+          <tr><td><span class="swatch" style="background:#b02a08"></span>Cherry red</td><td>~750°C</td><td>Approaching forging heat. Fine for gentle straightening; heavy work waits for orange.</td></tr>
+          <tr><td><span class="swatch" style="background:#e05a10"></span>Orange</td><td>~900°C</td><td><strong>The forging window.</strong> Metal moves under the hammer like stiff clay. Most shaping happens here.</td></tr>
+          <tr><td><span class="swatch" style="background:#f5a623"></span>Yellow</td><td>~1050°C</td><td>Very hot: metal moves fast and scale forms fast. Work quickly; forge-welding heat lives just above this.</td></tr>
+          <tr><td><span class="swatch" style="background:#ffe98a"></span>Yellow-white</td><td>~1200°C</td><td>Too hot for shaping ordinary work. Steel starts to burn — it sparkles, crumbles, and that damage does not heal.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h3>Why the sequence is the sequence</h3>
+      <p><strong>Why you don't hammer cold steel:</strong> cold steel barely moves, so your effort goes into stress instead of shape. Stressed cold steel cracks — sometimes inside, where you cannot see it until the piece fails in use.</p>
+      <p><strong>What quenching does:</strong> heating steel past its critical point rearranges its crystals; cooling it suddenly — the quench — traps that arrangement in a hard, stressed state called martensite. Hard, and brittle as glass.</p>
+      <p><strong>What tempering undoes:</strong> a gentle reheat lets some of that trapped stress relax. You trade a measured slice of hardness for toughness — the difference between a blade that chips and a blade that survives work.</p>
+      <p><strong>Why reheats cost you:</strong> every heat grows scale — a crust of oxidised iron that flakes off and is gone. More heats, thinner piece. Metal wasted is counted in your record for exactly this reason.</p>
+      <p><strong>Two honest strategies:</strong> <em>work hot and fast</em> spends the heat before it fades — fewer heats, less scale, but less time to check your shape. <em>Slow and careful</em> checks constantly — cleaner work, but every check is cooling, and cooling means another heat and more scale. Real smiths blend both: fast while roughing out, careful at the finish.</p>
+    </div>
+  </div>
+</section>
+
+<section id="videos" aria-labelledby="videos-h">
+  <h2 id="videos-h">Watch it done</h2>
+  <p>Real smiths, real forges. Each link below was opened and checked before it was put on this shelf — the title and channel printed beside it are the ones on the video itself.</p>
+  <div class="videolist">
+    <div class="video"><a href="https://www.youtube.com/watch?v=6KDfia6izrk" target="_blank" rel="noopener">The 7 Basic skills of a Blacksmith - Blacksmithing Fundamentals — tap to watch on YouTube</a><p class="meta">Channel: Black Bear Forge</p><p>The seven fundamental skills every beginner smith builds on — start here before your first real heat.</p></div>
+    <div class="video"><a href="https://www.youtube.com/watch?v=XDdJCkW6z0k" target="_blank" rel="noopener">Forging with ALEC STEELE: Hammer Technique, How To Forge for the First Time — tap to watch on YouTube</a><p class="meta">Channel: TA Outdoors</p><p>Hammer technique and a first forging session — stance, grip, and how the blows actually land.</p></div>
+    <div class="video"><a href="https://www.youtube.com/watch?v=6jQ4y0LK1kY" target="_blank" rel="noopener">Heat Treatment -The Science of Forging (feat. Alec Steele) — tap to watch on YouTube</a><p class="meta">Channel: Real Engineering</p><p>The science under this game's quench and temper stages — what the heat is really doing to the steel.</p></div>
+    <div class="video"><a href="https://www.youtube.com/watch?v=o_cK7UqQcYI" target="_blank" rel="noopener">Your first TOOLS - Affordable Blacksmithing part 2 — tap to watch on YouTube</a><p class="meta">Channel: Black Bear Forge</p><p>The first tools a real beginner actually needs, and how to get them without wasting money.</p></div>
+  </div>
+</section>
+
+<section id="record" aria-labelledby="record-h">
+  <h2 id="record-h">Your record</h2>
+  <p>Kept on this device only, in one clean shape, and nowhere else. Nothing is sent anywhere and there is no account. Export it any time; forget it in one tap.</p>
+  <div class="statgrid">
+    <div class="stat"><b id="statPieces">0</b>pieces finished</div>
+    <div class="stat"><b id="statOrders">0</b>orders filled</div>
+    <div class="stat"><b id="statWasted">0 g</b>metal wasted to scale &amp; spoiled work</div>
+    <div class="stat"><b id="statBest">–</b>best grade</div>
+  </div>
+  <p id="gradeCounts" class="meta" style="margin-top:10px"></p>
+  <div class="log" id="recordLog" style="margin-top:10px"></div>
+  <div class="btnrow">
+    <button type="button" id="exportBtn">Export my record as a file — tap to download</button>
+    <button type="button" id="forgetBtn">Forget everything — tap to erase my record from this device</button>
+  </div>
+  <p class="hint" id="forgetMsg" role="status"></p>
+</section>
+
+<section id="settings" aria-labelledby="settings-h">
+  <h2 id="settings-h">Settings — the rules are settings</h2>
+  <p>Change a rule and the game changes with it, honestly labelled: anything away from the standard game raises the <strong>Variant</strong> banner at the top of the forge, and pieces forged under a variant are marked <strong>V</strong> in your record. Variant grades are the variant's grades — never dressed as standard.</p>
+  <div class="setrow">
+    <div>
+      <label class="flabel" for="setDifficulty">Order difficulty</label>
+      <select id="setDifficulty">
+        <option value="apprentice">Apprentice — forgiving windows, simple orders</option>
+        <option value="standard" selected>Standard — the game as documented</option>
+        <option value="master">Master — tight windows, demanding orders</option>
+      </select>
+    </div>
+    <div>
+      <label class="flabel" for="setDay">Day length</label>
+      <select id="setDay">
+        <option value="3">Short day — 3 orders</option>
+        <option value="5" selected>Standard day — 5 orders</option>
+        <option value="8">Long day — 8 orders</option>
+      </select>
+    </div>
+    <div>
+      <label class="flabel" for="setAssist">Assist windows (variant)</label>
+      <select id="setAssist">
+        <option value="standard" selected>Standard windows — the real ones</option>
+        <option value="wide">Wide assist — wider hot &amp; quench windows (Variant)</option>
+      </select>
+    </div>
+  </div>
+  <div style="margin-top:16px;max-width:26em">
+    <label class="flabel" for="aliasInput">Smith name (optional)</label>
+    <input type="text" id="aliasInput" placeholder="Leave blank and just play — no name is ever required" autocomplete="off" />
+    <p class="hint">Alias freedom: play under any name, a changed name, or no name at all. Nothing on this page ever asks who you really are. Saved on this device only.</p>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Copyleft.</strong> Ember &amp; Iron — its text, design, and art — is free to copy, share, and build on under CC BY-SA 4.0; its code under the GPL. Derivatives carry the same freedom. The name stays with the house.</p>
+  <p>No ads — ever. No tracking. Your record and settings live on your device only.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- settings & record (this device only) ---------- */
+var SKEY="ember-iron-settings-v1", RKEY="ember-iron-record-v1";
+function loadJSON(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var settings=Object.assign({teach:"light",difficulty:"standard",day:5,assist:"standard",alias:""},loadJSON(SKEY,{}));
+var record=loadJSON(RKEY,{pieces:[],ordersFilled:0,metalWastedG:0});
+if(!Array.isArray(record.pieces))record={pieces:[],ordersFilled:0,metalWastedG:0};
+
+$("teachDial").value=settings.teach;
+$("setDifficulty").value=settings.difficulty;
+$("setDay").value=String(settings.day);
+$("setAssist").value=settings.assist;
+$("aliasInput").value=settings.alias||"";
+function persistSettings(){saveJSON(SKEY,settings);updateVariantBanner();}
+function isVariant(){return settings.difficulty!=="standard"||settings.assist!=="standard"||String(settings.day)!=="5"}
+function variantLabel(){var p=[];if(settings.difficulty!=="standard")p.push("difficulty: "+settings.difficulty);if(settings.assist!=="standard")p.push("wide assist windows");if(String(settings.day)!=="5")p.push("day length: "+settings.day+" orders");return p.join(" · ")}
+function updateVariantBanner(){var b=$("variantBanner");if(isVariant()){b.textContent="Variant in play — "+variantLabel()+". Grades earned now are marked V in your record.";b.classList.add("show")}else{b.textContent="";b.classList.remove("show")}}
+$("teachDial").addEventListener("change",function(){settings.teach=this.value;persistSettings();renderCoach()});
+$("setDifficulty").addEventListener("change",function(){settings.difficulty=this.value;persistSettings();buildOrders()});
+$("setDay").addEventListener("change",function(){settings.day=parseInt(this.value,10);persistSettings();renderDay()});
+$("setAssist").addEventListener("change",function(){settings.assist=this.value;persistSettings();updateWindows()});
+$("aliasInput").addEventListener("change",function(){settings.alias=this.value.trim();persistSettings()});
+
+/* ---------- orders ---------- */
+var ORDERS=[
+ {id:"horseshoe",name:"Horseshoe",diff:1,pay:"A farrier's staple",need:"Toughness above all — it will be struck by stone roads all its life.",bestTemper:"high",strikes:8},
+ {id:"knife",name:"Kitchen knife",diff:2,pay:"For the cook at the inn",need:"A keen, lasting edge — hardness matters most.",bestTemper:"low",strikes:12},
+ {id:"tool",name:"Cold chisel (tool)",diff:2,pay:"For the mason's kit",need:"A hard working end that does not chip — the balanced middle.",bestTemper:"mid",strikes:11},
+ {id:"sword",name:"Short sword",diff:3,pay:"A serious commission",need:"Spring and toughness — a blade that flexes and returns, never snaps.",bestTemper:"high",strikes:16}
+];
+var dayDone=0;
+function unlocked(o){
+  var n=record.pieces.length;
+  if(o.id==="horseshoe")return true;
+  if(o.id==="knife"||o.id==="tool")return n>=1;
+  if(o.id==="sword")return n>=3 && record.pieces.some(function(p){return ["S","A","B"].indexOf(p.grade)>=0});
+  return true;
+}
+function buildOrders(){
+  var board=$("orderBoard");board.innerHTML="";
+  ORDERS.forEach(function(o){
+    var card=document.createElement("div");card.className="order-card";
+    var open=unlocked(o);
+    var diffWord=settings.difficulty==="apprentice"?"gentle":(settings.difficulty==="master"?"demanding":"standard");
+    card.innerHTML="<h3>"+o.name+"</h3><p class='meta'>"+o.pay+" · "+diffWord+" work · about "+o.strikes+" good strikes to shape</p><p>"+o.need+"</p>"+
+      (open?"<button type='button' class='primary' data-order='"+o.id+"'>Take this order — tap to take it</button>"
+           :"<p class='meta'><strong>Locked by the ladder:</strong> "+(o.id==="sword"?"finish 3 pieces with at least one graded B or better":"finish 1 piece first")+" and this order opens.</p>");
+    board.appendChild(card);
+  });
+  board.querySelectorAll("[data-order]").forEach(function(b){b.addEventListener("click",function(){takeOrder(b.getAttribute("data-order"))})});
+  renderDay();
+}
+function renderDay(){$("dayLine").textContent="Today: "+dayDone+" of "+settings.day+" orders done."+(dayDone>=settings.day?" The day is complete — the forge cools. Finishing another piece simply starts a fresh day count.":"")}
+function ordersTodayResetIfNeeded(){if(dayDone>=settings.day)dayDone=0}
+
+/* ---------- game state ---------- */
+var G=null;
+function windows(){
+  var wide=settings.assist==="wide";
+  var diff=settings.difficulty;
+  var forge=wide?[740,1060]:(diff==="master"?[840,960]:(diff==="apprentice"?[780,1020]:[820,980]));
+  var quench=wide?[700,900]:(diff==="master"?[770,830]:(diff==="apprentice"?[730,870]:[760,840]));
+  return {forge:forge,quench:quench,idealQuench:800};
+}
+function colourFor(t){
+  if(t<500)return"Cold — black"; if(t<680)return"Dull red"; if(t<820)return"Cherry red";
+  if(t<980)return"Orange — forging heat"; if(t<1120)return"Yellow — very hot"; return"Yellow-white — burning!";
+}
+var STOCKS=[
+ {id:"mild",name:"Mild steel bar",desc:"Soft, forgiving, welds easily and barely hardens in the quench. Buys: the easiest forging there is. Costs: a knife in mild steel will not hold an edge — the grade will say so."},
+ {id:"carbon",name:"High-carbon steel",desc:"The blade steel. Hardens properly in the quench and holds an edge. Buys: real hardness. Costs: cracks if worked cold or quenched carelessly in water."},
+ {id:"spring",name:"Recycled leaf spring",desc:"Tough spring steel from a cart's suspension. Buys: outstanding toughness for tools and swords. Costs: stubborn under the hammer — more heats, more scale."}
+];
+var pickedStock=null,pickedApproach="fast",pickedTemper="mid",pickedQuench="oil";
+
+function log(msg){var el=$("workLog");var p=document.createElement("p");p.textContent=msg;el.appendChild(p);el.scrollTop=el.scrollHeight}
+function setStage(stage){
+  ["stock","heat","forge","quench","temper"].forEach(function(s){
+    var el=document.querySelector("[data-stage='"+s+"']");if(!el)return;
+    el.classList.remove("on","done");
+  });
+  var order=["stock","heat","forge","quench","temper"];
+  var idx=order.indexOf(stage);
+  order.forEach(function(s,i){var el=document.querySelector("[data-stage='"+s+"']");if(!el)return;if(i<idx)el.classList.add("done");if(i===idx)el.classList.add("on")});
+}
+function show(id){["noOrder","stageStock","stageWork","stageTemper","stageGrade"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
+
+function takeOrder(id){
+  ordersTodayResetIfNeeded();
+  var o=ORDERS.filter(function(x){return x.id===id})[0];if(!o)return;
+  G={order:o,stock:null,temp:20,shape:0,strikes:0,good:0,cold:0,burn:0,reheats:0,phase:"stock",quenchScore:null,wastedBefore:record.metalWastedG};
+  pickedStock=null;
+  show("stageStock");setStage("stock");
+  var box=$("stockChoices");box.innerHTML="";
+  STOCKS.forEach(function(s){
+    var b=document.createElement("button");b.type="button";b.className="choice";b.setAttribute("aria-pressed","false");
+    b.innerHTML="<strong>"+s.name+"</strong>"+s.desc;
+    b.addEventListener("click",function(){pickedStock=s;box.querySelectorAll(".choice").forEach(function(c){c.setAttribute("aria-pressed","false")});b.setAttribute("aria-pressed","true");$("confirmStockBtn").disabled=false;coachStock()});
+    box.appendChild(b);
+  });
+  $("confirmStockBtn").disabled=true;
+  document.getElementById("forge").scrollIntoView({behavior:"smooth",block:"start"});
+  renderCoach("stock");
+}
+$("confirmStockBtn").addEventListener("click",function(){
+  if(!G||!pickedStock)return;
+  G.stock=pickedStock;G.phase="heat";
+  show("stageWork");setStage("heat");
+  $("workTitle").textContent="Heating — "+G.order.name+" in "+G.stock.name;
+  $("workLog").innerHTML="";
+  log("Stock on the forge: "+G.stock.name+". Heat it into the orange window, then hammer.");
+  updateWindows();updateWork();renderCoach("heat");
+});
+function updateWindows(){
+  var w=windows();
+  var pct=function(t){return Math.max(0,Math.min(100,(t-0)/1300*100))};
+  var band=$("windowBand");band.style.left=pct(G&&G.phase==="quench"?w.quench[0]:w.forge[0])+"%";band.style.width=(pct(G&&G.phase==="quench"?w.quench[1]:w.forge[1])-pct(G&&G.phase==="quench"?w.quench[0]:w.forge[0]))+"%";
+  $("windowHint").textContent=G&&G.phase==="quench"
+    ?"Quench window (the white band): "+w.quench[0]+"–"+w.quench[1]+"°C. Plunge inside it for a clean hardening."
+    :"Forging window (the white band): "+w.forge[0]+"–"+w.forge[1]+"°C — orange heat. The marker is your steel.";
+}
+function updateWork(){
+  if(!G)return;
+  var pct=Math.max(0,Math.min(100,G.temp/1300*100));
+  $("tempMarker").style.left="calc("+pct+"% - 2px)";
+  $("tempRead").textContent=Math.round(G.temp)+"°C";
+  $("colourName").textContent=colourFor(G.temp);
+  $("shapeRead").textContent=Math.round(G.shape)+"%";
+  $("shapeMeter").style.width=Math.min(100,G.shape)+"%";
+  $("strikeRead").textContent="Strikes: "+G.strikes+" · in the window: "+G.good+" · cold: "+G.cold+" · burning hot: "+G.burn+" · reheats: "+G.reheats;
+  var w=windows();
+  $("heatBtn").disabled=!(G.phase==="heat"||G.phase==="forge");
+  $("hammerBtn").disabled=!(G.phase==="heat"||G.phase==="forge");
+  $("coolBtn").disabled=!(G.phase==="heat"||G.phase==="forge"||G.phase==="quench");
+  $("toQuenchBtn").classList.toggle("hidden",!(G.phase==="forge"&&G.shape>=100));
+  $("quenchBtn").classList.toggle("hidden",G.phase!=="quench");
+  $("workGoal").textContent=G.phase==="quench"
+    ?"Order: "+G.order.name+" · Shaping is done. Bring the steel to the quench window ("+w.quench[0]+"–"+w.quench[1]+"°C), then plunge it."
+    :"Order: "+G.order.name+" · Forge window "+w.forge[0]+"–"+w.forge[1]+"°C · Approach: "+(pickedApproach==="fast"?"hot & fast":"slow & careful");
+}
+document.querySelectorAll("[data-approach]").forEach(function(b){
+  b.addEventListener("click",function(){
+    pickedApproach=b.getAttribute("data-approach");
+    document.querySelectorAll("[data-approach]").forEach(function(c){c.setAttribute("aria-pressed",c===b?"true":"false")});
+    if(G){updateWork();renderCoach("approach")}
+  });
+});
+$("heatBtn").addEventListener("click",function(){
+  if(!G)return;
+  if(G.phase==="forge"){G.reheats++;log("Back into the forge for another heat — that is reheat #"+G.reheats+". Each one grows scale.")}
+  G.phase = G.shape>0 ? "forge" : "heat";
+  G.temp=Math.min(1280,G.temp+85);
+  if(G.temp>1120)log("Careful — "+Math.round(G.temp)+"°C is burning country. Steel this hot sparkles and crumbles; that damage does not heal.");
+  else log("Heating… "+Math.round(G.temp)+"°C — "+colourFor(G.temp)+".");
+  setStage(G.shape>0?"forge":"heat");updateWork();renderCoach("heat");
+});
+$("hammerBtn").addEventListener("click",function(){
+  if(!G||G.shape>=100)return;
+  var w=windows();G.strikes++;
+  var inWin=G.temp>=w.forge[0]&&G.temp<=w.forge[1];
+  var gain=0;
+  if(G.temp<560){G.cold++;gain=pickedApproach==="fast"?1:2;log("Cold strike at "+Math.round(G.temp)+"°C. The steel barely moved and took stress instead — this is how cracks are born. Heat it.");}
+  else if(G.temp<w.forge[0]){G.cold++;gain=3;log("Too cool at "+Math.round(G.temp)+"°C — "+colourFor(G.temp)+". A little movement, mostly wasted effort. Back to the fire.");}
+  else if(inWin){G.good++;gain=pickedApproach==="fast"?(100/G.order.strikes)*1.35:(100/G.order.strikes)*0.95;log("Good strike at "+Math.round(G.temp)+"°C — orange heat, the metal moved like stiff clay.");}
+  else if(G.temp<=1120){G.good++;gain=(100/G.order.strikes)*1.1;log("Hot strike at "+Math.round(G.temp)+"°C — yellow. It moved fast; watch the shape, it is easy to overshoot.");}
+  else{G.burn++;gain=2;record.metalWastedG+=4;log("Burning strike at "+Math.round(G.temp)+"°C! Sparks and crumbling — burnt steel is wasted steel. 4 g lost.");}
+  if(G.stock.id==="spring")gain*=0.85;
+  G.shape=Math.min(100,G.shape+gain);
+  if(G.shape>0&&G.phase==="heat")G.phase="forge";
+  G.temp=Math.max(20,G.temp-(pickedApproach==="fast"?42:30));
+  if(G.shape>=100){G.phase="forge";log("That is the shape — 100%. Stop hammering and move to the quench while you still hold heat.");}
+  $("hammerBtn").classList.remove("flash");void $("hammerBtn").offsetWidth;$("hammerBtn").classList.add("flash");
+  updateWork();renderCoach("forge");
+});
+$("coolBtn").addEventListener("click",function(){
+  if(!G)return;
+  G.temp=Math.max(20,G.temp-60);
+  log("You wait. The steel cools to "+Math.round(G.temp)+"°C — "+colourFor(G.temp)+".");
+  updateWork();renderCoach(G.phase==="quench"?"quench":"heat");
+});
+$("toQuenchBtn").addEventListener("click",function(){
+  if(!G)return;G.phase="quench";setStage("quench");updateWindows();updateWork();
+  log("To the quench bucket. Current heat "+Math.round(G.temp)+"°C. Heat it or let it cool into the window, then plunge.");
+  renderCoach("quench");
+});
+$("quenchBtn").addEventListener("click",function(){
+  if(!G||G.phase!=="quench")return;
+  var w=windows();
+  var dist=Math.abs(G.temp-w.idealQuench);
+  G.quenchScore=Math.max(0,Math.round(100-dist/3.2));
+  if(pickedQuench==="water"&&G.stock.id==="carbon")G.quenchScore=Math.max(0,G.quenchScore-12);
+  G.phase="temper";setStage("temper");
+  show("stageTemper");
+  $("quenchResult").innerHTML="You plunged at <strong>"+Math.round(G.temp)+"°C</strong> in <strong>"+pickedQuench+"</strong>. Quench score: <strong>"+G.quenchScore+" / 100</strong> — "+
+    (G.quenchScore>=85?"right in the window: the crystals locked hard and even.":
+     G.quenchScore>=60?"close to the window: hardened, though not perfectly even.":
+     G.quenchScore>=35?"well off the window: parts hardened, parts stayed soft — a patchy piece.":
+     "far outside the window: the quench mostly missed; the steel never truly hardened.");
+  renderCoach("temper");
+});
+document.querySelectorAll("[data-temper]").forEach(function(b){
+  b.addEventListener("click",function(){pickedTemper=b.getAttribute("data-temper");document.querySelectorAll("[data-temper]").forEach(function(c){c.setAttribute("aria-pressed",c===b?"true":"false")});renderCoach("temper")});
+});
+document.querySelectorAll("[data-quench]").forEach(function(b){
+  b.addEventListener("click",function(){pickedQuench=b.getAttribute("data-quench");document.querySelectorAll("[data-quench]").forEach(function(c){c.setAttribute("aria-pressed",c===b?"true":"false")})});
+});
+$("finishBtn").addEventListener("click",function(){
+  if(!G)return;
+  var w=windows();
+  var tempControl=G.strikes?Math.round(G.good/G.strikes*100):0;
+  var efficiency=Math.max(0,Math.round(100-(G.cold*9)-(G.burn*16)-(G.reheats*4)));
+  var temperScore=pickedTemper===G.order.bestTemper?100:(G.order.bestTemper==="mid"||pickedTemper==="mid"?65:40);
+  var stockScore=100;
+  if(G.order.id==="knife"&&G.stock.id==="mild")stockScore=35;
+  if(G.order.id==="sword"&&G.stock.id==="mild")stockScore=45;
+  if(G.order.id==="horseshoe"&&G.stock.id==="carbon")stockScore=75;
+  var score=Math.round(tempControl*0.34+efficiency*0.18+(G.quenchScore||0)*0.26+temperScore*0.12+stockScore*0.10);
+  var grade=score>=90?"S":score>=78?"A":score>=64?"B":score>=48?"C":"D";
+  var word={S:"Masterwork",A:"Fine work",B:"Sound work",C:"Rough work",D:"Spoiled work"}[grade];
+  var scaleLoss=G.reheats*3+G.burn*4+G.cold*1;
+  record.metalWastedG+=scaleLoss;
+  record.pieces.push({item:G.order.name,stock:G.stock.name,grade:grade,score:score,tempControl:tempControl,quenchScore:G.quenchScore,temper:pickedTemper,quenchMedium:pickedQuench,approach:pickedApproach,variant:isVariant(),date:new Date().toISOString().slice(0,10)});
+  record.ordersFilled++;dayDone++;
+  saveJSON(RKEY,record);
+  show("stageGrade");setStage("temper");
+  document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.add("done");el.classList.remove("on")});
+  $("gradeLetter").textContent=grade+(isVariant()?" V":"");
+  $("gradeWord").textContent=word+" — "+score+" / 100 for the "+G.order.name;
+  $("gradeExplain").innerHTML=
+    "<p><strong>Temperature control — "+tempControl+"% of strikes in the window.</strong> "+(tempControl>=80?"You lived in the orange. That is the whole craft in one habit.":tempControl>=55?"Over half your strikes landed hot. The cold ones cost shape and put stress in the steel.":"Most strikes fell outside the window — cold steel took stress, and the piece remembers it.")+"</p>"+
+    "<p><strong>Quench — "+(G.quenchScore||0)+" / 100</strong> at "+Math.round(G.temp)+"°C in "+pickedQuench+". "+(G.quenchScore>=85?"Textbook timing.":G.quenchScore>=60?"Workable timing; a touch closer to 800°C would harden it evenly.":"The plunge missed its window, so the hardening is patchy.")+"</p>"+
+    "<p><strong>Temper — "+pickedTemper+"</strong> for an order that wanted <strong>"+G.order.bestTemper+"</strong>. "+(temperScore===100?"The right call: the temper matches what this piece will actually be asked to do.":"A mismatch the customer will feel in use — see the temper choices for what each stop buys and costs.")+"</p>"+
+    "<p><strong>Stock — "+G.stock.name+":</strong> "+(stockScore>=90?"well matched to the order.":stockScore>=65?"usable, but not the steel this order would choose first.":"the wrong steel for this order, and no amount of good hammering fully makes up for it.")+"</p>"+
+    "<p><strong>Waste:</strong> "+scaleLoss+" g of metal went to scale and spoiled work this piece ("+G.reheats+" reheats, "+G.burn+" burning strikes, "+G.cold+" cold strikes). It is counted in your record.</p>"+
+    (isVariant()?"<p><strong>Variant note:</strong> forged under "+variantLabel()+" — this grade is the variant's grade, marked V, never dressed as standard.</p>":"");
+  G=null;buildOrders();renderRecord();renderCoach("graded");
+});
+$("nextOrderBtn").addEventListener("click",function(){show("noOrder");setStage("stock");document.querySelectorAll("[data-stage]").forEach(function(el){el.classList.remove("done","on")});document.getElementById("orders-sec").scrollIntoView({behavior:"smooth"})});
+
+/* ---------- coach ---------- */
+function coachStock(){renderCoach("stock")}
+function renderCoach(phase){
+  phase=phase||(G?G.phase:"idle");
+  var mode=settings.teach,box=$("coachBox");
+  if(mode==="off"){box.classList.add("hidden");return}
+  box.classList.remove("hidden");
+  var note="",extra="";
+  var light={
+    stock:"Tip: match the steel to the job — an edge wants carbon, a shoe wants toughness.",
+    heat:"Tip: orange is the window. Black and dull red are too cold to hammer; yellow-white burns.",
+    forge:"Tip: strike while it is orange. Cooling? Reheat — but every reheat costs scale.",
+    approach:"Tip: hot & fast spends heat before it fades; slow & careful spends heats to buy control.",
+    quench:"Tip: plunge at cherry-orange, about 800°C. Too hot warps; too cool never hardens.",
+    temper:"Tip: quenching made it hard and brittle. Tempering trades a little hardness for toughness.",
+    graded:"Tip: your record below shows every piece, grade, and gram wasted — export it any time.",
+    idle:"Tip: take an order from the board to put steel on the anvil."
+  };
+  if(mode==="light"){note=light[phase]||light.idle}
+  else{
+    if(phase==="stock"&&G){note="Coach, on your "+G.order.name+": "+(G.order.id==="knife"?"a knife lives or dies by its edge, and only carbon-bearing steel hardens enough to hold one — mild steel would forge beautifully and grade honestly poorly. The leaf spring would work but fights you the whole way.":G.order.id==="horseshoe"?"a horseshoe is struck by roads for months. Toughness is the whole job; high-carbon's hardness is wasted here and its brittleness is a liability. Mild or spring steel, tempered high.":"this order rewards balanced steel. Read each stock's trade-off out loud before you choose — that habit is the real skill being taught.");}
+    else if(phase==="heat"&&G){note="Coach: watch the colour, not the number — the number is here so you can learn the colour. At "+Math.round(G.temp)+"°C your steel is "+colourFor(G.temp).toLowerCase()+". "+(G.temp<820?"Keep heating. Below orange the hammer mostly writes stress into the steel.":G.temp<=1060?"You are in or near the window — start striking and spend this heat.":"Too hot. Let it fall back toward orange before you strike, or you will burn the surface off it.");extra="<p class='note'><strong>The deep note:</strong> colour is temperature made visible — the steel glows because heat is shaking its atoms hard enough to throw off light. Smiths judged heat this way for two thousand years before the pyrometer, and in a working forge they still do.</p>"}
+    else if(phase==="forge"&&G){note="Coach, on this piece: "+G.good+" good strikes, "+G.cold+" cold, "+G.burn+" burning, shape at "+Math.round(G.shape)+"%. "+(G.temp<820?"Your heat is gone — reheat now rather than persuade cold steel. Every cold strike is a crack applying for a job.":G.shape>70?"You are in finish country: switch toward careful strikes, check the shape after each one, and stop the moment it is right — overworking finish steel only thins it.":"Roughing out: this is where hot & fast earns its keep. Big movement while the orange lasts.");extra="<p class='note'><strong>Strategy, honestly:</strong> hot &amp; fast bought you movement and saved reheats; its cost is overshoot. Slow &amp; careful buys control at the price of heats and scale. On this piece, "+(pickedApproach==="fast"?"you chose speed — spend it, then finish careful.":"you chose control — guard your heat budget; reheat early rather than late.")+"</p>"}
+    else if(phase==="approach"){note="Coach: neither approach is the correct one — they are a trade, and trades are chosen per piece. Rough work favours hot & fast; finish work favours careful. Many smiths run both in a single piece, fast first, careful last."}
+    else if(phase==="quench"&&G){var w=windows();note="Coach: the quench is the one moment you cannot take back. Your steel is at "+Math.round(G.temp)+"°C; the window is "+w.quench[0]+"–"+w.quench[1]+"°C. "+(G.temp>w.quench[1]?"Let it cool — plunging this hot warps thin work and stresses everything.":G.temp<w.quench[0]?"Too cool — below the critical point the crystals never rearranged, so there is nothing for the quench to trap. Reheat into the window.":"You are in the window. Plunge now, and plunge decisively — a hesitant, half-in dip hardens in patches.");extra="<p class='note'><strong>What is happening:</strong> above ~770°C the steel's crystals open into a form that dissolves carbon. The sudden cold traps that carbon in a strained, needle-like structure — martensite. That strain is the hardness, and it is also the brittleness tempering will relieve.</p>"}
+    else if(phase==="temper"){note="Coach: tempering is a negotiation, not a correction. Low temper keeps the edge and keeps the risk. High temper surrenders edge for a piece that bends instead of breaking. This order — "+(G?G.order.name:"")+" — asked for "+(G?({low:"a keen, hard result",mid:"the balanced middle",high:"toughness and spring"})[G.order.bestTemper]:"")+". Choose like the customer will use it, because they will.";extra="<p class='note'><strong>Reading temper colours:</strong> as the polished steel reheats, oxide films paint it — straw, then brown, purple, then blue. Smiths read those colours exactly like forge colours: the surface announcing the temperature inside.</p>"}
+    else if(phase==="graded"){note="Coach: the grade above is arithmetic, not opinion — temperature control, quench timing, temper match, stock match, and waste, each printed with its reason. Your record keeps every piece in the same clean shape, so your patterns show: if your quench scores sag, that is your next lesson."}
+    else{note="Coach: take an order and I will teach on the actual piece in your hands — its steel, its heat, its strikes — not generic tips."}
+  }
+  $("coachNote").textContent=note;
+  $("coachExtra").innerHTML=extra;
+}
+var coachNotes=[
+ "Why you never hammer cold: cold steel moves so little that the force becomes internal stress. Enough stress, stored invisibly, and the piece cracks under its first real load — days after you made it.",
+ "Scale is not dirt. Scale is your steel, oxidised and gone. A smith who reheats six times delivers a thinner piece than the one they designed.",
+ "The quench does not make steel strong — it makes it hard. Strength you can use comes from the temper afterwards. Hard without temper is just fragile with confidence.",
+ "Forge welding happens above shaping heat, near yellow-white, where surfaces will fuse under the hammer. It is the one job that justifies heat that would ruin ordinary shaping.",
+ "Read the bounce: a hammer rebounding lively off the anvil face means hard, cold steel; a duller answer means the metal is soft and moving. Smiths listen as much as they look."
+];
+var noteIdx=0;
+$("coachAskBtn").addEventListener("click",function(){
+  if(settings.teach==="off"){settings.teach="light";$("teachDial").value="light";persistSettings()}
+  $("coachBox").classList.remove("hidden");
+  $("coachNote").textContent="Coach note: "+coachNotes[noteIdx%coachNotes.length];noteIdx++;
+  $("coachExtra").innerHTML=G?"<p class='note'>On your current piece: "+Math.round(G.temp)+"°C ("+colourFor(G.temp)+"), shape "+Math.round(G.shape)+"%, "+G.good+" of "+G.strikes+" strikes in the window.</p>":"";
+});
+/* hold-to-explain on work buttons */
+[["heatBtn","Heating raises the steel toward the orange window, roughly 85° a tap. Heat is spent by striking and waiting."],
+ ["hammerBtn","A strike moves metal only when the steel is hot. In the window it shapes; cold it stresses; burning it destroys."],
+ ["coolBtn","Waiting lets the steel cool about 60° — how you walk a too-hot piece down into the quench window."],
+ ["quenchBtn","The plunge traps the steel's hot crystal structure as hard martensite. Timing is the whole skill."]]
+.forEach(function(pair){
+  var el=$(pair[0]);if(!el)return;var t=null;
+  el.addEventListener("pointerdown",function(){t=setTimeout(function(){if(settings.teach!=="off"){$("coachBox").classList.remove("hidden");$("coachNote").textContent="Hold-explain: "+pair[1]}},550)});
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){el.addEventListener(ev,function(){if(t)clearTimeout(t)})});
+  el.addEventListener("mouseenter",function(){if(window.matchMedia("(hover:hover)").matches&&settings.teach==="coach"){$("coachNote").textContent="Coach: "+pair[1]}});
+});
+
+/* ---------- record ---------- */
+function renderRecord(){
+  $("statPieces").textContent=record.pieces.length;
+  $("statOrders").textContent=record.ordersFilled;
+  $("statWasted").textContent=record.metalWastedG+" g";
+  var order={S:5,A:4,B:3,C:2,D:1};var best="–",bv=0;var counts={};
+  record.pieces.forEach(function(p){counts[p.grade]=(counts[p.grade]||0)+1;if(order[p.grade]>bv){bv=order[p.grade];best=p.grade}});
+  $("statBest").textContent=best;
+  $("gradeCounts").textContent=record.pieces.length?("Grades so far: "+["S","A","B","C","D"].filter(function(g){return counts[g]}).map(function(g){return g+" × "+counts[g]}).join(" · ")):"No pieces yet — your first grade will land here.";
+  var el=$("recordLog");
+  if(!record.pieces.length){el.innerHTML="<p>No pieces finished yet.</p>";return}
+  el.innerHTML=record.pieces.slice().reverse().map(function(p){
+    return "<p><strong>"+p.item+"</strong> — grade <strong>"+p.grade+(p.variant?" V":"")+"</strong> ("+p.score+"/100) · "+p.stock+" · temp control "+p.tempControl+"% · quench "+p.quenchScore+"/100 · "+p.date+"</p>"}).join("");
+}
+$("exportBtn").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify({game:"Ember & Iron",exported:new Date().toISOString(),record:record},null,2)],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ember-and-iron-record.json";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+  if(!forgetArmed){forgetArmed=true;this.textContent="Tap again to confirm — this erases every piece, grade, and gram on this device";return}
+  record={pieces:[],ordersFilled:0,metalWastedG:0};saveJSON(RKEY,record);dayDone=0;
+  forgetArmed=false;this.textContent="Forget everything — tap to erase my record from this device";
+  $("forgetMsg").textContent="Forgotten. Your record on this device is empty.";
+  buildOrders();renderRecord();
+});
+
+/* ---------- offline download ---------- */
+$("downloadBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ember-and-iron.html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+});
+
+/* ---------- init ---------- */
+updateVariantBanner();buildOrders();renderRecord();renderCoach("idle");updateWindows();
+})();
+</script>
+</body>
+</html>
