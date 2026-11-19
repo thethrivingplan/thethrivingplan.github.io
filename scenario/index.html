@@ -266,6 +266,13 @@ body.dock-top .cpanel{bottom:auto;top:104px}
 @media(min-width:760px){.rollcall-panel{left:auto;right:12px;width:480px}}
 .rollcall-panel .rc-opt{display:block;width:100%;text-align:left;margin:6px 0;font-size:19px}
 .is-blocked-note{font-style:italic;color:var(--muted)}
+/* Claim-by-tap door + one-tap Join Table (launch basics) */
+.claim-name-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;border:2px solid var(--accent);border-radius:10px;background:var(--paper2);color:var(--ink);padding:14px 16px;margin:8px 0;cursor:pointer;font:inherit;min-height:56px}
+.claim-name-btn:hover{background:var(--accent-soft)}
+.claim-name-btn strong{font-size:19px;word-break:break-word}
+.claim-name-sub{font-size:13.5px;color:var(--muted)}
+.claim-name-btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--gold)}
+#joinTableBtn{width:100%;font-size:22px;min-height:64px;padding:14px 16px}
 </style>
 </head>
 <body>
@@ -295,22 +302,39 @@ body.dock-top .cpanel{bottom:auto;top:104px}
 </div>
 
 <section class="card" id="sit">
-  <h2>Take your seat — your name first</h2>
-  <p class="sub"><strong>First thing at this table: your name.</strong> Who you are here comes before everything else — your role card is how the table knows you. It is kept on this device only, so it is filled in next time.</p>
-  <label class="fl" for="fName">Your name at this table</label>
-  <input type="text" id="fName" placeholder="Anything you can type — e.g. Alex, 🌙 Moon Fox, Alex-of-the-North" />
-  <p style="margin-top:8px"><button class="btn primary" id="gotoForge" type="button">Build your name in the Name Forge</button> <button class="btn" id="gotoClaimFromSeat" type="button">Claim a name</button></p>
-  <p class="help">Picking a name? The Forge builds candidates from words you like and checks every one against the registry before offering it — its symbol shelf stands right beside the name field there, full of marks no keyboard shows. Claiming is optional: any unclaimed name seats you as-is, no code, no registry.</p>
-  <details class="fold"><summary><span>Your name &amp; who you are here — in full<span class="fold-sub">Anything you can type; your saved character; the claimed-names registry</span></span><span aria-hidden="true">▾</span></summary>
-  <div class="fold-body">
-  <p class="help">This name stands next to everything you say in the Run — the record attributes words to people, not to seats. <strong>Your name can be anything you can type</strong> — any language, any script, emoji, symbols, spaces, punctuation, mixed scripts, long or short — and it is stored and displayed <em>exactly</em> as you write it, every decoration intact. The law protects names; it doesn't police them.</p>
-  <p class="help"><strong>You are your saved character — it's yours because it's saved on your device, like a save on a game cartridge.</strong> No log-in, no account, nothing registered anywhere. And plainly: your name here is a <em>claimed</em> name, not a verified identity — the Run records what was said at this table under that name; it does not prove who was holding the phone. One table manner: a name is claimed once per table while its seat is in the run — if yours is taken, add a distinguishing mark (“Sam from the north side”). Above that sits the <strong>claimed-names registry</strong> baked into this page (below) — a registered name can only be sat under by the person who claimed it, in any language and any form of symbols. And <strong>once a name is claimed on any table, it is claimed on all tables</strong> — you can claim yours right at this table, with the claim form in the “Who are you here?” layer of the explainer below; it is recorded in the table's Run and the registry's dated history, and travels to every table as registry updates ship with new published versions. Entry #1 is <strong>~~~&gt;Tristan⁷⁷⁷</strong> (first entered as Tristan⁷, settled as ~~~&gt;Tristan⁷⁷⁷ the same day, Nov 15, 2026), and its owner's claim-code fingerprint <em>is</em> baked into this version: a claim under that name passes only for the one code whose fingerprint matches, and is refused to everyone else.</p>
-  </div></details>
-  <div id="claimPhraseWrap" hidden>
-    <label class="fl" for="claimPhrase">Claim code for that name</label>
-    <input type="text" id="claimPhrase" placeholder="Only needed if your name is on the claimed-names registry — the one code you picked when you claimed it" maxlength="120" autocomplete="off" />
-    <p class="help">Checked on this device only — hashed and compared here; the code itself never leaves your device and is never sent to the host or anyone. Unregistered names need no code at all.</p>
+  <h2>Claim your seat — tap your name</h2>
+  <p class="sub"><strong>First thing at this table: your name — and you never type it here.</strong> The claimed names stand below as a tap list: tap yours and the seat is yours on this device. A name that is not claimed yet is minted <em>once</em> in the Name Forge — the typed-once work happens there, never in the table.</p>
+  <p class="help" style="font-size:15.5px;color:var(--ink)"><strong>Tap your name to claim your seat.</strong> Hold a name and the door explains what claiming it means.</p>
+  <div id="claimTapList" role="list" aria-label="Claimed names — tap your name to claim your seat"><p class="sub">Reading the claimed-names registry…</p></div>
+  <p class="help" id="claimDoorMsg" role="status" style="font-size:15px;color:var(--ink)"></p>
+  <div id="claimProofDoor" hidden>
+    <p style="margin-top:8px"><button class="btn primary" id="gotoProofBtn" type="button">This name asks for proof — tap to go to the proof door in the claim flow</button></p>
+    <p class="help">Proof never happens in the table. The claim code is given only at the proof door in the claim flow (with the Name Forge, in the explainer below), where it is checked on this device only by its SHA-256 fingerprint — the code itself never travels, is never typed into the table, and never appears in any record. Where this device has claimed this seat before, tapping the name seats you with no code at all — everyday re-entry is at most the seat PIN, where you have set one.</p>
   </div>
+  <div id="seatPinWrap" hidden>
+    <label class="fl" for="seatPinIn">Seat PIN for this seat — the PIN you set on this device</label>
+    <input type="password" id="seatPinIn" inputmode="numeric" autocomplete="off" placeholder="Your seat PIN" />
+    <p style="margin-top:8px"><button class="btn primary" id="seatPinBtn" type="button">Enter with my PIN — tap to enter</button></p>
+    <p class="help">This seat carries a PIN on this device, so re-entry asks for it — at most this, and only where you set one. The PIN is checked on this device only and never travels.</p>
+  </div>
+  <p style="margin-top:10px"><button class="btn primary" id="gotoForge" type="button">No name in the list yet? Mint your first name once in the Name Forge — tap to open the Forge</button></p>
+  <p class="help">The Forge is the one place a first name is typed — once, when it is minted and claimed, with its symbol shelf standing right beside the name field there, full of marks no keyboard shows. From then on your name stands in the tap list above, and you only ever tap it. The full claim form stands with the Forge in the “Who are you here?” layer of the explainer below.</p>
+  <div id="joinDoor" hidden>
+    <p class="help" style="font-size:15.5px;color:var(--ink)" id="claimedSeatLine" role="status"></p>
+    <button class="btn primary" id="joinTableBtn" type="button"><span style="display:block;font-size:22px">Join Table</span><span style="display:block;font-size:14.5px;font-weight:400">Tap to join the table</span></button>
+    <p class="help"><strong>Tap to join the table.</strong> One tap — the door remembers your seat on this device, so there are no forms, no re-typing, and no multi-step entry. Hold the button and it explains what joining does.</p>
+    <details class="fold"><summary><span>Seat PIN — optional, for everyday re-entry<span class="fold-sub">Set a PIN on this device and re-entry asks for at most that; clear it any time</span></span><span aria-hidden="true">▾</span></summary>
+    <div class="fold-body">
+      <label class="fl" for="seatPinSetIn">New seat PIN for your claimed seat — this device only</label>
+      <input type="password" id="seatPinSetIn" inputmode="numeric" autocomplete="off" placeholder="A PIN you will remember" />
+      <p style="margin-top:8px"><button class="btn small" id="seatPinSetBtn" type="button">Set my seat PIN</button> <button class="btn small" id="seatPinClearBtn" type="button">Clear my seat PIN</button></p>
+      <p class="help" id="seatPinMsg" role="status" style="font-size:14.5px;color:var(--ink)"></p>
+      <p class="help">Only a fingerprint of the PIN is kept, on this device only. The PIN is not your claim code and proves nothing about your name — it only guards everyday re-entry on this one device.</p>
+    </div></details>
+  </div>
+  <input type="hidden" id="fName" />
+  <details class="fold"><summary><span>Your role card<span class="fold-sub">Your role, where you stand, your color and motif — set once, kept on this device</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
   <label class="fl" for="fRole">Your role</label>
   <select id="fRole"></select>
   <div id="customRoleWrap" hidden>
@@ -320,14 +344,18 @@ body.dock-top .cpanel{bottom:auto;top:104px}
   <label class="fl" for="fStand">Where I stand — one line</label>
   <input type="text" id="fStand" placeholder="e.g. I own the building, and I'm tired of being the villain in this story." maxlength="90" />
   <p class="help">Your role's position, in your own words. Everyone at the table can read it. It is the honest starting point the run tests.</p>
-  <details class="fold"><summary><span>Your color &amp; motif<span class="fold-sub">How your role looks, and the token that stands for you on the Place</span></span><span aria-hidden="true">▾</span></summary>
-  <div class="fold-body">
   <label class="fl">Your color</label>
   <div class="swatches" id="swatches" role="group" aria-label="Choose your color"></div>
   <label class="fl">Your motif — the token that stands for you on the Place</label>
   <div class="motifs" id="motifs" role="group" aria-label="Choose your motif"></div>
   </div></details>
-
+  <details class="fold"><summary><span>Your name &amp; who you are here — in full<span class="fold-sub">Your saved character; the claimed-names registry; how a first name is minted</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
+  <p class="help">This name stands next to everything you say in the Run — the record attributes words to people, not to seats. <strong>Your name can be anything you can type</strong> — any language, any script, emoji, symbols, spaces, punctuation, mixed scripts, long or short — and it is stored and displayed <em>exactly</em> as you write it, every decoration intact. The law protects names; it doesn't police them. The one place that typing happens is the Name Forge, where a first name is minted once; at this door you only ever tap.</p>
+  <p class="help"><strong>You are your saved character — it's yours because it's saved on your device, like a save on a game cartridge.</strong> No log-in, no account, nothing registered anywhere. And plainly: your name here is a <em>claimed</em> name, not a verified identity — the Run records what was said at this table under that name; it does not prove who was holding the phone. One table manner: a name is claimed once per table while its seat is in the run — if yours is taken, add a distinguishing mark (“Sam from the north side”). Above that sits the <strong>claimed-names registry</strong> baked into this page (below) — a registered name can only be sat under by the person who claimed it, in any language and any form of symbols. And <strong>once a name is claimed on any table, it is claimed on all tables</strong> — you can claim yours right at this table, with the claim form in the “Who are you here?” layer of the explainer below; it is recorded in the table's Run and the registry's dated history, and travels to every table as registry updates ship with new published versions. Entry #1 is <strong>~~~&gt;Tristan⁷⁷⁷</strong> (first entered as Tristan⁷, settled as ~~~&gt;Tristan⁷⁷⁷ the same day, Nov 15, 2026), and its owner's claim-code fingerprint <em>is</em> baked into this version: a claim under that name passes only for the one code whose fingerprint matches, and is refused to everyone else.</p>
+  </div></details>
+  <details class="fold"><summary><span>Live tables with other people — the other doors<span class="fold-sub">Open a table and host it, join one with its 5-character code, or play solo against the engine</span></span><span aria-hidden="true">▾</span></summary>
+  <div class="fold-body">
   <div class="grid2">
     <div>
       <h3>Open a new table</h3>
@@ -348,8 +376,36 @@ body.dock-top .cpanel{bottom:auto;top:104px}
   <button class="btn" id="leaveBtn" type="button">Leave / step away</button>
   <button class="btn" id="copyCodeBtn" type="button">Copy my table code</button>
   <p id="sitMsg" class="help" role="status" style="font-size:15px;color:var(--ink)"></p>
+  </div></details>
   <p id="connLine" class="sub"></p>
 </section>
+<section class="card" id="vote1Card">
+  <h2>Vote #1 — always open</h2>
+  <p style="font-size:19px;line-height:1.45"><strong>Should we all be held accountable for our own actions — owning whatever comes of them, good, bad, or otherwise — under one standard for everybody: Be Good? Yes or no.</strong></p>
+  <p class="sub"><strong>Franchise:</strong> every being that can make a spot at the table gets a vote. The claim code proves a name, never a ticket to vote. One voting seat per device.</p>
+  <p class="sub"><strong>Always open — no closing date.</strong> Ballots are changeable at any time. The standing result is the majority of votes cast, and the counts below are live.</p>
+  <p class="vote-tally" id="vote1Counts">YES 0 · NO 0 · OTHER 0 — 0 ballots cast</p>
+  <p style="font-size:16.5px" id="vote1Result" role="status">No ballots cast yet — the standing result waits for the first ballot. The vote stands open either way.</p>
+  <div id="vote1Ballots"><p class="sub">No ballots yet — yours could be the first.</p></div>
+  <p class="help" id="vote1Mine" role="status" style="font-size:14.5px;color:var(--ink)"></p>
+  <div role="radiogroup" aria-label="Your Vote #1 ballot">
+    <label class="radio-pill"><input type="radio" name="vote1choice" value="yes" /> YES</label>
+    <label class="radio-pill"><input type="radio" name="vote1choice" value="no" /> NO</label>
+    <label class="radio-pill"><input type="radio" name="vote1choice" value="other" /> OTHER</label>
+  </div>
+  <div id="vote1OtherWrap" hidden>
+    <label class="fl" for="vote1Other">Your differing opinion — at full size</label>
+    <textarea id="vote1Other" rows="4" placeholder="Your other answer, in your own words, at full size — a differing opinion is offered at full size here, never shrunk."></textarea>
+    <p class="help">OTHER is a full answer at this table, not a footnote: it stands in the count and in the record at the same size as YES and NO, and the discussion door below is open for it.</p>
+  </div>
+  <label class="fl" for="vote1Why">Why — optional, at full size</label>
+  <textarea id="vote1Why" rows="3" placeholder="Your reason, as long as you want it — or leave it blank. No why is ever required while a vote is open."></textarea>
+  <p style="margin-top:8px"><button class="btn primary" id="vote1CastBtn" type="button">Cast my ballot — tap to cast</button> <button class="btn" id="vote1DiscussBtn" type="button">Discuss Vote #1 — tap to open the discussion</button></p>
+  <p class="help" id="vote1Gate" role="status" style="font-size:14.5px;color:var(--ink)"></p>
+  <p class="help" id="vote1Msg" role="status" style="font-size:14.5px;color:var(--ink)"></p>
+  <p class="help">Casting rides the same seat as everything else at this table: claim once (tap your name above), join (one tap on Join Table), cast. Every ballot and every change lands in the Run, attributed, under the Record Law — and because this vote never closes, a changed mind is never late.</p>
+</section>
+
 
 <section class="card" id="claimedNames">
   <h2>Claimed Names — the registry</h2>
@@ -721,6 +777,17 @@ body.dock-top .cpanel{bottom:auto;top:104px}
       </div>
     </div>
   </div></details>
+    <div style="border:1.5px solid var(--accent);border-radius:8px;padding:12px 14px;background:var(--paper2);margin:10px 0" id="claimProofWrap">
+      <h3 style="margin-top:0">The proof door — prove a claimed name is yours</h3>
+      <p class="sub">This is the one place a claim code is ever given: here in the claim flow, beside the Forge — <strong>never in the table</strong>. If you tapped your name at the entry door and it asked for proof, this is that proof. The code is checked <strong>on this device only</strong>, by its SHA-256 fingerprint: the code itself never travels, is never typed into the table, and never appears in any record — only the fingerprint is ever compared. Where this device has claimed the seat before, no proof is asked at the door at all — the tap alone seats you, at most with the seat PIN you set.</p>
+      <p class="help" id="claimProofFor" role="status" style="font-size:15px;color:var(--ink)">No name is waiting for proof right now — tap your name at the entry door and, if it asks, it will name itself here.</p>
+      <div id="claimPhraseWrap" hidden>
+        <label class="fl" for="claimPhrase">Your claim code — the one code you picked when you claimed it</label>
+        <input type="text" id="claimPhrase" placeholder="Checked here, on this device, by fingerprint only" maxlength="120" autocomplete="off" />
+        <p style="margin-top:8px"><button class="btn primary" id="claimCheckBtn" type="button">Check my claim code — tap to check</button></p>
+        <p class="help" id="claimProofMsg" role="status" style="font-size:14.5px;color:var(--ink)"></p>
+      </div>
+    </div>
     <details class="fold"><summary><span>Claim a name — the form<span class="fold-sub">Your name exactly as typed, your own code, an optional declared watermark, your mark and motion</span></span><span aria-hidden="true">▾</span></summary>
   <div class="fold-body">
 <div style="border:1.5px solid var(--accent);border-radius:8px;padding:12px 14px;background:var(--paper2);margin:10px 0">
@@ -993,14 +1060,13 @@ body.dock-top .cpanel{bottom:auto;top:104px}
   <p style="margin:0"><button class="btn" id="votingSeatBtn" type="button">Make my seat this device’s voting seat (pays the small toll)</button></p>
   <p class="help" id="votingSeatMsg" role="status" style="font-size:14px;color:var(--ink)"></p></div>
 
-  <h3 style="margin-top:16px">Vote #1 — the Founding vote</h3>
-  <p class="help" style="font-size:14.5px;color:var(--ink)"><strong>“Should money and everything money represents be removed?”</strong> The founding vote is its own class — <strong>Founding</strong> — because on a brand-new table no seat on Earth can be 7 or 30 days old, the founder’s included, and a founder exception would be a handle. So aging is waived for this one vote, its reason printed here on its face, and the other layers carry it: <strong>full roll call</strong> (a live check at cast time), <strong>one voting seat per device</strong>, and <strong>the toll</strong>. Ballots from <strong>claimed</strong> seats are labeled claimed — <em>labeled, not weighted</em>: every ballot counts the same, and the reader sees the composition of the count. When it closes, its count stands <strong>PROVISIONAL for 7 days</strong> — an announced challenge period, printed on the vote itself, in which anyone may file a challenge on the record with evidence that a cluster of seats is one operator; challenges are decided by the table under its kick-vote law, in the open. When the period closes clean, the count is marked <strong>FINAL</strong>; if a cluster is discounted, the corrected count is published with the evidence and the original count remains beside it. Nothing is rewritten. Its passing rule is the table’s shipped default, like any vote’s — majority wins, and the discussion door stands open on its face.</p>
+  <h3 style="margin-top:16px">Vote #1 — the standing vote</h3>
+  <p class="help" style="font-size:14.5px;color:var(--ink)"><strong>“Should we all be held accountable for our own actions — owning whatever comes of them, good, bad, or otherwise — under one standard for everybody: Be Good? Yes or no.”</strong> Vote #1 is not called — it <strong>stands open</strong> at the top of the table, from the moment the page opens, and it is <strong>always open: no closing date</strong>. Its ballots are YES / NO / OTHER — OTHER carries its why at full size, never shrunk, with a discussion door — and every ballot is <strong>changeable at any time</strong>. The standing result is the <strong>majority of votes cast</strong>, with live cast counts shown on its face. <strong>Franchise, as printed on the vote itself:</strong> every being that can make a spot at the table gets a vote; the claim code proves a name, never a ticket to vote; one voting seat per device. Casting rides the same seat as everything else at this table: claim once (tap), join (one tap), cast. The integrity layers above stand behind it as they stand behind every vote here, and the honest limit below applies to it exactly as printed.</p>
+  <p style="margin-top:8px"><a class="btn primary" href="#vote1Card">Go to Vote #1 — it stands open at the top of the table</a></p>
   <div class="lawbox"><p style="margin:0 0 6px"><strong>THE HONEST LIMIT — read this before you trust any count here.</strong></p>
     <p style="margin:0 0 6px">No system on Earth can prove that every seat at a table is a different being — not without an authority who checks identities, and this table has no such authority, on purpose: no accounts, no identity papers, no gatekeeper, and nobody who can refuse you a seat. So this table does not prove one-being-one-vote. Here is what it does instead. A fake seat is made <em>slow</em> (a seat must age, and live on the record, before it can ballot on the votes that matter most), <em>singular</em> (one voting seat per device), <em>effortful at the moment of balloting</em> (heavy votes are cast in a live roll call), and <em>visible</em> (every ballot is on the public record, permanently, with the seat’s age and claim status printed beside it). And the count is <em>correctable</em>: if a cluster of seats is shown, from evidence on the record, to be one operator, the table can discount those ballots — in the open, with the evidence published, the original count preserved, and a wrongly discounted ballot restorable the same way.</p>
     <p style="margin:0 0 6px">What this cannot stop, stated plainly: a determined operator with many devices, real patience, and other real humans willing to sit their seats for them can still multiply their voice here. No design that keeps the door open to everyone can stop that; the designs that claim to stop it do so by installing someone who can say no to you. We chose the open door and the bright room. If manipulation is ever proven on a vote, the record will show that too — and the table can void the count and run the vote again.</p>
     <p style="margin:0">A table that hid this limit would be selling certainty it does not have. This one prints it.</p></div>
-  <p style="margin-top:8px"><button class="btn primary" id="foundingCallBtn" type="button">Call Vote #1 — the Founding vote</button></p>
-  <p class="help" id="foundingMsg" role="status" style="font-size:14.5px;color:var(--ink)">Take a seat first — then anyone seated can call the Founding vote. It stands in the vote list below, with the honest limit printed on the vote itself.</p>
   <h3>Call a vote</h3>
   <label class="fl" for="voteQuestion">What this vote covers — in your own words</label>
   <textarea id="voteQuestion" maxlength="600" placeholder="One topic, or several listed together as one package. e.g. “Order pizza, split the cost evenly, and let Maya pick the toppings” — or just “Order pizza?”"></textarea>
@@ -1946,6 +2012,289 @@ function gatePass(name,btnId){
  return false;
 }
 
+/* ---------- LAUNCH BASICS: claim by tap, one-tap join, Vote #1 ----------
+   The entry door never asks anyone to type their own name. The claimed
+   names stand as a TAP LIST; tapping yours claims your seat on this
+   device. A first name is minted ONCE in the Name Forge (the claim flow
+   in the explainer) — the typed-once work happens there, never here.
+   Claim proof is unchanged: the claim code proves the name, checked on
+   this device only by its SHA-256 fingerprint (gateName, above) — the
+   code itself never travels, is never typed into the table, and never
+   appears in any record. Where this device has claimed a seat before,
+   tapping the name seats the person; everyday re-entry is at most the
+   seat PIN, where the person has set one on this device. Once a seat is
+   claimed, Join Table is ONE TAP, and the door remembers the seat. */
+var VOTE1_QUESTION="Should we all be held accountable for our own actions — owning whatever comes of them, good, bad, or otherwise — under one standard for everybody: Be Good? Yes or no.";
+var VOTE1_STORE="scenariotable.vote1ballots";
+var doorPendingName=null, doorPinOkFor=null, claimDoorSig="", vote1Sig="", holdFiredAt=0;
+function doorSeat(){
+ var s=lsGet("scenariotable.seat");
+ if(s&&s.name&&s.key)return s;
+ var hk=deviceClaimedKey();
+ if(hk){
+   for(var i=0;i<CLAIMED_NAMES.length;i++)if(CLAIMED_NAMES[i].key===hk)return {name:CLAIMED_NAMES[i].name,key:hk};
+   var list=localClaims();
+   for(var j=0;j<list.length;j++)if(list[j].key===hk)return {name:list[j].name,key:hk};
+ }
+ return null;
+}
+function doorMsg(t){var m=$("claimDoorMsg");if(m)m.textContent=t;}
+function seatPinRec(){return lsGet("scenariotable.seatPin")||null;}
+function seatPinHashFor(key){var p=seatPinRec();return (p&&p.key===key)?p.hash:null;}
+function holdExplain(el,text){
+ if(!el)return;
+ var timer=null,held=false;
+ el.addEventListener("pointerdown",function(){held=false;timer=setTimeout(function(){held=true;holdFiredAt=Date.now();doorMsg(text);},650);});
+ ["pointerup","pointerleave","pointercancel"].forEach(function(ev){el.addEventListener(ev,function(){if(timer)clearTimeout(timer);});});
+ el.addEventListener("click",function(e){if(held){e.preventDefault();e.stopPropagation();held=false;}},true);
+}
+function completeClaim(name){
+ var key=foldName(name);
+ lsSet("scenariotable.seat",{name:name,key:key});
+ if($("fName"))$("fName").value=name;
+ myCard.name=name;lsSet("scenariotable.card",myCard);
+ doorPendingName=null;
+ var pw=$("claimPhraseWrap");if(pw)pw.hidden=true;
+ var pd=$("claimProofDoor");if(pd)pd.hidden=true;
+ var pf=$("claimProofFor");if(pf)pf.textContent="Proven — “"+name+"” is claimed on this device. The door at the top remembers the seat; Join Table is one tap.";
+ var sw=$("seatPinWrap");if(sw)sw.hidden=true;
+ renderClaimDoor(true);
+ doorMsg("Seat claimed — “"+name+"” is your seat on this device, and the door remembers it. One tap on Join Table takes you in.");
+}
+function claimTap(name){
+ if(Date.now()-holdFiredAt<800)return; /* that press was a hold — it explained; it does not also claim */
+ var e=registryEntry(name);
+ var lc=e?null:localClaimEntry(name);
+ var key=foldName(name);
+ if(e&&e.status==="retired"){doorMsg("That name was claimed before and retired — retired names are never re-issued, because history attaches to them. Mint your own name in the Name Forge.");return;}
+ if(e&&!e.fingerprint){doorMsg("“"+name+"” is claimed — and locked in this version of the page: no claim-code fingerprint is recorded for it yet, so nobody can prove or wear it yet. There is no special door for anyone. Mint your own name in the Name Forge.");return;}
+ if(seatPinHashFor(key)&&doorPinOkFor!==key){
+   doorPendingName=name;
+   var sw2=$("seatPinWrap");if(sw2)sw2.hidden=false;
+   var pw2=$("claimPhraseWrap");if(pw2)pw2.hidden=true;
+   doorMsg("This seat carries a PIN on this device — enter it to take your seat. Everyday re-entry asks for at most this, and only where you set one.");
+   var pi=$("seatPinIn");if(pi)pi.focus();
+   return;
+ }
+ var seat=doorSeat();
+ if(claimVerifiedFor===key||deviceClaimedKey()===key||(seat&&seat.key===key)){completeClaim(name);return;}
+ if(e||lc){
+   doorPendingName=name;
+   var pd3=$("claimProofDoor");if(pd3)pd3.hidden=false;
+   var sw3=$("seatPinWrap");if(sw3)sw3.hidden=true;
+   var pf3=$("claimProofFor");if(pf3)pf3.textContent="Proving the claim: “"+name+"” — give its claim code below. It is checked on this device only, by its fingerprint; the code itself never travels, is never typed into the table, and never appears anywhere.";
+   doorMsg("“"+name+"” is claimed, and this device has not claimed that seat before — so it asks for proof. Proof happens at the proof door in the claim flow, never in the table: tap the proof-door button and give the code there. If the name is not yours, mint your own in the Name Forge.");
+   return;
+ }
+ completeClaim(name);
+}
+function renderClaimDoor(force){
+ var list=$("claimTapList");if(!list)return;
+ var seat=doorSeat();
+ var entries=[];
+ CLAIMED_NAMES.forEach(function(e){if(!e.aliasOf&&e.status==="claimed")entries.push({name:e.name,baked:true,fp:!!e.fingerprint});});
+ localClaims().forEach(function(c){entries.push({name:c.name,baked:false,fp:true});});
+ var sig=JSON.stringify({e:entries.map(function(x){return x.name;}),seat:seat,dev:deviceClaimedKey(),pin:seatPinRec()?seatPinRec().key:""});
+ if(!force&&sig===claimDoorSig)return;
+ claimDoorSig=sig;
+ list.innerHTML="";
+ if(!entries.length)list.innerHTML='<p class="sub">No claimed names stand in the registry yet — mint the first in the Name Forge.</p>';
+ entries.forEach(function(en){
+   var key=foldName(en.name);
+   var mine=!!(seat&&seat.key===key);
+   var b=document.createElement("button");
+   b.type="button";b.className="claim-name-btn";b.setAttribute("role","listitem");
+   if(mine)b.setAttribute("aria-pressed","true");
+   var sub=mine?"Your seat on this device — tap to claim it"
+     :en.baked?(en.fp?"Claimed name — tap to claim your seat":"Claimed name — locked in this version: no fingerprint recorded yet, so nobody can prove it yet")
+     :"Claimed at a table, recorded on this device — tap to claim your seat";
+   b.innerHTML="<strong>"+nameHTML(en.name,!!(mine&&myClaimProven(en.name)))+'</strong><span class="claim-name-sub">'+esc(sub)+"</span>";
+   b.addEventListener("click",function(){claimTap(en.name);});
+   holdExplain(b,"Claiming “"+en.name+"”: tapping takes this seat on this device, under that name, with everything the name carries in the registry. The claim code proves the name — checked on this device only, by fingerprint — and where this device has claimed this seat before, the tap alone seats you, at most asking the seat PIN you set.");
+   list.appendChild(b);
+ });
+ var jd=$("joinDoor");
+ if(jd){
+   if(seat){
+     jd.hidden=false;
+     var cl=$("claimedSeatLine");
+     if(cl)cl.innerHTML="Your seat on this device: <strong>"+esc(seat.name)+"</strong> — claimed, and remembered here."+(seated()?" You are at the table now.":"");
+     if($("fName")&&$("fName").value!==seat.name)$("fName").value=seat.name;
+   }else jd.hidden=true;
+ }
+}
+/* One tap in: the claimed seat enters the table. This is the table's own
+   local door — the same seat the solo door seats — with Vote #1 standing
+   open on arrival. Live tables with other people keep their own doors
+   (open / join with a code) in the fold below, unchanged. */
+function joinTable(){
+ var v1c=document.getElementById("vote1Card");
+ if(seated()){if(v1c)v1c.scrollIntoView({behavior:"smooth",block:"start"});doorMsg("You are at the table — Vote #1 stands open below, always open.");return;}
+ var seat=doorSeat();
+ if(!seat){doorMsg("Claim your seat first — tap your name in the list above. New here? Mint your first name once in the Name Forge, and it joins the list.");return;}
+ if($("fName"))$("fName").value=seat.name;
+ saveMyCardFromForm();
+ claimSlotSession();closedByHost=false;tableCode=null;
+ mode="solo";
+ S={seats:[],chars:[],run:[],record:[],chat:[],scene:{place:"The table is set",line:"Vote #1 stands open — cast when you are ready. Pick a scenario from the shelf to run one."},rules:DEFAULT_RULES,pos:{},guide:clientId,hostSeat:clientId,hostAway:false,resources:[],sharedRule:true,chanceAnyone:false,tableWord:"",votes:[],kicked:{},delegations:[],clock:{mode:"stop",running:false,startAt:0,accum:0,duration:60000,anyone:true,zeroFired:false}};
+ vote1State();
+ var ch=readFormChar();myCharIds=[ch.id];actAsId=ch.id;
+ S.seats.push({clientId:clientId,peerId:"solo",label:ch.name,away:false,voice:false,claimProven:myClaimProven(ch.name)});
+ ch.controller=clientId;S.chars.push(ch);S.pos[ch.id]={x:35,y:60};
+ pendingChars.forEach(function(pc){pc.controller=clientId;S.chars.push(pc);S.pos[pc.id]={x:20+Math.random()*55,y:30+Math.random()*40};});
+ pendingChars=[];
+ pushRun(runEntry("system","",ch.name+" joins the table — seat claimed by tap at the door, in through the one-tap Join Table door."));
+ pushRun(runEntry("system","","Vote #1 stands open at this table — always open, no closing date: “"+VOTE1_QUESTION+"” Ballots are YES / NO / OTHER, changeable at any time; the standing result is the majority of votes cast."));
+ renderAll();saveRunLocal();resetHistory();recordLocalClaimsInRun();recordLifeDay();
+ doorMsg("You are at the table. Vote #1 stands open right below — cast when you are ready.");
+ if(v1c)v1c.scrollIntoView({behavior:"smooth",block:"start"});
+}
+/* ----- Vote #1: the standing vote — always open, majority of votes cast.
+   Its ballots live in S.vote1 (shared table state: host-held, synced,
+   saved, and entered in the Run like every ballot at this table), and
+   this device keeps a mirror of the ballots it has seen, so the standing
+   count on this device survives the page closing and re-opens with the
+   table. It has no close path at all: no timer, no close button, no
+   auto-close — closeVote and maybeAutoClose never see it, because it is
+   not a called vote in S.votes. ----- */
+function vote1State(){
+ if(!S.vote1||typeof S.vote1!=="object"){
+   var m=lsGet(VOTE1_STORE);
+   S.vote1={ballots:(m&&typeof m==="object"&&!Array.isArray(m))?m:{}};
+ }
+ if(!S.vote1.ballots||typeof S.vote1.ballots!=="object")S.vote1.ballots={};
+ return S.vote1;
+}
+function vote1Counts(){
+ var b=vote1State().ballots,c={yes:0,no:0,other:0,total:0};
+ for(var k in b){var ch=b[k]&&b[k].choice;if(ch==="yes"||ch==="no"||ch==="other"){c[ch]++;c.total++;}}
+ return c;
+}
+function renderVote1(){
+ var card=$("vote1Card");if(!card)return;
+ var st=vote1State();
+ if(seated())lsSet(VOTE1_STORE,st.ballots);
+ var mine=st.ballots[clientId]||null;
+ var sig=JSON.stringify({b:st.ballots,seated:seated(),seat:doorSeat()});
+ if(sig===vote1Sig)return;
+ vote1Sig=sig;
+ var c=vote1Counts();
+ var cel=$("vote1Counts");
+ if(cel)cel.textContent="YES "+c.yes+" · NO "+c.no+" · OTHER "+c.other+" — "+c.total+" ballot"+(c.total===1?"":"s")+" cast";
+ var res;
+ if(!c.total)res="No ballots cast yet — the standing result waits for the first ballot. The vote stands open either way.";
+ else if(c.yes*2>c.total)res="Standing result: YES — a majority of the votes cast.";
+ else if(c.no*2>c.total)res="Standing result: NO — a majority of the votes cast.";
+ else if(c.other*2>c.total)res="Standing result: OTHER — a majority of the votes cast.";
+ else res="No majority of votes cast yet — "+(c.yes>=c.no&&c.yes>=c.other?"YES":(c.no>=c.other?"NO":"OTHER"))+" leads, and the vote stands open.";
+ var rel=$("vote1Result");if(rel)rel.textContent=res;
+ var bl=$("vote1Ballots");
+ if(bl){
+   var keys=Object.keys(st.ballots);
+   bl.innerHTML=keys.length?keys.map(function(k){var b=st.ballots[k];return '<div class="seatlist"><span style="flex:1"><strong>'+esc(b.label)+"</strong> — "+esc(voteChoiceLabel(b))+(b.claimed?' <span class="badge">claimed seat</span>':"")+(b.why?'<br/><span class="sub">Why: '+esc(b.why)+"</span>":"")+"</span></div>";}).join(""):'<p class="sub">No ballots yet — yours could be the first.</p>';
+ }
+ var ml=$("vote1Mine");
+ if(ml){
+   if(mine)ml.innerHTML="Your ballot stands: <strong>"+esc(voteChoiceLabel(mine))+"</strong>"+(mine.why?" — why: "+esc(mine.why):"")+". You can change it at any time — this vote never closes.";
+   else ml.textContent=seated()?"You have not cast a ballot yet.":"";
+ }
+ if(mine){
+   var r=card.querySelector('input[name="vote1choice"][value="'+mine.choice+'"]');
+   if(r)r.checked=true;
+   if(mine.choice==="other"){var ow=$("vote1OtherWrap");if(ow)ow.hidden=false;var ot=$("vote1Other");if(ot)ot.value=mine.other||"";}
+   var wy=$("vote1Why");if(wy)wy.value=mine.why||"";
+ }
+ var cb=$("vote1CastBtn");
+ if(cb){cb.textContent=mine?"Change my ballot — tap to change":"Cast my ballot — tap to cast";cb.disabled=!seated();}
+ var gt=$("vote1Gate");
+ if(gt)gt.textContent=seated()?"":(doorSeat()?"Join the table to cast — one tap on Join Table above. Casting rides your claimed seat: claim once (tap), join (one tap), cast.":"Claim your seat above first — tap your name — then Join Table (one tap), then cast. One voting seat per device.");
+}
+function castVote1(choice,other,why){
+ function go(){
+   sendEvent({type:"vote1Cast",choice:choice,other:other,why:why});
+   var m=$("vote1Msg");if(m)m.textContent="Ballot recorded — the counts above are live, and you can change your ballot at any time. This vote never closes.";
+ }
+ if(lsGet("scenariotable.votingseat")!==clientId){
+   var m2=$("vote1Msg");if(m2)m2.textContent="Designating this device's one voting seat first — the small proof-of-work toll, a fraction of a second…";
+   setTimeout(function(){powSolve("seat:"+clientId,20);lsSet("scenariotable.votingseat",clientId);updateVotingSeatLine();go();},40);
+   return;
+ }
+ go();
+}
+if($("joinTableBtn"))$("joinTableBtn").addEventListener("click",function(){if(Date.now()-holdFiredAt<800)return;joinTable();});
+if($("joinTableBtn"))holdExplain($("joinTableBtn"),"Join Table: one tap takes your claimed seat into the table — no forms, no re-typing. The door remembers your seat on this device, so after a reload this same one tap is the whole way back in. Vote #1 stands open inside, always open.");
+if($("gotoProofBtn"))$("gotoProofBtn").addEventListener("click",function(){
+ var pw=$("claimPhraseWrap");if(pw)pw.hidden=false;
+ openFoldedTool($("claimPhrase"));
+ var cp=$("claimPhrase");if(cp)cp.focus({preventScroll:true});
+ var pm=$("claimProofMsg");if(pm)pm.textContent=doorPendingName?("Checking the claim for “"+doorPendingName+"” — the code is compared by fingerprint on this device only."):"";
+});
+if($("claimCheckBtn"))$("claimCheckBtn").addEventListener("click",function(){
+ var pm=$("claimProofMsg");
+ if(!doorPendingName){if(pm)pm.textContent="Tap your name at the entry door first — then this check knows which name it is proving.";return;}
+ var nm=doorPendingName;
+ gateName(nm).then(function(ok){
+   if(ok){completeClaim(nm);var sd=document.getElementById("sit");if(sd)sd.scrollIntoView({behavior:"smooth",block:"start"});}
+   else{var sm=$("sitMsg");var t=sm&&sm.textContent?sm.textContent:"That claim code doesn't match this name. If the name is yours, try your code again; otherwise mint your own name in the Name Forge.";if(pm)pm.textContent=t;doorMsg(t);}
+ });
+});
+if($("seatPinBtn"))$("seatPinBtn").addEventListener("click",function(){
+ if(!doorPendingName){doorMsg("Tap your name in the list first.");return;}
+ var pin=($("seatPinIn").value||"");
+ if(!pin){doorMsg("Enter your seat PIN first.");return;}
+ sha256hex(pin).then(function(h){
+   if(h&&h===seatPinHashFor(foldName(doorPendingName))){
+     doorPinOkFor=foldName(doorPendingName);
+     $("seatPinIn").value="";
+     var nm=doorPendingName;doorPendingName=null;
+     var sw=$("seatPinWrap");if(sw)sw.hidden=true;
+     claimTap(nm);
+   }else doorMsg("That PIN doesn't match this seat's PIN on this device. Try again — the PIN is checked here only and never travels.");
+ });
+});
+if($("seatPinSetBtn"))$("seatPinSetBtn").addEventListener("click",function(){
+ var msg=$("seatPinMsg");
+ var seat=doorSeat();
+ if(!seat){if(msg)msg.textContent="Claim your seat first — the PIN belongs to a claimed seat.";return;}
+ var pin=($("seatPinSetIn").value||"");
+ if(!pin||pin.length<4){if(msg)msg.textContent="Pick a PIN of at least 4 characters — something you will remember.";return;}
+ sha256hex(pin).then(function(h){
+   if(!h){if(msg)msg.textContent="This browser could not make a fingerprint for the PIN — no PIN was set.";return;}
+   lsSet("scenariotable.seatPin",{key:seat.key,hash:h});
+   $("seatPinSetIn").value="";
+   if(msg)msg.textContent="Seat PIN set for “"+seat.name+"” on this device. Everyday re-entry now asks for at most this PIN. Only its fingerprint is kept, here only.";
+   renderClaimDoor(true);
+ });
+});
+if($("seatPinClearBtn"))$("seatPinClearBtn").addEventListener("click",function(){
+ var msg=$("seatPinMsg");
+ lsDel("scenariotable.seatPin");doorPinOkFor=null;
+ if(msg)msg.textContent="Seat PIN cleared on this device. Re-entry is the tap alone again.";
+ renderClaimDoor(true);
+});
+document.querySelectorAll('input[name="vote1choice"]').forEach(function(r){
+ r.addEventListener("change",function(){
+   var ow=$("vote1OtherWrap");
+   var picked=document.querySelector('input[name="vote1choice"]:checked');
+   if(ow)ow.hidden=!(picked&&picked.value==="other");
+ });
+});
+if($("vote1CastBtn"))$("vote1CastBtn").addEventListener("click",function(){
+ var msg=$("vote1Msg");
+ if(!seated()){if(msg)msg.textContent="Join the table first — claim your seat (tap your name), then one tap on Join Table, then cast.";var sd=document.getElementById("sit");if(sd)sd.scrollIntoView({behavior:"smooth",block:"start"});return;}
+ var picked=document.querySelector('input[name="vote1choice"]:checked');
+ if(!picked){if(msg)msg.textContent="Pick YES, NO, or OTHER first — then cast.";return;}
+ var other=$("vote1Other")?$("vote1Other").value.trim():"";
+ if(picked.value==="other"&&!other){if(msg)msg.textContent="OTHER carries its why at full size — write your differing opinion in the big box above, at full size, then cast. A differing opinion is offered at full size here, never shrunk.";var ow2=$("vote1OtherWrap");if(ow2)ow2.hidden=false;if($("vote1Other"))$("vote1Other").focus();return;}
+ castVote1(picked.value,other,$("vote1Why")?$("vote1Why").value.trim():"");
+});
+if($("vote1DiscussBtn"))$("vote1DiscussBtn").addEventListener("click",function(){
+ var chEl=document.getElementById("channels");
+ if(chEl)chEl.scrollIntoView({behavior:"smooth",block:"start"});
+ var tt=$("tabTalk");if(tt)tt.click();
+ var msg=$("vote1Msg");if(msg)msg.textContent="The discussion door is Table Talk, beside the Run — talk it through there, in the open, and your words stand in the record like everything at this table. Whispers stay private and are never part of it.";
+});
+
 /* ---------- The claim form: claim a name right at any table ---------- */
 function renderClaimLists(){
  var box=$("claimLists");if(!box)return;
@@ -2043,6 +2392,7 @@ if($("claimNameBtn"))$("claimNameBtn").addEventListener("click",function(){
    if(wmPayload&&$("fName").value===typedName){$("fName").value=name;saveMyCardFromForm();}
    $("claimCodeIn").value="";if($("claimWatermarkIn"))$("claimWatermarkIn").value="";
    renderClaimLists();
+   completeClaim(name); /* the minted name joins the door's tap list, claimed on this device */
    msg.textContent="Claimed. \u201C"+typedName+"\u201D is recorded "+(rec.inRun?"in this table's Run and ":"on this device, ready to enter the Run of the next table you open or join, and ")+"in the registry's history with its date ("+rec.when+"). Once a name is claimed on any table, it is claimed on all tables: it travels with the next published registry, and every table enforces it from that version on. On this device it is enforced right now, and your code opens it. Keep your code — only its fingerprint was recorded, never the code itself."+(wmPayload?" Your name carries its declared watermark — the registry below says so in the open, and its exact codepoint spelling is published there for anyone to check against.":"")+" Your chosen standing — mark "+style.mark+", motion: "+style.motion+" — is recorded in your entry and will be conferred on your proven seat, on the exact string only.";
  });
 });
@@ -2556,6 +2906,21 @@ function hostApply(ev){
    if(vf.anonymous)pushRun(runEntry("vote","","An anonymous ballot was cast under handed authority — "+voteChoiceLabel(bf)+(bf.why?" — why: "+bf.why:"")+" — on: “"+voteScope(vf)+"”",{author:ev.clientId}));
    else pushRun(runEntry("vote",st.label,"Vote cast — "+voteBallotLine(bf,vf)+" — on: “"+voteScope(vf)+"”",{author:ev.clientId}));
    maybeAutoClose(vf);
+   return true;
+  case "vote1Cast":
+   /* VOTE #1 — the standing vote. Always open: there is no close path
+      for it anywhere in this logic. Ballots are changeable at any time;
+      the standing result is read live as the majority of votes cast.
+      One ballot per seat — and the seat is this device's one voting
+      seat, designated through the same toll as every ballot here. The
+      claim code is never a ticket: any seated being may cast. */
+   st=seatOf(ev.clientId); if(!st||st.away)return false;
+   if(["yes","no","other"].indexOf(ev.choice)<0)return false;
+   var v1s=vote1State();
+   var prev1=v1s.ballots[ev.clientId];
+   var nb1={choice:ev.choice,other:ev.choice==="other"?String(ev.other||"").slice(0,4000):"",why:String(ev.why||"").slice(0,4000),label:st.label,claimed:!!st.claimProven,ts:Date.now()};
+   v1s.ballots[ev.clientId]=nb1;
+   pushRun(runEntry("vote",st.label,(prev1?("Vote #1 — ballot changed by "+st.label+" from "+voteChoiceLabel(prev1)+" to "+voteChoiceLabel(nb1)):("Vote #1 — ballot cast by "+st.label+": "+voteChoiceLabel(nb1)))+" — “"+VOTE1_QUESTION+"”"+(nb1.why?" — why: "+nb1.why:"")+" Vote #1 is always open — no closing date; ballots are changeable at any time, and the standing result is the majority of votes cast.",{author:ev.clientId}));
    return true;
   case "voteDecline":
    /* Choosing not to vote — recorded by name, with a why or without.
@@ -3272,7 +3637,7 @@ function renderVotes(){
    list.appendChild(wrap);
  });
 }
-function renderAll(){renderConn();renderSeats();renderScene();renderRun();renderChat();renderChars();renderResources();renderGuide();renderVotes();renderClock();syncVoiceSeats();}
+function renderAll(){renderConn();renderSeats();renderScene();renderRun();renderChat();renderChars();renderResources();renderGuide();renderVotes();renderClock();syncVoiceSeats();renderVote1();renderClaimDoor();}
 
 /* ---------- Role card modal ---------- */
 function openCard(id){
@@ -4285,7 +4650,7 @@ $("offlineBtn").addEventListener("click",function(){
 });
 
 /* ---------- Dock, compass, settings ---------- */
-var PLACES=[["top","Top of page"],["sit","Take your seat — your name first"],["claimedNames","Claimed Names — the registry"],["tablesDeck","Your tables on this device"],["arrival","While you were gone — and what needs you"],["whos","Who's at the table"],["beginner","Never done this before?"],["scenarios","Scenarios"],["seatsCard","Seats & voice"],["sceneBanner","The Place & clock"],["rolesCard","Roles at this table"],["guideCard","The Guide"],["resourcesCard","Shared Resources"],["agreementsCard","The Table's Agreements"],["votesCard","Votes at the table"],["channels","The Run & Table Talk"],["saveCard","Save & go back"],["how","How the table works"],["hostTools","Table word"],["missing","What are we missing?"],["bottom","Bottom of page"]];
+var PLACES=[["top","Top of page"],["sit","Claim your seat — tap your name"],["vote1Card","Vote #1 — always open"],["claimedNames","Claimed Names — the registry"],["tablesDeck","Your tables on this device"],["arrival","While you were gone — and what needs you"],["whos","Who's at the table"],["beginner","Never done this before?"],["scenarios","Scenarios"],["seatsCard","Seats & voice"],["sceneBanner","The Place & clock"],["rolesCard","Roles at this table"],["guideCard","The Guide"],["resourcesCard","Shared Resources"],["agreementsCard","The Table's Agreements"],["votesCard","Votes at the table"],["channels","The Run & Table Talk"],["saveCard","Save & go back"],["how","How the table works"],["hostTools","Table word"],["missing","What are we missing?"],["bottom","Bottom of page"]];
 var placeIdx=0;
 function currentPlace(){
  var best=0;
@@ -6981,7 +7346,7 @@ renderScriptBuilder();renderTray();
 
 /* ---------- Init ---------- */
 (function init(){
- renderAll();updateAutosaveStatus();renderUserSaves();renderHistoryButtons();renderClaimLists();
+ renderAll();updateAutosaveStatus();renderUserSaves();renderHistoryButtons();renderClaimLists();renderClaimDoor(true);
  var stored=lsGet(AUTOSAVE_KEY);
  if(stored&&stored.S&&stored.S.run&&stored.S.run.length&&!seated()){$("resumeBanner").hidden=false;updateAutosaveStatus();}
 })();
