@@ -74,6 +74,22 @@ input[type="text"],input[type="number"],input[type="date"],select,textarea{width
 .entry{border:2px solid var(--line);border-radius:.6rem;padding:.7rem .9rem;margin:.6rem 0;background:var(--surface)}
 footer{border-top:2px solid var(--line);margin-top:2rem;padding-top:1rem;font-size:.92rem;color:var(--muted)}
 .kicker{font-weight:800;color:var(--clay);letter-spacing:.04em;text-transform:uppercase;font-size:.8rem}
+.presetgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));gap:.5rem;margin:.8rem 0}
+.presetgrid button{border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:.55rem;padding:.6rem .5rem;font-weight:700;cursor:pointer;text-align:left;font-size:.95rem}
+.presetgrid button[aria-pressed="true"]{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+.presetgrid button .extra{display:block;font-size:.75rem;font-weight:600;opacity:.85}
+.labgrid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}
+@media(max-width:720px){.labgrid{grid-template-columns:1fr}}
+#labBall{width:100%;max-width:340px;height:auto;display:block;margin:0 auto;touch-action:none}
+#labBall .finger{cursor:grab}
+#labBall .finger:active{cursor:grabbing}
+input[type="range"]{width:100%;accent-color:var(--green)}
+.readout{background:var(--surface2);border:2px solid var(--line);border-radius:.6rem;padding:.7rem .9rem;margin:.6rem 0}
+.readout strong.big{font-size:1.15rem}
+.zonewrap{display:flex;gap:1rem;flex-wrap:wrap}
+.zonewrap figure{margin:0;flex:1 1 13rem}
+.zonewrap figcaption{font-weight:700;font-size:.92rem;margin-bottom:.3rem}
+svg.view{width:100%;height:auto;background:var(--surface);border:2px solid var(--line);border-radius:.6rem}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 </style>
@@ -84,7 +100,7 @@ footer{border-top:2px solid var(--line);margin-top:2rem;padding-top:1rem;font-si
 
 <nav class="compass" aria-label="Page compass — tap a word to jump">
   <a href="#pitching">Pitching</a><a href="#batting">Batting</a><a href="#drills">Drills</a>
-  <a href="#trainer">Timing Trainer</a><a href="#record">Practice Record</a>
+  <a href="#trainer">Timing Trainer</a><a href="#lab">Pitch Lab</a><a href="#record">Practice Record</a>
 </nav>
 
 <div class="wrap">
@@ -338,6 +354,100 @@ footer{border-top:2px solid var(--line);margin-top:2rem;padding-top:1rem;font-si
 </div>
 </section>
 
+<!-- ============ CREATE-A-PITCH LAB ============ -->
+<section id="lab">
+<h2>Create-a-Pitch Lab — build a grip, test it</h2>
+<p>Tristan's ask, built as a toy with the teaching left in: <strong>move the fingers around on the ball, set each finger's pressure, pick what your wrist and forearm do — then see what the model says the pitch becomes, and throw it at a strike zone to test its accuracy.</strong> Knowledge as play: the full why is on the face of the lab, and nothing below pretends to be a measurement.</p>
+<p><strong>Play it like a game, because it is one:</strong> there is no wrong grip here. Load a documented pitch to learn it, then ruin it on purpose — split the fingers to the edges, crush one side, turn the forearm the “wrong” way — and read what the model says you just invented. Wild ideas cost nothing on a screen, and half of them teach you something a safe grip never would. Then take your build to the accuracy test in step 4 and play the real game: <strong>beat your own best grouping.</strong> Your tightest group is kept on this page as the mark — every new build gets measured against the best you, not against anybody else.</p>
+
+<div class="warn"><strong>Teaching model — the simplifications, named at full size:</strong> real spin is measured with high-speed cameras and ball sensors (the systems behind Statcast numbers). This lab has none of that. It estimates <em>direction and trade-offs</em> from finger placement, pressure, and forearm action using the documented behaviour of each grip family. It does not measure your real pitch, your real spin, or your real speed — and two pitchers throwing the “same” grip will get different real pitches. Use it to learn <em>why</em> grips do what they do, then test the real thing in practice.</div>
+
+<div class="teach" data-teach="light"><span class="who">The Magnus effect — why a spinning ball moves, in plain words</span><p>A spinning ball drags a thin layer of air around with it. On one side of the ball, that dragged air moves <em>with</em> the air rushing past; on the other side it fights it. The air ends up pushed to one side — and the ball gets pushed the other way. That push is the Magnus effect. Backspin (top of the ball spinning toward the pitcher) pushes the ball <em>up</em> against gravity, so a four-seam fastball falls less than a dropped stone would — it never truly rises, it just falls less than the hitter's eye expects. Topspin does the opposite and drags a curveball down. Tilt the spin sideways and the push goes sideways: that's a slider's cut. The seams matter because they grip the air and make the push stronger and steadier. No spin, no push — which is why a knuckleball, thrown with almost no spin, just flutters wherever the air takes it.</p></div>
+
+<h3>1 · Start from a documented grip — tap one to load it onto the ball</h3>
+<p class="small">Tristan's named list comes first and complete. The last three are labelled additions — real documented pitches, but not on his list, so they say so.</p>
+<div class="presetgrid" id="presetGrid" role="group" aria-label="Pitch presets — tap to load a grip"></div>
+<div class="card" id="presetCard" aria-live="polite"><p style="margin:0"><strong>No preset loaded yet.</strong> Tap a pitch above, or just start dragging fingers — the lab will name the closest documented family for whatever you build.</p></div>
+
+<h3>2 · Build your grip — drag the fingers, set the pressure</h3>
+<div class="btnrow"><button class="btn secondary" id="wildBtn" type="button">Tap to deal me a wild grip — random fingers, random pressures, see what happens</button></div>
+<p class="small">The wild-grip button is the toy box door: it scrambles the build so you start from somewhere no coach would put you, and the readout below tells you which documented family your accident is closest to. Some of the best learning in this lab starts from a grip you would never have chosen.</p>
+<div class="labgrid">
+<div>
+<svg id="labBall" viewBox="0 0 200 200" role="application" aria-label="Baseball, top view. Drag each finger pad around the ball.">
+<circle cx="100" cy="100" r="86" fill="#fdfdf8" stroke="#333" stroke-width="2"/>
+<path d="M38 42 Q100 84 162 42" fill="none" stroke="#b03024" stroke-width="3" stroke-dasharray="5 3"/>
+<path d="M38 158 Q100 116 162 158" fill="none" stroke="#b03024" stroke-width="3" stroke-dasharray="5 3"/>
+<path d="M52 22 Q78 100 52 178" fill="none" stroke="#b03024" stroke-width="2" stroke-dasharray="4 3" opacity="0.55"/>
+<path d="M148 22 Q122 100 148 178" fill="none" stroke="#b03024" stroke-width="2" stroke-dasharray="4 3" opacity="0.55"/>
+<g id="fingerLayer"></g>
+</svg>
+<p class="small" style="text-align:center">The ball from above, as your hand sees it. <strong>Drag a finger pad</strong> to move it — onto a seam, off it, spread wide or pinched together. Shown for a right-handed pitcher; mirror it for a lefty.</p>
+<div class="dial" role="group" aria-label="Throwing hand">
+<button type="button" id="handR" aria-pressed="true">Right-handed — tap to select</button>
+<button type="button" id="handL" aria-pressed="false">Left-handed — tap to select</button>
+</div>
+<label for="fbSpeed">Your fastball speed (mph) — the lab prices every pitch against it</label>
+<input type="number" id="fbSpeed" min="40" max="105" value="85" />
+</div>
+<div>
+<p style="margin-top:0"><strong>Finger pressure</strong> — slide each one. Pressure is where movement is made: the finger that pushes hardest at release tilts the spin.</p>
+<div id="pressureBox"></div>
+<p><strong>Wrist &amp; forearm action at release</strong> — tap one. Same grip, different forearm, different pitch: this is the whole difference between a curveball family and a screwball family.</p>
+<div class="stack" id="wristBox" role="group" aria-label="Wrist and forearm action — tap to choose">
+<button class="btn secondary" type="button" data-wrist="pronate" aria-pressed="false" style="text-align:left">Pronate — turn the thumb down and inward, like turning a key to lock a door. <span class="small">Pushes spin toward the arm side: changeups fade, screwballs break the “wrong” way.</span></button>
+<button class="btn secondary" type="button" data-wrist="neutral" aria-pressed="true" style="text-align:left">Neutral — palm stays facing the target, handshake position. <span class="small">Clean backspin or clean drop: fastballs, splitters, most changeups.</span></button>
+<button class="btn secondary" type="button" data-wrist="supinate" aria-pressed="false" style="text-align:left">Supinate — turn the thumb up and outward, like holding a bowl of soup. <span class="small">Tilts spin toward the glove side: curveballs and sliders live here.</span></button>
+</div>
+<div class="readout" aria-live="polite">
+<p style="margin:.1rem 0"><strong class="big" id="labName">Closest to a four-seam fastball — your variant</strong></p>
+<p style="margin:.2rem 0" id="labSpin"><strong>Spin:</strong> —</p>
+<p style="margin:.2rem 0" id="labMove"><strong>Movement:</strong> —</p>
+<p style="margin:.2rem 0" id="labVelo"><strong>Velocity:</strong> —</p>
+<p style="margin:.2rem 0" id="labWhy"><strong>Why:</strong> —</p>
+</div>
+</div>
+</div>
+
+<h3>3 · See it fly — flight view and strike-zone view</h3>
+<div class="zonewrap">
+<figure><figcaption>Pitch flight, from the side — release at left, plate at right</figcaption>
+<svg class="view" id="flightView" viewBox="0 0 320 150" role="img" aria-label="Drawn pitch flight path"></svg></figure>
+<figure><figcaption>Where the model puts it at the plate — catcher's view</figcaption>
+<svg class="view" id="zoneView" viewBox="0 0 200 200" role="img" aria-label="Drawn strike zone with predicted pitch location"></svg></figure>
+</div>
+<p class="small">The dot is where the model sends <em>this</em> grip if you aim at the middle. Movement numbers are inches of break against a spinless ball on the same path — the way coaches talk about break — estimated, not measured.</p>
+
+<h3>4 · Accuracy test — throw your pitch 10 times</h3>
+<p>The spread is not random decoration. It is driven by <strong>the grip family's documented control difficulty</strong> and by <strong>the pressure asymmetry you built in</strong> — squeeze harder on one side and the model pulls your pitches that way, the way a real tilted release does. A sound grip groups tight; a wild grip throws wild, and the lab tells you which ingredient did it.</p>
+<div class="zonewrap">
+<figure><figcaption>Your 10 throws — catcher's view</figcaption>
+<svg class="view" id="testView" viewBox="0 0 200 200" role="img" aria-label="Strike zone showing your ten test throws"></svg></figure>
+<div style="flex:1 1 13rem">
+<div class="btnrow"><button class="btn" id="throwBtn" type="button">Tap to throw 10 pitches</button></div>
+<p id="bestLine" aria-live="polite"><strong>The mark to beat:</strong> no grouping yet — your first test sets it.</p>
+<p id="testResult" aria-live="polite"><strong>No test yet.</strong> Build a grip above, then throw it. The game is simple: group them tighter than your best group so far. A wild grip that beats your mark teaches you more than a famous grip that doesn't — the scoreboard only knows the spread.</p>
+</div>
+</div>
+
+<details><summary>Arm honesty: the screwball — both shelves, same size <span class="gesture">Tap to open</span></summary>
+<div class="duo">
+<div class="shelf hasnt"><span class="tag">The old reputation</span><h3>“The screwball destroys arms”</h3><p>For decades the screwball was baseball's forbidden pitch: coaches banned it, and the story was that turning the forearm hard into pronation — thumb down and inward, against the fastball's natural finish — to make a ball break arm-side tore elbows apart. Famous screwballers' sore arms were told as proof, and many organisations still will not teach it to young pitchers.</p></div>
+<div class="shelf works"><span class="tag">The newer analysis</span><h3>What biomechanics work found</h3><p>More recent biomechanical analysis — including work from the American Sports Medicine Institute's lab — has not found the screwball's elbow stress to be clearly worse than a fastball's or curveball's when thrown with sound mechanics; some researchers argue the dread came from <em>how</em> it was taught (forcing the twist with the elbow instead of letting the forearm turn) rather than the pitch itself. The honest summary: the reputation is stronger than the evidence, the evidence is thinner than anyone would like, and it stays contested.</p></div>
+</div>
+<p><strong>The standing line, for every pitch in this lab:</strong> experimenting belongs in practice, at sub-max effort, a few throws at a time — never first tried in a game, never through discomfort. <strong>Pain means stop</strong>, today and until a professional has looked at it if it lingers, sharpens, or changes how you throw. A grip you invented on a screen is a question, and your arm is not obliged to answer it at full speed.</p>
+</details>
+
+<h3>5 · Name it and keep it — save your pitch to the practice record</h3>
+<div class="card">
+<label for="pitchName">Your name for this pitch</label>
+<input type="text" id="pitchName" placeholder="e.g. The Tristanator, Grandma's Fader" autocomplete="off" />
+<div class="btnrow"><button class="btn" id="savePitchBtn" type="button">Tap to save this pitch to the practice record</button></div>
+<p class="small" id="savePitchMsg" aria-live="polite">Saved pitches land in the Practice Record at the bottom of this page, stored on this device only. The record's Export button downloads them with everything else, and its Forget button clears them with everything else — one record, one door, nothing sent anywhere.</p>
+<div id="labSaved"></div>
+</div>
+</section>
+
 <!-- ============ WATCH ============ -->
 <section id="watch">
 <h2>Watch it done</h2>
@@ -537,13 +647,316 @@ document.getElementById('exportBtn').addEventListener('click',function(){
   var blob=new Blob([text],{type:'text/plain'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='baseball-practice-record.txt';document.body.appendChild(a);a.click();a.remove();
 });
 document.getElementById('forgetBtn').addEventListener('click',function(){
-  localStorage.removeItem(KEY);localStorage.removeItem('bb_teach');
+  localStorage.removeItem(KEY);localStorage.removeItem('bb_teach');localStorage.removeItem('bb_lab_best_v1');
   document.getElementById('alias').value='';render();
   document.getElementById('forgetMsg').textContent='Forgotten. The record and saved settings on this device are cleared.';
 });
 var savedAlias=localStorage.getItem('bb_alias');if(savedAlias)document.getElementById('alias').value=savedAlias;
 document.getElementById('alias').addEventListener('change',function(){localStorage.setItem('bb_alias',this.value);});
 render();
+})();
+</script>
+<script>
+(function(){
+"use strict";
+/* ================= CREATE-A-PITCH LAB ================= */
+var FINGERS=[["index","Index"],["middle","Middle"],["ring","Ring"],["thumb","Thumb"]];
+var COLORS={index:"#2e6b34",middle:"#a63d22",ring:"#245a7a",thumb:"#8a6d1a"};
+/* positions are SVG coords on a 200-box ball, centre 100,100. pressures 0-100. */
+var PRESETS=[
+{id:"four",name:"Four-Seam Fastball",pos:{index:[82,32],middle:[112,30],ring:[148,52],thumb:[100,178]},pr:{index:70,middle:70,ring:20,thumb:50},wrist:"neutral",drop:0,h:2,v:-8,ctrl:1,spin:"Nearly pure backspin, spinning straight over the top toward the pitcher.",
+ card:"<strong>What it does and why:</strong> index and middle sit <em>across</em> the wide seam gap, so four seams bite the air every revolution. Maximum clean backspin means maximum Magnus lift — the ball falls less than any other pitch, which the hitter reads as late life. This is the reference pitch: every other pitch's speed and movement on this page is priced against it.",
+ velo:"<strong>Velocity:</strong> this IS the fastball — 0 mph below your fastball, by definition.",
+ move:"<strong>Typical movement:</strong> 0–4 in of arm-side run, and it “rises” only in the sense of falling several inches less than a spinless ball.",
+ diff:"<strong>Control difficulty: 1 of 5 — the easiest pitch to command.</strong> The grip every pitcher learns first, for good reason."},
+{id:"two",name:"Two-Seam Fastball",pos:{index:[88,34],middle:[110,34],ring:[146,54],thumb:[100,178]},pr:{index:65,middle:70,ring:20,thumb:50},wrist:"neutral",drop:2,h:7,v:2,ctrl:2,spin:"Backspin tilted slightly toward the arm side.",
+ card:"<strong>What it does and why:</strong> the fingers ride <em>along</em> the narrow seams, closer together. The spin comes out a touch less pure than the four-seam, so the Magnus push tilts: the ball runs toward the pitching-arm side and sinks more as it slows. The ground-ball fastball — trade a whisper of speed for late, heavy movement down in the zone.",
+ velo:"<strong>Velocity:</strong> typically 1–3 mph below the four-seam fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> 6–10 in of arm-side run with real sink late.",
+ diff:"<strong>Control difficulty: 2 of 5.</strong> Nearly fastball command; the extra movement occasionally runs it off the edge."},
+{id:"circle",name:"Circle Change",pos:{index:[56,60],middle:[108,30],ring:[132,36],thumb:[58,148]},pr:{index:40,middle:65,ring:60,thumb:40},wrist:"pronate",drop:10,h:6,v:6,ctrl:3,spin:"Slow backspin with an arm-side tilt, from the pronated finish.",
+ card:"<strong>What it does and why:</strong> the index finger and thumb pinch a circle — the “OK” sign — against the side of the ball, and the middle and ring fingers do the throwing. The ball sits off the fingertips, so spin and speed bleed away while the <em>arm</em> still moves at fastball speed. The hitter reads fastball, commits, and swings over a ball that is also fading arm-side and sinking. The circle is the grip; the deception is the arm speed.",
+ velo:"<strong>Velocity:</strong> typically 8–12 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> arm-side fade of 5–9 in with sink — a fastball that dissolves.",
+ diff:"<strong>Control difficulty: 3 of 5.</strong> The feel pitch: the circle must stay loose, and a squeezed circle floats."},
+{id:"straight",name:"Straight Change (Three-Finger)",pos:{index:[78,36],middle:[100,28],ring:[124,36],thumb:[100,176]},pr:{index:55,middle:60,ring:55,thumb:45},wrist:"neutral",drop:9,h:3,v:5,ctrl:3,spin:"Slow, fairly straight backspin.",
+ card:"<strong>What it does and why:</strong> three fingers spread across the top of the ball and the ball pushed deeper into the hand than a fastball. More fingers and more palm mean more friction and less fingertip whip — the ball leaves slower with less spin, but on a fastball's straight line. The simplest changeup to learn, and the one most young pitchers start with before graduating to the circle.",
+ velo:"<strong>Velocity:</strong> typically 7–11 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> modest sink, a little arm-side fade for many pitchers; its weapon is speed difference, not break.",
+ diff:"<strong>Control difficulty: 3 of 5.</strong> Forgiving grip; the failure mode is slowing the arm down, which tells the pitch."},
+{id:"palm",name:"Palm Ball",pos:{index:[52,70],middle:[84,34],ring:[118,34],thumb:[100,170]},pr:{index:50,middle:50,ring:50,thumb:60},wrist:"neutral",drop:12,h:1,v:9,ctrl:4,spin:"Very slow spin — the ball is pushed more than spun.",
+ card:"<strong>What it does and why:</strong> the ball is jammed deep into the palm and gripped by the whole hand, thumb and fingers clamped around it. With no fingertip leverage, almost no spin can be applied — the ball floats up slower and drops steeply as gravity wins. A pitch from an older era, still thrown: when it works it looks like a fastball that simply stops arriving.",
+ velo:"<strong>Velocity:</strong> typically 10–15 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> little sideways break; a heavy, late sink as the slow ball falls.",
+ diff:"<strong>Control difficulty: 4 of 5.</strong> The deep grip makes release point hard to repeat — expect it to float high when you miss."},
+{id:"splitter",name:"Splitter (Split-Finger)",pos:{index:[68,40],middle:[132,40],ring:[152,70],thumb:[100,176]},pr:{index:75,middle:75,ring:25,thumb:55},wrist:"neutral",drop:7,h:2,v:12,ctrl:4,spin:"Slow tumble — backspin so reduced the ball nearly stops rotating and drops.",
+ card:"<strong>What it does and why:</strong> index and middle are split wide apart, outside the seams, with the ball wedged between them. The fingers cannot spin it like a fastball, so it leaves with fastball arm speed and a fraction of the backspin — then, in the last third of flight, gravity takes it and it drops like it fell off a table. The strikeout pitch of pitchers who live down in the zone.",
+ velo:"<strong>Velocity:</strong> typically 5–9 mph below the fastball — harder than a changeup, which is why hitters can't sit on it. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> small run, then a sharp late drop of 8–12 in below a fastball's path.",
+ diff:"<strong>Control difficulty: 4 of 5.</strong> The wide split is a feel grip; it also asks a lot of the forearm, so it belongs to mature arms in practice doses."},
+{id:"vulcan",name:"Vulcan Change",pos:{index:[52,62],middle:[148,62],ring:[150,96],thumb:[98,172]},pr:{index:70,middle:70,ring:30,thumb:55},wrist:"neutral",drop:10,h:4,v:10,ctrl:4,spin:"Slow tumble with a slight arm-side tilt.",
+ card:"<strong>What it does and why:</strong> the ball is wedged deep between the index and middle fingers, split wide in the “live long and prosper” V — a splitter's family, held like a changeup. The deep wedge kills spin and speed together, so it arrives changeup-slow but finishes with a splitter's sink and a little arm-side fade. Named for the hand sign it forces; thrown in the majors by pitchers who wanted a changeup that fell off the table.",
+ velo:"<strong>Velocity:</strong> typically 8–12 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> changeup fade plus a late, splitter-like drop.",
+ diff:"<strong>Control difficulty: 4 of 5.</strong> The wedge must stay deep without being squeezed; small hands may not be able to hold it at all — an honest fit limit, not a flaw in you."},
+{id:"knucklecurve",name:"Knuckle Curve",pos:{index:[92,26],middle:[118,34],ring:[146,56],thumb:[104,176]},pr:{index:30,middle:85,ring:20,thumb:60},wrist:"supinate",drop:13,h:-3,v:14,ctrl:4,spin:"Heavy topspin — the ball spins forward, top toward the plate.",
+ card:"<strong>What it does and why:</strong> the index finger is curled so its <em>knuckle</em> (on many pitchers, the fingertip dug in) spikes the ball, while the middle finger rides the seam and does the work. At release the spiked finger flicks straight as the hand comes over the top, loading the ball with topspin — Magnus push pointing down. The result is a curveball's big drop with a firmer, more direct feel at release, the signature pitch of more than one major-league ace.",
+ velo:"<strong>Velocity:</strong> typically 10–16 mph below the fastball — curveball speed. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> the biggest vertical drop in the catalogue: 12–6 break, mostly straight down.",
+ diff:"<strong>Control difficulty: 4 of 5.</strong> The spike must dig without stiffening the whole hand; when the knuckle slips, the pitch floats."},
+{id:"curve",name:"Curveball",pos:{index:[108,32],middle:[92,28],ring:[140,54],thumb:[96,176]},pr:{index:25,middle:90,ring:20,thumb:65},wrist:"supinate",drop:15,h:-6,v:13,ctrl:3,spin:"Topspin, tilted slightly toward the glove side.",
+ card:"<strong>What it does and why:</strong> the middle finger presses hard along a seam, the thumb braces the seam underneath, the index rests light — then the hand comes over the top so the middle finger pulls down the front of the ball. That makes topspin, and topspin's Magnus push points down: the ball breaks downward harder than gravity alone. The break is spin doing work, not a wrist snap.",
+ velo:"<strong>Velocity:</strong> typically 12–18 mph below the fastball — the slowest of the common breaking balls. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> big two-plane break: down first, with glove-side sweep — the classic 12–6 or 1–7 path.",
+ diff:"<strong>Control difficulty: 3 of 5.</strong> Learnable and repeatable once the release is in front; hung curves are what happens when it isn't."},
+{id:"slider",name:"Slider",pos:{index:[86,34],middle:[108,32],ring:[144,54],thumb:[100,178]},pr:{index:70,middle:80,ring:15,thumb:50},wrist:"neutral",drop:8,h:-8,v:3,ctrl:3,spin:"Tilted spin — part backspin, part sidespin, like a football spiral gone sideways.",
+ card:"<strong>What it does and why:</strong> a fastball grip shifted off-centre, fingers close, middle finger pressing the seam's edge. The spin axis tilts, so part of the Magnus push goes sideways: the ball holds a fastball's line for most of its flight, then cuts glove-side, short and late. That lateness is the whole pitch — it is a fastball until it isn't, which is why it tunnels with the four-seam so well.",
+ velo:"<strong>Velocity:</strong> typically 6–10 mph below the fastball — the hardest of the breaking balls. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> 4–8 in of late glove-side sweep with modest drop.",
+ diff:"<strong>Control difficulty: 3 of 5.</strong> Thrown with fastball intent; the miss is usually a spinner that doesn't cut — back up the middle."},
+{id:"slurve",name:"Slurve",pos:{index:[84,36],middle:[110,34],ring:[144,56],thumb:[100,176]},pr:{index:60,middle:80,ring:20,thumb:55},wrist:"supinate",drop:11,h:-9,v:8,ctrl:4,spin:"Topspin and sidespin in near-equal parts — a diagonal spin axis.",
+ card:"<strong>What it does and why:</strong> halfway between slider and curve — the name is the recipe. The grip sits between the two and the hand comes around the ball more than a slider's but less over the top than a curve's, tilting the spin axis to roughly 45 degrees. The break matches: a big, sweeping, diagonal move — more sweep than a slider, less pure drop than a curve. Some pitchers throw it on purpose; others are told their slurve is a flaw to split into two true pitches. Both can be right, for different arms.",
+ velo:"<strong>Velocity:</strong> typically 9–14 mph below the fastball — between slider and curve, like everything about it. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> the widest sideways sweep in the catalogue, with real drop attached — an 11–5 or 2–8 diagonal.",
+ diff:"<strong>Control difficulty: 4 of 5.</strong> Two half-pitches can inherit both parents' misses; the sweep also makes it the easiest breaking ball for a hitter to identify early."},
+{id:"screwball",name:"Screwball",pos:{index:[84,34],middle:[106,30],ring:[142,54],thumb:[98,176]},pr:{index:65,middle:85,ring:20,thumb:55},wrist:"pronate",drop:12,h:8,v:7,ctrl:5,spin:"Topspin tilted toward the arm side — a curveball's mirror image.",
+ card:"<strong>What it does and why:</strong> gripped much like a curve, but the forearm does the opposite: instead of coming over the top toward the glove side, it turns inward — pronates — so the spin tilts the other way and the ball breaks <em>arm-side and down</em>, away from opposite-handed hitters where a curve would break in. A breaking ball that goes the “wrong” way is a genuine puzzle for hitters. Read the arm-honesty fold below before experimenting: its injury reputation is stronger than the evidence, and the evidence is thin — practice doses, sub-max effort, pain means stop.",
+ velo:"<strong>Velocity:</strong> typically 10–15 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> arm-side run with sink — the mirror image of a curveball.",
+ diff:"<strong>Control difficulty: 5 of 5 — the hardest in the catalogue to command.</strong> The pronated finish fights most pitchers' natural fastball action, and feel comes slowly."},
+{id:"cutter",name:"Cutter (Cut Fastball)",extra:true,pos:{index:[80,34],middle:[114,32],ring:[146,54],thumb:[100,178]},pr:{index:55,middle:85,ring:20,thumb:50},wrist:"neutral",drop:3,h:-4,v:0,ctrl:2,spin:"Backspin with a small glove-side tilt.",
+ card:"<strong>What it does and why:</strong> a four-seam grip slid a little toward the thumb side, middle finger pressing harder. A few degrees of spin tilt give a few inches of late glove-side cut at near-fastball speed — enough to move the ball off the barrel's sweet spot and saw off inside hitters, with no big break to tip it. <em>Addition to Tristan's list — a documented pitch, labelled as an extra.</em>",
+ velo:"<strong>Velocity:</strong> typically 2–5 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> 2–5 in of late cut, glove-side, on a fastball's height.",
+ diff:"<strong>Control difficulty: 2 of 5.</strong> Fastball mechanics throughout; the risk is it flattening into a hittable, slightly slow fastball."},
+{id:"sinker",name:"Sinker",extra:true,pos:{index:[90,36],middle:[112,36],ring:[146,54],thumb:[100,178]},pr:{index:70,middle:65,ring:20,thumb:50},wrist:"pronate",drop:2,h:8,v:6,ctrl:3,spin:"Backspin with a strong arm-side tilt and a lower spin rate than a four-seam.",
+ card:"<strong>What it does and why:</strong> a two-seam grip with the fingers on top of the seams and a pronated lean at release: the spin axis tips hard toward the arm side and the ball runs and sinks in one heavy motion. The ground-ball specialist's fastball. <em>Addition to Tristan's list — a documented pitch, labelled as an extra.</em>",
+ velo:"<strong>Velocity:</strong> typically 1–3 mph below the fastball. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> 7–11 in of arm-side run with pronounced sink.",
+ diff:"<strong>Control difficulty: 3 of 5.</strong> Lives on the edges; a sinker that doesn't sink is a batting-practice fastball."},
+{id:"knuckle",name:"Knuckleball",extra:true,pos:{index:[84,30],middle:[110,28],ring:[134,34],thumb:[142,150]},pr:{index:85,middle:85,ring:70,thumb:30},wrist:"neutral",drop:23,h:0,v:4,ctrl:5,spin:"Almost none — ideally less than one full turn on the way to the plate.",
+ card:"<strong>What it does and why:</strong> the fingertips (for many throwers, the nails) dig into the ball and the wrist stays stiff: the ball is <em>pushed</em>, not spun. With no spin there is no steady Magnus push — the seams catch the air at random and the ball flutters, dances, and occasionally changes direction twice. Nearly extinct and nearly unhittable when right; a career in itself to learn. <em>Addition to Tristan's list — a documented pitch, labelled as an extra.</em>",
+ velo:"<strong>Velocity:</strong> typically 18–28 mph below the fastball — most knuckleballs live around 60–75 mph. Ranges vary by pitcher.",
+ move:"<strong>Typical movement:</strong> unpredictable by design. Any model — including this one — that draws you a confident knuckleball path is lying; the zone view shows a shrug, not a dot.",
+ diff:"<strong>Control difficulty: 5 of 5.</strong> Even its masters call it a pitch you suggest a direction to. Passed balls are part of its price."}
+];
+var state={pos:{index:[82,32],middle:[112,30],ring:[148,52],thumb:[100,178]},pr:{index:70,middle:70,ring:20,thumb:50},wrist:"neutral",hand:1,presetId:"four",touched:false};
+var layer=document.getElementById("fingerLayer"),svg=document.getElementById("labBall");
+function drawFingers(){
+  layer.innerHTML=FINGERS.map(function(f){
+    var k=f[0],p=state.pos[k];
+    return '<g class="finger" data-finger="'+k+'" tabindex="0" role="slider" aria-label="'+f[1]+' finger position — drag to move"><circle cx="'+p[0]+'" cy="'+p[1]+'" r="13" fill="'+COLORS[k]+'" stroke="#fff" stroke-width="2.5"/><text x="'+p[0]+'" y="'+(p[1]+4)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" pointer-events="none">'+f[1][0]+'</text></g>';
+  }).join("");
+}
+function pressureWord(v){return v<25?"Barely resting":v<50?"Light squeeze":v<75?"Firm pressure":"Crushing it";}
+function drawPressures(){
+  document.getElementById("pressureBox").innerHTML=FINGERS.map(function(f){
+    var k=f[0],v=state.pr[k];
+    return '<label for="pr_'+k+'">'+f[1]+' finger pressure — <span id="prw_'+k+'">'+pressureWord(v)+' ('+v+')</span></label><input type="range" id="pr_'+k+'" min="0" max="100" step="5" value="'+v+'" data-finger="'+k+'" />';
+  }).join("");
+  FINGERS.forEach(function(f){
+    document.getElementById("pr_"+f[0]).addEventListener("input",function(){
+      state.pr[f[0]]=parseInt(this.value,10);state.touched=true;
+      document.getElementById("prw_"+f[0]).textContent=pressureWord(state.pr[f[0]])+" ("+state.pr[f[0]]+")";
+      this.previousElementSibling; update();
+    });
+  });
+}
+function dist(a,b){var dx=a[0]-b[0],dy=a[1]-b[1];return Math.sqrt(dx*dx+dy*dy);}
+function nearest(){
+  var best=null,bs=1e9;
+  PRESETS.forEach(function(p){
+    var s=0;FINGERS.forEach(function(f){var k=f[0];s+=dist(state.pos[k],p.pos[k])*1.4+Math.abs(state.pr[k]-p.pr[k])*0.55;});
+    if(state.wrist!==p.wrist)s+=28;
+    if(s<bs){bs=s;best=p;}
+  });
+  return {p:best,score:bs};
+}
+function model(){
+  var n=nearest(),base=n.p;
+  var asym=(state.pr.index-state.pr.middle)/100; /* + = index heavier */
+  var spread=dist(state.pos.index,state.pos.middle);
+  var h=base.h+(state.pr.middle-state.pr.index)*0.08;
+  var v=base.v+Math.max(0,(spread-30))*0.06;
+  var drop=base.drop+Math.max(0,(spread-30))*0.09;
+  if(state.wrist==="pronate"){h+=5;v+=2;drop+=1;}
+  if(state.wrist==="supinate"){h-=5;v+=3;drop+=1;}
+  if(base.id==="knuckle"){h=0;v=4;}
+  var avg=(state.pr.index+state.pr.middle+state.pr.ring)/3;
+  if(avg<35&&base.id!=="knuckle"){v+=3;drop+=2;}
+  return {base:base,score:n.score,h:h*state.hand,v:v,drop:drop,asym:asym,spread:spread};
+}
+function zoneSVG(dots,extra){
+  var s='<rect x="62" y="38" width="76" height="104" fill="none" stroke="var(--green)" stroke-width="3"/>';
+  s+='<line x1="62" y1="73" x2="138" y2="73" stroke="var(--line)"/><line x1="62" y1="107" x2="138" y2="107" stroke="var(--line)"/><line x1="87" y1="38" x2="87" y2="142" stroke="var(--line)"/><line x1="113" y1="38" x2="113" y2="142" stroke="var(--line)"/>';
+  s+='<path d="M78 168 L122 168 L132 186 L68 186 Z" fill="var(--surface2)" stroke="var(--line)"/>';
+  if(extra)s+=extra;
+  (dots||[]).forEach(function(d){s+='<circle cx="'+d[0]+'" cy="'+d[1]+'" r="'+(d[2]||5)+'" fill="'+(d[3]||"#a63d22")+'" opacity="0.85"/>';});
+  return s;
+}
+function update(){
+  var m=model(),fb=parseFloat(document.getElementById("fbSpeed").value)||85;
+  var exact=m.score<8&&!state.touched;
+  document.getElementById("labName").textContent=exact?m.base.name+" — the documented grip, loaded":("Closest to a "+m.base.name.toLowerCase()+" — your variant");
+  document.getElementById("labSpin").innerHTML="<strong>Spin:</strong> "+m.base.spin;
+  var hTxt=Math.abs(m.h)<0.5?"stays straight":(Math.abs(m.h).toFixed(0)+" in toward the "+(m.h>0?"arm side":"glove side"));
+  var vTxt=m.v<-2?("falls "+Math.abs(m.v).toFixed(0)+" in LESS than a spinless ball (backspin lift)"):("drops about "+m.v.toFixed(0)+" in more than a fastball's path");
+  document.getElementById("labMove").innerHTML="<strong>Movement (model):</strong> "+hTxt+"; "+vTxt+".";
+  var lo=Math.max(35,fb-m.drop-2),hi=Math.max(36,fb-m.drop+2);
+  document.getElementById("labVelo").innerHTML="<strong>Velocity (model):</strong> about "+lo.toFixed(0)+"–"+hi.toFixed(0)+" mph if your fastball is "+fb+" — roughly "+m.drop.toFixed(0)+" mph below it. A band, not a reading: real speed depends on your arm speed, which no grip diagram can see.";
+  var why=[];
+  if(Math.abs(m.asym)>0.25)why.push("your pressure is heavier on the "+(m.asym>0?"index":"middle")+" side, which tilts the spin and pulls the break "+(m.asym>0?"glove-side":"arm-side"));
+  if(m.spread>55)why.push("your index and middle are split wide ("+m.spread.toFixed(0)+" units apart), which bleeds spin and speed and adds drop");
+  if(m.spread<22)why.push("your index and middle are pinched close, which keeps spin clean and the pitch straighter and harder");
+  if(state.wrist==="pronate")why.push("the pronated finish drags the break toward your arm side");
+  if(state.wrist==="supinate")why.push("the supinated finish tilts the break toward your glove side and adds drop");
+  if(!why.length)why.push("your build sits close to the documented "+m.base.name.toLowerCase()+" pattern, so the model mostly reads the family behaviour");
+  document.getElementById("labWhy").innerHTML="<strong>Why:</strong> "+why.join("; ")+".";
+  /* flight view */
+  var bend=m.v*2.2, midY=58+bend;
+  document.getElementById("flightView").innerHTML='<line x1="14" y1="118" x2="306" y2="118" stroke="var(--line)" stroke-width="3"/><circle cx="24" cy="46" r="7" fill="#fdfdf8" stroke="#333"/><path d="M24 46 Q160 '+midY+' 296 '+(86+Math.max(-26,Math.min(34,bend)))+'" fill="none" stroke="#a63d22" stroke-width="3"/><circle cx="296" cy="'+(86+Math.max(-26,Math.min(34,bend)))+'" r="6" fill="#a63d22"/><text x="20" y="140" font-size="11" fill="var(--muted)">Release</text><text x="262" y="140" font-size="11" fill="var(--muted)">The plate</text>';
+  /* zone view */
+  if(m.base.id==="knuckle"){
+    document.getElementById("zoneView").innerHTML=zoneSVG([],'<text x="100" y="96" text-anchor="middle" font-size="30" fill="var(--muted)">?</text><text x="100" y="122" text-anchor="middle" font-size="10" fill="var(--muted)">nobody knows. that is the pitch.</text>');
+  }else{
+    var zx=100+m.h*2.6, zy=90+m.v*2.4;
+    document.getElementById("zoneView").innerHTML=zoneSVG([[zx,zy,7,"#2e6b34"]]);
+  }
+  document.querySelectorAll("#presetGrid button").forEach(function(b){b.setAttribute("aria-pressed",String(exact&&b.dataset.id===m.base.id));});
+  return m;
+}
+function loadPreset(p){
+  state.pos=JSON.parse(JSON.stringify(p.pos));state.pr=Object.assign({},p.pr);state.wrist=p.wrist;state.presetId=p.id;state.touched=false;
+  drawFingers();drawPressures();syncWrist();
+  document.getElementById("presetCard").innerHTML="<h3 style='margin-top:0'>"+p.name+(p.extra?" <span class='small'>(addition to Tristan's list)</span>":"")+"</h3><p>"+p.card+"</p><p>"+p.velo+"</p><p>"+p.move+"</p><p>"+p.diff+"</p>";
+  update();
+}
+function syncWrist(){
+  document.querySelectorAll("#wristBox button").forEach(function(b){
+    var on=b.dataset.wrist===state.wrist;
+    b.setAttribute("aria-pressed",String(on));
+    b.style.background=on?"var(--green)":"";b.style.color=on?"var(--green-ink)":"";
+  });
+}
+document.getElementById("presetGrid").innerHTML=PRESETS.map(function(p){
+  return '<button type="button" data-id="'+p.id+'" aria-pressed="false">'+p.name+(p.extra?'<span class="extra">Addition — not on Tristan\u2019s list</span>':"")+"</button>";
+}).join("");
+document.getElementById("presetGrid").addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  var p=PRESETS.filter(function(x){return x.id===b.dataset.id;})[0];if(p)loadPreset(p);
+});
+document.getElementById("wristBox").addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;state.wrist=b.dataset.wrist;state.touched=true;syncWrist();update();
+});
+document.getElementById("fbSpeed").addEventListener("input",update);
+document.getElementById("handR").addEventListener("click",function(){state.hand=1;this.setAttribute("aria-pressed","true");document.getElementById("handL").setAttribute("aria-pressed","false");update();});
+document.getElementById("handL").addEventListener("click",function(){state.hand=-1;this.setAttribute("aria-pressed","true");document.getElementById("handR").setAttribute("aria-pressed","false");update();});
+/* dragging */
+var dragK=null;
+function svgPoint(ev){
+  var r=svg.getBoundingClientRect();
+  return [(ev.clientX-r.left)/r.width*200,(ev.clientY-r.top)/r.height*200];
+}
+svg.addEventListener("pointerdown",function(ev){
+  var g=ev.target.closest(".finger");if(!g)return;dragK=g.dataset.finger;svg.setPointerCapture(ev.pointerId);ev.preventDefault();
+});
+svg.addEventListener("pointermove",function(ev){
+  if(!dragK)return;var p=svgPoint(ev);
+  var dx=p[0]-100,dy=p[1]-100,d=Math.sqrt(dx*dx+dy*dy),max=72;
+  if(d>max){p[0]=100+dx/d*max;p[1]=100+dy/d*max;}
+  state.pos[dragK]=[Math.round(p[0]),Math.round(p[1])];state.touched=true;drawFingers();update();
+});
+["pointerup","pointercancel"].forEach(function(t){svg.addEventListener(t,function(){dragK=null;});});
+/* wild grip — the toy box door */
+document.getElementById("wildBtn").addEventListener("click",function(){
+  FINGERS.forEach(function(f){
+    var k=f[0],a=Math.random()*Math.PI*2,r=18+Math.random()*52;
+    state.pos[k]=[Math.round(100+Math.cos(a)*r),Math.round(100+Math.sin(a)*r)];
+    state.pr[k]=Math.round(Math.random()*20)*5;
+  });
+  var w=["pronate","neutral","supinate"];state.wrist=w[Math.floor(Math.random()*3)];
+  state.touched=true;drawFingers();drawPressures();syncWrist();
+  var m=update();
+  document.getElementById("presetCard").innerHTML="<h3 style='margin-top:0'>A wild grip, dealt at random</h3><p>No coach assigned this. The model reads it as <strong>closest to a "+m.base.name.toLowerCase()+" — your variant</strong>. Read the why in the readout, throw it in the accuracy test, and see whether chaos beats your best grouping. Then fix one thing — just one — and throw it again. That loop is the whole game.</p>";
+});
+/* accuracy test */
+function gauss(){return (Math.random()+Math.random()+Math.random()-1.5)/1.5;}
+var BESTKEY="bb_lab_best_v1";
+function loadBest(){try{return JSON.parse(localStorage.getItem(BESTKEY));}catch(e){return null;}}
+function showBest(){
+  var b=loadBest(),el=document.getElementById("bestLine");
+  el.innerHTML=b?("<strong>The mark to beat:</strong> your best grouping is a spread of <strong>"+b.spread.toFixed(1)+" in</strong> ("+b.strikes+" of 10 in the zone), thrown with \u201C"+escT(b.name)+"\u201D on "+b.date+". Beat that."):"<strong>The mark to beat:</strong> no grouping yet — your first test sets it.";
+}
+document.getElementById("throwBtn").addEventListener("click",function(){
+  var m=update();
+  var sigma=2.2+m.base.ctrl*2.6+Math.abs(m.asym)*16+Math.max(0,(m.spread-55))*0.12;
+  var biasX=m.h*1.1+(state.pr.index-state.pr.middle)*0.16*state.hand;
+  var biasY=m.v*1.2+(avgPr()>72?5:0);
+  function avgPr(){return (state.pr.index+state.pr.middle+state.pr.ring+state.pr.thumb)/4;}
+  var dots=[],strikes=0;
+  for(var i=0;i<10;i++){
+    var x=100+biasX+gauss()*sigma*3.1, y=90+biasY+gauss()*sigma*3.4;
+    x=Math.max(8,Math.min(192,x));y=Math.max(8,Math.min(192,y));
+    if(x>=62&&x<=138&&y>=38&&y<=142)strikes++;
+    dots.push([x,y,5,"#a63d22"]);
+  }
+  document.getElementById("testView").innerHTML=zoneSVG(dots);
+  /* the game: score this grouping against your best */
+  var cx=0,cy=0;dots.forEach(function(d){cx+=d[0];cy+=d[1];});cx/=dots.length;cy/=dots.length;
+  var md=0;dots.forEach(function(d){md+=Math.sqrt((d[0]-cx)*(d[0]-cx)+(d[1]-cy)*(d[1]-cy));});md/=dots.length;
+  var spread=md*0.45; /* zone-view units to plate inches, roughly */
+  var prevBest=loadBest(),verdict;
+  if(!prevBest||spread<prevBest.spread){
+    localStorage.setItem(BESTKEY,JSON.stringify({spread:spread,strikes:strikes,name:m.base.name,date:new Date().toISOString().slice(0,10)}));
+    verdict=" <strong>NEW BEST GROUPING — the mark moves.</strong> Spread "+spread.toFixed(1)+" in"+(prevBest?(", beating your old mark of "+prevBest.spread.toFixed(1)+" in"):" — the first mark is on the board")+". This build, whatever family it belongs to, is currently your most repeatable pitch in the lab.";
+  }else{
+    verdict=" <strong>The mark stands.</strong> This group spread "+spread.toFixed(1)+" in against your best of "+prevBest.spread.toFixed(1)+" in — "+(spread-prevBest.spread).toFixed(1)+" in off your own standard. Change ONE thing (a pressure, a finger, the forearm) and throw again; changing everything teaches you nothing about which thing mattered.";
+  }
+  showBest();
+  var expl=[];
+  expl.push("<strong>"+strikes+" of 10 in the zone.</strong>");
+  if(m.base.ctrl>=4)expl.push("The biggest ingredient is the family itself: "+m.base.name.toLowerCase()+" carries documented control difficulty "+m.base.ctrl+" of 5, so even a perfect build of it sprays more than a fastball does.");
+  else if(m.base.ctrl<=2)expl.push("The family helps you here: "+m.base.name.toLowerCase()+" is a command grip (difficulty "+m.base.ctrl+" of 5), so a sound build groups tight.");
+  else expl.push("The family is mid-difficulty ("+m.base.ctrl+" of 5) — neither a laser nor a lottery ticket.");
+  if(Math.abs(m.asym)>0.2)expl.push("Your pressure is heavier on the "+(m.asym>0?"index":"middle")+" side, and the model pulled these "+(m.asym>0?"glove-side":"arm-side")+" because of it — that tilt is a real release effect, not noise.");
+  if(m.spread>55)expl.push("Your wide finger split bled spin, and low-spin pitches wander more — part of this spread is the split talking.");
+  if(avgPr()>78)expl.push("You are also crushing the ball overall (average pressure high), and a strangled grip stiffens the wrist — real pitchers lose the zone the same way.");
+  if(strikes>=8)expl.push("That is a group you could game-plan with. Save it below before you touch anything.");
+  if(strikes<=3)expl.push("That is a wild group — which is information, not failure: the lab just showed you this build's price. Loosen the split, even the pressures, or pick a tamer family and watch the group shrink.");
+  expl.push(verdict);
+  document.getElementById("testResult").innerHTML=expl.join(" ");
+});
+/* save to practice record */
+var KEY="bb_record_v1";
+function escT(s){var d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
+function renderLabSaved(){
+  var r=[];try{r=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){}
+  var mine=r.filter(function(e){return e.skill==="Create-a-Pitch Lab";});
+  document.getElementById("labSaved").innerHTML=mine.length?("<p><strong>Your saved pitches in the record:</strong></p>"+mine.slice().reverse().map(function(e){return '<div class="entry"><strong>'+e.focus+'</strong><br/><span class="small">'+e.notes+'</span></div>';}).join("")):"";
+}
+document.getElementById("savePitchBtn").addEventListener("click",function(){
+  var m=update();
+  var name=document.getElementById("pitchName").value.trim()||("My "+m.base.name);
+  var fb=parseFloat(document.getElementById("fbSpeed").value)||85;
+  var desc="Closest family: "+m.base.name+" (your variant). Model: "+Math.abs(m.h).toFixed(0)+" in "+(m.h>0?"arm-side":"glove-side")+" break, "+m.v.toFixed(0)+" in vertical, about "+Math.max(35,fb-m.drop).toFixed(0)+" mph off an "+fb+" mph fastball. Forearm: "+state.wrist+". Pressures — index "+state.pr.index+", middle "+state.pr.middle+", ring "+state.pr.ring+", thumb "+state.pr.thumb+".";
+  var r=[];try{r=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){}
+  r.push({date:new Date().toISOString().slice(0,10),alias:escT(document.getElementById("alias")?document.getElementById("alias").value.trim():"")||"Player",skill:"Create-a-Pitch Lab",focus:escT(name),purpose:"Build and test my own pitch in the lab",minutes:"—",notes:escT(desc),variant:"Pitch Lab build"});
+  localStorage.setItem(KEY,JSON.stringify(r));
+  document.getElementById("savePitchMsg").textContent="Saved. \u201C"+name+"\u201D is now in the Practice Record at the bottom of this page — reload the page and it will still be there, and the record's Export and Forget buttons cover it too.";
+  renderLabSaved();
+  /* also show it in the record list right away */
+  var box=document.getElementById("entries");
+  if(box){
+    if(box.querySelector("p.small")&&r.length===1)box.innerHTML="";
+    var div=document.createElement("div");div.className="entry";
+    div.innerHTML="<strong>"+new Date().toISOString().slice(0,10)+"</strong> · Create-a-Pitch Lab — "+escT(name)+"<br/><span class='small'>Pitch Lab build</span><br/>"+escT(desc);
+    box.insertBefore(div,box.firstChild);
+  }
+});
+var forgetBtn=document.getElementById("forgetBtn");
+if(forgetBtn)forgetBtn.addEventListener("click",function(){setTimeout(function(){showBest();renderLabSaved();},50);});
+document.getElementById("testView").innerHTML=zoneSVG([]);
+drawFingers();drawPressures();syncWrist();loadPreset(PRESETS[0]);renderLabSaved();showBest();
 })();
 </script>
 </body>
