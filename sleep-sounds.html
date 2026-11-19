@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Drift — Sleep Sounds &amp; Tones</title>
+<style>
+  :root{
+    --bg:#edf1f4; --surface:#ffffff; --surface2:#e2e9ee; --ink:#16222e; --ink-soft:#3d4f61;
+    --line:#c3d0da; --accent:#0b6e5d; --accent-ink:#ffffff; --warm:#b35c12; --danger:#a3271e;
+    --meter:#0b6e5d; --radius:10px;
+    --font-body: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0c141d; --surface:#152231; --surface2:#1c2d42; --ink:#e8eef4; --ink-soft:#a9bccf;
+      --line:#31465c; --accent:#2fae97; --accent-ink:#06231d; --warm:#e09a4e; --danger:#ef8a80;
+      --meter:#2fae97;
+    }
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.55;font-size:17px;}
+  main{max-width:1060px;margin:0 auto;padding:0 16px 64px;}
+  button, select, input[type="text"], input[type="number"]{min-height:44px;font:inherit;}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 14px;font-weight:600;}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  button.danger{color:var(--danger);border-color:var(--danger);background:transparent;}
+  input[type="range"]{min-height:44px;width:100%;accent-color:var(--accent);}
+  input[type="text"], input[type="number"], select{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+  a{color:var(--accent);}
+  :focus-visible{outline:3px solid var(--warm);outline-offset:2px;}
+
+  .freebar{background:var(--ink);color:var(--bg);padding:12px 16px;}
+  .freebar .inner{max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;}
+  .freebar strong{font-size:1.02rem;}
+  .freebar button{background:transparent;color:inherit;border-color:currentColor;min-height:40px;}
+
+  h1{font-family:var(--font-display);font-size:2.3rem;line-height:1.15;margin:26px 0 6px;font-weight:700;}
+  h2{font-family:var(--font-display);font-size:1.55rem;margin:0 0 8px;}
+  h3{font-size:1.05rem;margin:0 0 4px;}
+  .lede{font-size:1.08rem;color:var(--ink-soft);max-width:65ch;margin:0 0 8px;}
+  .honest{background:var(--surface2);border-radius:var(--radius);padding:12px 16px;margin:14px 0;font-size:.98rem;}
+  .honest strong{color:var(--ink);}
+
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px;}
+  nav.compass a{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;text-decoration:none;background:var(--surface);font-weight:600;font-size:.95rem;}
+
+  section{margin-top:40px;}
+  .section-head p{color:var(--ink-soft);margin:0 0 14px;max-width:68ch;}
+
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+  .channel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .channel.playing{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+  .channel .desc{color:var(--ink-soft);font-size:.9rem;margin:0 0 10px;min-height:2.6em;}
+  .channel .row{display:flex;align-items:center;gap:10px;}
+  .channel .toggle{flex:0 0 auto;min-width:118px;}
+  .channel .level{font-variant-numeric:tabular-nums;font-weight:700;min-width:3.2em;text-align:right;}
+  .channel label.fader-label{font-size:.85rem;color:var(--ink-soft);display:block;margin-top:6px;}
+
+  .statusbar{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-top:14px;}
+  .statusbar p{margin:4px 0;}
+  .meterwrap{background:var(--surface2);border-radius:6px;height:14px;overflow:hidden;margin-top:8px;}
+  .meter{height:100%;width:0%;background:var(--meter);transition:width .18s linear;}
+  .mono{font-variant-numeric:tabular-nums;}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
+  .panel + .panel{margin-top:12px;}
+  .flexrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .flexrow > *{flex:0 1 auto;}
+  .grow{flex:1 1 180px;}
+  .note{color:var(--ink-soft);font-size:.92rem;}
+  .warning{border:1px solid var(--warm);border-radius:var(--radius);padding:12px 16px;margin:12px 0;}
+  .warning strong{color:var(--warm);}
+
+  .mixlist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px;}
+  .mixlist li{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface2);border-radius:8px;padding:10px 12px;}
+  .mixlist .mixname{font-weight:700;flex:1 1 140px;}
+  .mixlist .mixdetail{color:var(--ink-soft);font-size:.88rem;flex-basis:100%;}
+
+  .bighz{font-family:var(--font-display);font-size:3rem;line-height:1;font-variant-numeric:tabular-nums;margin:6px 0;}
+  .bighz small{font-size:1.2rem;color:var(--ink-soft);}
+  .presetrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .field{display:grid;gap:4px;}
+  .field label{font-size:.88rem;color:var(--ink-soft);font-weight:600;}
+
+  details{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:4px 16px;margin-top:10px;}
+  summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;padding:6px 0;}
+  details p{color:var(--ink-soft);}
+  details p strong{color:var(--ink);}
+
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--ink-soft);font-size:.9rem;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<div class="freebar">
+  <div class="inner">
+    <span><strong>Free. Always free.</strong> Every sound and tone on this page is free — nothing is locked, there is no paid tier, and there are no ads.</span>
+    <button type="button" id="downloadBtn">Tap to save this page for offline use</button>
+  </div>
+</div>
+
+<main>
+  <h1>Drift — Sleep Sounds &amp; Tones</h1>
+  <p class="lede">A mixing board of sleep sounds you fade in and out yourself, plus a tone and frequency generator. Set up the blend that works for you, save it on your own device, and let the sleep timer fade it out gently.</p>
+
+  <div class="honest">
+    <strong>How these sounds exist:</strong> every sound on this page is <strong>made live by the page itself</strong>, in your browser, using the Web Audio API — filtered noise, oscillators, and slow swells computed as you listen. There are <strong>no recordings, no audio files, no samples</strong>, and nothing licensed or copied from anyone. That is also why nothing here can ever be locked behind a paywall: there is nothing to withhold.
+  </div>
+
+  <nav class="compass" aria-label="Page compass">
+    <a href="#mixer">The Mixer</a>
+    <a href="#saved">Your Saved Mixes</a>
+    <a href="#timer">Sleep Timer</a>
+    <a href="#tones">Tone Generator</a>
+    <a href="#learn">Learn — tap to open each lesson</a>
+  </nav>
+
+  <!-- ============ MIXER ============ -->
+  <section id="mixer" aria-labelledby="mixer-h">
+    <div class="section-head">
+      <h2 id="mixer-h">The Mixer</h2>
+      <p>Each sound is its own channel. Tap a sound to start it, drag its fader to set its level, and layer as many as you like — they all play at once, in any mix. Tap again to stop just that sound.</p>
+    </div>
+
+    <div class="flexrow" style="margin-bottom:12px;">
+      <button type="button" id="stopAllBtn">Tap to stop all sounds</button>
+      <div class="field grow">
+        <label for="masterVol">Master volume</label>
+        <input type="range" id="masterVol" min="0" max="100" value="80" />
+      </div>
+      <span class="mono" id="masterVolReadout">80%</span>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="statusbar" aria-live="polite">
+      <p><strong>Now playing:</strong> <span id="nowPlaying">nothing yet — tap a sound above to start.</span></p>
+      <p class="mono" id="meterReadout">Output level: 0% (silent)</p>
+      <div class="meterwrap" aria-hidden="true"><div class="meter" id="meter"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ SAVED MIXES ============ -->
+  <section id="saved" aria-labelledby="saved-h">
+    <div class="section-head">
+      <h2 id="saved-h">Your Saved Mixes</h2>
+      <p>Name the mix you have playing and save it, then bring it back any time with one tap.</p>
+    </div>
+    <div class="panel">
+      <div class="flexrow">
+        <div class="field grow">
+          <label for="mixName">Name for this mix</label>
+          <input type="text" id="mixName" placeholder="e.g. Rainy night" maxlength="60" />
+        </div>
+        <button type="button" class="primary" id="saveMixBtn">Tap to save this mix</button>
+      </div>
+      <p class="note" id="saveMsg" aria-live="polite"></p>
+      <ul class="mixlist" id="mixList"></ul>
+      <p class="note" id="noMixes">No mixes saved yet.</p>
+      <p class="note"><strong>Saved on this device only.</strong> Your mixes live in this browser on this device — nothing is sent anywhere, there is no account, and nobody else can see them. Forgetting a mix removes it from this device for good.</p>
+      <button type="button" class="danger" id="forgetAllBtn">Tap to forget all saved mixes</button>
+    </div>
+  </section>
+
+  <!-- ============ TIMER ============ -->
+  <section id="timer" aria-labelledby="timer-h">
+    <div class="section-head">
+      <h2 id="timer-h">Sleep Timer</h2>
+      <p>Set how long the sounds and tones should play. When the time runs out, everything <strong>fades out gently</strong> over several seconds instead of cutting off — a sudden silence can wake you; a slow fade usually doesn't. (Why that works is in the Learn section below.)</p>
+    </div>
+    <div class="panel">
+      <div class="flexrow">
+        <div class="field">
+          <label for="timerSelect">Play for</label>
+          <select id="timerSelect">
+            <option value="10">10 seconds (just to try it)</option>
+            <option value="60">1 minute</option>
+            <option value="300">5 minutes</option>
+            <option value="600">10 minutes</option>
+            <option value="1200">20 minutes</option>
+            <option value="1800" selected>30 minutes</option>
+            <option value="2700">45 minutes</option>
+            <option value="3600">1 hour</option>
+            <option value="5400">1 hour 30 minutes</option>
+          </select>
+        </div>
+        <button type="button" class="primary" id="timerStartBtn">Tap to start the timer</button>
+        <button type="button" id="timerCancelBtn">Tap to cancel the timer</button>
+      </div>
+      <p class="mono" id="timerStatus" aria-live="polite">Timer is off. Sounds will play until you stop them.</p>
+    </div>
+  </section>
+
+  <!-- ============ TONE GENERATOR ============ -->
+  <section id="tones" aria-labelledby="tones-h">
+    <div class="section-head">
+      <h2 id="tones-h">Tone &amp; Frequency Generator</h2>
+      <p>One clean tone at any frequency from 20 Hz to 20,000 Hz. Drag the slider or type the number. The tone runs through the same master volume and the same sleep timer as the mixer.</p>
+    </div>
+
+    <div class="warning">
+      <strong>Volume safety — read this first:</strong> a pure tone at high volume can damage your hearing, especially through headphones, and high frequencies can be painful before they sound "loud." This generator <strong>starts quiet on purpose</strong>. Raise the volume slowly, and if a tone feels harsh, turn it down or stop it.
+    </div>
+
+    <div class="panel">
+      <p class="bighz"><span id="hzBig">220</span> <small>Hz</small></p>
+      <p class="mono" id="toneStatus" aria-live="polite">Tone is off.</p>
+
+      <div class="field">
+        <label for="freqSlider">Frequency — drag to change</label>
+        <input type="range" id="freqSlider" min="0" max="1000" value="500" />
+      </div>
+      <div class="flexrow" style="margin-top:10px;">
+        <div class="field">
+          <label for="freqInput">Or type the frequency (Hz)</label>
+          <input type="number" id="freqInput" min="20" max="20000" step="1" value="220" />
+        </div>
+        <div class="field">
+          <label for="waveSelect">Wave shape</label>
+          <select id="waveSelect">
+            <option value="sine" selected>Sine (smoothest — the default)</option>
+            <option value="triangle">Triangle (a little fuller)</option>
+            <option value="square">Square (harsher, buzzy)</option>
+            <option value="sawtooth">Sawtooth (harshest, bright)</option>
+          </select>
+        </div>
+        <div class="field grow">
+          <label for="toneVol">Tone volume (starts quiet by design)</label>
+          <input type="range" id="toneVol" min="0" max="100" value="15" />
+        </div>
+        <span class="mono" id="toneVolReadout">15%</span>
+      </div>
+      <div class="flexrow" style="margin-top:12px;">
+        <button type="button" class="primary" id="toneToggleBtn" aria-pressed="false">Tap to start the tone</button>
+      </div>
+
+      <h3 style="margin-top:22px;">Popular preset tones</h3>
+      <p class="note">These are frequencies people commonly ask for. They are listed as <strong>popular choices only — the claims made about them online are unverified</strong>, and this page makes no claim that any frequency heals, repairs, or treats anything. They are simply tones, and they sound the way tones sound.</p>
+      <div class="presetrow" id="presetRow">
+        <button type="button" data-freq="432">Tap for 432 Hz</button>
+        <button type="button" data-freq="528">Tap for 528 Hz</button>
+        <button type="button" data-freq="396">Tap for 396 Hz</button>
+        <button type="button" data-freq="639">Tap for 639 Hz</button>
+        <button type="button" data-freq="852">Tap for 852 Hz</button>
+        <button type="button" data-freq="1000">Tap for 1,000 Hz (test tone)</button>
+        <button type="button" data-freq="440">Tap for 440 Hz (concert A)</button>
+      </div>
+
+      <h3 style="margin-top:24px;">Binaural mode — one tone per ear</h3>
+      <p class="note">Binaural mode plays a slightly different frequency into each ear. Your brain perceives the <em>difference</em> between them as a slow beat. <strong>It only works with headphones</strong> — through speakers both tones mix in the air and the effect is gone. What the evidence actually shows is written plainly in the Learn section below: interesting, studied, and <strong>not proven</strong> to do what it is often sold as doing.</p>
+      <div class="flexrow">
+        <button type="button" id="binauralBtn" aria-pressed="false">Tap to turn binaural mode on</button>
+        <div class="field">
+          <label for="beatInput">Beat frequency — the difference (Hz)</label>
+          <input type="number" id="beatInput" min="0.5" max="40" step="0.5" value="6" />
+        </div>
+      </div>
+      <p class="mono" id="binauralReadout">Binaural is off. Left ear and right ear get the same tone.</p>
+    </div>
+  </section>
+
+  <!-- ============ LEARN ============ -->
+  <section id="learn" aria-labelledby="learn-h">
+    <div class="section-head">
+      <h2 id="learn-h">Learn — the short, plain version</h2>
+      <p>Tap any lesson to open it. Nothing here blocks the board — read while your mix plays.</p>
+    </div>
+
+    <details>
+      <summary>White, pink, and brown noise — what they actually are · Tap to open</summary>
+      <p><strong>White noise</strong> gives every frequency the same amount of energy. It sounds like television static or a loud fan — bright and hissy. Because it covers a wide range evenly, it is good at <strong>masking</strong> other sounds: a door closing or a dog barking stands out less against it.</p>
+      <p><strong>Pink noise</strong> turns the high frequencies down and keeps more energy in the lows, which matches how human hearing works, so it sounds more balanced and softer than white noise — closer to steady rainfall or rustling leaves. Many people find white noise too sharp for sleep and pink noise easier to live with all night.</p>
+      <p><strong>Brown noise</strong> (also called red noise) turns the highs down much further still. What is left is a deep rumble — like a strong waterfall heard from a distance, or thunder that never quite arrives. People who find hiss distracting often settle on brown noise because there is almost no high end in it at all.</p>
+      <p>None of the three is "best." They are three different shapes of the same static, and the right one is the one your ears stop noticing.</p>
+    </details>
+
+    <details>
+      <summary>What a binaural beat is — and what the evidence does and doesn't show · Tap to open</summary>
+      <p><strong>What it is:</strong> play 220 Hz into the left ear and 226 Hz into the right, and you don't hear two tones — you hear one tone with a slow wobble, beating 6 times a second. The beat doesn't exist in the air; your brain builds it from the difference. That part is real and easy to verify with your own ears and headphones.</p>
+      <p><strong>What people use it for:</strong> different beat speeds are sold as sleep aids (slow beats), focus aids (faster beats), and more. You will find strong claims online.</p>
+      <p><strong>What the evidence shows, honestly:</strong> binaural beats have been studied in small trials for sleep, anxiety, attention, and pain. Results are mixed — some small studies find modest effects, others find none, and reviews generally call the evidence weak and inconsistent. There is no solid proof that a binaural beat puts your brain into a chosen state, and <strong>this page makes no medical claim for it</strong>. If a slow beat under a rain mix feels good to fall asleep to, that is a fine reason to use it — treat it as a sound you like, not a treatment.</p>
+    </details>
+
+    <details>
+      <summary>Why a fade beats a hard stop · Tap to open</summary>
+      <p>Your hearing stays on guard while you sleep — that's why a floorboard creak can wake you. A sound that <strong>cuts off suddenly</strong> is exactly the kind of change your ears are watching for, and the silence after it can feel louder than the sound did. A sound that <strong>fades slowly</strong> gives your hearing nothing sudden to react to: the level slides down below the room's own quiet, and by the time it's gone, you were already not hearing it. That's why this page's sleep timer fades everything out over several seconds instead of switching it off.</p>
+    </details>
+
+    <details>
+      <summary>How the mixer sounds are made — no recordings, honestly · Tap to open</summary>
+      <p>Every channel starts from one of two raw ingredients your browser computes on the spot: <strong>noise</strong> (random samples, shaped into white, pink, or brown) and <strong>tones</strong> (oscillators). Filters carve the noise into shapes — a low filter and a slow swell become ocean waves; a wandering filter becomes wind. The campfire's crackle and the storm's thunder are short bursts of shaped noise, fired at random intervals by the page, so no two minutes sound exactly alike — because they aren't a loop of anything.</p>
+      <p>The honest limit: synthesis imitates. The rain here is filtered noise that behaves like rain, not a microphone in a storm. If a sound couldn't be made to honestly resemble itself this way, it didn't ship.</p>
+    </details>
+
+    <details>
+      <summary>About the app this page replaces · Tap to open</summary>
+      <p>This page takes its good ideas from a sleep app called Better Sleep — a board of base sounds you fade in and out to build your own mix — and leaves its worst part behind: <strong>the paywall</strong>. Sounds that were free until they weren't are the reason this page exists. Here, every sound is free, nothing is locked, nothing is a trial, and because every sound is generated live by the page itself, there is nothing here that could be taken away or put behind a door later.</p>
+    </details>
+  </section>
+
+  <footer>
+    <p>Drift — Sleep Sounds &amp; Tones. Free, always free, no ads. Every sound is synthesized live in your browser with the Web Audio API; no recordings, samples, or licensed audio are used. Your saved mixes stay on your own device.</p>
+    <p>Copyleft: this page's text and design are shared under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> and its code under the GPL — copy it, change it, pass it on under the same freedom.</p>
+  </footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+var LS_KEY = "drift-mixes-v1";
+
+/* ---------- Audio core ---------- */
+var actx = null, masterGain = null, analyser = null;
+function ensureAudio(){
+  if (actx) { if (actx.state === "suspended") actx.resume(); return; }
+  var AC = window.AudioContext || window.webkitAudioContext;
+  actx = new AC();
+  masterGain = actx.createGain();
+  masterGain.gain.value = masterVolEl.value / 100;
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 2048;
+  masterGain.connect(analyser);
+  analyser.connect(actx.destination);
+}
+var masterVolEl = document.getElementById("masterVol");
+var masterVolReadout = document.getElementById("masterVolReadout");
+masterVolEl.addEventListener("input", function(){
+  masterVolReadout.textContent = masterVolEl.value + "%";
+  if (masterGain) masterGain.gain.setTargetAtTime(masterVolEl.value/100, actx.currentTime, 0.05);
+});
+
+/* Noise buffers, generated once per context */
+var buffers = {};
+function makeBuffers(){
+  if (buffers.white) return;
+  var len = actx.sampleRate * 3;
+  function buf(){ var b = actx.createBuffer(1, len, actx.sampleRate); return [b, b.getChannelData(0)]; }
+  var w = buf(); for (var i=0;i<len;i++) w[1][i] = Math.random()*2-1; buffers.white = w[0];
+  /* Pink noise (Paul Kellet's approximation) */
+  var p = buf(); var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for (var j=0;j<len;j++){ var x = Math.random()*2-1;
+    b0=0.99886*b0+x*0.0555179; b1=0.99332*b1+x*0.0750759; b2=0.96900*b2+x*0.1538520;
+    b3=0.86650*b3+x*0.3104856; b4=0.55000*b4+x*0.5329522; b5=-0.7616*b5-x*0.0168980;
+    p[1][j] = (b0+b1+b2+b3+b4+b5+b6+x*0.5362)*0.11; b6 = x*0.115926; }
+  buffers.pink = p[0];
+  /* Brown noise (integrated white, leaky) */
+  var br = buf(); var last = 0;
+  for (var k=0;k<len;k++){ var y = Math.random()*2-1; last = (last + 0.02*y)/1.02; br[1][k] = last*3.5; }
+  buffers.brown = br[0];
+}
+function noiseSrc(kind){
+  var s = actx.createBufferSource(); s.buffer = buffers[kind]; s.loop = true; return s;
+}
+function lfo(freq, amount, dest){
+  var o = actx.createOscillator(); o.type = "sine"; o.frequency.value = freq;
+  var g = actx.createGain(); g.gain.value = amount;
+  o.connect(g); g.connect(dest); o.start(); return o;
+}
+
+/* ---------- Sound factories: each returns nodes + optional timers ---------- */
+function base(out){ return { out: out, nodes: [], timers: [] }; }
+var FACTORIES = {
+  rain: function(out){
+    var r = base(out); makeBuffers();
+    var src = noiseSrc("pink");
+    var lp = actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2800;
+    var hp = actx.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=350;
+    src.connect(hp); hp.connect(lp); lp.connect(out); src.start();
+    r.nodes.push(src, lfo(0.13, 0.06, out.gain)); out.gain.value = 0.9; return r;
+  },
+  heavyrain: function(out){
+    var r = base(out); makeBuffers();
+    var src = noiseSrc("white");
+    var lp = actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=4200;
+    var hp = actx.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=250;
+    src.connect(hp); hp.connect(lp); lp.connect(out); src.start();
+    var rum = noiseSrc("brown");
+    var rlp = actx.createBiquadFilter(); rlp.type="lowpass"; rlp.frequency.value=220;
+    var rg = actx.createGain(); rg.gain.value = 0.5;
+    rum.connect(rlp); rlp.connect(rg); rg.connect(out); rum.start();
+    r.nodes.push(src, rum, lfo(0.09, 0.05, out.gain)); out.gain.value = 0.85; return r;
+  },
+  ocean: function(out){
+    var r = base(out); makeBuffers();
+    var src = noiseSrc("brown");
+    var lp = actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=480; lp.Q.value=0.6;
+    var swell = actx.createGain(); swell.gain.value = 0.65;
+    src.connect(lp); lp.connect(swell); swell.connect(out); src.start();
+    r.nodes.push(src, lfo(0.08, 260, lp.frequency), lfo(0.08, 0.3, swell.gain));
+    out.gain.value = 1.0; return r;
+  },
+  wind: function(out){
+    var r = base(out); makeBuffers();
+    var src = noiseSrc("pink");
+    var bp = actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=480; bp.Q.value=1.1;
+    src.connect(bp); bp.connect(out); src.start();
+    r.nodes.push(src, lfo(0.06, 260, bp.frequency), lfo(0.045, 0.22, out.gain));
+    out.gain.value = 0.8; return r;
+  },
+  forest: function(out){
+    var r = base(out); makeBuffers();
+    var bed = noiseSrc("pink");
+    var blp = actx.createBiquadFilter(); blp.type="lowpass"; blp.frequency.value=500;
+    var bg = actx.createGain(); bg.gain.value = 0.25;
+    bed.connect(blp); blp.connect(bg); bg.connect(out); bed.start();
+    /* Crickets: a high sine whose volume is chopped into chirps */
+    var osc = actx.createOscillator(); osc.type="sine"; osc.frequency.value=4300;
+    var cg = actx.createGain(); cg.gain.value = 0;
+    osc.connect(cg); cg.connect(out); osc.start();
+    r.nodes.push(bed, osc);
+    var chirp = function(){
+      if (!channels.forest.playing) return;
+      var t = actx.currentTime;
+      for (var i=0;i<4;i++){
+        cg.gain.setValueAtTime(0, t + i*0.14);
+        cg.gain.linearRampToValueAtTime(0.05, t + i*0.14 + 0.03);
+        cg.gain.linearRampToValueAtTime(0, t + i*0.14 + 0.09);
+      }
+      r.timers.push(setTimeout(chirp, 1400 + Math.random()*2600));
+    };
+    chirp();
+    out.gain.value = 0.9; return r;
+  },
+  campfire: function(out){
+    var r = base(out); makeBuffers();
+    var bed = noiseSrc("brown");
+    var blp = actx.createBiquadFilter(); blp.type="lowpass"; blp.frequency.value=320;
+    var bg = actx.createGain(); bg.gain.value = 0.4;
+    bed.connect(blp); blp.connect(bg); bg.connect(out); bed.start();
+    r.nodes.push(bed);
+    var pop = function(){
+      if (!channels.campfire.playing) return;
+      var dur = 0.02 + Math.random()*0.05;
+      var src = actx.createBufferSource(); src.buffer = buffers.white;
+      src.playbackRate.value = 0.7 + Math.random()*0.8;
+      var f = actx.createBiquadFilter(); f.type="bandpass";
+      f.frequency.value = 700 + Math.random()*1800; f.Q.value = 2.5;
+      var g = actx.createGain(); var t = actx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5 + Math.random()*0.4, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(out);
+      src.start(t, Math.random()*2); src.stop(t + dur + 0.05);
+      r.timers.push(setTimeout(pop, 60 + Math.random()*700));
+    };
+    pop();
+    out.gain.value = 0.9; return r;
+  },
+  storm: function(out){
+    var r = base(out); makeBuffers();
+    var rain = noiseSrc("pink");
+    var rlp = actx.createBiquadFilter(); rlp.type="lowpass"; rlp.frequency.value=2400;
+    var rg = actx.createGain(); rg.gain.value = 0.55;
+    rain.connect(rlp); rlp.connect(rg); rg.connect(out); rain.start();
+    r.nodes.push(rain);
+    var rumble = function(){
+      if (!channels.storm.playing) return;
+      var dur = 2.5 + Math.random()*3;
+      var src = noiseSrc("brown");
+      var f = actx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=130;
+      var g = actx.createGain(); var t = actx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.9, t + dur*0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(out); src.start(t); src.stop(t + dur + 0.1);
+      r.timers.push(setTimeout(rumble, 6000 + Math.random()*14000));
+    };
+    r.timers.push(setTimeout(rumble, 2500));
+    out.gain.value = 0.9; return r;
+  },
+  white: function(out){ var r = base(out); makeBuffers(); var s = noiseSrc("white"); s.connect(out); s.start(); r.nodes.push(s); out.gain.value=0.55; return r; },
+  pink:  function(out){ var r = base(out); makeBuffers(); var s = noiseSrc("pink");  s.connect(out); s.start(); r.nodes.push(s); out.gain.value=0.8;  return r; },
+  brown: function(out){ var r = base(out); makeBuffers(); var s = noiseSrc("brown"); s.connect(out); s.start(); r.nodes.push(s); out.gain.value=0.95; return r; },
+  fan: function(out){
+    var r = base(out); makeBuffers();
+    var o1 = actx.createOscillator(); o1.type="sine"; o1.frequency.value=118;
+    var o2 = actx.createOscillator(); o2.type="sine"; o2.frequency.value=236;
+    var og = actx.createGain(); og.gain.value = 0.12;
+    o1.connect(og); o2.connect(og); og.connect(out); o1.start(); o2.start();
+    var air = noiseSrc("white");
+    var lp = actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=380;
+    var ag = actx.createGain(); ag.gain.value = 0.35;
+    air.connect(lp); lp.connect(ag); ag.connect(out); air.start();
+    r.nodes.push(o1, o2, air); out.gain.value = 0.85; return r;
+  }
+};
+
+var SOUNDS = [
+  { id:"rain",      name:"Rain",            desc:"Steady rainfall on a roof — filtered noise with a soft high end." },
+  { id:"heavyrain", name:"Heavy Rain",      desc:"A downpour: brighter rain over a low, rolling rumble." },
+  { id:"ocean",     name:"Ocean Waves",     desc:"Slow swells that rise and fall, like surf on a shore." },
+  { id:"wind",      name:"Wind",            desc:"A wandering breeze that gusts and settles." },
+  { id:"forest",    name:"Night Forest",    desc:"Soft night air with crickets chirping in loose patterns." },
+  { id:"campfire",  name:"Campfire",        desc:"A low fire bed with random crackles and pops — never the same twice." },
+  { id:"storm",     name:"Thunderstorm",    desc:"Rain with deep thunder rolling through every so often." },
+  { id:"white",     name:"White Noise",     desc:"Even energy at every frequency — the classic static hiss. See Learn." },
+  { id:"pink",      name:"Pink Noise",      desc:"Static with the highs turned down — softer, more like rainfall." },
+  { id:"brown",     name:"Brown Noise",     desc:"Almost all low end — a deep, steady rumble with no hiss." },
+  { id:"fan",       name:"Fan Hum",         desc:"A low motor hum with moving air over it." }
+];
+
+/* ---------- Channel state + board UI ---------- */
+var channels = {};
+var boardEl = document.getElementById("board");
+SOUNDS.forEach(function(s){
+  channels[s.id] = { def:s, playing:false, level:70, gainNode:null, live:null, card:null, btn:null, levelEl:null };
+  var card = document.createElement("div"); card.className = "channel"; card.id = "ch-" + s.id;
+  card.innerHTML =
+    "<h3>" + s.name + "</h3>" +
+    "<p class='desc'>" + s.desc + "</p>" +
+    "<div class='row'><button type='button' class='toggle' aria-pressed='false'>Tap to play</button>" +
+    "<span class='level' aria-hidden='true'>70%</span></div>" +
+    "<label class='fader-label' for='fader-" + s.id + "'>" + s.name + " volume — drag to fade</label>" +
+    "<input type='range' id='fader-" + s.id + "' min='0' max='100' value='70' />";
+  boardEl.appendChild(card);
+  var ch = channels[s.id];
+  ch.card = card;
+  ch.btn = card.querySelector(".toggle");
+  ch.levelEl = card.querySelector(".level");
+  var fader = card.querySelector("input[type=range]");
+  ch.btn.addEventListener("click", function(){ toggleChannel(s.id); });
+  fader.addEventListener("input", function(){
+    ch.level = +fader.value;
+    ch.levelEl.textContent = fader.value + "%";
+    if (ch.playing && ch.gainNode) ch.gainNode.gain.setTargetAtTime(ch.level/100 * (ch.baseScale||1), actx.currentTime, 0.05);
+    updateNowPlaying();
+  });
+  ch.fader = fader;
+});
+
+function startChannel(id){
+  ensureAudio();
+  var ch = channels[id];
+  if (ch.playing) return;
+  var g = actx.createGain();
+  g.connect(masterGain);
+  ch.playing = true; /* set before the factory runs: its crackle/chirp/thunder schedulers check this flag */
+  var live = FACTORIES[id](g);
+  ch.baseScale = g.gain.value; /* factory sets its own character scale on the same node; capture before fader scale */
+  g.gain.value = ch.level/100 * ch.baseScale;
+  ch.gainNode = g; ch.live = live;
+  ch.btn.textContent = "Tap to stop"; ch.btn.setAttribute("aria-pressed","true");
+  ch.card.classList.add("playing");
+  updateNowPlaying();
+}
+function stopChannel(id){
+  var ch = channels[id];
+  if (!ch.playing) return;
+  ch.playing = false;
+  if (ch.live){
+    ch.live.timers.forEach(clearTimeout);
+    ch.live.nodes.forEach(function(n){ try{ n.stop && n.stop(); }catch(e){} try{ n.disconnect(); }catch(e){} });
+  }
+  if (ch.gainNode){ try{ ch.gainNode.disconnect(); }catch(e){} }
+  ch.gainNode = null; ch.live = null;
+  ch.btn.textContent = "Tap to play"; ch.btn.setAttribute("aria-pressed","false");
+  ch.card.classList.remove("playing");
+  updateNowPlaying();
+}
+function toggleChannel(id){ channels[id].playing ? stopChannel(id) : startChannel(id); }
+
+document.getElementById("stopAllBtn").addEventListener("click", function(){
+  SOUNDS.forEach(function(s){ stopChannel(s.id); });
+  stopTone();
+});
+
+function activeList(){ return SOUNDS.filter(function(s){ return channels[s.id].playing; }); }
+function updateNowPlaying(){
+  var act = activeList();
+  var el = document.getElementById("nowPlaying");
+  if (!act.length && !tone.playing){ el.textContent = "nothing yet — tap a sound above to start."; }
+  else {
+    var parts = act.map(function(s){ return s.name + " at " + channels[s.id].level + "%"; });
+    if (tone.playing) parts.push("Tone at " + currentFreq() + " Hz");
+    el.textContent = parts.join(" · ");
+  }
+}
+
+/* ---------- Level meter (analyser readout) ---------- */
+var meterEl = document.getElementById("meter");
+var meterReadout = document.getElementById("meterReadout");
+var meterBuf = new Uint8Array(2048);
+setInterval(function(){
+  if (!analyser || (!activeList().length && !tone.playing)){
+    meterEl.style.width = "0%"; meterReadout.textContent = "Output level: 0% (silent)"; return;
+  }
+  analyser.getByteTimeDomainData(meterBuf);
+  var sum = 0; for (var i=0;i<meterBuf.length;i++){ var v = (meterBuf[i]-128)/128; sum += v*v; }
+  var pct = Math.min(100, Math.round(Math.sqrt(sum/meterBuf.length)*280));
+  meterEl.style.width = pct + "%";
+  meterReadout.textContent = "Output level: " + pct + "% (measured live from the page's own output)";
+}, 250);
+
+/* ---------- Tone generator ---------- */
+var tone = { playing:false, osc:null, osc2:null, gain:null, gain2:null, pan:null, pan2:null, binaural:false };
+var freqSlider = document.getElementById("freqSlider");
+var freqInput = document.getElementById("freqInput");
+var hzBig = document.getElementById("hzBig");
+var toneVolEl = document.getElementById("toneVol");
+function sliderToFreq(v){ return Math.round(20 * Math.pow(1000, v/1000)); }
+function freqToSlider(f){ return Math.round(1000 * Math.log(f/20) / Math.log(1000)); }
+function currentFreq(){ return Math.min(20000, Math.max(20, +freqInput.value || 220)); }
+function setFreq(f, fromSlider){
+  f = Math.min(20000, Math.max(20, Math.round(f)));
+  hzBig.textContent = f;
+  freqInput.value = f;
+  if (!fromSlider) freqSlider.value = freqToSlider(f);
+  if (tone.playing) applyToneFreq();
+  updateBinauralReadout(); updateNowPlaying();
+}
+freqSlider.addEventListener("input", function(){ setFreq(sliderToFreq(+freqSlider.value), true); });
+freqInput.addEventListener("change", function(){ setFreq(currentFreq(), false); });
+document.getElementById("presetRow").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-freq]"); if (!b) return;
+  setFreq(+b.getAttribute("data-freq"), false);
+});
+toneVolEl.addEventListener("input", function(){
+  document.getElementById("toneVolReadout").textContent = toneVolEl.value + "%";
+  if (tone.playing && tone.gain){
+    var v = toneVolEl.value/100 * 0.6;
+    tone.gain.gain.setTargetAtTime(v, actx.currentTime, 0.05);
+    if (tone.gain2) tone.gain2.gain.setTargetAtTime(v, actx.currentTime, 0.05);
+  }
+});
+document.getElementById("waveSelect").addEventListener("change", function(){
+  if (tone.playing){ if (tone.osc) tone.osc.type = this.value; if (tone.osc2) tone.osc2.type = this.value; }
+});
+var beatInput = document.getElementById("beatInput");
+beatInput.addEventListener("change", function(){ if (tone.playing) applyToneFreq(); updateBinauralReadout(); });
+function beatHz(){ return Math.min(40, Math.max(0.5, +beatInput.value || 6)); }
+function updateBinauralReadout(){
+  var el = document.getElementById("binauralReadout");
+  var f = currentFreq();
+  if (!tone.binaural){ el.textContent = "Binaural is off. Left ear and right ear get the same tone."; return; }
+  el.textContent = "Binaural is on: left ear " + f + " Hz · right ear " + (f + beatHz()) + " Hz · the difference — the beat you perceive — is " + beatHz() + " Hz. Headphones needed.";
+}
+function applyToneFreq(){
+  var f = currentFreq();
+  if (tone.osc) tone.osc.frequency.setTargetAtTime(f, actx.currentTime, 0.03);
+  if (tone.osc2) tone.osc2.frequency.setTargetAtTime(f + beatHz(), actx.currentTime, 0.03);
+  document.getElementById("toneStatus").textContent = tone.binaural
+    ? "Tone is playing: left " + f + " Hz, right " + (f + beatHz()) + " Hz, beat " + beatHz() + " Hz."
+    : "Tone is playing at " + f + " Hz.";
+}
+function startTone(){
+  ensureAudio();
+  if (tone.playing) return;
+  var f = currentFreq();
+  var v = toneVolEl.value/100 * 0.6;
+  tone.gain = actx.createGain(); tone.gain.gain.value = v;
+  tone.osc = actx.createOscillator();
+  tone.osc.type = document.getElementById("waveSelect").value;
+  tone.osc.frequency.value = f;
+  if (tone.binaural){
+    tone.pan = actx.createStereoPanner(); tone.pan.pan.value = -1;
+    tone.osc.connect(tone.gain); tone.gain.connect(tone.pan); tone.pan.connect(masterGain);
+    tone.gain2 = actx.createGain(); tone.gain2.gain.value = v;
+    tone.osc2 = actx.createOscillator();
+    tone.osc2.type = tone.osc.type; tone.osc2.frequency.value = f + beatHz();
+    tone.pan2 = actx.createStereoPanner(); tone.pan2.pan.value = 1;
+    tone.osc2.connect(tone.gain2); tone.gain2.connect(tone.pan2); tone.pan2.connect(masterGain);
+    tone.osc2.start();
+  } else {
+    tone.osc.connect(tone.gain); tone.gain.connect(masterGain);
+  }
+  tone.osc.start();
+  tone.playing = true;
+  var btn = document.getElementById("toneToggleBtn");
+  btn.textContent = "Tap to stop the tone"; btn.setAttribute("aria-pressed","true");
+  applyToneFreq(); updateNowPlaying();
+}
+function stopTone(){
+  if (!tone.playing) return;
+  tone.playing = false;
+  [tone.osc, tone.osc2].forEach(function(o){ if (o){ try{o.stop();}catch(e){} try{o.disconnect();}catch(e){} } });
+  [tone.gain, tone.gain2, tone.pan, tone.pan2].forEach(function(n){ if (n){ try{n.disconnect();}catch(e){} } });
+  tone.osc = tone.osc2 = tone.gain = tone.gain2 = tone.pan = tone.pan2 = null;
+  var btn = document.getElementById("toneToggleBtn");
+  btn.textContent = "Tap to start the tone"; btn.setAttribute("aria-pressed","false");
+  document.getElementById("toneStatus").textContent = "Tone is off.";
+  updateNowPlaying();
+}
+document.getElementById("toneToggleBtn").addEventListener("click", function(){ tone.playing ? stopTone() : startTone(); });
+document.getElementById("binauralBtn").addEventListener("click", function(){
+  tone.binaural = !tone.binaural;
+  this.textContent = tone.binaural ? "Tap to turn binaural mode off" : "Tap to turn binaural mode on";
+  this.setAttribute("aria-pressed", tone.binaural ? "true" : "false");
+  updateBinauralReadout();
+  if (tone.playing){ stopTone(); startTone(); }
+});
+setFreq(220, false); freqSlider.value = freqToSlider(220);
+
+/* ---------- Sleep timer with gentle fade ---------- */
+var timer = { endAt:0, interval:null, active:false };
+var timerStatus = document.getElementById("timerStatus");
+function fmtLeft(ms){
+  var s = Math.max(0, Math.ceil(ms/1000));
+  var m = Math.floor(s/60), r = s%60;
+  return (m > 0 ? m + "m " : "") + r + "s";
+}
+document.getElementById("timerStartBtn").addEventListener("click", function(){
+  var secs = +document.getElementById("timerSelect").value;
+  timer.endAt = Date.now() + secs*1000; timer.active = true;
+  clearInterval(timer.interval);
+  timerStatus.textContent = "Timer running: " + fmtLeft(secs*1000) + " left, then everything fades out gently.";
+  timer.interval = setInterval(function(){
+    var left = timer.endAt - Date.now();
+    if (left > 0){ timerStatus.textContent = "Timer running: " + fmtLeft(left) + " left, then everything fades out gently."; return; }
+    clearInterval(timer.interval); timer.active = false;
+    fadeOutAndStop();
+  }, 500);
+});
+document.getElementById("timerCancelBtn").addEventListener("click", function(){
+  clearInterval(timer.interval); timer.active = false;
+  timerStatus.textContent = "Timer is off. Sounds will play until you stop them.";
+});
+function fadeOutAndStop(){
+  timerStatus.textContent = "Timer finished — fading out gently now…";
+  if (!actx || !masterGain){ finishFade(); return; }
+  var target = masterVolEl.value/100;
+  var now = actx.currentTime;
+  masterGain.gain.cancelScheduledValues(now);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.linearRampToValueAtTime(0.0001, now + 8);
+  setTimeout(function(){
+    finishFade();
+    if (masterGain) masterGain.gain.value = target;
+  }, 8500);
+}
+function finishFade(){
+  SOUNDS.forEach(function(s){ stopChannel(s.id); });
+  stopTone();
+  timerStatus.textContent = "Timer finished: everything faded out and stopped. Tap a sound to start again.";
+}
+
+/* ---------- Saved mixes (this device only) ---------- */
+function loadMixes(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch(e){ return []; }
+}
+function storeMixes(m){ try { localStorage.setItem(LS_KEY, JSON.stringify(m)); } catch(e){} }
+function renderMixes(){
+  var mixes = loadMixes();
+  var list = document.getElementById("mixList");
+  list.innerHTML = "";
+  document.getElementById("noMixes").style.display = mixes.length ? "none" : "block";
+  mixes.forEach(function(mix, idx){
+    var li = document.createElement("li");
+    var detail = Object.keys(mix.levels).map(function(id){
+      var d = SOUNDS.filter(function(s){ return s.id===id; })[0];
+      return (d ? d.name : id) + " " + mix.levels[id] + "%";
+    }).join(" · ");
+    li.innerHTML = "<span class='mixname'></span>" +
+      "<button type='button' class='primary'>Tap to load this mix</button>" +
+      "<button type='button' class='danger'>Tap to forget this mix</button>" +
+      "<span class='mixdetail'></span>";
+    li.querySelector(".mixname").textContent = mix.name;
+    li.querySelector(".mixdetail").textContent = detail || "No sounds in this mix.";
+    li.querySelector(".primary").addEventListener("click", function(){ applyMix(mix); });
+    li.querySelector(".danger").addEventListener("click", function(){
+      var all = loadMixes(); all.splice(idx,1); storeMixes(all); renderMixes();
+      document.getElementById("saveMsg").textContent = "Forgot \"" + mix.name + "\". It is removed from this device.";
+    });
+    list.appendChild(li);
+  });
+}
+function applyMix(mix){
+  ensureAudio();
+  SOUNDS.forEach(function(s){
+    var ch = channels[s.id];
+    if (Object.prototype.hasOwnProperty.call(mix.levels, s.id)){
+      ch.level = mix.levels[s.id];
+      ch.fader.value = ch.level; ch.levelEl.textContent = ch.level + "%";
+      if (!ch.playing) startChannel(s.id);
+      else if (ch.gainNode) ch.gainNode.gain.setTargetAtTime(ch.level/100 * (ch.baseScale||1), actx.currentTime, 0.05);
+    } else if (ch.playing) stopChannel(s.id);
+  });
+  document.getElementById("saveMsg").textContent = "Loaded \"" + mix.name + "\".";
+  updateNowPlaying();
+}
+document.getElementById("saveMixBtn").addEventListener("click", function(){
+  var nameEl = document.getElementById("mixName");
+  var name = nameEl.value.trim();
+  var msg = document.getElementById("saveMsg");
+  var act = activeList();
+  if (!name){ msg.textContent = "Give the mix a name first, then tap save."; nameEl.focus(); return; }
+  if (!act.length){ msg.textContent = "Nothing is playing yet — start at least one sound, then save the mix."; return; }
+  var levels = {};
+  act.forEach(function(s){ levels[s.id] = channels[s.id].level; });
+  var mixes = loadMixes();
+  mixes.push({ name:name, levels:levels, savedAt:new Date().toISOString() });
+  storeMixes(mixes); renderMixes();
+  msg.textContent = "Saved \"" + name + "\" on this device only.";
+  nameEl.value = "";
+});
+document.getElementById("forgetAllBtn").addEventListener("click", function(){
+  storeMixes([]); renderMixes();
+  document.getElementById("saveMsg").textContent = "All saved mixes forgotten — removed from this device.";
+});
+renderMixes();
+
+/* ---------- Offline download door ---------- */
+document.getElementById("downloadBtn").addEventListener("click", function(){
+  var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+  var blob = new Blob([html], { type:"text/html" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "drift-sleep-sounds.html";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+
+/* ---------- Exposed state for verification ---------- */
+window.__drift = {
+  getState: function(){
+    return {
+      playing: activeList().map(function(s){ return { id:s.id, level:channels[s.id].level }; }),
+      tone: { playing: tone.playing, freq: currentFreq(), binaural: tone.binaural, beat: beatHz() },
+      timerActive: timer.active,
+      savedMixes: loadMixes().map(function(m){ return m.name; }),
+      audioRunning: !!(actx && actx.state === "running")
+    };
+  }
+};
+})();
+</script>
+</body>
+</html>
