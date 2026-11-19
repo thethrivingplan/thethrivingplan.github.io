@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Last Card</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#eef1ee; --panel:#ffffff; --panel2:#e3e9e4; --ink:#17211b; --muted:#4d5c52;
+        --line:#c3cec5; --accent:#b34700; --accent-ink:#ffffff; --felt:#0d4f42; --felt2:#093a30;
+        --gold:#8a6d00; --danger:#b3261e; --ok:#146c2e;
+        --c-ember:#cf2e25; --c-ocean:#1565ad; --c-leaf:#1d7a3a; --c-sun:#d99a06;
+        --shadow:0 2px 10px rgba(10,30,20,.16);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#101613; --panel:#1a221d; --panel2:#232d26; --ink:#eef3ee; --muted:#a9b8ad;
+          --line:#39463c; --accent:#e8762c; --accent-ink:#1a1005; --felt:#0a3d33; --felt2:#062a23;
+          --gold:#e3b93c; --danger:#ff8a80; --ok:#7fd598;
+          --shadow:0 2px 10px rgba(0,0,0,.5);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif; line-height:1.5; }
+      .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+      a{ color:var(--accent); }
+      .freebar{ background:var(--ink); color:var(--bg); padding:.55rem 1rem; display:flex; flex-wrap:wrap;
+        gap:.5rem 1rem; align-items:center; justify-content:space-between; font-weight:700; }
+      .freebar .big{ font-size:1.02rem; letter-spacing:.01em; }
+      .freebar button{ background:var(--accent); color:var(--accent-ink); border:0; border-radius:.45rem;
+        padding:.45rem .9rem; font:inherit; font-weight:700; cursor:pointer; min-height:2.25rem; }
+      .wrap{ max-width:1060px; margin:0 auto; padding:0 1rem 3rem; }
+      header.hero{ padding:1.6rem 0 .4rem; }
+      h1{ font-size:clamp(2.4rem,7vw,4rem); font-weight:900; margin:0; line-height:1.02; letter-spacing:-.01em; }
+      h1 .thin{ color:var(--accent); }
+      .lede{ font-size:1.13rem; max-width:44rem; margin:.7rem 0 0; }
+      .homage{ color:var(--muted); max-width:44rem; margin:.55rem 0 0; font-size:.98rem; }
+      nav.compass{ display:flex; flex-wrap:wrap; gap:.5rem; margin:1.2rem 0 1.4rem; }
+      nav.compass a{ display:inline-flex; align-items:center; gap:.45rem; background:var(--panel);
+        border:1.5px solid var(--line); border-radius:999px; padding:.5rem 1rem; color:var(--ink);
+        text-decoration:none; font-weight:700; min-height:2.25rem; box-shadow:var(--shadow); }
+      nav.compass a .dir{ color:var(--accent); font-family:"IBM Plex Mono",monospace; font-weight:700; }
+      section{ margin:0 0 2rem; }
+      h2{ font-size:1.55rem; font-weight:900; margin:0 0 .6rem; }
+      h3{ font-size:1.12rem; font-weight:900; margin:1.1rem 0 .35rem; }
+      .panel{ background:var(--panel); border:1.5px solid var(--line); border-radius:.9rem; padding:1rem 1.1rem; box-shadow:var(--shadow); }
+      .muted{ color:var(--muted); }
+      .small{ font-size:.9rem; }
+
+      /* ---------- Game table ---------- */
+      .table{ background:linear-gradient(180deg, var(--felt), var(--felt2)); border-radius:1.1rem;
+        padding:1rem; color:#f2f7f2; box-shadow:var(--shadow); border:1.5px solid rgba(0,0,0,.25); }
+      .scores{ display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.9rem; }
+      .scorechip{ background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.28);
+        border-radius:.6rem; padding:.4rem .7rem; font-weight:700; font-size:.92rem; }
+      .scorechip.turn{ background:#f5c542; color:#231a00; border-color:#f5c542; }
+      .scorechip .pts{ font-family:"IBM Plex Mono",monospace; }
+      .bots{ display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin-bottom:1rem; }
+      .bot{ background:rgba(0,0,0,.22); border:1.5px solid rgba(255,255,255,.22); border-radius:.8rem; padding:.6rem .7rem; }
+      .bot.turn{ border-color:#f5c542; box-shadow:0 0 0 2px #f5c542 inset; }
+      .bot .bname{ font-weight:900; font-size:1.02rem; display:flex; justify-content:space-between; gap:.4rem; flex-wrap:wrap;}
+      .bot .lvl{ font-size:.78rem; font-weight:700; background:rgba(255,255,255,.16); border-radius:999px; padding:.08rem .55rem; }
+      .bot .bdesc{ font-size:.8rem; color:#cfded2; margin:.25rem 0 .4rem; }
+      .minis{ display:flex; gap:3px; flex-wrap:wrap; min-height:26px; }
+      .mini{ width:17px; height:25px; border-radius:3px; background:#274b63; border:1.5px solid #dfe9df;
+        color:#dfe9df; font-size:.6rem; display:flex; align-items:center; justify-content:center; font-weight:900;}
+      .lastbadge{ display:inline-block; background:#f5c542; color:#231a00; font-weight:900; border-radius:.4rem;
+        padding:.05rem .5rem; font-size:.8rem; margin-top:.3rem; }
+      .centre{ display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:center; padding:.4rem 0 .8rem; }
+      .pilewrap{ text-align:center; }
+      .pilelabel{ font-size:.82rem; font-weight:700; color:#cfded2; margin-top:.4rem; }
+      button.drawpile{ width:84px; height:118px; border-radius:.6rem; border:2.5px solid #e8f0e8; cursor:pointer;
+        background:repeating-linear-gradient(45deg,#274b63 0 10px,#1d3a4e 10px 20px); color:#eaf3ea;
+        font-family:inherit; font-weight:900; font-size:.95rem; padding:.3rem; }
+      button.drawpile:disabled{ opacity:.55; cursor:default; }
+      .statusbox{ background:rgba(0,0,0,.25); border:1.5px solid rgba(255,255,255,.22); border-radius:.8rem;
+        padding:.6rem .9rem; min-width:210px; max-width:320px; }
+      .statusbox .row{ display:flex; align-items:center; gap:.5rem; font-weight:700; margin:.15rem 0; }
+      .cdot{ width:20px; height:20px; border-radius:50%; border:2px solid #fff; display:inline-block; flex:none; }
+      .turnbanner{ text-align:center; font-size:1.18rem; font-weight:900; background:rgba(0,0,0,.28);
+        border-radius:.7rem; padding:.55rem .8rem; margin:.2rem 0 .7rem; }
+      .turnbanner.yours{ background:#f5c542; color:#231a00; }
+      .coach{ background:rgba(245,197,66,.16); border:1.5px dashed #f5c542; color:#fdf3d0; border-radius:.7rem;
+        padding:.55rem .8rem; font-size:.95rem; margin:0 0 .8rem; }
+      .controls{ display:flex; flex-wrap:wrap; gap:.55rem; justify-content:center; margin:.4rem 0 .8rem; }
+      .btn{ font:inherit; font-weight:800; border-radius:.55rem; border:1.5px solid var(--line);
+        background:var(--panel); color:var(--ink); padding:.55rem 1rem; cursor:pointer; min-height:2.75rem; }
+      .table .btn{ background:rgba(255,255,255,.94); color:#17211b; border-color:transparent; }
+      .btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+      .btn.call{ background:#f5c542; color:#231a00; border-color:transparent; font-size:1.02rem; }
+      .btn.call.armed{ background:var(--ok); color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,.5); }
+      .btn:disabled{ opacity:.5; cursor:default; }
+      .btn .gest{ display:block; font-size:.72rem; font-weight:700; opacity:.75; }
+      .handwrap{ background:rgba(0,0,0,.22); border-radius:.9rem; padding:.8rem; }
+      .handhead{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:baseline; justify-content:space-between; margin-bottom:.55rem; }
+      .handhead .who{ font-weight:900; font-size:1.08rem; }
+      .hand{ display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; }
+
+      /* ---------- Cards (our own faces) ---------- */
+      .card{ --cc:#888; position:relative; width:76px; height:110px; border-radius:.6rem; border:2.5px solid #f4f6f0;
+        background:var(--cc); color:#fff; font-family:inherit; cursor:pointer; padding:0; flex:none;
+        box-shadow:0 3px 7px rgba(0,0,0,.35); text-align:center; }
+      .card.sun{ color:#241a00; }
+      .card .corner{ position:absolute; top:4px; left:6px; font-weight:900; font-size:.82rem; line-height:1.05; text-align:left; }
+      .card .corner.br{ top:auto; left:auto; bottom:4px; right:6px; transform:rotate(180deg); }
+      .card .centre{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; }
+      .card .big{ font-size:2rem; font-weight:900; line-height:1; background:rgba(255,255,255,.92); color:var(--cc);
+        border-radius:50%; width:52px; height:52px; display:flex; align-items:center; justify-content:center; }
+      .card.sun .big{ color:#8a6100; }
+      .card .big.wide{ border-radius:.7rem; width:58px; font-size:1.35rem; }
+      .card .cname{ position:absolute; bottom:5px; left:0; right:0; font-size:.58rem; font-weight:900; letter-spacing:.14em; }
+      .card.wildcard{ background:conic-gradient(var(--c-ember) 0 25%, var(--c-sun) 0 50%, var(--c-leaf) 0 75%, var(--c-ocean) 0); color:#fff; }
+      .card.wildcard .big{ color:#17211b; }
+      .card.playable{ outline:3px solid #f5c542; outline-offset:2px; }
+      .card.dim{ opacity:.62; }
+      .card:disabled{ cursor:default; }
+      .card.static{ cursor:default; width:84px; height:118px; }
+      .colourpick{ display:none; gap:.55rem; flex-wrap:wrap; justify-content:center; margin:.6rem 0; }
+      .colourpick.open{ display:flex; }
+      .colourpick button{ font:inherit; font-weight:900; border-radius:.55rem; border:2.5px solid #fff; color:#fff;
+        padding:.6rem 1.1rem; cursor:pointer; min-height:2.75rem; }
+      .colourpick button.sun{ color:#241a00; }
+      .log{ list-style:none; margin:.8rem 0 0; padding:.6rem .8rem; background:rgba(0,0,0,.25); border-radius:.7rem;
+        max-height:180px; overflow:auto; font-size:.92rem; }
+      .log li{ padding:.14rem 0; border-bottom:1px solid rgba(255,255,255,.08); }
+      .log li:last-child{ border-bottom:0; }
+      .log .why{ color:#f5d67a; }
+      .endpanel{ display:none; background:var(--panel); color:var(--ink); border-radius:.8rem; padding:1rem; margin-top:1rem; }
+      .endpanel.open{ display:block; }
+      table.score{ border-collapse:collapse; width:100%; margin:.5rem 0; }
+      table.score th, table.score td{ text-align:left; padding:.35rem .5rem; border-bottom:1px solid var(--line); }
+      table.score td.n, table.score th.n{ text-align:right; font-family:"IBM Plex Mono",monospace; }
+      .explain{ display:none; background:var(--panel2); border:1.5px solid var(--line); border-radius:.7rem;
+        padding:.6rem .9rem; margin:.7rem 0 0; font-size:.95rem; }
+      .explain.open{ display:block; }
+
+      /* ---------- Text sections ---------- */
+      .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+      @media (max-width:720px){ .grid2{ grid-template-columns:1fr; } .bots{ grid-template-columns:1fr; } }
+      details{ background:var(--panel); border:1.5px solid var(--line); border-radius:.9rem; padding:.4rem 1.1rem .9rem; box-shadow:var(--shadow); }
+      summary{ font-weight:900; font-size:1.08rem; cursor:pointer; padding:.6rem 0; min-height:2.25rem; }
+      .setrow{ display:flex; flex-wrap:wrap; gap:.6rem 1.2rem; align-items:end; }
+      .field{ display:flex; flex-direction:column; gap:.25rem; font-weight:700; font-size:.92rem; }
+      .field select, .field input{ font:inherit; padding:.45rem .6rem; border-radius:.45rem; border:1.5px solid var(--line);
+        background:var(--panel); color:var(--ink); min-height:2.5rem; }
+      .recnums{ display:flex; flex-wrap:wrap; gap:.6rem; margin:.6rem 0; }
+      .recnum{ background:var(--panel2); border-radius:.7rem; padding:.6rem .9rem; text-align:center; min-width:96px; }
+      .recnum .v{ font-family:"IBM Plex Mono",monospace; font-size:1.5rem; font-weight:700; display:block; }
+      footer{ border-top:1.5px solid var(--line); padding-top:1rem; color:var(--muted); font-size:.92rem; }
+      .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+    </style>
+  </head>
+  <body>
+    <div class="freebar">
+      <span class="big">Free — always free. No ads, no account, no paywall.</span>
+      <button type="button" id="dlBtn" data-explain="Downloads a copy of this whole page as one file. Open that file in any browser and the game works with no connection at all.">Tap to download this page for offline play</button>
+    </div>
+
+    <div class="wrap">
+      <header class="hero">
+        <h1>Last <span class="thin">Card</span></h1>
+        <p class="lede">Shed every card in your hand before the bots shed theirs. Match the top card by <strong>colour</strong> or <strong>number</strong>, bend the turn with action cards — and whatever you do, call <strong>“Last Card!”</strong> before you play down to one.</p>
+        <p class="homage">A homage to the classic colour-and-number shedding games that have filled kitchen tables for decades — they work, so we borrowed the shape and built our own: our own name, our own colours (Ember, Ocean, Leaf, Sun), our own card faces and art. Nothing here is copied from any published game.</p>
+      </header>
+
+      <nav class="compass" aria-label="Compass — tap to go to a part of the page">
+        <a href="#play"><span class="dir">N</span> Play — tap to go</a>
+        <a href="#teaching"><span class="dir">E</span> Why it works — tap to go</a>
+        <a href="#rules"><span class="dir">S</span> Rules in full — tap to go</a>
+        <a href="#settings"><span class="dir">W</span> Settings &amp; your record — tap to go</a>
+      </nav>
+
+      <section id="play" aria-label="The game">
+        <div class="table">
+          <div class="scores" id="scoreStrip" aria-label="Match scores"></div>
+          <div class="bots" id="botsRow"></div>
+
+          <div class="centre">
+            <div class="pilewrap">
+              <button type="button" class="drawpile" id="drawBtn" data-explain="Tap on your turn to draw one card from the pile. If the card you drew can be played, you may play it straight away; if it cannot, your turn passes. If a Draw Two or Draw Four is waiting on you, tapping the pile takes those cards instead.">DRAW<br/>PILE</button>
+              <div class="pilelabel" id="deckCount">— cards in pile · tap pile to draw</div>
+            </div>
+            <div class="pilewrap">
+              <div id="topCard"></div>
+              <div class="pilelabel">Top card — match its colour or number</div>
+            </div>
+            <div class="statusbox" aria-label="Table status">
+              <div class="row"><span class="cdot" id="colourDot"></span><span id="colourNow">Colour to match: —</span></div>
+              <div class="row"><span id="dirNow">Direction: —</span></div>
+              <div class="row"><span id="pendingNow">Nothing waiting</span></div>
+            </div>
+          </div>
+
+          <div class="turnbanner" id="turnBanner" role="status">Dealing…</div>
+          <p class="coach" id="coachLine" hidden></p>
+
+          <div class="controls">
+            <button type="button" class="btn call" id="callBtn" data-explain="Tap this BEFORE you play the card that leaves you holding exactly one card. Calling in time is the whole rule. Play down to one without calling and you draw penalty cards.">Call “LAST CARD!”<span class="gest">Tap to call · hold to hear why</span></button>
+            <button type="button" class="btn" id="passBtn" hidden>Pass turn<span class="gest">Tap to pass</span></button>
+            <button type="button" class="btn" id="newHandBtn">New hand<span class="gest">Tap to re-deal</span></button>
+            <button type="button" class="btn" id="newMatchBtn">New match<span class="gest">Tap to reset scores</span></button>
+          </div>
+
+          <div class="colourpick" id="colourPick" role="group" aria-label="Choose a colour for your wild card">
+            <span style="font-weight:900; align-self:center;">Wild card — tap to choose the new colour:</span>
+          </div>
+
+          <div class="handwrap">
+            <div class="handhead">
+              <span class="who" id="handTitle">Your hand</span>
+              <span id="handHint" class="small">Gold-outlined cards can be played. Tap a card to play it.</span>
+            </div>
+            <div class="hand" id="playerHand"></div>
+          </div>
+
+          <div class="explain" id="explainBox" role="status"></div>
+
+          <div class="endpanel" id="endPanel"></div>
+
+          <ul class="log" id="gameLog" aria-live="polite"></ul>
+        </div>
+      </section>
+
+      <section id="teaching" aria-label="Why the game works the way it does">
+        <h2>Why it works — the teaching layer</h2>
+        <div class="panel">
+          <label class="field" style="max-width:340px;">Teaching dial — tap to choose
+            <select id="teachDial">
+              <option value="off">Off — just play</option>
+              <option value="coach" selected>Coach — a hint on your turn</option>
+              <option value="full">Full lesson — hints plus the why, as it happens</option>
+            </select>
+          </label>
+          <h3>The one trap this game teaches: high cards left late</h3>
+          <p>When a hand ends, the winner scores the value of <em>every card left in everyone else’s hand</em>. Number cards score their face. Action cards — Skip, Reverse, Draw Two — score <strong>20 each</strong>. Wilds score <strong>50 each</strong>. So the card that feels most powerful to hold is exactly the card that costs you most when somebody else goes out first.</p>
+          <p>That is why shedding high cards late is a trap: a Wild Draw Four sitting in your hand on the last turn is not strength, it is 50 points you are about to hand to the winner. The strong play is usually the opposite of the greedy one — spend your heavy cards while the hand is young, keep cheap numbers for the endgame, and save a wild only when you can name the turn you will spend it on.</p>
+          <h3>Why the call rule exists</h3>
+          <p>Calling “Last Card!” is a memory-and-honesty rule: it tells the table you are one card from winning, so they can aim their Skips and Draw Twos at you. Forgetting is not cheating — it is a slip — so the price is cards, not blame: draw the penalty and play on. Watch the bots: Pip the novice genuinely forgets about one time in three, and pays for it, same as you.</p>
+          <h3>Why matching colour <em>or</em> number</h3>
+          <p>Two ways to match means a hand is rarely fully stuck, but the choice matters: playing the same colour keeps the colour you are long in; switching colour with a matching number can strand an opponent who has been hoarding the old one. The flow of the table — who is forced to draw, who gets skipped — is set by these small choices, the same pacing-and-contrast logic as a set list or a meal: tension, release, and knowing what comes next.</p>
+        </div>
+      </section>
+
+      <section id="rules" aria-label="Rules in full">
+        <details>
+          <summary>Rules in full — tap to open, tap again to close</summary>
+          <h3>Goal</h3>
+          <p>Be first to play your last card. The winner of a hand scores the value of all cards left in the other players’ hands. First to the target score (default 200, changeable in Settings) wins the match.</p>
+          <h3>Your turn</h3>
+          <p>Play one card that matches the top card by <strong>colour</strong>, by <strong>number</strong>, or — for action cards — by <strong>symbol</strong>. Wild cards match anything. If you cannot or will not play, tap the draw pile: draw one card; if it can be played you may play it at once, otherwise your turn passes.</p>
+          <h3>The cards (all our own designs)</h3>
+          <p><strong>Numbers 0–9</strong> in Ember, Ocean, Leaf and Sun. <strong>Pass (Skip)</strong> — the next player loses their turn. <strong>Turnabout (Reverse)</strong> — play reverses direction. <strong>Draw Two</strong> — the next player draws two and loses their turn. <strong>Wild</strong> — play it on anything and name the new colour. <strong>Wild Draw Four</strong> — name the colour <em>and</em> the next player draws four and loses their turn. With stacking on (Settings), a player facing a draw may answer with their own Draw Two or Wild Draw Four and pass the whole growing pile along.</p>
+          <h3>The call</h3>
+          <p>Before you play the card that leaves you holding exactly one card, tap the <strong>Call “LAST CARD!”</strong> button. Play down to one without calling and you immediately draw the penalty (default 2 cards). Bots play by the same rule, at their own honest forgetfulness rates.</p>
+          <h3>Scoring</h3>
+          <p>Numbers score face value · Pass, Turnabout and Draw Two score 20 · Wild and Wild Draw Four score 50. The hand winner collects the total from all three other hands.</p>
+          <h3>The bots, honestly</h3>
+          <p><strong>Pip — Novice:</strong> plays a random legal card, names a random wild colour, forgets the call about 1 time in 3. <strong>Marlo — Casual:</strong> plays a sensible card, keeps wilds back, names the colour it holds most of, forgets the call about 1 time in 10. <strong>Vera — Sharp:</strong> sheds its highest-value cards first, saves a Wild Draw Four for when an opponent is nearly out, and never forgets the call. No bot sees your hand; no bot cheats.</p>
+        </details>
+      </section>
+
+      <section id="settings" aria-label="Settings and your record">
+        <h2>Settings — the rules are settings</h2>
+        <div class="panel">
+          <div class="setrow">
+            <label class="field">Your name (alias) — type any name you like
+              <span style="display:flex; gap:.45rem;">
+                <input type="text" id="aliasInput" maxlength="20" placeholder="You" autocomplete="off" />
+                <button type="button" class="btn primary" id="aliasBtn">Tap to set name</button>
+              </span>
+            </label>
+            <label class="field">Cards dealt — tap to choose
+              <select id="setHandSize"><option value="5">5</option><option value="7" selected>7</option><option value="9">9</option></select>
+            </label>
+            <label class="field">Forgotten-call penalty — tap to choose
+              <select id="setPenalty"><option value="1">1 card</option><option value="2" selected>2 cards</option><option value="4">4 cards</option></select>
+            </label>
+            <label class="field">Match target — tap to choose
+              <select id="setTarget"><option value="100">100 points</option><option value="200" selected>200 points</option><option value="500">500 points</option></select>
+            </label>
+            <label class="field">Stacking draw cards — tap to choose
+              <select id="setStacking"><option value="on" selected>On — answer a draw with a draw</option><option value="off">Off — a draw always lands</option></select>
+            </label>
+            <label class="field">Bot speed — tap to choose
+              <select id="setSpeed"><option value="fast" selected>Fast</option><option value="relaxed">Relaxed</option></select>
+            </label>
+          </div>
+          <p class="muted small">New settings apply from the next hand. Nothing here is locked: house rules are yours to bend.</p>
+
+          <h3>Your record — kept in this tab only</h3>
+          <p class="small muted">This record lives in this page while it is open. Export it to keep a copy as a file; Forget wipes it on the spot. Nothing is sent anywhere.</p>
+          <div class="recnums" id="recNums"></div>
+          <div style="display:flex; flex-wrap:wrap; gap:.55rem;">
+            <button type="button" class="btn" id="exportBtn">Export record<span class="gest">Tap to download a JSON copy</span></button>
+            <button type="button" class="btn" id="forgetBtn">Forget everything<span class="gest">Tap to wipe record &amp; name</span></button>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <p><strong>Copyleft.</strong> This page, its writing and its card designs are free to share and adapt under CC BY-SA 4.0; its code under the GPL. Derivatives carry the same freedom. No ads — ever. No tracking. Your name and record never leave this tab unless you export them yourself.</p>
+        <p>Last Card is an original game built on the documented shape of classic shedding games. Ember ▲, Ocean ●, Leaf ■, Sun ★.</p>
+      </footer>
+    </div>
+
+<script>
+(function(){
+"use strict";
+/* ================= Last Card — an original shedding game ================= */
+var COLOURS = [
+  { id:"ember", name:"Ember", glyph:"▲", css:"var(--c-ember)", hex:"#cf2e25" },
+  { id:"ocean", name:"Ocean", glyph:"●", css:"var(--c-ocean)", hex:"#1565ad" },
+  { id:"leaf",  name:"Leaf",  glyph:"■", css:"var(--c-leaf)",  hex:"#1d7a3a" },
+  { id:"sun",   name:"Sun",   glyph:"★", css:"var(--c-sun)",   hex:"#d99a06" }
+];
+function colourById(id){ for (var i=0;i<COLOURS.length;i++) if (COLOURS[i].id===id) return COLOURS[i]; return COLOURS[0]; }
+function pointsOf(card){
+  if (card.type==="number") return card.value;
+  if (card.type==="wild" || card.type==="wild4") return 50;
+  return 20; /* skip, reverse, draw2 */
+}
+function labelOf(card){
+  if (card.type==="number") return String(card.value);
+  if (card.type==="skip") return "⊘";
+  if (card.type==="reverse") return "⇄";
+  if (card.type==="draw2") return "+2";
+  if (card.type==="wild") return "◆";
+  return "+4";
+}
+function nameOf(card){
+  if (card.type==="wild") return "Wild";
+  if (card.type==="wild4") return "Wild Draw Four";
+  var c = colourById(card.colour).name;
+  if (card.type==="number") return c + " " + card.value;
+  if (card.type==="skip") return c + " Pass";
+  if (card.type==="reverse") return c + " Turnabout";
+  return c + " Draw Two";
+}
+var uid = 0;
+function buildDeck(){
+  var d = [];
+  COLOURS.forEach(function(c){
+    d.push({id:++uid, colour:c.id, type:"number", value:0});
+    for (var n=1;n<=9;n++){ d.push({id:++uid, colour:c.id, type:"number", value:n}); d.push({id:++uid, colour:c.id, type:"number", value:n}); }
+    ["skip","reverse","draw2"].forEach(function(t){ d.push({id:++uid, colour:c.id, type:t, value:null}); d.push({id:++uid, colour:c.id, type:t, value:null}); });
+  });
+  for (var i=0;i<4;i++){ d.push({id:++uid, colour:"wild", type:"wild", value:null}); d.push({id:++uid, colour:"wild", type:"wild4", value:null}); }
+  return d;
+}
+function shuffle(a){ for (var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function mod(n,m){ return ((n%m)+m)%m; }
+
+var settings = { handSize:7, penalty:2, target:200, stacking:true, speed:"fast" };
+var record = { hands:0, handsWon:0, matches:0, matchesWon:0, callsMade:0, callsMissed:0, actionCardsPlayed:0 };
+var state = null;
+var botTimer = null;
+var pendingWildCard = null;
+var suppressClick = false;
+
+function newPlayers(){
+  return [
+    { name:"You", bot:false, level:"", hand:[], score:0, lastCard:false },
+    { name:"Pip", bot:true, level:"Novice", desc:"Plays any legal card at random. Forgets the call about 1 time in 3.", hand:[], score:0, lastCard:false },
+    { name:"Marlo", bot:true, level:"Casual", desc:"Plays sensibly, saves wilds, names its most-held colour. Forgets the call about 1 time in 10.", hand:[], score:0, lastCard:false },
+    { name:"Vera", bot:true, level:"Sharp", desc:"Sheds high-value cards first, saves a Wild Draw Four for a nearly-out opponent. Never forgets the call.", hand:[], score:0, lastCard:false }
+  ];
+}
+function freshState(keepScores){
+  var players = keepScores && state ? state.players : newPlayers();
+  players.forEach(function(p){ p.hand=[]; p.lastCard=false; if(!keepScores) p.score=0; });
+  return {
+    players: players, deck: shuffle(buildDeck()), discard: [], turn: 0, dir: 1,
+    currentColour: null, pendingDraw: 0, callArmed: false, drewCardId: null,
+    handOver: false, matchOver: false, starter: state ? mod(state.starter+1,4) : 0,
+    events: { actionPlayed:false, lastCallMade:false, lastCallMissed:false }
+  };
+}
+function topCard(){ return state.discard[state.discard.length-1]; }
+function drawCards(pi, n){
+  var p = state.players[pi], got = [];
+  for (var i=0;i<n;i++){
+    if (!state.deck.length){
+      var top = state.discard.pop();
+      state.deck = shuffle(state.discard); state.discard = top ? [top] : [];
+      if (!state.deck.length) break;
+    }
+    var c = state.deck.pop(); p.hand.push(c); got.push(c);
+    if (p.hand.length > 1) p.lastCard = false;
+  }
+  return got;
+}
+function isPlayable(card){
+  if (state.pendingDraw > 0 && settings.stacking) return card.type==="draw2" || card.type==="wild4";
+  if (card.type==="wild" || card.type==="wild4") return true;
+  var t = topCard(); if (!t) return true;
+  if (card.colour === state.currentColour) return true;
+  if (card.type==="number" && t.type==="number" && card.value===t.value) return true;
+  if (card.type!=="number" && card.type===t.type) return true;
+  return false;
+}
+
+/* ---------------- logging & teaching ---------------- */
+var logEl = document.getElementById("gameLog");
+function log(msg, why){
+  var li = document.createElement("li");
+  li.innerHTML = msg + (why && teachLevel()==="full" ? ' <span class="why">Why: ' + why + '</span>' : "");
+  logEl.insertBefore(li, logEl.firstChild);
+  while (logEl.children.length > 30) logEl.removeChild(logEl.lastChild);
+}
+function teachLevel(){ return document.getElementById("teachDial").value; }
+
+/* ---------------- rendering ---------------- */
+function cardHTML(card, opts){
+  opts = opts || {};
+  var c = card.colour==="wild" ? null : colourById(card.colour);
+  var cls = "card" + (card.colour==="wild" ? " wildcard" : "") + (c && c.id==="sun" ? " sun" : "") + (opts.static ? " static" : "");
+  var style = c ? ' style="--cc:' + c.css + '"' : "";
+  var big = labelOf(card);
+  var wide = (card.type==="draw2" || card.type==="wild4") ? " wide" : "";
+  var cname = card.colour==="wild" ? (card.type==="wild" ? "WILD" : "WILD +4") : c.name.toUpperCase() + " " + c.glyph;
+  return '<span class="corner">' + big + '</span><span class="centre"><span class="big' + wide + '">' + big + '</span></span>' +
+         '<span class="cname">' + cname + '</span><span class="corner br">' + big + '</span>';
+}
+function render(){
+  if (!state) return;
+  /* scores */
+  var ss = document.getElementById("scoreStrip");
+  ss.innerHTML = state.players.map(function(p,i){
+    return '<span class="scorechip' + (state.turn===i && !state.handOver ? " turn" : "") + '">' + escapeHtml(p.name) +
+      ' · <span class="pts">' + p.score + ' pts</span> · ' + p.hand.length + (p.hand.length===1 ? " card" : " cards") + '</span>';
+  }).join("") + '<span class="scorechip">First to <span class="pts">' + settings.target + '</span></span>';
+  /* bots */
+  var br = document.getElementById("botsRow");
+  br.innerHTML = state.players.slice(1).map(function(p,bi){
+    var i = bi+1;
+    var minis = p.hand.map(function(){ return '<span class="mini">LC</span>'; }).join("");
+    return '<div class="bot' + (state.turn===i && !state.handOver ? " turn" : "") + '"><div class="bname"><span>' + p.name + '</span>' +
+      '<span class="lvl">' + p.level + '</span></div><div class="bdesc">' + p.desc + '</div><div class="minis">' + minis + '</div>' +
+      '<div class="small">' + p.hand.length + (p.hand.length===1 ? " card left" : " cards left") + '</div>' +
+      (p.lastCard ? '<span class="lastbadge">LAST CARD!</span>' : "") + '</div>';
+  }).join("");
+  /* centre */
+  document.getElementById("deckCount").textContent = state.deck.length + " cards in pile · tap pile to draw";
+  document.getElementById("topCard").innerHTML = topCard() ? '<div class="card static ' + (topCard().colour==="sun" ? "sun" : "") + (topCard().colour==="wild" ? " wildcard" : "") + '"' + (topCard().colour!=="wild" ? ' style="--cc:' + colourById(topCard().colour).css + '"' : "") + '>' + cardHTML(topCard(), {static:true}).replace(/^<span class="corner">/,'<span class="corner">') + '</div>' : "—";
+  var cc = colourById(state.currentColour || "ember");
+  var dot = document.getElementById("colourDot"); dot.style.background = cc.hex;
+  document.getElementById("colourNow").textContent = "Colour to match: " + cc.name + " " + cc.glyph;
+  document.getElementById("dirNow").textContent = "Direction: " + (state.dir===1 ? "You → Pip → Marlo → Vera ↻" : "You → Vera → Marlo → Pip ↺");
+  document.getElementById("pendingNow").textContent = state.pendingDraw>0 ? ("⚠ " + state.pendingDraw + " cards waiting for " + state.players[state.turn].name + (settings.stacking ? " — answer with a Draw Two / Wild +4, or tap the pile to take them" : "")) : "Nothing waiting";
+  /* banner */
+  var banner = document.getElementById("turnBanner");
+  if (state.matchOver){ banner.textContent = "Match over — see the result below."; banner.className = "turnbanner"; }
+  else if (state.handOver){ banner.textContent = "Hand over — see the scoring below."; banner.className = "turnbanner"; }
+  else if (state.turn===0){ banner.textContent = "Your turn, " + state.players[0].name + " — match " + cc.name + " or " + (topCard() && topCard().type==="number" ? topCard().value : "the symbol") + "."; banner.className = "turnbanner yours"; }
+  else { banner.textContent = state.players[state.turn].name + " is thinking…"; banner.className = "turnbanner"; }
+  /* call button */
+  var cb = document.getElementById("callBtn");
+  cb.disabled = !(state.turn===0 && !state.handOver);
+  cb.classList.toggle("armed", state.callArmed);
+  cb.firstChild.textContent = state.callArmed ? "Called — LAST CARD! ✓ " : "Call “LAST CARD!”";
+  document.getElementById("passBtn").hidden = !(state.turn===0 && state.drewCardId!==null && !state.handOver);
+  document.getElementById("drawBtn").disabled = !(state.turn===0 && !state.handOver);
+  /* hand */
+  document.getElementById("handTitle").innerHTML = escapeHtml(state.players[0].name) + "’s hand — " + state.players[0].hand.length + (state.players[0].hand.length===1 ? " card" : " cards") +
+    (state.players[0].lastCard ? ' <span class="lastbadge">LAST CARD!</span>' : "");
+  var hand = state.players[0].hand.slice().sort(function(a,b){
+    var ca = a.colour==="wild" ? 4 : COLOURS.indexOf(colourById(a.colour)), cb2 = b.colour==="wild" ? 4 : COLOURS.indexOf(colourById(b.colour));
+    if (ca!==cb2) return ca-cb2; return pointsOf(b)-pointsOf(a);
+  });
+  var hh = document.getElementById("playerHand");
+  hh.innerHTML = "";
+  hand.forEach(function(card){
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "card" + (card.colour==="wild" ? " wildcard" : "") + (card.colour==="sun" ? " sun" : "") +
+      ((state.turn===0 && !state.handOver && isPlayable(card)) ? " playable" : " dim");
+    if (card.colour!=="wild") btn.style.setProperty("--cc", colourById(card.colour).css);
+    btn.innerHTML = cardHTML(card);
+    btn.setAttribute("aria-label", nameOf(card) + ", worth " + pointsOf(card) + " points if left in hand. Tap to play.");
+    btn.disabled = !(state.turn===0 && !state.handOver);
+    btn.addEventListener("click", function(){ if (!suppressClick) humanPlay(card.id); });
+    hh.appendChild(btn);
+  });
+  renderCoach();
+  renderRecord();
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]; }); }
+
+function renderCoach(){
+  var el = document.getElementById("coachLine");
+  if (teachLevel()==="off" || !state || state.turn!==0 || state.handOver){ el.hidden = true; return; }
+  var p = state.players[0];
+  var playable = p.hand.filter(isPlayable);
+  var txt = "";
+  if (state.pendingDraw>0 && settings.stacking){
+    txt = "Coach: " + state.pendingDraw + " cards are waiting on you. If you hold a Draw Two or Wild Draw Four (gold outline), play it to pass the pile on — otherwise tap the draw pile and take them.";
+  } else if (p.hand.length===2 && playable.length){
+    txt = "Coach: you hold 2 cards and one of them plays. Tap Call “LAST CARD!” FIRST, then play — playing down to one without calling costs you " + settings.penalty + " penalty cards.";
+  } else if (!playable.length){
+    txt = "Coach: nothing in your hand matches. Tap the draw pile — a drawn card that matches can be played straight away.";
+  } else {
+    var heavy = playable.slice().sort(function(a,b){ return pointsOf(b)-pointsOf(a); })[0];
+    var danger = state.players.some(function(q,i){ return i!==0 && q.hand.length<=2; });
+    txt = "Coach: your heaviest playable card is the " + nameOf(heavy) + " (" + pointsOf(heavy) + " pts if you are caught holding it). " +
+      (danger ? "Someone is nearly out — shed heavy cards and aim action cards at them now, not later." : "Spending heavy cards early is usually right: their power is the same, but the risk of donating their points grows every turn.");
+  }
+  el.textContent = txt; el.hidden = false;
+}
+function renderRecord(){
+  var r = record;
+  var items = [["Hands played", r.hands],["Hands won", r.handsWon],["Matches", r.matches],["Matches won", r.matchesWon],["Calls made", r.callsMade],["Calls missed", r.callsMissed],["Action cards you played", r.actionCardsPlayed]];
+  document.getElementById("recNums").innerHTML = items.map(function(it){ return '<div class="recnum"><span class="v">' + it[1] + '</span>' + it[0] + '</div>'; }).join("");
+}
+
+/* ---------------- turn engine ---------------- */
+function startHand(){
+  if (botTimer){ clearTimeout(botTimer); botTimer = null; }
+  var keep = state !== null;
+  var scores = keep ? state.players.map(function(p){ return p.score; }) : null;
+  var alias = keep ? state.players[0].name : "You";
+  state = freshState(keep);
+  if (keep){ state.players.forEach(function(p,i){ p.score = scores[i]; }); state.players[0].name = alias; }
+  state.turn = state.starter;
+  for (var r=0;r<settings.handSize;r++) for (var i=0;i<4;i++) state.players[i].hand.push(state.deck.pop());
+  var first = state.deck.pop();
+  while (first.type==="wild4"){ state.deck.unshift(first); shuffle(state.deck); first = state.deck.pop(); }
+  state.discard.push(first);
+  state.currentColour = first.colour==="wild" ? COLOURS[Math.floor(Math.random()*4)].id : first.colour;
+  document.getElementById("endPanel").className = "endpanel";
+  document.getElementById("endPanel").innerHTML = "";
+  document.getElementById("colourPick").className = "colourpick";
+  pendingWildCard = null;
+  log("New hand dealt — " + settings.handSize + " cards each. " + state.players[state.turn].name + " starts. Top card: " + nameOf(first) + ".");
+  render();
+  maybeBot();
+}
+function startMatch(){
+  state = null; startHand();
+  state.players.forEach(function(p){ p.score = 0; });
+  record.matches++;
+  log("New match — first to " + settings.target + " points wins the match.");
+  render();
+}
+function nextFrom(pi, steps){ return mod(pi + state.dir*steps, 4); }
+
+function botCalls(pi){
+  var p = state.players[pi];
+  var forget = p.level==="Novice" ? 0.34 : p.level==="Casual" ? 0.10 : 0;
+  return Math.random() >= forget;
+}
+function applyPlay(pi, card, chosenColour){
+  var p = state.players[pi];
+  p.hand = p.hand.filter(function(c){ return c.id!==card.id; });
+  state.discard.push(card);
+  state.currentColour = card.colour==="wild" ? chosenColour : card.colour;
+  var isAction = card.type!=="number";
+  if (isAction){ state.events.actionPlayed = true; if (pi===0) record.actionCardsPlayed++; }
+  log("<strong>" + escapeHtml(p.name) + "</strong> plays <strong>" + nameOf(card) + "</strong>." + (card.colour==="wild" ? " New colour: " + colourById(chosenColour).name + "." : ""),
+      isAction ? "action cards bend the turn — and they are worth 20–50 points if you are caught holding them at the end." : null);
+  /* hand won? */
+  if (p.hand.length===0){ endHand(pi); return; }
+  /* last-card call check */
+  if (p.hand.length===1){
+    var called = pi===0 ? state.callArmed : botCalls(pi);
+    if (called){
+      p.lastCard = true; state.events.lastCallMade = true;
+      if (pi===0) record.callsMade++;
+      log("<strong>" + escapeHtml(p.name) + "</strong> calls <strong>“LAST CARD!”</strong> — one card to go.", "the call warns the table, so rivals can aim Skips and Draw Twos at the leader.");
+    } else {
+      state.events.lastCallMissed = true;
+      if (pi===0) record.callsMissed++;
+      var pen = drawCards(pi, settings.penalty);
+      log("<strong>" + escapeHtml(p.name) + "</strong> played down to one card <strong>without calling</strong> — penalty: draws " + pen.length + " card(s).", "the call must come before the play; the penalty is cards, not blame.");
+    }
+  }
+  state.callArmed = false;
+  state.drewCardId = null;
+  /* effects */
+  var steps = 1;
+  if (card.type==="skip"){ var sk = state.players[nextFrom(pi,1)]; log(escapeHtml(sk.name) + " is passed over — no turn.", null); steps = 2; }
+  else if (card.type==="reverse"){ state.dir *= -1; log("Turnabout! Play now runs the other way.", null); steps = 1; }
+  else if (card.type==="draw2" || card.type==="wild4"){
+    var amt = card.type==="draw2" ? 2 : 4, target = nextFrom(pi,1);
+    if (settings.stacking){ state.pendingDraw += amt; log(state.players[target].name + " faces " + state.pendingDraw + " cards — answer with a draw card or take them.", null); steps = 1; }
+    else { drawCards(target, amt); state.players[target].lastCard = false; log(state.players[target].name + " draws " + amt + " and loses the turn.", null); steps = 2; }
+  }
+  state.turn = nextFrom(pi, steps);
+  render();
+  maybeBot();
+}
+function endHand(winnerIdx){
+  state.handOver = true;
+  record.hands++;
+  if (winnerIdx===0) record.handsWon++;
+  var rows = "", total = 0;
+  state.players.forEach(function(p,i){
+    if (i===winnerIdx){ rows += "<tr><td>" + escapeHtml(p.name) + "</td><td>— went out —</td><td class='n'>0</td></tr>"; return; }
+    var pts = p.hand.reduce(function(s,c){ return s+pointsOf(c); }, 0);
+    total += pts;
+    rows += "<tr><td>" + escapeHtml(p.name) + "</td><td>" + p.hand.map(nameOf).join(", ") + "</td><td class='n'>" + pts + "</td></tr>";
+  });
+  state.players[winnerIdx].score += total;
+  var w = state.players[winnerIdx];
+  log("<strong>" + escapeHtml(w.name) + "</strong> goes out and collects <strong>" + total + " points</strong> from the cards left in other hands.",
+      "every point came from cards somebody held too long — heavy cards shed late are points donated.");
+  if (w.score >= settings.target){
+    state.matchOver = true;
+    if (winnerIdx===0) record.matchesWon++;
+    log("<strong>" + escapeHtml(w.name) + "</strong> reaches " + w.score + " and wins the match!");
+  }
+  var ep = document.getElementById("endPanel");
+  ep.className = "endpanel open";
+  ep.innerHTML = "<h3 style='margin-top:0;'>" + escapeHtml(w.name) + " wins the hand — +" + total + " points</h3>" +
+    "<table class='score'><tr><th>Player</th><th>Cards left</th><th class='n'>Points given</th></tr>" + rows + "</table>" +
+    "<p class='small muted'>Numbers score face value · Pass / Turnabout / Draw Two score 20 · Wilds score 50. That is the whole trap: the longer a heavy card sits in a hand, the more likely it becomes somebody else’s points.</p>" +
+    (state.matchOver
+      ? "<p><strong>" + escapeHtml(w.name) + " wins the match, " + w.score + " points.</strong></p><button type='button' class='btn primary' id='againMatchBtn'>Tap to play a new match</button>"
+      : "<button type='button' class='btn primary' id='nextHandBtn'>Tap to deal the next hand</button>");
+  render();
+  var nb = document.getElementById("nextHandBtn"); if (nb) nb.addEventListener("click", function(){ startHand(); });
+  var am = document.getElementById("againMatchBtn"); if (am) am.addEventListener("click", function(){ startMatch(); });
+}
+
+/* ---------------- human actions ---------------- */
+function humanTurnGuard(){ return state && state.turn===0 && !state.handOver && !pendingWildCard; }
+function humanPlay(cardId){
+  if (!humanTurnGuard()) return;
+  var p = state.players[0];
+  var card = null; p.hand.forEach(function(c){ if (c.id===cardId) card = c; });
+  if (!card) return;
+  if (state.drewCardId!==null && card.id!==state.drewCardId){ log("You drew this turn — you may play the card you drew, or tap Pass."); return; }
+  if (!isPlayable(card)){ log("The " + nameOf(card) + " does not match " + colourById(state.currentColour).name + " or the top card. Gold-outlined cards are the ones that play."); return; }
+  if (card.colour==="wild"){ pendingWildCard = card; showColourPick(); return; }
+  applyPlay(0, card, null);
+}
+function showColourPick(){
+  var cp = document.getElementById("colourPick");
+  cp.innerHTML = "<span style='font-weight:900; align-self:center;'>Wild card — tap to choose the new colour:</span>";
+  COLOURS.forEach(function(c){
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = c.name + " " + c.glyph;
+    b.style.background = c.hex; if (c.id==="sun") b.className = "sun";
+    b.addEventListener("click", function(){
+      var card = pendingWildCard; pendingWildCard = null;
+      cp.className = "colourpick"; cp.innerHTML = "";
+      if (card) applyPlay(0, card, c.id);
+    });
+    cp.appendChild(b);
+  });
+  cp.className = "colourpick open";
+}
+function humanDraw(){
+  if (!humanTurnGuard()) return;
+  var p = state.players[0];
+  if (state.pendingDraw>0){
+    var n = state.pendingDraw; state.pendingDraw = 0;
+    drawCards(0, n); p.lastCard = false;
+    log("You take the " + n + " waiting cards. Turn passes.", "taking the pile early can be cheaper than stacking it into a disaster.");
+    state.turn = nextFrom(0,1); state.callArmed = false;
+    render(); maybeBot(); return;
+  }
+  if (state.drewCardId!==null) return;
+  var got = drawCards(0,1); var card = got[0];
+  log("You draw " + (card ? nameOf(card) : "a card") + ".");
+  if (card && isPlayable(card)){ state.drewCardId = card.id; log("It can be played — tap it to play it, or tap Pass."); }
+  else { state.turn = nextFrom(0,1); state.callArmed = false; log("It cannot be played — turn passes."); }
+  render(); maybeBot();
+}
+function humanPass(){
+  if (state.turn!==0 || state.drewCardId===null) return;
+  state.drewCardId = null; state.callArmed = false;
+  state.turn = nextFrom(0,1);
+  log("You pass.");
+  render(); maybeBot();
+}
+
+/* ---------------- bots ---------------- */
+function botPickColour(p){
+  if (p.level==="Novice") return COLOURS[Math.floor(Math.random()*4)].id;
+  var counts = {}; var best = "ember", bn = -1;
+  p.hand.forEach(function(c){ if (c.colour!=="wild"){ counts[c.colour]=(counts[c.colour]||0)+1; } });
+  COLOURS.forEach(function(c){ if ((counts[c.id]||0)>bn){ bn = counts[c.id]||0; best = c.id; } });
+  return best;
+}
+function botChoose(p){
+  var playable = p.hand.filter(isPlayable);
+  if (!playable.length) return null;
+  if (state.pendingDraw>0 && settings.stacking) return playable[0];
+  if (p.level==="Novice") return playable[Math.floor(Math.random()*playable.length)];
+  if (p.level==="Casual"){
+    var nonWild = playable.filter(function(c){ return c.colour!=="wild"; });
+    var pool = nonWild.length ? nonWild : playable;
+    return pool.slice().sort(function(a,b){ return pointsOf(b)-pointsOf(a); })[0];
+  }
+  /* Vera — Sharp */
+  var danger = state.players.some(function(q,i){ return q!==p && q.hand.length<=1; });
+  var nonWild = playable.filter(function(c){ return c.colour!=="wild"; });
+  if (nonWild.length) return nonWild.slice().sort(function(a,b){ return pointsOf(b)-pointsOf(a); })[0];
+  var w4 = playable.filter(function(c){ return c.type==="wild4"; });
+  if (w4.length && (danger || p.hand.length<=3)) return w4[0];
+  return playable[0];
+}
+function maybeBot(){
+  if (!state || state.handOver || state.matchOver) return;
+  if (state.players[state.turn].bot){
+    var delay = settings.speed==="fast" ? 650 : 1400;
+    botTimer = setTimeout(botTurn, delay);
+  }
+}
+function botTurn(){
+  botTimer = null;
+  if (!state || state.handOver) return;
+  var pi = state.turn, p = state.players[pi];
+  if (!p.bot) return;
+  if (state.pendingDraw>0 && settings.stacking){
+    var stacker = p.hand.filter(function(c){ return c.type==="draw2" || c.type==="wild4"; })[0];
+    if (stacker){ playBotCard(pi, stacker); return; }
+    var n = state.pendingDraw; state.pendingDraw = 0;
+    drawCards(pi, n); p.lastCard = false;
+    log(escapeHtml(p.name) + " takes the " + n + " waiting cards.");
+    state.turn = nextFrom(pi,1); render(); maybeBot(); return;
+  }
+  var card = botChoose(p);
+  if (!card){
+    var got = drawCards(pi,1); var d = got[0];
+    log(escapeHtml(p.name) + " has no match and draws a card.");
+    if (d && isPlayable(d)){ playBotCard(pi, d); return; }
+    state.turn = nextFrom(pi,1); render(); maybeBot(); return;
+  }
+  playBotCard(pi, card);
+}
+function playBotCard(pi, card){
+  var colour = card.colour==="wild" ? botPickColour(state.players[pi]) : null;
+  applyPlay(pi, card, colour);
+}
+
+/* ---------------- controls ---------------- */
+document.getElementById("drawBtn").addEventListener("click", function(){ if (!suppressClick) humanDraw(); });
+document.getElementById("callBtn").addEventListener("click", function(){
+  if (suppressClick) return;
+  if (state.turn!==0 || state.handOver) return;
+  state.callArmed = true;
+  log("You call <strong>“LAST CARD!”</strong> — now play the card that leaves you with one.");
+  render();
+});
+document.getElementById("passBtn").addEventListener("click", humanPass);
+document.getElementById("newHandBtn").addEventListener("click", function(){ startHand(); });
+document.getElementById("newMatchBtn").addEventListener("click", function(){ startMatch(); });
+document.getElementById("aliasBtn").addEventListener("click", function(){
+  var v = document.getElementById("aliasInput").value.trim();
+  state.players[0].name = v ? v : "You";
+  log("Your name at this table is now <strong>" + escapeHtml(state.players[0].name) + "</strong>. Any alias you like — that freedom is the point.");
+  render();
+});
+document.getElementById("teachDial").addEventListener("change", render);
+function bindSetting(id, fn){ document.getElementById(id).addEventListener("change", function(){ fn(this.value); log("Setting changed — it applies from the next hand."); }); }
+bindSetting("setHandSize", function(v){ settings.handSize = parseInt(v,10); });
+bindSetting("setPenalty", function(v){ settings.penalty = parseInt(v,10); });
+bindSetting("setTarget", function(v){ settings.target = parseInt(v,10); });
+bindSetting("setStacking", function(v){ settings.stacking = v==="on"; });
+bindSetting("setSpeed", function(v){ settings.speed = v; });
+
+function download(name, text, type){
+  var blob = new Blob([text], { type: type });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+}
+document.getElementById("dlBtn").addEventListener("click", function(){
+  download("last-card.html", "<!doctype html>\n" + document.documentElement.outerHTML, "text/html");
+});
+document.getElementById("exportBtn").addEventListener("click", function(){
+  download("last-card-record.json", JSON.stringify({ game:"Last Card", alias: state.players[0].name, record: record, exported: new Date().toISOString() }, null, 2), "application/json");
+});
+document.getElementById("forgetBtn").addEventListener("click", function(){
+  record = { hands:0, handsWon:0, matches:0, matchesWon:0, callsMade:0, callsMissed:0, actionCardsPlayed:0 };
+  document.getElementById("aliasInput").value = "";
+  state.players[0].name = "You";
+  log("Forgotten. Record wiped and name reset — nothing kept, nothing sent.");
+  render();
+});
+
+/* hold-to-explain + hover-explain on labelled controls */
+var explainBox = document.getElementById("explainBox");
+function showExplain(el){
+  var t = el.getAttribute("data-explain"); if (!t) return;
+  explainBox.textContent = t; explainBox.className = "explain open";
+}
+document.querySelectorAll("[data-explain]").forEach(function(el){
+  var timer = null;
+  el.addEventListener("pointerdown", function(){ timer = setTimeout(function(){ suppressClick = true; showExplain(el); setTimeout(function(){ suppressClick = false; }, 350); }, 550); });
+  el.addEventListener("pointerup", function(){ if (timer) clearTimeout(timer); });
+  el.addEventListener("pointerleave", function(){ if (timer) clearTimeout(timer); });
+  el.addEventListener("mouseenter", function(){ showExplain(el); });
+});
+
+/* expose for testing / driving */
+window.LC = { get state(){ return state; }, startHand: startHand, startMatch: startMatch,
+  humanPlay: humanPlay, humanDraw: humanDraw, humanPass: humanPass,
+  call: function(){ document.getElementById("callBtn").click(); },
+  settings: settings, get record(){ return record; } };
+
+startMatch();
+})();
+</script>
+</body>
+</html>
