@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Keep It — Knowledge Retention Trainer</title>
+<style>
+:root{
+  --bg:#f2f5f3; --surface:#ffffff; --surface2:#e8efec; --ink:#16211e; --muted:#4b5d58;
+  --line:#cfdcd6; --teal:#0e6b5e; --teal-d:#0a4f45; --amber:#b45309; --amber-bg:#fef3c7;
+  --good:#15803d; --bad:#b91c1c; --radius:14px;
+  --shadow:0 2px 10px rgba(10,40,35,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#101714; --surface:#1a2420; --surface2:#222f2a; --ink:#e7efec; --muted:#a7bab3;
+  --line:#33463f; --teal:#2dd4bf; --teal-d:#5eead4; --amber:#f59e0b; --amber-bg:#3a2c10;
+  --good:#4ade80; --bad:#f87171; --shadow:0 2px 10px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;padding-bottom:96px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0}
+a{color:var(--teal)}
+button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:44px}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px}
+.freebar{background:var(--teal-d);color:#fff;text-align:center;padding:10px 14px;font-size:.98rem}
+@media (prefers-color-scheme: dark){.freebar{background:#07332c}}
+.freebar strong{font-size:1.02rem}
+.freebar button{background:#fff;color:#0a4f45;border:0;border-radius:999px;padding:6px 14px;font-weight:700;text-decoration:underline;min-height:36px}
+.hero{padding:14px 0 4px}
+.hero h1{font-size:2.4rem;letter-spacing:-.02em}
+.hero .sub{font-size:1.12rem;color:var(--muted);max-width:640px;margin-top:8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;box-shadow:var(--shadow)}
+.stat b{font-size:1.45rem;display:block;font-family:Georgia,serif}
+.stat span{font-size:.85rem;color:var(--muted)}
+.duebanner{background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius);padding:14px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.duebanner p{margin:0;font-weight:600}
+.btn{background:var(--teal);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:700}
+.btn.secondary{background:var(--surface);color:var(--teal);border:2px solid var(--teal)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:7px 12px;font-size:.92rem}
+.gesture{display:block;font-size:.72rem;font-weight:400;opacity:.85;margin-top:2px}
+section{margin:30px 0}
+.sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.sec-head h2{font-size:1.55rem}
+.sec-head p{color:var(--muted);margin:0}
+.decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.deck{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.deck h3{font-size:1.25rem}
+.deck .meta{color:var(--muted);font-size:.9rem;margin:4px 0 10px}
+.bar{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--teal)}
+.deck .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{display:inline-block;background:var(--surface2);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:600}
+.pill.lock{background:var(--amber-bg);color:var(--amber)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:4px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:700;padding:10px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary .tap{font-size:.78rem;color:var(--teal);font-weight:600;white-space:nowrap}
+details[open ] summary .tap::after{content:""}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.gamebox{background:var(--surface);border:2px solid var(--teal);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.gamebox h3{font-size:1.3rem}
+.timerwrap{height:12px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:12px 0}
+.timerbar{height:100%;background:var(--amber);transition:width .2s linear}
+.qprompt{font-size:1.5rem;font-family:Georgia,serif;margin:10px 0}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.choice{background:var(--surface2);border:2px solid var(--line);border-radius:12px;padding:14px;text-align:left;font-size:1.05rem}
+.choice.correct{border-color:var(--good);background:#dcfce7;color:#14532d}
+.choice.wrong{border-color:var(--bad);background:#fee2e2;color:#7f1d1d}
+@media (prefers-color-scheme: dark){.choice.correct{background:#14532d;color:#dcfce7}.choice.wrong{background:#450a0a;color:#fee2e2}}
+.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.matchcol{display:flex;flex-direction:column;gap:8px}
+.mbtn{background:var(--surface2);border:2px solid var(--line);border-radius:10px;padding:12px;text-align:left}
+.mbtn.sel{border-color:var(--amber)}
+.mbtn.done{opacity:.35}
+input[type=text]{width:100%;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-size:1.05rem}
+.feedback{border-radius:10px;padding:12px 14px;margin-top:14px;font-weight:600}
+.feedback.good{background:#dcfce7;color:#14532d}
+.feedback.bad{background:#fee2e2;color:#7f1d1d}
+@media (prefers-color-scheme: dark){.feedback.good{background:#14532d;color:#dcfce7}.feedback.bad{background:#450a0a;color:#fee2e2}}
+.tip{background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:.95rem}
+.gapword{font-size:1.6rem;letter-spacing:.18em;font-family:ui-monospace,Menlo,monospace;text-align:center;margin:14px 0}
+.curvewrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.curvewrap svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.9rem;margin-top:8px}
+.legend span::before{content:"— ";font-weight:900}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.card h3{margin-bottom:8px}
+.recordlist{max-height:320px;overflow-y:auto;overflow-x:hidden}
+.recordlist table{font-size:.86rem}
+.recordlist th,.recordlist td{padding:6px 4px}
+.small{font-size:.88rem;color:var(--muted)}
+.dock{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:2px solid var(--line);z-index:50;padding:5px 10px calc(5px + env(safe-area-inset-bottom))}
+.dock .inner{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px}
+.dock button{border-radius:12px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-weight:700;padding:5px 8px;min-height:44px}
+.dock .gesture{font-size:.65rem;margin-top:0}
+.dock button.centre{background:var(--teal);color:#fff;border-color:var(--teal)}
+.panel{position:fixed;inset:auto 0 0 0;max-height:78vh;overflow:auto;background:var(--surface);border-top:3px solid var(--teal);z-index:60;padding:18px 16px 30px;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.panel h2{font-size:1.4rem;margin-bottom:8px}
+.door{display:flex;width:100%;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:6px 0;text-align:left;color:var(--ink)}
+.overlay{position:fixed;inset:0;background:rgba(8,20,17,.55);z-index:70;display:flex;align-items:center;justify-content:center;padding:16px}
+.overlay .box{background:var(--surface);border-radius:16px;max-width:520px;width:100%;padding:22px;max-height:85vh;overflow:auto}
+.hidden{display:none!important}
+footer{margin:36px 0 10px;color:var(--muted);font-size:.9rem}
+.seg{display:inline-flex;border:2px solid var(--teal);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--teal);padding:8px 16px;font-weight:700;min-height:40px}
+.seg button.on{background:var(--teal);color:#fff}
+.modepick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}.choices{grid-template-columns:1fr}.hero h1{font-size:2rem}}
+</style>
+</head>
+<body>
+
+<div class="freebar">
+  <strong>Free — always free.</strong> No ads, ever. No account. Keep It is
+  <button id="dlTop" type="button">available offline<span class="gesture">Tap to download this page to your device</span></button>
+  — tap those words to save the whole page and play without a connection.
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <h1>Keep It</h1>
+    <p class="sub">Learn things so they <em>stay</em> learned. Short games teach a set, then bring it back at just the right gaps — same day, next day, a few days, a week, longer — so what you know keeps holding.</p>
+    <p class="small">Playing as <strong id="aliasLabel">Guest</strong>. <button class="btn ghost small" id="aliasBtn" type="button">Change name for this visit <span class="gesture">Tap to open · Hold to edit</span></button>
+    <span id="aliasEdit" class="hidden"><input type="text" id="aliasInput" maxlength="24" placeholder="Type any name — Guest always works" style="max-width:260px;display:inline-block"> <button class="btn small" id="aliasSave" type="button">Use this name <span class="gesture">Tap to save</span></button></span></p>
+  </header>
+
+  <div class="stats" aria-label="Your record at a glance">
+    <div class="stat"><b id="stKnown">0</b><span>Known &amp; holding</span></div>
+    <div class="stat"><b id="stLearned">0</b><span>Items learned</span></div>
+    <div class="stat"><b id="stDue">0</b><span>Due for review today</span></div>
+    <div class="stat"><b id="stRounds">0</b><span>Game rounds played</span></div>
+  </div>
+
+  <div class="duebanner" id="dueBanner">
+    <p id="dueText">Nothing due yet — learn your first deck below and reviews will appear here.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="reviewDueBtn" type="button">Review what's due <span class="gesture">Tap to play</span></button>
+      <button class="btn secondary" id="reviewNowBtn" type="button">Review now — anything learned <span class="gesture">Tap to make learned items due right now</span></button>
+    </div>
+  </div>
+
+  <!-- GAME AREA -->
+  <section id="playSection" class="hidden" aria-label="Game">
+    <div class="gamebox">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+        <h3 id="gameTitle">Game</h3>
+        <span class="pill" id="gameProgress">Question 1</span>
+      </div>
+      <div class="timerwrap" id="timerWrap"><div class="timerbar" id="timerBar" style="width:100%"></div></div>
+      <p class="small" id="timerLabel"></p>
+      <div id="gameBody"></div>
+      <div id="gameFeedback"></div>
+      <div id="teachTip"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn hidden" id="nextBtn" type="button">Next <span class="gesture">Tap to continue</span></button>
+        <button class="btn ghost" id="quitBtn" type="button">Stop this round <span class="gesture">Tap to stop</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DECKS -->
+  <section id="decksSection">
+    <div class="sec-head"><h2>Your decks</h2><p>Small decks first. Bigger decks unlock as earlier ones are learned — that is <strong>The Ramp</strong>, named below.</p></div>
+    <div class="modepick" role="group" aria-label="Choose a game">
+      <span style="font-weight:700;align-self:center">Game:</span>
+      <span class="seg" id="modeSeg">
+        <button type="button" data-mode="recall" class="on">Recall Race<span class="gesture">Tap to choose</span></button>
+        <button type="button" data-mode="match">Matching<span class="gesture">Tap to choose</span></button>
+        <button type="button" data-mode="gap">Fill the Gap<span class="gesture">Tap to choose</span></button>
+      </span>
+    </div>
+    <div class="decks" id="deckGrid"></div>
+
+    <details>
+      <summary>The Ramp — how difficulty grows <span class="tap">Tap to open · Tap to close</span></summary>
+      <p><strong>Step 1 · Gentle Start:</strong> 8 items, 20 seconds a question. <strong>Step 2 · Steady:</strong> 10–12 items, 15 seconds. <strong>Step 3 · Brisk:</strong> 12–14 items, 12 seconds — still gentle, never a trap. A deck unlocks when at least half of the deck before it is <em>known &amp; holding</em> (answered right on a spaced review, not just on first sight). The point of the ramp: your memory, not the clock, is the opponent.</p>
+    </details>
+  </section>
+
+  <!-- CURVE -->
+  <section>
+    <div class="sec-head"><h2>Your forgetting curve</h2><p>Drawn from <em>your</em> results, on this device.</p></div>
+    <div class="curvewrap">
+      <div id="curveSvg"></div>
+      <div class="legend">
+        <span style="color:var(--muted)">Dashed grey — the well-documented forgetting pattern (memory fades fast without review)</span>
+        <span style="color:var(--teal)">Solid teal — your own results: how often you still knew an item, by how long after learning you reviewed it</span>
+      </div>
+      <p class="small" style="margin-top:10px"><strong>Read this honestly:</strong> this is a <em>model drawn from your own results on this device</em> — for each item, how long after learning it you reviewed it and whether you still knew it. It is <strong>not a measurement of your brain</strong>, not a medical or cognitive measure. Items you review on schedule should hold; items left alone should slide — watch whether yours do.</p>
+      <p class="small" id="curveNote"></p>
+    </div>
+  </section>
+
+  <!-- SCIENCE -->
+  <section>
+    <div class="sec-head"><h2>Why this works</h2><p>The science, in plain words — and one tap down for the fuller story.</p></div>
+    <div class="cols">
+      <div class="card">
+        <h3>Retrieval practice</h3>
+        <p>Trying to recall an answer strengthens memory more than re-reading it. That is why every game here makes you <em>pull the answer out</em> — pick it, type it, match it — instead of just looking at it again. This effect is documented and strong across many studies.</p>
+      </div>
+      <div class="card">
+        <h3>The spacing effect</h3>
+        <p>The same practice spread over time beats the same practice bunched together. So Keep It schedules reviews at growing gaps: <strong>later the same day → next day → 3 days → a week → 2 weeks → a month</strong>. Get one right and the gap grows; miss one and it comes back sooner.</p>
+      </div>
+    </div>
+    <details>
+      <summary>Two honest strategies, side by side <span class="tap">Tap to open · Tap to close</span></summary>
+      <table>
+        <tr><th>Strategy</th><th>What it feels like</th><th>The trade-off</th></tr>
+        <tr><td><strong>Massed cramming</strong> — everything in one sitting</td><td>Fast and familiar right away. Feels like learning.</td><td>Fades fast. Good for a test tomorrow, poor for knowing it next month.</td></tr>
+        <tr><td><strong>Spacing + retrieval</strong> — short games at growing gaps (this page)</td><td>Slower to feel finished. Each return is a little effortful — that effort is the mechanism.</td><td>Holds far longer for the same total minutes. Needs you to come back on schedule.</td></tr>
+      </table>
+      <p>Neither is magic. Spacing wins on retention in the research; cramming wins only on speed-to-first-test. Keep It is built for keeping, so it uses spacing — and shows you your own curve so you can judge it yourself.</p>
+    </details>
+    <details>
+      <summary>Honest limits <span class="tap">Tap to open · Tap to close</span></summary>
+      <p>This trains retention of the deck content on this page. It is <strong>not a school replacement</strong>, not tutoring, and not a test of intelligence. The curve is a picture of your practice results, not a medical or cognitive measure. If a deck fact ever looks wrong, trust a good reference book over a game.</p>
+    </details>
+  </section>
+
+  <!-- RECORD -->
+  <section>
+    <div class="sec-head"><h2>Your record</h2><p>Every result, in one clean shape — saved on your device only.</p></div>
+    <div class="card">
+      <p class="small">Saved <strong>on this device only</strong> — nothing is sent anywhere, there is no account and no server copy. Export it any time, or wipe it in one tap.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+        <button class="btn secondary" id="exportBtn" type="button">Export my record (JSON) <span class="gesture">Tap to download</span></button>
+        <button class="btn danger" id="forgetBtn" type="button">Forget everything <span class="gesture">Tap to wipe this device's record</span></button>
+      </div>
+      <div class="recordlist" id="recordList"><p class="small">No results yet. Play a round and every answer lands here.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Keep It — free, always free, no ads ever. Copyleft: this page and its decks are shared under <strong>CC BY-SA 4.0</strong> — copy it, change it, pass it on, keep it free. The stake here is not money — there is no money anywhere on this page. The stake is watching what you know <em>stay known</em>.</p>
+  </footer>
+</div>
+
+<!-- DOCK -->
+<nav class="dock" aria-label="Compass">
+  <div class="inner">
+    <button type="button" data-panel="feedback">?! Feedback <span class="gesture">Tap to open</span></button>
+    <button type="button" class="centre" data-panel="navigate">Navigate <span class="gesture">Tap to open</span></button>
+    <button type="button" data-panel="settings">Settings <span class="gesture">Tap to open</span></button>
+  </div>
+</nav>
+
+<!-- PANELS -->
+<div class="panel hidden" id="panel-feedback" role="dialog" aria-label="Feedback">
+  <h2>Feedback</h2>
+  <p>Tell us what helped, what confused you, or what deck you want next. Feedback opens your own mail app — nothing is sent from this page itself.</p>
+  <p><a class="btn" style="display:inline-block;text-decoration:none" href="mailto:?subject=Keep%20It%20feedback&body=What%20I%20was%20doing%3A%0AWhat%20happened%3A%0AWhat%20I%20wish%20it%20did%3A">Write feedback <span class="gesture">Tap to open your mail app</span></a></p>
+  <button class="btn ghost" data-close type="button">Close <span class="gesture">Tap to close</span></button>
+</div>
+
+<div class="panel hidden" id="panel-navigate" role="dialog" aria-label="Navigate">
+  <h2>Navigate</h2>
+  <p class="small">The compass is navigation only. Cross-page doors open in their own view.</p>
+  <div id="doorList"></div>
+  <button class="btn ghost" data-close type="button">Close <span class="gesture">Tap to close</span></button>
+</div>
+
+<div class="panel hidden" id="panel-settings" role="dialog" aria-label="Settings">
+  <h2>Settings</h2>
+  <p><strong>Teaching dial</strong> — how much explaining rides along while you play. Saved on this device only.</p>
+  <span class="seg" id="dialSeg">
+    <button type="button" data-dial="off">Off<span class="gesture">Tap to choose</span></button>
+    <button type="button" data-dial="light">Light<span class="gesture">Tap to choose</span></button>
+    <button type="button" data-dial="coach">Coach<span class="gesture">Tap to choose</span></button>
+  </span>
+  <p class="small">Off = just play. Light = a one-line tip after each answer (the default). Coach = the tip plus the why behind it.</p>
+  <p style="margin-top:16px"><button class="btn secondary" id="dlSettings" type="button">Download this page for offline use <span class="gesture">Tap to download</span></button></p>
+  <p><button class="btn danger" id="forgetBtn2" type="button">Forget everything on this device <span class="gesture">Tap to wipe</span></button></p>
+  <button class="btn ghost" data-close type="button">Close <span class="gesture">Tap to close</span></button>
+</div>
+
+<div class="overlay hidden" id="doorOverlay">
+  <div class="box">
+    <h2 id="doorTitle" style="font-size:1.35rem"></h2>
+    <p id="doorBody"></p>
+    <p class="small">This door opens in its own view when you follow it from the full site. From this single saved page, the door is named here so you know where it leads.</p>
+    <button class="btn" id="doorClose" type="button">Back <span class="gesture">Tap to close</span></button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="forgetOverlay">
+  <div class="box">
+    <h2 style="font-size:1.35rem">Forget everything?</h2>
+    <p>This wipes your decks progress, review schedule, curve data and record <strong>from this device only</strong>. There is no other copy, so it cannot be undone.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn danger" id="forgetYes" type="button">Yes — forget it all <span class="gesture">Tap to wipe</span></button>
+      <button class="btn ghost" id="forgetNo" type="button">Keep my record <span class="gesture">Tap to cancel</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ DATA: original decks ============ */
+var DECKS=[
+{id:"words",name:"Word Pairs",desc:"Uncommon words → what they mean",secs:20,items:[
+ ["petrichor","the earthy smell after rain on dry ground"],["serendipity","a happy discovery made by chance"],
+ ["liminal","in-between; on the threshold of change"],["sonder","realising every passer-by has a full life of their own"],
+ ["apricity","the warmth of the sun in winter"],["halcyon","calm, golden, untroubled (of days)"],
+ ["susurrus","a soft whispering or rustling sound"],["ineffable","too great to put into words"]]},
+{id:"capitals",name:"World Capitals",desc:"Country → its capital city",secs:15,items:[
+ ["Japan","Tokyo"],["Australia","Canberra"],["Canada","Ottawa"],["Brazil","Brasília"],["Egypt","Cairo"],
+ ["Iceland","Reykjavík"],["Kenya","Nairobi"],["Poland","Warsaw"],["Vietnam","Hanoi"],["Chile","Santiago"],
+ ["Norway","Oslo"],["Morocco","Rabat"]]},
+{id:"stars",name:"Star Names",desc:"Star → the constellation it belongs to",secs:15,items:[
+ ["Sirius","Canis Major"],["Vega","Lyra"],["Betelgeuse","Orion"],["Rigel","Orion"],["Polaris","Ursa Minor"],
+ ["Antares","Scorpius"],["Deneb","Cygnus"],["Aldebaran","Taurus"],["Regulus","Leo"],["Spica","Virgo"]]},
+{id:"anatomy",name:"Anatomy Basics",desc:"Body part or term → what it does / where it is",secs:12,items:[
+ ["Femur","the thigh bone — the longest bone in the body"],["Diaphragm","the dome muscle under the lungs that drives breathing"],
+ ["Aorta","the largest artery, carrying blood from the heart"],["Cerebellum","the back-of-brain region coordinating balance and movement"],
+ ["Alveoli","tiny air sacs in the lungs where oxygen enters the blood"],["Patella","the kneecap"],
+ ["Liver","the organ that filters blood and makes bile"],["Tibia","the shin bone"],
+ ["Cornea","the clear front window of the eye"],["Pancreas","the organ that makes insulin and digestive juices"],
+ ["Clavicle","the collarbone"],["Bronchi","the two main airways branching into the lungs"]]},
+{id:"ocean",name:"Ocean Life",desc:"Creature → its true fact",secs:12,items:[
+ ["Octopus","has three hearts and blue blood"],["Seahorse","the male carries the babies in a pouch"],
+ ["Blue whale","the largest animal known to have lived"],["Clownfish","lives sheltered among stinging anemone tentacles"],
+ ["Sea turtle","can hold its breath for hours while resting"],["Jellyfish","has no brain, heart, or bones"],
+ ["Narwhal","its 'horn' is actually a long left canine tooth"],["Axolotl","can regrow its limbs, heart tissue, and parts of its brain"],
+ ["Mantis shrimp","punches with the force of a bullet"],["Starfish","can regrow a lost arm — sometimes a whole body from one arm"],
+ ["Penguin","a bird that swims but cannot fly"],["Oyster","can change sex during its life"],
+ ["Electric eel","can deliver a shock of around 600 volts"],["Plankton","tiny drifters that produce much of Earth's oxygen"]]}
+];
+var INTERVALS=[0,1,3,7,14,30]; /* same day, next day, few days, week, longer */
+var TIPS={
+ recall:"Retrieval practice: pulling the answer out — even a guess — strengthens the memory more than re-reading it.",
+ match:"Matching still counts as retrieval: your brain has to find each answer, not just recognise the pair side by side.",
+ gap:"Filling a gap forces recall of the whole word from a part — a harder pull, and harder pulls hold longer.",
+ spaced:"This item came back on schedule. Reviews at growing gaps are the spacing effect doing its work.",
+ missed:"Missed it? Good news: it now returns sooner, and the effort of almost-knowing still strengthens the trace."
+};
+var COACH_EXTRA=" Why it works: each successful recall makes the memory easier to pull out next time, so the gap before the next review can safely grow. That growing gap is the whole engine of this page.";
+
+/* ============ STATE (this device only) ============ */
+var KEY="keepit_v1";
+var state=null;
+function freshState(){return{dial:"light",alias:"Guest",items:{},events:[],rounds:0};}
+function load(){try{var s=localStorage.getItem(KEY);state=s?JSON.parse(s):freshState();}catch(e){state=freshState();}if(!state||!state.items)state=freshState();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function key(deck,id){return deck+":"+id;}
+function itemState(d,i){return state.items[key(d,i)];}
+function ensureItem(d,i){var k=key(d,i);if(!state.items[k])state.items[k]={stage:-1,learnedAt:0,nextDue:0};return state.items[k];}
+function deckById(id){for(var j=0;j<DECKS.length;j++)if(DECKS[j].id===id)return DECKS[j];return null;}
+function knownCount(deck){var n=0;deck.items.forEach(function(_,i){var s=itemState(deck.id,i);if(s&&s.stage>=2)n++;});return n;}
+function learnedCount(deck){var n=0;deck.items.forEach(function(_,i){var s=itemState(deck.id,i);if(s&&s.stage>=0)n++;});return n;}
+function isUnlocked(idx){if(idx===0)return true;var prev=DECKS[idx-1];return knownCount(prev)>=Math.ceil(prev.items.length/2);}
+function dueItems(){var out=[],now=Date.now();DECKS.forEach(function(d){d.items.forEach(function(_,i){var s=itemState(d.id,i);if(s&&s.stage>=0&&s.nextDue<=now)out.push({deck:d,idx:i});});});return out;}
+function allLearned(){var out=[];DECKS.forEach(function(d){d.items.forEach(function(_,i){var s=itemState(d.id,i);if(s&&s.stage>=0)out.push({deck:d,idx:i});});});return out;}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function norm(s){return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();}
+
+/* ============ RECORDING ============ */
+function record(deck,idx,game,correct){
+  var s=ensureItem(deck.id,idx),now=Date.now();
+  var firstLearn=(s.stage<0);
+  if(firstLearn){s.stage=0;s.learnedAt=now;}
+  var daysSince=s.learnedAt?Math.max(0,(now-s.learnedAt)/86400000):0;
+  if(correct){s.stage=Math.min(s.stage+1,INTERVALS.length-1);}
+  else{s.stage=Math.max(0,s.stage-1);}
+  s.nextDue=now+INTERVALS[s.stage]*86400000;
+  /* A same-day first learn reviewed instantly would be due instantly at stage>=1? stage1 interval is 1 day, fine. */
+  state.events.push({at:new Date(now).toISOString(),deck:deck.name,item:deck.items[idx][0],game:game,result:correct?"known":"missed",daysSinceLearn:Math.round(daysSince*100)/100,stageAfter:s.stage,nextReviewInDays:INTERVALS[s.stage]});
+  save();
+}
+
+/* ============ RENDER: stats / decks / record / curve ============ */
+function renderStats(){
+  var known=0,learned=0;DECKS.forEach(function(d){known+=knownCount(d);learned+=learnedCount(d);});
+  document.getElementById("stKnown").textContent=known;
+  document.getElementById("stLearned").textContent=learned;
+  document.getElementById("stDue").textContent=dueItems().length;
+  document.getElementById("stRounds").textContent=state.rounds;
+  var due=dueItems().length;
+  document.getElementById("dueText").textContent=due>0?("You have "+due+" item"+(due===1?"":"s")+" due for review today. A short round now is worth more than a long one next week.")
+    :(learned>0?"Nothing due right now — your reviews are scheduled and holding. Use “Review now” any time you want extra practice.":"Nothing due yet — learn your first deck below and reviews will appear here.");
+  document.getElementById("reviewDueBtn").disabled=(due===0);
+  document.getElementById("reviewNowBtn").disabled=(learned===0);
+  document.getElementById("aliasLabel").textContent=state.alias||"Guest";
+}
+function renderDecks(){
+  var mode=currentMode,grid=document.getElementById("deckGrid");grid.innerHTML="";
+  DECKS.forEach(function(deck,di){
+    var un=isUnlocked(di),learned=learnedCount(deck),known=knownCount(deck);
+    var card=document.createElement("div");card.className="deck";
+    var ramp=di===0?"Step 1 · Gentle Start":(di<3?"Step 2 · Steady":"Step 3 · Brisk");
+    card.innerHTML="<h3>"+esc(deck.name)+"</h3><p class='meta'>"+esc(deck.desc)+"<br>"+deck.items.length+" items · "+deck.secs+" seconds a question · "+ramp+"</p>"
+      +(un?"<span class='pill'>"+learned+" / "+deck.items.length+" learned</span> <span class='pill'>"+known+" known &amp; holding</span>"
+          :"<span class='pill lock'>Locked — get "+Math.ceil(DECKS[di-1].items.length/2)+" items in "+esc(DECKS[di-1].name)+" to “known &amp; holding” to open this deck</span>")
+      +"<div class='bar'><i style='width:"+Math.round(learned/deck.items.length*100)+"%'></i></div>"
+      +"<div class='row'>"
+      +"<button class='btn' data-act='learn' data-deck='"+deck.id+"' "+(un?"":"disabled")+">Learn &amp; play <span class='gesture'>Tap to start a round</span></button>"
+      +"<button class='btn secondary' data-act='review' data-deck='"+deck.id+"' "+(un&&learned?"":"disabled")+">Review this deck now <span class='gesture'>Tap to review learned items</span></button>"
+      +"</div>"
+      +"<details><summary>See all "+deck.items.length+" items <span class='tap'>Tap to open · Tap to close</span></summary><table>"
+      +deck.items.map(function(p,i){var s=itemState(deck.id,i);var st=!s||s.stage<0?"Not started":(s.stage>=2?"Known & holding":"Learning · stage "+s.stage);return "<tr><td><strong>"+esc(p[0])+"</strong></td><td>"+esc(p[1])+"</td><td class='small'>"+st+"</td></tr>";}).join("")
+      +"</table></details>";
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll("button[data-act]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var deck=deckById(b.getAttribute("data-deck"));
+      if(b.getAttribute("data-act")==="learn")startRound(deck,false);
+      else startRound(deck,true);
+    });
+  });
+}
+function renderRecord(){
+  var el=document.getElementById("recordList");
+  if(!state.events.length){el.innerHTML="<p class='small'>No results yet. Play a round and every answer lands here.</p>";return;}
+  var rows=state.events.slice(-60).reverse().map(function(e){
+    return "<tr><td class='small'>"+esc(e.at.slice(5,10))+" "+esc(e.at.slice(11,16))+"</td><td>"+esc(e.deck)+"</td><td>"+esc(e.item)+"</td><td>"+esc(e.game)+"</td><td>"+(e.result==="known"?"✓ knew it":"✗ missed")+"</td><td class='small'>"+e.daysSinceLearn+"d</td></tr>";
+  }).join("");
+  el.innerHTML="<table><tr><th>When</th><th>Deck</th><th>Item</th><th>Game</th><th>Result</th><th>Days later</th></tr>"+rows+"</table>";
+}
+function renderCurve(){
+  var W=720,H=300,pl=46,pb=34,pt=14,pr=14,cw=W-pl-pr,ch=H-pt-pb;
+  function X(d){return pl+(d/30)*cw;} function Y(p){return pt+ch-(p/100)*ch;}
+  var ref="";for(var d=0;d<=30;d+=1){var p=100*Math.exp(-d/6)+8;if(p>100)p=100;ref+=(d===0?"M":"L")+X(d).toFixed(1)+","+Y(p).toFixed(1)+" ";}
+  /* player's own buckets */
+  var buckets={};state.events.forEach(function(e){var b=e.daysSinceLearn<0.05?"0":e.daysSinceLearn<1.5?"1":e.daysSinceLearn<5?"3":e.daysSinceLearn<10?"7":e.daysSinceLearn<21?"14":"30";if(!buckets[b])buckets[b]={k:0,t:0};buckets[b].t++;if(e.result==="known")buckets[b].k++;});
+  var pts=Object.keys(buckets).map(function(b){return{d:parseFloat(b),p:Math.round(buckets[b].k/buckets[b].t*100),n:buckets[b].t};}).sort(function(a,b){return a.d-b.d;});
+  var mine=pts.map(function(pt,i){return (i===0?"M":"L")+X(pt.d)+","+Y(pt.p);}).join(" ");
+  var dots=pts.map(function(pt){return "<circle cx='"+X(pt.d)+"' cy='"+Y(pt.p)+"' r='6' fill='var(--teal)' stroke='var(--surface)' stroke-width='2'><title>Day "+pt.d+": knew "+pt.p+"% of "+pt.n+" reviews</title></circle>";}).join("");
+  var grid="";[0,25,50,75,100].forEach(function(p){grid+="<line x1='"+pl+"' y1='"+Y(p)+"' x2='"+(W-pr)+"' y2='"+Y(p)+"' stroke='var(--line)'/><text x='"+(pl-6)+"' y='"+(Y(p)+4)+"' font-size='12' text-anchor='end' fill='var(--muted)'>"+p+"%</text>";});
+  [0,1,3,7,14,30].forEach(function(d){grid+="<text x='"+X(d)+"' y='"+(H-10)+"' font-size='12' text-anchor='middle' fill='var(--muted)'>"+d+"d</text>";});
+  var svg="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Forgetting curve chart'>"+grid
+    +"<path d='"+ref+"' fill='none' stroke='#9aa5a1' stroke-width='2.5' stroke-dasharray='7 5'/>"
+    +(pts.length>1?"<path d='"+mine+"' fill='none' stroke='var(--teal)' stroke-width='3.5'/>":"")+dots
+    +"<text x='"+pl+"' y='"+(H-0)+"' font-size='0'></text></svg>";
+  document.getElementById("curveSvg").innerHTML=svg;
+  document.getElementById("curveNote").textContent=pts.length?
+    "Your plotted points come from "+state.events.length+" recorded answers. Reviews near day 0–1, then at widening gaps, are where holding shows up.":
+    "No points of your own yet — the dashed line is the documented pattern alone. Play a round, come back for a review, and your own line starts to draw itself.";
+}
+function renderAll(){renderStats();renderDecks();renderRecord();renderCurve();syncDial();}
+
+/* ============ GAMES ============ */
+var currentMode="recall";
+var session=null,timerInt=null;
+function showTip(kind){
+  var el=document.getElementById("teachTip");
+  if(state.dial==="off"){el.innerHTML="";return;}
+  var t=TIPS[kind]||TIPS.recall;
+  if(state.dial==="coach")t+=COACH_EXTRA;
+  el.innerHTML="<div class='tip'>💡 "+esc(t)+"</div>";
+}
+function startTimer(secs,onDone){
+  clearInterval(timerInt);var left=secs,total=secs;
+  var bar=document.getElementById("timerBar"),lab=document.getElementById("timerLabel");
+  bar.style.width="100%";lab.textContent="Gentle clock: "+secs+" seconds — no penalty for using them, the clock is a nudge, not a trap. If it runs out, nothing is marked wrong: take the time you need and answer anyway.";
+  timerInt=setInterval(function(){left-=0.2;bar.style.width=Math.max(0,left/total*100)+"%";if(left<=0){clearInterval(timerInt);lab.textContent="Time's up — no penalty, and nothing was marked wrong. Take the time you need; answering now still counts exactly the same.";if(onDone)onDone();}},200);
+}
+function timesUpNote(){/* the gentle clock never records a miss on its own — only an answer does */}
+function stopTimer(){clearInterval(timerInt);document.getElementById("timerBar").style.width="0%";}
+function startRound(deck,reviewOnly,forcedItems){
+  var pool;
+  if(forcedItems)pool=forcedItems.slice();
+  else if(reviewOnly)pool=deck.items.map(function(_,i){return{deck:deck,idx:i};}).filter(function(x){var s=itemState(deck.id,x.idx);return s&&s.stage>=0;});
+  else pool=deck.items.map(function(_,i){return{deck:deck,idx:i};});
+  pool=shuffle(pool).slice(0,currentMode==="match"?Math.min(6,pool.length):Math.min(8,pool.length));
+  if(!pool.length){return;}
+  session={queue:pool,pos:0,score:0,mode:currentMode,deckName:deck?deck.name:"Mixed review",answered:false,matchSel:null,matched:0};
+  state.rounds++;save();
+  document.getElementById("playSection").classList.remove("hidden");
+  document.getElementById("playSection").scrollIntoView({behavior:"smooth"});
+  nextQuestion();
+}
+function cur(){return session.queue[session.pos];}
+function nextQuestion(){
+  session.answered=false;session.matchSel=null;
+  document.getElementById("gameFeedback").innerHTML="";
+  document.getElementById("teachTip").innerHTML="";
+  document.getElementById("nextBtn").classList.add("hidden");
+  document.getElementById("nextBtn").innerHTML='Next <span class="gesture">Tap to continue</span>';
+  if(session.pos>=session.queue.length){finishRound();return;}
+  var c=cur(),pair=c.deck.items[c.idx];
+  document.getElementById("gameTitle").textContent=session.deckName+" · "+({recall:"Recall Race",match:"Matching",gap:"Fill the Gap"})[session.mode];
+  document.getElementById("gameProgress").textContent="Question "+(session.pos+1)+" of "+session.queue.length+" · Score "+session.score;
+  var body=document.getElementById("gameBody");
+  if(session.mode==="recall")renderRecall(c,pair);
+  else if(session.mode==="gap")renderGap(c,pair);
+  else renderMatchRound();
+}
+function answerCurrent(correct,kind){
+  if(session.answered)return;session.answered=true;stopTimer();
+  var c=cur();record(c.deck,c.idx,session.mode,correct);
+  if(correct)session.score++;
+  var pair=c.deck.items[c.idx];
+  document.getElementById("gameFeedback").innerHTML="<div class='feedback "+(correct?"good":"bad")+"'>"+(correct?"✓ You knew it. ":"✗ Not this time. ")+"The answer: <strong>"+esc(pair[0])+" → "+esc(pair[1])+"</strong>"+(correct?" It now returns at a longer gap.":" It will come back sooner — that is the schedule working.")+"</div>";
+  showTip(correct?(kind||"spaced"):"missed");
+  document.getElementById("gameProgress").textContent="Question "+(session.pos+1)+" of "+session.queue.length+" · Score "+session.score;
+  document.getElementById("nextBtn").classList.remove("hidden");
+  renderStats();renderDecks();renderRecord();renderCurve();
+}
+function renderRecall(c,pair){
+  var body=document.getElementById("gameBody");
+  var others=shuffle(c.deck.items.filter(function(_,i){return i!==c.idx;}).slice()).slice(0,3).map(function(p){return p[1];});
+  var opts=shuffle(others.concat([pair[1]]));
+  body.innerHTML="<p class='small'>What does this mean / where does it belong? Pick the answer — or say it aloud first, then tap.</p><p class='qprompt'>"+esc(pair[0])+"</p><div class='choices'>"
+    +opts.map(function(o){return "<button class='choice' type='button' data-o='"+esc(o)+"'>"+esc(o)+"<span class='gesture'>Tap to answer</span></button>";}).join("")+"</div>"
+    +"<p class='small' style='margin-top:10px'>Prefer typing? <input type='text' id='typeAns' placeholder='Type the answer, then tap Check' style='margin-top:6px'></p>"
+    +"<button class='btn secondary' id='typeCheck' type='button'>Check typed answer <span class='gesture'>Tap to check</span></button>";
+  startTimer(c.deck.secs,timesUpNote);
+  body.querySelectorAll(".choice").forEach(function(b){b.addEventListener("click",function(){if(session.answered)return;markChoices(pair);answerCurrent(b.getAttribute("data-o")===pair[1]);});});
+  document.getElementById("typeCheck").addEventListener("click",function(){
+    if(session.answered)return;var v=document.getElementById("typeAns").value;
+    markChoices(pair);answerCurrent(norm(v)===norm(pair[1]));
+  });
+  function markChoices(pr){body.querySelectorAll(".choice").forEach(function(b){if(b.getAttribute("data-o")===pr[1])b.classList.add("correct");else b.classList.add("wrong");});}
+}
+function renderGap(c,pair){
+  var ans=pair[1];
+  var li=0;var gapped=ans.split("").map(function(ch){if(/[A-Za-zÀ-ÿ]/.test(ch)){li++;return li%2===0?"_":ch;}return ch;}).join("");
+  var body=document.getElementById("gameBody");
+  body.innerHTML="<p class='small'>The answer with pieces missing — every second letter is gone. Rebuild the full answer for:</p><p class='qprompt'>"+esc(pair[0])+"</p>"
+    +"<div class='gapword' style='letter-spacing:.06em;font-size:1.15rem'>"+esc(gapped)+"</div>"
+    +"<input type='text' id='gapAns' placeholder='Type the full answer'><div style='margin-top:10px'><button class='btn' id='gapCheck' type='button'>Check <span class='gesture'>Tap to check</span></button></div>";
+  startTimer(c.deck.secs+5,timesUpNote);
+  document.getElementById("gapCheck").addEventListener("click",function(){
+    if(session.answered)return;var v=document.getElementById("gapAns").value;
+    answerCurrent(norm(v)===norm(ans),"gap");
+  });
+}
+function renderMatchRound(){
+  stopTimer();
+  var items=session.queue,pairs=items.map(function(c){return c.deck.items[c.idx];});
+  var left=shuffle(items.map(function(c,i){return i;}));
+  var right=shuffle(items.map(function(c,i){return i;}));
+  var body=document.getElementById("gameBody");
+  document.getElementById("gameProgress").textContent="Matching · "+session.matched+" of "+items.length+" pairs · Score "+session.score;
+  body.innerHTML="<p class='small'>Tap a card on the left, then its match on the right. Gentle clock for the whole set: "+(items[0].deck.secs*items.length)+" seconds.</p><div class='matchgrid'><div class='matchcol'>"
+    +left.map(function(i){return "<button class='mbtn' data-side='l' data-i='"+i+"' type='button'>"+esc(pairs[i][0])+"<span class='gesture'>Tap to pick</span></button>";}).join("")+"</div><div class='matchcol'>"
+    +right.map(function(i){return "<button class='mbtn' data-side='r' data-i='"+i+"' type='button'>"+esc(pairs[i][1])+"<span class='gesture'>Tap to match</span></button>";}).join("")+"</div></div>";
+  var totalSecs=items[0].deck.secs*items.length;
+  startTimer(totalSecs,timesUpNote);
+  body.querySelectorAll(".mbtn").forEach(function(b){b.addEventListener("click",function(){
+    if(b.classList.contains("done")||session.answered)return;
+    if(b.getAttribute("data-side")==="l"){session.matchSel=parseInt(b.getAttribute("data-i"),10);body.querySelectorAll("[data-side='l']").forEach(function(x){x.classList.remove("sel");});b.classList.add("sel");}
+    else if(session.matchSel!==null){
+      var li=session.matchSel,ri=parseInt(b.getAttribute("data-i"),10),ok=(li===ri),c=items[li];
+      record(c.deck,c.idx,"match",ok);
+      if(ok){session.score++;session.matched++;session["done"+li]=true;
+        body.querySelectorAll(".mbtn").forEach(function(x){if(parseInt(x.getAttribute("data-i"),10)===li)x.classList.add("done");});
+        document.getElementById("gameFeedback").innerHTML="<div class='feedback good'>✓ Matched: "+esc(pairs[li][0])+" → "+esc(pairs[li][1])+"</div>";showTip("match");
+      }else{
+        document.getElementById("gameFeedback").innerHTML="<div class='feedback bad'>✗ Not a pair. "+esc(pairs[li][0])+" does not go with that one — try again, it is now scheduled to return sooner.</div>";showTip("missed");
+      }
+      session.matchSel=null;body.querySelectorAll("[data-side='l']").forEach(function(x){x.classList.remove("sel");});
+      document.getElementById("gameProgress").textContent="Matching · "+session.matched+" of "+items.length+" pairs · Score "+session.score;
+      renderStats();renderDecks();renderRecord();renderCurve();
+      if(session.matched>=items.length){session.answered=true;stopTimer();document.getElementById("nextBtn").classList.remove("hidden");document.getElementById("nextBtn").textContent="See result";session.pos=session.queue.length-1;}
+    }
+  });});
+}
+function finishRound(timedOut){
+  stopTimer();var s=session;session=null;
+  document.getElementById("gameBody").innerHTML="<p class='qprompt'>Round done"+(timedOut?" — time ran out":"")+".</p><p>You scored <strong>"+s.score+"</strong>. Every answer was written to your record below, and each item's next review is scheduled: right answers move to a longer gap, misses come back sooner.</p><p>Known &amp; holding is the score that matters — watch it grow in the numbers at the top.</p>";
+  document.getElementById("gameTitle").textContent="Round complete";
+  document.getElementById("gameProgress").textContent="Score "+s.score;
+  document.getElementById("nextBtn").classList.add("hidden");
+  showTip("spaced");renderAll();
+}
+
+/* ============ CONTROLS ============ */
+document.getElementById("modeSeg").querySelectorAll("button").forEach(function(b){
+  b.addEventListener("click",function(){currentMode=b.getAttribute("data-mode");document.getElementById("modeSeg").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});});
+});
+document.getElementById("nextBtn").addEventListener("click",function(){if(!session)return;if(session.mode==="match"){finishRound();return;}session.pos++;nextQuestion();});
+document.getElementById("quitBtn").addEventListener("click",function(){stopTimer();session=null;document.getElementById("playSection").classList.add("hidden");renderAll();});
+document.getElementById("reviewDueBtn").addEventListener("click",function(){var d=dueItems();if(d.length)startRound(null,false,d);else document.getElementById("dueText").textContent="Nothing is due right now — reviews appear here when their scheduled gap arrives. “Review now” below the decks, or on each deck, gives extra practice any time.";});
+document.getElementById("reviewNowBtn").addEventListener("click",function(){
+  var all=allLearned();if(!all.length){document.getElementById("dueText").textContent="Nothing learned yet to review — play “Learn & play” on Word Pairs first, then this button brings those items straight back.";return;}
+  all.forEach(function(x){var s=ensureItem(x.deck.id,x.idx);s.nextDue=Date.now();});save();renderStats();
+  startRound(null,false,all);
+});
+/* alias */
+document.getElementById("aliasBtn").addEventListener("click",function(){document.getElementById("aliasEdit").classList.toggle("hidden");});
+document.getElementById("aliasSave").addEventListener("click",function(){
+  var v=document.getElementById("aliasInput").value.trim();state.alias=v||"Guest";save();
+  document.getElementById("aliasEdit").classList.add("hidden");renderStats();
+});
+/* download the page itself */
+function downloadPage(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"});var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="keep-it.html";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+}
+document.getElementById("dlTop").addEventListener("click",downloadPage);
+document.getElementById("dlSettings").addEventListener("click",downloadPage);
+/* export + forget */
+document.getElementById("exportBtn").addEventListener("click",function(){
+  var out={exportedAt:new Date().toISOString(),alias:state.alias,teachingDial:state.dial,rounds:state.rounds,items:state.items,events:state.events};
+  var blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="keep-it-record.json";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+function openForget(){document.getElementById("forgetOverlay").classList.remove("hidden");}
+document.getElementById("forgetBtn").addEventListener("click",openForget);
+document.getElementById("forgetBtn2").addEventListener("click",openForget);
+document.getElementById("forgetNo").addEventListener("click",function(){document.getElementById("forgetOverlay").classList.add("hidden");});
+document.getElementById("forgetYes").addEventListener("click",function(){
+  try{localStorage.removeItem(KEY);}catch(e){}
+  state=freshState();save();session=null;stopTimer();
+  document.getElementById("playSection").classList.add("hidden");
+  document.getElementById("forgetOverlay").classList.add("hidden");closePanels();renderAll();
+});
+/* teaching dial */
+function syncDial(){document.getElementById("dialSeg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-dial")===state.dial);});}
+document.getElementById("dialSeg").querySelectorAll("button").forEach(function(b){
+  b.addEventListener("click",function(){state.dial=b.getAttribute("data-dial");save();syncDial();});
+});
+/* compass panels + doors */
+var DOORS=[
+ ["What Are We Missing?","The shared door: tell the whole project what is missing, unclear, or wanted. It appears here at the top and again at the bottom, by design."],
+ ["Start Page","The front door of the whole project — where every visit can begin."],
+ ["The Thriving Plan","The plan itself: the serious core that all of these pages serve."],
+ ["Serious pages","For Veterans — The Record, the Legal Record, and the other serious reference pages."],
+ ["Tools","The working tools — coupon finder, planners, and practical helpers."],
+ ["For fun","Games and play pages — including this trainer's neighbours in the games build-out."],
+ ["What Are We Missing?","The shared door again: if you thought of something while browsing the list, here it is a second time, on purpose."]
+];
+var dl=document.getElementById("doorList");
+DOORS.forEach(function(d){
+  var b=document.createElement("button");b.className="door";b.type="button";
+  b.innerHTML="<span>"+esc(d[0])+"</span><span class='small'>Tap to open</span>";
+  b.addEventListener("click",function(){document.getElementById("doorTitle").textContent=d[0];document.getElementById("doorBody").textContent=d[1];document.getElementById("doorOverlay").classList.remove("hidden");});
+  dl.appendChild(b);
+});
+document.getElementById("doorClose").addEventListener("click",function(){document.getElementById("doorOverlay").classList.add("hidden");});
+function closePanels(){document.querySelectorAll(".panel").forEach(function(p){p.classList.add("hidden");});}
+document.querySelectorAll(".dock button").forEach(function(b){
+  b.addEventListener("click",function(){var id="panel-"+b.getAttribute("data-panel");var p=document.getElementById(id);var was=p.classList.contains("hidden");closePanels();if(was)p.classList.remove("hidden");});
+});
+document.querySelectorAll("[data-close]").forEach(function(b){b.addEventListener("click",closePanels);});
+
+load();renderAll();
+</script>
+</body>
+</html>
