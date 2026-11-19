@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Match the Note — Vocal Pitch Training</title>
+<style>
+:root{
+  --bg:#f4f6f5; --panel:#ffffff; --panel2:#eef2f0; --ink:#14201c; --muted:#4d5f59;
+  --line:#cfdcd6; --teal:#0e7c6b; --teal-d:#095c4f; --amber:#b45309; --amber-bg:#fdf3e0;
+  --green:#178a4c; --red:#c0392b; --blue:#1d6fb8; --chip:#e3ece8;
+  --shadow:0 2px 10px rgba(20,32,28,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1513; --panel:#18211e; --panel2:#1f2a26; --ink:#eef4f1; --muted:#a9bcb4;
+    --line:#33443d; --teal:#2fbf9f; --teal-d:#2fbf9f; --amber:#f0a33c; --amber-bg:#3a2c12;
+    --green:#4cc97e; --red:#ff7a6b; --blue:#6db3ec; --chip:#26342e;
+    --shadow:0 2px 10px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;font-size:17px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0 0 .4em}
+h1{font-size:2rem}
+h2{font-size:1.45rem;border-bottom:2px solid var(--teal);padding-bottom:.25em;margin-top:1.6em}
+h3{font-size:1.12rem}
+p{margin:.5em 0}
+button,select,input[type=text]{min-height:44px;font:inherit}
+button{cursor:pointer;border:2px solid var(--teal-d);background:var(--teal);color:#fff;border-radius:10px;padding:.55em 1em;font-weight:700}
+button.secondary{background:var(--panel);color:var(--teal-d)}
+@media (prefers-color-scheme: dark){button.secondary{color:var(--teal)}}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.warn{background:var(--panel);color:var(--red);border-color:var(--red)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button .gesture{display:block;font-size:.72rem;font-weight:400;opacity:.85;margin-top:2px}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+.freebar{background:var(--teal-d);color:#fff;padding:12px 16px}
+.freebar .wrap{padding-top:0;padding-bottom:0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.freebar strong{font-size:1.05rem}
+.freebar button{background:#fff;color:var(--teal-d);border-color:#fff;min-height:40px}
+.privacy{background:var(--amber-bg);border:2px solid var(--amber);border-radius:12px;padding:16px 18px;margin:16px 0;font-size:1.12rem}
+.privacy strong{font-size:1.2rem}
+.compass{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.compass a{flex:1 1 120px;text-align:center;padding:12px 8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;font-weight:700;box-shadow:var(--shadow)}
+.compass a small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;box-shadow:var(--shadow)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.field{flex:1 1 200px}
+.field label{display:block;font-weight:700;font-size:.9rem;margin-bottom:4px}
+.field input[type=text],.field select{width:100%;padding:.5em;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.seg{display:flex;gap:0;border:2px solid var(--teal-d);border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:none;border-radius:0;background:var(--panel);color:var(--ink);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--teal);color:#fff}
+.stage{text-align:center}
+.target-note{font-family:Georgia,serif;font-size:3.2rem;font-weight:700;color:var(--amber);line-height:1}
+.target-sub{color:var(--muted)}
+canvas#scope{width:100%;height:220px;background:#101a17;border-radius:12px;display:block}
+@media (prefers-color-scheme: light){canvas#scope{background:#16241f}}
+.readout{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:12px 0}
+.readout .box{background:var(--panel2);border-radius:10px;padding:10px 16px;min-width:130px}
+.readout .box .big{font-size:1.5rem;font-weight:800;font-family:Georgia,serif}
+.readout .box .lab{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.verdict{font-size:1.25rem;font-weight:800;min-height:1.6em;margin:8px 0}
+.verdict.good{color:var(--green)} .verdict.low{color:var(--blue)} .verdict.high{color:var(--red)} .verdict.idle{color:var(--muted);font-weight:600}
+.holdbar{height:14px;background:var(--panel2);border-radius:7px;overflow:hidden;border:1px solid var(--line)}
+.holdbar>div{height:100%;width:0%;background:var(--green);transition:width .1s linear}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tabs button{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.tabs button[aria-selected="true"]{background:var(--teal);color:#fff;border-color:var(--teal-d)}
+.ladder{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.rung{flex:1 1 60px;text-align:center;padding:10px 4px;border:2px solid var(--line);border-radius:10px;background:var(--panel2);font-weight:700}
+.rung.now{border-color:var(--amber);background:var(--amber-bg)}
+.rung.done{border-color:var(--green);background:var(--green);color:#fff}
+.piano{display:flex;height:90px;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:10px 0}
+.piano .key{flex:1;background:#fff;border-right:1px solid #bbb;position:relative}
+.piano .key span{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:max-content;white-space:nowrap;text-align:center;font-size:.6rem;color:#555;pointer-events:none}
+.piano .key.inrange{background:#bfe6d8}
+.piano .key.target{background:var(--amber);color:#fff}
+.piano .key.you{background:var(--teal);color:#fff}
+@media (prefers-color-scheme: dark){.piano .key{background:#dfe6e2}.piano .key.inrange{background:#3f7d6a}}
+input[type=range]{width:100%;min-height:44px}
+.teach{background:var(--panel2);border-radius:10px;padding:12px 14px;margin:10px 0}
+.teach .tag{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-d)}
+@media (prefers-color-scheme: dark){.teach .tag{color:var(--teal)}}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;background:var(--panel)}
+summary{cursor:pointer;font-weight:700;min-height:36px;padding:6px 0}
+summary small{color:var(--muted);font-weight:400}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+th{background:var(--panel2)}
+#explain{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);max-width:92vw;width:480px;background:var(--ink);color:var(--bg);border-radius:12px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.35);display:none;z-index:50}
+#explain.show{display:block}
+#explain button{background:transparent;border-color:currentColor;color:inherit;min-height:40px;margin-top:8px}
+.statgrid{display:flex;flex-wrap:wrap;gap:10px}
+.statgrid .box{flex:1 1 130px;background:var(--panel2);border-radius:10px;padding:12px;text-align:center}
+.statgrid .box .big{font-size:1.6rem;font-weight:800}
+footer{color:var(--muted);font-size:.92rem;padding:24px 0 40px}
+.small{font-size:.9rem;color:var(--muted)}
+.kbd-note{font-size:.85rem;color:var(--muted)}
+@media (max-width:560px){h1{font-size:1.65rem}.target-note{font-size:2.5rem}canvas#scope{height:180px}}
+</style>
+</head>
+<body>
+
+<div class="freebar"><div class="wrap">
+  <div><strong>Free — always free.</strong> No ads. No account. No sign-up.</div>
+  <button id="btnDownload" data-explain="Saves a copy of this whole page as one file on your device. Open that file any time — it works with no internet at all. That is the offline door: download it before you need it.">Download for offline<span class="gesture">Tap to download</span></button>
+</div></div>
+
+<div class="wrap">
+  <h1>Match the Note</h1>
+  <p style="font-size:1.1rem">Vocal pitch training. The page plays a note. You sing it back. The page listens and shows you — on a line, in plain words — whether you are on it, a little low, or a little high, and by how much. Then you adjust. That loop, repeated, is how every singer who ever lived learned to sing in tune.</p>
+
+  <div class="privacy" role="note">
+    <strong>🔒 Your voice never leaves this device.</strong><br>
+    Pitch is worked out <strong>right here, on your device</strong>, the instant you sing. <strong>Nothing is recorded. Nothing is sent anywhere. There is no server listening.</strong> The microphone only runs when <em>you</em> turn it on with the button below, and it stops the moment you turn it off. Close the page and it is gone.
+  </div>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#play">🎯 Play<small>Tap to jump to the games</small></a>
+    <a href="#learn">📖 Learn<small>Tap to jump to the teaching</small></a>
+    <a href="#range-sec">🎤 Your Range<small>Tap to jump to range finder</small></a>
+    <a href="#record-sec">🗂️ Your Record<small>Tap — saved on this device only</small></a>
+  </nav>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label for="alias">Your name or alias — any name works, it is only shown on this device</label>
+        <input type="text" id="alias" placeholder="e.g. Tristan, or Nightingale, or X" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Reference pitch — what “A” is tuned to</label>
+        <div class="seg" role="group" aria-label="Reference pitch">
+          <button id="ref440" aria-pressed="false" data-explain="Standard tuning: A above middle C = 440 Hz. Most instruments, orchestras, and tuners use this.">A = 440 Hz<span class="gesture">Tap to select — standard</span></button>
+          <button id="ref432" aria-pressed="true" data-explain="A = 432 Hz — the tuning Tristan's music is recorded at. Every note sits a little lower and softer than 440. If you sing along with his tracks, train at 432 so your ear matches the records.">A = 432 Hz<span class="gesture">Tap to select — Tristan's tuning</span></button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="dial">Teaching dial — how much explanation rides along</label>
+        <select id="dial">
+          <option value="0">Just play — hide the teaching</option>
+          <option value="1" selected>Show tips — the short why with each game</option>
+          <option value="2">Teach me deep — tips plus the full lessons below</option>
+        </select>
+      </div>
+    </div>
+    <p class="small">Every button on this page says its gesture on the button. <strong>Tap</strong> does the thing. <strong>Hold</strong> any button (or hover with a mouse) and it explains itself before you commit.</p>
+  </div>
+
+  <!-- ======================= PLAY ======================= -->
+  <section id="play">
+  <h2>Play</h2>
+
+  <div class="card stage">
+    <div class="small" id="gameName">Game: Match the Note</div>
+    <div class="target-note" id="targetNote">A3</div>
+    <div class="target-sub" id="targetSub">Target: A3 · 216.0 Hz (at A = 432 Hz) — tap “Hear the target” and sing it back</div>
+
+    <div style="margin:14px 0">
+      <canvas id="scope" width="900" height="220" aria-label="Pitch line: the amber line is the target, the green band is the in-tune window, the bright trace is your voice"></canvas>
+    </div>
+
+    <div class="verdict idle" id="verdict">Turn on a voice source below, then sing.</div>
+    <div class="holdbar" aria-label="Hold-in-tune progress"><div id="holdFill"></div></div>
+    <p class="small" id="holdLabel">Hold the note inside the green window to score. The bar fills while you are in tune.</p>
+
+    <div class="readout">
+      <div class="box"><div class="lab">You are singing</div><div class="big" id="youNote">—</div><div id="youHz">— Hz</div></div>
+      <div class="box"><div class="lab">Off by</div><div class="big" id="youCents">—</div><div id="youWord">sing to see it</div></div>
+      <div class="box"><div class="lab">Score</div><div class="big" id="scoreBox">0</div><div>streak <span id="streakBox">0</span> · best <span id="bestBox">0</span></div></div>
+    </div>
+
+    <div class="row" style="justify-content:center">
+      <button id="btnHear" data-explain="Plays the target note through your speaker, made by the page itself (a synthesized tone — no recording of anyone). Listen, hold it in your head, then sing it.">🔊 Hear the target<span class="gesture">Tap to play the note</span></button>
+      <button id="btnNew" class="secondary" data-explain="Picks a fresh target note in a comfortable middle range, so you cannot just memorise one note.">🎲 New note<span class="gesture">Tap for a new target</span></button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+    <h3>Voice source — pick one</h3>
+    <div class="row" style="justify-content:center">
+      <button id="btnMic" data-explain="Asks your browser for the microphone. The sound is analysed on this device only — never recorded, never sent. Your browser will ask permission first; the mic light is yours to switch off any time with the same button.">🎙️ Turn mic ON<span class="gesture">Tap to start listening</span></button>
+      <button id="btnTest" class="secondary" data-explain="No mic? No voice handy? This makes a steady test tone inside the page and feeds it through the exact same pitch reader your voice uses — so you can watch the line move, bend the tone sharp and flat with the slider, and score a real graded match without singing a note.">〰️ Use test tone as voice<span class="gesture">Tap to use the built-in tone</span></button>
+      <button id="btnStop" class="warn" data-explain="Stops the microphone and the test tone completely. Nothing keeps listening after this.">⏹ Stop listening<span class="gesture">Tap to stop everything</span></button>
+    </div>
+    <div id="testControls" style="display:none;margin-top:12px">
+      <label for="bend"><strong>Test-tone bend</strong> — slide to push the tone flat (left) or sharp (right) of the target, in cents</label>
+      <input type="range" id="bend" min="-100" max="100" value="0" step="1">
+      <div class="small"><span id="bendLabel">0 cents — dead on the target</span> · Tip: slide to about +60, watch the verdict say “sharp”, then slide back into the green and hold it to score.</div>
+    </div>
+    <p class="small" id="micStatus">Listening: off. The mic only runs when you turn it on.</p>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Games">
+    <button role="tab" aria-selected="true" id="tab-match" data-explain="The core game. One target note. Sing it and hold it inside the green window until the bar fills.">1 · Match the Note<span class="gesture">Tap to open this game</span></button>
+    <button role="tab" aria-selected="false" id="tab-ladder" data-explain="A rising scale, one rung at a time: C D E F G A B C. Match each note to climb. Trains your ear for steps, the bricks songs are built from.">2 · Climb the Ladder<span class="gesture">Tap to open this game</span></button>
+    <button role="tab" aria-selected="false" id="tab-interval" data-explain="The page plays two notes. You sing the SECOND one. The gap between them is an interval — the distance that makes melodies feel the way they feel.">3 · Sing the Interval<span class="gesture">Tap to open this game</span></button>
+    <button role="tab" aria-selected="false" id="tab-range" data-explain="Finds the lowest and highest notes you can sing comfortably, maps them, and names the voice family they point to.">4 · Find Your Range<span class="gesture">Tap to open this game</span></button>
+  </div>
+
+  <div class="card" id="panel-match">
+    <h3>Match the Note</h3>
+    <p>Hear the target. Sing it. Keep your trace inside the green band until the hold bar fills — about a second and a half of steady, in-tune singing. Wobbling through the window does not count; holding it does. That steadiness <em>is</em> the skill.</p>
+    <div class="teach" data-teach="1"><span class="tag">Why it works</span><p>Your ear hears the target, your brain compares it with what your voice is doing, and your voice corrects — dozens of times a second. At first the corrections are slow and overshoot. Practice makes the loop faster and finer. You are not “getting a better voice”; you are training a feedback loop, like balancing a broom on your palm.</p></div>
+  </div>
+
+  <div class="card" id="panel-ladder" style="display:none">
+    <h3>Climb the Ladder — a rising scale</h3>
+    <p>Eight rungs: <strong>C – D – E – F – G – A – B – C</strong>. Match the glowing rung to climb to the next. Reach the top and the ladder restarts a step higher.</p>
+    <div class="ladder" id="ladderRow"></div>
+    <p class="small" id="ladderStatus">Rung 1 of 8. Hear the target, sing it, hold it.</p>
+    <div class="teach" data-teach="1"><span class="tag">Tip</span><p>Scales feel easy until the top two rungs — the voice wants to flatten as it climbs. Think the note <em>before</em> you sing it: hear it in your head first, then let the voice go to the sound you already heard. Singers call this “aiming”.</p></div>
+  </div>
+
+  <div class="card" id="panel-interval" style="display:none">
+    <h3>Sing the Interval</h3>
+    <p>The page plays a home note, then a second note some distance away. <strong>Your job: sing the second note.</strong> Use “Hear the pair” as often as you like.</p>
+    <div class="row">
+      <button id="btnPair" data-explain="Plays the home note, a breath of silence, then the note you must sing. The gap between them is named after you match it — guessing the name is not the game, singing the distance is.">▶️ Hear the pair<span class="gesture">Tap to play both notes</span></button>
+      <button id="btnNewInterval" class="secondary" data-explain="Chooses a new home note and a new gap — anything from a small step to a full octave.">🎲 New interval<span class="gesture">Tap for a new pair</span></button>
+    </div>
+    <p id="intervalInfo" style="font-weight:700">Interval: hidden until you match it — your ears first, names second.</p>
+    <div class="teach" data-teach="1"><span class="tag">Why intervals</span><p>A melody is nothing but intervals in a row. Singers who can hear and produce a fifth or a third on demand can learn songs by ear, find harmonies, and stop depending on a piano to feed them every note.</p></div>
+  </div>
+
+  <div class="card" id="panel-range" style="display:none">
+    <h3>Find Your Range</h3>
+    <p>Sing the <strong>lowest</strong> note you can hold comfortably — not a croak, a note you could actually use — and tap “Save as my lowest”. Then do the same at the top: highest comfortable note, no shouting or squeezing. Your map appears in the Your Range section below.</p>
+    <div class="row">
+      <button id="btnLow" data-explain="Takes the pitch you are singing right now and saves it, on this device only, as the bottom of your range.">⬇ Save as my lowest<span class="gesture">Tap while singing low</span></button>
+      <button id="btnHigh" data-explain="Takes the pitch you are singing right now and saves it, on this device only, as the top of your range.">⬆ Save as my highest<span class="gesture">Tap while singing high</span></button>
+    </div>
+    <p class="small">No voice source on? Turn the mic on above first — or use the test tone and bend it to explore where notes sit.</p>
+  </div>
+  </section>
+
+  <!-- ======================= RANGE ======================= -->
+  <section id="range-sec">
+  <h2>Your Range, Mapped</h2>
+  <div class="card">
+    <div class="piano" id="piano" aria-label="Two-octave piano strip showing your saved range"></div>
+    <p id="rangeText">No range saved yet. Play “Find Your Range” above to map your lowest and highest comfortable notes.</p>
+    <div class="teach" data-teach="2"><span class="tag">Reading the names</span><p>Voice families are rough neighbourhoods, not boxes: <strong>Bass</strong> (about E2–E4), <strong>Baritone</strong> (A2–A4), <strong>Tenor</strong> (C3–C5), <strong>Alto</strong> (F3–F5), <strong>Mezzo-soprano</strong> (A3–A5), <strong>Soprano</strong> (C4–C6). Most untrained voices span about an octave and a half; trained voices often reach two octaves or more. Where your voice <em>sounds best</em> (your tessitura) matters more than the extremes — the extremes just tell you where the fence is.</p></div>
+  </div>
+  </section>
+
+  <!-- ======================= LEARN ======================= -->
+  <section id="learn">
+  <h2>Learn — the knowledge under the game</h2>
+
+  <details open>
+    <summary>What pitch actually is <small>— Tap to open / close</small></summary>
+    <p><strong>What it is:</strong> pitch is how high or low a sound is, and physically it is speed of vibration — frequency, measured in Hertz (Hz). A string or vocal fold vibrating 220 times a second gives A3 at standard tuning. Double the frequency and you get the same note one octave higher; halve it, one octave lower.</p>
+    <p><strong>What it means:</strong> the octave is divided into 12 equal semitones. Each semitone is divided into 100 <strong>cents</strong>. Being 50 cents off means you are halfway to the next note — plainly out. Within about ±10 cents sounds locked-in to most ears; ±25 cents is a fair practice window for a beginner, which is the green band on the scope.</p>
+    <p><strong>What it could mean for you:</strong> “sharp” = too high, your frequency is above the target. “Flat” = too low. When the page says “18 cents flat”, it means: nudge up, less than a fifth of the way to the next note. Small corrections, not leaps.</p>
+  </details>
+
+  <details>
+    <summary>Breath and placement — the basics, at the knowledge level <small>— Tap to open / close</small></summary>
+    <p><strong>Breath:</strong> your voice is a wind instrument. Pitch stays steady when air flows steady. Breathe low — belly and ribs expanding, shoulders still — and let the air out slowly, as if fogging a mirror gently. Most pitch sagging (going flat at the end of a note) is simply running out of air pressure.</p>
+    <p><strong>Placement:</strong> where the sound feels like it resonates. Humming with lips closed, feeling a buzz in the lips and front teeth, is “forward” placement — bright and easy to tune. A swallowed, throaty sound sits back and is harder to control. Try this: hum the target note until your lips tingle, then open into an “ah” keeping the same feeling.</p>
+    <p><strong>Posture:</strong> stand or sit tall, head level — looking down or up bends the tube the air travels through and drags pitch with it. None of this is talent. It is plumbing, and plumbing can be learned.</p>
+    <p class="small">This page teaches knowledge, not lessons in person: if singing ever hurts, stop — pain is information, and a real voice teacher beats any page for fixing strain.</p>
+  </details>
+
+  <details>
+    <summary>Why matching improves — the ear–voice loop <small>— Tap to open / close</small></summary>
+    <p>Nobody sings in tune by having a “tuned voice”. They sing in tune because a loop runs constantly: <strong>ear hears → brain compares → voice adjusts</strong>. Studies of singers consistently find that pitch-matching accuracy improves with short, regular practice, because the loop gets faster and the comparison gets finer — the same way a darts player’s arm learns, the <em>system</em> learns.</p>
+    <p>Two honest consequences. First: if you cannot yet <em>hear</em> whether you are sharp or flat, that is the first thing training fixes — the verdict line on this page is a stand-in for that hearing until your own arrives. Second: progress is usually quick at the start (the window feels huge within a couple of weeks of ten-minute sessions) and then slower and finer. Both phases are normal.</p>
+  </details>
+
+  <details>
+    <summary>440 vs 432 — what the reference switch does <small>— Tap to open / close</small></summary>
+    <p>“Concert pitch” is an agreement about where A sits. Today’s standard is A = 440 Hz. A = 432 Hz tunes everything about 32 cents lower — a slightly warmer, softer feel that many players prefer, and the tuning Tristan’s music is recorded at. Neither is “correct” in nature; what matters is that everyone in the room uses the same one. Train at 432 if you sing along with those records, 440 for almost everything else.</p>
+  </details>
+
+  <div class="card" style="border-color:var(--amber)">
+    <h3>⚠ Honest limits — read this once</h3>
+    <p><strong>This is a practice mirror, not a measurement instrument.</strong> Phone and laptop microphones, room echo, a TV in the background, a fan, singing quietly or far from the mic — all of these move the reading, sometimes by a lot. Vibrato (the natural wobble in a sung note) makes the trace dance; read the middle of the dance, not the edges. If the page and your ears disagree in a quiet room at a steady volume, believe the disagreement is worth one more try — not that either of you is broken. And the mic is <strong>off until you turn it on</strong>, every time.</p>
+  </div>
+  </section>
+
+  <!-- ======================= RECORD ======================= -->
+  <section id="record-sec">
+  <h2>Your Record — on this device only</h2>
+  <div class="card">
+    <p class="small">Saved in this browser, on this device. Nothing is uploaded, ever. Export takes a copy out as a file; Forget wipes it here completely.</p>
+    <div class="statgrid">
+      <div class="box"><div class="big" id="statMatches">0</div>matches held</div>
+      <div class="box"><div class="big" id="statBest">0</div>best streak</div>
+      <div class="box"><div class="big" id="statSessions">0</div>sessions</div>
+      <div class="box"><div class="big" id="statRange">—</div>saved range</div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="btnExport" class="secondary" data-explain="Downloads your record — alias, scores, best streak, saved range — as a small text file you keep. Nothing is sent anywhere; the file goes from this device to this device.">⬇ Export my record<span class="gesture">Tap to download a file</span></button>
+      <button id="btnForget" class="warn" data-explain="Erases everything this page has saved on this device: alias, scores, streaks, range. Gone means gone — there is no copy anywhere else to restore from.">🗑 Forget everything<span class="gesture">Tap to erase this device's record</span></button>
+    </div>
+    <p class="small" id="forgetMsg"></p>
+  </div>
+  </section>
+
+  <footer>
+    <p><strong>Copyleft:</strong> this page and its design are free to copy, share, and build on under CC BY-SA 4.0; its code under GPL. The name of the project is not part of the grant. No ads — ever. Made to be downloaded and kept.</p>
+    <p>Why? → How? → Act. Why: singing in tune is a trainable loop, not a gift. How: hear a note, sing it, see the truth, adjust. Act: ten minutes a day beats an hour once a month.</p>
+  </footer>
+</div>
+
+<div id="explain" role="dialog" aria-live="polite"><div id="explainText"></div><button id="explainClose">Got it<span class="gesture">Tap to close</span></button></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var NOTE_NAMES=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+var state={
+  ref:432, game:"match", targetMidi:57, homeMidi:48, intervalSteps:7,
+  ladderBase:48, ladderIdx:0, score:0, streak:0,
+  source:null, audioCtx:null, analyser:null, micStream:null, osc:null, oscGain:null,
+  currentFreq:0, currentCentsToTarget:null, holdMs:0, lastTs:0, trace:[], raf:0,
+  matchedThisTarget:false
+};
+var LADDER=[0,2,4,5,7,9,11,12];
+var INTERVAL_NAMES={0:"unison",1:"minor 2nd",2:"major 2nd",3:"minor 3rd",4:"major 3rd",5:"perfect 4th",6:"tritone",7:"perfect 5th",8:"minor 6th",9:"major 6th",10:"minor 7th",11:"major 7th",12:"octave"};
+
+/* ---------- record (on-device only) ---------- */
+var KEY="matchTheNote.record.v1";
+var rec={alias:"",matches:0,best:0,sessions:0,lowMidi:null,highMidi:null};
+try{var saved=localStorage.getItem(KEY); if(saved){rec=JSON.parse(saved);}}catch(e){}
+function saveRec(){try{localStorage.setItem(KEY,JSON.stringify(rec));}catch(e){} renderRecord();}
+function midiToFreq(m){return state.ref*Math.pow(2,(m-69)/12);}
+function freqToMidiF(f){return 69+12*Math.log2(f/state.ref);}
+function midiName(m){m=Math.round(m);return NOTE_NAMES[((m%12)+12)%12]+(Math.floor(m/12)-1);}
+function centsBetween(f,targetF){return 1200*Math.log2(f/targetF);}
+
+function renderRecord(){
+  $("statMatches").textContent=rec.matches;
+  $("statBest").textContent=rec.best;
+  $("statSessions").textContent=rec.sessions;
+  $("bestBox").textContent=rec.best;
+  var r="—";
+  if(rec.lowMidi!=null&&rec.highMidi!=null) r=midiName(rec.lowMidi)+"–"+midiName(rec.highMidi);
+  $("statRange").textContent=r;
+  renderRange();
+}
+function renderRange(){
+  var piano=$("piano"); piano.innerHTML="";
+  var start=36,end=72; /* C2..C5 display window C3..? use 48..72+ */
+  start=48; end=84;
+  for(var m=start;m<end;m++){
+    var k=document.createElement("div"); k.className="key";
+    if(rec.lowMidi!=null&&rec.highMidi!=null&&m>=Math.round(rec.lowMidi)&&m<=Math.round(rec.highMidi)) k.className+=" inrange";
+    if(m===state.targetMidi) k.className+=" target";
+    if(m%12===0){var s=document.createElement("span"); s.textContent=midiName(m); k.appendChild(s);}
+    piano.appendChild(k);
+  }
+  var t=$("rangeText");
+  if(rec.lowMidi!=null&&rec.highMidi!=null){
+    var lo=Math.round(rec.lowMidi),hi=Math.round(rec.highMidi),span=hi-lo;
+    var fam="—";
+    if(hi<=64&&lo<=52) fam="bass / low baritone country";
+    else if(lo<55&&hi<=69) fam="baritone / alto country — the wide middle where most voices live";
+    else if(lo>=55&&hi>=72) fam="tenor / mezzo country";
+    else if(lo>=60) fam="soprano / high tenor country";
+    else fam="the wide middle — baritone/tenor or alto/mezzo country";
+    t.innerHTML="Your saved range: <strong>"+midiName(lo)+" to "+midiName(hi)+"</strong> — "+span+" semitones (about "+(span/12).toFixed(1)+" octaves). That points to <strong>"+fam+"</strong>. Treat the family name as a neighbourhood, not a verdict: comfort and tone in the middle matter more than the fence-posts.";
+  } else {
+    t.textContent="No range saved yet. Play “Find Your Range” above to map your lowest and highest comfortable notes.";
+  }
+}
+
+/* ---------- audio: synth playback ---------- */
+function ctx(){
+  if(!state.audioCtx){ state.audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
+  if(state.audioCtx.state==="suspended") state.audioCtx.resume();
+  return state.audioCtx;
+}
+function playTone(freq,when,dur){
+  var ac=ctx(),o=ac.createOscillator(),g=ac.createGain();
+  o.type="triangle"; o.frequency.value=freq;
+  var t=ac.currentTime+when;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(0.35,t+0.04);
+  g.gain.setValueAtTime(0.35,t+dur-0.12);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(t+dur+0.05);
+}
+function playTarget(){ playTone(midiToFreq(state.targetMidi),0,1.4); }
+function playPair(){
+  playTone(midiToFreq(state.homeMidi),0,1.0);
+  playTone(midiToFreq(state.targetMidi),1.25,1.4);
+}
+
+/* ---------- pitch detection (autocorrelation, on-device) ---------- */
+function autoCorrelate(buf,sampleRate){
+  var SIZE=buf.length, rms=0,i,j;
+  for(i=0;i<SIZE;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/SIZE);
+  if(rms<0.012) return -1;
+  var r1=0,r2=SIZE-1,th=0.2;
+  for(i=0;i<SIZE/2;i++) if(Math.abs(buf[i])<th){r1=i;break;}
+  for(i=1;i<SIZE/2;i++) if(Math.abs(buf[SIZE-i])<th){r2=SIZE-i;break;}
+  var b=buf.slice(r1,r2), N=b.length;
+  var corr=new Array(N).fill(0);
+  for(i=0;i<N;i++) for(j=0;j<N-i;j++) corr[i]+=b[j]*b[j+i];
+  var d=0; while(d<N-1&&corr[d]>corr[d+1]) d++;
+  var maxv=-1,maxp=-1;
+  for(i=d;i<N;i++) if(corr[i]>maxv){maxv=corr[i];maxp=i;}
+  if(maxp<=0) return -1;
+  var T0=maxp;
+  if(T0>0&&T0<N-1){
+    var x1=corr[T0-1],x2=corr[T0],x3=corr[T0+1];
+    var a=(x1+x3-2*x2)/2, bb=(x3-x1)/2;
+    if(a) T0=T0-bb/(2*a);
+  }
+  return sampleRate/T0;
+}
+
+/* ---------- sources ---------- */
+function ensureAnalyser(){
+  var ac=ctx();
+  if(!state.analyser){ state.analyser=ac.createAnalyser(); state.analyser.fftSize=2048; }
+  return state.analyser;
+}
+function stopAll(){
+  if(state.micStream){ state.micStream.getTracks().forEach(function(t){t.stop();}); state.micStream=null; }
+  if(state.osc){ try{state.osc.stop();}catch(e){} state.osc.disconnect(); state.osc=null; }
+  if(state.raf) cancelAnimationFrame(state.raf);
+  state.source=null; state.currentFreq=0; state.currentCentsToTarget=null;
+  $("btnMic").innerHTML="🎙️ Turn mic ON<span class='gesture'>Tap to start listening</span>";
+  $("testControls").style.display="none";
+  $("micStatus").textContent="Listening: off. The mic only runs when you turn it on.";
+  updateReadout(); drawScope();
+}
+$("btnStop").addEventListener("click",stopAll);
+
+$("btnMic").addEventListener("click",function(){
+  if(state.source==="mic"){ stopAll(); return; }
+  stopAll();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    $("micStatus").textContent="This browser cannot open a microphone here. The test tone below works everywhere — use it to explore the line and score matches.";
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})
+  .then(function(stream){
+    state.micStream=stream; state.source="mic";
+    var ac=ctx(), src=ac.createMediaStreamSource(stream), an=ensureAnalyser();
+    src.connect(an);
+    $("btnMic").innerHTML="🎙️ Mic is ON — tap to turn off<span class='gesture'>Tap to stop listening</span>";
+    $("micStatus").textContent="Listening: microphone, analysed on this device only. Nothing is recorded or sent.";
+    rec.sessions++; saveRec();
+    state.lastTs=performance.now(); loop();
+  })
+  .catch(function(){
+    $("micStatus").textContent="Microphone permission was not given, so nothing is listening. You can still play every game with the test tone below.";
+  });
+});
+
+$("btnTest").addEventListener("click",function(){
+  if(state.source==="test"){ stopAll(); return; }
+  stopAll();
+  var ac=ctx(), an=ensureAnalyser();
+  var o=ac.createOscillator(), g=ac.createGain();
+  o.type="sine"; g.gain.value=0.5;
+  o.frequency.value=midiToFreq(state.targetMidi)*Math.pow(2,(parseFloat($("bend").value)||0)/1200);
+  o.connect(g); g.connect(an);
+  o.start();
+  state.osc=o; state.source="test";
+  $("testControls").style.display="block";
+  $("micStatus").textContent="Listening: built-in test tone, fed through the same pitch reader as your voice.";
+  rec.sessions++; saveRec();
+  state.lastTs=performance.now(); loop();
+});
+$("bend").addEventListener("input",function(){
+  var c=parseFloat(this.value)||0;
+  $("bendLabel").textContent=(c>0?"+":"")+c+" cents — "+(c===0?"dead on the target":(c>0?"sharp (too high)":"flat (too low)"));
+  if(state.osc&&state.source==="test"){
+    state.osc.frequency.setTargetAtTime(midiToFreq(state.targetMidi)*Math.pow(2,c/1200),ctx().currentTime,0.03);
+  }
+});
+
+/* ---------- main loop ---------- */
+var buf=new Float32Array(2048);
+function loop(){
+  state.raf=requestAnimationFrame(loop);
+  var now=performance.now(), dt=Math.min(100,now-state.lastTs); state.lastTs=now;
+  if(!state.analyser) return;
+  state.analyser.getFloatTimeDomainData(buf);
+  var f=autoCorrelate(buf,ctx().sampleRate);
+  if(f>50&&f<1200){
+    state.currentFreq=f;
+    state.currentCentsToTarget=centsBetween(f,midiToFreq(state.targetMidi));
+  } else { state.currentFreq=0; state.currentCentsToTarget=null; }
+  /* trace */
+  state.trace.push(state.currentCentsToTarget);
+  if(state.trace.length>240) state.trace.shift();
+  /* hold logic */
+  var c=state.currentCentsToTarget;
+  if(c!==null&&Math.abs(c)<=25&&!state.matchedThisTarget){
+    state.holdMs+=dt;
+    if(state.holdMs>=1500){ onMatch(); }
+  } else if(c===null||Math.abs(c)>40){ state.holdMs=Math.max(0,state.holdMs-dt*1.5); }
+  $("holdFill").style.width=Math.min(100,state.holdMs/15)+"%";
+  updateReadout(); drawScope();
+}
+function onMatch(){
+  state.matchedThisTarget=true;
+  state.score++; state.streak++;
+  rec.matches++; if(state.streak>rec.best) rec.best=state.streak;
+  saveRec();
+  $("scoreBox").textContent=state.score; $("streakBox").textContent=state.streak;
+  var v=$("verdict"); v.className="verdict good";
+  if(state.game==="ladder"){
+    v.textContent="🎉 Rung matched! Climbing…";
+    setTimeout(nextLadder,900);
+  } else if(state.game==="interval"){
+    $("intervalInfo").textContent="Interval: "+INTERVAL_NAMES[Math.abs(state.intervalSteps)]+" ("+Math.abs(state.intervalSteps)+" semitones) — and you sang its top note. That distance now lives in your ear.";
+    v.textContent="🎉 Matched! That was a "+INTERVAL_NAMES[Math.abs(state.intervalSteps)]+". New pair coming…";
+    setTimeout(newInterval,1400);
+  } else if(state.game==="range"){
+    v.textContent="🎉 Steady and in tune. Now save it as your lowest or highest below.";
+    state.matchedThisTarget=false; state.holdMs=0;
+  } else {
+    v.textContent="🎉 Matched and held! New note coming…";
+    setTimeout(newTarget,1100);
+  }
+}
+function updateReadout(){
+  var f=state.currentFreq, c=state.currentCentsToTarget;
+  var v=$("verdict");
+  if(!f){
+    $("youNote").textContent="—"; $("youHz").textContent="— Hz";
+    $("youCents").textContent="—"; $("youWord").textContent=state.source?"listening… sing!":"no source on";
+    if(!state.matchedThisTarget){ v.className="verdict idle"; v.textContent=state.source?"Listening… sing the target note.":"Turn on a voice source below, then sing."; }
+    return;
+  }
+  var mf=freqToMidiF(f);
+  $("youNote").textContent=midiName(mf);
+  $("youHz").textContent=f.toFixed(1)+" Hz";
+  var cc=Math.round(c);
+  $("youCents").textContent=(cc>0?"+":"")+cc+" cents";
+  var word, cls;
+  if(Math.abs(c)<=10){ word="locked in — hold it right there"; cls="good"; }
+  else if(Math.abs(c)<=25){ word=(c<0?"a hair flat — in the window, hold it":"a hair sharp — in the window, hold it"); cls="good"; }
+  else if(c<0){ word=(Math.abs(c)<=60?"flat — a little low, nudge up":"well flat — sing higher, think the note first"); cls="low"; }
+  else { word=(Math.abs(c)<=60?"sharp — a little high, ease down":"well sharp — sing lower, soften the push"); cls="high"; }
+  $("youWord").textContent=word;
+  if(!state.matchedThisTarget){ v.className="verdict "+cls; v.textContent=(cc>0?"+":"")+cc+" cents — "+word+"."; }
+}
+function drawScope(){
+  var cv=$("scope"), g=cv.getContext("2d");
+  var W=cv.width,H=cv.height, mid=H/2, pxPerCent=H/2/120;
+  g.clearRect(0,0,W,H);
+  /* window band ±25 cents */
+  g.fillStyle="rgba(76,201,126,.28)";
+  g.fillRect(0,mid-25*pxPerCent,W,50*pxPerCent);
+  /* ±50 guides */
+  g.strokeStyle="rgba(255,255,255,.18)"; g.lineWidth=1;
+  [-100,-50,50,100].forEach(function(cc){ g.beginPath(); g.moveTo(0,mid-cc*pxPerCent); g.lineTo(W,mid-cc*pxPerCent); g.stroke(); });
+  /* target line */
+  g.strokeStyle="#f0a33c"; g.lineWidth=3;
+  g.beginPath(); g.moveTo(0,mid); g.lineTo(W,mid); g.stroke();
+  g.fillStyle="#f0a33c"; g.font="bold 15px system-ui"; g.fillText("TARGET "+midiName(state.targetMidi),10,mid-10);
+  g.fillStyle="rgba(255,255,255,.65)"; g.font="12px system-ui";
+  g.fillText("+100¢ sharp",10,16); g.fillText("−100¢ flat",10,H-8);
+  /* trace */
+  var tr=state.trace;
+  if(tr.length>1){
+    g.strokeStyle="#2fbf9f"; g.lineWidth=3; g.beginPath();
+    var started=false;
+    for(var i=0;i<tr.length;i++){
+      var x=(i/239)*W, cc=tr[i];
+      if(cc===null||Math.abs(cc)>130){ started=false; continue; }
+      var y=mid-cc*pxPerCent;
+      if(!started){ g.moveTo(x,y); started=true; } else g.lineTo(x,y);
+    }
+    g.stroke();
+    var last=tr[tr.length-1];
+    if(last!==null&&Math.abs(last)<=130){
+      g.fillStyle=Math.abs(last)<=25?"#4cc97e":"#ffffff";
+      g.beginPath(); g.arc(W-8,mid-last*pxPerCent,6,0,7); g.fill();
+    }
+  } else {
+    g.fillStyle="rgba(255,255,255,.6)"; g.font="16px system-ui";
+    g.fillText(state.source?"Sing — your pitch line will draw here":"Your pitch line draws here once a voice source is on",24,40);
+  }
+}
+
+/* ---------- games ---------- */
+function setTarget(m){
+  state.targetMidi=m; state.matchedThisTarget=false; state.holdMs=0; state.trace=[];
+  $("holdFill").style.width="0%";
+  $("targetNote").textContent=midiName(m);
+  $("targetSub").textContent="Target: "+midiName(m)+" · "+midiToFreq(m).toFixed(1)+" Hz (at A = "+state.ref+" Hz)";
+  if(state.osc&&state.source==="test"){
+    var c=parseFloat($("bend").value)||0;
+    state.osc.frequency.setTargetAtTime(midiToFreq(m)*Math.pow(2,c/1200),ctx().currentTime,0.03);
+  }
+  renderRange(); drawScope();
+}
+function newTarget(){
+  var pool=[45,47,48,50,52,53,55,57,59,60,62,64];
+  var m=pool[Math.floor(Math.random()*pool.length)];
+  if(m===state.targetMidi) m=pool[(pool.indexOf(m)+3)%pool.length];
+  setTarget(m);
+}
+function buildLadder(){
+  var row=$("ladderRow"); row.innerHTML="";
+  LADDER.forEach(function(s,i){
+    var d=document.createElement("div"); d.className="rung"+(i===state.ladderIdx?" now":"")+(i<state.ladderIdx?" done":"");
+    d.textContent=midiName(state.ladderBase+s); row.appendChild(d);
+  });
+  $("ladderStatus").textContent="Rung "+(state.ladderIdx+1)+" of 8 — "+midiName(state.targetMidi)+". Hear it, sing it, hold it.";
+}
+function nextLadder(){
+  state.ladderIdx++;
+  if(state.ladderIdx>=LADDER.length){
+    state.ladderIdx=0; state.ladderBase=Math.min(60,state.ladderBase+2);
+    $("verdict").textContent="🏔️ Top of the ladder! It restarts a step higher.";
+  }
+  setTarget(state.ladderBase+LADDER[state.ladderIdx]);
+  buildLadder(); playTarget();
+}
+function newInterval(){
+  var steps=[2,3,4,5,7,9,12];
+  state.intervalSteps=steps[Math.floor(Math.random()*steps.length)];
+  state.homeMidi=45+Math.floor(Math.random()*6);
+  setTarget(state.homeMidi+state.intervalSteps);
+  $("intervalInfo").textContent="Interval: hidden until you match it — your ears first, names second. Home note: "+midiName(state.homeMidi)+".";
+  playPair();
+}
+function selectGame(game){
+  state.game=game; state.streak=0; $("streakBox").textContent="0";
+  ["match","ladder","interval","range"].forEach(function(k){
+    $("tab-"+k).setAttribute("aria-selected",k===game?"true":"false");
+    $("panel-"+k).style.display=k===game?"block":"none";
+  });
+  $("gameName").textContent="Game: "+{match:"Match the Note",ladder:"Climb the Ladder",interval:"Sing the Interval",range:"Find Your Range"}[game];
+  if(game==="ladder"){ state.ladderIdx=0; setTarget(state.ladderBase+LADDER[0]); buildLadder(); }
+  else if(game==="interval"){ newInterval(); }
+  else if(game==="range"){ setTarget(48); $("targetSub").textContent="Range finder: sing low or high, hold it steady, then save it below. Target line is middle C, just a landmark."; }
+  else { newTarget(); }
+}
+["match","ladder","interval","range"].forEach(function(k){
+  $("tab-"+k).addEventListener("click",function(){ selectGame(k); });
+});
+$("btnHear").addEventListener("click",function(){ if(state.game==="interval") playPair(); else playTarget(); });
+$("btnNew").addEventListener("click",function(){
+  if(state.game==="ladder"){ state.ladderIdx=0; setTarget(state.ladderBase+LADDER[0]); buildLadder(); }
+  else if(state.game==="interval"){ newInterval(); }
+  else newTarget();
+});
+$("btnPair").addEventListener("click",playPair);
+$("btnNewInterval").addEventListener("click",newInterval);
+
+$("btnLow").addEventListener("click",function(){
+  if(!state.currentFreq){ $("verdict").textContent="No pitch heard yet — sing your lowest comfortable note first, then tap save."; return; }
+  rec.lowMidi=Math.round(freqToMidiF(state.currentFreq)); saveRec();
+  $("verdict").textContent="Saved: lowest = "+midiName(rec.lowMidi)+". Now find your highest.";
+});
+$("btnHigh").addEventListener("click",function(){
+  if(!state.currentFreq){ $("verdict").textContent="No pitch heard yet — sing your highest comfortable note first, then tap save."; return; }
+  rec.highMidi=Math.round(freqToMidiF(state.currentFreq)); saveRec();
+  $("verdict").textContent="Saved: highest = "+midiName(rec.highMidi)+". Your map is below.";
+});
+
+/* ---------- settings ---------- */
+function setRef(r){
+  state.ref=r;
+  $("ref440").setAttribute("aria-pressed",r===440?"true":"false");
+  $("ref432").setAttribute("aria-pressed",r===432?"true":"false");
+  setTarget(state.targetMidi);
+}
+$("ref440").addEventListener("click",function(){setRef(440);});
+$("ref432").addEventListener("click",function(){setRef(432);});
+
+$("alias").value=rec.alias||"";
+$("alias").addEventListener("change",function(){ rec.alias=this.value.trim(); saveRec(); });
+
+function applyDial(){
+  var lvl=parseInt($("dial").value,10);
+  document.querySelectorAll("[data-teach]").forEach(function(el){
+    var need=parseInt(el.getAttribute("data-teach"),10);
+    el.style.display=(lvl>=need)?"block":"none";
+  });
+  $("learn").style.display=lvl===0?"none":"block";
+}
+$("dial").addEventListener("change",applyDial);
+
+/* ---------- export / forget / download ---------- */
+function downloadFile(name,text){
+  var b=new Blob([text],{type:"text/plain"}), u=URL.createObjectURL(b);
+  var a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(u); a.remove();},400);
+}
+$("btnExport").addEventListener("click",function(){
+  var lines=["Match the Note — my record","Name/alias: "+(rec.alias||"(none set)"),
+  "Matches held: "+rec.matches,"Best streak: "+rec.best,"Sessions: "+rec.sessions,
+  "Reference pitch last used: A = "+state.ref+" Hz",
+  "Range: "+(rec.lowMidi!=null?midiName(rec.lowMidi):"—")+" to "+(rec.highMidi!=null?midiName(rec.highMidi):"—"),
+  "Exported from this device only. Nothing was ever uploaded."];
+  downloadFile("match-the-note-record.txt",lines.join("\n"));
+});
+$("btnForget").addEventListener("click",function(){
+  rec={alias:"",matches:0,best:0,sessions:0,lowMidi:null,highMidi:null};
+  state.score=0; state.streak=0; $("scoreBox").textContent="0"; $("streakBox").textContent="0";
+  $("alias").value=""; saveRec();
+  try{localStorage.removeItem(KEY);}catch(e){}
+  $("forgetMsg").textContent="Forgotten. Everything this page saved on this device is erased.";
+});
+$("btnDownload").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  downloadFile("match-the-note.html",html);
+});
+
+/* ---------- hold-to-explain + hover explain ---------- */
+var holdTimer=null;
+function showExplain(text){ $("explainText").textContent=text; $("explain").classList.add("show"); }
+$("explainClose").addEventListener("click",function(){ $("explain").classList.remove("show"); });
+document.querySelectorAll("[data-explain]").forEach(function(el){
+  el.addEventListener("pointerdown",function(){
+    holdTimer=setTimeout(function(){ showExplain(el.getAttribute("data-explain")); },550);
+  });
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){
+    el.addEventListener(ev,function(){ if(holdTimer) clearTimeout(holdTimer); });
+  });
+  el.addEventListener("mouseenter",function(){
+    if(window.matchMedia("(hover:hover)").matches){
+      holdTimer=setTimeout(function(){ showExplain(el.getAttribute("data-explain")); },900);
+    }
+  });
+  el.addEventListener("mouseleave",function(){ if(holdTimer) clearTimeout(holdTimer); });
+});
+
+/* ---------- init ---------- */
+renderRecord();
+applyDial();
+setTarget(57);
+drawScope();
+})();
+</script>
+</body>
+</html>
