@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Evidence Board — Detective</title>
+<style>
+  :root{
+    --paper:#f6efe0; --paper2:#efe5cf; --card:#fffaf0; --ink:#211a12; --ink2:#57493a;
+    --line:#c9b892; --cork:#8a6a44; --cork2:#75582f; --string:#b3352b; --string2:#8f271e;
+    --accent:#1f5f5b; --accent2:#174845; --gold:#a97b12; --bad:#a4261f; --good:#2e6b34;
+    --shadow:0 2px 10px rgba(40,26,8,.18); --radius:10px;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#171310; --paper2:#1f1a15; --card:#262019; --ink:#f0e6d2; --ink2:#c4b299;
+      --line:#4a3d2c; --cork:#3a2c1c; --cork2:#2c2114; --string:#e0655a; --string2:#e0655a;
+      --accent:#5db8b0; --accent2:#8fd4cd; --gold:#d9a83e; --bad:#ef8a83; --good:#8fce97;
+      --shadow:0 2px 10px rgba(0,0,0,.5);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:16px}
+  main{max-width:1060px;margin:0 auto;padding:0 16px 48px}
+  h1,h2,h3{font-family:var(--serif);line-height:1.2;margin:0 0 .4em}
+  h1{font-size:clamp(1.7rem,5vw,2.5rem)}
+  h2{font-size:1.45rem;border-bottom:2px solid var(--line);padding-bottom:.3em;margin-top:1.4em}
+  h3{font-size:1.12rem}
+  p{margin:.5em 0}
+  a{color:var(--accent)}
+  button,[role="button"],select,input,textarea,summary{min-height:44px}
+  button{font-family:var(--sans);font-size:.95rem;cursor:pointer;border-radius:8px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent2);color:#fff;font-weight:700}
+  @media (prefers-color-scheme: dark){button.primary{color:#0d2422}}
+  button.danger{border-color:var(--bad);color:var(--bad)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent2)}
+  @media (prefers-color-scheme: dark){button[aria-pressed="true"]{color:#0d2422}}
+  .gesture{display:block;font-size:.72rem;font-weight:400;opacity:.75;letter-spacing:.02em}
+  .freeline{background:var(--accent);color:#fff;padding:10px 16px;font-weight:700;text-align:center;font-size:.98rem}
+  @media (prefers-color-scheme: dark){.freeline{color:#0d2422}}
+  .freeline button{margin-left:10px;min-height:36px;padding:6px 12px;font-weight:700}
+  .hero{padding:22px 0 6px}
+  .hero .sub{font-size:1.06rem;color:var(--ink2);max-width:65ch}
+  .fiction-banner{border:2px dashed var(--gold);background:var(--paper2);border-radius:var(--radius);padding:10px 14px;margin:12px 0;font-size:.95rem}
+  .panel{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:14px 0}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .row>*{flex:0 1 auto}
+  .grow{flex:1 1 200px}
+  label{font-weight:700;font-size:.92rem}
+  input[type="text"],textarea,select{background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:10px;font-size:1rem;font-family:var(--sans)}
+  textarea{width:100%;min-height:74px}
+  .dial{display:flex;gap:6px;flex-wrap:wrap}
+  .compass{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--paper2);border:1.5px solid var(--line);border-radius:var(--radius);padding:10px 14px;margin:14px 0}
+  .compass .rose{font-size:1.5rem;color:var(--string);font-family:var(--serif);line-height:1}
+  .compass a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;border:1.5px solid transparent}
+  .compass a:hover{border-color:var(--accent)}
+  .compass a b{color:var(--string);margin-right:6px;font-family:var(--serif)}
+  .case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .case-card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .case-card.active{border-color:var(--string);border-width:2.5px}
+  .tag{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border:1.5px solid var(--line);border-radius:20px;padding:3px 10px;color:var(--ink2)}
+  .tag.fiction{border-color:var(--gold);color:var(--gold)}
+  .tag.solved{border-color:var(--good);color:var(--good)}
+  .meta{font-size:.88rem;color:var(--ink2)}
+  /* Evidence board */
+  .board-wrap{position:relative;background:var(--cork);background-image:radial-gradient(rgba(0,0,0,.14) 1.2px,transparent 1.3px),radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.1px);background-size:22px 22px,15px 15px;border:10px solid var(--cork2);border-radius:6px;padding:18px;min-height:320px}
+  #stringSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  #boardGrid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px}
+  .node{background:var(--card);color:var(--ink);border-radius:4px;box-shadow:0 4px 8px rgba(0,0,0,.35);padding:12px 12px 10px;cursor:pointer;position:relative;text-align:left;width:100%;border:2px solid transparent;transform:rotate(-.6deg)}
+  .node:nth-child(even){transform:rotate(.7deg)}
+  .node::before{content:"";position:absolute;top:-7px;left:50%;margin-left:-7px;width:14px;height:14px;border-radius:50%;background:var(--string);box-shadow:0 2px 3px rgba(0,0,0,.4);z-index:3}
+  .node.suspect{background:#fdf3d8}
+  @media (prefers-color-scheme: dark){.node.suspect{background:#3a3220}}
+  .node.statement{background:#eef4ea}
+  @media (prefers-color-scheme: dark){.node.statement{background:#24301f}}
+  .node.selected{border-color:var(--string);outline:3px solid var(--string);outline-offset:2px}
+  .node .ntype{font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--string2)}
+  @media (prefers-color-scheme: dark){.node .ntype{color:var(--string)}}
+  .node .ntitle{font-family:var(--serif);font-weight:700;font-size:1rem;line-height:1.25;margin:3px 0}
+  .node .ntext{font-size:.82rem;color:var(--ink2);line-height:1.4}
+  .node .nlinks{font-size:.75rem;font-weight:700;color:var(--accent);margin-top:6px}
+  .empty-board{color:#fff;background:rgba(0,0,0,.35);border-radius:8px;padding:18px;text-align:center;grid-column:1/-1}
+  .board-tools{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .feedback{border-radius:var(--radius);padding:14px 16px;margin:12px 0;border:1.5px solid var(--line);background:var(--paper2)}
+  .feedback.good{border-color:var(--good);border-width:2.5px}
+  .feedback.bad{border-color:var(--bad);border-width:2.5px}
+  .feedback.teach{border-color:var(--gold);border-width:2.5px}
+  .feedback h3{margin-top:0}
+  .suspect-grid,.clue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+  .person,.clueitem{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);padding:14px}
+  .person h3,.clueitem h3{margin-bottom:.15em}
+  .role{color:var(--ink2);font-size:.9rem}
+  .quote{font-style:italic;border-left:4px solid var(--line);padding:4px 0 4px 12px;margin:8px 0;color:var(--ink)}
+  .timeline{list-style:none;padding:0;margin:8px 0}
+  .timeline li{display:flex;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .timeline .t{font-family:var(--serif);font-weight:700;white-space:nowrap;color:var(--string2)}
+  @media (prefers-color-scheme: dark){.timeline .t{color:var(--string)}}
+  .primer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .primer{background:var(--paper2);border:1.5px solid var(--line);border-radius:var(--radius);padding:14px}
+  .primer h3{color:var(--accent)}
+  .notes-list{list-style:none;padding:0}
+  .notes-list li{border-bottom:1px dashed var(--line);padding:8px 0}
+  .chain{list-style:none;counter-reset:chain;padding:0}
+  .chain li{counter-increment:chain;padding:10px 12px 10px 52px;position:relative;background:var(--paper2);border-radius:8px;margin:8px 0}
+  .chain li::before{content:counter(chain);position:absolute;left:12px;top:9px;width:28px;height:28px;border-radius:50%;background:var(--string);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .stat{display:inline-block;background:var(--paper2);border:1.5px solid var(--line);border-radius:8px;padding:8px 14px;margin:4px 4px 4px 0;font-weight:700}
+  .energy{font-weight:800;color:var(--gold)}
+  footer{border-top:2px solid var(--line);margin-top:36px;padding:18px 0 8px;color:var(--ink2);font-size:.9rem}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #detailPanel{border:2.5px solid var(--accent)}
+  @media (max-width:560px){
+    #boardGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .board-wrap{padding:12px;border-width:6px}
+    main{padding:0 10px 40px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="freeline">FREE — always free. No ads, no account, no paywall.
+  <button id="downloadBtn" type="button">Save this page for offline<span class="gesture">Tap to download</span></button>
+</div>
+<main>
+  <div class="hero">
+    <h1>The Evidence Board</h1>
+    <p class="sub">A detective game about <strong>proof, not hunches</strong>. Collect clues, interview suspects, and literally string the evidence together on the corkboard — dot to dot. An accusation only stands if the string you built can hold it up. The stakes in every case are the same: the truth, and clearing the wrongly accused. There is never any money in it.</p>
+    <p class="meta">Every case here is original fiction, written for this page. The country-house case is labelled fiction in big letters, contains no gore, and is a logic puzzle — the mystery is the point.</p>
+  </div>
+
+  <div class="panel" id="setupPanel">
+    <div class="row">
+      <div class="grow">
+        <label for="aliasInput">Your detective name — call yourself anything</label><br>
+        <input type="text" id="aliasInput" value="Detective" maxlength="30" style="width:100%;max-width:320px" autocomplete="off">
+        <span class="gesture">Type to rename yourself. Alias freedom: it never leaves this tab.</span>
+      </div>
+      <div>
+        <label>Teaching dial</label>
+        <div class="dial" role="group" aria-label="Teaching dial">
+          <button type="button" data-teach="0">Off<span class="gesture">Tap to select</span></button>
+          <button type="button" data-teach="1" aria-pressed="true">Gentle<span class="gesture">Tap to select</span></button>
+          <button type="button" data-teach="2">Full coach<span class="gesture">Tap to select</span></button>
+        </div>
+        <span class="gesture">Off = solve cold. Gentle = a nudge when you trip. Full coach = the why, every time.</span>
+      </div>
+      <div>
+        <label>Interview energy budget</label><br>
+        <button type="button" id="budgetBtn" aria-pressed="true">Budget: ON<span class="gesture">Tap to toggle</span></button>
+        <span class="gesture">Where a case sets one, each first interview costs 1 energy. Turn it off to play at your own pace.</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="compass" aria-label="Compass">
+    <span class="rose" aria-hidden="true">✦</span>
+    <a href="#cases"><b>N</b> Cases</a>
+    <a href="#boardSection"><b>E</b> Evidence Board</a>
+    <a href="#interviews"><b>S</b> Interviews</a>
+    <a href="#notebook"><b>W</b> Notebook</a>
+    <a href="#guide">Guide</a>
+    <a href="#record">Your Record</a>
+  </nav>
+
+  <section id="guide">
+    <h2>How to work a case</h2>
+    <div class="primer-grid">
+      <div class="primer"><h3>1 · Gather</h3><p>Collect the physical clues at the scene and interview every suspect. Interviews add their <em>statement cards</em> to the board. A statement is a claim — not yet a fact.</p></div>
+      <div class="primer"><h3>2 · String it together</h3><p>On the board, <strong>tap one card, then tap another</strong> to run string between them. Tap the pair again to cut the string. Hold a card to read it in full. Only connect what you can <em>show</em> connects.</p></div>
+      <div class="primer"><h3>3 · Accuse — with a chain</h3><p>Pick a suspect in the Accuse panel and make the accusation. It stands only if your string links that suspect to the key evidence. A guess gets refused, and the refusal tells you why.</p></div>
+      <div class="primer"><h3>Consequences, stated up front</h3><p>A wrong or unsupported accusation rattles an innocent person and costs the case: <strong>each one costs 2 energy (when the budget is on) and adds a strike. Three strikes and the case goes cold</strong> — witnesses stop talking and you must start the case over. The board never lies to save you.</p></div>
+    </div>
+    <div class="primer-grid" style="margin-top:12px">
+      <div class="primer"><h3>Evidence vs assumption</h3><p>A connection you can <strong>show</strong> (“the register has his name at 3:55”) is evidence. A connection you merely <strong>believe</strong> (“he seems shifty”) is an assumption. String is for the first kind only.</p></div>
+      <div class="primer"><h3>Motive is not proof</h3><p>Motive says someone <em>wanted</em> it done. It never says they <em>did</em> it. Every case here plants a loud motive on an innocent person. Check their alibi before you string them up.</p></div>
+      <div class="primer"><h3>Timelines</h3><p>Lay the times end to end. Most lies die on a timeline: a person cannot be carrying a violin case at 4:22 and “never near the boiler room” at the same time.</p></div>
+      <div class="primer"><h3>Alibi checking</h3><p>An alibi is a claim until something independent backs it — a witness, a record, a camera. A backed alibi clears a suspect even when their motive screams.</p></div>
+    </div>
+  </section>
+
+  <section id="cases">
+    <h2>Cases — in order, they ramp</h2>
+    <p class="meta">Case 1 is a theft with 3 suspects. Case 2 adds a fourth suspect, an energy budget, and a trap about shared knowledge. Case 3 is the country-house murder mystery: 5 suspects, 11 pieces of evidence (6 at the scene, 5 statements), and the loudest motive in the drawer belongs to an innocent woman.</p>
+    <div class="case-grid" id="caseGrid"></div>
+  </section>
+
+  <section id="caseArea" hidden>
+    <h2 id="caseTitle">Case</h2>
+    <div id="fictionSlot"></div>
+    <div class="panel">
+      <h3>The brief</h3>
+      <p id="caseBrief"></p>
+      <p id="caseStakes" class="meta"></p>
+      <p id="caseStatusLine" class="meta"></p>
+      <div class="row">
+        <span class="stat">Day <span id="dayNum">1</span></span>
+        <span class="stat">Energy <span class="energy" id="energyNum">—</span></span>
+        <span class="stat">Strikes <span id="strikeNum">0</span> / 3</span>
+        <button type="button" id="restBtn">Rest — start a new day<span class="gesture">Tap to refill energy</span></button>
+        <button type="button" id="restartBtn" class="danger">Restart this case<span class="gesture">Tap to wipe this case's board</span></button>
+      </div>
+      <h3 style="margin-top:16px">Timeline — as the case gives it to you</h3>
+      <ul class="timeline" id="timelineList"></ul>
+    </div>
+
+    <h2>The scene — collect the physical clues</h2>
+    <p class="meta">Tap “Add to board” to pin a clue to the corkboard. What you don't pin, you can't string.</p>
+    <div class="clue-grid" id="sceneGrid"></div>
+
+    <section id="interviews">
+      <h2>Interviews</h2>
+      <p class="meta">Tap to interview. A first interview costs 1 energy where the case sets a budget; re-reading a statement is always free. Statements can contradict each other — and the physical clues. Watch for it.</p>
+      <div class="suspect-grid" id="suspectGrid"></div>
+    </section>
+
+    <section id="boardSection">
+      <h2>The Evidence Board — dot to dot</h2>
+      <p class="meta"><strong>Tap a card to select it, then tap a second card to string them together.</strong> Tap a linked pair again to cut the string. <strong>Hold a card</strong> (or press and keep pressing) to read it in full and see why it might matter.</p>
+      <div class="board-tools">
+        <button type="button" id="checkChainBtn" class="primary">Check my chain<span class="gesture">Tap to test the string</span></button>
+        <button type="button" id="clearStringBtn">Cut all string<span class="gesture">Tap to clear every link</span></button>
+        <span class="stat" id="linkCount">0 links</span>
+        <span class="stat" id="contraCount">0 contradictions found</span>
+      </div>
+      <div class="board-wrap" id="boardWrap">
+        <svg id="stringSvg" aria-hidden="true"></svg>
+        <div id="boardGrid"></div>
+      </div>
+      <div id="boardFeedback" aria-live="polite"></div>
+      <div class="panel" id="detailPanel" hidden>
+        <h3 id="detailTitle"></h3>
+        <p class="tag" id="detailType"></p>
+        <p id="detailText"></p>
+        <p id="detailWhy" class="meta"></p>
+        <button type="button" id="detailClose">Close<span class="gesture">Tap to close</span></button>
+      </div>
+    </section>
+
+    <section id="notebook">
+      <h2>Notebook</h2>
+      <div class="panel">
+        <p class="meta">Your own words. Detectives write it down because memory edits itself. Notes live in this tab only — export them below if you want to keep them.</p>
+        <label for="noteInput">Add a note</label>
+        <textarea id="noteInput" placeholder="e.g. June's motive is loud but twelve people saw her on stage…"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button type="button" id="addNoteBtn" class="primary">Add note<span class="gesture">Tap to save to notebook</span></button>
+        </div>
+        <ul class="notes-list" id="notesList"></ul>
+        <h3 style="margin-top:14px">Case log</h3>
+        <ul class="notes-list" id="logList"></ul>
+      </div>
+    </section>
+
+    <section id="accuse">
+      <h2>Make the accusation</h2>
+      <div class="panel">
+        <p>Name the culprit. The accusation is tested against your string: <strong>the suspect must be linked to the key evidence, and any contradiction the chain depends on must be strung too.</strong> If the chain can't hold it, the accusation is refused and you'll be told exactly what's missing.</p>
+        <div class="row" id="accuseChips" role="group" aria-label="Choose who to accuse"></div>
+        <div id="chainSummary" class="feedback" hidden></div>
+        <div class="row">
+          <button type="button" id="accuseBtn" class="primary">Make the accusation<span class="gesture">Tap to accuse the selected suspect</span></button>
+        </div>
+        <div id="accuseFeedback" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="debrief" hidden>
+      <h2>Case closed — the full true chain</h2>
+      <div class="panel">
+        <p id="debriefIntro"></p>
+        <ol class="chain" id="chainList"></ol>
+        <p id="debriefOutro"></p>
+      </div>
+    </section>
+  </section>
+
+  <section id="record">
+    <h2>Your record — on this device, in this tab</h2>
+    <div class="panel">
+      <p><span class="stat">Cases solved: <span id="recSolved">0</span> / 3</span>
+      <span class="stat">Accusations made: <span id="recAcc">0</span></span>
+      <span class="stat">Contradictions found: <span id="recContra">0</span></span>
+      <span class="stat">Notes written: <span id="recNotes">0</span></span></p>
+      <p class="meta">Your record, notes, and board live only in this tab's memory — nothing is sent anywhere and there is no account. Export a copy to keep it; Forget wipes it all.</p>
+      <div class="row">
+        <button type="button" id="exportBtn" class="primary">Export my record<span class="gesture">Tap to download a text file</span></button>
+        <button type="button" id="forgetBtn" class="danger">Forget everything<span class="gesture">Tap to wipe record, notes &amp; boards</span></button>
+      </div>
+      <p id="forgetMsg" class="meta" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Copyleft.</strong> This page and its original cases are shared under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a> — copy it, teach with it, build on it; keep the same freedom attached. Code: GPL. No ads — ever. Nothing on this page tracks you.</p>
+    <p>Why → How → Act: <em>why</em> a chain holds is shown in every debrief; <em>how</em> to build one is the game itself; the <em>act</em> is yours, at the accusation panel.</p>
+    <p class="meta">All cases are original fiction. Any resemblance to real people is coincidence; no real crime is depicted.</p>
+  </footer>
+</main>
+<script>
+"use strict";
+/* ============ CASE DATA — all original fiction ============ */
+var CASES = [
+{
+  id:"c1", num:1, title:"The Missing Violin", kind:"Theft · Starter case", fiction:false,
+  suspectsCount:3, cluesCount:8, energyMax:0,
+  brief:"Anya's violin vanished from the locked practice room at Riverton School between 4:00 and 4:40 pm, while the orchestra rehearsed next door. The window was never forced. Somebody is not telling the whole story.",
+  stakes:"Stakes: Anya plays Friday only if the violin is found — and whoever is wrongly accused carries that label at school. The truth is the prize. There is no reward money.",
+  timeline:[
+    ["3:55 pm","The spare practice-room key is signed out of the office."],
+    ["4:00 pm","Samira locks the practice room. Rehearsal begins next door."],
+    ["4:22 pm","The corridor camera records someone carrying a long, case-shaped bundle toward the boiler room."],
+    ["4:38 pm","The spare key is signed back in."],
+    ["4:45 pm","Rehearsal ends. The practice room is opened: the violin is gone."]
+  ],
+  suspects:[
+    {id:"june", name:"June Park", role:"Fellow violinist", motive:"Passed over for the solo Anya won. The loudest motive in the building.",
+     statement:"I was on stage rehearsing from 4:00 to 4:45. The whole orchestra saw me. I never left my chair.",
+     why:"June's statement is a claim. It becomes an alibi only when something independent backs it — look for the witnesses clue."},
+    {id:"theo", name:"Theo Alvarez", role:"Stage crew", motive:"No obvious motive. Friendly, helpful, first to volunteer to search.",
+     statement:"I signed in, tuned the piano at 4:05, then stayed in the hall the whole time. I never went near the boiler room — I don't even have a key.",
+     why:"Theo makes two checkable claims: no key, and never near the boiler room. Checkable claims are gifts — check them."},
+    {id:"samira", name:"Samira Khan", role:"Music teacher", motive:"None known. She reported the theft herself, immediately.",
+     statement:"I locked the practice room at 4:00 myself. Only two keys exist: mine, on my ring, and the spare in the office.",
+     why:"Samira's statement sets the board: if only two keys exist, the key register becomes the most important paper in the case."}
+  ],
+  clues:[
+    {id:"key", title:"Spare Key Register", type:"Document", text:"Office register, in ink: the spare practice-room key was signed out at 3:55 pm by T. Alvarez, and signed back in at 4:38 pm.",
+     why:"A record nobody wrote for your benefit. It directly tests Theo's claim that he has no key."},
+    {id:"camera", title:"Hall Camera Still — 4:22 pm", type:"Timeline · Photo", text:"Corridor camera, 4:22 pm: Theo Alvarez carries a long, case-shaped bundle toward the boiler room.",
+     why:"A photo doesn't argue. Put it next to Theo's statement and read both out loud."},
+    {id:"boiler", title:"The Empty Case", type:"Physical", text:"Anya's violin case, found hidden behind the boiler — empty. The violin itself is gone.",
+     why:"Proves the bundle's destination mattered: the case really was taken to the boiler room. It doesn't, by itself, say who carried it."},
+    {id:"latch", title:"Window Latch", type:"Physical", text:"The practice-room window latch is clean and undamaged. It was never forced. Whoever took the violin came through the door — with a key.",
+     why:"This clue kills the 'outside thief' theory and points the whole case at the key register."},
+    {id:"alibi_june", title:"Twelve Witnesses", type:"Alibi · Timeline", text:"Twelve orchestra members confirm, separately: June Park was on stage, playing, from 4:00 to 4:45 without a break.",
+     why:"This is what a backed alibi looks like. June's motive is real — and she still didn't do it. Motive is not proof."}
+  ],
+  culprit:"theo",
+  requiredLinks:[["theo","key"],["theo","camera"],["stmt_theo","camera"]],
+  requiredLabels:{"key|theo":"Theo ↔ the Spare Key Register (he did have a key)","camera|theo":"Theo ↔ the Camera Still (he carried the bundle)","camera|stmt_theo":"Theo's Statement ↔ the Camera Still (the contradiction)"},
+  contradictions:[["stmt_theo","camera","Theo said he never went near the boiler room and had no key. The camera shows him carrying a case-shaped bundle toward that boiler room at 4:22. A statement against a photo: the photo wins. That is a contradiction you can show — evidence, not a feeling."]],
+  motiveTrap:"june",
+  debriefIntro:"Theo Alvarez took the violin. Here is the chain, link by link, exactly as your string had to prove it:",
+  trueChain:[
+    "3:55 pm — Theo signs out the spare practice-room key (Key Register). His 'I don't even have a key' is false from the first link.",
+    "4:00 pm — Samira locks the room. Only two keys exist; hers never left her ring. The spare was out — with Theo.",
+    "The window latch was never forced, so the door was the way in — and the door needed that key.",
+    "4:22 pm — The corridor camera catches Theo carrying a case-shaped bundle toward the boiler room, where Anya's empty case was found hidden.",
+    "His statement ('never near the boiler room') collapses against the camera. A lie about the key, a lie about the boiler room, and the physical case to match."
+  ],
+  debriefOutro:"Confronted with the chain, Theo showed where he had stashed the violin — in the props cupboard, 'as a joke that went too far.' Anya plays Friday. And June Park — the girl with the motive — is cleared in front of the whole orchestra, because twelve witnesses put her on stage the entire time. That is what the string is for."
+},
+{
+  id:"c2", num:2, title:"The Night Till at Marigold Bakery", kind:"Theft · Intermediate", fiction:false,
+  suspectsCount:4, cluesCount:10, energyMax:6,
+  brief:"Marigold Bakery's Sunday till is $340 short on Monday morning. The shop was locked all night, nothing was forced — but the alarm log says the back door opened at 11:47 pm, on a staff code. Everyone on staff is suddenly very helpful.",
+  stakes:"Stakes: the owner, Marta, trusts her small crew like family and is ready to fire the person she's angriest at — who may be innocent. The truth is the prize. There is no reward money.",
+  timeline:[
+    ["6:00 pm","Priya finishes the bake, sets the alarm, and leaves."],
+    ["9:00 pm","Deniz says he dropped the delivery van and went straight home."],
+    ["10:15 pm","Rosa's night-class register is signed; class runs to midnight across town."],
+    ["11:30 pm","The van log is signed — the van came back much later than 9:00."],
+    ["11:40–11:55 pm","The shop camera is unplugged."],
+    ["11:47 pm","The back door opens on staff code 3."]
+  ],
+  suspects:[
+    {id:"rosa", name:"Rosa Lindqvist", role:"Cashier, owner's niece", motive:"Asked Marta for a pay advance last week and was refused. Marta is furious at her.",
+     statement:"I was at my night class until midnight — the register has my name, and the class is across town. I never touched that till.",
+     why:"Rosa has the motive Marta is staring at. Her alibi claim is checkable: the class register and the roster clue."},
+    {id:"deniz", name:"Deniz Yilmaz", role:"Delivery driver", motive:"No known motive. Easy-going; offered to 'check the locks' for Marta.",
+     statement:"I dropped the van at 9:00 and went straight home. I wasn't anywhere near the bakery after dark.",
+     why:"Two checkable claims again: the van's return time, and where he was after dark. The van log is a document — documents don't take sides."},
+    {id:"priya", name:"Priya Nair", role:"Baker", motive:"None known. She set the alarm and found nothing wrong at 6 pm.",
+     statement:"I left at six, alarm set. One thing, though — on Saturday, Deniz asked me twice which camera covered the till. Said it had been 'playing up'.",
+     why:"Priya's statement is a pointer, not proof: it tells you the unplugged camera is worth a hard look, and who knew about it."},
+    {id:"walt", name:"Walt Berger", role:"Cleaner", motive:"None known. Works Saturdays only, by his own roster.",
+     statement:"I cleaned Saturday, that's my day. And I'll tell you for free: the break-room board had every staff code written on it, big as you like. Anyone on staff could read code 3.",
+     why:"Walt just broke the lazy theory. If everyone could read code 3, the alarm log alone proves almost nothing. Evidence vs assumption — the code is the assumption trap."}
+  ],
+  clues:[
+    {id:"alarm", title:"Alarm Log — 11:47 pm", type:"Document", text:"Back door opened 11:47 pm Sunday, staff code 3, no force, door closed again at 11:53 pm.",
+     why:"Real evidence — but Walt's statement caps what it can prove. A code everyone could read points at everyone, which is to say: no one."},
+    {id:"codes", title:"Break-Room Board", type:"Physical", text:"A whiteboard in the break room lists every staff code in marker, including code 3, Deniz's. It has clearly been up for months.",
+     why:"Pin this next to the alarm log. Together they teach the lesson: a true clue can still be a weak clue."},
+    {id:"cameragap", title:"The Unplugged Camera", type:"Physical", text:"The till camera's plug, behind the flour sacks, was pulled out. Its last frame is 11:40 pm; it resumes at 11:55 pm. Someone who knew the shop knew exactly where that plug was.",
+     why:"Priya's statement gives this clue its weight: only one person had been asking which camera covered the till."},
+    {id:"tread", title:"Boot Tread in the Flour", type:"Physical", text:"A clear boot print in spilled flour by the back door: a zig-zag tread. That tread is the delivery-boot pattern — issued only to delivery staff. Only one delivery driver works at Marigold.",
+     why:"This is the physical link the alarm log couldn't give you: not a code anyone could borrow, but a boot only one person wears."},
+    {id:"roster", title:"Van Log — Sunday", type:"Document · Timeline", text:"The delivery van's log, signed in Deniz Yilmaz's hand: van returned Sunday at 11:30 pm — two and a half hours after he says he dropped it at 9:00 and went home.",
+     why:"Set this beside Deniz's statement. 'Home by nine' cannot survive a signature that says 11:30."},
+    {id:"classreg", title:"Night-Class Register", type:"Alibi · Document", text:"Rosa Lindqvist signed into her night class at 6:30 pm across town; the tutor confirms she was present until midnight.",
+     why:"Rosa's alibi, independently backed. The advance she asked for is a motive — and motive is not proof."}
+  ],
+  culprit:"deniz",
+  requiredLinks:[["deniz","tread"],["deniz","roster"],["stmt_deniz","roster"]],
+  requiredLabels:{"deniz|tread":"Deniz ↔ the Boot Tread (his delivery boots, in the flour, at night)","deniz|roster":"Deniz ↔ the Van Log (he was out with the van until 11:30)","roster|stmt_deniz":"Deniz's Statement ↔ the Van Log (the contradiction: 'home by nine')"},
+  contradictions:[["stmt_deniz","roster","Deniz said he dropped the van at 9:00 and went straight home. His own signature on the van log says 11:30 pm. A statement against a signed document — the document wins. Contradiction found, and this one you can show."]],
+  motiveTrap:"rosa",
+  debriefIntro:"Deniz Yilmaz took the $340. The chain, link by link:",
+  trueChain:[
+    "11:30 pm — Deniz signs the van back in, two and a half hours after he claims he went home (Van Log). His alibi is broken by his own handwriting.",
+    "He knew the shop: on Saturday he asked Priya twice which camera covered the till — and at 11:40 that camera's plug was pulled.",
+    "11:47 pm — The back door opens on staff code 3. True, but weak: the codes were on a whiteboard for anyone to read. On its own, this link would not hold — and this case is built to teach you that.",
+    "The flour by the back door holds a zig-zag delivery-boot print. Only delivery staff wear those boots. Only one delivery driver works at Marigold.",
+    "Camera knowledge + van log + boot tread: opportunity, presence, and identity, each one shown, none of them assumed."
+  ],
+  debriefOutro:"Deniz admitted it when the tread photo was put next to the van log — he had debts he was ashamed of, and the money was repaid in full. Rosa kept her job and got an apology from Marta in front of the whole crew: the advance Rosa asked for was a motive, and Marta nearly fired an innocent woman over it. Motive is not proof."
+},
+{
+  id:"c3", num:3, title:"Death at Ashford House", kind:"Country-house murder mystery · FICTION", fiction:true,
+  suspectsCount:5, cluesCount:11, energyMax:8,
+  brief:"FICTION — an invented country-house mystery in the classic style. Lord Ashford was found dead in his library after dinner. The doctor's finding, stated plainly and without gore: his evening tea carried a doubled dose of his own heart medicine — a fatal dose. No wounds, no struggle, the library door locked from the outside by the household's ordinary routine. Five people were in the house. One of them prepared that tea.",
+  stakes:"Stakes: an innocent woman stands to be ruined by gossip before any court sits — she inherits, and everyone can do that arithmetic. The truth is the prize. There is no reward money. (And it is fiction: nobody real is accused of anything.)",
+  timeline:[
+    ["6:00 pm","Mrs Bell counts Lord Ashford's heart tablets: six in the bottle. His dose is one, with his evening tea."],
+    ["7:30 pm","Mr Harrow says he left for the village."],
+    ["8:00–8:40 pm","Clara Ashford is on a telephone call to London, in the drawing room."],
+    ["8:10 pm","A tea tray is carried to the library."],
+    ["9:00 pm","Mr Harrow says he returned."],
+    ["9:30 pm","Lord Ashford is found in the library. The tablet bottle now holds four."]
+  ],
+  suspects:[
+    {id:"clara", name:"Clara Ashford", role:"The niece — and the heir", motive:"She inherits Ashford House. Half the county has already convicted her over breakfast.",
+     statement:"I was on the telephone to London from eight until twenty to nine, in the drawing room. Mrs Bell brought me a shawl at half past — she saw me there. I never went near the library or the tea.",
+     why:"Clara's motive is the loudest in the case, which is exactly why you must check her alibi hardest. Gossip is not a timeline."},
+    {id:"harrow", name:"Mr Harrow", role:"Secretary to Lord Ashford", motive:"No gossip attaches to him. Quiet, indispensable, trusted with every paper in the house.",
+     statement:"I left the house at half past seven for the village and returned at nine. I never took Lord Ashford his tea — he always made it himself.",
+     why:"Two checkable claims: his whereabouts at 8:10, and who carried the tea. The household saw the tray carried. By whom?"},
+    {id:"bell", name:"Mrs Bell", role:"Housekeeper of thirty years", motive:"None. She counted the tablets at six, as she always did.",
+     statement:"I counted six tablets at six o'clock, same as always. And I'll say what I saw: at ten past eight, Mr Harrow carried the tea tray to the library himself. I thought it odd — his lordship always made his own.",
+     why:"Mrs Bell's statement is an eyewitness claim about the tray. If it stands, it collides head-on with Harrow's statement. String them together and see."},
+    {id:"tom", name:"Tom Wren", role:"Gardener", motive:"Was given notice last week — a week's wages owed, and angry about it. The second motive in the drawer.",
+     statement:"I was in the potting shed till seven, then at the inn in the village till closing. The landlord and six regulars will tell you. I never came up to the house that night.",
+     why:"Tom's alibi is checkable at the inn — and the timeline of the tea (8:10, inside the house) is checkable against it."},
+    {id:"fell", name:"Dr Fell", role:"Family doctor, dinner guest", motive:"None known. He certified the death and telephoned the police himself.",
+     statement:"I was at the card table with Lord Ashford's brother from dinner until we found him. The medicine was his own prescription, one tablet — I counted the bottle with Mrs Bell's list myself afterward: it is short by two, and his dose accounts for only one of them.",
+     why:"Dr Fell corroborates the tablet count — the physical spine of the case. Two extra tablets went somewhere. Into a cup of tea, says the residue."}
+  ],
+  clues:[
+    {id:"codicil", title:"The New Codicil", type:"Document", text:"A codicil dated that very day, leaving the management of the estate — and a generous annual fee — to Mr Harrow. The solicitor, by telephone, says the signature shakes in the wrong places: it is a traced copy of Lord Ashford's hand.",
+     why:"A forged document is motive AND method in one: it only pays out if Lord Ashford dies before he can disown it. And only one person in the house traces signatures for a living — the secretary who writes his letters."},
+    {id:"medicine", title:"The Tablet Count", type:"Physical", text:"Six tablets at 6:00 pm (Mrs Bell's count, Dr Fell's list agrees). Four remain — two are gone. His dose was one. So one extra tablet left that bottle and went somewhere it was never prescribed to go.",
+     why:"The arithmetic of the case: 6 counted − 4 remaining = 2 gone. One was his proper dose. The second tablet is the crime: dissolved into the same tea, it doubles the dose."},
+    {id:"tea", title:"The Library Tea", type:"Physical", text:"The library cup: Lord Ashford took his tea unsweetened, always. This cup carries a sweet residue — sugar stirred in, the classic way to mask a bitter dissolved taste.",
+     why:"The tea was prepared by someone, prepared carefully, and prepared to hide something. Combined with the tray sighting, it names the route: tray, library, cup."},
+    {id:"phone", title:"The Telephone Record", type:"Alibi · Document", text:"The exchange's record: a call from Ashford House to London, connected 8:00 pm, ended 8:40 pm. Mrs Bell confirms Clara was on it, in the drawing room, the whole time.",
+     why:"Clara's alibi, independently backed by a record and a witness. She could not have carried a tray at 8:10. The heir's motive is loud — and she still didn't do it."},
+    {id:"inn", title:"The Inn's Word", type:"Alibi", text:"The landlord and six regulars at the village inn place Tom Wren there from seven until closing, a mile from the house.",
+     why:"Tom's notice and his anger are real. So is his alibi. Two motives in this case, two innocent people carrying them."},
+    {id:"letter", title:"The Burned Letter", type:"Document · Red herring", text:"In the library grate, a half-burned letter in a woman's hand: '…you cannot leave me with nothing…' It is twenty years old — from Lord Ashford's late sister, about a different quarrel entirely.",
+     why:"A genuine clue about a real sorrow — and nothing to do with that night. Not every true thing is evidence in this case. Detectives learn to set a true thing down when it doesn't connect."}
+  ],
+  culprit:"harrow",
+  requiredLinks:[["harrow","codicil"],["harrow","medicine"],["stmt_harrow","stmt_bell"]],
+  requiredLabels:{"codicil|harrow":"Mr Harrow ↔ the Forged Codicil (his traced signature, his fee)","harrow|medicine":"Mr Harrow ↔ the Tablet Count (the missing tablets and the tea he carried)","bell|stmt_harrow_PLACEHOLDER":""},
+  contradictions:[["stmt_harrow","stmt_bell","Harrow said he was in the village and never took the tea. Mrs Bell watched him carry the tea tray to the library at 8:10. Statement against statement — so you do not pick the one you like; you check it against the physical clues. The sweetened cup and the missing tablets side with Mrs Bell."]],
+  motiveTrap:"clara",
+  debriefIntro:"Mr Harrow, the secretary, killed Lord Ashford — on paper first, then in the teacup. The full true chain:",
+  trueChain:[
+    "The codicil: dated that day, it pays Harrow a generous fee to manage the estate — but only if Lord Ashford dies before disowning it. The signature is traced. Harrow, who writes his employer's letters, is the one hand in the house that could trace it.",
+    "6:00 pm — Six tablets in the bottle; afterwards, four. Two left the bottle: one was his proper dose, and the extra one, dissolved into his tea alongside it, doubled it.",
+    "The library cup is sweetened, though Lord Ashford never took sugar — a taste being masked.",
+    "8:10 pm — Mrs Bell sees Harrow carry the tray to the library, flatly contradicting his 'I was in the village; he made his own tea.' The physical clues side with her.",
+    "Clara, the heir, was on a recorded telephone call from 8:00 to 8:40 with a witness in the room. Tom was at the inn, a mile away, all evening. Both motives, both innocent."
+  ],
+  debriefOutro:"Harrow confessed when the codicil was laid beside the tablet count: he was in debt, and the forged paper was worthless while Lord Ashford lived. Clara Ashford kept her house and her name — the record of a telephone call did what no amount of protesting could. That is the whole craft: a connection you can show beats a story everyone believes."
+}
+];
+/* Fix c3 requiredLabels (statement pair key is computed dynamically) */
+CASES[2].requiredLabels = {"codicil|harrow":"Mr Harrow ↔ the Forged Codicil (his traced signature, his fee)","harrow|medicine":"Mr Harrow ↔ the Tablet Count (the missing tablets and the tea he carried)","stmt_bell|stmt_harrow":"Harrow's Statement ↔ Mrs Bell's Statement (the tray contradiction)"};
+
+/* ============ STATE (in-tab memory only) ============ */
+var S = {
+  alias:"Detective", teaching:1, budgetOn:true,
+  caseId:null, collected:{}, interviewed:{}, links:{},
+  selectedNode:null, accuseTarget:null, strikes:0, energy:0, day:1,
+  solved:{}, accusations:0, contradictions:{}, notes:[], log:[],
+  forgetArmed:false
+};
+function cur(){ for(var i=0;i<CASES.length;i++){ if(CASES[i].id===S.caseId) return CASES[i]; } return null; }
+function linkKey(a,b){ return [a,b].sort().join("|"); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function el(id){ return document.getElementById(id); }
+function teach(level){ return S.teaching>=level; }
+function suspectById(c,id){ for(var i=0;i<c.suspects.length;i++) if(c.suspects[i].id===id) return c.suspects[i]; return null; }
+function clueById(c,id){ for(var i=0;i<c.clues.length;i++) if(c.clues[i].id===id) return c.clues[i]; return null; }
+function nodeInfo(c,nid){
+  if(nid.indexOf("stmt_")===0){ var s=suspectById(c,nid.slice(5)); return s?{title:s.name+" — Statement",type:"Statement",text:"“"+s.statement+"”",why:s.why}:null; }
+  var sp=suspectById(c,nid); if(sp) return {title:sp.name,type:"Suspect",text:sp.role+". Motive note: "+sp.motive,why:sp.why};
+  var cl=clueById(c,nid); if(cl) return {title:cl.title,type:cl.type,text:cl.text,why:cl.why};
+  return null;
+}
+function boardNodeIds(c){
+  var ids=[]; c.suspects.forEach(function(s){ ids.push(s.id); });
+  c.clues.forEach(function(cl){ if(S.collected[cl.id]) ids.push(cl.id); });
+  c.suspects.forEach(function(s){ if(S.interviewed[s.id]) ids.push("stmt_"+s.id); });
+  return ids;
+}
+function addLog(msg){ S.log.unshift(msg); renderLog(); }
+
+/* ============ RENDER: CASES ============ */
+function renderCases(){
+  var g=el("caseGrid"); g.innerHTML="";
+  CASES.forEach(function(c){
+    var d=document.createElement("div"); d.className="case-card"+(S.caseId===c.id?" active":"");
+    var tags='<span class="tag">'+esc(c.kind)+'</span> ';
+    if(c.fiction) tags+='<span class="tag fiction">Fiction</span> ';
+    if(S.solved[c.id]) tags+='<span class="tag solved">Solved ✓</span>';
+    d.innerHTML="<div>"+tags+"</div><h3>Case "+c.num+": "+esc(c.title)+"</h3>"+
+      '<p class="meta">'+c.suspectsCount+" suspects · "+c.cluesCount+" pieces of evidence"+(c.energyMax?(" · Interview budget: "+c.energyMax+" energy/day"):" · No energy budget — a training case")+"</p>"+
+      "<p>"+esc(c.brief.slice(0,150))+"…</p>";
+    var b=document.createElement("button"); b.type="button"; b.className="primary";
+    b.innerHTML=(S.caseId===c.id?"Case open":"Open this case")+'<span class="gesture">Tap to open</span>';
+    (function(cid){ b.addEventListener("click",function(){ openCase(cid); }); })(c.id);
+    d.appendChild(b); g.appendChild(d);
+  });
+}
+function openCase(cid){
+  if(S.caseId!==cid){
+    S.caseId=cid; S.collected={}; S.interviewed={}; S.links={}; S.selectedNode=null;
+    S.accuseTarget=null; S.strikes=0; S.day=1; S.contradictions={}; S.log=[];
+    var c=cur(); S.energy=c.energyMax;
+    addLog("Case opened: "+c.title+".");
+  }
+  renderAll();
+  el("caseArea").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderCaseHead(){
+  var c=cur(); if(!c) return;
+  el("caseArea").hidden=false;
+  el("caseTitle").textContent="Case "+c.num+": "+c.title;
+  el("fictionSlot").innerHTML=c.fiction?'<div class="fiction-banner"><strong>FICTION.</strong> This is an invented mystery in the classic country-house style. No real person did any of this, no gore is described — it is a logic puzzle. The fun is the chain.</div>':"";
+  el("caseBrief").textContent=c.brief;
+  el("caseStakes").textContent=c.stakes;
+  el("caseStatusLine").textContent=S.solved[c.id]?"Status: SOLVED — the debrief is at the bottom of this case. You can still revisit the board.":("Status: open. Consequences: each wrong or unsupported accusation costs "+(S.budgetOn&&c.energyMax?"2 energy and ":"")+"adds a strike. Three strikes and the case goes cold.");
+  el("dayNum").textContent=S.day;
+  el("energyNum").textContent=(!S.budgetOn||!c.energyMax)?"No budget":(S.energy+" / "+c.energyMax);
+  el("strikeNum").textContent=S.strikes;
+  var tl=el("timelineList"); tl.innerHTML="";
+  c.timeline.forEach(function(t){ var li=document.createElement("li"); li.innerHTML='<span class="t">'+esc(t[0])+'</span><span>'+esc(t[1])+"</span>"; tl.appendChild(li); });
+  el("debrief").hidden=!S.solved[c.id];
+  if(S.solved[c.id]) renderDebrief();
+}
+function renderScene(){
+  var c=cur(); if(!c) return; var g=el("sceneGrid"); g.innerHTML="";
+  c.clues.forEach(function(cl){
+    var d=document.createElement("div"); d.className="clueitem";
+    if(S.collected[cl.id]){
+      d.innerHTML="<h3>"+esc(cl.title)+'</h3><p class="tag">'+esc(cl.type)+'</p><p>'+esc(cl.text)+'</p><p class="meta">✓ Pinned to the board</p>';
+    } else {
+      d.innerHTML="<h3>"+esc(cl.title)+'</h3><p class="tag">'+esc(cl.type)+'</p><p class="meta">Found at the scene. Not yet on your board.</p>';
+      var b=document.createElement("button"); b.type="button"; b.className="primary";
+      b.innerHTML='Add to board<span class="gesture">Tap to pin this clue</span>';
+      (function(id){ b.addEventListener("click",function(){ S.collected[id]=true; addLog("Pinned to board: "+clueById(cur(),id).title+"."); renderAll(); }); })(cl.id);
+      d.appendChild(b);
+    }
+    g.appendChild(d);
+  });
+}
+function renderSuspects(){
+  var c=cur(); if(!c) return; var g=el("suspectGrid"); g.innerHTML="";
+  c.suspects.forEach(function(s){
+    var d=document.createElement("div"); d.className="person";
+    var h="<h3>"+esc(s.name)+'</h3><p class="role">'+esc(s.role)+"</p><p><strong>Motive note:</strong> "+esc(s.motive)+"</p>";
+    if(S.interviewed[s.id]){
+      h+='<p class="quote">“'+esc(s.statement)+'”</p><p class="meta">✓ Statement card is on the board.</p>';
+    } else {
+      var cost=(S.budgetOn&&c.energyMax)?" · costs 1 energy":"";
+      h+='<p class="meta">Not yet interviewed'+cost+'.</p>';
+      var b=document.createElement("button"); b.type="button"; b.className="primary";
+      b.innerHTML='Interview '+esc(s.name.split(" ")[0])+'<span class="gesture">Tap to interview</span>';
+      (function(sid){ b.addEventListener("click",function(){ interview(sid); }); })(s.id);
+      d.innerHTML=h; d.appendChild(b);
+    }
+    if(S.interviewed[s.id]) d.innerHTML=h;
+    g.appendChild(d);
+  });
+}
+function interview(sid){
+  var c=cur();
+  if(S.budgetOn&&c.energyMax){
+    if(S.energy<=0){ boardFeedback("bad","Out of energy","You have no interview energy left today. Tap “Rest — start a new day” above to refill, or turn the budget off at the top of the page. Real detectives sleep; fictional ones click a button."); return; }
+    S.energy--;
+  }
+  S.interviewed[sid]=true;
+  var s=suspectById(c,sid);
+  addLog("Interviewed "+s.name+". Statement pinned to the board.");
+  if(teach(1)) boardFeedback("teach","New statement on the board","“"+s.statement+"” — remember: a statement is a claim, not a fact. It earns its keep only when a clue backs it — or breaks it.");
+  renderAll();
+}
+/* ============ RENDER: BOARD ============ */
+function renderBoard(){
+  var c=cur(); var grid=el("boardGrid"); grid.innerHTML="";
+  if(!c){ grid.innerHTML='<div class="empty-board">Open a case to start pinning evidence.</div>'; drawStrings(); return; }
+  var ids=boardNodeIds(c);
+  ids.forEach(function(nid){
+    var info=nodeInfo(c,nid); if(!info) return;
+    var isSuspect=!!suspectById(c,nid), isStmt=nid.indexOf("stmt_")===0;
+    var d=document.createElement("div");
+    d.className="node"+(isSuspect?" suspect":"")+(isStmt?" statement":"")+(S.selectedNode===nid?" selected":"");
+    d.setAttribute("role","button"); d.setAttribute("tabindex","0"); d.dataset.nid=nid;
+    var linkN=0; Object.keys(S.links).forEach(function(k){ var p=k.split("|"); if(p[0]===nid||p[1]===nid) linkN++; });
+    d.innerHTML='<span class="ntype">'+esc(info.type)+'</span><div class="ntitle">'+esc(info.title)+'</div><div class="ntext">'+esc(info.text.slice(0,110))+(info.text.length>110?"…":"")+'</div>'+(linkN?'<div class="nlinks">● '+linkN+" string link"+(linkN>1?"s":"")+"</div>":"")+'<span class="gesture">Tap to select · Hold to read</span>';
+    attachNodeGestures(d,nid);
+    grid.appendChild(d);
+  });
+  el("linkCount").textContent=Object.keys(S.links).length+" links";
+  el("contraCount").textContent=Object.keys(S.contradictions).length+" contradictions found";
+  requestAnimationFrame(drawStrings);
+}
+function drawStrings(){
+  var svg=el("stringSvg"), wrap=el("boardWrap"); if(!svg||!wrap) return;
+  var wr=wrap.getBoundingClientRect(); svg.setAttribute("viewBox","0 0 "+wrap.offsetWidth+" "+wrap.offsetHeight);
+  var html="";
+  Object.keys(S.links).forEach(function(k){
+    var p=k.split("|"); var a=wrap.querySelector('[data-nid="'+p[0]+'"]'), b=wrap.querySelector('[data-nid="'+p[1]+'"]');
+    if(!a||!b) return;
+    var ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect();
+    var x1=ra.left-wr.left+ra.width/2, y1=ra.top-wr.top+4, x2=rb.left-wr.left+rb.width/2, y2=rb.top-wr.top+4;
+    var mx=(x1+x2)/2, my=Math.min(y1,y2)+Math.abs(y2-y1)/2+26;
+    html+='<path d="M '+x1+" "+y1+" Q "+mx+" "+my+" "+x2+" "+y2+'" fill="none" stroke="var(--string)" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>';
+  });
+  svg.innerHTML=html;
+}
+function attachNodeGestures(d,nid){
+  var holdTimer=null, held=false;
+  d.addEventListener("pointerdown",function(){ held=false; holdTimer=setTimeout(function(){ held=true; showDetail(nid); },550); });
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ d.addEventListener(ev,function(){ if(holdTimer) clearTimeout(holdTimer); }); });
+  d.addEventListener("click",function(){ if(held){ held=false; return; } nodeTap(nid); });
+  d.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); nodeTap(nid); } });
+}
+function nodeTap(nid){
+  var c=cur(); if(!c) return;
+  if(!S.selectedNode){ S.selectedNode=nid; renderBoard(); return; }
+  if(S.selectedNode===nid){ S.selectedNode=null; renderBoard(); return; }
+  var a=S.selectedNode, b=nid, k=linkKey(a,b); S.selectedNode=null;
+  if(S.links[k]){ delete S.links[k]; addLog("Cut string: "+nodeInfo(c,a).title+" — "+nodeInfo(c,b).title+"."); renderAll(); return; }
+  S.links[k]=true;
+  addLog("Strung: "+nodeInfo(c,a).title+" ↔ "+nodeInfo(c,b).title+".");
+  /* contradiction check */
+  var found=null;
+  c.contradictions.forEach(function(pair){ if(linkKey(pair[0],pair[1])===k) found=pair; });
+  if(found && !S.contradictions[k]){
+    S.contradictions[k]=true;
+    boardFeedback("good","⚡ Contradiction found — and you can show it",found[2]+(teach(2)?" This is the strongest kind of link on the board: two cards that cannot both be true, with a document or photo to settle it.":""));
+  } else if(found){
+    boardFeedback("teach","Already counted","That contradiction is already in your case log. Good string is string you can defend twice.");
+  } else if(teach(2)){
+    var ia=nodeInfo(c,a), ib=nodeInfo(c,b);
+    if(ia&&ib&&(ia.type==="Suspect"||ib.type==="Suspect")){
+      boardFeedback("teach","A link — but is it shown, or believed?","You've strung a suspect to a card. Ask the detective's question: could you show this connection to a stranger, or do you merely believe it? Belief is where you start digging, not where you accuse.");
+    }
+  }
+  renderAll();
+}
+function showDetail(nid){
+  var c=cur(); var info=nodeInfo(c,nid); if(!info) return;
+  el("detailTitle").textContent=info.title; el("detailType").textContent=info.type;
+  el("detailText").textContent=info.text;
+  el("detailWhy").textContent=teach(1)?("Why it might matter: "+info.why):"";
+  el("detailPanel").hidden=false;
+  el("detailPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function boardFeedback(kind,title,body){
+  el("boardFeedback").innerHTML='<div class="feedback '+kind+'"><h3>'+esc(title)+"</h3><p>"+esc(body)+"</p></div>";
+}
+/* ============ ACCUSATION ============ */
+function renderAccuse(){
+  var c=cur(); if(!c) return; var wrap=el("accuseChips"); wrap.innerHTML="";
+  c.suspects.forEach(function(s){
+    var b=document.createElement("button"); b.type="button";
+    b.setAttribute("aria-pressed", S.accuseTarget===s.id?"true":"false");
+    b.innerHTML="Accuse "+esc(s.name)+'<span class="gesture">Tap to select</span>';
+    (function(sid){ b.addEventListener("click",function(){ S.accuseTarget=sid; renderAccuse(); }); })(s.id);
+    wrap.appendChild(b);
+  });
+  var sum=el("chainSummary");
+  if(S.accuseTarget){
+    var met=[],missing=[];
+    c.requiredLinks.forEach(function(pair){
+      var k=linkKey(pair[0],pair[1]);
+      if(pair.indexOf(S.accuseTarget)>=0||S.accuseTarget===c.culprit){
+        if(S.links[k]) met.push(c.requiredLabels[k]||k); else missing.push(c.requiredLabels[k]||k);
+      }
+    });
+    /* Only meaningful summary for the true required set; for wrong suspects show their links */
+    var myLinks=Object.keys(S.links).filter(function(k){ return k.split("|").indexOf(S.accuseTarget)>=0; });
+    sum.hidden=false;
+    sum.innerHTML="<h3>Chain check — "+esc(suspectById(c,S.accuseTarget).name)+"</h3><p>This suspect is strung to <strong>"+myLinks.length+" card"+(myLinks.length===1?"":"s")+"</strong> on your board. "+
+      (S.accuseTarget===c.culprit
+        ? ("Key links in place: <strong>"+met.length+" of "+c.requiredLinks.length+"</strong>."+(missing.length&&teach(1)?" Still missing: "+missing.map(esc).join("; ")+".":""))
+        : (teach(1)?"Remember: being strung to a motive is not the same as being strung to proof. Check this person's alibi against the timeline before you commit.":""))+"</p>";
+  } else sum.hidden=true;
+}
+function doAccuse(){
+  var c=cur(); if(!c) return;
+  var fb=el("accuseFeedback");
+  if(!S.accuseTarget){ fb.innerHTML='<div class="feedback bad"><h3>No one selected</h3><p>Tap a suspect above first. An accusation needs a name — and a chain.</p></div>'; return; }
+  if(S.solved[c.id]){ fb.innerHTML='<div class="feedback good"><h3>Already solved</h3><p>This case is closed. The debrief below shows the full true chain.</p></div>'; return; }
+  var target=suspectById(c,S.accuseTarget);
+  var missing=c.requiredLinks.filter(function(pair){ return !S.links[linkKey(pair[0],pair[1])]; });
+  if(S.accuseTarget!==c.culprit){
+    S.accusations++; S.strikes++;
+    if(S.budgetOn&&c.energyMax) S.energy=Math.max(0,S.energy-2);
+    addLog("WRONG ACCUSATION: "+target.name+". Strike "+S.strikes+" of 3.");
+    var extra="";
+    if(S.accuseTarget===c.motiveTrap) extra=" This is the motive trap, and it is the oldest one in detective work: "+target.name+" had a reason to want it done. A reason is not a pair of hands. Their alibi was checkable — check it against the timeline and the independent records before you ever string a person up for wanting something.";
+    if(teach(1)&&S.accuseTarget!==""+c.motiveTrap) extra=" Before accusing, ask: what physical clue — not a feeling, not a motive — ties this person to the act, and is it strung on your board?";
+    if(S.strikes>=3){
+      fb.innerHTML='<div class="feedback bad"><h3>Case gone cold</h3><p>Three wrong or unsupported accusations. Witnesses have stopped talking and '+esc(target.name)+' has been wronged in public. That was the stated consequence, and it has landed. Restart the case and let the string — not suspicion — do the accusing.</p></div>';
+      addLog("Case went cold after 3 strikes.");
+    } else {
+      fb.innerHTML='<div class="feedback bad"><h3>Wrong — and it costs</h3><p><strong>'+esc(target.name)+'</strong> did not do it. Consequence, as stated at the start: strike '+S.strikes+' of 3'+(S.budgetOn&&c.energyMax?", and 2 energy lost":"")+'. An innocent person has been accused in front of the others; the room is colder now.'+esc(extra)+"</p></div>";
+    }
+    renderAll(); return;
+  }
+  /* Right person — does the chain hold? */
+  if(missing.length){
+    S.accusations++;
+    var list=missing.map(function(pair){ return c.requiredLabels[linkKey(pair[0],pair[1])]||linkKey(pair[0],pair[1]); });
+    addLog("UNSUPPORTED ACCUSATION refused: right suspicion, missing chain ("+missing.length+" link(s)).");
+    fb.innerHTML='<div class="feedback teach"><h3>Accusation refused — the chain doesn\'t hold it yet</h3><p>You may be right about <strong>'+esc(target.name)+'</strong> — but being right in your head is an <em>assumption</em>. The board is where it becomes <em>evidence</em>. Right now your string is missing:</p><ul>'+list.map(function(x){ return "<li>"+esc(x)+"</li>"; }).join("")+'</ul><p>Go back to the board, tap the two cards in each pair to string them, then accuse again. No strike for an honest refusal — the lesson is the point: <strong>motive is not proof, and a hunch is not a chain.</strong></p></div>';
+    renderAll(); return;
+  }
+  /* Solved */
+  S.solved[c.id]=true; S.accusations++;
+  addLog("CASE SOLVED: "+target.name+", with the full chain strung.");
+  fb.innerHTML='<div class="feedback good"><h3>It stands. Case solved, '+esc(S.alias)+'.</h3><p>The accusation against <strong>'+esc(target.name)+'</strong> is supported by every key link on your board. Read the full true chain in the debrief below — including how the innocent were cleared.</p></div>';
+  renderAll();
+  el("debrief").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderDebrief(){
+  var c=cur(); if(!c||!S.solved[c.id]) return;
+  el("debriefIntro").textContent=c.debriefIntro;
+  var ol=el("chainList"); ol.innerHTML="";
+  c.trueChain.forEach(function(step){ var li=document.createElement("li"); li.textContent=step; ol.appendChild(li); });
+  el("debriefOutro").textContent=c.debriefOutro;
+}
+/* ============ NOTEBOOK / RECORD ============ */
+function renderNotes(){
+  var ul=el("notesList"); ul.innerHTML="";
+  if(!S.notes.length){ ul.innerHTML='<li class="meta">No notes yet.</li>'; }
+  S.notes.forEach(function(n){ var li=document.createElement("li"); li.textContent=n; ul.appendChild(li); });
+  el("recNotes").textContent=S.notes.length;
+}
+function renderLog(){
+  var ul=el("logList"); if(!ul) return; ul.innerHTML="";
+  if(!S.log.length){ ul.innerHTML='<li class="meta">Nothing logged yet.</li>'; }
+  S.log.slice(0,20).forEach(function(m){ var li=document.createElement("li"); li.textContent=m; ul.appendChild(li); });
+}
+function renderRecord(){
+  el("recSolved").textContent=Object.keys(S.solved).length;
+  el("recAcc").textContent=S.accusations;
+  var total=0; Object.keys(S.solved).forEach(function(){ total++; });
+  el("recContra").textContent=countContradictionsAll();
+}
+var contraTotal=0;
+function countContradictionsAll(){ return contraTotal; }
+function renderAll(){
+  renderCases(); renderCaseHead(); renderScene(); renderSuspects(); renderBoard(); renderAccuse(); renderNotes(); renderLog(); renderRecord();
+  el("budgetBtn").innerHTML="Budget: "+(S.budgetOn?"ON":"OFF")+'<span class="gesture">Tap to toggle</span>';
+  el("budgetBtn").setAttribute("aria-pressed", S.budgetOn?"true":"false");
+}
+/* Track contradictions cumulatively for the record */
+var _origNodeTap=nodeTap;
+
+/* ============ EVENTS ============ */
+el("aliasInput").addEventListener("input",function(e){ S.alias=e.target.value.trim()||"Detective"; });
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click",function(){
+    S.teaching=parseInt(b.getAttribute("data-teach"),10);
+    document.querySelectorAll("[data-teach]").forEach(function(x){ x.setAttribute("aria-pressed", x===b?"true":"false"); });
+    var c=cur(); if(c) showDetailRefresh();
+    renderAll();
+  });
+});
+function showDetailRefresh(){ el("detailPanel").hidden=true; }
+el("budgetBtn").addEventListener("click",function(){ S.budgetOn=!S.budgetOn; var c=cur(); if(c&&S.energy===0&&c.energyMax) S.energy=c.energyMax; renderAll(); });
+el("downloadBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="the-evidence-board.html"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+});
+el("restBtn").addEventListener("click",function(){ var c=cur(); if(!c) return; S.day++; S.energy=c.energyMax; addLog("Rested. Day "+S.day+" begins, energy refilled."); renderAll(); });
+el("restartBtn").addEventListener("click",function(){
+  var cid=S.caseId; S.caseId=null; openCase(cid);
+  boardFeedback("teach","Case restarted","Fresh board, fresh string. What did the cold case teach you? Carry that into this run.");
+});
+el("clearStringBtn").addEventListener("click",function(){ S.links={}; S.selectedNode=null; addLog("Cut all string from the board."); renderAll(); });
+el("checkChainBtn").addEventListener("click",function(){
+  var c=cur(); if(!c) return;
+  var n=Object.keys(S.links).length, contra=Object.keys(S.contradictions).length;
+  if(!n){ boardFeedback("teach","No string yet","An empty board accuses no one. Collect clues, interview suspects, then tap two cards to string them. Start with the pair you can most easily show to a stranger."); return; }
+  var metC=c.requiredLinks.filter(function(p){ return S.links[linkKey(p[0],p[1])]; }).length;
+  boardFeedback(contra?"good":"teach","Chain check: "+n+" link"+(n===1?"":"s")+", "+contra+" contradiction"+(contra===1?"":"s")+" found",
+    "Of the links a complete, provable chain needs, "+metC+" of "+c.requiredLinks.length+" are strung. "+(teach(1)?(contra?"You hold at least one contradiction you can show — the strongest timber in a case. ":"No contradiction strung yet: hunt for a statement that a document, photo, or second statement cannot both be true with. ")+"Remember the order of strength: physical record > independent witness > a suspect's own words.":""));
+});
+el("detailClose").addEventListener("click",function(){ el("detailPanel").hidden=true; });
+el("addNoteBtn").addEventListener("click",function(){
+  var v=el("noteInput").value.trim(); if(!v) return;
+  S.notes.unshift((cur()?"["+cur().title+"] ":"")+v); el("noteInput").value=""; renderNotes(); renderRecord();
+});
+el("accuseBtn").addEventListener("click",doAccuse);
+el("exportBtn").addEventListener("click",function(){
+  var lines=["THE EVIDENCE BOARD — "+S.alias+"'s record","Exported from the page (on-device record; nothing was sent anywhere).","",
+    "Cases solved: "+Object.keys(S.solved).length+" of "+CASES.length,
+    "Accusations made: "+S.accusations,"Contradictions found (this session): "+contraTotal,""];
+  CASES.forEach(function(c){ lines.push("Case "+c.num+": "+c.title+" — "+(S.solved[c.id]?"SOLVED":"not solved")); });
+  lines.push("","NOTEBOOK:"); S.notes.forEach(function(n){ lines.push("- "+n); });
+  lines.push("","CASE LOG:"); S.log.slice().reverse().forEach(function(m){ lines.push("- "+m); });
+  var blob=new Blob([lines.join("\n")],{type:"text/plain"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="evidence-board-record.txt"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+});
+el("forgetBtn").addEventListener("click",function(){
+  if(!S.forgetArmed){ S.forgetArmed=true; el("forgetBtn").innerHTML='Tap again to confirm forget<span class="gesture">This wipes everything, for real</span>'; el("forgetMsg").textContent="Armed. Tap again to wipe your record, notes, boards, and progress in this tab."; return; }
+  S.forgetArmed=false; contraTotal=0;
+  var alias=S.alias, teaching=S.teaching, budget=S.budgetOn;
+  S={alias:alias,teaching:teaching,budgetOn:budget,solved:{},accusations:0,notes:[],log:[],collected:{},interviewed:{},links:{},contradictions:{},selectedNode:null,accuseTarget:null,strikes:0,energy:0,day:1,caseId:null,forgetArmed:false};
+  el("caseArea").hidden=true;
+  el("forgetBtn").innerHTML='Forget everything<span class="gesture">Tap to wipe record, notes &amp; boards</span>';
+  el("forgetMsg").textContent="Forgotten. Record, notes, boards, and progress in this tab are wiped.";
+  renderAll(); el("caseArea").hidden=true;
+});
+window.addEventListener("resize",function(){ drawStrings(); });
+
+/* Count contradictions cumulatively: wrap renderBoard counting */
+var _lastContraKeys="";
+setInterval(function(){
+  var keys=Object.keys(S.contradictions).sort().join(",");
+  if(keys!==_lastContraKeys){
+    var before=_lastContraKeys?_lastContraKeys.split(",").filter(Boolean).length:0;
+    var now=keys?keys.split(",").filter(Boolean).length:0;
+    if(now>before) contraTotal+=(now-before);
+    _lastContraKeys=keys;
+    el("recContra").textContent=contraTotal;
+  }
+},600);
+
+renderAll();
+</script>
+</body>
+</html>
