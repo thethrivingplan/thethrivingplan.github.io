@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Basketball — The Shot</title>
+<style>
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  *{box-sizing:border-box}
+  :root{
+    --bg:#f7f3ec; --surface:#fffdf8; --surface2:#efe7d8; --ink:#1d1a16; --muted:#5c554b;
+    --line:#d8cdb8; --accent:#b84a12; --accent-ink:#ffffff; --good:#1e6b3a; --bad:#9c2b1b; --try:#7a5200;
+    --good-bg:#e3efe2; --bad-bg:#f6e3dc; --try-bg:#f7ecc8; --court:#2e5d43; --rim:#c33;
+    --shadow:0 1px 4px rgba(30,20,10,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#171512; --surface:#221f1b; --surface2:#2c2822; --ink:#f0e9dd; --muted:#b8ae9d;
+      --line:#453e33; --accent:#e06a2c; --accent-ink:#1a120b; --good:#7fc98f; --bad:#ef9a86; --try:#e8c96a;
+      --good-bg:#223626; --bad-bg:#3d2620; --try-bg:#3a331d; --court:#7fb894; --rim:#ef7a6a;
+      --shadow:0 1px 4px rgba(0,0,0,.5); }
+  }
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.55}
+  .sans{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  header.top{border-bottom:3px solid var(--accent);background:var(--surface);padding:.7rem 1rem}
+  .free-line{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:700;font-size:1.02rem}
+  .free-line span{color:var(--accent)}
+  .toprow{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;max-width:1060px;margin:0 auto}
+  .btn{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--surface2);color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:.45rem .8rem;font-size:.92rem;cursor:pointer;min-height:2.5rem}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+  .btn:active{transform:translateY(1px)}
+  .gesture{display:block;font-size:.72rem;font-weight:400;opacity:.85}
+  nav.compass{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+  nav.compass .inner{max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;gap:.2rem;padding:.35rem .6rem}
+  nav.compass a{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.86rem;color:var(--ink);text-decoration:none;padding:.55rem .6rem;border-radius:6px}
+  nav.compass a:hover{background:var(--surface2)}
+  main{max-width:1060px;margin:0 auto;padding:0 1rem 3rem}
+  h1{font-size:2.3rem;line-height:1.12;margin:.4rem 0 .3rem}
+  h2{font-size:1.55rem;line-height:1.2;margin:2.2rem 0 .5rem;border-bottom:2px solid var(--accent);padding-bottom:.25rem}
+  h3{font-size:1.15rem;margin:1.1rem 0 .3rem}
+  p{margin:.45rem 0}
+  .lede{font-size:1.12rem}
+  .muted{color:var(--muted)}
+  .small{font-size:.88rem}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin:.8rem 0;box-shadow:var(--shadow)}
+  .shelf{display:inline-block;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.72rem;font-weight:800;letter-spacing:.04em;padding:.18rem .55rem;border-radius:999px;vertical-align:middle}
+  .shelf.works{background:var(--good-bg);color:var(--good);border:1px solid var(--good)}
+  .shelf.hasnt{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad)}
+  .shelf.try{background:var(--try-bg);color:var(--try);border:1px solid var(--try)}
+  .shelf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
+  @media(max-width:760px){.shelf-grid{grid-template-columns:1fr} h1{font-size:1.8rem}}
+  .chain{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem}
+  .chain .step{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--accent);border-radius:8px;padding:.8rem}
+  .chain .num{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:800;color:var(--accent);font-size:.8rem;letter-spacing:.06em}
+  .teach{border-left:4px solid var(--accent);background:var(--surface2);border-radius:0 8px 8px 0;padding:.55rem .8rem;margin:.6rem 0;font-size:.95rem}
+  .teach b{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.75rem;letter-spacing:.05em}
+  body[data-teaching="off"] .teach-light,body[data-teaching="off"] .teach-coach{display:none}
+  body[data-teaching="light"] .teach-coach{display:none}
+  .dial{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  .dial button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:.45rem .95rem;cursor:pointer;font-size:.92rem;min-height:2.5rem}
+  .dial button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+  details{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:.6rem 0;padding:.2rem 1rem .8rem}
+  summary{cursor:pointer;font-weight:700;font-size:1.05rem;padding:.6rem 0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  summary .gesture{font-weight:400}
+  .versus{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+  @media(max-width:760px){.versus{grid-template-columns:1fr}}
+  .versus .side{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem}
+  table{border-collapse:collapse;width:100%;font-size:.95rem}
+  th,td{border-bottom:1px solid var(--line);padding:.45rem .5rem;text-align:left;vertical-align:top}
+  th{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.8rem;letter-spacing:.03em}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  canvas#court{width:100%;height:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;display:block}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.9rem;margin:.8rem 0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  .controls label{font-size:.9rem;font-weight:600;display:block}
+  .controls output{font-weight:800;color:var(--accent)}
+  input[type="range"]{width:100%;min-height:2.25rem}
+  input[type="text"],input[type="number"],select,textarea{font:inherit;font-size:1rem;background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:.45rem .6rem;width:100%}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.7rem;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  .form-grid label{font-size:.85rem;font-weight:600}
+  .result{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:700;font-size:1.05rem;min-height:1.6em}
+  .honest{background:var(--try-bg);border:1px solid var(--try);border-radius:10px;padding:.8rem 1rem}
+  .limit{background:var(--bad-bg);border:1px solid var(--bad);border-radius:10px;padding:.8rem 1rem}
+  ul{margin:.4rem 0 .4rem 1.2rem;padding:0}
+  li{margin:.25rem 0}
+  footer{border-top:1px solid var(--line);margin-top:2.5rem;padding-top:1rem}
+  a{color:var(--accent)}
+  .stack>*+*{margin-top:.5rem}
+  .rowflex{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+  .kbd-note{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.82rem;color:var(--muted)}
+</style>
+</head>
+<body data-teaching="light">
+
+<header class="top">
+  <div class="toprow">
+    <div>
+      <div class="free-line"><span>Free — always free.</span> No ads. No paywall. No account.</div>
+      <div class="small muted sans">Basketball — The Shot · Sports wing · Everything on this page was written and drawn for this page.</div>
+    </div>
+    <button class="btn" id="downloadBtn" type="button">⬇ Save this page for offline<span class="gesture">Tap to download a copy you can open with no connection</span></button>
+  </div>
+</header>
+
+<nav class="compass sans" aria-label="Compass — jump to a part of the page">
+  <div class="inner">
+    <a href="#chain">The Shot Chain</a>
+    <a href="#trainer">Arc Trainer</a>
+    <a href="#freethrow">Free Throw</a>
+    <a href="#faults">Faults &amp; Fixes</a>
+    <a href="#practice">Practice Design</a>
+    <a href="#strategy">Shot Selection</a>
+    <a href="#drills">Drills</a>
+    <a href="#contested">Both Shelves</a>
+    <a href="#record">Your Record</a>
+    <a href="#watch">Watch It Done</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Basketball — The Shot</h1>
+  <p class="lede">One skill, taught whole: the mechanics, the physics, the practice science, and the strategy — with every tip graded honestly, so you know what is settled, what is a myth, and what is yours to test.</p>
+
+  <div class="card">
+    <div class="dial" role="group" aria-label="Teaching dial">
+      <strong>Teaching:</strong>
+      <button type="button" data-dial="off" aria-pressed="false">Off<span class="gesture">Tap — just the core</span></button>
+      <button type="button" data-dial="light" aria-pressed="true">Light<span class="gesture">Tap — short nudges</span></button>
+      <button type="button" data-dial="coach" aria-pressed="false">Coach<span class="gesture">Tap — full coaching notes</span></button>
+    </div>
+    <p class="small muted sans" style="margin:.5rem 0 0">Your dial choice is saved on this device only. Nothing on this page is sent anywhere.</p>
+    <div class="teach teach-light"><b>LIGHT NOTE</b> — Start at the chain below. One link at a time; a shot is a chain, and a miss usually names the link that broke.</div>
+    <div class="teach teach-coach"><b>COACH NOTE</b> — How to use this page: read the chain, fly ten balls in the Arc Trainer until the arc lesson is in your hands, then shoot for real and log it in Your Record at the bottom. The record — not a single hot day — is what tells you the truth about your shot.</div>
+  </div>
+
+  <h2>How every tip on this page is graded</h2>
+  <div class="shelf-grid">
+    <div class="card" style="border-top:5px solid var(--good)"><span class="shelf works">WHAT WORKS</span>
+      <p>Well-established mechanics and practice science — the things coaches and research keep agreeing on across bodies and levels.</p></div>
+    <div class="card" style="border-top:5px solid var(--bad)"><span class="shelf hasnt">WHAT REALLY HASN'T</span>
+      <p>Myths and dead ends, named as such — ideas that sound like coaching but don't survive contact with real shooters or real games.</p></div>
+    <div class="card" style="border-top:5px solid var(--try)"><span class="shelf try">WHAT TO TRY</span>
+      <p>Individual experiments. Bodies differ, so these are try-and-see: test one for two weeks, let your own record judge it.</p></div>
+  </div>
+  <p>Where good people disagree, both sides stand at the same size in <a href="#contested">Both Shelves</a> — nothing contested is dressed up as settled.</p>
+
+  <div class="honest">
+    <strong class="sans">The stakes here are not money — and never need to be.</strong>
+    <p style="margin:.3rem 0 0">What is actually on the line when you practice: <strong>your own makes-by-spot numbers</strong> going up, <strong>standing with the people you play with</strong> — being the teammate others trust with the open look — and <strong>shooting well to help your team</strong>, which is a purpose, not a price. Beating your own record is the bet. No element of this page uses money as a stake or a score, so there is nothing to switch off — the game was never about money to begin with.</p>
+  </div>
+
+  <h2 id="chain">The shot as a chain</h2>
+  <p>A shot is five links in order. Power starts in the floor and ends in your fingertips; each link hands energy and direction to the next. When shots go wrong, work the chain from the floor up — don't rebuild the release for a balance problem.</p>
+  <div class="chain">
+    <div class="step"><div class="num">LINK 1</div><h3>Feet &amp; balance</h3>
+      <p>Feet about shoulder-width, shooting-side foot a half-step ahead, weight even, knees soft. You should be able to be nudged and not fall over.</p>
+      <p><span class="shelf works">WHAT WORKS</span> Balance before everything: a shooter who lands where they took off is balanced; drifting forward, back, or sideways on landing is the tell that the base moved.</p>
+      <div class="teach teach-coach"><b>COACH NOTE</b> — The 1-2 step vs. hop debate is smaller than it sounds. What matters is arriving balanced and on time with the catch. Pick the footwork that gets you set before the ball arrives, and keep it.</div>
+    </div>
+    <div class="step"><div class="num">LINK 2</div><h3>The set point</h3>
+      <p>The ball rises from the catch to one repeatable spot — roughly above and in front of your shooting-side eye — where the shooting hand is under/behind the ball, wrist loaded.</p>
+      <p><span class="shelf works">WHAT WORKS</span> One repeatable set point. Great shooters differ in where theirs sits; none of them have three.</p>
+      <div class="teach teach-light"><b>LIGHT NOTE</b> — If you can see the rim under the ball at your set point, your eyes and the ball aren't fighting for the same space.</div>
+    </div>
+    <div class="step"><div class="num">LINK 3</div><h3>The guide hand's real job</h3>
+      <p>The guide (non-shooting) hand steadies the ball on the way up — then gets out of the way. It adds no power and no aim.</p>
+      <p><span class="shelf works">WHAT WORKS</span> Guide hand on the side of the ball, fingers up, leaving before release. A guide thumb that stays and pushes is one of the most common causes of left–right misses (for a right-hander, a late thumb flick pushes the ball left).</p>
+      <div class="teach teach-coach"><b>COACH NOTE</b> — Test it: shoot ten one-handed shots from close range. If your normal shot flies straighter than your one-handed shot, your guide hand is doing a job it shouldn't. If the one-handed shots spray, the problem is in the shooting hand itself.</div>
+    </div>
+    <div class="step"><div class="num">LINK 4</div><h3>Release &amp; follow-through</h3>
+      <p>The shooting arm extends, the wrist snaps, and the ball leaves off the index and middle fingers with backspin. Hold the finish — arm up, wrist flopped, fingers pointing at the rim — until the ball lands.</p>
+      <p><span class="shelf works">WHAT WORKS</span> Backspin is not decoration: it softens the ball's bounce off rim and board, and a consistent spin is a visible signature of a consistent release.</p>
+      <div class="teach teach-light"><b>LIGHT NOTE</b> — Dropping your arm the instant the ball leaves changes nothing about that shot — but it rushes the next one. Hold the finish; it's free information about whether you rushed.</div>
+    </div>
+    <div class="step"><div class="num">LINK 5</div><h3>Arc</h3>
+      <p>The ball should arrive falling, not flying flat. A good shot peaks well above the rim and drops in at roughly a 45–52° entry angle.</p>
+      <p><span class="shelf works">WHAT WORKS</span> The physics in the next section: a steeper entry makes the rim a bigger target — up to a point. Too much arc costs control and energy.</p>
+    </div>
+  </div>
+
+  <h3>The physics of arc, in plain words</h3>
+  <div class="card">
+    <p>The rim is 18 inches (45 cm) across; the ball is about 9.5 inches (24 cm) across. Shot flat, the ball sees the rim edge-on — the usable opening shrinks to a slit, and only a near-perfect shot fits. Shot so it <em>falls</em> into the rim, the ball sees the opening from above, closer to its true size. That is the whole secret of arc: <strong>the steeper the entry (up to a point), the bigger the target effectively is, and the more a slightly-off shot can still drop.</strong></p>
+    <p>The trade-off, printed plainly: every extra bit of height costs release speed you must produce exactly right, gives wind and small errors more time to act outdoors, and makes distance control harder. Research on real shots puts the sweet spot at an entry angle around <strong>45–52°</strong> — steep enough to open the rim up, flat enough to control. A rainbow that enters at 60°+ is not "more forgiving"; it is a harder shot to repeat.</p>
+    <p><span class="shelf hasnt">WHAT REALLY HASN'T</span> "More arc is always better." It isn't — past the sweet spot, makes go down, not up. Flat is bad and moon-ball is bad; the middle is the lesson.</p>
+    <div class="teach teach-coach"><b>COACH NOTE</b> — A quick floor test for arc: stand at the free-throw line and have a partner hold a hand as high as they can reach midway. If your shot doesn't clear it comfortably, your entry angle is likely under 40° and the rim is a smaller target than it needs to be.</div>
+  </div>
+
+  <h2 id="trainer">Arc Trainer — honest physics, in your hands</h2>
+  <p>Pick a release angle and a speed, then shoot. The ball flies on real gravity math (9.81 m/s²), from a 2.0 m release height to a 3.05 m rim. Challenges climb a <strong>difficulty ramp</strong>: free throw first, then mid-range, then the three — each step asks for more speed control, exactly like real practice.</p>
+  <div class="card">
+    <canvas id="court" width="900" height="460" aria-label="Side view of a basketball court with hoop, drawn for the arc trainer"></canvas>
+    <div class="controls">
+      <div>
+        <label for="distSel">Challenge — <span class="muted">difficulty ramp</span></label>
+        <select id="distSel">
+          <option value="4.19">Level 1 · Free throw — 4.19 m</option>
+          <option value="5.50">Level 2 · Mid-range — 5.50 m</option>
+          <option value="6.75">Level 3 · Three-pointer — 6.75 m</option>
+        </select>
+      </div>
+      <div>
+        <label for="angleRange">Release angle: <output id="angleOut">52°</output></label>
+        <input type="range" id="angleRange" min="35" max="75" step="1" value="52" />
+      </div>
+      <div>
+        <label for="speedRange">Release speed: <output id="speedOut">7.3 m/s</output></label>
+        <input type="range" id="speedRange" min="5" max="13" step="0.1" value="7.3" />
+      </div>
+    </div>
+    <div class="rowflex">
+      <button class="btn primary" id="shootBtn" type="button">🏀 Shoot<span class="gesture">Tap to fly the ball</span></button>
+      <button class="btn" id="hintBtn" type="button">Show a make<span class="gesture">Tap to set angle &amp; speed to a known make for this level</span></button>
+      <span class="result" id="shotResult" role="status">Ready. The Level 1 settings above start on a make — tap Shoot.</span>
+    </div>
+    <p class="small muted sans" id="shotStats" style="margin-top:.4rem">Shots this session: 0 · Makes: 0</p>
+    <div class="teach teach-light"><b>LIGHT NOTE</b> — Experiment: hold speed steady and raise the angle 2° at a time. Watch the entry angle climb — and notice how the shot gets harder to repeat once you pass the low 50s.</div>
+    <div class="teach teach-coach"><b>COACH NOTE</b> — The lesson to take to the court: at free-throw distance there is a <em>family</em> of angle/speed pairs that score, not one magic pair. Forgiving shots live in the middle of that family — entry near 45–52° — because a small error still drops. Shots at the edge of the family (very flat, or barely enough speed) only score when everything is perfect. Build your real shot in the middle of the family.</div>
+  </div>
+  <div class="honest"><strong class="sans">What this model leaves out — named, not hidden:</strong> no air resistance, no spin, no rim or backboard bounce physics, and your release is a perfect point. Real balls slow a little in the air and backspin changes how they meet the rim. The model is honest for its lesson — arc and entry angle — and is not a shooting simulator.</div>
+
+  <h2 id="freethrow">The free throw</h2>
+  <div class="card stack">
+    <p>The free throw is the only shot in basketball taken with no defender, no clock pressure on the motion, and the same distance every time — which makes it the purest test of <em>routine</em> in the sport.</p>
+    <p><span class="shelf works">WHAT WORKS</span> <strong>A repeatable pre-shot routine.</strong> Same dribbles, same breath, same words, same look at the rim, every time. Why it works: under pressure, attention narrows and working memory shrinks. A routine moves the shot onto well-worn rails — the body runs a memorised sequence instead of solving the shot fresh while nervous. Studies of pre-performance routines across sports consistently find they protect performance under pressure; the routine's exact contents matter far less than that it never changes.</p>
+    <p><span class="shelf works">WHAT WORKS</span> <strong>One external focus.</strong> Pick one target — the front of the rim, the back of the rim, a hook above it — and keep your eyes there. Research on attention in motor skills finds that focusing on the target (external) beats focusing on your own body parts (internal) for accuracy.</p>
+    <p><span class="shelf try">WHAT TO TRY</span> <strong>Your exhale as the trigger.</strong> Many shooters start the motion on a slow breath out. It times the shot and settles the shoulders. Try it for two weeks of logged free throws and let the record judge.</p>
+    <p><span class="shelf hasnt">WHAT REALLY HASN'T</span> <strong>Thinking about the last miss, the score, or the crowd.</strong> Not a character flaw — a bandwidth problem. The mental game that works is smaller: routine, breath, target, shoot, next one. Elite free-throw shooters describe the line as boring on purpose.</p>
+    <div class="teach teach-coach"><b>COACH NOTE</b> — Practice the routine, not just the shot: in training, step off the line between every free throw and run the full routine each time, exactly as in a game. Ten routine free throws teach more than fifty catch-and-fling ones — and log them as their own spot in your record, because game free throws and practice-line free throws are different skills until the routine joins them.</div>
+  </div>
+
+  <h2 id="faults">Faults &amp; fixes — read the miss</h2>
+  <p>A miss is information. Where the ball goes wrong, consistently, points at the link that broke. One wild miss means nothing; a <em>pattern</em> of ten is a diagnosis. Tap a miss pattern to open its story, its fix, and its drill.</p>
+
+  <details>
+    <summary>Missing SHORT — hitting the front rim or falling shy <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p><strong>The story:</strong> the ball simply didn't get enough energy, or got it late. Usual causes: not enough legs (shooting with the arm alone), a pause between the dip and the rise that bleeds power, stopping the follow-through early, or tired legs late in a session.</p>
+    <p><strong>The fix:</strong> shoot <em>up</em> before you shoot <em>out</em> — let the legs and arm rise as one motion, and finish tall on your toes with the follow-through held. Check your landing: landing well behind your takeoff point often means the power went backward instead of up.</p>
+    <p><strong>The drill:</strong> one-hand form shots, one step from the rim, finishing on your toes — 3 sets of 10. Then step back one pace only when 8 of 10 drop.</p>
+    <div class="teach teach-light"><b>LIGHT NOTE</b> — Short late in practice is often just fatigue, not form. That's the session telling you your quality capacity is ending (see Practice Design).</div>
+  </details>
+
+  <details>
+    <summary>Missing LONG — back rim, or over the rim entirely <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p><strong>The story:</strong> too much energy, or energy aimed too flat. Usual causes: pushing with the legs <em>and</em> throwing with the arm (double power), a flat trajectory that needs extra speed to arrive, or leaning/falling forward into the shot.</p>
+    <p><strong>The fix:</strong> add arc before you subtract power — a flatter shot must be faster to reach, and faster is harder to control. Aim to drop the ball <em>down</em> into the rim: finish with your elbow at least at eye height and the ball peaking clearly above the board's top edge on mid-range shots.</p>
+    <p><strong>The drill:</strong> "rainbow" shooting from the free-throw line — deliberately exaggerate the arc for 10 shots, then settle to your normal arc for 10. You are calibrating where your middle is.</p>
+  </details>
+
+  <details>
+    <summary>Missing LEFT (right-handed shooter) <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p><strong>The story:</strong> something pushed or pulled the ball across your body. Usual causes: the guide-hand thumb flicking at release, the shooting elbow flaring out so the hand finishes across the face, or your whole body rotating (shoulders opening) during the shot. Mirror everything here if you shoot left-handed.</p>
+    <p><strong>The fix:</strong> guide hand leaves early and finishes open, away from the ball — it should look like it's waving, not throwing. Shooting hand finishes pointing at the rim, not across your face.</p>
+    <p><strong>The drill:</strong> guide-hand-off shooting — shoot with the guide hand hovering a centimetre off the ball (touching nothing at release) from close range, 20 shots. Awkward for a day, revealing for a season.</p>
+  </details>
+
+  <details>
+    <summary>Missing RIGHT (right-handed shooter) <span class="gesture">Tap to open · Tap again to close</span></summary>
+    <p><strong>The story:</strong> the mirror problem: the ball starts off-line from the set point. Usual causes: the ball sitting too far to the shooting side at the set point so the arm pushes diagonally, the shooting hand under the side of the ball instead of behind it, or feet pointed one way while the shoulders aim another.</p>
+    <p><strong>The fix:</strong> align the simple things first — toes, knees, and the ball's starting spot all on one line to the rim — and check the ball rests on your finger pads with the hand behind it, seams level, at the set point.</p>
+    <p><strong>The drill:</strong> wall shooting — stand a metre from a wall, shoot your full motion so the ball rises and falls back into your hands, hitting the same wall spot. No rim to chase means the line of the shot is all you can watch. 3 × 15.</p>
+    <div class="teach teach-coach"><b>COACH NOTE</b> — Before changing anything, film ten shots from the front (see Film It). Left–right patterns are the easiest to misread from memory and the easiest to see on video: guide thumb, elbow path, and finish direction are all right there.</div>
+  </details>
+
+  <h2 id="practice">Practice design — how practice actually builds a shot</h2>
+  <div class="card stack">
+    <h3 style="margin-top:0">The difficulty ramp <span class="shelf works">WHAT WORKS</span></h3>
+    <p>Good shooting practice climbs a ramp, in this order, and only moves up when the level below holds:</p>
+    <ol>
+      <li><strong>Form shooting</strong> — close range, slow, one link at a time. Builds the motion.</li>
+      <li><strong>Spot shooting</strong> — set shots from game spots, at game spots' distances, keeping score by spot.</li>
+      <li><strong>Game speed</strong> — off the catch, off the dribble, off movement, at the speed a defender forces.</li>
+      <li><strong>Pressure</strong> — a consequence, a clock, a score to beat, a teammate watching. The shot you own is the one that survives this level.</li>
+    </ol>
+    <p><span class="shelf hasnt">WHAT REALLY HASN'T</span> Shooting drills with no game pressure, sold as game training. Undefended, unhurried, uncounted reps build an undefended, unhurried shot. They have a place — level 1 and 2 of the ramp — but a practice that never climbs is rehearsing a game that doesn't exist.</p>
+    <h3>Capacity: quality reps are finite</h3>
+    <p>Here is a limit nobody can train away: <strong>a session's honest capacity is the number of reps you can shoot while your form holds.</strong> Past that point you are not practising your shot — you are practising the tired, broken version of it, and practice makes permanent whatever it repeats. In Your Record below you can mark <em>where a session's quality ended</em>; over weeks, that number is your real capacity, and growing it (with fitness and with shorter, more frequent sessions) beats pretending it isn't there.</p>
+    <h3>Self-energy: legs are the battery</h3>
+    <p>A shot is powered from the floor, so tired legs flatten arc and shorten range — every player has felt the fourth-quarter shot come up short. Two honest uses of that fact: <strong>(1)</strong> end sessions before the battery is empty, while form still holds; <strong>(2)</strong> as a labelled, occasional mode — a few shots taken under honest fatigue at the end of a workout (log them as <em>Tired legs</em> in the record, kept separate from your fresh numbers) teach you what your shot does when it's tired, which is exactly the shot a close game will ask for. The trade-off is printed with it: tired reps teach a tired motion if they become the habit, so this mode is a spice, not the meal.</p>
+    <h3>Keeping score honestly</h3>
+    <p>Memory lies kindly: we remember the makes. The record below counts <strong>makes by spot</strong>, because "I'm a good shooter" is a feeling and "I make 41% from the left wing and 63% from the right corner" is a fact you can practise from. Log attempts and makes exactly as they happened — a record padded to feel good is worse than no record, because every later decision reads from it.</p>
+    <div class="teach teach-coach"><b>COACH NOTE</b> — Sample size honesty: 20 shots from a spot tells you almost nothing (a true 50% shooter will shoot anywhere from 30% to 70% across 20 shots by luck alone). Judge a spot at 100+ logged shots. The record shows your totals growing so you can see when a number has earned your trust.</div>
+  </div>
+
+  <h2 id="strategy">Shot selection — what a good shot is</h2>
+  <div class="card stack">
+    <p>Form decides whether <em>your</em> shot goes in. Selection decides whether the shot was worth taking. The documented analytics picture, in plain words — points per shot, roughly, at high levels of the game:</p>
+    <table>
+      <tr><th>Shot</th><th class="num">Typical return</th><th>Why</th></tr>
+      <tr><td>Layups &amp; shots at the rim</td><td class="num">~1.2 pts / shot</td><td>Closest target, highest make rate, most fouls drawn</td></tr>
+      <tr><td>Free throws</td><td class="num">~1.5 pts / trip (2 shots)</td><td>Unguarded, set distance — the most efficient "shot" in the game</td></tr>
+      <tr><td>Corner three</td><td class="num">~1.15 pts / shot</td><td>Shortest three (6.7 m on an NBA court) at three-point value</td></tr>
+      <tr><td>Above-the-break three</td><td class="num">~1.05 pts / shot</td><td>Longer, but three points still pays for a ~35% make rate</td></tr>
+      <tr><td>Long two (just inside the line)</td><td class="num">~0.8 pts / shot</td><td>Nearly as hard as a three, worth one point less — the worst trade in the modern game</td></tr>
+    </table>
+    <p><span class="shelf works">WHAT WORKS</span> The core lesson survives every level check: <strong>step back, not in.</strong> A shot one step inside the three-point line gives up a point for almost no extra accuracy. And an open shot early beats a contested shot late — "good" is about openness and location, not about who takes it.</p>
+    <p><strong>The limits, printed at the same size:</strong> these are league averages for elite players. Your numbers are yours — if your record says you make 55% of your mid-range shots and 22% of your threes, <em>your</em> good shot today is the mid-range one, and the analytics lesson for you is to practise the three until your own numbers move. Averages describe populations; your record describes you. Also: shot selection is a team act — the best shot is often the one your pass creates for a teammate.</p>
+    <h3>Off-ball basics, in brief</h3>
+    <ul>
+      <li><strong>Spacing:</strong> stand where your defender must choose between you and the rim — usually a pass away, outside the line. Two teammates in one spot guard each other.</li>
+      <li><strong>Cut when ignored:</strong> if your defender turns their head to the ball, cut behind them to the rim. The easiest layups are earned standing still, then leaving.</li>
+      <li><strong>Be shot-ready:</strong> feet set and hands showing before the pass arrives. Most "slow releases" are actually late preparation.</li>
+    </ul>
+  </div>
+
+  <h2 id="drills">Drills — with honest transfer notes</h2>
+  <p class="muted">A drill's value is what survives into a game. Each drill below carries its transfer note: what it honestly does and doesn't do.</p>
+  <div class="shelf-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+    <div class="card"><h3 style="margin-top:0">Form ladder</h3><p>One-hand shots from 1 m, then step back a pace after every 5 makes, out to the free-throw line.</p><p class="small"><strong>Transfer:</strong> high for mechanics, low for games. This builds the motion the other drills will stress-test. Never skip it; never let it be the whole practice.</p></div>
+    <div class="card"><h3 style="margin-top:0">Five-spot scoring</h3><p>10 shots from each of 5 spots (both corners, both wings, top). Log every spot separately in your record.</p><p class="small"><strong>Transfer:</strong> high — same spots, same distances as games, and it feeds your makes-by-spot truth. Add movement between spots as you improve.</p></div>
+    <div class="card"><h3 style="margin-top:0">Beat your record</h3><p>From your best spot: shoot sets of 10. Today's set must beat your logged average to "win" the day.</p><p class="small"><strong>Transfer:</strong> the stake is your own record — standing with yourself. Real mild pressure, honestly labelled as practice pressure, not game pressure.</p></div>
+    <div class="card"><h3 style="margin-top:0">Catch-and-shoot on the move</h3><p>A partner (or a chair and a self-toss) feeds you as you cut to a spot; shoot on arrival, game speed, alternate spots randomly.</p><p class="small"><strong>Transfer:</strong> the highest on this page short of playing — random order, movement, and a pass to read. This is where blocked practice becomes game practice.</p></div>
+    <div class="card"><h3 style="margin-top:0">Plus–minus free throws</h3><p>Shoot pairs: make = +1, miss = −1, in sets of 10 shots. Try to finish positive.</p><p class="small"><strong>Transfer:</strong> builds the routine under a small, honest consequence. It imitates scoreboard pressure the way a photograph imitates weather — useful, partial, labelled as such.</p></div>
+    <div class="card"><h3 style="margin-top:0">Tired-legs finisher <span class="shelf try">WHAT TO TRY</span></h3><p>At the very end of a workout only: 10 shots, logged separately as <em>Tired legs</em>.</p><p class="small"><strong>Transfer:</strong> teaches you your tired shot's tendencies (usually short — see Faults). Occasional by design; if tired reps become most of your reps, they become your form.</p></div>
+  </div>
+
+  <h2>Film it — the real check</h2>
+  <div class="limit">
+    <p style="margin:0"><strong>This page cannot see your shot.</strong> No text can. The real checks are a camera and a coach's eye, and here is exactly how to use the camera: film from the <strong>side</strong> (shooting-hand side, full body in frame) to read balance, landing drift, set point, and arc — and from the <strong>front</strong> to read the guide hand, elbow path, and left–right line. Ten shots from each angle tells you more than a month of guessing from memory. Show the same footage to any real coach and you have given them what they actually need.</p>
+  </div>
+
+  <h2 id="contested">Both shelves — where good shooters disagree</h2>
+  <p>Contested topics, both sides at the same size. Neither side here is a straw man.</p>
+
+  <h3>One-motion vs. two-motion shooting</h3>
+  <div class="versus">
+    <div class="side"><strong class="sans">THE ONE-MOTION SCHOOL</strong>
+      <p>The ball flows from catch to release in one continuous rise — no pause at the set point. Advocates argue: energy from the legs transfers without a leak, the shot is quicker and extends range (smaller players especially can reach three-point distance), and one rhythm is simpler to repeat. Many of the longest-range shooters in the modern game shoot this way.</p></div>
+    <div class="side"><strong class="sans">THE TWO-MOTION SCHOOL</strong>
+      <p>The ball rises, settles briefly at a set point — often higher, above the head — then releases. Advocates argue: the set point gives a stable platform for mid-range shots, pull-ups, and shooting over defenders, and generations of great mid-range shooters were built this way. The pause, they say, is control, not a leak.</p></div>
+  </div>
+  <p><span class="shelf try">WHAT TO TRY</span> The honest verdict: both schools have produced elite shooters, which means the motion count is not the deciding variable — repeatability and range are. If you struggle for distance, experiment toward one-motion. If your mid-range pull-up is your living, the two-motion platform may be your home. Two weeks each, logged, beats two years of arguing.</p>
+
+  <h3>Does the elbow have to be perfectly in?</h3>
+  <div class="versus">
+    <div class="side"><strong class="sans">THE CLASSIC TEACHING</strong>
+      <p>"Elbow under the ball, pointing at the rim" has been coached for a century. Its logic is clean: an elbow in line means the arm pushes in line, and the ball goes where the arm pushes. For beginners spraying shots sideways, it is often the fastest single fix.</p></div>
+    <div class="side"><strong class="sans">THE REVISIONIST CASE</strong>
+      <p>Slow-motion of elite shooters shows many elbows sitting slightly out — because shoulders, not geometry diagrams, decide what's comfortable, and forcing an elbow in can twist the wrist and shoulder into worse positions. What the film actually shows as universal is not elbow position but <em>finish</em> position: the shooting hand ends pointing at the rim.</p></div>
+  </div>
+  <p>The synthesis most evidence supports: coach the elbow as a <em>range</em>, not a point — roughly under the ball, never forced — and judge by the ball's line and your logged left–right pattern, not by a photograph of the "perfect" angle.</p>
+  <p><span class="shelf hasnt">WHAT REALLY HASN'T</span> <strong>"The perfect textbook form" — one shape for every body.</strong> Bodies differ in shoulder width, arm length, mobility, and strength history; the history of great shooting is a museum of different-looking shots that share the same few outcomes: balance, repeatability, backspin, arc. Copy the outcomes. A form copied joint-by-joint from a player built differently from you is a costume, not a shot.</p>
+
+  <h3>Blocked vs. random practice — the finding that feels wrong</h3>
+  <div class="versus">
+    <div class="side"><strong class="sans">BLOCKED PRACTICE</strong>
+      <p>50 shots from one spot, then 50 from the next. It feels great — makes climb within the session, confidence rises, and the shooter leaves believing the lesson landed. Motor-learning research calls this the performance effect: real, and mostly temporary.</p></div>
+    <div class="side"><strong class="sans">RANDOM / VARIED PRACTICE</strong>
+      <p>Spots, distances, and shot types shuffled, so no two shots in a row are the same. It feels worse — makes dip during the session. And the documented result, replicated across decades of motor-learning studies (the contextual-interference effect), is that it <em>retains</em> better: a week later, the random-practice group outperforms. Games are random practice by definition.</p></div>
+  </div>
+  <p>Printed as the evidence stands: use blocked practice early, to build a new motion; use random practice as soon as the motion exists, to keep it. If your practice always feels smooth, it is probably teaching less than it could.</p>
+
+  <h2 id="record">Your practice record</h2>
+  <p>Saved on this device only — never sent anywhere, no account, no cloud. The record's job is honesty: your makes by spot, exactly as they happened, so you always know where you actually stand. The stake it keeps is the real one: your own numbers, and the standing they earn you with the people you play with.</p>
+  <div class="card">
+    <div class="form-grid">
+      <div><label for="aliasInput">Your name or alias — your call, change it any time</label><input type="text" id="aliasInput" placeholder="e.g. Tristan, or any name you like" autocomplete="off" /></div>
+      <div><label for="spotSel">Spot</label>
+        <select id="spotSel">
+          <option>Free throw</option><option>Paint / close</option>
+          <option>Left corner 3</option><option>Right corner 3</option>
+          <option>Left wing 3</option><option>Right wing 3</option><option>Top 3</option>
+          <option>Mid-range left</option><option>Mid-range right</option>
+        </select></div>
+      <div><label for="modeSel">Practice mode</label>
+        <select id="modeSel">
+          <option>Form</option><option>Spot</option><option>Game-speed</option><option>Pressure</option><option>Tired legs</option>
+        </select></div>
+      <div><label for="attInput">Attempts</label><input type="number" id="attInput" min="1" max="500" value="10" /></div>
+      <div><label for="makeInput">Makes</label><input type="number" id="makeInput" min="0" max="500" value="6" /></div>
+      <div><label for="qualityInput">Quality ended at shot # (optional — your capacity mark)</label><input type="number" id="qualityInput" min="0" max="500" placeholder="Blank = form held" /></div>
+    </div>
+    <div style="margin-top:.6rem"><label for="noteInput" class="sans" style="font-size:.85rem;font-weight:600">Note (optional)</label>
+    <input type="text" id="noteInput" placeholder="What did you notice? e.g. Short when tired" /></div>
+    <div class="rowflex" style="margin-top:.8rem">
+      <button class="btn primary" id="logBtn" type="button">Log this session<span class="gesture">Tap to write it to your record on this device</span></button>
+      <button class="btn" id="exportBtn" type="button">Export record<span class="gesture">Tap to download your record as a file</span></button>
+      <button class="btn" id="forgetBtn" type="button">Forget everything<span class="gesture">Tap once, then confirm — wipes the record from this device</span></button>
+    </div>
+    <p class="result" id="recordMsg" role="status"></p>
+    <div id="forgetConfirm" style="display:none" class="honest">
+      <p style="margin:0 0 .5rem"><strong>Wipe your whole record from this device?</strong> This cannot be undone. Export first if you want a copy.</p>
+      <div class="rowflex">
+        <button class="btn" id="forgetYes" type="button">Yes, forget it all<span class="gesture">Tap to erase</span></button>
+        <button class="btn" id="forgetNo" type="button">Keep my record<span class="gesture">Tap to cancel</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Makes by spot — <span id="recordName">your numbers</span></h3>
+    <div id="bySpotWrap"><p class="muted" id="emptyRecord">Nothing logged yet. Shoot ten from anywhere, log them honestly, and this table becomes the truest thing anyone can tell you about your shot.</p>
+    <table id="bySpotTable" style="display:none"><thead><tr><th>Spot</th><th class="num">Attempts</th><th class="num">Makes</th><th class="num">Make %</th></tr></thead><tbody id="bySpotBody"></tbody>
+    <tfoot><tr><th>All spots</th><th class="num" id="totAtt">0</th><th class="num" id="totMake">0</th><th class="num" id="totPct">—</th></tr></tfoot></table></div>
+    <p class="small muted sans" id="modeSummary"></p>
+    <h3>Recent sessions</h3>
+    <div id="historyWrap"><p class="muted">No sessions yet.</p></div>
+  </div>
+
+  <h2 id="watch">Watch it done</h2>
+  <p>Only videos actually opened and checked ship on this shelf — title and channel as verified on Nov 18, 2026. An unverifiable link does not ship.</p>
+  <div class="shelf-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    <div class="card"><h3 style="margin-top:0"><a href="https://www.youtube.com/watch?v=47N9lsCPkgg" target="_blank" rel="noopener">How Shooting Habits Form (And How Coaches Reshape Them)</a></h3>
+      <p class="sans small"><strong>Channel:</strong> Coach Dave Love (NBA shooting coach)</p>
+      <p>Why habits form and why "perfect form was never the target" — the research-minded companion to this page's What Really Hasn't shelf. Verified by opening, Nov 18, 2026.</p></div>
+    <div class="card"><h3 style="margin-top:0"><a href="https://www.youtube.com/watch?v=EztEhywHzko" target="_blank" rel="noopener">5 Beginner Basketball Shooting Drills — Teach Kids to Shoot the Right Way</a></h3>
+      <p class="sans small"><strong>Channel:</strong> Breakthrough Basketball · Coach Jim Huber</p>
+      <p>Five beginner drills on video — wall shooting, the ladder, and a random-practice read drill that matches this page's practice science. Verified by opening, Nov 18, 2026.</p></div>
+  </div>
+
+  <footer>
+    <p class="sans small"><strong>Copyleft:</strong> this page's text and diagrams are free to share and adapt under CC BY-SA 4.0 — pass it on, keep it free. No ads, ever. No tracking. Your record lives on your device and nowhere else.</p>
+    <p class="sans small muted">Basketball — The Shot · Sports wing · Built Nov 18, 2026 · The honest limit, one more time: this page teaches knowledge and judgment. It cannot see your shot — film from the side and the front, and let a real coach's eye be the final check.</p>
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var LS_T="bball_teaching_v1", LS_R="bball_record_v1", LS_A="bball_alias_v1";
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+
+  /* Teaching dial */
+  var dial = lsGet(LS_T) || "light";
+  if(["off","light","coach"].indexOf(dial)<0) dial="light";
+  function applyDial(){
+    document.body.setAttribute("data-teaching", dial);
+    var btns=document.querySelectorAll("[data-dial]");
+    for(var i=0;i<btns.length;i++){ btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-dial")===dial ? "true":"false"); }
+  }
+  var dialBtns=document.querySelectorAll("[data-dial]");
+  for(var i=0;i<dialBtns.length;i++){ (function(b){ b.addEventListener("click",function(){ dial=b.getAttribute("data-dial"); lsSet(LS_T,dial); applyDial(); }); })(dialBtns[i]); }
+  applyDial();
+
+  /* Offline download door */
+  document.getElementById("downloadBtn").addEventListener("click",function(){
+    var html="<!doctype html>\n"+document.documentElement.outerHTML;
+    var blob=new Blob([html],{type:"text/html"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="basketball-the-shot.html";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400);
+  });
+
+  /* ---------- Arc Trainer ---------- */
+  var cv=document.getElementById("court"), ctx=cv.getContext("2d");
+  var W=cv.width, H=cv.height;
+  var G=9.81, RIM_Y=3.05, REL_Y=2.0;
+  var angleEl=document.getElementById("angleRange"), speedEl=document.getElementById("speedRange");
+  var angleOut=document.getElementById("angleOut"), speedOut=document.getElementById("speedOut");
+  var distSel=document.getElementById("distSel");
+  var resultEl=document.getElementById("shotResult"), statsEl=document.getElementById("shotStats");
+  var shots=0, makes=0, anim=null, trail=[];
+
+  function world(){ var d=parseFloat(distSel.value); return {dist:d, maxX:d+2.2, maxY:5.0}; }
+  function px(x){ var w=world(); return 40 + (x/w.maxX)*(W-80); }
+  function py(y){ var w=world(); return H-46 - (y/w.maxY)*(H-80); }
+
+  function draw(ball){
+    var w=world(), d=w.dist;
+    ctx.clearRect(0,0,W,H);
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    ctx.strokeStyle = dark ? "#7fb894" : "#2e5d43"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(20,H-46); ctx.lineTo(W-20,H-46); ctx.stroke();
+    /* hoop: pole, backboard, rim */
+    var rimX=px(d), rimY=py(RIM_Y);
+    ctx.strokeStyle = dark ? "#cbbfa8" : "#555"; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(rimX+52,H-46); ctx.lineTo(rimX+52,rimY-58); ctx.stroke();
+    ctx.fillStyle = dark ? "#e8e2d4" : "#ffffff"; ctx.strokeStyle= dark ? "#cbbfa8" : "#333"; ctx.lineWidth=2;
+    ctx.fillRect(rimX+34,rimY-58,14,44); ctx.strokeRect(rimX+34,rimY-58,14,44);
+    ctx.strokeStyle="#c0392b"; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(rimX-24,rimY); ctx.lineTo(rimX+34,rimY); ctx.stroke();
+    ctx.strokeStyle = dark ? "rgba(240,233,221,.55)" : "rgba(60,50,30,.45)"; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(rimX-22,rimY); ctx.lineTo(rimX-12,rimY+26); ctx.lineTo(rimX+8,rimY+26); ctx.lineTo(rimX+30,rimY);
+    ctx.moveTo(rimX-12,rimY+26); ctx.lineTo(rimX-6,rimY); ctx.moveTo(rimX+8,rimY+26); ctx.lineTo(rimX+10,rimY);
+    ctx.stroke();
+    /* free-throw / distance marker */
+    ctx.fillStyle = dark ? "#b8ae9d" : "#5c554b"; ctx.font="13px sans-serif"; ctx.textAlign="center";
+    ctx.fillText(d.toFixed(2)+" m to rim centre", px(d/2), H-28);
+    /* release point + shooter mark */
+    ctx.fillStyle = dark ? "#e06a2c" : "#b84a12";
+    ctx.beginPath(); ctx.arc(px(0),py(0.95),7,0,7); ctx.fill();
+    ctx.fillRect(px(0)-3,py(0.95),6,py(0)-py(0.95));
+    ctx.fillText("you", px(0), H-28);
+    /* trail */
+    if(trail.length>1){
+      ctx.strokeStyle = dark ? "rgba(224,106,44,.75)" : "rgba(184,74,18,.7)"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(px(trail[0].x),py(trail[0].y));
+      for(var i=1;i<trail.length;i++) ctx.lineTo(px(trail[i].x),py(trail[i].y));
+      ctx.stroke();
+    }
+    if(ball){
+      ctx.fillStyle="#e07b2a"; ctx.strokeStyle= dark ? "#f0e9dd" : "#7a3405"; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(px(ball.x),py(ball.y),Math.max(7,(0.12/w.maxX)*(W-80)),0,7); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  function simulate(angDeg, spd, dist){
+    var th=angDeg*Math.PI/180, vx=spd*Math.cos(th), vy=spd*Math.sin(th);
+    var x=0,y=REL_Y,t=0,dt=0.005, pts=[{x:0,y:REL_Y}], prev=null, cross=null;
+    while(t<3){
+      prev={x:x,y:y,vy:vy};
+      vy-=G*dt; x+=vx*dt; y+=vy*dt; t+=dt;
+      pts.push({x:x,y:y});
+      if(!cross && prev.y>RIM_Y && y<=RIM_Y && vy<0){
+        var f=(prev.y-RIM_Y)/(prev.y-y);
+        cross={ x: prev.x+(x-prev.x)*f, entry: Math.atan2(Math.abs(vy),vx)*180/Math.PI };
+      }
+      if(y<0){ break; }
+      if(x>dist+1.2){ break; }
+    }
+    var verdict, detail;
+    if(cross){
+      var err=cross.x-dist;
+      if(Math.abs(err)<=0.10){ verdict="SWISH"; }
+      else if(Math.abs(err)<=0.21){ verdict="MAKE"; }
+      else if(err<0){ verdict="MISS — SHORT"; }
+      else { verdict="MISS — LONG"; }
+      detail="Entry angle "+cross.entry.toFixed(0)+"° · ball crossed rim height "+(err>=0?"+":"")+(err*100).toFixed(0)+" cm from centre.";
+      if(verdict==="SWISH") detail="Nothing but net. "+detail;
+      if(verdict==="MAKE") detail="In — off the rim's forgiveness. "+detail;
+    } else {
+      verdict = (pts[pts.length-1].x < dist) ? "MISS — SHORT" : "MISS";
+      detail="The ball never crossed rim height on the way down near the hoop. Entry angle: —.";
+      cross={entry:null};
+    }
+    return {pts:pts, verdict:verdict, detail:detail, entry: cross?cross.entry:null};
+  }
+
+  function knownMake(dist){
+    /* solve a mid-family make: entry ~48deg, search angle/speed grid */
+    var best=null;
+    for(var a=44;a<=60;a+=1){
+      for(var s=5.5;s<=12.5;s+=0.05){
+        var r=simulate(a,s,dist);
+        if((r.verdict==="SWISH"||r.verdict==="MAKE") && r.entry){
+          var score=Math.abs(r.entry-48);
+          if(!best || score<best.score) best={a:a,s:Math.round(s*10)/10,score:score};
+        }
+      }
+    }
+    return best;
+  }
+
+  function syncLabels(){ angleOut.textContent=angleEl.value+"°"; speedOut.textContent=parseFloat(speedEl.value).toFixed(1)+" m/s"; }
+  angleEl.addEventListener("input",syncLabels); speedEl.addEventListener("input",syncLabels);
+  distSel.addEventListener("change",function(){ trail=[]; draw(null); var km=knownMake(parseFloat(distSel.value)); if(km){ angleEl.value=km.a; speedEl.value=km.s; syncLabels(); resultEl.textContent="Level set. Settings adjusted to a make for this distance — tap Shoot, then experiment."; } });
+  document.getElementById("hintBtn").addEventListener("click",function(){
+    var km=knownMake(parseFloat(distSel.value));
+    if(km){ angleEl.value=km.a; speedEl.value=km.s; syncLabels(); resultEl.textContent="Set to a make: "+km.a+"° at "+km.s.toFixed(1)+" m/s. Tap Shoot — then change one thing at a time and watch what breaks."; }
+  });
+
+  document.getElementById("shootBtn").addEventListener("click",function(){
+    if(anim) cancelAnimationFrame(anim);
+    var dist=parseFloat(distSel.value);
+    var res=simulate(parseFloat(angleEl.value), parseFloat(speedEl.value), dist);
+    trail=[]; var idx=0, pts=res.pts;
+    shots++; if(res.verdict==="SWISH"||res.verdict==="MAKE") makes++;
+    function frame(){
+      var steps=3;
+      while(steps-->0 && idx<pts.length){ trail.push(pts[idx]); idx++; }
+      draw(pts[Math.min(idx,pts.length)-1] || null);
+      if(idx<pts.length){ anim=requestAnimationFrame(frame); }
+      else {
+        resultEl.textContent=res.verdict+" — "+res.detail;
+        statsEl.textContent="Shots this session: "+shots+" · Makes: "+makes+(shots? " · "+Math.round(makes/shots*100)+"%":"");
+        draw(pts[pts.length-1]);
+      }
+    }
+    resultEl.textContent="Ball away…";
+    frame();
+  });
+
+  syncLabels(); draw(null);
+
+  /* ---------- Practice record ---------- */
+  var record=[];
+  try{ record=JSON.parse(lsGet(LS_R)||"[]"); if(!Array.isArray(record)) record=[]; }catch(e){ record=[]; }
+  var aliasInput=document.getElementById("aliasInput");
+  aliasInput.value=lsGet(LS_A)||"";
+  aliasInput.addEventListener("change",function(){ lsSet(LS_A, aliasInput.value.trim()); renderRecord(); });
+
+  var msg=document.getElementById("recordMsg");
+  function saveRecord(){ lsSet(LS_R, JSON.stringify(record)); }
+  function pct(m,a){ return a? Math.round(m/a*100)+"%" : "—"; }
+
+  function renderRecord(){
+    var name=(aliasInput.value||"").trim();
+    document.getElementById("recordName").textContent = name? name+"'s numbers" : "your numbers";
+    var bySpot={}, modes={}, tA=0, tM=0;
+    record.forEach(function(e){
+      bySpot[e.spot]=bySpot[e.spot]||{a:0,m:0}; bySpot[e.spot].a+=e.att; bySpot[e.spot].m+=e.makes;
+      modes[e.mode]=(modes[e.mode]||0)+e.att; tA+=e.att; tM+=e.makes;
+    });
+    var table=document.getElementById("bySpotTable"), empty=document.getElementById("emptyRecord"), body=document.getElementById("bySpotBody");
+    if(record.length===0){ table.style.display="none"; empty.style.display="block"; }
+    else{
+      table.style.display=""; empty.style.display="none"; body.innerHTML="";
+      Object.keys(bySpot).sort().forEach(function(s){
+        var tr=document.createElement("tr");
+        tr.innerHTML="<td></td><td class='num'></td><td class='num'></td><td class='num'></td>";
+        tr.children[0].textContent=s; tr.children[1].textContent=bySpot[s].a; tr.children[2].textContent=bySpot[s].m; tr.children[3].textContent=pct(bySpot[s].m,bySpot[s].a);
+        body.appendChild(tr);
+      });
+      document.getElementById("totAtt").textContent=tA; document.getElementById("totMake").textContent=tM; document.getElementById("totPct").textContent=pct(tM,tA);
+    }
+    var ms=document.getElementById("modeSummary");
+    var parts=Object.keys(modes).map(function(k){ return k+": "+modes[k]+" shots"; });
+    ms.textContent = parts.length? ("Attempts by mode — kept separate on purpose, because fresh and tired numbers are different truths: "+parts.join(" · ")) : "";
+    var hw=document.getElementById("historyWrap");
+    if(record.length===0){ hw.innerHTML="<p class='muted'>No sessions yet.</p>"; }
+    else{
+      hw.innerHTML="";
+      record.slice(-8).reverse().forEach(function(e){
+        var p=document.createElement("p"); p.className="small"; p.style.margin=".25rem 0";
+        p.textContent=e.date+" — "+e.spot+" ("+e.mode+"): "+e.makes+" of "+e.att+" ("+pct(e.makes,e.att)+")"
+          +(e.quality? " · quality ended at shot "+e.quality : "")
+          +(e.note? " · “"+e.note+"”" : "");
+        hw.appendChild(p);
+      });
+    }
+  }
+
+  document.getElementById("logBtn").addEventListener("click",function(){
+    var att=parseInt(document.getElementById("attInput").value,10);
+    var mk=parseInt(document.getElementById("makeInput").value,10);
+    var qv=document.getElementById("qualityInput").value;
+    if(isNaN(att)||att<1){ msg.textContent="Attempts must be at least 1 — the record only takes honest numbers."; return; }
+    if(isNaN(mk)||mk<0||mk>att){ msg.textContent="Makes must be between 0 and your attempts. Count them as they happened."; return; }
+    var entry={ date:new Date().toISOString().slice(0,10),
+      spot:document.getElementById("spotSel").value, mode:document.getElementById("modeSel").value,
+      att:att, makes:mk, quality: qv===""? null : parseInt(qv,10),
+      note:document.getElementById("noteInput").value.trim() };
+    record.push(entry); saveRecord(); renderRecord();
+    msg.textContent="Logged: "+entry.makes+" of "+entry.att+" from "+entry.spot+" ("+entry.mode+"). Your makes-by-spot table above has already moved.";
+  });
+
+  document.getElementById("exportBtn").addEventListener("click",function(){
+    var payload={ player:(aliasInput.value||"").trim()||null, exported:new Date().toISOString(), entries:record };
+    var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="basketball-shot-record.json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400);
+    msg.textContent="Exported "+record.length+" session(s) as a file — yours to keep anywhere.";
+  });
+
+  var fc=document.getElementById("forgetConfirm");
+  document.getElementById("forgetBtn").addEventListener("click",function(){ fc.style.display="block"; });
+  document.getElementById("forgetNo").addEventListener("click",function(){ fc.style.display="none"; });
+  document.getElementById("forgetYes").addEventListener("click",function(){
+    record=[]; lsDel(LS_R); fc.style.display="none"; renderRecord();
+    msg.textContent="Forgotten. The record on this device is empty — a clean slate, whenever you want one.";
+  });
+
+  renderRecord();
+})();
+</script>
+</body>
+</html>
