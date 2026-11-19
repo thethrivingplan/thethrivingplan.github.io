@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Market Street — Tycoon</title>
+<style>
+  :root{
+    --bg:#f4f1e8; --surface:#fffdf6; --surface2:#ece7d8; --ink:#1c241e; --muted:#5a665c;
+    --line:#c9c2ab; --green:#1d5c3f; --green-ink:#ffffff; --amber:#8a5a12; --amber-bg:#fdf0d3;
+    --red:#9c2b1e; --red-bg:#fbe7e2; --good:#1d5c3f; --good-bg:#e2efe4;
+    --shadow:0 1px 3px rgba(28,36,30,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141713; --surface:#1e211c; --surface2:#262a23; --ink:#ece8da; --muted:#a9b0a2;
+      --line:#3d4238; --green:#7fc79b; --green-ink:#10231a; --amber:#e3b356; --amber-bg:#3a3018;
+      --red:#f0937f; --red-bg:#3d211b; --good:#7fc79b; --good-bg:#1d2f24;
+      --shadow:0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  html{ -webkit-text-size-adjust:100%; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size:16px; line-height:1.5; }
+  h1,h2,h3{ font-family: "Iowan Old Style", Palatino, Georgia, serif; line-height:1.2; margin:0 0 .4rem; }
+  p{ margin:0 0 .6rem; }
+  a{ color:var(--green); }
+  button, select, input[type="text"], input[type="number"]{ font:inherit; min-height:44px; }
+  button{ cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    border-radius:8px; padding:.5rem .9rem; box-shadow:var(--shadow); }
+  button.primary{ background:var(--green); color:var(--green-ink); border-color:var(--green); font-weight:700; }
+  button.danger{ color:var(--red); border-color:var(--red); }
+  button.small{ min-height:38px; padding:.3rem .6rem; font-size:.92rem; }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  select, input[type="text"], input[type="number"]{ background:var(--surface); color:var(--ink);
+    border:1px solid var(--line); border-radius:8px; padding:.45rem .6rem; }
+  input[type="number"]{ width:6.5rem; }
+  .wrap{ max-width:1060px; margin:0 auto; padding:1rem 1rem 3rem; }
+  .freeline{ background:var(--green); color:var(--green-ink); border-radius:10px; padding:.8rem 1rem;
+    display:flex; flex-wrap:wrap; gap:.6rem 1rem; align-items:center; justify-content:space-between; }
+  .freeline strong{ font-size:1.05rem; }
+  .freeline button{ background:transparent; color:inherit; border-color:currentColor; box-shadow:none; }
+  header.hero{ padding:1.2rem 0 .4rem; }
+  header.hero h1{ font-size:2.3rem; margin-bottom:.2rem; }
+  .tagline{ color:var(--muted); font-size:1.05rem; max-width:44rem; }
+  nav.compass{ display:flex; flex-wrap:wrap; gap:.4rem; margin:.9rem 0 1.1rem; }
+  nav.compass a{ display:inline-flex; align-items:center; min-height:40px; padding:.3rem .8rem;
+    border:1px solid var(--line); border-radius:999px; background:var(--surface); text-decoration:none; font-weight:600; }
+  .hud{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.6rem; margin-bottom:1rem; }
+  .hud .cell{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:.6rem .8rem; box-shadow:var(--shadow); }
+  .hud .k{ font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .hud .v{ font-size:1.35rem; font-weight:700; font-variant-numeric:tabular-nums; }
+  .hud .v.neg{ color:var(--red); }
+  section.card{ background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:1rem 1.1rem; margin-bottom:1rem; box-shadow:var(--shadow); }
+  section.card > h2{ font-size:1.35rem; }
+  .sub{ color:var(--muted); font-size:.94rem; }
+  .banner{ border-radius:10px; padding:.7rem .9rem; margin-bottom:1rem; font-weight:600; }
+  .banner.variant{ background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); }
+  .banner.win{ background:var(--good-bg); color:var(--good); border:1px solid var(--good); }
+  .banner.bust{ background:var(--red-bg); color:var(--red); border:1px solid var(--red); }
+  .banner.event{ background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media (max-width:760px){ .grid2{ grid-template-columns:1fr; } header.hero h1{ font-size:1.9rem; } }
+  .biz{ border:1px solid var(--line); border-radius:10px; padding:.85rem .95rem; margin-bottom:.8rem; background:var(--surface); }
+  .biz h3{ font-size:1.15rem; display:flex; flex-wrap:wrap; gap:.5rem; align-items:baseline; justify-content:space-between; }
+  .kind{ font-family:system-ui,sans-serif; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--amber); border:1px solid var(--amber); border-radius:999px; padding:.05rem .55rem; }
+  .bizstats{ display:flex; flex-wrap:wrap; gap:.35rem 1.1rem; font-variant-numeric:tabular-nums; margin:.3rem 0 .6rem; }
+  .bizstats b{ font-weight:700; }
+  .controls{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+  .controls label{ display:flex; align-items:center; gap:.4rem; }
+  .market{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:.7rem; }
+  .shop{ border:1px solid var(--line); border-radius:10px; padding:.8rem .9rem; background:var(--surface2); }
+  .shop h3{ font-size:1.05rem; }
+  table{ border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+  th, td{ text-align:right; padding:.4rem .5rem; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child{ text-align:left; }
+  th{ font-size:.85rem; color:var(--muted); }
+  .tablewrap{ overflow-x:auto; }
+  .coachnote{ border-left:4px solid var(--green); background:var(--surface2); border-radius:0 10px 10px 0;
+    padding:.7rem .9rem; margin-bottom:.6rem; }
+  .coachnote h3{ font-size:1.02rem; margin-bottom:.2rem; }
+  .strat{ border:1px solid var(--line); border-radius:10px; padding:.8rem .95rem; margin-bottom:.7rem; }
+  .strat h3{ font-size:1.08rem; }
+  .tradeoff{ display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.4rem; }
+  @media (max-width:560px){ .tradeoff{ grid-template-columns:1fr; } }
+  .tradeoff div{ background:var(--surface2); border-radius:8px; padding:.5rem .7rem; font-size:.94rem; }
+  .row{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; }
+  .row > *{ margin:0; }
+  .field{ display:flex; flex-direction:column; gap:.25rem; margin-bottom:.7rem; }
+  .field label{ font-weight:600; }
+  .explain{ background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); border-radius:10px;
+    padding:.6rem .9rem; margin-bottom:1rem; display:none; font-weight:600; }
+  .explain.show{ display:block; }
+  details{ border:1px solid var(--line); border-radius:10px; padding:.6rem .9rem; margin-bottom:.7rem; background:var(--surface); }
+  summary{ cursor:pointer; font-weight:700; min-height:40px; display:flex; align-items:center; }
+  .muted{ color:var(--muted); }
+  .small-note{ font-size:.9rem; color:var(--muted); }
+  .pos{ color:var(--good); font-weight:700; } .neg{ color:var(--red); font-weight:700; }
+  footer{ color:var(--muted); font-size:.92rem; border-top:1px solid var(--line); padding-top:1rem; margin-top:1.5rem; }
+  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .seg button{ border:0; border-radius:0; box-shadow:none; min-height:44px; }
+  .seg button[aria-pressed="true"]{ background:var(--green); color:var(--green-ink); font-weight:700; }
+  .hidden{ display:none !important; }
+  .loan{ border:1px solid var(--line); border-radius:10px; padding:.7rem .9rem; margin-bottom:.6rem; background:var(--surface2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="freeline">
+    <span><strong>Free — always free.</strong> No ads, no account, no in-app purchases. Play money only.</span>
+    <button id="btnDownload" type="button">Tap to download this page for offline play</button>
+  </div>
+
+  <header class="hero">
+    <h1>Market Street</h1>
+    <p class="tagline">A business tycoon game. Start with one small coffee cart and a little play money. Buy shops, set prices, hire staff, keep stock on the shelves, borrow carefully — or don't — and grow your worth, week by week.</p>
+  </header>
+
+  <nav class="compass" aria-label="Page compass">
+    <a href="#play">Play</a>
+    <a href="#ledger">Ledger</a>
+    <a href="#coach">Coach</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#record">Your record</a>
+    <a href="#settings">Settings</a>
+    <a href="#about">About &amp; the real history</a>
+  </nav>
+
+  <div id="explainBox" class="explain" role="status"></div>
+  <div id="variantBanner"></div>
+  <div id="eventBanner"></div>
+  <div id="endBanner"></div>
+
+  <!-- SETUP -->
+  <section class="card" id="setupCard">
+    <h2>Start a new run</h2>
+    <p class="sub">You begin with one business — a coffee cart on Market Street — some stock, one pair of hands (yours), and your starting cash. Everything after that is your calls.</p>
+    <div class="field">
+      <label for="aliasInput">Your shopkeeper name <span class="muted">(optional — any name you like, or leave it blank; no real name is ever required)</span></label>
+      <input type="text" id="aliasInput" maxlength="30" placeholder="e.g. Sam of Market Street" autocomplete="off" />
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="startCashSel">Starting cash</label>
+        <select id="startCashSel">
+          <option value="5000">$5,000 — standard</option>
+          <option value="2500">$2,500 — shoestring (variant)</option>
+          <option value="10000">$10,000 — comfortable (variant)</option>
+          <option value="20000">$20,000 — well-funded (variant)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="goalSel">Worth goal — reach it to win</label>
+        <select id="goalSel">
+          <option value="50000">$50,000 — standard</option>
+          <option value="25000">$25,000 — short game (variant)</option>
+          <option value="100000">$100,000 — long game (variant)</option>
+          <option value="0">No goal — open-ended sandbox</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="eventSel">How often life happens (events)</label>
+        <select id="eventSel">
+          <option value="normal">Normal — standard</option>
+          <option value="calm">Calm — fewer surprises (variant)</option>
+          <option value="wild">Wild — surprises most weeks (variant)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Teaching</label>
+        <div class="seg" role="group" aria-label="Teaching level">
+          <button type="button" data-teach="off">Off</button>
+          <button type="button" data-teach="light">Light</button>
+          <button type="button" data-teach="coach">Coach</button>
+        </div>
+        <span class="small-note">Off = no notes. Light = one short note when it matters. Coach = the full lesson, with the maths worked from your own books. Saved on this device only.</span>
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" class="primary" id="btnStart">Tap to start your run</button>
+      <button type="button" id="btnContinue" class="hidden">Tap to continue your saved run</button>
+    </div>
+    <p class="small-note">Tap does the thing. <strong>Hold</strong> a button (or hover with a mouse) and it explains itself first. Your game and record are saved on this device only — nothing is sent anywhere.</p>
+  </section>
+
+  <!-- PLAY -->
+  <div id="gameArea" class="hidden">
+    <div class="hud" id="play">
+      <div class="cell"><div class="k">Week</div><div class="v" id="hudWeek">1</div></div>
+      <div class="cell"><div class="k">Cash</div><div class="v" id="hudCash">$0</div></div>
+      <div class="cell"><div class="k">Total worth</div><div class="v" id="hudWorth">$0</div></div>
+      <div class="cell"><div class="k">Debt owed</div><div class="v" id="hudDebt">$0</div></div>
+      <div class="cell"><div class="k">Goal</div><div class="v" id="hudGoal">—</div></div>
+    </div>
+
+    <section class="card">
+      <h2>Run the week</h2>
+      <p class="sub">Set your prices, staff and stock first — then run the week and watch the ledger. One week at a time is how real shops learn.</p>
+      <div class="row">
+        <button type="button" class="primary" id="btnWeek" data-explain="Runs one week of trading for every shop you own: customers buy, rent and wages go out, loan interest is charged, and the ledger below records it all.">Tap to run next week</button>
+        <button type="button" id="btnMonth" data-explain="Runs four weeks back to back with your current prices, staff and stock. Faster — but you can't react to a sell-out or a slow week in between.">Tap to run 4 weeks</button>
+        <button type="button" class="danger" id="btnEndRun" data-explain="Ends this run now and writes it into Your record below, exactly as it stands. You can start a fresh run afterwards.">Tap to end this run and record it</button>
+      </div>
+      <p class="small-note" id="weekSummary"></p>
+    </section>
+
+    <section class="card">
+      <h2>Your street</h2>
+      <div id="bizList"></div>
+    </section>
+
+    <section class="card">
+      <h2>Businesses for sale</h2>
+      <p class="sub">Buying a second shop spreads your risk — and doubles your rent and wages. The Coach section below will tell you, from your own numbers, whether you can actually afford one.</p>
+      <div class="market" id="marketList"></div>
+    </section>
+
+    <section class="card">
+      <h2>The bank</h2>
+      <p class="sub">Loans put cash in the till today and take interest out every week until the principal is repaid. Refusing a loan is a real strategy — plenty of strong streets never borrow a cent.</p>
+      <div id="loanOffers"></div>
+      <h3>Your loans</h3>
+      <div id="loanList"><p class="muted">No loans. You owe nobody anything.</p></div>
+    </section>
+
+    <section class="card" id="ledger">
+      <h2>The ledger</h2>
+      <p class="sub">Every week, written down. Profit is what's left after all costs. Cash is what's actually in the till — the Coach explains why those two numbers so often disagree.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Week</th><th>Sales in</th><th>Costs out</th><th>Profit</th><th>Cash after</th><th>Worth after</th><th style="text-align:left">What happened</th></tr></thead>
+          <tbody id="ledgerBody"><tr><td colspan="7" class="muted" style="text-align:left">No weeks run yet.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- COACH -->
+  <section class="card" id="coach">
+    <h2>Coach — real business basics, from your own books</h2>
+    <p class="sub">The Coach reads <em>your</em> ledger, prices and loans — never generic tips. Change the Teaching dial in Settings or on the start screen: <strong>Off</strong> hides all of this, <strong>Light</strong> shows the single most useful note, <strong>Coach</strong> shows everything, including the pro tools.</p>
+    <div id="coachNotes"><p class="muted">Start a run and run a week — your first notes will appear here, worked out from your numbers.</p></div>
+    <div id="proTools" class="hidden">
+      <h3>Pro tools</h3>
+      <div class="field">
+        <label for="beBiz">Break-even calculator — pick a business</label>
+        <select id="beBiz"></select>
+      </div>
+      <p id="beOut" style="font-variant-numeric:tabular-nums"></p>
+      <details>
+        <summary>Tap to open: Margin vs markup — the two numbers people mix up</summary>
+        <p><strong>Markup</strong> is what you add on top of cost: sell at $5 what cost $2, and your markup is ($5 − $2) ÷ $2 = <strong>150%</strong>.</p>
+        <p><strong>Margin</strong> is the share of the selling price you keep before rent and wages: ($5 − $2) ÷ $5 = <strong>60%</strong>.</p>
+        <p>Same sale, two different numbers. Margin is the one that has to cover your rent, wages and loan interest — which is why the Coach always quotes margin, and why a "100% markup" can still lose money in a shop with high rent.</p>
+      </details>
+      <details>
+        <summary>Tap to open: Cash flow vs profit — why profitable shops go broke</summary>
+        <p>Profit counts a sale the moment it happens. Cash counts money the moment it moves. Buy $800 of stock on Monday and it leaves your till at once, but it only becomes "cost" in the profit column as it sells, week by week.</p>
+        <p>So a shop can show a profit every week and still run out of cash — usually because it bought stock, repaid a loan, or expanded faster than the till refilled. Watch both numbers in the HUD. Cash is the one that ends games.</p>
+      </details>
+      <details>
+        <summary>Tap to open: Why expanding on debt breaks people</summary>
+        <p>A loan adds two things: cash today, and a fixed interest bill every week whether trade is good or bad. Rent and wages are also fixed. Stack enough fixed bills under a business whose sales swing with the seasons, and one slow month puts cash under zero — even if the business is "profitable on average."</p>
+        <p>The test the Coach uses on your books: could you pay all your fixed weekly bills for four straight weeks with zero sales? If not, you are one bad month from the edge, whatever the profit column says.</p>
+      </details>
+      <details>
+        <summary>Tap to open: Pricing — both directions are real strategies</summary>
+        <p><strong>Price lower</strong> and more customers come, but each sale keeps less. Works when your margin is fat and your shelves are full — volume pays the rent.</p>
+        <p><strong>Price higher</strong> and each sale keeps more, but fewer customers come. Works when your product is distinctive and your costs are low — this is the premium niche.</p>
+        <p>There is no universally right price. There is only the price whose maths — margin × number of sales — beats your fixed bills. The Coach works that maths on your actual shops, above.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- STRATEGIES -->
+  <section class="card" id="strategies">
+    <h2>Three honest ways to play</h2>
+    <p class="sub">More than one strategy can win. Each has a real trade-off — anyone who tells you otherwise is selling something.</p>
+    <div class="strat">
+      <h3>1 · Slow and solvent</h3>
+      <p>Never borrow. Grow only from profit, keep a cash cushion of at least four weeks of bills, expand one shop at a time.</p>
+      <div class="tradeoff"><div><strong>What you gain:</strong> almost impossible to go bankrupt; a slow season is an inconvenience, not an ending.</div><div><strong>What it costs:</strong> slow. A borrower who survives will reach the goal weeks before you.</div></div>
+    </div>
+    <div class="strat">
+      <h3>2 · Borrow and grow</h3>
+      <p>Take a loan early, buy a second and third shop while prices are fair, and let three tills pay the interest. Repay aggressively in good weeks.</p>
+      <div class="tradeoff"><div><strong>What you gain:</strong> the fastest route to a big worth goal — more shops earning at once.</div><div><strong>What it costs:</strong> fixed bills stack up. One slow season plus one breakdown can put you under before the growth pays off.</div></div>
+    </div>
+    <div class="strat">
+      <h3>3 · Premium-price niche</h3>
+      <p>Keep one or two shops, price well above the street average, run lean staff, and live on fat margins from fewer, happier-to-pay customers.</p>
+      <div class="tradeoff"><div><strong>What you gain:</strong> high profit per sale, low stock costs, small wage bill — very resilient per shop.</div><div><strong>What it costs:</strong> a low ceiling. Fewer sales means worth grows slowly, and a price-sensitive event hits you hardest.</div></div>
+    </div>
+    <p class="small-note">Your record below keeps every run's decisions and money flow in the same shape, so you can compare these strategies honestly — your own evidence, not anyone's say-so.</p>
+  </section>
+
+  <!-- RECORD -->
+  <section class="card" id="record">
+    <h2>Your record — the strategy test bench</h2>
+    <p class="sub">Every finished run is written here in one clean, consistent shape: settings, week-by-week cash and worth, and every decision (prices set, hires, stock bought, loans taken or repaid, shops bought or sold). Saved on this device only. Nothing is sent anywhere.</p>
+    <div id="recordSummary"><p class="muted">No finished runs yet.</p></div>
+    <div id="recordList"></div>
+    <div class="row">
+      <button type="button" id="btnExportJson">Tap to download record (JSON)</button>
+      <button type="button" id="btnExportCsv">Tap to download record (CSV)</button>
+      <button type="button" class="danger" id="btnForget">Tap to forget everything — wipe record and saved game</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="card" id="settings">
+    <h2>Settings</h2>
+    <div class="field">
+      <label>Teaching dial</label>
+      <div class="seg" role="group" aria-label="Teaching level in settings">
+        <button type="button" data-teach="off">Off</button>
+        <button type="button" data-teach="light">Light</button>
+        <button type="button" data-teach="coach">Coach</button>
+      </div>
+      <span class="small-note">Default is Light. Saved on this device only.</span>
+    </div>
+    <p class="small-note">Starting cash, worth goal and event frequency are chosen at the start of each run (top of this page). Any non-standard choice is labelled a <strong>variant</strong> with a banner while it is in play, and the run is recorded as that variant — a variant's result is never dressed up as a standard one.</p>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="card" id="about">
+    <h2>About &amp; the real history</h2>
+    <p><strong>Market Street</strong> is an original game — its name, shops, prices, events and words are all its own. It belongs to a documented kind of game: the <em>tycoon game</em>, a business simulation where you build and run an enterprise against costs, prices and luck.</p>
+    <p>The form got its name from a 1990 railroad-building classic — a game about laying track, running trains and out-trading rival railroad companies — whose title put the word "Tycoon" on the genre for good. Dozens of business simulations followed in the decades after, covering everything from theme parks to pizza chains, all built on the same honest loop this page uses: buy, price, staff, stock, borrow or don't, and live with the ledger.</p>
+    <p>The business lessons in the Coach are real and standard: margin and markup, cash flow versus profit, fixed costs, break-even, and the danger of expanding on debt. The money here is play money — but the maths is the maths.</p>
+    <p><strong>How a week is worked out:</strong> each shop has a fair street price. Price below it and more customers come (with diminishing returns); price above it and they drift away. Staff set how many customers you can actually serve; stock sets how many you can sell to. Food stock spoils a little each week. Events — a street festival, a slow season, a supplier putting prices up, a breakdown, a kind review — are drawn honestly at the frequency you chose, and the ledger tells you when one lands.</p>
+  </section>
+
+  <footer>
+    <p>Market Street — free, always free, no ads. Copyleft: this page is shared under CC BY-SA 4.0 — copy it, change it, pass it on, keep it free. Play money only; nothing here is financial advice, it's a game that teaches.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+var money = function(n){ var neg = n<0; n = Math.round(Math.abs(n)); return (neg?"-$":"$") + n.toLocaleString("en-US"); };
+var LS_GAME="marketstreet.game.v1", LS_REC="marketstreet.record.v1", LS_SET="marketstreet.settings.v1";
+
+/* ---------- Business templates (all original) ---------- */
+var TEMPLATES=[
+ {key:"coffee", name:"Coffee Cart", kind:"Food", cost:2000, wholesale:2, fair:5, baseDemand:95, rent:110, wage:90, blurb:"Cheap to start, fast turnover, thin margin per cup."},
+ {key:"noodle", name:"Noodle Bowl Stall", kind:"Food", cost:3000, wholesale:4, fair:9, baseDemand:100, rent:150, wage:100, blurb:"Steady lunch trade; stock spoils if you over-order."},
+ {key:"bakery", name:"Corner Bakery", kind:"Food", cost:4500, wholesale:3, fair:7, baseDemand:115, rent:200, wage:110, blurb:"Big morning demand, bigger rent."},
+ {key:"groom", name:"Pet Grooming Studio", kind:"Services", cost:3400, wholesale:3, fair:20, baseDemand:48, rent:160, wage:130, blurb:"Few customers, high price per visit, loyal regulars."},
+ {key:"nursery", name:"Plant Nursery", kind:"Goods", cost:3800, wholesale:6, fair:13, baseDemand:70, rent:170, wage:100, blurb:"Seasonal swings, patient money."},
+ {key:"repair", name:"Fix-It Repair Bench", kind:"Services", cost:5200, wholesale:5, fair:22, baseDemand:44, rent:220, wage:150, blurb:"Skilled staff cost more; each job pays well."},
+ {key:"books", name:"Book & Game Shop", kind:"Goods", cost:6500, wholesale:9, fair:18, baseDemand:62, rent:260, wage:120, blurb:"Fat margins, slow feet through the door."}
+];
+function tpl(key){ for(var i=0;i<TEMPLATES.length;i++) if(TEMPLATES[i].key===key) return TEMPLATES[i]; return null; }
+var LOAN_OFFERS=[
+ {key:"small", name:"Small loan", amount:2000, rate:0.015, blurb:"1.5% interest per week."},
+ {key:"growth", name:"Growth loan", amount:6000, rate:0.02, blurb:"2% interest per week."},
+ {key:"big", name:"Big loan", amount:12000, rate:0.025, blurb:"2.5% interest per week. Fixed bills get heavy."}
+];
+
+/* ---------- Settings / teaching ---------- */
+var settings={ teaching:"light" };
+try{ var s=JSON.parse(localStorage.getItem(LS_SET)||"null"); if(s&&s.teaching) settings.teaching=s.teaching; }catch(e){}
+function saveSettings(){ try{ localStorage.setItem(LS_SET, JSON.stringify(settings)); }catch(e){} }
+function paintTeach(){
+  var btns=document.querySelectorAll("[data-teach]");
+  for(var i=0;i<btns.length;i++){ btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-teach")===settings.teaching ? "true":"false"); }
+  $("proTools").classList.toggle("hidden", settings.teaching!=="coach");
+  renderCoach();
+}
+document.addEventListener("click", function(ev){
+  var t=ev.target.closest ? ev.target.closest("[data-teach]") : null;
+  if(t){ settings.teaching=t.getAttribute("data-teach"); saveSettings(); paintTeach(); }
+});
+
+/* ---------- Game state ---------- */
+var G=null; // active game
+var uid=1;
+function newBiz(key, price){
+  var t=tpl(key);
+  return { id:uid++, key:key, name:t.name, kind:t.kind, price:(price||t.fair), staff:1, stock:(key==="coffee"?60:40),
+           wholesale:t.wholesale, rent:t.rent, wage:t.wage, baseDemand:t.baseDemand, fair:t.fair, cost:t.cost,
+           lastSales:0, lastWanted:0, lastProfit:0 };
+}
+function totalDebt(){ if(!G) return 0; var d=0; for(var i=0;i<G.loans.length;i++) d+=G.loans[i].principal; return d; }
+function bizValue(b){ return Math.round(b.cost*0.8 + b.stock*b.wholesale + b.staff*100); }
+function totalWorth(){ if(!G) return 0; var w=G.cash - totalDebt(); for(var i=0;i<G.biz.length;i++) w+=bizValue(G.biz[i]); return w; }
+function fixedBills(){ if(!G) return 0; var f=0,i; for(i=0;i<G.biz.length;i++) f+=G.biz[i].rent + G.biz[i].staff*G.biz[i].wage;
+  for(i=0;i<G.loans.length;i++) f+=Math.round(G.loans[i].principal*G.loans[i].rate); return f; }
+
+function logDecision(type, detail, amount){
+  if(!G) return;
+  G.decisions.push({ week:G.week, type:type, detail:detail, amount:(amount==null?null:Math.round(amount)), cash:Math.round(G.cash), worth:Math.round(totalWorth()) });
+}
+function saveGame(){ try{ if(G) localStorage.setItem(LS_GAME, JSON.stringify(G)); }catch(e){} }
+function loadGame(){ try{ var g=JSON.parse(localStorage.getItem(LS_GAME)||"null"); if(g&&g.biz) return g; }catch(e){} return null; }
+
+function startRun(){
+  var startCash=parseInt($("startCashSel").value,10);
+  var goal=parseInt($("goalSel").value,10);
+  var ev=$("eventSel").value;
+  var alias=$("aliasInput").value.trim();
+  uid=1;
+  G={ week:1, cash:startCash, biz:[], loans:[], ledger:[], decisions:[], effects:[],
+      runSettings:{ startCash:startCash, goal:goal, events:ev },
+      alias:alias, startedAt:new Date().toISOString(), recorded:false, over:false, result:null,
+      lastWeek:null };
+  G.biz.push(newBiz("coffee"));
+  logDecision("start","Run started with a Coffee Cart", startCash);
+  saveGame();
+  showGame();
+  $("weekSummary").textContent="Week 1. Your cart is stocked with 60 cups' worth of supplies. Set a price, then run the week.";
+  renderAll();
+}
+function isVariant(){
+  if(!G) return false;
+  return G.runSettings.startCash!==5000 || (G.runSettings.goal!==undefined) || (G.runSettings.goal!==50000 && G.runSettings.goal!==0) || G.runSettings.events!=="normal" || G.runSettings.goal===0;
+}
+function variantText(){
+  if(!G) return "";
+  var parts=[];
+  if(G.runSettings.startCash!==5000) parts.push("starting cash "+money(G.runSettings.startCash));
+  if(G.runSettings.goal===0) parts.push("open-ended, no goal");
+  else if(G.runSettings.goal!==50000) parts.push("goal "+money(G.runSettings.goal));
+  if(G.runSettings.events!=="normal") parts.push("events: "+G.runSettings.events);
+  return parts.join(" · ");
+}
+
+/* ---------- Events ---------- */
+function rollEvent(){
+  var chance = G.runSettings.events==="calm"?0.15 : G.runSettings.events==="wild"?0.6 : 0.35;
+  if(Math.random()>chance) return null;
+  var pool=["festival","slow","supplier","breakdown","review","quietstreet"];
+  var k=pool[Math.floor(Math.random()*pool.length)];
+  if(k==="festival"){ G.effects.push({label:"Street Festival", demandMult:1.5, weeks:1}); return {label:"Street Festival", note:"The street festival brought crowds — demand up half again this week."}; }
+  if(k==="slow"){ G.effects.push({label:"Slow Season", demandMult:0.65, weeks:1}); return {label:"Slow Season", note:"A slow week on the street — demand down by about a third."}; }
+  if(k==="supplier"){ G.effects.push({label:"Supplier Price Rise", wholesaleMult:1.2, weeks:3}); return {label:"Supplier Price Rise", note:"Your supplier put prices up 20% for the next 3 weeks. Restocking costs more; margins squeeze."}; }
+  if(k==="review"){ G.effects.push({label:"A Kind Review", demandMult:1.25, weeks:3}); return {label:"A Kind Review", note:"A local paper praised Market Street — demand up a quarter for 3 weeks."}; }
+  if(k==="quietstreet"){ G.effects.push({label:"Roadworks", demandMult:0.8, weeks:2}); return {label:"Roadworks", note:"Roadworks at the corner for 2 weeks — fewer passers-by."}; }
+  // breakdown
+  if(G.biz.length){
+    var b=G.biz[Math.floor(Math.random()*G.biz.length)];
+    var cost=120+Math.floor(Math.random()*180);
+    G.cash-=cost;
+    return {label:"Breakdown at "+b.name, note:"Equipment at "+b.name+" broke down — "+money(cost)+" repair bill, paid at once.", cost:cost};
+  }
+  return null;
+}
+function effectMult(field){
+  var m=1;
+  for(var i=0;i<G.effects.length;i++){ if(G.effects[i][field]) m*=G.effects[i][field]; }
+  return m;
+}
+
+/* ---------- Run one week ---------- */
+function runWeek(){
+  if(!G||G.over) return;
+  var ev=rollEvent();
+  var dMult=effectMult("demandMult"), wMult=effectMult("wholesaleMult");
+  var revenue=0, costs=0, i, b;
+  for(i=0;i<G.biz.length;i++){
+    b=G.biz[i];
+    var ratio=b.fair/b.price;
+    var priceMult=Math.pow(ratio,1.5); if(priceMult>2.2)priceMult=2.2; if(priceMult<0.22)priceMult=0.22;
+    var wanted=Math.round(b.baseDemand*priceMult*dMult*(0.9+Math.random()*0.2));
+    var capacity=b.staff*55;
+    var sales=Math.min(b.stock, wanted, capacity);
+    var rev=sales*b.price, cogs=sales*b.wholesale;
+    var fixed=b.rent + b.staff*b.wage;
+    revenue+=rev; costs+=cogs+fixed;
+    b.stock-=sales;
+    if(b.kind==="Food"&&b.stock>0){ var spoil=Math.floor(b.stock*0.08); b.stock-=spoil; }
+    b.lastSales=sales; b.lastWanted=wanted; b.lastProfit=rev-cogs-fixed;
+  }
+  var interest=0;
+  for(i=0;i<G.loans.length;i++){ interest+=Math.round(G.loans[i].principal*G.loans[i].rate); }
+  costs+=interest;
+  var profit=revenue-costs;
+  G.cash+=profit;
+  // tick effects
+  for(i=G.effects.length-1;i>=0;i--){ G.effects[i].weeks--; if(G.effects[i].weeks<=0) G.effects.splice(i,1); }
+  var note=ev?ev.note:"A plain trading week.";
+  G.ledger.push({ week:G.week, revenue:Math.round(revenue), costs:Math.round(costs), profit:Math.round(profit),
+                  cash:Math.round(G.cash), worth:Math.round(totalWorth()), note:note });
+  G.lastWeek={ revenue:revenue, costs:costs, profit:profit, interest:interest, event:ev };
+  logDecision("week","Ran week "+G.week+(ev?(" — "+ev.label):""), profit);
+  G.week++;
+  // endings
+  var worth=totalWorth();
+  if(G.runSettings.goal>0 && worth>=G.runSettings.goal && !G.recorded){
+    G.result="Won — reached "+money(G.runSettings.goal)+" worth";
+    finalizeRecord(G.result);
+    showEnd(true,"You did it — worth "+money(worth)+" in week "+(G.week-1)+". Goal reached. You can keep playing open-ended from here; the win is already in your record.");
+  }
+  if(G.cash<=-750){
+    G.over=true; G.result="Bankrupt — cash fell to "+money(G.cash);
+    finalizeRecord(G.result);
+    showEnd(false,"Bankrupt. Cash fell to "+money(G.cash)+" — further under zero than the bank allows. The street closes. It happens to careful people too when fixed bills stack up; your record below keeps the whole run, honestly, so the next one can be smarter.");
+  }
+  saveGame();
+  renderAll();
+  if(!G.over){
+    $("weekSummary").textContent="Week "+(G.week-1)+" done: sales in "+money(revenue)+", costs out "+money(costs)+", profit "+money(profit)+(interest?(", including "+money(interest)+" loan interest"):"")+". "+note;
+    if(G.cash<0) $("weekSummary").textContent+=" Warning: cash is under zero. Sell a shop, repay nothing, take a loan, or raise prices — if cash reaches -$750 the run ends in bankruptcy.";
+  }
+}
+function showEnd(won, text){
+  $("endBanner").innerHTML='<div class="banner '+(won?"win":"bust")+'">'+text+"</div>";
+}
+
+/* ---------- Record ---------- */
+function getRecord(){ try{ var r=JSON.parse(localStorage.getItem(LS_REC)||"[]"); return Array.isArray(r)?r:[]; }catch(e){ return []; } }
+function finalizeRecord(result){
+  if(!G||G.recorded) return;
+  G.recorded=true;
+  var weeks=G.ledger.map(function(l){ return { week:l.week, cash:l.cash, worth:l.worth, revenue:l.revenue, profit:l.profit }; });
+  var rec={ runId:"run-"+Date.now(), startedAt:G.startedAt, alias:G.alias||"", result:result,
+            variant:variantText()||"standard",
+            settings:{ startCash:G.runSettings.startCash, goal:G.runSettings.goal, events:G.runSettings.events, teaching:settings.teaching },
+            weeksPlayed:G.ledger.length, finalCash:Math.round(G.cash), finalWorth:Math.round(totalWorth()), finalDebt:Math.round(totalDebt()),
+            weeks:weeks, decisions:G.decisions };
+  var all=getRecord(); all.push(rec);
+  try{ localStorage.setItem(LS_REC, JSON.stringify(all)); }catch(e){}
+  renderRecord();
+}
+function renderRecord(){
+  var all=getRecord();
+  if(!all.length){ $("recordSummary").innerHTML='<p class="muted">No finished runs yet.</p>'; $("recordList").innerHTML=""; return; }
+  var wins=0,i; for(i=0;i<all.length;i++) if(all[i].result.indexOf("Won")===0) wins++;
+  $("recordSummary").innerHTML="<p><strong>"+all.length+"</strong> finished run"+(all.length===1?"":"s")+" · <strong>"+wins+"</strong> won. Newest last.</p>";
+  var html="";
+  for(i=all.length-1;i>=0;i--){
+    var r=all[i];
+    html+="<details><summary>Tap to open: "+r.result+" — "+r.weeksPlayed+" weeks, final worth "+money(r.finalWorth)+(r.alias?(" · played as "+escapeHtml(r.alias)):"")+"</summary>"
+      +"<p class='small-note'>Variant: "+escapeHtml(r.variant)+" · Started "+escapeHtml((r.startedAt||"").slice(0,10))+" · Final cash "+money(r.finalCash)+" · Debt at end "+money(r.finalDebt)+"</p>"
+      +"<p class='small-note'>Decisions logged: "+r.decisions.length+" · Weeks logged: "+r.weeks.length+"</p></details>";
+  }
+  $("recordList").innerHTML=html;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function download(name, text, type){
+  var blob=new Blob([text],{type:type}); var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },400);
+}
+
+/* ---------- Coach ---------- */
+function coachData(){
+  if(!G||!G.biz.length) return [];
+  var notes=[], i, b;
+  var bills=fixedBills();
+  // Margin & markup on the first / each business
+  for(i=0;i<G.biz.length;i++){
+    b=G.biz[i];
+    var margin=(b.price-b.wholesale)/b.price, markup=(b.price-b.wholesale)/b.wholesale;
+    if(margin<0.18) notes.push({h:"Thin margin at "+b.name, body:"At "+money(b.price)+" a sale with "+money(b.wholesale)+" cost, your margin is "+Math.round(margin*100)+"% (markup "+Math.round(markup*100)+"%). Out of every dollar taken, only "+Math.round(margin*100)+" cents are there to cover "+money(b.rent)+" rent and wages. Thin margins need big volume — or a price rise."});
+    if(b.lastWanted>0 && b.stock===0 && b.lastSales<b.lastWanted) notes.push({h:"You sold out at "+b.name, body:"Last week "+b.lastWanted+" customers wanted to buy and you served "+b.lastSales+". Empty shelves are lost sales you already paid rent to earn. Order stock before running the next week — or raise the price and let the margin do the work."});
+    if(b.lastWanted>0 && b.lastSales>=b.staff*55 && b.lastWanted>b.staff*55) notes.push({h:"Staff are the bottleneck at "+b.name, body:b.lastWanted+" customers came but "+b.staff+" staff can only serve about "+(b.staff*55)+". Hiring one more costs "+money(b.wage)+" a week and only pays if the extra sales' margin beats it: at your current margin of "+money(b.price-b.wholesale)+" a sale, you need about "+Math.ceil(b.wage/Math.max(1,(b.price-b.wholesale)))+" extra sales a week to break even on that hire."});
+    if(b.price>b.fair*1.3) notes.push({h:"Premium pricing at "+b.name, body:"Your price "+money(b.price)+" is well above the street fair price of "+money(b.fair)+". That's the premium niche: fewer customers, more kept per sale. It works while margin × sales beats your fixed bills of "+money(b.rent+b.staff*b.wage)+" a week — watch the ledger: if sales fall below break-even, the niche is just expensive."});
+    if(b.price<b.fair*0.8) notes.push({h:"Volume pricing at "+b.name, body:"Your price "+money(b.price)+" is well under the fair "+money(b.fair)+". You're buying customers with margin. That pays only if the extra sales actually arrive and your stock holds out — check you aren't selling out cheap and restocking at full cost."});
+  }
+  // Cash runway / fixed bills
+  if(bills>0){
+    var runway=G.cash>0? Math.floor(G.cash/bills) : 0;
+    if(G.cash<bills*4) notes.push({h:"Your cushion is thin", body:"Your fixed bills — rent, wages and loan interest — come to "+money(bills)+" every week whether anyone buys or not. Your cash of "+money(G.cash)+" covers about "+runway+" week"+(runway===1?"":"s")+" of zero sales. The Coach's rule of thumb is four. One slow season plus one breakdown is all it takes from here."});
+    else notes.push({h:"A healthy cushion", body:"Fixed bills are "+money(bills)+" a week and cash is "+money(G.cash)+" — about "+runway+" weeks of zero sales covered. That's the slow-and-solvent position: a bad month hurts, it doesn't end you."});
+  }
+  // Debt
+  var debt=totalDebt(), worth=totalWorth();
+  if(debt>0){
+    var interest=0; for(i=0;i<G.loans.length;i++) interest+=Math.round(G.loans[i].principal*G.loans[i].rate);
+    notes.push({h:"What your debt really costs", body:"You owe "+money(debt)+". Interest alone is "+money(interest)+" every week — that's "+money(interest*52)+" over a year of play, paid before rent. Debt is "+(worth>0?Math.round(debt/Math.max(1,worth+debt)*100):100)+"% of everything you've built. Expanding on debt works only while the new shop's weekly profit beats this interest bill with room to spare."});
+  }
+  // Cash flow vs profit from last week
+  if(G.lastWeek){
+    var lw=G.lastWeek;
+    if(lw.profit>0) notes.push({h:"Profit is not cash — check both", body:"Last week showed a profit of "+money(lw.profit)+". But any stock you order or loan you repay this week leaves the till immediately, while profit only counts stock as it sells. If cash ever falls while profit rises, that's why — and cash, not profit, is the number that can end the run."});
+    if(lw.profit<0) notes.push({h:"Last week lost money", body:"Costs of "+money(lw.costs)+" beat sales of "+money(lw.revenue)+". Before borrowing to cover it, find the leak in the ledger: was it low sales (price or demand), a stock-out, or fixed bills that have grown past what one street can carry?"});
+  }
+  if(!notes.length) notes.push({h:"Steady books", body:"Margins, stock, staff and cash all look balanced on your current numbers. The next honest question is growth: a second shop spreads risk, and the Strategies section lays out what each route costs."});
+  return notes;
+}
+function renderCoach(){
+  var box=$("coachNotes");
+  if(settings.teaching==="off"){ box.innerHTML='<p class="muted">Teaching is Off — the Coach is silent. Turn it to Light or Coach in Settings any time.</p>'; return; }
+  if(!G){ box.innerHTML='<p class="muted">Start a run and run a week — your first notes will appear here, worked out from your numbers.</p>'; return; }
+  var notes=coachData();
+  var show = settings.teaching==="light" ? notes.slice(0,1) : notes;
+  var html="";
+  for(var i=0;i<show.length;i++) html+='<div class="coachnote"><h3>'+escapeHtml(show[i].h)+'</h3><p>'+escapeHtml(show[i].body)+'</p></div>';
+  if(settings.teaching==="light"&&notes.length>1) html+='<p class="small-note">Light shows the one note that matters most right now. Switch to Coach for all '+notes.length+' notes plus the pro tools.</p>';
+  box.innerHTML=html;
+  paintBreakEven();
+}
+function paintBreakEven(){
+  var sel=$("beBiz"); if(!sel||!G) return;
+  var b=null,i;
+  for(i=0;i<G.biz.length;i++) if(String(G.biz[i].id)===sel.value) b=G.biz[i];
+  if(!b&&G.biz.length) b=G.biz[0];
+  if(!b){ $("beOut").textContent=""; return; }
+  var fixed=b.rent+b.staff*b.wage, unit=b.price-b.wholesale;
+  var be=unit>0?Math.ceil(fixed/unit):Infinity;
+  var margin=Math.round((b.price-b.wholesale)/b.price*100), markup=Math.round((b.price-b.wholesale)/b.wholesale*100);
+  $("beOut").innerHTML="<strong>"+escapeHtml(b.name)+":</strong> fixed bills "+money(fixed)+"/week ÷ "+money(unit)+" kept per sale = break-even at <strong>"+(isFinite(be)?be:"never at this price")+" sales a week</strong>. Last week: "+b.lastSales+" sold. Price "+money(b.price)+", cost "+money(b.wholesale)+" → margin "+margin+"%, markup "+markup+"%.";
+}
+
+/* ---------- Rendering ---------- */
+function showGame(){
+  $("setupCard").classList.add("hidden");
+  $("gameArea").classList.remove("hidden");
+}
+function renderAll(){
+  if(!G) return;
+  $("hudWeek").textContent=G.week;
+  var cashEl=$("hudCash"); cashEl.textContent=money(G.cash); cashEl.className="v"+(G.cash<0?" neg":"");
+  $("hudWorth").textContent=money(totalWorth());
+  $("hudDebt").textContent=money(totalDebt());
+  $("hudGoal").textContent=G.runSettings.goal>0?money(G.runSettings.goal):"Open-ended";
+  var vt=variantText();
+  $("variantBanner").innerHTML=vt?'<div class="banner variant">Variant in play: '+escapeHtml(vt)+". This run is recorded as a variant — its result is never dressed up as a standard run.</div>":"";
+  // businesses
+  var html="", i, b;
+  for(i=0;i<G.biz.length;i++){
+    b=G.biz[i];
+    var wMult=effectMult("wholesaleMult");
+    var restockCost=Math.round(50*b.wholesale*wMult);
+    html+='<div class="biz"><h3><span>'+escapeHtml(b.name)+'</span><span class="kind">'+escapeHtml(b.kind)+'</span></h3>'
+      +'<div class="bizstats"><span>Price <b>'+money(b.price)+'</b> (fair '+money(b.fair)+')</span><span>Stock <b>'+b.stock+'</b></span><span>Staff <b>'+b.staff+'</b></span><span>Rent <b>'+money(b.rent)+'</b>/wk</span><span>Wages <b>'+money(b.staff*b.wage)+'</b>/wk</span><span>Last week: <b>'+b.lastSales+' sold</b>, profit <b>'+money(b.lastProfit)+'</b></span><span>Sell value <b>'+money(bizValue(b))+'</b></span></div>'
+      +'<div class="controls">'
+      +'<label>Price $ <input type="number" min="1" max="99" step="1" value="'+b.price+'" data-price="'+b.id+'" aria-label="Price for '+escapeHtml(b.name)+'"></label>'
+      +'<button type="button" class="small" data-act="setprice" data-id="'+b.id+'" data-explain="Sets this shop\'s price. Lower brings more customers but keeps less per sale; higher keeps more but sends customers away. The Coach works the maths on your numbers.">Tap to set price</button>'
+      +'<button type="button" class="small" data-act="stock" data-id="'+b.id+'" data-explain="Buys 50 units of stock at the wholesale cost, paid from cash now. Food stock spoils a little each week, so don\'t over-order food.">Tap to order 50 stock ('+money(restockCost)+')</button>'
+      +'<button type="button" class="small" data-act="hire" data-id="'+b.id+'" data-explain="Hires one staff member. Each staff member can serve about 55 customers a week, and adds their wage to your fixed weekly bills.">Tap to hire staff (+'+money(b.wage)+'/wk)</button>'
+      +'<button type="button" class="small" data-act="fire" data-id="'+b.id+'" '+(b.staff<=1?"disabled":"")+' data-explain="Lets one staff member go. Cuts the wage bill, but caps how many customers you can serve.">Tap to let one go</button>'
+      +'<button type="button" class="small danger" data-act="sell" data-id="'+b.id+'" data-explain="Sells this business for its sell value — 80% of what it cost, plus stock and staff value. Selling is how you escape a cash hole without a loan.">Tap to sell this shop</button>'
+      +'</div></div>';
+  }
+  if(!G.biz.length) html='<p class="muted">You own no businesses. Buy one below to get back on the street — or end the run.</p>';
+  $("bizList").innerHTML=html;
+  // market
+  var mh="";
+  for(i=0;i<TEMPLATES.length;i++){
+    var t=TEMPLATES[i];
+    mh+='<div class="shop"><h3>'+t.name+' · '+money(t.cost)+'</h3><p class="small-note">'+t.kind+' · fair price '+money(t.fair)+' · cost '+money(t.wholesale)+'/unit · rent '+money(t.rent)+'/wk</p><p>'+t.blurb+'</p>'
+      +'<button type="button" class="small" data-act="buy" data-key="'+t.key+'" data-explain="Buys this business outright from your cash. It arrives with 40 stock and 1 staff, and adds its rent and wages to your fixed weekly bills from next week.">Tap to buy</button></div>';
+  }
+  $("marketList").innerHTML=mh;
+  // loans
+  var lh="";
+  for(i=0;i<LOAN_OFFERS.length;i++){
+    var o=LOAN_OFFERS[i];
+    lh+='<div class="loan"><strong>'+o.name+': '+money(o.amount)+'</strong> — '+o.blurb+' Interest is '+money(Math.round(o.amount*o.rate))+' a week. '
+      +'<button type="button" class="small" data-act="loan" data-key="'+o.key+'" data-explain="Takes this loan: cash lands in your till now, interest is charged every week, and the principal stays owed until you repay it. Refusing loans entirely is a legitimate strategy.">Tap to take this loan</button> '
+      +'<button type="button" class="small" data-act="noloan" data-explain="A deliberate no: you keep your fixed bills low and your street fully your own. The Coach respects this strategy — slow and solvent wins plenty of runs.">Tap to refuse — stay debt-free</button></div>';
+  }
+  $("loanOffers").innerHTML=lh;
+  if(G.loans.length){
+    var ll="";
+    for(i=0;i<G.loans.length;i++){
+      var L=G.loans[i];
+      ll+='<div class="loan"><strong>'+escapeHtml(L.name)+'</strong> — you owe <strong>'+money(L.principal)+'</strong>, interest '+money(Math.round(L.principal*L.rate))+'/wk. '
+        +'<button type="button" class="small" data-act="repay" data-id="'+L.id+'" data-explain="Repays $500 of the principal from cash. Every dollar repaid cuts next week\'s interest bill.">Tap to repay $500</button> '
+        +'<button type="button" class="small" data-act="repayall" data-id="'+L.id+'" data-explain="Repays the whole remaining principal at once, if your cash covers it.">Tap to repay in full</button></div>';
+    }
+    $("loanList").innerHTML=ll;
+  } else {
+    $("loanList").innerHTML='<p class="muted">No loans. You owe nobody anything.</p>';
+  }
+  // ledger
+  if(G.ledger.length){
+    var rows="";
+    for(i=G.ledger.length-1;i>=0;i--){
+      var l=G.ledger[i];
+      rows+="<tr><td>"+l.week+"</td><td>"+money(l.revenue)+"</td><td>"+money(l.costs)+"</td><td class='"+(l.profit<0?"neg":"pos")+"'>"+money(l.profit)+"</td><td>"+money(l.cash)+"</td><td>"+money(l.worth)+"</td><td style='text-align:left'>"+escapeHtml(l.note)+"</td></tr>";
+    }
+    $("ledgerBody").innerHTML=rows;
+  }
+  // break-even select
+  var sel=$("beBiz"), cur=sel.value, opts="";
+  for(i=0;i<G.biz.length;i++) opts+='<option value="'+G.biz[i].id+'">'+escapeHtml(G.biz[i].name)+'</option>';
+  sel.innerHTML=opts; if(cur) sel.value=cur;
+  renderCoach();
+}
+
+/* ---------- Actions ---------- */
+$("bizList").addEventListener("click", function(ev){
+  var btn=ev.target.closest?ev.target.closest("button[data-act]"):null; if(!btn||!G) return;
+  var id=parseInt(btn.getAttribute("data-id"),10), act=btn.getAttribute("data-act");
+  var b=null,i; for(i=0;i<G.biz.length;i++) if(G.biz[i].id===id) b=G.biz[i];
+  if(!b) return;
+  if(act==="setprice"){
+    var inp=document.querySelector('input[data-price="'+id+'"]');
+    var v=Math.max(1,Math.min(99,parseInt(inp.value,10)||b.price));
+    b.price=v; logDecision("price","Set "+b.name+" price to "+money(v), v); $("weekSummary").textContent=b.name+" price set to "+money(v)+". The Coach has fresh maths on it below.";
+  }
+  if(act==="stock"){
+    var cost=Math.round(50*b.wholesale*effectMult("wholesaleMult"));
+    if(G.cash<cost){ $("weekSummary").textContent="Not enough cash to order stock ("+money(cost)+" needed)."; return; }
+    G.cash-=cost; b.stock+=50; logDecision("stock","Ordered 50 stock for "+b.name, -cost); $("weekSummary").textContent="50 stock ordered for "+b.name+" — "+money(cost)+" out of the till now. It becomes profit only as it sells: that's cash flow vs profit, in your own ledger.";
+  }
+  if(act==="hire"){ b.staff++; logDecision("hire","Hired staff at "+b.name+" (now "+b.staff+")", null); $("weekSummary").textContent="Hired at "+b.name+". Wages are now "+money(b.staff*b.wage)+" a week there — a fixed bill, good weeks and bad."; }
+  if(act==="fire"){ if(b.staff>1){ b.staff--; logDecision("fire","Let staff go at "+b.name+" (now "+b.staff+")", null); $("weekSummary").textContent="Staff cut at "+b.name+". Wage bill down; serving capacity down to about "+(b.staff*55)+" customers a week."; } }
+  if(act==="sell"){
+    var val=bizValue(b); G.cash+=val;
+    G.biz.splice(G.biz.indexOf(b),1);
+    logDecision("sell","Sold "+b.name, val); $("weekSummary").textContent="Sold "+b.name+" for "+money(val)+". Rent and wages there are gone from next week.";
+  }
+  saveGame(); renderAll();
+});
+$("marketList").addEventListener("click", function(ev){
+  var btn=ev.target.closest?ev.target.closest("button[data-act='buy']"):null; if(!btn||!G) return;
+  var t=tpl(btn.getAttribute("data-key")); if(!t) return;
+  if(G.cash<t.cost){ $("weekSummary").textContent="Not enough cash for the "+t.name+" ("+money(t.cost)+"). That's the bank's favourite moment — borrow, save, or pick a cheaper shop."; return; }
+  G.cash-=t.cost; var nb=newBiz(t.key); nb.stock=40; G.biz.push(nb);
+  logDecision("buy","Bought "+t.name, -t.cost);
+  $("weekSummary").textContent="You now own the "+t.name+". Your fixed weekly bills are "+money(fixedBills())+" across the street.";
+  saveGame(); renderAll();
+});
+$("loanOffers").addEventListener("click", function(ev){
+  var btn=ev.target.closest?ev.target.closest("button[data-act]"):null; if(!btn||!G) return;
+  if(btn.getAttribute("data-act")==="noloan"){ logDecision("loan-refused","Refused a loan — stayed debt-free", 0); $("weekSummary").textContent="Loan refused. Noted in your record — staying debt-free is a strategy, and your record will show how it played."; saveGame(); return; }
+  var key=btn.getAttribute("data-key"), o=null,i;
+  for(i=0;i<LOAN_OFFERS.length;i++) if(LOAN_OFFERS[i].key===key) o=LOAN_OFFERS[i];
+  if(!o) return;
+  G.cash+=o.amount; G.loans.push({ id:uid++, name:o.name, principal:o.amount, rate:o.rate });
+  logDecision("loan-take","Took "+o.name, o.amount);
+  $("weekSummary").textContent=o.name+" taken: "+money(o.amount)+" in the till. Interest of "+money(Math.round(o.amount*o.rate))+" now leaves every week until it's repaid.";
+  saveGame(); renderAll();
+});
+$("loanList").addEventListener("click", function(ev){
+  var btn=ev.target.closest?ev.target.closest("button[data-act]"):null; if(!btn||!G) return;
+  var id=parseInt(btn.getAttribute("data-id"),10), L=null,i;
+  for(i=0;i<G.loans.length;i++) if(G.loans[i].id===id) L=G.loans[i];
+  if(!L) return;
+  var amt=btn.getAttribute("data-act")==="repayall"?L.principal:Math.min(500,L.principal);
+  if(G.cash<amt){ $("weekSummary").textContent="Not enough cash to repay "+money(amt)+"."; return; }
+  G.cash-=amt; L.principal-=amt;
+  logDecision("loan-repay","Repaid "+money(amt)+" of "+L.name, -amt);
+  if(L.principal<=0) G.loans.splice(G.loans.indexOf(L),1);
+  $("weekSummary").textContent="Repaid "+money(amt)+". Interest bill is now "+money(Math.round(totalDebt()*0+ (function(){var s=0;for(var j=0;j<G.loans.length;j++)s+=Math.round(G.loans[j].principal*G.loans[j].rate);return s;})()))+" a week.";
+  saveGame(); renderAll();
+});
+$("btnWeek").addEventListener("click", function(){ runWeek(); });
+$("btnMonth").addEventListener("click", function(){ for(var i=0;i<4&&G&&!G.over;i++) runWeek(); });
+$("btnEndRun").addEventListener("click", function(){
+  if(!G) return;
+  if(!G.recorded){ G.result=G.result||"Ended by player at week "+G.week+" — worth "+money(totalWorth()); finalizeRecord(G.result); }
+  G.over=true; saveGame();
+  showEnd(totalWorth()>= (G.runSettings.goal||Infinity), "Run ended and recorded: "+G.result+". Start a new run above whenever you're ready.");
+  $("btnContinue").classList.add("hidden");
+  try{ localStorage.removeItem(LS_GAME); }catch(e){}
+  G=null; $("gameArea").classList.add("hidden"); $("setupCard").classList.remove("hidden");
+  renderRecord();
+});
+$("btnStart").addEventListener("click", function(){ $("endBanner").innerHTML=""; startRun(); document.getElementById("play").scrollIntoView({behavior:"smooth"}); });
+$("beBiz").addEventListener("change", paintBreakEven);
+
+/* record buttons */
+$("btnExportJson").addEventListener("click", function(){ download("market-street-record.json", JSON.stringify(getRecord(),null,2), "application/json"); });
+$("btnExportCsv").addEventListener("click", function(){
+  var all=getRecord(), lines=["runId,result,variant,weeksPlayed,finalCash,finalWorth,finalDebt,week,cash,worth,revenue,profit"];
+  for(var i=0;i<all.length;i++){ var r=all[i];
+    if(!r.weeks.length) lines.push([r.runId,'"'+r.result.replace(/"/g,'""')+'"','"'+r.variant.replace(/"/g,'""')+'"',r.weeksPlayed,r.finalCash,r.finalWorth,r.finalDebt,"","","",""].join(","));
+    for(var j=0;j<r.weeks.length;j++){ var w=r.weeks[j];
+      lines.push([r.runId,'"'+r.result.replace(/"/g,'""')+'"','"'+r.variant.replace(/"/g,'""')+'"',r.weeksPlayed,r.finalCash,r.finalWorth,r.finalDebt,w.week,w.cash,w.worth,w.revenue,w.profit].join(",")); }
+  }
+  download("market-street-record.csv", lines.join("\n"), "text/csv");
+});
+$("btnForget").addEventListener("click", function(){
+  try{ localStorage.removeItem(LS_REC); localStorage.removeItem(LS_GAME); }catch(e){}
+  G=null; $("gameArea").classList.add("hidden"); $("setupCard").classList.remove("hidden"); $("btnContinue").classList.add("hidden");
+  $("endBanner").innerHTML=""; renderRecord();
+  $("recordSummary").innerHTML='<p class="muted">Forgotten. Record and saved game wiped from this device.</p>';
+});
+
+/* download offline copy */
+$("btnDownload").addEventListener("click", function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  download("market-street.html", html, "text/html");
+});
+
+/* hold-to-explain + hover explain */
+var holdTimer=null, suppressClick=false;
+function explainOf(el){ return el&&el.getAttribute?el.getAttribute("data-explain"):null; }
+document.addEventListener("pointerdown", function(ev){
+  var el=ev.target.closest?ev.target.closest("[data-explain]"):null; if(!el) return;
+  holdTimer=setTimeout(function(){
+    var box=$("explainBox"); box.textContent=explainOf(el); box.classList.add("show"); suppressClick=true;
+    setTimeout(function(){ box.classList.remove("show"); }, 5000);
+  }, 550);
+});
+document.addEventListener("pointerup", function(){ if(holdTimer) clearTimeout(holdTimer); });
+document.addEventListener("pointercancel", function(){ if(holdTimer) clearTimeout(holdTimer); });
+document.addEventListener("mouseover", function(ev){
+  var el=ev.target.closest?ev.target.closest("[data-explain]"):null; if(!el||ev.pointerType==="touch") return;
+  var box=$("explainBox"); box.textContent=explainOf(el); box.classList.add("show");
+});
+document.addEventListener("mouseout", function(ev){
+  var el=ev.target.closest?ev.target.closest("[data-explain]"):null; if(el) $("explainBox").classList.remove("show");
+});
+document.addEventListener("click", function(ev){ if(suppressClick){ suppressClick=false; ev.preventDefault(); ev.stopPropagation(); } }, true);
+
+/* ---------- Init ---------- */
+var saved=loadGame();
+if(saved&&!saved.over){ G=saved; uid=1000; for(var i=0;i<G.biz.length;i++) if(G.biz[i].id>=uid) uid=G.biz[i].id+1;
+  $("btnContinue").classList.remove("hidden");
+  $("btnContinue").addEventListener("click", function(){ showGame(); renderAll(); });
+}
+if(saved&&saved.alias) $("aliasInput").value=saved.alias;
+paintTeach();
+renderRecord();
+})();
+</script>
+</body>
+</html>
