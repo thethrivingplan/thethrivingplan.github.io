@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hot Dice — a press-your-luck dice game</title>
+<style>
+:root{--bg:#101820;--card:#1b2836;--card2:#243447;--ink:#f2f5f7;--muted:#b9c6d2;--accent:#ffb340;--accent2:#57d38c;--bad:#ff7a7a;--line:#3a4f66}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:120px}
+a{color:var(--accent)}
+.wrap{max-width:860px;margin:0 auto;padding:12px 14px 30px}
+.freebar{background:#0d3b22;border:2px solid var(--accent2);border-radius:12px;padding:12px 14px;font-size:1.05rem;font-weight:700;text-align:center;margin:10px 0 14px}
+.freebar a{color:#aef0c6;text-decoration:underline}
+h1{font-size:2rem;margin:6px 0 2px}
+h2{font-size:1.25rem;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 14px}
+button{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:1rem;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);color:#1a1200;font-weight:800;border-color:var(--accent)}
+button.good{background:var(--accent2);color:#06280f;font-weight:800;border-color:var(--accent2)}
+select,input[type=text]{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px;font-size:1rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.scoreboard td.cur{font-weight:800;color:var(--accent)}
+.dice{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.die{width:62px;height:62px;background:#fdfdf8;border-radius:12px;border:3px solid #999;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;cursor:pointer}
+.die.sel{border-color:var(--accent);background:#fff3d6;box-shadow:0 0 0 3px var(--accent)}
+.die.used{opacity:.35;cursor:default}
+.pip{width:11px;height:11px;border-radius:50%;background:#1b2836;place-self:center;visibility:hidden}
+.pip.on{visibility:visible}
+.pip.red{background:#c62f2f}
+#probLine{font-weight:700}
+#coachLine{color:var(--muted)}
+#statusLine{font-size:1.1rem;font-weight:700;min-height:1.4em}
+#log{background:#0c141d;border:1px solid var(--line);border-radius:10px;padding:10px;max-height:220px;overflow:auto;font-size:.95rem;white-space:pre-wrap}
+.banner{background:#5a3a00;border:2px solid var(--accent);border-radius:10px;padding:10px 12px;font-weight:800;margin:0 0 12px}
+.foldcontent{margin-top:10px}
+.hidden{display:none}
+footer{color:var(--muted);font-size:.9rem;margin-top:18px}
+.kicker{color:var(--accent);font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:.8rem}
+/* Compass dock: 3-column grid inside the bar's padding, so the centre column is centred in the CONTENT box */
+#dock{position:fixed;left:0;right:0;bottom:0;background:#0a1119;border-top:2px solid var(--line);display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:8px 14px calc(8px + env(safe-area-inset-bottom));z-index:50}
+.stack{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;padding:0}
+.stack .disc{width:46px;height:46px;border-radius:50%;background:var(--card2);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;color:var(--accent)}
+.stack .pill{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.8rem;color:var(--ink)}
+#dockLeft{justify-self:start}#dockCentre{justify-self:center}#dockRight{justify-self:end}
+.panel{position:fixed;left:10px;right:10px;bottom:96px;max-width:560px;margin:0 auto;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px;z-index:60;max-height:70vh;overflow:auto}
+.panel a{display:block;padding:7px 4px}
+label.f{display:block;margin:10px 0 4px;font-weight:700}
+.small{font-size:.9rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="freebar">Free — always free. No ads. No accounts. This page is <a href="#" id="dlLink">available offline</a> — tap “available offline” to download this page as one file and keep it forever.</div>
+
+<h1>🎲 Hot Dice</h1>
+<p class="sub">A press-your-luck dice game for points only — no money anywhere. Roll six dice, set scoring dice aside, then choose: bank what you have, or roll the rest and risk it all.</p>
+<p class="small">Homage, in plain words: Hot Dice is our own version of a folk dice shape played under many names at kitchen tables for generations. The shape is old and shared; the name Hot Dice, the words, the dice art, and the code on this page are our own.</p>
+
+<div id="variantBanner" class="banner hidden">Variant game — non-standard rules</div>
+
+<section class="card" aria-label="Game table">
+<div class="row">
+  <div class="grow"><label class="f" for="aliasInput">Your scoreboard name (optional — “Guest” always works; this is a session alias, never a claimed name)</label>
+  <input type="text" id="aliasInput" maxlength="24" placeholder="Guest"></div>
+  <div><label class="f" for="teachSelect">Teaching</label>
+  <select id="teachSelect"><option value="off">Off</option><option value="light" selected>Light</option><option value="coach">Coach</option></select></div>
+</div>
+<table class="scoreboard" aria-label="Scoreboard"><thead><tr><th>Player</th><th>Score</th><th>On the board?</th></tr></thead><tbody id="scoreBody"></tbody></table>
+<p id="targetLine" class="small"></p>
+<p id="statusLine" role="status"></p>
+<p id="turnInfo"></p>
+<div class="dice" id="diceTray" aria-label="Dice tray"></div>
+<p id="selInfo" class="small">Tap a die to select it or unselect it. Every die you set aside must be part of the score.</p>
+<p id="probLine"></p>
+<p id="coachLine"></p>
+<div class="row">
+  <button id="rollBtn" class="primary">🎲 Roll dice — Tap to roll</button>
+  <button id="asideBtn">Set aside selected — Tap to set aside</button>
+  <button id="bankBtn" class="good">Bank — Tap to bank</button>
+  <button id="newGameBtn">New game — Tap to start over</button>
+</div>
+<p class="small">Saved on this device only: your teaching choice, settings, alias, and record live in this browser on this device — nothing is sent anywhere. Use Forget in the Record section to wipe them.</p>
+</section>
+
+<section class="card" aria-label="Turn log">
+<h2>What happened</h2>
+<div id="log" aria-live="polite"></div>
+</section>
+
+<section class="card">
+<button id="scoreFoldBtn" aria-expanded="false">Scoring table — Tap to open</button>
+<div id="scoreFold" class="foldcontent hidden">
+<table aria-label="Scoring table">
+<tr><th>Combination</th><th>Points</th></tr>
+<tr><td>Single 1</td><td>100</td></tr>
+<tr><td>Single 5</td><td>50</td></tr>
+<tr><td>Three 1s</td><td>1,000</td></tr>
+<tr><td>Three of any other face</td><td>face × 100 (three 2s = 200, three 6s = 600)</td></tr>
+<tr><td>Four of a kind</td><td>1,000</td></tr>
+<tr><td>Five of a kind</td><td>2,000</td></tr>
+<tr><td>Six of a kind</td><td>3,000</td></tr>
+<tr><td>Straight 1–6</td><td>1,500</td></tr>
+<tr><td>Three pairs</td><td>1,500</td></tr>
+<tr><td>Two triplets</td><td>2,500</td></tr>
+<tr><td>Four of a kind + a pair</td><td>1,500</td></tr>
+</table>
+<p>How a turn works: roll all unbanked dice, tap dice to set aside a selection that scores with <strong>every</strong> selected die used — the page scores your selection by searching for its best exact breakdown, so four 1s read 1,100 (three 1s + a single 1), not 1,000. Then roll the rest or bank. A roll with no scoring combination at all <strong>busts</strong>: the unbanked turn total is lost. If all six dice score across a turn, that is <strong>hot dice</strong> — roll all six fresh and keep accumulating. Your first bank of a game must reach the entry threshold (a setting, standard 500). When a player crosses the target score, every other player gets one final turn; then the highest score wins.</p>
+</div>
+</section>
+
+<section class="card">
+<button id="bustFoldBtn" aria-expanded="false">The bust table — the real odds — Tap to open</button>
+<div id="bustFold" class="foldcontent hidden">
+<p>Counted from this page's exact scoring rules — every possible roll. When the page loaded, it enumerated all 6<sup>k</sup> rolls for each dice count and counted the ones with no scoring combination. Nothing here is a remembered percentage.</p>
+<table aria-label="Bust table"><thead><tr><th>Dice rolled</th><th>Possible rolls</th><th>Rolls with no score</th><th>Chance of no score (bust)</th><th>Chance to score</th></tr></thead><tbody id="bustTableBody"></tbody></table>
+</div>
+</section>
+
+<section class="card">
+<button id="whyFoldBtn" aria-expanded="false">Why the math works — Tap to open</button>
+<div id="whyFold" class="foldcontent hidden">
+<h3>What press-your-luck really is</h3>
+<p>Every “roll again?” is the same trade: a sure thing in hand (your unbanked turn total) against a chance to grow it and a chance to lose it all. There is no luck skill — there is only knowing the price of the next roll before you pay it. That price is in the bust table above, counted from these exact rules.</p>
+<h3>Why the last two dice are the dangerous ones</h3>
+<p>Read the bust table from six dice down to one. With six dice a bust is rare; with two dice it is close to a coin flip; with one die, two times in three the roll scores nothing, because only a 1 or a 5 saves you. The fewer dice you roll, the more each roll is a gamble — exactly when a big turn total tempts you to keep going.</p>
+<h3>Why a threshold to open exists</h3>
+<p>The entry threshold (standard 500 for your first bank) stops a game from being won by tiny, safe banks. It forces every player to press their luck at least once before they are on the board, which is where the game — and the lesson — lives.</p>
+<h3>Strategies — pick your own, none is the one true way</h3>
+<p><strong>Bank early (around 300):</strong> small, steady banks; few busts; slow climb. You trade big turns for safety.</p>
+<p><strong>Steady middle (around 500):</strong> bank a solid turn, but ride a hot start a little. A balance of growth and busts.</p>
+<p><strong>Ride it (750+):</strong> chase big turns and hot dice. You will bust more — the table tells you exactly how much more — and sometimes land the turn that wins the game.</p>
+<p><strong>Read the table (the Pro way):</strong> weigh what you stand to lose — turn total × bust chance for the dice you would roll — against the likely gain. When the likely loss outweighs the likely gain, bank. This is expected value, the same math casinos and insurers use, taught here by playing.</p>
+</div>
+</section>
+
+<section class="card">
+<button id="botsFoldBtn" aria-expanded="false">The bots, honestly — and Check the bots — Tap to open</button>
+<div id="botsFold" class="foldcontent hidden">
+<p>Each bot's rule, in plain words. The bots in real games use these exact rules, and the checker below uses the same rules and the same game engine:</p>
+<ul>
+<li><strong>Learning:</strong> banks as soon as its turn total is 300 or more. It takes its points early and often.</li>
+<li><strong>Steady:</strong> banks at 500 or more — but banks at 300 or more when only 1 or 2 dice are left to roll, because those rolls are the dangerous ones.</li>
+<li><strong>Sharp:</strong> banks at 750 or more; banks at 500 or more with 1–2 dice left; banks at 350 or more with only 1 die left.</li>
+<li><strong>Pro:</strong> decides from the bust table itself. It estimates the likely gain of rolling again (the average set-aside score for that many dice, sampled from real rolls) and the likely loss (turn total × bust chance). When the likely loss outweighs the likely gain, it banks; otherwise it rolls.</li>
+</ul>
+<p>All bots set aside the best-scoring selection they can find — the same exact search the page uses for you — and respect the entry threshold for their first bank.</p>
+<button id="simBtn">Check the bots — Tap to run 300 solo turns per level</button>
+<div id="simResults" style="margin-top:10px"></div>
+</div>
+</section>
+
+<section class="card">
+<button id="recordFoldBtn" aria-expanded="false">Your record (on this device only) — Tap to open</button>
+<div id="recordFold" class="foldcontent hidden">
+<div id="recordView"></div>
+<div class="row" style="margin-top:10px">
+<button id="exportBtn">Export record as JSON — Tap to download</button>
+<button id="forgetBtn">Forget — Tap to wipe record, settings, and alias from this device</button>
+</div>
+</div>
+</section>
+
+<footer>
+<p>Copyleft — The Thriving Plan. Writings and pages: CC BY-SA 4.0. Code: GPL. Derivatives carry the same freedom. The name “The Thriving Plan” is not in the grant. No ads, ever. No accounts. Your record and settings are saved on your device only.</p>
+</footer>
+</div>
+
+<div id="navPanel" class="panel hidden" role="dialog" aria-label="Navigate">
+<h2>Navigate</h2>
+<button id="thisPageBtn" aria-expanded="false">This page — Tap to open</button>
+<div id="thisPageFold" class="foldcontent hidden">
+<a href="#top" onclick="return false">Hot Dice — the game (you are here)</a>
+<p class="small">You are on Hot Dice. This fold lists this page; the next fold lists other pages.</p>
+</div>
+<button id="otherPagesBtn" aria-expanded="false" style="margin-top:8px">Other pages — Tap to open</button>
+<div id="otherPagesFold" class="foldcontent hidden">
+<a href="https://thethrivingplan.github.io/" target="_blank" rel="noopener">Start Page</a>
+<a href="https://thethrivingplan.github.io/five-dice.html" target="_blank" rel="noopener">Five Dice</a>
+<a href="https://thethrivingplan.github.io/bowling.html" target="_blank" rel="noopener">Bowling</a>
+<a href="https://thethrivingplan.github.io/poker.html" target="_blank" rel="noopener">Poker</a>
+<a href="https://thethrivingplan.github.io/slots.html" target="_blank" rel="noopener">Slots</a>
+<a href="https://thethrivingplan.github.io/chess.html" target="_blank" rel="noopener">Chess</a>
+</div>
+<p style="margin-top:10px"><button id="navCloseBtn">Close — Tap to close</button></p>
+</div>
+
+<div id="feedbackPanel" class="panel hidden" role="dialog" aria-label="Feedback">
+<h2>Won't work? We'll fix it.</h2>
+<p>Tell us what broke or what felt wrong. Notes you write here stay on this device until you share them — nothing is sent anywhere by this page.</p>
+<label class="f" for="feedbackText">Your note (saved on this device only)</label>
+<input type="text" id="feedbackText" style="width:100%">
+<p style="margin-top:10px"><button id="feedbackCloseBtn">Close — Tap to close</button></p>
+</div>
+
+<div id="settingsPanel" class="panel hidden" role="dialog" aria-label="Page settings">
+<h2>Page settings</h2>
+<p class="small">Rules are settings. Standard rules: entry threshold 500, target 5,000. Any other entry or target makes the game a variant, and the page and your record will say so. Settings are saved on this device only. Changing a rule starts a new game.</p>
+<label class="f" for="setEntry">Entry threshold — the first bank of a game must reach this</label>
+<select id="setEntry"><option value="0">0 — no threshold</option><option value="300">300</option><option value="500" selected>500 — standard</option><option value="750">750</option></select>
+<label class="f" for="setTarget">Target score — cross it and everyone else gets one final turn</label>
+<select id="setTarget"><option value="3000">3,000 — short game</option><option value="5000" selected>5,000 — standard</option><option value="10000">10,000 — the long classic</option></select>
+<label class="f" for="setBots">Bot opponents (0 = solo)</label>
+<select id="setBots"><option value="0">0 — solo</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+<label class="f" for="setBotLevel">Bot level</label>
+<select id="setBotLevel"><option value="learning">Learning</option><option value="steady" selected>Steady</option><option value="sharp">Sharp</option><option value="pro">Pro</option></select>
+<label class="f" for="setTeach">Teaching dial</label>
+<select id="setTeach"><option value="off">Off — numbers only</option><option value="light">Light — a probability line and a short why</option><option value="coach">Coach — fuller expected-value reasoning</option></select>
+<p style="margin-top:12px"><button id="settingsCloseBtn" class="primary">Save settings &amp; new game — Tap to save</button></p>
+</div>
+
+<nav id="dock" aria-label="Compass">
+  <button class="stack" id="dockLeft" aria-label="Feedback — tap to open"><span class="disc">?!</span><span class="pill">Won't Work — We'll Fix It</span></button>
+  <button class="stack" id="dockCentre" aria-label="Navigate — tap to open"><span class="disc">🧭</span><span class="pill">Navigate</span></button>
+  <button class="stack" id="dockRight" aria-label="Settings — tap to open"><span class="disc">⚙</span><span class="pill">Settings</span></button>
+</nav>
+
+<script id="engine">
+"use strict";
+/* Hot Dice engine — pure logic, no DOM. Exposed for the page and for audit. */
+var HD = (function(){
+var PATTERNS = [];
+(function buildPatterns(){
+  function pat(counts, score){ PATTERNS.push({counts:counts, score:score}); }
+  var c;
+  c=[0,0,0,0,0,0]; c[0]=1; pat(c.slice(),100);
+  c=[0,0,0,0,0,0]; c[4]=1; pat(c.slice(),50);
+  for(var f=0; f<6; f++){
+    c=[0,0,0,0,0,0]; c[f]=3; pat(c.slice(), f===0?1000:(f+1)*100);
+    c=[0,0,0,0,0,0]; c[f]=4; pat(c.slice(),1000);
+    c=[0,0,0,0,0,0]; c[f]=5; pat(c.slice(),2000);
+    c=[0,0,0,0,0,0]; c[f]=6; pat(c.slice(),3000);
+  }
+  pat([1,1,1,1,1,1],1500);
+  var a,b,i,j;
+  for(a=0;a<6;a++) for(b=a+1;b<6;b++) for(var d=b+1;d<6;d++){ c=[0,0,0,0,0,0]; c[a]=2;c[b]=2;c[d]=2; pat(c.slice(),1500); }
+  for(a=0;a<6;a++) for(b=0;b<6;b++){ if(b===a) continue; c=[0,0,0,0,0,0]; c[a]=3;c[b]=3; pat(c.slice(),2500); }
+  for(a=0;a<6;a++) for(b=0;b<6;b++){ if(b===a) continue; c=[0,0,0,0,0,0]; c[a]=4;c[b]=2; pat(c.slice(),1500); }
+})();
+var memo = {};
+function countsOf(dice){ var c=[0,0,0,0,0,0]; for(var i=0;i<dice.length;i++) c[dice[i]-1]++; return c; }
+function bestScoreCounts(counts){
+  var key = counts.join(",");
+  if(memo.hasOwnProperty(key)) return memo[key];
+  var total = 0, i; for(i=0;i<6;i++) total+=counts[i];
+  var result;
+  if(total===0){ result = 0; }
+  else{
+    var best = -1;
+    for(var p=0;p<PATTERNS.length;p++){
+      var pc = PATTERNS[p].counts, ok=true;
+      for(i=0;i<6;i++){ if(counts[i]<pc[i]){ ok=false; break; } }
+      if(!ok) continue;
+      var rest = counts.slice(); for(i=0;i<6;i++) rest[i]-=pc[i];
+      var r = bestScoreCounts(rest);
+      if(r>=0 && PATTERNS[p].score + r > best) best = PATTERNS[p].score + r;
+    }
+    result = best;
+  }
+  memo[key]=result; return result;
+}
+function bestScoreDice(dice){ return bestScoreCounts(countsOf(dice)); }
+function hasScoreCounts(counts){
+  for(var p=0;p<PATTERNS.length;p++){
+    var pc=PATTERNS[p].counts, ok=true;
+    for(var i=0;i<6;i++){ if(counts[i]<pc[i]){ ok=false; break; } }
+    if(ok) return true;
+  }
+  return false;
+}
+function hasScoreDice(dice){ return hasScoreCounts(countsOf(dice)); }
+/* Enumerate every possible roll of k dice; count those with no scoring combination. */
+function bustTable(){
+  var table = {};
+  for(var k=1;k<=6;k++){
+    var total = Math.pow(6,k), bust = 0, roll = [], i;
+    for(i=0;i<k;i++) roll.push(1);
+    var n = total;
+    while(n-- > 0){
+      if(!hasScoreDice(roll)) bust++;
+      var pos = k-1;
+      while(pos>=0){ roll[pos]++; if(roll[pos]<=6) break; roll[pos]=1; pos--; }
+    }
+    table[k] = {k:k, total:total, bust:bust, bustPct: bust/total*100, scorePct: (total-bust)/total*100};
+  }
+  return table;
+}
+function bestSubset(dice){
+  /* Search all count-subsets of the rolled dice; return {dice:[...], score} maximising score, then dice used. */
+  var counts = countsOf(dice), best = {dice:[], score:-1}, cur = [0,0,0,0,0,0];
+  function rec(face){
+    if(face===6){
+      var sc = bestScoreCounts(cur);
+      if(sc>0){
+        var nd=0,i; for(i=0;i<6;i++) nd+=cur[i];
+        var bd=0; for(i=0;i<best.dice.length;i++) bd++;
+        if(sc>best.score || (sc===best.score && nd>best.dice.length)){
+          var arr=[]; for(i=0;i<6;i++) for(var j=0;j<cur[i];j++) arr.push(i+1);
+          best={dice:arr, score:sc};
+        }
+      }
+      return;
+    }
+    for(var v=0; v<=counts[face]; v++){ cur[face]=v; rec(face+1); }
+    cur[face]=0;
+  }
+  rec(0);
+  return best.score<0 ? {dice:[], score:0} : best;
+}
+/* Expected set-aside gain of rolling k dice, sampled from real rolls (seeded, deterministic). */
+var gainCache = {};
+function expectedGain(k, table){
+  if(gainCache[k]!==undefined) return gainCache[k];
+  var seed = 1234567 + k*999, samples = 1200, sum = 0;
+  function rnd(){ seed = (seed*1103515245 + 12345) % 2147483648; return seed/2147483648; }
+  for(var s=0;s<samples;s++){
+    var roll=[]; for(var i=0;i<k;i++) roll.push(1+Math.floor(rnd()*6));
+    if(!hasScoreDice(roll)) continue;
+    sum += bestSubset(roll).score;
+  }
+  gainCache[k] = sum/samples;
+  return gainCache[k];
+}
+function botShouldBank(level, turnTotal, diceLeft, table, entered, entry){
+  var canBank = turnTotal>0 && (entered || turnTotal>=entry);
+  if(!canBank) return false;
+  if(level==="learning") return turnTotal>=300;
+  if(level==="steady") return turnTotal>=500 || (diceLeft<=2 && turnTotal>=300);
+  if(level==="sharp") return turnTotal>=750 || (diceLeft<=2 && turnTotal>=500) || (diceLeft<=1 && turnTotal>=350);
+  if(level==="pro"){
+    var bustP = table[diceLeft].bustPct/100;
+    var loss = turnTotal * bustP;
+    var gain = expectedGain(diceLeft, table);
+    return loss > gain;
+  }
+  return turnTotal>=500;
+}
+function botRuleText(level){
+  if(level==="learning") return "bank at 300 or more";
+  if(level==="steady") return "bank at 500 or more, sooner with few dice left";
+  if(level==="sharp") return "bank at 750 or more, weighs dice left";
+  if(level==="pro") return "banks when turn total × bust chance outweighs the likely gain";
+  return "";
+}
+/* Simulate one solo turn for a bot level using the real engine. rng: function returning 0..1 */
+function simulateTurn(level, table, rng, entry){
+  var turnTotal=0, diceLeft=6, entered=false, guard=0;
+  while(guard++<60){
+    var roll=[]; for(var i=0;i<diceLeft;i++) roll.push(1+Math.floor(rng()*6));
+    if(!hasScoreDice(roll)) return {banked:0, bust:true, hot:0};
+    var sub = bestSubset(roll);
+    turnTotal += sub.score;
+    var used = sub.dice.length, hot=0;
+    diceLeft -= used;
+    if(diceLeft===0){ diceLeft=6; hot=1; }
+    /* Simulated turns are ordinary mid-game turns: the entry threshold was met in an earlier turn, so each level's own bank rule decides. */
+    if(botShouldBank(level, turnTotal, diceLeft, table, true, 0)){
+      return {banked:turnTotal, bust:false, hot:hot};
+    }
+  }
+  return {banked:turnTotal, bust:false, hot:0};
+}
+function simulateBots(table, turnsPerLevel, rng){
+  var levels=["learning","steady","sharp","pro"], out={};
+  levels.forEach(function(level){
+    var bankedSum=0, busts=0;
+    for(var t=0;t<turnsPerLevel;t++){
+      var r = simulateTurn(level, table, rng, 500);
+      bankedSum += r.banked; if(r.bust) busts++;
+    }
+    out[level] = {avg: bankedSum/turnsPerLevel, bustRate: busts/turnsPerLevel*100, turns: turnsPerLevel};
+  });
+  return out;
+}
+return {bestScoreDice:bestScoreDice, bestScoreCounts:bestScoreCounts, hasScoreDice:hasScoreDice, countsOf:countsOf, bustTable:bustTable, bestSubset:bestSubset, expectedGain:expectedGain, botShouldBank:botShouldBank, botRuleText:botRuleText, simulateTurn:simulateTurn, simulateBots:simulateBots};
+})();
+if(typeof window!=="undefined") window.HD = HD;
+</script>
+
+<script id="ui">
+"use strict";
+function $(id){ return document.getElementById(id); }
+var TABLE = HD.bustTable();
+var settings = {entry:500, target:5000, bots:0, botLevel:"steady", teach:"light"};
+var record = null;
+var blankRec = function(){ return {games:0,wins:0,turns:0,banks:0,busts:0,hot:0,bestTurn:0,biggestBank:0}; };
+function loadAll(){
+  try{
+    var s = localStorage.getItem("hotdice-settings"); if(s){ var p=JSON.parse(s); for(var k in p) settings[k]=p[k]; }
+    var r = localStorage.getItem("hotdice-record"); record = r? JSON.parse(r) : {standard:blankRec(), variant:blankRec()};
+    if(!record.standard) record.standard = blankRec();
+    if(!record.variant) record.variant = blankRec();
+    var a = localStorage.getItem("hotdice-alias"); if(a) $("aliasInput").value = a;
+    var f = localStorage.getItem("hotdice-feedback"); if(f) $("feedbackText").value = f;
+  }catch(e){ record = {standard:blankRec(), variant:blankRec()}; }
+}
+function saveSettings(){ try{ localStorage.setItem("hotdice-settings", JSON.stringify(settings)); }catch(e){} }
+function saveRecord(){ try{ localStorage.setItem("hotdice-record", JSON.stringify(record)); }catch(e){} }
+function isVariant(){ return settings.entry!==500 || settings.target!==5000; }
+function recBucket(){ return isVariant()? record.variant : record.standard; }
+
+var G = null;
+function newGame(){
+  var alias = ($("aliasInput").value||"").trim() || "Guest";
+  try{ localStorage.setItem("hotdice-alias", alias); }catch(e){}
+  var players = [{name:alias, human:true, score:0, entered:false}];
+  for(var i=0;i<settings.bots;i++) players.push({name:"Bot "+(i+1)+" ("+settings.botLevel+")", human:false, score:0, entered:false, level:settings.botLevel});
+  G = {players:players, cur:0, turnTotal:0, diceLeft:6, rolled:[], selected:{}, asideThisTurn:0, phase:"awaitRoll", final:false, finalLeft:0, over:false, gameCounted:false};
+  $("log").textContent = "";
+  log("New game. Target "+settings.target+". First bank must reach "+settings.entry+"."+(isVariant()?" Variant game — non-standard rules.":" Standard rules."));
+  renderAll();
+  setStatus(players[0].name+" to roll. Tap Roll dice.");
+}
+function log(msg){ var el=$("log"); el.textContent = (el.textContent? el.textContent+"\n":"")+msg; el.scrollTop = el.scrollHeight; }
+function setStatus(t){ $("statusLine").textContent = t; }
+function curPlayer(){ return G.players[G.cur]; }
+
+var PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function renderDice(){
+  var tray = $("diceTray"); tray.innerHTML = "";
+  G.rolled.forEach(function(d, idx){
+    var b = document.createElement("button");
+    b.className = "die" + (G.selected[idx]?" sel":"");
+    b.setAttribute("aria-label", "Die showing "+d+" — tap to select or unselect");
+    for(var cell=0; cell<9; cell++){
+      var s = document.createElement("span");
+      s.className = "pip" + (PIPS[d].indexOf(cell)>=0 ? " on" : "") + (d===1 && cell===4 ? " red":"");
+      b.appendChild(s);
+    }
+    b.addEventListener("click", function(){ toggleDie(idx); });
+    tray.appendChild(b);
+  });
+}
+function renderBoard(){
+  var tb = $("scoreBody"); tb.innerHTML = "";
+  G.players.forEach(function(p, i){
+    var tr = document.createElement("tr");
+    var td1=document.createElement("td"); td1.textContent = p.name + (i===G.cur && !G.over ? " ← rolling":""); if(i===G.cur) td1.className="cur";
+    var td2=document.createElement("td"); td2.textContent = String(p.score);
+    var td3=document.createElement("td"); td3.textContent = p.entered? "Yes":"Not yet — first bank needs "+settings.entry;
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tb.appendChild(tr);
+  });
+  $("targetLine").textContent = "Target: "+settings.target+" points. Entry threshold for a first bank: "+settings.entry+". Turn total so far: "+G.turnTotal+" points. Dice left to roll: "+G.diceLeft+".";
+  $("variantBanner").className = isVariant()? "banner" : "banner hidden";
+}
+function teachLines(diceCount){
+  var t = TABLE[diceCount], bust = Math.round(t.bustPct*10)/10, score = Math.round(t.scorePct*10)/10;
+  var prob = "Rolling "+diceCount+" dice: about "+bust+"% chance of no score (bust), about "+score+"% chance to score.";
+  var coach = "";
+  if(settings.teach==="off"){ prob = diceCount+" dice — bust "+bust+"% · score "+score+"%"; }
+  else if(settings.teach==="light"){
+    coach = diceCount<=2 ? "Why: with so few dice, only a 1, a 5, or a set can save the roll — the table shows these are the dangerous rolls." : "Why: more dice means more ways to score — the bust table shows the chance falling as dice rise.";
+  } else if(settings.teach==="coach"){
+    var loss = Math.round(G.turnTotal * t.bustPct)/100;
+    var gain = Math.round(HD.expectedGain(diceCount, TABLE));
+    coach = "Coach: you stand to lose this turn's "+G.turnTotal+" points. Likely loss = turn total × bust chance ≈ "+loss+" points. Likely gain from rolling ≈ "+gain+" points (the average set-aside for "+diceCount+" dice, sampled from real rolls). "+(loss>gain? "The likely loss outweighs the likely gain — banking is the math's pick here." : "The likely gain outweighs the likely loss — rolling is the math's pick here.")+" It is still your call: expected value is an average over many turns, not a promise about this one.";
+  }
+  $("probLine").textContent = (G.phase==="decide" || G.phase==="awaitRoll") ? prob : "";
+  $("coachLine").textContent = (G.phase==="decide" || G.phase==="awaitRoll") ? coach : "";
+}
+function renderAll(){
+  renderBoard(); renderDice(); renderSel(); teachLines(G.diceLeft);
+  var human = curPlayer().human;
+  $("rollBtn").disabled = !(human && (G.phase==="awaitRoll"||G.phase==="decide") && !G.over);
+  $("asideBtn").disabled = !(human && G.phase==="select" && !G.over);
+  $("bankBtn").disabled = !(human && G.phase==="decide" && !G.over);
+  $("turnInfo").textContent = G.over? "Game over." : (curPlayer().name+"'s turn — turn total "+G.turnTotal+", "+G.diceLeft+" dice left to roll.");
+}
+function renderSel(){
+  if(G.phase!=="select"){ $("selInfo").textContent = "Tap a die to select it or unselect it. Every die you set aside must be part of the score."; return; }
+  var sel = [];
+  G.rolled.forEach(function(d,i){ if(G.selected[i]) sel.push(d); });
+  if(!sel.length){ $("selInfo").textContent = "Tap dice from the roll to set aside. Every selected die must be used in the score."; return; }
+  var sc = HD.bestScoreDice(sel);
+  $("selInfo").textContent = sc<0 ? "Selected: "+sel.join(", ")+" — that selection does not score with every die used. Unselect a die or pick a different set." : "Selected: "+sel.join(", ")+" = "+sc+" points. Tap “Set aside selected” to keep them.";
+}
+function toggleDie(idx){
+  if(G.phase!=="select" || !curPlayer().human) return;
+  G.selected[idx] = !G.selected[idx];
+  renderDice(); renderSel();
+}
+function doRoll(){
+  if(!curPlayer().human) return;
+  rollCurrent(G.diceLeft);
+}
+function rollCurrent(n){
+  var roll = [];
+  for(var i=0;i<n;i++) roll.push(1+Math.floor(Math.random()*6));
+  G.rolled = roll; G.selected = {};
+  log(curPlayer().name+" rolls "+n+" dice: "+roll.join(", ")+".");
+  if(!HD.hasScoreDice(roll)){
+    var t = TABLE[n];
+    var pct = Math.round(t.bustPct*10)/10;
+    var once = Math.max(1, Math.round(100/t.bustPct));
+    log("BUST — no scoring combination. The unbanked "+G.turnTotal+" points are lost. Lesson: that was a ~"+pct+"% risk — it lands roughly once in "+once+" such rolls.");
+    setStatus("Bust! That was a ~"+pct+"% risk — it lands roughly once in "+once+" such rolls. Turn total lost.");
+    var rb = recBucket(); rb.busts++; rb.turns++; saveRecord(); renderRecord();
+    G.turnTotal = 0; G.rolled = [];
+    endTurn();
+    return;
+  }
+  G.phase = "select";
+  setStatus(curPlayer().human? "Tap scoring dice to select them, then set them aside." : curPlayer().name+" is choosing dice…");
+  renderAll();
+  if(!curPlayer().human) setTimeout(botChoose, 650);
+}
+function doAside(){
+  var sel = [];
+  G.rolled.forEach(function(d,i){ if(G.selected[i]) sel.push(d); });
+  if(!sel.length){ setStatus("Select at least one scoring die first."); return; }
+  var sc = HD.bestScoreDice(sel);
+  if(sc<0){ setStatus("That selection does not score with every die used — change it."); return; }
+  applyAside(sel, sc);
+}
+function applyAside(sel, sc){
+  G.turnTotal += sc;
+  G.asideThisTurn += sel.length;
+  var remaining = [];
+  var used = {};
+  G.rolled.forEach(function(d,i){ if(G.selected[i]) used[i]=true; });
+  G.rolled.forEach(function(d,i){ if(!used[i]) remaining.push(d); });
+  log(curPlayer().name+" sets aside "+sel.join(", ")+" for "+sc+" points. Turn total: "+G.turnTotal+".");
+  G.rolled = [];
+  G.selected = {};
+  G.diceLeft = remaining.length;
+  var hot = false;
+  if(G.asideThisTurn>=6 && G.diceLeft===0){ hot = true; }
+  /* If dice remain from this roll un-set-aside they are lost to this turn in classic flow? No: unchosen dice are the ones you roll next. diceLeft already = remaining count. But if player set aside only part, remaining dice are exactly the next roll. Correct. */
+  if(hot){
+    G.diceLeft = 6; G.asideThisTurn = 0;
+    var rb = recBucket(); rb.hot++; saveRecord(); renderRecord();
+    log("HOT DICE! All six dice scored — roll all six fresh and keep accumulating.");
+    setStatus("Hot dice! All six scored. Roll all six fresh, or bank "+G.turnTotal+".");
+  }
+  G.phase = "decide";
+  renderAll();
+}
+function canBankNow(){
+  var p = curPlayer();
+  return G.turnTotal>0 && (p.entered || G.turnTotal>=settings.entry);
+}
+function doBank(){
+  if(!canBankNow()){
+    setStatus("Your first bank must reach "+settings.entry+" points — this turn has "+G.turnTotal+". Keep rolling or risk the bust.");
+    return;
+  }
+  applyBank();
+}
+function applyBank(){
+  var p = curPlayer();
+  var amt = G.turnTotal;
+  p.score += amt; if(amt>0) p.entered = true;
+  var rb = recBucket(); rb.banks++; rb.turns++; if(amt>rb.biggestBank) rb.biggestBank = amt; if(amt>rb.bestTurn) rb.bestTurn = amt; saveRecord(); renderRecord();
+  log(p.name+" banks "+amt+" points. Score: "+p.score+".");
+  G.turnTotal = 0;
+  if(!G.final && p.score>=settings.target){
+    G.final = true;
+    var others = G.players.length - 1;
+    G.finalLeft = others;
+    if(others===0){ finishGame(); return; }
+    log(p.name+" crosses "+settings.target+"! Every other player gets one final turn.");
+  } else if(G.final){
+    G.finalLeft--;
+    if(G.finalLeft<=0){ finishGame(); return; }
+  }
+  endTurn();
+}
+function endTurn(){
+  if(G.over) { renderAll(); return; }
+  if(G.final && G.finalLeft<=0){ finishGame(); return; }
+  G.cur = (G.cur+1) % G.players.length;
+  G.turnTotal = 0; G.diceLeft = 6; G.asideThisTurn = 0; G.rolled = []; G.selected = {}; G.phase = "awaitRoll";
+  renderAll();
+  var p = curPlayer();
+  if(p.human){ setStatus(p.name+" to roll. Tap Roll dice."); }
+  else { setStatus(p.name+"'s turn…"); setTimeout(botTurnStart, 700); }
+}
+function finishGame(){
+  G.over = true; G.phase = "over";
+  var best = G.players[0];
+  G.players.forEach(function(p){ if(p.score>best.score) best = p; });
+  var rb = recBucket(); rb.games++; if(best.human) rb.wins++; saveRecord(); renderRecord();
+  setStatus("Game over — "+best.name+" wins with "+best.score+" points!");
+  log("Game over — "+best.name+" wins with "+best.score+" points."+(isVariant()?" (Variant game — non-standard rules.)":""));
+  renderAll();
+}
+/* Bots */
+function botTurnStart(){ if(G.over || curPlayer().human) return; rollCurrent(6); }
+function botChoose(){
+  if(G.over) return;
+  var p = curPlayer();
+  var sub = HD.bestSubset(G.rolled);
+  if(!sub.dice.length){ endTurn(); return; }
+  G.selected = {};
+  var pool = G.rolled.slice();
+  sub.dice.forEach(function(v){
+    for(var i=0;i<pool.length;i++){ if(pool[i]===v && !G.selected[i]){ G.selected[i]=true; pool[i]=null; break; } }
+  });
+  applyAside(sub.dice, sub.score);
+  /* decide */
+  var enteredBefore = p.entered;
+  if(HD.botShouldBank(p.level, G.turnTotal, G.diceLeft, TABLE, enteredBefore, settings.entry)){
+    log(p.name+" banks "+G.turnTotal+" — its rule: "+HD.botRuleText(p.level)+".");
+    applyBank();
+  } else {
+    if(!canBankNow() && G.turnTotal>0){ /* must roll */ }
+    log(p.name+" rolls on with "+G.diceLeft+" dice (turn total "+G.turnTotal+") — its rule: "+HD.botRuleText(p.level)+".");
+    setTimeout(function(){ rollCurrent(G.diceLeft); }, 650);
+  }
+}
+/* Record view */
+function recText(name, r){
+  return name+": games "+r.games+" · wins "+r.wins+" · turns "+r.turns+" · banks "+r.banks+" · busts "+r.busts+" · hot-dice rolls "+r.hot+" · best turn "+r.bestTurn+" · biggest bank "+r.biggestBank;
+}
+function renderRecord(){
+  if(!record) return;
+  $("recordView").textContent = recText("Standard rules", record.standard)+" | "+recText("Variant rules", record.variant);
+}
+/* Folds */
+function wireFold(btnId, foldId){
+  var b = $(btnId), f = $(foldId);
+  var base = b.textContent.replace(/ — Tap to (open|close)$/,"");
+  b.addEventListener("click", function(){
+    var open = f.className.indexOf("hidden")<0;
+    if(open){ f.className = "foldcontent hidden"; b.textContent = base+" — Tap to open"; b.setAttribute("aria-expanded","false"); }
+    else { f.className = "foldcontent"; b.textContent = base+" — Tap to close"; b.setAttribute("aria-expanded","true"); }
+  });
+}
+/* Panels */
+function showPanel(id){
+  ["navPanel","feedbackPanel","settingsPanel"].forEach(function(p){ $(p).className = p===id? "panel" : "panel hidden"; });
+  if(id==="navPanel"){ $("thisPageFold").className="foldcontent hidden"; $("otherPagesFold").className="foldcontent hidden"; $("thisPageBtn").textContent="This page — Tap to open"; $("otherPagesBtn").textContent="Other pages — Tap to open"; }
+}
+function hidePanels(){ ["navPanel","feedbackPanel","settingsPanel"].forEach(function(p){ $(p).className="panel hidden"; }); }
+function renderBustTable(){
+  var tb = $("bustTableBody"); tb.innerHTML = "";
+  for(var k=1;k<=6;k++){
+    var t = TABLE[k], tr = document.createElement("tr");
+    [String(k), String(t.total), String(t.bust), (Math.round(t.bustPct*10)/10)+"%", (Math.round(t.scorePct*10)/10)+"%"].forEach(function(v){
+      var td=document.createElement("td"); td.textContent=v; tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  }
+}
+function syncSettingsUI(){
+  $("setEntry").value = String(settings.entry); $("setTarget").value = String(settings.target);
+  $("setBots").value = String(settings.bots); $("setBotLevel").value = settings.botLevel;
+  $("setTeach").value = settings.teach; $("teachSelect").value = settings.teach;
+}
+function init(){
+  loadAll(); renderBustTable(); renderRecord(); syncSettingsUI();
+  wireFold("scoreFoldBtn","scoreFold"); wireFold("bustFoldBtn","bustFold"); wireFold("whyFoldBtn","whyFold"); wireFold("botsFoldBtn","botsFold"); wireFold("recordFoldBtn","recordFold");
+  wireFold("thisPageBtn","thisPageFold"); wireFold("otherPagesBtn","otherPagesFold");
+  $("rollBtn").addEventListener("click", doRoll);
+  $("asideBtn").addEventListener("click", doAside);
+  $("bankBtn").addEventListener("click", doBank);
+  $("newGameBtn").addEventListener("click", newGame);
+  $("dockLeft").addEventListener("click", function(){ showPanel("feedbackPanel"); });
+  $("dockCentre").addEventListener("click", function(){ showPanel("navPanel"); });
+  $("dockRight").addEventListener("click", function(){ syncSettingsUI(); showPanel("settingsPanel"); });
+  $("navCloseBtn").addEventListener("click", hidePanels);
+  $("feedbackCloseBtn").addEventListener("click", hidePanels);
+  $("feedbackText").addEventListener("change", function(){ try{ localStorage.setItem("hotdice-feedback", $("feedbackText").value); }catch(e){} });
+  $("settingsCloseBtn").addEventListener("click", function(){
+    settings.entry = parseInt($("setEntry").value,10); settings.target = parseInt($("setTarget").value,10);
+    settings.bots = parseInt($("setBots").value,10); settings.botLevel = $("setBotLevel").value; settings.teach = $("setTeach").value;
+    saveSettings(); syncSettingsUI(); hidePanels(); newGame();
+  });
+  $("teachSelect").addEventListener("change", function(){ settings.teach = $("teachSelect").value; saveSettings(); syncSettingsUI(); if(G) renderAll(); });
+  $("aliasInput").addEventListener("change", function(){ try{ localStorage.setItem("hotdice-alias", ($("aliasInput").value||"").trim()||"Guest"); }catch(e){} if(G && G.players[0]){ G.players[0].name = ($("aliasInput").value||"").trim()||"Guest"; renderBoard(); } });
+  $("dlLink").addEventListener("click", function(ev){
+    ev.preventDefault();
+    var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:"text/html"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = "hot-dice.html"; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  });
+  $("exportBtn").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(record, null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = "hot-dice-record.json"; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  });
+  $("forgetBtn").addEventListener("click", function(){
+    try{ localStorage.removeItem("hotdice-record"); localStorage.removeItem("hotdice-settings"); localStorage.removeItem("hotdice-alias"); localStorage.removeItem("hotdice-feedback"); }catch(e){}
+    record = {standard:blankRec(), variant:blankRec()};
+    settings = {entry:500, target:5000, bots:0, botLevel:"steady", teach:"light"};
+    $("aliasInput").value = ""; $("feedbackText").value = "";
+    saveSettings(); saveRecord(); syncSettingsUI(); renderRecord(); newGame();
+    setStatus("Forgotten. Record, settings, and alias wiped from this device.");
+  });
+  $("simBtn").addEventListener("click", function(){
+    $("simResults").textContent = "Running 300 solo turns per level with the real game engine…";
+    setTimeout(function(){
+      var res = HD.simulateBots(TABLE, 300, Math.random);
+      var names = {learning:"Learning", steady:"Steady", sharp:"Sharp", pro:"Pro"};
+      var html = "<table><tr><th>Bot level</th><th>Average banked points per turn</th><th>Bust rate</th></tr>";
+      ["learning","steady","sharp","pro"].forEach(function(lv){
+        html += "<tr><td>"+names[lv]+"</td><td>"+(Math.round(res[lv].avg*10)/10)+"</td><td>"+(Math.round(res[lv].bustRate*10)/10)+"%</td></tr>";
+      });
+      html += "</table><p class='small'>Measured just now, on this device, from 300 simulated solo turns per level using this page's engine and each level's printed rule. Run it again and the numbers will move a little — the gaps between levels are the point.</p>";
+      $("simResults").innerHTML = html;
+    }, 30);
+  });
+  newGame();
+}
+init();
+</script>
+</body>
+</html>
