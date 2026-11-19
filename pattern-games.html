@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Sharp Eyes — Pattern Games</title>
+<style>
+:root{
+  --bg:#f6f4ee; --panel:#fffdf8; --panel2:#efe9db; --ink:#1d2420; --muted:#5c665f;
+  --line:#d8d0bd; --accent:#0e6b5c; --accent-ink:#ffffff; --amber:#a85b12; --amber-bg:#fdf0dc;
+  --good:#177245; --good-bg:#e2f2e6; --bad:#b3372c; --bad-bg:#fbe7e3; --focus:#0e6b5c;
+  --shadow:0 2px 10px rgba(29,36,32,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#141816; --panel:#1d2320; --panel2:#262d29; --ink:#ece7da; --muted:#a9b2ab;
+    --line:#3a423c; --accent:#3fae97; --accent-ink:#0d1512; --amber:#e0a458; --amber-bg:#3a2d1a;
+    --good:#6fce93; --good-bg:#1e3527; --bad:#f0927f; --bad-bg:#3d2420; --focus:#3fae97;
+    --shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55;font-size:17px}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.2;margin:0}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:.5rem .95rem}
+button:hover{border-color:var(--accent)}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.btn-main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn-quiet{background:transparent}
+.btn-small{padding:.3rem .7rem;font-size:.92rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+a{color:var(--accent)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+.freebar{background:var(--accent);color:var(--accent-ink);padding:10px 16px;text-align:center;font-weight:700;font-size:1.02rem}
+.freebar button{margin-left:10px;background:var(--accent-ink);color:var(--accent);border:none;font-weight:700;padding:.35rem .8rem}
+header.hero{padding:30px 0 8px}
+header.hero h1{font-size:2.5rem;letter-spacing:-.01em}
+header.hero p.lede{font-size:1.13rem;color:var(--muted);max-width:44rem;margin:.6rem 0 0}
+nav.compass{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1.5px solid var(--line);padding:8px 0;margin-top:18px}
+nav.compass ul{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+nav.compass a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.3rem .75rem;border:1.5px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);background:var(--panel);font-size:.95rem;font-weight:600}
+nav.compass a:hover{border-color:var(--accent);color:var(--accent)}
+section{margin-top:38px}
+section>h2{font-size:1.65rem;margin-bottom:.35rem}
+section>p.intro{color:var(--muted);max-width:46rem;margin:.2rem 0 14px}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:end;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.controls label{font-weight:700;font-size:.95rem;display:block}
+.controls .sub{font-weight:400;color:var(--muted);font-size:.88rem;display:block;margin-top:2px}
+.controls select,.controls input[type="text"]{font:inherit;padding:.45rem .6rem;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);min-width:170px}
+.shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin-top:14px}
+.gamecard{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+.gamecard h3{font-size:1.18rem}
+.gamecard p{margin:0;color:var(--muted);font-size:.95rem;flex:1}
+.gamecard .best{font-size:.88rem;font-weight:700;color:var(--amber)}
+.panel{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.panel h3{font-size:1.35rem}
+.panel .story{color:var(--muted);margin:.35rem 0 12px;max-width:44rem}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.status{font-weight:700}
+.hint{background:var(--amber-bg);border-radius:10px;padding:10px 12px;font-size:.95rem;margin:10px 0}
+.hint[hidden]{display:none}
+.result{border-radius:10px;padding:12px 14px;margin:12px 0;font-weight:600}
+.result.good{background:var(--good-bg);color:var(--good)}
+.result.bad{background:var(--bad-bg);color:var(--bad)}
+.result.neutral{background:var(--panel2)}
+details{border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--panel);margin-top:12px}
+summary{cursor:pointer;font-weight:700;padding:.25rem 0}
+.levelpick{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;overflow:hidden}
+.levelpick button{border:none;border-radius:0;background:transparent;padding:.35rem .8rem;font-weight:600}
+.levelpick button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+/* Café scene */
+.scene{position:relative;background:linear-gradient(var(--panel2),var(--panel2));border:2px solid var(--line);border-radius:14px;min-height:340px;overflow:hidden}
+.scene .wall{position:absolute;inset:0;background:
+  repeating-linear-gradient(0deg,transparent 0 44px,rgba(0,0,0,.045) 44px 45px)}
+.spot{position:absolute;background:transparent;border:2.5px dashed transparent;border-radius:12px;padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}
+.spot .cap{font-size:.72rem;font-weight:700;color:var(--muted);background:var(--panel);padding:0 6px;border-radius:999px;border:1px solid var(--line)}
+body.guessing .spot{cursor:pointer;border-color:transparent}
+body.guessing .spot:hover{border-color:var(--accent)}
+.spot.picked{border-color:var(--amber)!important;background:var(--amber-bg)}
+.spot.right{border-color:var(--good)!important;background:var(--good-bg)}
+.spot.wrong{border-color:var(--bad)!important;background:var(--bad-bg)}
+.spot.missed{border-color:var(--bad)!important;border-style:solid}
+.cover{position:absolute;inset:0;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:1.4rem;z-index:5;text-align:center;padding:20px}
+/* Tray */
+.tray{display:flex;flex-wrap:wrap;gap:10px;background:var(--panel2);border:2px dashed var(--line);border-radius:14px;padding:16px;min-height:110px;align-items:center;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:.45rem .85rem;font-weight:600}
+.chip .dot{width:16px;height:16px;border-radius:50%;flex:none;border:1.5px solid rgba(0,0,0,.25)}
+.pickgrid{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.pickgrid .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pickgrid .chip.right{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.pickgrid .chip.wrong{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+/* Party faces */
+.faces{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:12px 0}
+.facecard{text-align:center;background:var(--panel2);border-radius:14px;padding:12px 10px 8px;border:1.5px solid var(--line);min-width:118px}
+.facecard .nm{font-weight:800;margin-top:6px;font-size:1.05rem}
+.facecard.big{min-width:170px;padding:20px}
+/* Sequences */
+.seq{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:1.5rem;font-weight:800;margin:14px 0}
+.seq .cell{background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;min-width:52px;min-height:52px;display:flex;align-items:center;justify-content:center;padding:4px 10px}
+.seq .cell.q{background:var(--amber-bg);color:var(--amber)}
+.opts{display:flex;flex-wrap:wrap;gap:10px}
+.opts button{font-size:1.15rem;font-weight:700;min-width:64px}
+.opts button.right{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.opts button.wrong{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+/* Crowd */
+.crowd{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:10px;margin-top:12px}
+.person{background:var(--panel2);border:2.5px solid transparent;border-radius:12px;padding:8px 4px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-height:96px}
+.person:hover{border-color:var(--accent)}
+.person.right{border-color:var(--good);background:var(--good-bg)}
+.person.wrong{border-color:var(--bad);background:var(--bad-bg)}
+/* Debrief + record */
+table{border-collapse:collapse;width:100%;margin-top:10px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--panel2)}
+.debrief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.skill{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:15px}
+.skill h3{font-size:1.08rem;margin-bottom:4px}
+.skill p{margin:0;color:var(--muted);font-size:.95rem}
+footer{margin-top:48px;border-top:1.5px solid var(--line);padding-top:16px;color:var(--muted);font-size:.92rem}
+.toast{background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;margin-top:12px;font-weight:600}
+[hidden]{display:none!important}
+@media (max-width:560px){
+  header.hero h1{font-size:2rem}
+  .scene{min-height:420px}
+  .spot{min-width:56px}
+  body{font-size:16px}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="freebar">Free — always free. No ads, no account, nothing to buy.
+  <button type="button" id="offlineBtn">Tap to save this page for offline</button>
+</div>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Sharp Eyes</h1>
+  <p class="lede">Five small games wearing friendly disguises — a café, a tea tray, a party, a code, a crowded street. Play them for fun. What they quietly practice is named at the end, in the Debrief, because finding out afterwards is half the delight.</p>
+</header>
+
+<nav class="compass" aria-label="Page compass">
+  <ul>
+    <li><a href="#shelf">The Shelf</a></li>
+    <li><a href="#cafe">Café</a></li>
+    <li><a href="#tray">Tea Tray</a></li>
+    <li><a href="#party">Party</a></li>
+    <li><a href="#codes">Codes</a></li>
+    <li><a href="#crowd">Crowd</a></li>
+    <li><a href="#debrief">Debrief</a></li>
+    <li><a href="#record">Your Record</a></li>
+  </ul>
+</nav>
+
+<section id="setup" aria-labelledby="setup-h">
+  <h2 id="setup-h">Before you play</h2>
+  <p class="intro">Two small choices. Both live only on this device, in this visit — export your record below if you want to keep it.</p>
+  <div class="controls">
+    <div>
+      <label for="aliasInput">Play as any name you like
+        <span class="sub">Alias freedom: your real name, a nickname, a codename — your call.</span>
+      </label>
+      <input type="text" id="aliasInput" maxlength="24" placeholder="e.g. Night Owl" autocomplete="off" />
+    </div>
+    <div>
+      <label for="teachDial">Teaching dial
+        <span class="sub">How much explaining the games do while you play.</span>
+      </label>
+      <select id="teachDial">
+        <option value="0">Quiet — just play</option>
+        <option value="1" selected>Hints — a nudge when it helps</option>
+        <option value="2">Coach — hints plus the why, as you go</option>
+      </select>
+    </div>
+    <div>
+      <button type="button" class="btn-main" id="aliasBtn">Tap to set your name</button>
+      <span class="sub" id="aliasEcho" role="status">Playing as: Guest</span>
+    </div>
+  </div>
+</section>
+
+<section id="shelf" aria-labelledby="shelf-h">
+  <h2 id="shelf-h">The shelf</h2>
+  <p class="intro">Pick any door. Levels ramp inside each game — start at Level 1, and the game will offer you the next rung when you earn it. Every play button says its gesture in plain words — tap to start, tap to cover, tap to check.</p>
+  <div class="shelf">
+    <div class="gamecard"><h3>The Café That Moves</h3><p>A quiet café. Look closely… then look again. Something has shifted. Can you catch what?</p><span class="best" data-best="cafe"></span><a href="#cafe"><button type="button" class="btn-main">Tap to play the Café</button></a></div>
+    <div class="gamecard"><h3>The Tea Tray</h3><p>A tray of small treasures, shown for a few breaths, then covered. How much of it can you hold in your head?</p><span class="best" data-best="tray"></span><a href="#tray"><button type="button" class="btn-main">Tap to play the Tray</button></a></div>
+    <div class="gamecard"><h3>Names at the Party</h3><p>Meet the guests, learn their names — then the party starts and somebody asks, “which one was…?”</p><span class="best" data-best="party"></span><a href="#party"><button type="button" class="btn-main">Tap to play the Party</button></a></div>
+    <div class="gamecard"><h3>Codes &amp; Sequences</h3><p>Numbers, shapes, and little tunes that follow a hidden rule. Find the rule; pick what comes next.</p><span class="best" data-best="codes"></span><a href="#codes"><button type="button" class="btn-main">Tap to play Codes</button></a></div>
+    <div class="gamecard"><h3>One Stranger in the Crowd</h3><p>A street full of near-twins. One figure quietly breaks the pattern. Find them before the crowd moves on.</p><span class="best" data-best="crowd"></span><a href="#crowd"><button type="button" class="btn-main">Tap to play the Crowd</button></a></div>
+  </div>
+</section>
+
+<!-- ============ GAME 1: CAFÉ ============ -->
+<section id="cafe" aria-labelledby="cafe-h">
+  <h2 id="cafe-h">1 · The Café That Moves</h2>
+  <p class="intro">Study the café. When you tap “I’ve got it,” the lights blink — and while they’re out, a few things quietly change. Tap every spot you believe changed.</p>
+  <div class="panel">
+    <div class="row">
+      <span class="status" id="cafeStatus" role="status">Ready when you are.</span>
+      <span class="levelpick" role="group" aria-label="Café level">
+        <button type="button" data-cafe-level="1" aria-pressed="true">Level 1 · 2 changes</button>
+        <button type="button" data-cafe-level="2" aria-pressed="false">Level 2 · 3 changes</button>
+        <button type="button" data-cafe-level="3" aria-pressed="false">Level 3 · 4 changes</button>
+      </span>
+    </div>
+    <div class="scene" id="cafeScene" aria-label="Café scene"></div>
+    <div class="hint" data-hint="1">Hint: don’t just look at objects — look at states. Open or shut? Full or empty? Lit or dark? On the wall or gone?</div>
+    <div class="hint" data-hint="2">Why it works: your eyes take in a whole scene at once, but memory keeps only a sketch of it. Fixing three or four details on purpose — “clock, plant, sign” — gives the sketch anchors, and changes near an anchor jump out.</div>
+    <div class="row">
+      <button type="button" class="btn-main" id="cafeStart">Tap to start a round</button>
+      <button type="button" class="btn-main" id="cafeReady" hidden>Tap when you’ve got it — blink the lights</button>
+      <button type="button" id="cafeCheck" hidden>Tap to check my taps</button>
+      <button type="button" id="cafeAgain" hidden>Tap to play again</button>
+    </div>
+    <div id="cafeResult" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ============ GAME 2: TRAY ============ -->
+<section id="tray" aria-labelledby="tray-h">
+  <h2 id="tray-h">2 · The Tea Tray</h2>
+  <p class="intro">An old parlour game, played for over a century: a tray of objects is carried in, you study it, it’s covered — and you say what was on it. Here the cover is a button.</p>
+  <div class="panel">
+    <div class="row">
+      <span class="status" id="trayStatus" role="status">Ready when you are.</span>
+      <span class="levelpick" role="group" aria-label="Tray level">
+        <button type="button" data-tray-level="1" aria-pressed="true">Level 1 · 5 things</button>
+        <button type="button" data-tray-level="2" aria-pressed="false">Level 2 · 7 things</button>
+        <button type="button" data-tray-level="3" aria-pressed="false">Level 3 · 9 things</button>
+      </span>
+    </div>
+    <div class="tray" id="trayBoard"><span style="color:var(--muted)">The tray arrives when you tap start.</span></div>
+    <div class="hint" data-hint="1">Hint: group the tray as you look — “the three round things, the two red things, the odd one by the spoon.” Groups are easier to hold than a list.</div>
+    <div class="hint" data-hint="2">Why it works: memory holds chunks, not items. Five loose objects strain it; three little groups slide in easily. Grouping on purpose is the whole trick — spies, waiters, and nurses all use it.</div>
+    <div class="row">
+      <button type="button" class="btn-main" id="trayStart">Tap to bring in the tray</button>
+      <button type="button" class="btn-main" id="trayCover" hidden>Tap to cover the tray and answer</button>
+      <button type="button" id="trayCheck" hidden>Tap to check my picks</button>
+      <button type="button" id="trayAgain" hidden>Tap to play again</button>
+    </div>
+    <div class="pickgrid" id="trayPicks" hidden></div>
+    <div id="trayResult" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ============ GAME 3: PARTY ============ -->
+<section id="party" aria-labelledby="party-h">
+  <h2 id="party-h">3 · Names at the Party</h2>
+  <p class="intro">You’ve just arrived. Meet everybody, faces and names together. Then the music starts, the names come off — and you’ll be asked who was who.</p>
+  <div class="panel">
+    <div class="row">
+      <span class="status" id="partyStatus" role="status">Ready when you are.</span>
+      <span class="levelpick" role="group" aria-label="Party level">
+        <button type="button" data-party-level="1" aria-pressed="true">Level 1 · 5 guests</button>
+        <button type="button" data-party-level="2" aria-pressed="false">Level 2 · 7 guests</button>
+      </span>
+    </div>
+    <div class="faces" id="partyBoard"><span style="color:var(--muted)">The guests arrive when you tap start.</span></div>
+    <div class="hint" data-hint="1">Hint: hook each name to something you can see — “Rosa wears the rose-red scarf.” A silly hook beats a careful one; silly sticks.</div>
+    <div class="hint" data-hint="2">Why it works: a bare name is slippery, but a name tied to a picture has two handles instead of one. You’re not memorising harder — you’re giving memory a second way back in.</div>
+    <div class="row">
+      <button type="button" class="btn-main" id="partyStart">Tap to meet the guests</button>
+      <button type="button" class="btn-main" id="partyQuizBtn" hidden>Tap to start the party — names off</button>
+      <button type="button" id="partyAgain" hidden>Tap to play again</button>
+    </div>
+    <div id="partyQuiz"></div>
+    <div id="partyResult" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ============ GAME 4: CODES ============ -->
+<section id="codes" aria-labelledby="codes-h">
+  <h2 id="codes-h">4 · Codes &amp; Sequences</h2>
+  <p class="intro">Every row below follows a rule — in numbers, in shapes, or in little tunes you can play. Work out the rule, then tap what comes next.</p>
+  <div class="panel">
+    <div class="row">
+      <span class="status" id="codesStatus" role="status">Ready when you are.</span>
+      <span class="levelpick" role="group" aria-label="Codes level">
+        <button type="button" data-codes-level="1" aria-pressed="true">Level 1 · warm-up rules</button>
+        <button type="button" data-codes-level="2" aria-pressed="false">Level 2 · trickier rules</button>
+        <button type="button" data-codes-level="3" aria-pressed="false">Level 3 · two rules at once</button>
+      </span>
+    </div>
+    <div id="codesBoard"><p style="color:var(--muted)">Your first code arrives when you tap start.</p></div>
+    <div class="hint" data-hint="1">Hint: say the gaps out loud — “plus 3, plus 3…” When the gaps themselves change, the rule lives in the gaps.</div>
+    <div class="hint" data-hint="2">Why it works: a sequence is a story told in shorthand. Finding the rule is finding the story — once you can say it in words (“each step doubles, then rests”), the next step says itself.</div>
+    <div class="row">
+      <button type="button" class="btn-main" id="codesStart">Tap to start the codes</button>
+      <button type="button" id="codesAgain" hidden>Tap to play again</button>
+    </div>
+    <div id="codesResult" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ============ GAME 5: CROWD ============ -->
+<section id="crowd" aria-labelledby="crowd-h">
+  <h2 id="crowd-h">5 · One Stranger in the Crowd</h2>
+  <p class="intro">A busy street, everybody dressed to a pattern — except one. Tap the figure who breaks it. Fewer wild taps wins: each wrong tap costs a point.</p>
+  <div class="panel">
+    <div class="row">
+      <span class="status" id="crowdStatus" role="status">Ready when you are.</span>
+      <span class="levelpick" role="group" aria-label="Crowd level">
+        <button type="button" data-crowd-level="1" aria-pressed="true">Level 1 · loud difference</button>
+        <button type="button" data-crowd-level="2" aria-pressed="false">Level 2 · quieter</button>
+        <button type="button" data-crowd-level="3" aria-pressed="false">Level 3 · whisper-quiet</button>
+      </span>
+    </div>
+    <div class="crowd" id="crowdBoard"><p style="color:var(--muted);grid-column:1/-1">The crowd gathers when you tap start.</p></div>
+    <div class="hint" data-hint="1">Hint: don’t inspect faces one by one. Let your eyes drift over the whole crowd — the odd one usually tugs at the corner of your eye.</div>
+    <div class="hint" data-hint="2">Why it works: your visual system flags “not like the others” before you can say why. Scanning loosely uses that flag; staring hard at one face at a time switches it off.</div>
+    <div class="row">
+      <button type="button" class="btn-main" id="crowdStart">Tap to gather the crowd</button>
+      <button type="button" id="crowdAgain" hidden>Tap to play again</button>
+    </div>
+    <div id="crowdResult" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ============ DEBRIEF ============ -->
+<section id="debrief" aria-labelledby="debrief-h">
+  <h2 id="debrief-h">The Debrief — what you were actually practising</h2>
+  <p class="intro">The disguise was the design: the face was play, the skills are real, and the naming comes after — because a skill you discover in yourself sticks better than one you were lectured about. Here is the shelf, named plainly.</p>
+  <div class="debrief-grid">
+    <div class="skill"><h3>The Café → Change-spotting</h3><p>Noticing what altered between two looks at the same scene. The core of “something’s off here” — used by inspectors, editors, nurses on a ward round, and anyone who walks back into a room and feels it differ.</p></div>
+    <div class="skill"><h3>The Tea Tray → Observation memory</h3><p>Holding a seen arrangement in mind after it’s gone. This is the classic Kim’s Game, named after Kipling’s novel <em>Kim</em>, where it trains a young intelligence agent — the documented parlour shape of a real training exercise.</p></div>
+    <div class="skill"><h3>The Party → Face-and-name recall</h3><p>Binding a name to a face so it survives a crowd. The friendliest form of an operative skill — and, not coincidentally, the one that makes hosts, teachers, and organisers beloved.</p></div>
+    <div class="skill"><h3>Codes → Pattern-finding</h3><p>Reading a run of things and inferring the rule that made it — in numbers, shapes, and sounds alike. The same move, three costumes.</p></div>
+    <div class="skill"><h3>The Crowd → Spotting the break</h3><p>Fast visual search for the one element that violates the pattern of the rest — the anomaly sense behind proofreading, quality checks, and “wait, that one’s wrong.”</p></div>
+  </div>
+  <details>
+    <summary>Tap to open — the honest note about transfer</summary>
+    <p>These games genuinely train attention and memory <em>inside the game</em>: you will get measurably better at the café, the tray, and the rest, and the strategies (grouping, hooking a name to a face, saying the rule in words) are real techniques that carry into similar real tasks. What no honest page can promise is broad transfer: getting sharp at these games does not by itself make memory stronger everywhere, and research on “brain training” finds transfer is partial and task-shaped. Treat your scores as what they are — proof your attention is trainable, and a good time had training it — not as a certificate of a generally upgraded mind.</p>
+  </details>
+  <details>
+    <summary>Tap to open — where these shapes come from</summary>
+    <p>The tray game is Kim’s Game, described in Rudyard Kipling’s <em>Kim</em> (1901) and used since in scout, military, and observation training. Change-spotting pictures are a staple of observation exercises and “spot the difference” publishing. Face-name hooks are the standard advice of memory teachers. Nothing here is copied from any one source — the shapes are old, shared, and in the open, borrowed with thanks and expanded a little, which is how these things have always travelled.</p>
+  </details>
+</section>
+
+<!-- ============ RECORD ============ -->
+<section id="record" aria-labelledby="record-h">
+  <h2 id="record-h">Your record</h2>
+  <p class="intro">Kept on this device, in this visit only — nothing is sent anywhere, and there is no account. Export it to keep a copy; Forget wipes it clean.</p>
+  <div class="panel">
+    <div id="recordBody"><p style="color:var(--muted)">No rounds yet. Play anything above and your scores land here.</p></div>
+    <div class="row">
+      <button type="button" id="exportBtn">Tap to export my record (.json)</button>
+      <button type="button" id="forgetBtn">Tap to Forget — wipe my record</button>
+      <button type="button" class="btn-main" id="forgetConfirm" hidden>Tap again to confirm Forget</button>
+    </div>
+    <div id="recordToast" aria-live="polite"></div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Sharp Eyes</strong> is free, always — no ads, no tracking, no account. Made to be shared: copy it, pass it on, improve it.</p>
+  <p>Copyleft: this page’s text and design are CC BY-SA 4.0 and its code is GPL — derivatives carry the same freedom. Why? → How? → Act: the why is attention worth training; the how is play that doesn’t feel like training; the act is the five doors above.</p>
+</footer>
+</div>
+<script>
+"use strict";
+function $(s,r){return (r||document).querySelector(s)}
+function $all(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function pickN(a,n){return shuffle(a).slice(0,n)}
+
+/* ---------- Shared state / record ---------- */
+var state={alias:"Guest",teach:1,record:{plays:{},best:{},log:[]}};
+function logPlay(game,level,scoreText,scoreNum,maxNum){
+  state.record.plays[game]=(state.record.plays[game]||0)+1;
+  var key=game+" L"+level;
+  if(!state.record.best[key]||scoreNum>state.record.best[key].num){
+    state.record.best[key]={text:scoreText,num:scoreNum,max:maxNum};
+  }
+  state.record.log.push({game:game,level:level,score:scoreText,when:new Date().toLocaleTimeString()});
+  renderRecord(); renderBests();
+}
+var GAME_NAMES={cafe:"The Café That Moves",tray:"The Tea Tray",party:"Names at the Party",codes:"Codes & Sequences",crowd:"One Stranger in the Crowd"};
+function renderBests(){
+  $all("[data-best]").forEach(function(el){
+    var g=el.getAttribute("data-best"),best=null,bk="";
+    Object.keys(state.record.best).forEach(function(k){if(k.indexOf(g+" ")===0){var b=state.record.best[k];if(!best||b.num/b.max>best.num/best.max){best=b;bk=k}}});
+    el.textContent=best?("Best so far: "+best.text+" ("+bk.replace(g+" L","Level ")+")"):"";
+  });
+}
+function renderRecord(){
+  var body=$("#recordBody"),games=Object.keys(state.record.plays);
+  if(!games.length){body.innerHTML='<p style="color:var(--muted)">No rounds yet. Play anything above and your scores land here.</p>';return}
+  var rows=games.map(function(g){
+    var bl=Object.keys(state.record.best).filter(function(k){return k.indexOf(g+" ")===0}).map(function(k){return k.replace(g+" L","Level ")+": "+state.record.best[k].text}).join("<br>")||"—";
+    return "<tr><td><strong>"+GAME_NAMES[g]+"</strong></td><td>"+state.record.plays[g]+"</td><td>"+bl+"</td></tr>";
+  }).join("");
+  body.innerHTML='<p>Playing as <strong>'+escapeHtml(state.alias)+'</strong></p><table><thead><tr><th>Game</th><th>Rounds</th><th>Best scores</th></tr></thead><tbody>'+rows+"</tbody></table>";
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+/* ---------- Setup controls ---------- */
+$("#aliasBtn").addEventListener("click",function(){
+  var v=$("#aliasInput").value.trim(); state.alias=v||"Guest";
+  $("#aliasEcho").textContent="Playing as: "+state.alias; renderRecord();
+});
+function applyTeach(){
+  state.teach=parseInt($("#teachDial").value,10);
+  $all("[data-hint]").forEach(function(el){el.hidden=state.teach<parseInt(el.getAttribute("data-hint"),10)});
+}
+$("#teachDial").addEventListener("change",applyTeach); applyTeach();
+
+/* ---------- Offline door ---------- */
+$("#offlineBtn").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"}); var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download="sharp-eyes.html"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url)},2000);
+});
+
+/* ---------- Level pickers (generic) ---------- */
+function levelPicker(attr,cb){
+  var cur=1;
+  $all("[data-"+attr+"-level]").forEach(function(b){
+    b.addEventListener("click",function(){
+      cur=parseInt(b.getAttribute("data-"+attr+"-level"),10);
+      $all("[data-"+attr+"-level]").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false")});
+      cb(cur);
+    });
+  });
+  return function(){return cur};
+}
+
+/* ================= GAME 1: CAFÉ ================= */
+var CAFE_SPOTS=[
+ {id:"clock",cap:"Clock",x:"4%",y:"6%",v:function(ch){var a=ch?200:50;return svgWrap('<circle cx="30" cy="30" r="26" fill="#fffdf8" stroke="#5c665f" stroke-width="3"/><line x1="30" y1="30" x2="30" y2="12" stroke="#1d2420" stroke-width="3" transform="rotate('+a+' 30 30)"/><line x1="30" y1="30" x2="44" y2="30" stroke="#1d2420" stroke-width="3" transform="rotate('+(a+80)+' 30 30)"/>')}},
+ {id:"sign",cap:"Door sign",x:"42%",y:"4%",v:function(ch){return svgWrap('<rect x="4" y="14" width="52" height="32" rx="6" fill="'+(ch?"#b3372c":"#0e6b5c")+'"/><text x="30" y="36" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">'+(ch?"SHUT":"OPEN")+"</text>")}},
+ {id:"plant",cap:"Plant",x:"82%",y:"8%",v:function(ch){if(ch)return svgWrap('<path d="M14 44 L46 44 L41 60 L19 60 Z" fill="#a85b12"/>');return svgWrap('<path d="M30 34 C20 22 14 20 8 22 C14 30 22 34 30 34 C38 34 46 30 52 22 C46 20 40 22 30 34" fill="#177245"/><path d="M14 40 L46 40 L41 60 L19 60 Z" fill="#a85b12"/>')}},
+ {id:"menu",cap:"Menu board",x:"20%",y:"38%",v:function(ch){return svgWrap('<rect x="6" y="6" width="48" height="48" rx="4" fill="#1d2420"/><text x="30" y="28" text-anchor="middle" font-size="11" fill="#fffdf8">'+(ch?"PIE":"SOUP")+'</text><text x="30" y="44" text-anchor="middle" font-size="11" fill="#fffdf8">'+(ch?"TEA":"CAKE")+"</text>")}},
+ {id:"lamp",cap:"Lamp",x:"66%",y:"36%",v:function(ch){return svgWrap((ch?'<circle cx="30" cy="26" r="17" fill="#ffd97a" opacity="0.65"/>':"")+'<path d="M16 30 L44 30 L36 12 L24 12 Z" fill="'+(ch?"#e0a458":"#5c665f")+'"/><rect x="28" y="30" width="4" height="22" fill="#5c665f"/>')}},
+ {id:"mug",cap:"Mug",x:"40%",y:"62%",v:function(ch){return svgWrap('<rect x="14" y="18" width="28" height="30" rx="4" fill="'+(ch?"#b3372c":"#0e6b5c")+'"/><path d="M42 24 C54 24 54 40 42 40" fill="none" stroke="'+(ch?"#b3372c":"#0e6b5c")+'" stroke-width="5"/>')}},
+ {id:"books",cap:"Books",x:"6%",y:"64%",v:function(ch){var s='<rect x="12" y="38" width="36" height="9" fill="#0e6b5c"/><rect x="15" y="28" width="30" height="9" fill="#a85b12"/>';if(ch)s+='<rect x="18" y="18" width="24" height="9" fill="#b3372c"/>';return svgWrap(s)}},
+ {id:"picture",cap:"Picture",x:"84%",y:"58%",v:function(ch){return svgWrap('<rect x="8" y="10" width="44" height="36" fill="#fffdf8" stroke="#a85b12" stroke-width="4"/>'+(ch?'<circle cx="30" cy="26" r="8" fill="#5c665f"/><path d="M12 42 L24 32 L32 38 L40 30 L48 42 Z" fill="#3a423c"/>':'<circle cx="38" cy="20" r="6" fill="#e0a458"/><path d="M12 42 L24 30 L32 36 L40 28 L48 42 Z" fill="#177245"/>'))}},
+ {id:"cushion",cap:"Chair cushion",x:"56%",y:"72%",v:function(ch){return svgWrap('<rect x="10" y="30" width="40" height="12" rx="5" fill="'+(ch?"#0e6b5c":"#b3372c")+'"/><rect x="14" y="10" width="5" height="22" fill="#5c665f"/><rect x="41" y="10" width="5" height="22" fill="#5c665f"/>')}},
+ {id:"jar",cap:"Cookie jar",x:"24%",y:"70%",v:function(ch){return svgWrap('<rect x="16" y="16" width="28" height="36" rx="6" fill="#dfe8e4" stroke="#5c665f" stroke-width="2"/>'+(ch?"":'<circle cx="24" cy="40" r="5" fill="#a85b12"/><circle cx="34" cy="34" r="5" fill="#a85b12"/><circle cx="30" cy="45" r="5" fill="#8a4a0e"/>')+'<rect x="20" y="10" width="20" height="7" rx="3" fill="#5c665f"/>')}}
+];
+function svgWrap(inner){return '<svg width="60" height="60" viewBox="0 0 60 60" role="img" aria-hidden="true">'+inner+"</svg>"}
+var cafe={level:1,phase:"idle",changes:[],picked:{}};
+var cafeLevel=levelPicker("cafe",function(l){cafe.level=l});
+function cafeRender(changedIds){
+  var sc=$("#cafeScene"); sc.innerHTML='<div class="wall"></div>';
+  CAFE_SPOTS.forEach(function(sp){
+    var d=document.createElement("div"); d.className="spot"; d.style.left=sp.x; d.style.top=sp.y;
+    d.setAttribute("data-spot",sp.id); d.setAttribute("role","button"); d.setAttribute("tabindex","0");
+    d.setAttribute("aria-label",sp.cap);
+    d.innerHTML=sp.v(changedIds.indexOf(sp.id)>=0)+'<span class="cap">'+sp.cap+"</span>";
+    d.addEventListener("click",function(){cafeTap(sp.id,d)});
+    d.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();cafeTap(sp.id,d)}});
+    sc.appendChild(d);
+  });
+}
+function cafeTap(id,el){
+  if(cafe.phase!=="guess")return;
+  cafe.picked[id]=!cafe.picked[id];
+  el.classList.toggle("picked",!!cafe.picked[id]);
+  var n=Object.keys(cafe.picked).filter(function(k){return cafe.picked[k]}).length;
+  $("#cafeStatus").textContent="You’ve tapped "+n+" spot"+(n===1?"":"s")+". Tap “check” when you’re done.";
+}
+cafeRender([]);
+$("#cafeStart").addEventListener("click",function(){
+  cafe.level=cafeLevel(); cafe.phase="study"; cafe.picked={};
+  cafe.changes=pickN(CAFE_SPOTS.map(function(s){return s.id}),cafe.level+1);
+  cafeRender([]); document.body.classList.remove("guessing");
+  $("#cafeStatus").textContent="Study the café. Take your time — then blink the lights.";
+  $("#cafeStart").hidden=true; $("#cafeReady").hidden=false; $("#cafeCheck").hidden=true; $("#cafeAgain").hidden=true; $("#cafeResult").innerHTML="";
+});
+$("#cafeReady").addEventListener("click",function(){
+  if(cafe.phase!=="study")return;
+  var sc=$("#cafeScene"); var cov=document.createElement("div"); cov.className="cover"; cov.textContent="…blink…"; sc.appendChild(cov);
+  $("#cafeReady").hidden=true;
+  setTimeout(function(){
+    cafeRender(cafe.changes); cafe.phase="guess"; document.body.classList.add("guessing");
+    $("#cafeStatus").textContent="Something changed while the lights were out. Tap every spot you believe changed — there are "+cafe.changes.length+".";
+    $("#cafeCheck").hidden=false;
+  },700);
+});
+$("#cafeCheck").addEventListener("click",function(){
+  if(cafe.phase!=="guess")return;
+  cafe.phase="done"; document.body.classList.remove("guessing");
+  var found=0;
+  $all(".spot",$("#cafeScene")).forEach(function(el){
+    var id=el.getAttribute("data-spot"),was=cafe.changes.indexOf(id)>=0,got=!!cafe.picked[id];
+    el.classList.remove("picked");
+    if(was&&got){el.classList.add("right");found++}
+    else if(!was&&got)el.classList.add("wrong");
+    else if(was&&!got)el.classList.add("missed");
+  });
+  var wrongs=Object.keys(cafe.picked).filter(function(k){return cafe.picked[k]&&cafe.changes.indexOf(k)<0}).length;
+  var score=Math.max(0,found-wrongs);
+  var names=cafe.changes.map(function(id){return CAFE_SPOTS.filter(function(s){return s.id===id})[0].cap}).join(", ");
+  var msg=found===cafe.changes.length&&wrongs===0?"Every change caught — café-perfect.":"You caught "+found+" of "+cafe.changes.length+" changes"+(wrongs?(", with "+wrongs+" false alarm"+(wrongs===1?"":"s")):"")+". The changes were: "+names+".";
+  $("#cafeResult").innerHTML='<div class="result '+(found===cafe.changes.length&&wrongs===0?"good":"neutral")+'">'+escapeHtml(msg)+"</div>";
+  $("#cafeStatus").textContent="Round over."; $("#cafeCheck").hidden=true; $("#cafeAgain").hidden=false;
+  logPlay("cafe",cafe.level,score+" / "+cafe.changes.length+" changes",score,cafe.changes.length);
+});
+$("#cafeAgain").addEventListener("click",function(){$("#cafeStart").click()});
+
+/* ================= GAME 2: TRAY ================= */
+var TRAY_POOL=[
+ {n:"Brass key",c:"#b08a2e"},{n:"Red button",c:"#b3372c"},{n:"Blue marble",c:"#2c5f8a"},{n:"Silver spoon",c:"#9aa3a0"},
+ {n:"Green leaf",c:"#177245"},{n:"Cork",c:"#c9a06a"},{n:"Purple ribbon",c:"#6d4a8a"},{n:"Wooden bead",c:"#8a5a2e"},
+ {n:"Paper clip",c:"#5c665f"},{n:"Orange peel",c:"#d97c1e"},{n:"White shell",c:"#e8e2d2"},{n:"Black stone",c:"#23282a"},
+ {n:"Gold coin",c:"#d9a514"},{n:"Pink petal",c:"#d97b9c"},{n:"Striped feather",c:"#7a6a53"},{n:"Tiny bell",c:"#c2b280"}
+];
+var tray={level:1,items:[],phase:"idle"};
+var trayLevel=levelPicker("tray",function(l){tray.level=l});
+function chipHtml(it){return '<span class="chip"><span class="dot" style="background:'+it.c+'"></span>'+escapeHtml(it.n)+"</span>"}
+$("#trayStart").addEventListener("click",function(){
+  tray.level=trayLevel(); tray.phase="study";
+  var count=tray.level===1?5:(tray.level===2?7:9);
+  tray.items=pickN(TRAY_POOL,count);
+  $("#trayBoard").innerHTML=tray.items.map(chipHtml).join("");
+  $("#trayStatus").textContent="Study the tray — "+count+" things. Group them in your head, then cover it.";
+  $("#trayStart").hidden=true; $("#trayCover").hidden=false; $("#trayCheck").hidden=true; $("#trayAgain").hidden=true;
+  $("#trayPicks").hidden=true; $("#trayResult").innerHTML="";
+});
+$("#trayCover").addEventListener("click",function(){
+  if(tray.phase!=="study")return; tray.phase="answer";
+  $("#trayBoard").innerHTML='<span style="color:var(--muted);font-weight:700">The tray is covered. From the full parlour shelf below, tap everything that was on it.</span>';
+  var grid=$("#trayPicks"); grid.hidden=false;
+  grid.innerHTML="";
+  shuffle(TRAY_POOL).forEach(function(it){
+    var b=document.createElement("button"); b.type="button"; b.className="chip"; b.setAttribute("aria-pressed","false");
+    b.innerHTML='<span class="dot" style="background:'+it.c+'"></span>'+escapeHtml(it.n);
+    b.addEventListener("click",function(){var on=b.getAttribute("aria-pressed")==="true";b.setAttribute("aria-pressed",on?"false":"true")});
+    grid.appendChild(b);
+  });
+  $("#trayStatus").textContent="Tap the things that were on the tray, then check.";
+  $("#trayCover").hidden=true; $("#trayCheck").hidden=false;
+});
+$("#trayCheck").addEventListener("click",function(){
+  if(tray.phase!=="answer")return; tray.phase="done";
+  var names=tray.items.map(function(i){return i.n}),found=0,wrongs=0;
+  $all(".chip",$("#trayPicks")).forEach(function(b){
+    var nm=b.textContent.trim(),on=b.getAttribute("aria-pressed")==="true",was=names.indexOf(nm)>=0;
+    b.disabled=true;
+    if(on&&was){b.classList.add("right");found++} else if(on&&!was){b.classList.add("wrong");wrongs++} else if(!on&&was){b.classList.add("wrong")}
+  });
+  var score=Math.max(0,found-wrongs);
+  var missed=names.filter(function(n){return !$all(".chip",$("#trayPicks")).some(function(b){return b.textContent.trim()===n&&b.getAttribute("aria-pressed")==="true"})});
+  $("#trayResult").innerHTML='<div class="result '+(found===names.length&&wrongs===0?"good":"neutral")+'">You held '+found+" of "+names.length+" things"+(wrongs?(", with "+wrongs+" that weren’t there"):"")+(missed.length?(". Slipped away: "+escapeHtml(missed.join(", "))+"."):" — the whole tray, held.")+"</div>";
+  $("#trayStatus").textContent="Round over."; $("#trayCheck").hidden=true; $("#trayAgain").hidden=false;
+  logPlay("tray",tray.level,score+" / "+names.length+" things",score,names.length);
+});
+$("#trayAgain").addEventListener("click",function(){$("#trayStart").click()});
+
+/* ================= GAME 3: PARTY ================= */
+var FACE_SKINS=["#f2c79b","#c68850","#8a5a34","#f7d7b5","#6e4525"];
+var FACE_HAIR=["#2b2118","#7a4a21","#b8b0a4","#a83226","#3a3f8a","#177245"];
+var FACE_NAMES=["Rosa","Felix","Priya","Marcus","June","Tomas","Ada","Kenji","Mabel","Oscar","Lena","Hugo","Nadia","Peter","Sana","Victor"];
+function faceSvg(f,size){
+  var hair="";
+  if(f.style===0)hair='<path d="M20 34 C20 12 60 12 60 34 L60 22 C48 12 32 12 20 22 Z" fill="'+f.hairC+'"/><rect x="16" y="30" width="8" height="26" rx="4" fill="'+f.hairC+'"/><rect x="56" y="30" width="8" height="26" rx="4" fill="'+f.hairC+'"/>';
+  else if(f.style===1)hair='<path d="M18 36 C18 10 62 10 62 36 C50 24 30 24 18 36 Z" fill="'+f.hairC+'"/>';
+  else if(f.style===2)hair='<circle cx="40" cy="14" r="8" fill="'+f.hairC+'"/><path d="M20 34 C22 16 58 16 60 34 C48 25 32 25 20 34 Z" fill="'+f.hairC+'"/>';
+  else hair='<path d="M20 32 C24 18 56 18 60 32 L54 32 C50 24 30 24 26 32 Z" fill="'+f.hairC+'"/>';
+  var acc="";
+  if(f.acc==="glasses")acc='<circle cx="30" cy="42" r="7" fill="none" stroke="#1d2420" stroke-width="2"/><circle cx="50" cy="42" r="7" fill="none" stroke="#1d2420" stroke-width="2"/><line x1="37" y1="42" x2="43" y2="42" stroke="#1d2420" stroke-width="2"/>';
+  else if(f.acc==="scarf")acc='<path d="M24 66 C32 60 48 60 56 66 L56 76 L24 76 Z" fill="'+f.accC+'"/>';
+  else if(f.acc==="hat")acc='<path d="M18 26 L62 26 L54 12 L26 12 Z" fill="'+f.accC+'"/><rect x="14" y="24" width="52" height="5" fill="'+f.accC+'"/>';
+  else if(f.acc==="earring")acc='<circle cx="19" cy="54" r="3.5" fill="#d9a514"/>';
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 80 84" role="img" aria-label="Drawn guest"><circle cx="40" cy="42" r="24" fill="'+f.skin+'"/>'+hair+'<circle cx="31" cy="42" r="2.6" fill="#1d2420"/><circle cx="49" cy="42" r="2.6" fill="#1d2420"/><path d="M32 54 C36 58 44 58 48 54" fill="none" stroke="#1d2420" stroke-width="2.2" stroke-linecap="round"/>'+acc+"</svg>";
+}
+function makeGuest(name,i){
+  return {name:name,skin:FACE_SKINS[i%FACE_SKINS.length],hairC:FACE_HAIR[(i*2+1)%FACE_HAIR.length],style:i%4,acc:["glasses","scarf","hat","earring","none"][i%5],accC:["#b3372c","#0e6b5c","#a85b12"][i%3]};
+}
+var party={level:1,guests:[],q:0,score:0};
+var partyLevel=levelPicker("party",function(l){party.level=l});
+$("#partyStart").addEventListener("click",function(){
+  party.level=partyLevel();
+  var count=party.level===1?5:7;
+  var names=pickN(FACE_NAMES,count);
+  party.guests=names.map(function(n,i){return makeGuest(n,i)});
+  $("#partyBoard").innerHTML=party.guests.map(function(g){return '<div class="facecard">'+faceSvg(g,84)+'<div class="nm">'+escapeHtml(g.name)+"</div></div>"}).join("");
+  $("#partyStatus").textContent="Meet the guests. Hook each name to something you can see.";
+  $("#partyStart").hidden=true; $("#partyQuizBtn").hidden=false; $("#partyAgain").hidden=true;
+  $("#partyQuiz").innerHTML=""; $("#partyResult").innerHTML="";
+});
+$("#partyQuizBtn").addEventListener("click",function(){
+  party.q=0; party.score=0; party.order=shuffle(party.guests);
+  $("#partyBoard").innerHTML=""; $("#partyQuizBtn").hidden=true;
+  partyNext();
+});
+function partyNext(){
+  if(party.q>=party.order.length){
+    $("#partyQuiz").innerHTML=""; $("#partyStatus").textContent="Party over.";
+    $("#partyResult").innerHTML='<div class="result '+(party.score===party.order.length?"good":"neutral")+'">You named '+party.score+" of "+party.order.length+" guests correctly."+(party.score===party.order.length?" The perfect host.":"")+"</div>";
+    $("#partyAgain").hidden=false;
+    logPlay("party",party.level,party.score+" / "+party.order.length+" names",party.score,party.order.length);
+    return;
+  }
+  var g=party.order[party.q];
+  var others=pickN(party.guests.filter(function(x){return x!==g}),3);
+  var opts=shuffle(others.concat([g]));
+  $("#partyStatus").textContent="Guest "+(party.q+1)+" of "+party.order.length+" — who is this?";
+  $("#partyQuiz").innerHTML='<div class="faces"><div class="facecard big">'+faceSvg(g,130)+"</div></div>";
+  var row=document.createElement("div"); row.className="row opts"; row.style.justifyContent="center";
+  opts.forEach(function(o){
+    var b=document.createElement("button"); b.type="button"; b.textContent=o.name;
+    b.addEventListener("click",function(){
+      $all("button",row).forEach(function(x){x.disabled=true});
+      if(o===g){b.classList.add("right");party.score++}else{b.classList.add("wrong");$all("button",row).forEach(function(x){if(x.textContent===g.name)x.classList.add("right")})}
+      party.q++;
+      var nb=document.createElement("button"); nb.type="button"; nb.className="btn-main"; nb.textContent=party.q>=party.order.length?"Tap to finish":"Tap for the next guest";
+      nb.addEventListener("click",partyNext); row.appendChild(nb);
+    });
+    row.appendChild(b);
+  });
+  $("#partyQuiz").appendChild(row);
+}
+$("#partyAgain").addEventListener("click",function(){$("#partyStart").click()});
+
+/* ================= GAME 4: CODES ================= */
+var AC=null;
+function tone(freq,when,dur){
+  try{
+    if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
+    var o=AC.createOscillator(),g=AC.createGain();
+    o.frequency.value=freq; o.type="sine"; o.connect(g); g.connect(AC.destination);
+    var t=AC.currentTime+when; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.25,t+0.03); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.start(t); o.stop(t+dur+0.05);
+  }catch(e){}
+}
+function playSeq(freqs){freqs.forEach(function(f,i){tone(f,i*0.38,0.32)})}
+var CODE_BANK={
+ 1:[
+   {kind:"num",seq:["2","4","6","8"],opts:["9","10","12"],ans:"10",rule:"Add 2 each time."},
+   {kind:"num",seq:["5","10","20","40"],opts:["45","60","80"],ans:"80",rule:"Double each time."},
+   {kind:"shape",seq:["●","▲","●","▲","●"],opts:["▲","●","■"],ans:"▲",rule:"Circle, triangle, taking turns."},
+   {kind:"num",seq:["9","7","5","3"],opts:["2","1","0"],ans:"1",rule:"Take away 2 each time."},
+   {kind:"sound",label:"A little tune: low, middle, high, middle…",seqFreqs:[262,330,392,330],opts:[{t:"low again",f:[262]},{t:"high again",f:[392]},{t:"middle again",f:[330]}],ans:"high again",rule:"The tune climbs up, steps back, climbs up — low, middle, high, middle, high."}
+ ],
+ 2:[
+   {kind:"num",seq:["1","3","6","10","15"],opts:["18","20","21"],ans:"21",rule:"The gaps grow: +2, +3, +4, +5 — so next is +6."},
+   {kind:"num",seq:["3","6","5","10","9","18"],opts:["12","17","27"],ans:"17",rule:"Two rules taking turns: double, then take 1 away."},
+   {kind:"shape",seq:["■","■","●","■","■","●","■","■"],opts:["●","■","▲"],ans:"●",rule:"Two squares, one circle, repeating."},
+   {kind:"num",seq:["81","27","9","3"],opts:["1","2","6"],ans:"1",rule:"Divide by 3 each time."},
+   {kind:"sound",label:"A little tune: high, high, low, high, high, low…",seqFreqs:[392,392,262,392,392,262],opts:[{t:"high",f:[392]},{t:"low",f:[262]},{t:"middle",f:[330]}],ans:"high",rule:"Two highs, one low, repeating — so a high comes next."}
+ ],
+ 3:[
+   {kind:"num",seq:["2","3","5","9","17"],opts:["25","33","31"],ans:"33",rule:"The gaps double: +1, +2, +4, +8 — so next is +16."},
+   {kind:"num",seq:["1","2","6","24","120"],opts:["240","600","720"],ans:"720",rule:"Multiply by 2, then 3, then 4, then 5 — next by 6."},
+   {kind:"shape",seq:["▲","●","●","▲","●","●","●","▲","●","●","●","●"],opts:["▲","●","■"],ans:"▲",rule:"A triangle, then circles — and the circle run grows by one each time."},
+   {kind:"num",seq:["4","9","19","39","79"],opts:["99","159","149"],ans:"159",rule:"Double, then add 1 — every time."},
+   {kind:"sound",label:"A little tune: low, high, middle, low, high, middle…",seqFreqs:[262,392,330,262,392,330],opts:[{t:"low",f:[262]},{t:"high",f:[392]},{t:"middle",f:[330]}],ans:"low",rule:"Low, high, middle, repeating — so it starts over at low."}
+ ]};
+var codes={level:1,list:[],i:0,score:0};
+var codesLevel=levelPicker("codes",function(l){codes.level=l});
+$("#codesStart").addEventListener("click",function(){
+  codes.level=codesLevel(); codes.list=shuffle(CODE_BANK[codes.level]).slice(0,4); codes.i=0; codes.score=0;
+  $("#codesStart").hidden=true; $("#codesAgain").hidden=true; $("#codesResult").innerHTML="";
+  codesNext();
+});
+function codesNext(){
+  var board=$("#codesBoard");
+  if(codes.i>=codes.list.length){
+    board.innerHTML='<p style="color:var(--muted)">Set complete.</p>';
+    $("#codesStatus").textContent="Codes done.";
+    $("#codesResult").innerHTML='<div class="result '+(codes.score===codes.list.length?"good":"neutral")+'">You cracked '+codes.score+" of "+codes.list.length+" codes at Level "+codes.level+"."+"</div>";
+    $("#codesAgain").hidden=false;
+    logPlay("codes",codes.level,codes.score+" / "+codes.list.length+" codes",codes.score,codes.list.length);
+    return;
+  }
+  var p=codes.list[codes.i];
+  $("#codesStatus").textContent="Code "+(codes.i+1)+" of "+codes.list.length+". What comes next?";
+  var html="";
+  if(p.kind==="sound"){
+    html='<p><strong>'+escapeHtml(p.label)+'</strong></p><div class="row"><button type="button" id="codesPlay">Tap to hear the tune</button></div><div class="seq"><span class="cell q">?</span></div>';
+  }else{
+    html='<div class="seq">'+p.seq.map(function(s){return '<span class="cell">'+escapeHtml(s)+"</span>"}).join("")+'<span class="cell q">?</span></div>';
+  }
+  board.innerHTML=html;
+  if(p.kind==="sound")$("#codesPlay").addEventListener("click",function(){playSeq(p.seqFreqs)});
+  var row=document.createElement("div"); row.className="opts";
+  shuffle(p.opts).forEach(function(o){
+    var label=(typeof o==="string")?o:o.t;
+    var b=document.createElement("button"); b.type="button"; b.textContent=label;
+    if(typeof o!=="string"){var pb=document.createElement("button");pb.type="button";pb.className="btn-small";pb.textContent="Tap to hear: "+label;pb.addEventListener("click",function(){playSeq(o.f)});row.appendChild(pb)}
+    b.addEventListener("click",function(){
+      $all("button",row).forEach(function(x){if(x.textContent.indexOf("Tap to hear")!==0)x.disabled=true});
+      var right=label===p.ans;
+      b.classList.add(right?"right":"wrong");
+      if(right)codes.score++;
+      var note=document.createElement("div");
+      note.innerHTML='<div class="result '+(right?"good":"neutral")+'">'+(right?"Cracked it. ":"Not quite — the answer was <strong>"+escapeHtml(p.ans)+"</strong>. ")+"The rule: "+escapeHtml(p.rule)+"</div>";
+      board.appendChild(note);
+      var nb=document.createElement("button"); nb.type="button"; nb.className="btn-main"; nb.textContent=codes.i+1>=codes.list.length?"Tap to see my score":"Tap for the next code";
+      nb.addEventListener("click",function(){codes.i++;codesNext()});
+      var nr=document.createElement("div"); nr.className="row"; nr.appendChild(nb); board.appendChild(nr);
+    });
+    row.appendChild(b);
+  });
+  board.appendChild(row);
+}
+$("#codesAgain").addEventListener("click",function(){$("#codesStart").click()});
+
+/* ================= GAME 5: CROWD ================= */
+function personSvg(f){
+  var hat=f.hat?'<path d="M22 20 L58 20 L50 6 L30 6 Z" fill="'+f.hatC+'"/><rect x="18" y="18" width="44" height="4.5" fill="'+f.hatC+'"/>':"";
+  var item="";
+  if(f.item==="bag")item='<rect x="56" y="46" width="12" height="14" rx="2" fill="#a85b12"/><path d="M59 46 C59 40 65 40 65 46" fill="none" stroke="#a85b12" stroke-width="2.4"/>';
+  else if(f.item==="book")item='<rect x="8" y="44" width="11" height="15" fill="#0e6b5c"/>';
+  else if(f.item==="cup")item='<rect x="58" y="44" width="9" height="11" rx="2" fill="#fffdf8" stroke="#5c665f" stroke-width="1.6"/>';
+  var pocket=f.pocket?'<rect x="'+(f.pocket==="left"?"26":"46")+'" y="58" width="8" height="7" fill="#ffffff" opacity="0.55"/>':"";
+  return '<svg width="62" height="82" viewBox="0 0 80 100" role="img" aria-label="Street figure"><circle cx="40" cy="26" r="13" fill="'+f.skin+'"/>'+hat+'<rect x="26" y="40" width="28" height="34" rx="7" fill="'+f.coat+'"/>'+pocket+'<rect x="29" y="74" width="8" height="20" fill="#3a3f4a"/><rect x="43" y="74" width="8" height="20" fill="#3a3f4a"/>'+item+"</svg>";
+}
+var crowd={level:1,wrongs:0,done:false};
+var crowdLevel=levelPicker("crowd",function(l){crowd.level=l});
+$("#crowdStart").addEventListener("click",function(){
+  crowd.level=crowdLevel(); crowd.wrongs=0; crowd.done=false;
+  var n=crowd.level===1?12:(crowd.level===2?15:18);
+  var base={skin:"#e9b98a",coat:"#0e6b5c",hat:true,hatC:"#a85b12",item:"bag",pocket:"left"};
+  var oddIdx=Math.floor(Math.random()*n);
+  var board=$("#crowdBoard"); board.innerHTML="";
+  for(var i=0;i<n;i++){
+    (function(i){
+      var f=JSON.parse(JSON.stringify(base));
+      if(i===oddIdx){
+        if(crowd.level===1)f.coat="#b3372c";
+        else if(crowd.level===2)f.item="book";
+        else f.pocket="right";
+      }
+      var b=document.createElement("button"); b.type="button"; b.className="person"; b.innerHTML=personSvg(f);
+      b.setAttribute("aria-label","Figure "+(i+1)+" — tap if this is the odd one out");
+      b.addEventListener("click",function(){
+        if(crowd.done)return;
+        if(i===oddIdx){
+          crowd.done=true; b.classList.add("right");
+          var score=Math.max(1,5-crowd.wrongs);
+          $("#crowdStatus").textContent="Found them.";
+          var diff=crowd.level===1?"a coat of a different colour":(crowd.level===2?"carrying a book while everyone else carries a bag":"a pocket on the other side — whisper-quiet indeed");
+          $("#crowdResult").innerHTML='<div class="result good">That’s the stranger — '+diff+". Wrong taps: "+crowd.wrongs+". Score: "+score+" / 5.</div>";
+          $("#crowdAgain").hidden=false; $("#crowdStart").hidden=true;
+          logPlay("crowd",crowd.level,score+" / 5",score,5);
+        }else{
+          b.classList.add("wrong"); b.disabled=true; crowd.wrongs++;
+          $("#crowdStatus").textContent="Not that one — "+crowd.wrongs+" wrong tap"+(crowd.wrongs===1?"":"s")+". Keep drifting your eyes over the crowd.";
+        }
+      });
+      board.appendChild(b);
+    })(i);
+  }
+  $("#crowdStatus").textContent="One figure breaks the pattern. Tap them.";
+  $("#crowdResult").innerHTML=""; $("#crowdStart").hidden=true; $("#crowdAgain").hidden=true;
+});
+$("#crowdAgain").addEventListener("click",function(){$("#crowdStart").hidden=false;$("#crowdStart").click()});
+
+/* ---------- Record export / forget ---------- */
+$("#exportBtn").addEventListener("click",function(){
+  var data={page:"Sharp Eyes — Pattern Games",alias:state.alias,exported:new Date().toISOString(),plays:state.record.plays,best:state.record.best,log:state.record.log};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download="sharp-eyes-record.json"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url)},2000);
+  $("#recordToast").innerHTML='<div class="toast">Record downloaded as sharp-eyes-record.json</div>';
+});
+$("#forgetBtn").addEventListener("click",function(){
+  $("#forgetConfirm").hidden=false; $("#forgetBtn").hidden=true;
+  $("#recordToast").innerHTML='<div class="toast">Forget wipes every round and score from this visit. Tap the confirm button to go ahead, or play on to keep it.</div>';
+});
+$("#forgetConfirm").addEventListener("click",function(){
+  state.record={plays:{},best:{},log:[]};
+  renderRecord(); renderBests();
+  $("#forgetConfirm").hidden=true; $("#forgetBtn").hidden=false;
+  $("#recordToast").innerHTML='<div class="toast">Forgotten. The slate is clean.</div>';
+});
+renderRecord();
+</script>
+</body>
+</html>
