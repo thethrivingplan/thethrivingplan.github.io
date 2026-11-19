@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Growing Season</title>
+<style>
+  :root{
+    --bg:#f4f1e6; --panel:#fffdf4; --panel2:#ece7d3; --ink:#26301f; --ink2:#55604a;
+    --line:#c9c2a4; --green:#3e6b2f; --green2:#5d8a3c; --soil:#7a5230; --soil2:#a9743f;
+    --sun:#c98a12; --water:#2f6f9f; --red:#a83a2a; --accent:#3e6b2f; --chip:#e3ddc2;
+    --shadow:0 2px 10px rgba(60,50,20,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#171c12; --panel:#212818; --panel2:#2a331e; --ink:#eef0dd; --ink2:#b9c2a4;
+      --line:#49543a; --green:#9ccb72; --green2:#7fb355; --soil:#c99a63; --soil2:#a9743f;
+      --sun:#e5b84e; --water:#7db8dd; --red:#e08a76; --accent:#9ccb72; --chip:#333d24;
+      --shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.5}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0}
+  button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:1.5px solid var(--green);background:var(--green);color:#fff;
+    border-radius:10px;padding:.45rem .8rem;font-weight:600}
+  @media (prefers-color-scheme: dark){button{color:#131a0e}}
+  button.ghost{background:transparent;color:var(--accent)}
+  button.soft{background:var(--chip);color:var(--ink);border-color:var(--line)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 1rem 3rem}
+  /* Free line */
+  .freeline{background:var(--green);color:#fff;padding:.6rem 1rem;text-align:center;font-weight:700}
+  @media (prefers-color-scheme: dark){.freeline{color:#131a0e}}
+  .freeline .sub{font-weight:400;font-size:.9rem;display:block}
+  .freeline button{margin-top:.4rem;background:#fff;color:#2c4d21;border-color:#fff;font-size:.9rem;padding:.3rem .7rem}
+  @media (prefers-color-scheme: dark){.freeline button{background:#131a0e;color:#cdeeb2;border-color:#131a0e}}
+  /* Compass */
+  nav.compass{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+    display:flex;gap:.4rem;flex-wrap:wrap;padding:.5rem 0}
+  nav.compass a{color:var(--ink);text-decoration:none;border:1px solid var(--line);background:var(--panel);
+    border-radius:999px;padding:.45rem .8rem;font-size:.92rem;min-height:2.25rem;display:inline-flex;align-items:center}
+  nav.compass a:hover{border-color:var(--green)}
+  header.hero{padding:1.6rem 0 1rem}
+  header.hero h1{font-size:clamp(2rem,6vw,3.2rem);letter-spacing:-.01em}
+  header.hero p.lede{font-size:1.12rem;max-width:44rem;color:var(--ink2);margin:.6rem 0 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+  @media (max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  section{margin-top:2rem}
+  section>h2{font-size:1.6rem;border-bottom:3px solid var(--green);padding-bottom:.3rem;margin-bottom:.8rem}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1rem;box-shadow:var(--shadow)}
+  .gesture{display:block;font-size:.75rem;font-weight:400;opacity:.85;letter-spacing:.02em}
+  .small{font-size:.9rem;color:var(--ink2)}
+  .tiny{font-size:.8rem;color:var(--ink2)}
+  /* Status strip */
+  .status{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem}
+  @media (max-width:760px){.status{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.6rem .8rem}
+  .stat b{font-size:1.25rem;display:block;font-family:Georgia,serif}
+  .stat span{font-size:.82rem;color:var(--ink2)}
+  .bar{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:.3rem;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:var(--green2);transition:width .3s}
+  .bar.energy i{background:var(--sun)} .bar.soilbar i{background:var(--soil2)}
+  /* Crop picker */
+  .crops{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem}
+  @media (max-width:760px){.crops{grid-template-columns:1fr 1fr}}
+  .crop{text-align:left;background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-radius:12px;padding:.6rem}
+  .crop[aria-pressed="true"]{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset}
+  .crop .swatch{width:100%;height:34px;border-radius:8px;margin-bottom:.4rem}
+  .crop b{display:block}
+  .crop span{font-size:.78rem;color:var(--ink2);display:block;line-height:1.35}
+  /* Plots */
+  .plots{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+  @media (max-width:520px){.plots{grid-template-columns:1fr 1fr}}
+  .plot{border:2px solid var(--soil);background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border-radius:12px;padding:.6rem;min-height:8.2rem;text-align:left;color:var(--ink);width:100%}
+  .plot.empty{border-style:dashed;color:var(--ink2);display:flex;align-items:center;justify-content:center;text-align:center}
+  .plot .pname{font-weight:700;font-family:Georgia,serif;font-size:1.05rem}
+  .plot .stage{font-size:.82rem}
+  .plot .needs{font-size:.78rem;color:var(--ink2)}
+  .plot.ready{border-color:var(--sun);box-shadow:0 0 0 2px var(--sun) inset}
+  .plot.thirsty{border-color:var(--water)}
+  .sprout{height:30px;display:flex;align-items:flex-end;gap:3px;margin:.3rem 0}
+  .sprout i{display:block;width:7px;border-radius:99px 99px 0 0;background:var(--green2)}
+  /* Companion + event banners */
+  .banner{border-radius:12px;padding:.9rem 1rem;margin-top:.8rem;border:1.5px solid}
+  .banner.good{background:var(--panel);border-color:var(--green)}
+  .banner.bad{background:var(--panel);border-color:var(--red)}
+  .banner.event{border-color:var(--sun);background:var(--panel)}
+  .banner h3{margin-bottom:.3rem}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:99px;padding:.1rem .55rem;margin-right:.35rem;background:var(--chip);color:var(--ink)}
+  .tag.contested{border-color:var(--sun);color:var(--sun)}
+  .tag.verified{border-color:var(--green);color:var(--accent)}
+  /* Shelves */
+  .shelf{border-top:1px dashed var(--line);padding:.6rem 0}
+  .shelf h4{margin:.1rem 0 .3rem;font-size:1rem}
+  ul{margin:.3rem 0 .3rem 1.1rem;padding:0}
+  li{margin:.2rem 0}
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  th,td{text-align:left;padding:.45rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:Georgia,serif}
+  .tablewrap{overflow-x:auto}
+  @media (max-width:640px){
+    .tablewrap table,.tablewrap thead,.tablewrap tbody,.tablewrap tr,.tablewrap th,.tablewrap td{display:block}
+    .tablewrap thead{display:none}
+    .tablewrap tr{border:1px solid var(--line);border-radius:10px;margin-bottom:.6rem;padding:.4rem;background:var(--panel)}
+    .tablewrap td{border:none;padding:.2rem .5rem}
+    .tablewrap td::before{content:attr(data-l) " — ";font-weight:700}
+  }
+  .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+  .row>*{flex:0 1 auto}
+  input[type="text"]{font:inherit;padding:.45rem .6rem;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);max-width:100%}
+  select{font:inherit;padding:.45rem .6rem;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}
+  .switchrow{display:flex;gap:.8rem;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.8rem}
+  .ledger{border:1px solid var(--line);border-radius:12px;padding:.8rem;background:var(--panel)}
+  .ledger h3{margin-bottom:.3rem}
+  .ledger ul{list-style:none;margin-left:0}
+  .ledger li{border-bottom:1px dashed var(--line);padding:.3rem 0;font-size:.92rem}
+  #explainBox{position:sticky;bottom:.6rem;z-index:30;background:var(--ink);color:var(--bg);border-radius:12px;
+    padding:.7rem .9rem;box-shadow:var(--shadow);display:none;font-size:.95rem}
+  #explainBox.show{display:block}
+  /* Teaching dial depth */
+  body[data-teach="play"] .why-deep, body[data-teach="play"] .why-more{display:none}
+  body[data-teach="learn"] .why-deep{display:none}
+  footer{margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem;font-size:.88rem;color:var(--ink2)}
+  .kbd-note{border-left:4px solid var(--sun);padding:.4rem .8rem;background:var(--panel);border-radius:0 10px 10px 0}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body data-teach="learn">
+
+<div class="freeline">
+  Free. Always free. No ads, no account, nothing to buy.
+  <span class="sub">Your game and record stay on this device, in this tab. Take the whole page with you for offline play:</span>
+  <button type="button" id="downloadPageBtn">Download this page for offline use<span class="gesture">Tap to download</span></button>
+</div>
+
+<div class="wrap">
+  <nav class="compass" aria-label="Compass — every part of this page">
+    <a href="#play">Play the season</a>
+    <a href="#crops">Crops &amp; companions</a>
+    <a href="#soil">Soil &amp; seasons</a>
+    <a href="#events">Pests &amp; weather</a>
+    <a href="#harvest">Harvest &amp; sharing</a>
+    <a href="#record">Your record</a>
+  </nav>
+
+  <header class="hero">
+    <h1>The Growing Season</h1>
+    <p class="lede">One game, two scales — a garden bed outside the kitchen door, and fields big enough to feed the street. Plant real crops with their real needs, learn <em>why</em> some plants help each other, rest your soil, weather the storms, and feed people first.</p>
+  </header>
+
+  <!-- SETTINGS -->
+  <section aria-label="Your settings" style="margin-top:1rem">
+    <div class="grid3">
+      <div class="card">
+        <h3>Your grower name</h3>
+        <p class="small">Alias freedom: call yourself anything — your name, a nickname, “the tomato person.” It only labels your record, here on this device.</p>
+        <div class="row">
+          <input type="text" id="aliasInput" placeholder="e.g. Tristan, or Captain Kale" aria-label="Grower name or alias" maxlength="40">
+          <button type="button" id="aliasBtn" class="soft">Use this name<span class="gesture">Tap to set</span></button>
+        </div>
+        <p class="tiny" id="aliasEcho">Growing as: <b>Neighbour Gardener</b></p>
+      </div>
+      <div class="card">
+        <h3>Teaching dial</h3>
+        <p class="small">How much explaining do you want while you play?</p>
+        <label class="tiny" for="teachDial">Teaching level</label><br>
+        <select id="teachDial">
+          <option value="play">Just play — keep it quiet</option>
+          <option value="learn" selected>Learn as I go — the why, briefly</option>
+          <option value="deep">Teach me deep — full detail</option>
+        </select>
+        <p class="tiny">Hold (or hover over) any button to hear what it does and what else it can do. Buttons say their gesture on them.</p>
+      </div>
+      <div class="card">
+        <h3>How a day works</h3>
+        <p class="small">A day holds <b>8 work hours</b>. Work spends your <b>energy</b> too — plant, water, and harvest until one runs out, then end the day and sleep. Game time is compressed: <b>1 game day ≈ 10 real growing days</b>, and a season lasts 14 game days. Real days-to-harvest are printed on every crop.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="play">
+    <h2>Play the season</h2>
+    <div class="status" role="status" aria-live="polite">
+      <div class="stat"><span>Day &amp; season</span><b id="stDay">Day 1 · Spring</b><span id="stWeather">Weather: Sunny</span></div>
+      <div class="stat"><span>Work hours left today</span><b id="stHours">8 hrs</b><div class="bar"><i id="hoursBar" style="width:100%"></i></div></div>
+      <div class="stat"><span>Your energy</span><b id="stEnergy">100</b><div class="bar energy"><i id="energyBar" style="width:100%"></i></div></div>
+      <div class="stat"><span>Storehouse (harvest waiting)</span><b id="stStore">0 servings</b><span id="stFed">Household fed: 0 · Shared: 0 · Sold: 0</span></div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <h3>1 · Pick a crop</h3>
+      <p class="small">Tap a crop, then tap an empty plot to plant it (1 work hour, 10 energy). Every need below is the crop's documented real need — the game checks weather and watering against them.</p>
+      <div class="crops" id="cropPicker"></div>
+      <p class="small" id="cropDetail" style="margin-top:.7rem"></p>
+    </div>
+
+    <div class="grid2" style="margin-top:1rem">
+      <div class="card">
+        <h3>2 · The garden — beds by the door</h3>
+        <p class="small">Six close plots. Companions planted side by side in the garden help (or fight) each other — plant a pair and read why below.</p>
+        <div class="plots" id="gardenPlots"></div>
+      </div>
+      <div class="card">
+        <h3>2 · The farm — fields over the fence</h3>
+        <p class="small">Six field plots, planted the same way but in rows of one crop. Fields feed more people per harvest — and tire soil faster if you never rotate or rest them.</p>
+        <div class="plots" id="fieldPlots"></div>
+      </div>
+    </div>
+
+    <div id="companionBanner" aria-live="polite"></div>
+    <div id="eventBanner" aria-live="polite"></div>
+
+    <div class="card" style="margin-top:1rem">
+      <h3>3 · Work the day, then turn it</h3>
+      <div class="row">
+        <button type="button" id="waterAllBtn" data-explain="Watering: gives every thirsty crop a drink. Costs 1 work hour and 8 energy for the whole holding. Rain does this job for free — check the weather first.">Water everything thirsty<span class="gesture">Tap to water · Hold to explain</span></button>
+        <button type="button" id="advanceBtn" data-explain="End the day: crops grow overnight if they were watered and the weather suited them. Your hours and energy refill. Weather and season turn.">End the day &amp; sleep<span class="gesture">Tap to advance 1 day · Hold to explain</span></button>
+        <button type="button" id="ffBtn" class="soft" data-explain="Fast-forward: turns days one by one, auto-watering when you have hours, and stops when a crop is ready to harvest or after 14 days.">Fast-forward to next harvest<span class="gesture">Tap to run days · Hold to explain</span></button>
+      </div>
+      <p class="small" id="dayLog" style="margin-top:.6rem">Welcome. Pick a crop above — lettuce and tomato are the classic first pair.</p>
+    </div>
+  </section>
+
+  <!-- CROPS & COMPANIONS -->
+  <section id="crops">
+    <h2>Crops &amp; companions — the knowledge, with the why</h2>
+    <p>Companion planting is real knowledge and folk knowledge mixed together. Each pairing below is labelled: <span class="tag verified">Documented</span> where the mechanism is well supported, <span class="tag contested">Contested</span> where gardeners swear by it but trials are mixed. Nothing here is dressed up as more certain than it is.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Pair</th><th>Why it can help</th><th>Standing</th></tr></thead>
+        <tbody>
+          <tr><td data-l="Pair"><b>Lettuce + Tomato</b></td><td data-l="Why">Different root depths (lettuce shallow, tomato deep) so they don't fight for the same water; lettuce grows in the tomato's shade during hot spells and is harvested before the tomato needs the space. The classic space-and-shade pairing.</td><td data-l="Standing"><span class="tag verified">Documented</span></td></tr>
+          <tr><td data-l="Pair"><b>Corn + Beans</b> (the Three Sisters, with squash)</td><td data-l="Why">Beans are legumes: root bacteria fix nitrogen from the air into the soil that heavy-feeding corn needs. Corn gives bean vines a pole to climb. Squash leaves shade the soil, holding moisture and crowding out weeds.</td><td data-l="Standing"><span class="tag verified">Documented</span></td></tr>
+          <tr><td data-l="Pair"><b>Tomato + Basil</b></td><td data-l="Why">Basil's strong scent may confuse tomato pests like thrips and hornworm moths (pest confusion), and both want the same sun and water, so care is shared. Claims that basil makes tomatoes taste better or hugely boosts yield are not proven.</td><td data-l="Standing"><span class="tag contested">Contested</span> for yield/taste; scent effect plausible</td></tr>
+          <tr><td data-l="Pair"><b>Carrot + Onion</b></td><td data-l="Why">Onion scent is said to confuse carrot root fly, which finds carrots by smell. Gardeners have used it for generations; controlled trials show only partial, inconsistent protection.</td><td data-l="Standing"><span class="tag contested">Contested</span></td></tr>
+          <tr><td data-l="Pair"><b>Beans + almost anything</b></td><td data-l="Why">Legumes leave soil richer in nitrogen than they found it. Following or flanking a heavy feeder (corn, kale, tomato) with beans is the engine of rotation.</td><td data-l="Standing"><span class="tag verified">Documented</span></td></tr>
+          <tr><td data-l="Pair"><b>Tomato + Potato — keep apart</b></td><td data-l="Why">Same family (nightshades): they share diseases, above all late blight, which jumps between them fast in wet weather. Planting them together is planting an epidemic a short cut.</td><td data-l="Standing"><span class="tag verified">Documented</span> — a pairing to avoid</td></tr>
+          <tr><td data-l="Pair"><b>Onion family + Beans — keep apart?</b></td><td data-l="Why">Allium root compounds are said to inhibit the bacteria legumes depend on. Evidence is thin and mostly from lab dishes, not fields — many gardeners grow them together without trouble.</td><td data-l="Standing"><span class="tag contested">Contested</span> — a pairing to watch</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="why-deep kbd-note">The deep why, in one line each: <b>pest confusion</b> — strong or mixed scents make it harder for a pest to find its one host plant by smell. <b>Root depth</b> — shallow and deep roots drink from different layers. <b>Shade</b> — a tall crop is a parasol for a cool-season crop. <b>Nitrogen</b> — legumes are the only common crops that add fertility instead of spending it. <b>Shared family, shared disease</b> — related crops catch each other's illnesses.</p>
+  </section>
+
+  <!-- SOIL & SEASONS -->
+  <section id="soil">
+    <h2>Soil &amp; seasons</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Soil health — it remembers</h3>
+        <p>Every plot carries a soil score (shown on the plot). It responds to what you actually do:</p>
+        <ul>
+          <li><b>Rest it:</b> an empty plot left fallow slowly recovers (+1 a day, up to full health).</li>
+          <li><b>Rotate:</b> planting a different plant family than last time protects the score.</li>
+          <li><b>Repeat the same family</b> in the same plot and soil drops sharply — pests and diseases that love that family build up in it.</li>
+          <li><b>Beans give back:</b> harvesting a legume leaves the plot richer than planting found it.</li>
+          <li class="why-more">Tired soil (under 40) grows crops at half speed and halves the harvest. There is no fertiliser button that fixes it in a day — in real gardens, as here, soil is rebuilt by rest, rotation, and legumes over time.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Seasons — difficulty ramps</h3>
+        <ul>
+          <li><b>Spring</b> — the kind season. Cool crops (lettuce, carrot, kale) thrive; frost is rare.</li>
+          <li><b>Summer</b> — heat and pests arrive. Tomatoes, corn, and basil fly; lettuce bolts (goes bitter and to seed) in heatwaves.</li>
+          <li><b>Autumn</b> — frost returns. Kale and carrots sweeten after a light frost; tender crops must come in before a hard one.</li>
+          <li><b>Winter</b> — the resting season. Almost nothing grows; this is the soil's holiday and the planner's season. Crops planted in winter mostly wait, slowly, for spring.</li>
+        </ul>
+        <p class="small">Weather turns daily: sun, cloud, rain, heatwave, frost. Rain waters everything free; a heatwave drinks double; frost can kill tender crops outright.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="events">
+    <h2>Pests &amp; weather — honest responses</h2>
+    <p>When trouble arrives in the game, it arrives with these shelves — the same shelves shown here so you can read ahead. <b>What works</b> is supported by practice and trials. <b>What really hasn't</b> is the shelf most guides are too polite to print. <b>What to try</b> is plausible, lower-certainty, worth an experiment.</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>Aphids on the greens</h3>
+        <div class="shelf"><h4>What works</h4><ul><li>A hard jet of water knocks them off; repeat every few days.</li><li>Ladybirds and lacewings — leave them somewhere to live and they do the patrol.</li><li>Pinch out and bin the worst-infested tips.</li></ul></div>
+        <div class="shelf"><h4>What really hasn't</h4><ul><li>Broad-spectrum insecticide: kills the predators too, and aphids — breeding faster than their enemies — come back bigger.</li><li>One spray of soapy water, once, then declaring it useless or done.</li></ul></div>
+        <div class="shelf"><h4>What to try</h4><ul><li>Neem or insecticidal soap, in the evening, on the undersides of leaves.</li><li>A sacrificial nasturtium patch nearby to draw them off.</li></ul></div>
+      </div>
+      <div class="card">
+        <h3>Drought &amp; heatwave</h3>
+        <div class="shelf"><h4>What works</h4><ul><li>Deep, less-frequent watering that sends roots down, early in the morning.</li><li>Mulch — straw, leaves, grass clippings — to shade soil and hold moisture.</li><li>Shade cloth over cool-season crops.</li></ul></div>
+        <div class="shelf"><h4>What really hasn't</h4><ul><li>A light sprinkle every midday: it evaporates, keeps roots shallow, and wets leaves for fungus.</li><li>Watering wilted-looking beans at noon before checking — beans fold their leaves in heat even when moist.</li></ul></div>
+        <div class="shelf"><h4>What to try</h4><ul><li>Clay-pot (olla) buried irrigation for thirsty beds.</li><li>Planting the thirsty crop on the shady side of a tall one — companions again.</li></ul></div>
+      </div>
+      <div class="card">
+        <h3>Late blight (tomato &amp; potato)</h3>
+        <div class="shelf"><h4>What works</h4><ul><li>Space plants for airflow; water the soil, not the leaves.</li><li>Remove and bin (never compost) infected plants fast.</li><li>Keep tomato and potato apart — see the companions table.</li></ul></div>
+        <div class="shelf"><h4>What really hasn't</h4><ul><li>Saving seed or tubers from a blighted crop.</li><li>Composting blighted plants — home heaps don't get hot enough to kill it.</li></ul></div>
+        <div class="shelf"><h4>What to try</h4><ul><li>Blight-resistant varieties next season — the honest long game.</li><li>Copper sprays where permitted; evidence is preventive only, never a cure.</li></ul></div>
+      </div>
+      <div class="card">
+        <h3>Slugs &amp; snails</h3>
+        <div class="shelf"><h4>What works</h4><ul><li>Night patrol with a torch after rain — unglamorous, decisive.</li><li>Iron-phosphate pellets (the lower-harm kind), sparingly.</li><li>Encourage frogs, hedgehogs, and ground beetles.</li></ul></div>
+        <div class="shelf"><h4>What really hasn't</h4><ul><li>Beer traps alone in a big garden — they catch some and may attract more.</li><li>Salt — it damages the soil you're feeding.</li></ul></div>
+        <div class="shelf"><h4>What to try</h4><ul><li>Copper tape around prized pots.</li><li>A board or grapefruit half as a trap-and-collect shelter.</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HARVEST -->
+  <section id="harvest">
+    <h2>Harvest &amp; sharing — purpose first</h2>
+    <p>The point of the harvest, in order: <b>feed the household, feed the neighbours, then — only if you choose it — sell the surplus.</b> Market mode is optional and separate, and the record keeps the two kinds of giving apart, always labelled.</p>
+    <div class="switchrow">
+      <div style="flex:1 1 16rem">
+        <h3 id="modeTitle">Market mode: ON</h3>
+        <p class="small" id="modeText">Surplus can be sold at the market for coins. Sales are recorded under <b>MARKET</b>, never mixed with sharing.</p>
+      </div>
+      <button type="button" id="moneyToggle" aria-pressed="true" data-explain="Money switch: ON means market mode, where surplus can be sold. MONEY OFF means share/give mode — the sell door closes and everything surplus is shared or given. The record labels the two modes separately either way.">Switch MONEY OFF — share &amp; give only<span class="gesture">Tap to switch mode · Hold to explain</span></button>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3>The storehouse</h3>
+      <p class="small" id="storeList">Nothing harvested yet. Grow something to ready, then tap its plot to harvest it into the storehouse.</p>
+      <div class="row" style="margin-top:.6rem">
+        <button type="button" id="feedBtn" data-explain="Feed the household: turns all storehouse servings into meals for your household. This is the first purpose of the harvest and is recorded as HOUSEHOLD.">Feed the household<span class="gesture">Tap to feed · Hold to explain</span></button>
+        <button type="button" id="shareBtn" data-explain="Share with neighbours: gives all storehouse servings away. Recorded under SHARE / GIVE, with the mode labelled.">Share with neighbours<span class="gesture">Tap to share · Hold to explain</span></button>
+        <button type="button" id="sellBtn" data-explain="Sell surplus at market: only available in market mode. Coins earned are recorded under MARKET, kept separate from sharing.">Sell surplus at market<span class="gesture">Tap to sell · Hold to explain</span></button>
+      </div>
+      <p class="small" id="harvestLog" style="margin-top:.6rem"></p>
+    </div>
+  </section>
+
+  <!-- RECORD -->
+  <section id="record">
+    <h2>Your record — on this device only</h2>
+    <p class="small">Kept in this tab's memory on your device. Nothing is sent anywhere. Export it as a file to keep it, or Forget it to wipe the record clean. Market and share/give are separate ledgers, by design — what was sold is never dressed up as what was given, or the other way round.</p>
+    <div class="grid3">
+      <div class="ledger"><h3>Household ledger</h3><p class="small">Meals the harvest put on your own table.</p><ul id="ledgerHouse"><li class="tiny">Nothing yet.</li></ul></div>
+      <div class="ledger"><h3>Share / Give ledger <span class="tag">giving only — never sales</span></h3><p class="small">Given to neighbours. Each entry is labelled with the mode it happened under (MARKET mode, or MONEY OFF — share/give).</p><ul id="ledgerShare"><li class="tiny">Nothing yet.</li></ul></div>
+      <div class="ledger"><h3>Market ledger</h3><p class="small">Sold surplus only. Never mixed with giving.</p><ul id="ledgerMarket"><li class="tiny">Nothing yet.</li></ul></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3>Season totals</h3>
+      <p id="totalsLine">Household fed: 0 servings · Shared/given: 0 servings · Sold: 0 servings (0 coins) · Harvests: 0</p>
+      <div class="row" style="margin-top:.6rem">
+        <button type="button" id="exportBtn" class="soft">Export my record (JSON file)<span class="gesture">Tap to download</span></button>
+        <button type="button" id="forgetBtn" class="ghost">Forget my record<span class="gesture">Tap once, then tap again to confirm</span></button>
+      </div>
+      <p class="tiny" id="forgetNote"></p>
+      <h3 style="margin-top:1rem">Field notes (every action, in order)</h3>
+      <ul id="notesList" style="max-height:16rem;overflow:auto"><li class="tiny">No notes yet — plant something.</li></ul>
+    </div>
+  </section>
+
+  <div id="explainBox" role="status" aria-live="polite"></div>
+
+  <footer>
+    <p><b>Copyleft.</b> This page, its text, and its game design are free to copy, share, and build on under CC BY-SA 4.0; its code under GPL. Derivatives carry the same freedom. The name alone is not in the grant. No ads — ever. No account, no tracking; your record lives on your device and leaves only if you export it yourself.</p>
+    <p>Why? → How? → Act. The why is printed with every pairing and every pest shelf above; the how is the work of the day; the act is the harvest, shared.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- Data: real needs, compressed game time ---------- */
+var CROPS={
+  lettuce:{name:"Lettuce",family:"Aster",color:"#7fb355",sun:"Part shade to full sun",water:"Frequent, shallow — never let it dry out",spacing:"6–8 in apart",realDays:"30–45 days",gameDays:3,yield:4,price:2,seasons:["Spring","Autumn"],note:"Cool-season. Bolts (turns bitter) in heatwaves."},
+  tomato:{name:"Tomato",family:"Nightshade",color:"#c0452f",sun:"Full sun, 6–8 hrs",water:"Regular, deep, at the base",spacing:"18–24 in apart",realDays:"70–85 days from transplant",gameDays:6,yield:6,price:4,seasons:["Spring","Summer"],note:"Warm-season heavy feeder. Keep away from potato — shared blight."},
+  carrot:{name:"Carrot",family:"Carrot",color:"#d97c2b",sun:"Full sun",water:"Even moisture, loose soil",spacing:"2–3 in apart",realDays:"60–75 days",gameDays:5,yield:5,price:2,seasons:["Spring","Autumn"],note:"Sweetens after a light autumn frost."},
+  beans:{name:"Bush Beans",family:"Legume",color:"#4c7a3f",sun:"Full sun",water:"Regular; don't wet leaves late in the day",spacing:"3–4 in apart",realDays:"50–60 days",gameDays:4,yield:6,price:3,seasons:["Spring","Summer"],note:"Legume — fixes nitrogen and leaves soil richer."},
+  corn:{name:"Corn",family:"Grass",color:"#d9a91f",sun:"Full sun",water:"Deep and regular — a thirsty crop",spacing:"12 in apart, in blocks for pollination",realDays:"60–90 days",gameDays:6,yield:6,price:3,seasons:["Summer"],note:"Heavy feeder. The pole of the Three Sisters."},
+  basil:{name:"Basil",family:"Mint",color:"#3f9e63",sun:"Full sun",water:"Regular; pinch tips to keep it bushy",spacing:"10–12 in apart",realDays:"30–45 days to first picks",gameDays:3,yield:3,price:3,seasons:["Summer"],note:"Tomato's famous neighbour — scent plausible, taste claims contested."},
+  kale:{name:"Kale",family:"Brassica",color:"#2f6b4f",sun:"Full sun to part shade",water:"Regular",spacing:"12–18 in apart",realDays:"50–60 days",gameDays:4,yield:5,price:2,seasons:["Spring","Autumn","Winter"],note:"The hardy one — grows, slowly, even in winter."},
+  potato:{name:"Potato",family:"Nightshade",color:"#a9743f",sun:"Full sun",water:"Regular; earth up the stems",spacing:"12 in apart",realDays:"70–90 days",gameDays:5,yield:7,price:3,seasons:["Spring"],note:"Nightshade — keep away from tomato. Shared blight risk."}
+};
+var PAIRS=[
+ {a:"lettuce",b:"tomato",kind:"good",standing:"Documented",title:"Lettuce + Tomato — a documented good pairing",
+  why:"Different root depths (lettuce shallow, tomato deep) mean they drink from different layers, and the lettuce crops in the tomato's shade during hot spells, harvested before the tomato needs the room. Shade + root depth + timing: three mechanisms, all real."},
+ {a:"corn",b:"beans",kind:"good",standing:"Documented",title:"Corn + Beans — the Three Sisters engine",
+  why:"Beans fix nitrogen from the air into the soil through their root bacteria; corn is a heavy feeder that spends exactly that nitrogen, and repays the beans with a living pole to climb. Add squash and its leaves shade the soil too."},
+ {a:"tomato",b:"basil",kind:"good",standing:"Contested",title:"Tomato + Basil — beloved, and partly contested",
+  why:"Basil's strong scent may confuse tomato pests (pest confusion), and the two want identical sun and water. But claims that basil makes tomatoes taste better or greatly boosts yield are contested — trials are mixed. Plant it for the scent and the shared care, not a promised miracle."},
+ {a:"carrot",b:"beans",kind:"good",standing:"Documented",title:"Carrot + Beans — quiet neighbours",
+  why:"Beans leave nitrogen behind as they grow; carrots, deep and undemanding, don't compete for the beans' light. A rotation-friendly pair."},
+ {a:"tomato",b:"potato",kind:"bad",standing:"Documented",title:"Tomato + Potato — keep apart (documented)",
+  why:"Same family, same diseases. Late blight jumps between tomato and potato fast in wet weather. Planting them side by side shortens the disease's journey. Separate them across the holding."}
+];
+var EVENTS=[
+ {id:"aphids",title:"Aphids on the greens!",text:"Clusters of aphids have found your leafy crops. Untreated, affected crops lose health each day.",
+  options:[
+   {label:"Blast them off with a hard jet of water (What works)",cost:{h:1,e:8},good:true,result:"Water jet done — most aphids knocked off. Repeat after rain. The predators that eat aphids are unharmed."},
+   {label:"Spray broad-spectrum insecticide (What really hasn't)",cost:{h:1,e:6},good:false,result:"Sprayed. The aphids' predators died too — expect a bigger aphid wave in a few days. The honest shelf warned about exactly this."},
+   {label:"Try neem in the evening, undersides of leaves (What to try)",cost:{h:1,e:10},good:true,result:"Neem applied at dusk. Slower than the jet, promising — mark it as an experiment in your notes."}]},
+ {id:"drought",title:"Heatwave — the soil is drinking fast",text:"A heatwave settles in. Every crop will need double water today and tomorrow; lettuce may bolt.",
+  options:[
+   {label:"Deep-water early and mulch the beds (What works)",cost:{h:2,e:14},good:true,result:"Deep watering plus mulch. Roots chase the water down, soil stays cool. This is the documented answer."},
+   {label:"Light sprinkle at midday (What really hasn't)",cost:{h:1,e:6},good:false,result:"Sprinkled at noon. Most of it evaporated, roots stayed shallow, leaves got wet in the heat. The crops are still thirsty."},
+   {label:"Try shade cloth over the cool-season crops (What to try)",cost:{h:1,e:8},good:true,result:"Shade cloth up. Lettuce breathes again — worth remembering for every summer."}]},
+ {id:"blight",title:"Dark blotches — possible late blight",text:"Wet weather, and dark lesions on nightshade leaves. If it is blight, speed matters more than saving the plant.",
+  options:[
+   {label:"Remove and bin the worst plants, space the rest (What works)",cost:{h:2,e:12},good:true,result:"Infected plants binned — not composted. Airflow improved. You may have just saved the rest of the crop."},
+   {label:"Compost the infected plants to feed next year (What really hasn't)",cost:{h:1,e:6},good:false,result:"Composted. Home heaps don't get hot enough to kill blight — you've stored the disease for next season. Dig it back out if you can."},
+   {label:"Try a preventive copper spray on the healthy plants (What to try)",cost:{h:1,e:10},good:true,result:"Copper on the healthy plants only. It prevents, never cures — the removed plants were the real treatment."}]}
+];
+
+/* ---------- State (in this tab's memory only) ---------- */
+var S={day:1,hours:8,energy:100,alias:"Neighbour Gardener",selected:"lettuce",
+  store:0,storeValue:0,coins:0,moneyMode:true,
+  fed:0,shared:0,sold:0,soldCoins:0,harvests:0,
+  ledgers:{house:[],share:[],market:[]},notes:[],event:null,eventCooldown:2,forgetArm:false};
+function mkPlots(n,prefix){var a=[];for(var i=0;i<n;i++)a.push({id:prefix+(i+1),crop:null,age:0,moisture:1,health:100,soil:85,lastFamily:null});return a}
+var garden=mkPlots(6,"Bed "), field=mkPlots(6,"Field ");
+var SEASONS=["Spring","Summer","Autumn","Winter"];
+function season(){return SEASONS[Math.floor((S.day-1)/14)%4]}
+function weatherFor(day){
+  var s=season(), r=(day*37+11)%10;
+  if(s==="Summer"&&r===9)return"Heatwave";
+  if(s==="Winter"&&r<3)return"Frost";
+  if(s==="Autumn"&&r===8)return"Frost";
+  if(r<3)return"Rain"; if(r<6)return"Sunny"; if(r<8)return"Cloudy"; return"Sunny";
+}
+function weather(){return weatherFor(S.day)}
+
+/* ---------- Logging / record ---------- */
+function note(t){S.notes.push("Day "+S.day+" ("+season()+") — "+t);renderRecord()}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function renderRecord(){
+  function fill(id,arr,fmt){var el=$(id);if(!arr.length){el.innerHTML='<li class="tiny">Nothing yet.</li>';return}
+    el.innerHTML=arr.map(function(x){return "<li>"+esc(fmt(x))+"</li>"}).join("")}
+  fill("ledgerHouse",S.ledgers.house,function(x){return x});
+  fill("ledgerShare",S.ledgers.share,function(x){return x});
+  fill("ledgerMarket",S.ledgers.market,function(x){return x});
+  $("totalsLine").textContent="Household fed: "+S.fed+" servings · Shared/given: "+S.shared+" servings · Sold: "+S.sold+" servings ("+S.soldCoins+" coins) · Harvests: "+S.harvests;
+  $("notesList").innerHTML=S.notes.length?S.notes.slice().reverse().map(function(n){return "<li>"+esc(n)+"</li>"}).join(""):'<li class="tiny">No notes yet — plant something.</li>';
+}
+
+/* ---------- Rendering ---------- */
+function renderPicker(){
+  var html="";
+  Object.keys(CROPS).forEach(function(k){var c=CROPS[k];
+    html+='<button type="button" class="crop" data-crop="'+k+'" aria-pressed="'+(S.selected===k)+'">'
+      +'<span class="swatch" style="background:'+c.color+'"></span><b>'+c.name+'</b>'
+      +'<span>Real: '+c.realDays+' · Game: '+c.gameDays+' days</span>'
+      +'<span>Sun: '+c.sun+'</span><span>Yield: '+c.yield+' servings</span></button>';});
+  $("cropPicker").innerHTML=html;
+  var btns=$("cropPicker").querySelectorAll("button");
+  for(var i=0;i<btns.length;i++)btns[i].addEventListener("click",function(){S.selected=this.getAttribute("data-crop");renderPicker();renderDetail();});
+  renderDetail();
+}
+function renderDetail(){
+  var c=CROPS[S.selected];
+  $("cropDetail").innerHTML="<b>"+c.name+"</b> — Sun: "+c.sun+". Water: "+c.water+". Spacing: "+c.spacing+". Real time to harvest: "+c.realDays+" (game: "+c.gameDays+" days). Best seasons: "+c.seasons.join(", ")+". <i>"+c.note+"</i> <span class='gesture'>Tap an empty plot below to plant it — 1 work hour, 10 energy.</span>";
+}
+function companionFor(a,b){
+  for(var i=0;i<PAIRS.length;i++){var p=PAIRS[i];
+    if((p.a===a&&p.b===b)||(p.a===b&&p.b===a))return p}
+  return null;
+}
+function checkCompanions(){
+  var planted=[];garden.concat(field).forEach(function(p){if(p.crop)planted.push(p.crop)});
+  var found=null,bad=null;
+  for(var i=0;i<planted.length;i++)for(var j=i+1;j<planted.length;j++){
+    var pr=companionFor(planted[i],planted[j]);if(pr){if(pr.kind==="bad")bad=pr;else if(!found)found=pr}}
+  var show=bad||found, el=$("companionBanner");
+  if(!show){el.innerHTML="";return}
+  el.innerHTML='<div class="banner '+(show.kind==="bad"?"bad":"good")+'"><h3>'+show.title+'</h3>'
+    +'<p><span class="tag '+(show.standing==="Contested"?"contested":"verified")+'">'+show.standing+'</span></p>'
+    +'<p style="margin:.3rem 0 0">'+show.why+'</p></div>';
+  return show;
+}
+function plotHTML(p,scale){
+  if(!p.crop)return '<button type="button" class="plot empty" data-plot="'+p.id+'"><span>'+p.id+'<br>Empty — soil '+p.soil+'<br><span class="tiny">Tap to plant '+CROPS[S.selected].name+'</span></span></button>';
+  var c=CROPS[p.crop], pct=Math.min(100,Math.round(p.age/c.gameDays*100));
+  var ready=p.age>=c.gameDays, bars="";
+  var h=6+Math.round(pct/6);for(var i=0;i<5;i++)bars+='<i style="height:'+h+'px"></i>';
+  return '<button type="button" class="plot'+(ready?" ready":"")+(p.moisture<=0?" thirsty":"")+'" data-plot="'+p.id+'">'
+    +'<span class="pname">'+c.name+'</span> <span class="tiny">'+p.id+'</span>'
+    +'<span class="sprout">'+bars+'</span>'
+    +'<span class="stage">'+(ready?"<b>Ready to harvest!</b>":"Growing — day "+p.age+" of "+c.gameDays)+'</span><br>'
+    +'<span class="needs">Water: '+(p.moisture<=0?"<b>Thirsty — water today</b>":"OK")+' · Health '+p.health+'% · Soil '+p.soil+'</span><br>'
+    +'<span class="tiny">'+(ready?"Tap to harvest ("+c.yield*scale+" servings) · Hold to explain":"Tap to water this plot (1 hr) · Hold to explain")+'</span></button>';
+}
+function bindPlots(el,arr,scale){
+  el.innerHTML=arr.map(function(p){return plotHTML(p,scale)}).join("");
+  var btns=el.querySelectorAll("button");
+  for(var i=0;i<btns.length;i++)(function(btn){
+    var id=btn.getAttribute("data-plot");
+    btn.setAttribute("data-explain","Plot "+id+": tap an empty plot to plant the selected crop; tap a growing crop to water just it; tap a ready crop to harvest it into the storehouse.");
+    btn.addEventListener("click",function(){
+      if(suppressClick)return;
+      var p=arr.filter(function(x){return x.id===id})[0];
+      if(!p.crop)plant(p); else if(p.age>=CROPS[p.crop].gameDays)harvest(p,scale); else waterPlot(p);
+      renderAll();
+    });
+  })(btns[i]);
+}
+function renderAll(){
+  $("stDay").textContent="Day "+S.day+" · "+season();
+  $("stWeather").textContent="Weather: "+weather()+(weather()==="Rain"?" — everything gets watered free":weather()==="Heatwave"?" — crops drink double":weather()==="Frost"?" — tender crops at risk":"");
+  $("stHours").textContent=S.hours+" hrs"; $("hoursBar").style.width=(S.hours/8*100)+"%";
+  $("stEnergy").textContent=S.energy; $("energyBar").style.width=S.energy+"%";
+  $("stStore").textContent=S.store+" servings";
+  $("stFed").textContent="Household fed: "+S.fed+" · Shared: "+S.shared+" · Sold: "+S.sold;
+  bindPlots($("gardenPlots"),garden,1);
+  bindPlots($("fieldPlots"),field,2);
+  checkCompanions();
+  renderEvent(); renderStore(); renderRecord();
+  $("sellBtn").disabled=!S.moneyMode||S.store===0;
+  $("feedBtn").disabled=S.store===0; $("shareBtn").disabled=S.store===0;
+}
+function renderStore(){
+  $("storeList").innerHTML=S.store>0
+    ?"<b>"+S.store+" servings</b> waiting (market value "+S.storeValue+" coins). Feed the household first, share with neighbours, "+(S.moneyMode?"or sell the surplus.":"— MONEY is OFF, so the sell door is closed: surplus is shared or given.") 
+    :"Nothing harvested yet. Grow something to ready, then tap its plot to harvest it into the storehouse.";
+}
+
+/* ---------- Actions ---------- */
+function spend(h,e){if(S.hours<h||S.energy<e){log("Not enough "+(S.hours<h?"work hours":"energy")+" left today — end the day and sleep to refill both.");return false}S.hours-=h;S.energy-=e;return true}
+function log(t){$("dayLog").textContent=t}
+function plant(p){
+  if(!spend(1,10))return;
+  var c=CROPS[S.selected];
+  if(p.lastFamily&&p.lastFamily===c.family){p.soil=Math.max(5,p.soil-15);log("Planted "+c.name+" in "+p.id+" — same family as last time here, so soil health dropped to "+p.soil+". Rotation is how real soil stays alive.");}
+  else{p.soil=Math.min(100,p.soil+2);log("Planted "+c.name+" in "+p.id+". Needs: "+c.sun+"; "+c.water+". Ready in "+c.gameDays+" game days ("+c.realDays+" real).");}
+  if(!c.seasons.includes(season()))log(logText()+" Out of its best season ("+c.seasons.join(", ")+") — it will grow at half speed. Difficulty ramps with the season.");
+  function logText(){return $("dayLog").textContent}
+  p.crop=S.selected;p.age=0;p.moisture=1;p.health=100;
+  note("Planted "+c.name+" in "+p.id+".");
+  var pr=checkCompanionsSoon(); if(pr)note("Companion in the ground: "+pr.title+" — "+pr.standing+".");
+}
+function checkCompanionsSoon(){return checkCompanions()}
+function waterPlot(p){if(!spend(1,6))return;p.moisture=2;log("Watered "+CROPS[p.crop].name+" in "+p.id+". Deep, at the base — the way that works.");note("Watered "+p.id+".")}
+function harvest(p,scale){
+  if(!spend(1,8))return;
+  var c=CROPS[p.crop], y=c.yield*scale;
+  if(p.soil<40){y=Math.ceil(y/2);log("Harvested "+y+" servings of "+c.name+" from "+p.id+" — halved by tired soil ("+p.soil+"). Rest or rotate this plot.");}
+  else log("Harvested "+y+" servings of "+c.name+" from "+p.id+" into the storehouse.");
+  S.store+=y;S.storeValue+=y*c.price;S.harvests++;
+  if(c.family==="Legume"){p.soil=Math.min(100,p.soil+10);log($("dayLog").textContent+" The beans left this soil richer (+10) — nitrogen, given back.");}
+  note("Harvested "+y+" servings of "+c.name+" from "+p.id+" (soil "+p.soil+").");
+  p.lastFamily=c.family;p.crop=null;p.age=0;p.moisture=1;
+}
+$("waterAllBtn").addEventListener("click",function(){
+  if(suppressClick)return;
+  var thirsty=garden.concat(field).some(function(p){return p.crop&&p.moisture<2});
+  if(!thirsty){log("Nothing is thirsty right now — save your hours.");return}
+  if(!spend(1,8))return;
+  garden.concat(field).forEach(function(p){if(p.crop)p.moisture=2});
+  log("Watered everything. "+(weather()==="Rain"?"(The rain would have done this free today — worth checking the sky first.)":""));note("Watered all crops.");renderAll();
+});
+function advanceDay(auto){
+  S.day++;S.hours=8;S.energy=100;
+  var w=weather(), msgs=[];
+  garden.concat(field).forEach(function(p){
+    if(!p.crop){p.soil=Math.min(100,p.soil+1);return}
+    var c=CROPS[p.crop];
+    if(w==="Rain")p.moisture=2;
+    if(w==="Heatwave")p.moisture-=1;
+    p.moisture-=1;
+    var grow=1;
+    if(p.moisture<0){grow=0;p.health=Math.max(10,p.health-15);msgs.push(c.name+" in "+p.id+" went thirsty and lost health.");p.moisture=0}
+    if(!c.seasons.includes(season()))grow*=0.5;
+    if(p.soil<40)grow*=0.5;
+    if(w==="Frost"&&!c.seasons.includes("Winter")&&!c.seasons.includes("Autumn")){p.health=Math.max(5,p.health-30);msgs.push("Frost nipped the "+c.name+" in "+p.id+".")}
+    if(w==="Heatwave"&&p.crop==="lettuce"){p.health=Math.max(10,p.health-20);msgs.push("The lettuce is bolting in the heat — bitter leaves, going to seed.")}
+    p.age+=grow;
+    if(S.event&&S.event.id==="aphids"&&grow>0)p.health=Math.max(10,p.health-8);
+  });
+  if(auto)garden.concat(field).forEach(function(p){if(p.crop&&p.moisture<1&&S.hours>=1){p.moisture=2;S.hours-=1}});
+  S.eventCooldown--;
+  if(!S.event&&S.eventCooldown<=0&&(season()==="Summer"||season()==="Spring")){
+    S.event=EVENTS[Math.floor(Math.random()*EVENTS.length)];S.eventCooldown=6;
+    note("Event: "+S.event.title);
+  }
+  var ready=garden.concat(field).filter(function(p){return p.crop&&p.age>=CROPS[p.crop].gameDays});
+  log("Day "+S.day+" — "+season()+", "+w+". "+(msgs.join(" ")||"A quiet growing day.")+(ready.length?" Ready to harvest: "+ready.map(function(p){return CROPS[p.crop].name+" ("+p.id+")"}).join(", ")+".":""));
+  note("Day turned to "+S.day+" ("+season()+", "+w+").");
+  renderAll();
+  return ready.length>0;
+}
+$("advanceBtn").addEventListener("click",function(){if(suppressClick)return;advanceDay(false)});
+$("ffBtn").addEventListener("click",function(){
+  if(suppressClick)return;
+  var any=garden.concat(field).some(function(p){return p.crop});
+  if(!any){log("Nothing is planted — fast-forwarding an empty holding just ages the gardener. Plant something first.");return}
+  for(var i=0;i<14;i++){if(advanceDay(true))break}
+});
+
+/* ---------- Events ---------- */
+function renderEvent(){
+  var el=$("eventBanner");
+  if(!S.event){el.innerHTML="";return}
+  var ev=S.event, html='<div class="banner event"><h3>Event — '+ev.title+'</h3><p style="margin:.2rem 0 .6rem">'+ev.text+'</p><div class="row">';
+  ev.options.forEach(function(o,i){html+='<button type="button" class="soft" data-ev="'+i+'">'+o.label+'<span class="gesture">Tap to choose · '+o.cost.h+' hr, '+o.cost.e+' energy</span></button>'});
+  el.innerHTML=html+"</div></div>";
+  var btns=el.querySelectorAll("button");
+  for(var i=0;i<btns.length;i++)btns[i].addEventListener("click",function(){
+    var o=ev.options[+this.getAttribute("data-ev")];
+    if(!spend(o.cost.h,o.cost.e))return;
+    if(!o.good&&ev.id==="aphids"){/* consequence lingers */}
+    if(o.good&&ev.id==="aphids")garden.concat(field).forEach(function(p){if(p.crop)p.health=Math.min(100,p.health+10)});
+    log(o.result);note("Event response ("+ev.title+"): "+o.label+" — "+(o.good?"shelf: works/tried":"shelf: what really hasn't"));
+    S.event=null;renderAll();
+  });
+}
+
+/* ---------- Harvest distribution ---------- */
+$("feedBtn").addEventListener("click",function(){
+  if(suppressClick||!S.store)return;
+  var n=S.store;S.fed+=n;S.store=0;S.storeValue=0;
+  S.ledgers.house.push("Day "+S.day+": "+n+" servings fed the household (mode: "+(S.moneyMode?"MARKET available, feeding first":"MONEY OFF")+" ).");
+  $("harvestLog").textContent=n+" servings on the household table. Purpose first — that's the harvest doing its first job.";
+  note("Fed household "+n+" servings.");renderAll();
+});
+$("shareBtn").addEventListener("click",function(){
+  if(suppressClick||!S.store)return;
+  var n=S.store;S.shared+=n;S.store=0;S.storeValue=0;
+  var mode=S.moneyMode?"MARKET mode (chose to share)":"MONEY OFF — share/give mode";
+  S.ledgers.share.push("Day "+S.day+": "+n+" servings shared with neighbours — ["+mode+"].");
+  $("harvestLog").textContent=n+" servings shared with neighbours, recorded under SHARE / GIVE — ["+mode+"]. Never mixed with sales.";
+  note("Shared "+n+" servings ["+mode+"].");renderAll();
+});
+$("sellBtn").addEventListener("click",function(){
+  if(suppressClick||!S.store||!S.moneyMode)return;
+  var n=S.store,v=S.storeValue;S.sold+=n;S.soldCoins+=v;S.coins+=v;S.store=0;S.storeValue=0;
+  S.ledgers.market.push("Day "+S.day+": sold "+n+" servings for "+v+" coins — [MARKET mode].");
+  $("harvestLog").textContent="Sold "+n+" servings for "+v+" coins, recorded under MARKET — kept separate from every act of sharing.";
+  note("Sold "+n+" servings for "+v+" coins [MARKET].");renderAll();
+});
+$("moneyToggle").addEventListener("click",function(){
+  if(suppressClick)return;
+  S.moneyMode=!S.moneyMode;
+  this.setAttribute("aria-pressed",S.moneyMode);
+  if(S.moneyMode){$("modeTitle").textContent="Market mode: ON";$("modeText").innerHTML="Surplus can be sold at the market for coins. Sales are recorded under <b>MARKET</b>, never mixed with sharing.";this.firstChild.textContent="Switch MONEY OFF — share & give only";}
+  else{$("modeTitle").textContent="MONEY OFF — share / give mode";$("modeText").innerHTML="The sell door is <b>closed</b>. Surplus can only feed the household or be shared with neighbours, and the record labels these entries <b>MONEY OFF — share/give</b>.";this.firstChild.textContent="Switch market mode back ON";}
+  note("Mode switched to "+(S.moneyMode?"MARKET":"MONEY OFF — share/give")+".");
+  renderAll();
+});
+
+/* ---------- Settings, record tools, offline ---------- */
+$("aliasBtn").addEventListener("click",function(){
+  var v=$("aliasInput").value.trim();if(v)S.alias=v;
+  $("aliasEcho").innerHTML="Growing as: <b>"+esc(S.alias)+"</b>";
+  note("Grower name set to “"+S.alias+"”.");
+});
+$("teachDial").addEventListener("change",function(){document.body.setAttribute("data-teach",this.value)});
+function download(name,content,type){
+  var b=new Blob([content],{type:type}),u=URL.createObjectURL(b),a=document.createElement("a");
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},800);
+}
+$("downloadPageBtn").addEventListener("click",function(){
+  download("the-growing-season.html","<!doctype html>\n"+document.documentElement.outerHTML,"text/html");
+});
+$("exportBtn").addEventListener("click",function(){
+  download("growing-season-record.json",JSON.stringify({grower:S.alias,exportedDay:S.day,totals:{householdFed:S.fed,sharedGiven:S.shared,soldServings:S.sold,soldCoins:S.soldCoins,harvests:S.harvests},ledgers:S.ledgers,notes:S.notes},null,2),"application/json");
+});
+$("forgetBtn").addEventListener("click",function(){
+  if(!S.forgetArm){S.forgetArm=true;$("forgetNote").textContent="Tap “Forget my record” once more to wipe the ledgers, totals, and field notes. The growing game itself keeps its plots.";return}
+  S.ledgers={house:[],share:[],market:[]};S.notes=[];S.fed=0;S.shared=0;S.sold=0;S.soldCoins=0;S.harvests=0;S.forgetArm=false;
+  $("forgetNote").textContent="Record forgotten. Clean page, same garden.";renderAll();
+});
+
+/* ---------- Hold to explain ---------- */
+var suppressClick=false, holdTimer=null;
+var box=$("explainBox");
+function explain(el){
+  var t=el.getAttribute("data-explain");if(!t)return;
+  box.textContent="Hold-to-explain: "+t;box.classList.add("show");
+  setTimeout(function(){box.classList.remove("show")},5000);
+}
+document.addEventListener("pointerdown",function(e){
+  var el=e.target.closest?e.target.closest("[data-explain]"):null;if(!el)return;
+  holdTimer=setTimeout(function(){suppressClick=true;explain(el);setTimeout(function(){suppressClick=false},350)},600);
+});
+document.addEventListener("pointerup",function(){if(holdTimer)clearTimeout(holdTimer)});
+var lastExplained=null,lastExplainAt=0;
+document.addEventListener("mouseover",function(e){
+  var el=e.target.closest?e.target.closest("[data-explain]"):null;if(!el)return;
+  var now=Date.now();if(el===lastExplained&&now-lastExplainAt<6000)return;
+  lastExplained=el;lastExplainAt=now;
+  if(window.matchMedia&&window.matchMedia("(hover:hover)").matches)explain(el);
+});
+
+renderPicker();renderAll();
+log("Welcome, "+S.alias+". Pick a crop above — lettuce and tomato are the classic first pair. Plant them side by side in the garden beds and read why they help each other.");
+})();
+</script>
+</body>
+</html>
