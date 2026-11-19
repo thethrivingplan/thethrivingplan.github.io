@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>First Lines — a tattoo practice simulator</title>
+<style>
+  :root{
+    --font-head: Rockwell, "Rockwell Nova", Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Times New Roman", serif;
+    --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --bg:#f6f3ec; --panel:#fffdf8; --panel2:#efe9db;
+    --ink:#1d1710; --muted:#5d5342; --line:#d8cdb4;
+    --accent:#a93226; --accent-ink:#fff7f2;
+    --green:#2e5e4e; --gold:#9a6b14;
+    --skin:#f0d2a4; --skin-edge:#d9ae76;
+    --warn-bg:#fbeae7; --warn-line:#a93226;
+    --ok:#2e5e4e; --bad:#a93226; --mid:#9a6b14;
+    --shadow:0 1px 3px rgba(29,23,16,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131009; --panel:#1e1a12; --panel2:#282216;
+      --ink:#f0e8d8; --muted:#b8ab90; --line:#40382a;
+      --accent:#e0685c; --accent-ink:#1d0f0c;
+      --green:#7fbfa5; --gold:#d9a94f;
+      --skin:#caa06c; --skin-edge:#a87f4c;
+      --warn-bg:#331a16; --warn-line:#e0685c;
+      --ok:#7fbfa5; --bad:#e0685c; --mid:#d9a94f;
+      --shadow:0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--font-body);
+    font-size:1.05rem;line-height:1.55;}
+  h1,h2,h3{font-family:var(--font-head);line-height:1.15;margin:0 0 .4em}
+  h1{font-size:2.1rem}
+  h2{font-size:1.55rem;border-bottom:3px solid var(--accent);padding-bottom:.25rem;margin-top:0}
+  h3{font-size:1.15rem}
+  p{margin:.5em 0}
+  a{color:var(--accent)}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:2px solid var(--ink);background:var(--panel);
+    color:var(--ink);border-radius:.45rem;padding:.45rem .9rem;font-weight:700;box-shadow:var(--shadow)}
+  button:hover{border-color:var(--accent)}
+  button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  select,input[type="text"]{font:inherit;padding:.4rem .6rem;border:2px solid var(--line);
+    border-radius:.45rem;background:var(--panel);color:var(--ink)}
+  input[type="range"]{width:100%;accent-color:var(--accent)}
+  .wrap{max-width:920px;margin:0 auto;padding:0 1rem 3rem}
+  .freeline{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;
+    background:var(--ink);color:var(--bg);padding:.6rem 1rem;font-weight:700}
+  .freeline button{background:var(--bg);color:var(--ink);border-color:var(--bg);min-height:2.25rem}
+  nav.compass{display:flex;flex-wrap:wrap;gap:.4rem;padding:.8rem 0 .2rem}
+  nav.compass a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.3rem .8rem;
+    border:2px solid var(--line);border-radius:2rem;text-decoration:none;color:var(--ink);
+    background:var(--panel);font-weight:700;font-size:.95rem}
+  nav.compass a:hover{border-color:var(--accent)}
+  section{margin:2.2rem 0}
+  .panel{background:var(--panel);border:2px solid var(--line);border-radius:.7rem;
+    padding:1.1rem 1.2rem;box-shadow:var(--shadow)}
+  .safety{border:3px solid var(--warn-line);background:var(--warn-bg);border-radius:.7rem;padding:1.1rem 1.2rem}
+  .safety h2{border-bottom-color:var(--warn-line)}
+  .safety li{margin:.35em 0}
+  .lede{font-size:1.15rem}
+  .muted{color:var(--muted)}
+  .small{font-size:.92rem}
+  details{border:2px solid var(--line);border-radius:.6rem;background:var(--panel);
+    padding:.7rem 1rem;margin:.7rem 0;box-shadow:var(--shadow)}
+  details summary{cursor:pointer;font-family:var(--font-head);font-weight:600;font-size:1.1rem;
+    display:flex;align-items:center;min-height:2.25rem}
+  details summary .tap{margin-left:auto;font-family:var(--font-body);
+    font-size:.8rem;font-weight:700;color:var(--muted);border:1px solid var(--line);
+    border-radius:2rem;padding:.15rem .6rem;white-space:nowrap}
+  table{border-collapse:collapse;width:100%;margin:.8rem 0;font-size:.98rem}
+  th,td{border:1px solid var(--line);padding:.5rem .6rem;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-family:var(--font-head)}
+  .grid{display:grid;gap:1rem}
+  @media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr}}
+  .levelrow{display:flex;flex-wrap:wrap;gap:.45rem;margin:.6rem 0}
+  .levelrow button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .seg{display:inline-flex;border:2px solid var(--ink);border-radius:.5rem;overflow:hidden}
+  .seg button{border:0;border-radius:0;box-shadow:none}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  canvas#skin{width:100%;height:auto;display:block;border-radius:.6rem;
+    border:3px solid var(--skin-edge);background:var(--skin);touch-action:none;cursor:crosshair}
+  .controls{display:grid;gap:1rem;margin-top:1rem}
+  @media(min-width:720px){.controls{grid-template-columns:1fr 220px}}
+  .gauge{border:2px solid var(--line);border-radius:.6rem;padding:.7rem .9rem;background:var(--panel)}
+  .gauge-track{position:relative;height:150px;border:2px solid var(--ink);border-radius:.4rem;
+    background:linear-gradient(to top,#8a5a3b 0 30%,#c98d54 30% 63%,#eecfa5 63% 100%);margin:.5rem 0}
+  .gauge-window{position:absolute;left:0;right:0;top:37%;height:26%;
+    border-top:3px dashed var(--green);border-bottom:3px dashed var(--green);
+    background:rgba(46,94,78,.18)}
+  .gauge-marker{position:absolute;left:-6px;right:-6px;height:0;border-top:4px solid var(--accent);
+    transition:top .05s linear}
+  .gauge-labels{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted)}
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin:.8rem 0}
+  .stat{border:2px solid var(--line);border-radius:.6rem;padding:.6rem .8rem;background:var(--panel)}
+  .stat b{font-family:var(--font-head);font-size:1.5rem;display:block}
+  .grade-A{color:var(--ok)} .grade-B{color:var(--ok)} .grade-C{color:var(--mid)}
+  .grade-D{color:var(--mid)} .grade-F{color:var(--bad)}
+  .coach{border-left:6px solid var(--gold);background:var(--panel2);border-radius:.4rem;
+    padding:.8rem 1rem;margin:.8rem 0}
+  .coach h3{margin-top:0}
+  .banner{border:2px dashed var(--gold);border-radius:.5rem;padding:.55rem .9rem;
+    background:var(--panel2);font-weight:700;margin:.6rem 0}
+  .recorditem{border:1px solid var(--line);border-radius:.5rem;padding:.55rem .8rem;margin:.45rem 0;background:var(--panel)}
+  .rowbtns{display:flex;flex-wrap:wrap;gap:.5rem;margin:.7rem 0}
+  .depthbtns{display:flex;flex-wrap:wrap;gap:.5rem;margin:.6rem 0}
+  .crosswrap{background:var(--panel);border:2px solid var(--line);border-radius:.7rem;padding:1rem;box-shadow:var(--shadow)}
+  svg text{font-family:var(--font-body)}
+  footer{border-top:2px solid var(--line);margin-top:3rem;padding-top:1rem}
+  .kbd-hint{font-size:.9rem;color:var(--muted)}
+  @media(max-width:640px){
+    table,thead,tbody,tr,th,td{display:block;width:100%}
+    tr{border:1px solid var(--line);border-radius:.4rem;margin-bottom:.6rem;padding:.3rem 0}
+    th,td{border:0}
+    td{border-top:1px dashed var(--line)}
+    tr td:first-child,tr th:first-child{border-top:0}
+  }
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="freeline">
+  <span>Free — always free. No ads, no account, nothing locked.</span>
+  <button id="downloadBtn" type="button">Download this page — tap to save it for offline use</button>
+</div>
+
+<div class="wrap">
+
+<nav class="compass" aria-label="Compass — where to go on this page">
+  <a href="#play">▶ Play</a>
+  <a href="#safety">Safety &amp; the law</a>
+  <a href="#skinlayers">Skin layers</a>
+  <a href="#tools">Needles, machines &amp; ink</a>
+  <a href="#knowhow">Know-how</a>
+  <a href="#record">Your record</a>
+  <a href="#settings">Settings</a>
+</nav>
+
+<header>
+  <h1>First Lines — a tattoo practice simulator</h1>
+  <p class="lede">Learn the knowledge and line discipline behind real tattooing, and practise it on drawn
+  practice skin — never on a person. The page models needle depth as you draw: too shallow and the line
+  heals faint, in the window and it holds, too deep and it blows out. Every grade is explained by the
+  skin theory underneath it.</p>
+  <p class="muted">Everything here is original — the name, the practice designs, the words. The designs are
+  simple line art drawn for this page, for practice skin only.</p>
+</header>
+
+<section id="safety" class="safety" aria-labelledby="safety-h">
+  <h2 id="safety-h">Safety and the law — read this first, at full size</h2>
+  <ul>
+    <li><strong>Sanitation is the craft's foundation, not an extra.</strong> Tattooing breaks skin, so it can
+    carry bloodborne pathogens — hepatitis B, hepatitis C, HIV, and skin infections. Real practice means:
+    a <strong>new single-use needle for every client</strong>, opened in front of them and dropped straight into a
+    sharps container after; gloves; barrier film over the machine, clip cord, and work surfaces; surfaces
+    disinfected between clients; ink poured into single-use caps, never back into the bottle; and formal
+    bloodborne-pathogen training. Anything that touches blood is either single-use or sterilised in an
+    autoclave. There are no shortcuts around this — it is the first skill, learned before line work.</li>
+    <li><strong>Tattooing people requires training, an apprenticeship, and usually a licence.</strong> The rules
+    vary by city, state, and country — many places require a licence, a registered premises, a minimum age
+    for clients, and inspected sanitation. Working through a real apprenticeship under an experienced,
+    licensed tattooist is how the craft is actually learned.</li>
+    <li><strong>Practice belongs on practice skin and fruit</strong> — silicone practice skins, oranges, bananas,
+    grapefruit — never on yourself, never on a friend, never on anyone "just to try." Untrained work on real
+    skin scars people and spreads infection.</li>
+    <li><strong>This game teaches knowledge and line discipline only. It qualifies nobody.</strong> It cannot teach
+    the feel of real skin, real sanitation under pressure, or judgement about a real person's body. The only
+    thing left after this page is the real apprenticeship — that is deliberate, and it is the honest limit of
+    what a page can carry.</li>
+  </ul>
+</section>
+
+<section id="play" aria-labelledby="play-h">
+  <h2 id="play-h">The practice skin</h2>
+  <p>Pick a level, then draw on the skin. <strong>Tap a level button to choose it.</strong> In
+  <strong>Trace</strong> mode the guide line is printed on the skin — follow it. In <strong>Freehand</strong> mode the
+  guide fades to a whisper and you draw from the small reference, the way you'd work from a stencil you've
+  already studied.</p>
+  <p><strong>Depth is the game.</strong> Your needle depth comes from pressure and speed together:
+  press harder and move slower and the needle sits deeper; press light and move fast and it rides shallow.
+  If your pen or touch gives real pressure, the page uses it. If not, use the
+  <strong>Pressure slider</strong> below — that is the plain fallback, and it works fine. Watch the depth gauge
+  while you draw. The depth numbers are a teaching model, not a measurement of any real machine.</p>
+
+  <p><strong>The ladder is a ramp, on purpose.</strong> Each rung adds exactly one new demand and nothing else:
+  straight lines ask for even speed and depth; curves add changing direction; corners add turning without
+  dwelling; the whole design adds endurance and working order; whip shading adds a stroke that changes as it
+  travels. That ordering is how the craft is taught — master the demand in front of you before the next one
+  is stacked on it. The Ramp setting below lets you choose the guided order or an open bench.</p>
+  <div class="levelrow" role="group" aria-label="Choose a level">
+    <button type="button" data-level="0" aria-pressed="true">1 · Straight lines</button>
+    <button type="button" data-level="1" aria-pressed="false">2 · Curves</button>
+    <button type="button" data-level="2" aria-pressed="false">3 · Corners</button>
+    <button type="button" data-level="3" aria-pressed="false">4 · A whole design — Sprout &amp; Moon</button>
+    <button type="button" data-level="4" aria-pressed="false">5 · Whip shading</button>
+  </div>
+  <p id="rampNote" class="small muted"></p>
+  <p id="levelDesc" class="muted"></p>
+  <div class="panel" style="border-left:6px solid var(--green)">
+    <h3 style="margin-top:0">The brief — who this is for</h3>
+    <p id="briefLine" style="margin:0"></p>
+  </div>
+
+  <div class="rowbtns">
+    <span class="seg" role="group" aria-label="Mode">
+      <button type="button" id="modeTrace" aria-pressed="true">Trace</button>
+      <button type="button" id="modeFree" aria-pressed="false">Freehand</button>
+    </span>
+    <button type="button" id="stretchBtn" aria-pressed="false">Skin stretch: OFF — tap to stretch</button>
+    <button type="button" id="clearBtn">Clear the skin — tap to start over</button>
+  </div>
+  <p class="small muted" id="stretchNote">Stretch is off: the skin gives as you draw, so your line can drift —
+  that wobble is the lesson. Real tattooists stretch the skin taut with their free hand the whole time.
+  Tap the stretch button and feel the difference.</p>
+
+  <canvas id="skin" width="900" height="620" aria-label="Drawn practice skin. Draw on it with your mouse, finger, or pen."></canvas>
+
+  <div class="controls">
+    <div class="panel">
+      <label for="pressure"><strong>Pressure</strong> — how hard you press (fallback when your pointer gives no pressure)</label>
+      <input type="range" id="pressure" min="5" max="100" value="55" />
+      <p class="small muted" id="pressureNote">No pointer pressure detected yet — the slider is driving depth.
+      A pen or pressure-sensitive touch will take over automatically while you draw.</p>
+      <p><strong>Hand speed</strong> is read from your drawing itself: slow down and the needle dwells and
+      digs; speed up and it skips shallow. That trade-off is real — it is why line speed and machine speed
+      have to be matched by hand, not by habit.</p>
+      <div id="fatigueBox" style="display:none;border-top:2px dashed var(--line);margin-top:.8rem;padding-top:.8rem">
+        <p style="margin-top:0"><strong>Hand steadiness: <span id="fatiguePct">100%</span></strong></p>
+        <div style="height:16px;border:2px solid var(--ink);border-radius:2rem;overflow:hidden">
+          <div id="fatigueBar" style="height:100%;width:100%;background:var(--green)"></div>
+        </div>
+        <p class="small muted" id="fatigueNote">Hand fatigue is on: the longer you draw without a break, the more
+        your hand tires and the more wobble creeps into the line — the way a real hand tires over a long session.</p>
+        <button type="button" id="breakBtn">Take a break — tap to shake out, stretch, and re-set your grip</button>
+      </div>
+      <div class="rowbtns">
+        <button type="button" id="gradeBtn" class="primary">Finish &amp; grade — tap when the design is done</button>
+        <button type="button" id="healedBtn" aria-pressed="false">See the healed result — tap to look a month later</button>
+      </div>
+      <p class="small muted">The healed view shows what time does: shallow sections fade, deep sections
+      spread, and only the in-window work stays crisp. It is the single most honest picture in tattooing.</p>
+    </div>
+    <div class="gauge" aria-label="Needle depth gauge">
+      <strong>Needle depth</strong>
+      <div class="gauge-track">
+        <div class="gauge-window"></div>
+        <div class="gauge-marker" id="gaugeMarker" style="top:96%"></div>
+      </div>
+      <div class="gauge-labels"><span>3.0 mm — too deep</span><span>0 — on the surface</span></div>
+      <p class="small" id="gaugeText">Not drawing. The dashed band is the window: the dermis, where ink holds.</p>
+    </div>
+  </div>
+
+  <div id="gradeArea" aria-live="polite"></div>
+
+  <div class="panel" id="standingPanel" style="margin-top:1rem">
+    <h3 style="margin-top:0">Studio standing — the stakes here are trust, not money</h3>
+    <p id="standingNow"></p>
+    <div id="standingLadder"></div>
+    <p class="small muted">There is no money anywhere in First Lines — no prices, no client payments, no shop
+    earnings, nothing to buy and nothing to win. What a good record earns is standing: the studio trusting you
+    with work that matters to somebody. Standing is never a lock and never a price — it is a reputation, and
+    reputations are the one currency this craft has always actually run on.</p>
+  </div>
+</section>
+
+<section id="skinlayers" aria-labelledby="skin-h">
+  <h2 id="skin-h">Skin layers — why depth is everything</h2>
+  <p>A tattoo is not drawn <em>on</em> skin. It is placed <em>inside</em> it, and which layer receives the ink
+  decides whether the work lasts a month or a lifetime. Tap a depth to see what the needle does there.</p>
+
+  <div class="crosswrap">
+    <svg viewBox="0 0 680 400" width="100%" role="img" aria-label="Drawn cross-section of skin: epidermis on top, dermis in the middle, fat below, with a needle shown at the chosen depth.">
+      <!-- epidermis -->
+      <rect x="40" y="30" width="470" height="52" fill="#eecfa5" stroke="#b98d54" stroke-width="2"/>
+      <!-- dermis -->
+      <rect x="40" y="82" width="470" height="168" fill="#dfa06a" stroke="#b98d54" stroke-width="2"/>
+      <!-- hypodermis / fat -->
+      <rect x="40" y="250" width="470" height="100" fill="#f2df9e" stroke="#b98d54" stroke-width="2"/>
+      <circle cx="110" cy="300" r="26" fill="#f7ecc0"/><circle cx="185" cy="312" r="30" fill="#f7ecc0"/>
+      <circle cx="265" cy="298" r="24" fill="#f7ecc0"/><circle cx="340" cy="312" r="30" fill="#f7ecc0"/>
+      <circle cx="420" cy="298" r="25" fill="#f7ecc0"/><circle cx="480" cy="315" r="22" fill="#f7ecc0"/>
+      <!-- dermis texture: wavy collagen -->
+      <path d="M50 130 q30 -14 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0" fill="none" stroke="#c07f45" stroke-width="3" opacity=".6"/>
+      <path d="M50 200 q30 -14 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0" fill="none" stroke="#c07f45" stroke-width="3" opacity=".6"/>
+      <!-- labels -->
+      <text x="525" y="62" font-size="17" font-weight="bold" fill="currentColor">Epidermis</text>
+      <text x="525" y="82" font-size="13" fill="currentColor">sheds &amp; renews</text>
+      <text x="525" y="160" font-size="17" font-weight="bold" fill="currentColor">Dermis</text>
+      <text x="525" y="180" font-size="13" fill="currentColor">stable — ink holds here</text>
+      <text x="525" y="295" font-size="17" font-weight="bold" fill="currentColor">Fat layer</text>
+      <text x="525" y="315" font-size="13" fill="currentColor">loose — ink spreads</text>
+      <!-- ink deposit -->
+      <g id="inkDots" fill="#26221e">
+        <circle cx="252" cy="150" r="5"/><circle cx="266" cy="158" r="4"/><circle cx="240" cy="160" r="4"/>
+        <circle cx="258" cy="140" r="3.5"/><circle cx="246" cy="146" r="3"/>
+      </g>
+      <!-- needle -->
+      <g id="needleGroup">
+        <rect x="262" y="-70" width="10" height="200" fill="#8f97a3" stroke="#5c636e" stroke-width="1.5"/>
+        <polygon points="262,130 272,130 267,168" fill="#c7ccd4" stroke="#5c636e" stroke-width="1.5"/>
+      </g>
+      <text x="40" y="372" font-size="12.5" fill="currentColor">Drawn for this page. Not to scale —</text>
+      <text x="40" y="390" font-size="12.5" fill="currentColor">but the layer order, and how each treats ink, is true.</text>
+    </svg>
+    <div class="depthbtns" role="group" aria-label="Show the needle at a depth">
+      <button type="button" data-depth="shallow" aria-pressed="false">Too shallow — tap to see</button>
+      <button type="button" data-depth="window" aria-pressed="true">In the window — tap to see</button>
+      <button type="button" data-depth="deep" aria-pressed="false">Too deep — tap to see</button>
+    </div>
+    <p id="depthExplain"><strong>In the window (the dermis).</strong> The dermis barely renews itself, and its
+    collagen mesh traps the ink particles. Immune cells called macrophages grab the pigment and, being
+    long-lived and going nowhere, hold it in place for decades. This is the only layer where a tattoo is
+    permanent <em>and</em> crisp — which is why the whole craft is aimed at a band only a millimetre or two deep.</p>
+  </div>
+
+  <div class="grid two" style="margin-top:1rem">
+    <div class="panel">
+      <h3>Why too shallow fades</h3>
+      <p>The epidermis is a conveyor belt: new cells are born at its base and push upward, shedding from the
+      surface roughly every month. Ink parked there rides the belt out of the body. A shallow line can look
+      perfect on the day and heal patchy and grey within weeks — the ink was never in the building, only on
+      the escalator.</p>
+    </div>
+    <div class="panel">
+      <h3>Why too deep blows out</h3>
+      <p>Below the dermis sits fat — loose, soft, with no mesh to hold anything. Ink pushed into it migrates
+      sideways along the loose tissue, and the line heals with a blurry halo: a <strong>blowout</strong>. Blowouts are
+      permanent and cannot be pulled back out. Depth errors downward are forever; depth errors upward merely
+      fade. That asymmetry is why good tattooists would rather re-touch a faint line than apologise for a
+      blown one.</p>
+    </div>
+  </div>
+</section>
+
+<section id="tools" aria-labelledby="tools-h">
+  <h2 id="tools-h">Needles, machines &amp; ink</h2>
+
+  <details>
+    <summary>Needle groupings — what each bundle is for <span class="tap">Tap to open</span></summary>
+    <p>A tattoo "needle" is a bundle of fine pins soldered to a bar (or sealed in a cartridge). The grouping —
+    how many pins, arranged how — decides what the bundle does well. The number is the pin count; the letters
+    are the arrangement.</p>
+    <table>
+      <tr><th>Grouping</th><th>Arrangement</th><th>What it is for — and why</th></tr>
+      <tr><td><strong>Round Liner (RL)</strong> — e.g. 3RL, 5RL, 9RL</td><td>Pins pulled into a tight round point</td>
+        <td>Line work. A tight bundle deposits ink in a narrow track and the pins support each other, so the
+        line stays crisp. Small counts (3RL) draw fine lines but carry little ink and punish shaky hands —
+        every wobble shows. Large counts (9RL+) lay bold lines and carry more ink per pass.</td></tr>
+      <tr><td><strong>Round Shader (RS)</strong></td><td>Round, but the pins sit slightly spread</td>
+        <td>Soft shading and small fills. The spread bundle covers more skin per pass and lays ink less densely,
+        which is exactly what a soft gradient wants — and exactly wrong for a crisp line.</td></tr>
+      <tr><td><strong>Flat</strong></td><td>One straight row of pins</td>
+        <td>Bold one-pass lines and solid colour in strokes. The row acts like a chisel: strong coverage along
+        the stroke, weaker across it, so it rewards drawing <em>with</em> the row.</td></tr>
+      <tr><td><strong>Magnum (M1 / M2)</strong></td><td>Two rows of pins, woven (M1) or stacked (M2)</td>
+        <td>Shading and packing colour over larger areas. Many pins spread the work, so large areas fill with
+        fewer passes — and fewer passes means less trauma to the skin. Stacked magnums pack denser; woven
+        magnums run softer.</td></tr>
+      <tr><td><strong>Curved / Round Magnum (CM / RM)</strong></td><td>Two rows with the outer pins shorter — an arc</td>
+        <td>Soft-edged shading. The arc means the edges of the bundle touch lighter than the middle, so gradients
+        melt out with no hard edge. The same arc makes it a poor choice where a hard edge is the point.</td></tr>
+    </table>
+    <p><strong>The strategy trade-off:</strong> a smaller grouping gives control and fine detail but covers slowly and
+    shows every tremor; a larger grouping covers fast and forgives small shakes but cannot turn tight corners
+    or draw fine lines. Choosing the grouping <em>is</em> choosing which mistakes you can afford.</p>
+  </details>
+
+  <details>
+    <summary>Machine types — coil, rotary, pen <span class="tap">Tap to open</span></summary>
+    <table>
+      <tr><th>Machine</th><th>How it works</th><th>Strengths</th><th>Costs &amp; trade-offs</th></tr>
+      <tr><td><strong>Coil</strong></td><td>Two electromagnetic coils snap an armature bar down and a spring throws
+        it back — the classic buzzing machine, tuned by springs, gaps, and capacitor.</td>
+        <td>A hard, punchy hit that drives big liner groupings and lays bold lines; endlessly tunable by a
+        tattooist who knows the machine.</td>
+        <td>Heavy, loud, and the tuning <em>is</em> a skill of its own — a badly tuned coil chews skin. Vibration
+        tires the hand over long sessions.</td></tr>
+      <tr><td><strong>Rotary</strong></td><td>An electric motor turns a cam that pushes the needle in a smooth,
+        even cycle.</td>
+        <td>Consistent, quiet, light; the same even hit suits shading and colour packing; less to tune.</td>
+        <td>The hit is softer and more uniform — some artists find bold lines need more care, and there is less
+        of the coil's "give" feedback through the hand.</td></tr>
+      <tr><td><strong>Pen</strong></td><td>A rotary motor inside a pen-shaped body, using sealed cartridges.</td>
+        <td>The grip feels like drawing, which shortens the learning curve for line control; cartridges swap
+        groupings in seconds and are single-use by design.</td>
+        <td>Cartridges cost more per session; the pen's light weight removes the ballast some artists use to
+        steady a line. Wireless pens add battery weight and one more thing to run flat.</td></tr>
+    </table>
+    <p><strong>Voltage and hand speed are one decision, not two.</strong> The machine cycles the needle so many
+    times per second; your hand moves the skin past it. Move too slowly for the voltage and each patch of skin
+    takes hit after hit — overworked, chewed skin. Move too fast and the needle skips, leaving a dotted,
+    faint line. The pair must match: that matching is most of what "a good line" physically is.</p>
+  </details>
+
+  <details>
+    <summary>Ink &amp; colour basics <span class="tap">Tap to open</span></summary>
+    <p>Tattoo ink is pigment — solid coloured particles — suspended in a carrier liquid (typically water,
+    alcohol, and glycerin or similar) that gets the particles into the skin and then leaves. Traditional black
+    is carbon-based. What stays in the dermis is the particle, and size is destiny: particles too small would
+    be carried away by the immune system; tattoo pigments are large enough that a macrophage can swallow one
+    but cannot digest or move it. A tattoo lasts because the ink is, quite literally, too big to remove.</p>
+    <ul>
+      <li><strong>You see healed colour through the epidermis</strong>, like looking through a tinted window. The
+      skin's own tone sits over every colour, so the same ink reads differently on different skin — pale
+      yellows and pastels can nearly vanish on deeper skin tones, while black and strong contrast hold on
+      everyone. Honest tattooists design <em>with</em> the client's skin tone, not against it.</li>
+      <li><strong>Contrast outlives colour.</strong> Over years, fine detail softens and light colours fade fastest.
+      Designs built on strong dark-versus-light structure age gracefully; designs built on subtle colour
+      differences blur into each other. This is the whole theory behind "bold will hold."</li>
+      <li><strong>Sun is ink's enemy.</strong> Ultraviolet light breaks pigment particles down into smaller pieces —
+      small enough for the immune system to finally carry away. Faded old tattoos are, in part, sun-eaten.</li>
+      <li><strong>Fresh ink colour lies.</strong> On the day, ink also sits in the epidermis and in irritated,
+      reddened skin, so fresh work looks bolder and brighter than it will heal. Judging a tattoo before it has
+      healed (two to four weeks) is judging a draft.</li>
+    </ul>
+  </details>
+</section>
+
+<section id="knowhow" aria-labelledby="know-h">
+  <h2 id="know-h">Know-how — the discipline behind the line</h2>
+
+  <details>
+    <summary>Line discipline — one confident pass <span class="tap">Tap to open</span></summary>
+    <p>Skin is not paper. Every pass of the needle is a small injury, and skin answers injury with swelling,
+    bleeding, and toughness. A line laid in <strong>one confident pass</strong> at the right depth heals crisp.
+    A line scratched in with three timid re-passes is three injuries stacked on one track: the skin swells,
+    the stencil blurs under plasma, later passes land in damaged tissue that holds ink unevenly, and the heal
+    comes out scarred and patchy. <strong>That is why the game counts your re-passes against you</strong> — going
+    back over a line is sometimes necessary in real work, but it is never free.</p>
+    <p><strong>Two honest strategies, with their trade-offs:</strong></p>
+    <ul>
+      <li><strong>Commit:</strong> pull the full line in one pass at matched speed and depth. Best heal, cleanest
+      result — and no eraser. A wobble is in the skin. This is the strategy the levels train.</li>
+      <li><strong>Build:</strong> lay a first pass slightly light, then strengthen weak sections once. Forgiving for
+      beginners and for skin that takes ink unevenly — but every extra pass is extra trauma, and "slightly
+      light" easily becomes "three scratchy passes." Building works only with the discipline to stop.</li>
+    </ul>
+    <p>Pull lines <em>toward</em> your body where you can, in sections your hand can travel without re-gripping,
+    and breathe out through the pull — the same reason marksmen fire on the exhale: a moving ribcage is a
+    moving hand.</p>
+  </details>
+
+  <details>
+    <summary>Stretching the skin — why your other hand matters <span class="tap">Tap to open</span></summary>
+    <p>Loose skin gives under the needle: it bounces, drags, and lets the line wander, and the needle's depth
+    varies as the surface moves. Stretched taut — usually a three-point stretch between thumb, finger, and
+    the side of the hand — the skin becomes a firm, flat drum: the needle enters cleanly, depth stays even,
+    and the line goes where it is aimed. Stretch also shows the tattooist the skin's natural grain, because a
+    design must sit with how the skin moves on the body, not against it. In the game, unstretched skin adds
+    drift to your stroke; stretched skin holds still. Try the same curve both ways and read your consistency
+    score — that difference is the lesson.</p>
+  </details>
+
+  <details>
+    <summary>Whip shading — and why direction is the whole trick <span class="tap">Tap to open</span></summary>
+    <p>Whip shading lays a gradient with a flicking stroke: the needle enters the skin at the dark end of the
+    gradient and whips <em>out</em> — accelerating and lifting — so the dots of ink start dense and thin out to
+    nothing. The taper comes from physics, not magic: as the stroke speeds up and the needle rides shallower,
+    less ink lands per millimetre. Whip <em>away</em> from the dark area, always in the direction the gradient
+    should fade. Whipping the wrong way piles ink at the light end and buries the gradient. Level 5 grades
+    exactly this: stroke direction and taper. The alternative, <strong>pendulum shading</strong>, swings the needle
+    back and forth in an arc for a softer, more even field — gentler on skin over large areas, but slower to
+    build a strong gradient and easier to overwork if you keep swinging over the same patch.</p>
+  </details>
+
+  <details>
+    <summary>Aftercare — the principles and their reasons <span class="tap">Tap to open</span></summary>
+    <p>A fresh tattoo is an open wound with ink in it, and the heal decides the final quality as much as the
+    needle work did. The standard principles, each with its reason:</p>
+    <ul>
+      <li><strong>Keep it clean, gently.</strong> Wash with clean hands and mild soap — the wound is open to bacteria
+      for the first days, and infection in the dermis destroys ink and scars.</li>
+      <li><strong>Moisturise thin, not thick.</strong> A thin film keeps the surface supple so it doesn't crack;
+      a thick suffocating layer traps moisture and bacteria and can draw ink out. The skin needs to breathe
+      to close.</li>
+      <li><strong>Never pick or scratch.</strong> Flaking skin and scabs are still attached to healing dermis;
+      pulling them pulls ink particles out with them, leaving pale gaps. Itching means healing — pat, don't
+      scratch.</li>
+      <li><strong>No soaking, no sun while healing.</strong> Long soaks soften scabs off early (same ink loss as
+      picking) and pools and baths are bacterial soups. Sun burns healing skin fast and starts breaking
+      pigment down before the tattoo has even settled.</li>
+      <li><strong>After it heals: sunscreen is the maintenance.</strong> For the UV reason above — every unprotected
+      summer spends a little of the tattoo.</li>
+    </ul>
+    <p class="small muted">This is general knowledge about how tattoos heal, printed so the reasoning is visible.
+    Real aftercare instructions come from the licensed tattooist who did the work and from local health
+    guidance — follow those over any page, including this one.</p>
+  </details>
+</section>
+
+<section id="record" aria-labelledby="record-h">
+  <h2 id="record-h">Your record</h2>
+  <p>Saved on this device only — nothing is sent anywhere. Call yourself anything:
+  <label for="alias" class="small"><strong>Practice name</strong></label>
+  <input type="text" id="alias" maxlength="30" placeholder="Any name you like" />
+  <button type="button" id="aliasSave">Save name — tap</button></p>
+  <p id="trendLine" class="muted">No attempts yet. Finish a level and your depth discipline trend will draw itself here.</p>
+  <div id="trendSvg"></div>
+  <div id="recordList"></div>
+  <div class="rowbtns">
+    <button type="button" id="exportBtn">Export record — tap to download it</button>
+    <button type="button" id="forgetBtn">Forget everything — tap to erase this device's record</button>
+  </div>
+  <p id="forgetMsg" class="small muted" aria-live="polite"></p>
+</section>
+
+<section id="settings" aria-labelledby="settings-h">
+  <h2 id="settings-h">Settings — the rules are settings</h2>
+  <div class="panel">
+    <h3>Teaching dial</h3>
+    <p>How much the page teaches while you play. Saved on this device.</p>
+    <div class="levelrow" role="group" aria-label="Teaching dial">
+      <button type="button" data-teach="off" aria-pressed="false">Off</button>
+      <button type="button" data-teach="light" aria-pressed="true">Light — a nudge after each attempt</button>
+      <button type="button" data-teach="coach" aria-pressed="false">Coach — full notes, tied to the theory</button>
+    </div>
+    <h3 style="margin-top:1.2rem">Depth window</h3>
+    <div class="banner">Variant — not the standard rule: the window below changes how strict the depth grading is. The standard game uses the Practice window.</div>
+    <div class="levelrow" role="group" aria-label="Depth window variant">
+      <button type="button" data-window="practice" aria-pressed="true">Practice window (standard) — 1.1 to 2.0&nbsp;mm</button>
+      <button type="button" data-window="narrow" aria-pressed="false">Narrow window (variant) — 1.3 to 1.8&nbsp;mm</button>
+    </div>
+    <p class="small muted">The narrow window is closer to how unforgiving real skin is. Grades earned under it
+    say so in your record, so the two never pretend to be the same achievement.</p>
+    <h3 style="margin-top:1.2rem">The ramp</h3>
+    <div class="levelrow" role="group" aria-label="Ramp setting">
+      <button type="button" data-ramp="guided" aria-pressed="true">Guided ramp (standard) — one rung at a time</button>
+      <button type="button" data-ramp="open" aria-pressed="false">Open bench — jump in anywhere</button>
+    </div>
+    <div class="banner">Variant — not the standard rule: Open bench removes the order and lets you start on any rung. The guided ramp is the standard because each rung adds exactly one new demand; jumping ahead stacks demands you haven't isolated yet.</div>
+    <p class="small muted">Under the guided ramp, a rung opens when the rung before it has one graded attempt
+    in your record — any grade. It is an order, not a paywall: switch to Open bench any time and every rung is
+    yours, and attempts under each setting are the same record, honestly labelled by level.</p>
+    <h3 style="margin-top:1.2rem">Steady hand — hand fatigue</h3>
+    <div class="levelrow" role="group" aria-label="Hand fatigue setting">
+      <button type="button" data-fatigue="off" aria-pressed="true">Fatigue off (standard)</button>
+      <button type="button" data-fatigue="on" aria-pressed="false">Fatigue on — your hand tires as you draw</button>
+    </div>
+    <p class="small muted">With fatigue on, a long piece drains your steadiness and wobble grows into the line,
+    the way a real hand tires — and real skin tires too: it swells over a long session and stops taking ink
+    cleanly, which is one reason big pieces are split across sittings. The Break button rests your hand back
+    to full. Attempts made with fatigue on say so in your record, with the steadiness you finished on.</p>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Copyleft:</strong> this page — its words, designs, and code — is shared under CC BY-SA 4.0 (code under GPL).
+  Take it, learn from it, build on it, and pass it on under the same freedom. The name stays ours; the work is yours.</p>
+  <p class="muted small">First Lines teaches knowledge and line discipline only. It qualifies nobody to tattoo.
+  Practice belongs on practice skin and fruit; tattooing people belongs to trained, apprenticed, licensed hands.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- storage (this device only) ---------- */
+var LS_SET="firstlines.settings.v1", LS_REC="firstlines.record.v1";
+function loadJSON(k,d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+var settings=Object.assign({teaching:"light",win:"practice",alias:"",ramp:"guided",fatigue:"off"},loadJSON(LS_SET,{}));
+var record=loadJSON(LS_REC,[]);
+var WIN = settings.win==="narrow" ? {lo:1.3,hi:1.8} : {lo:1.1,hi:2.0};
+
+/* ---------- download door ---------- */
+document.getElementById("downloadBtn").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="first-lines-tattoo-practice.html"; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400);
+});
+
+/* ---------- guide designs (original line art, drawn for this page) ---------- */
+function line(x1,y1,x2,y2){ var p=[],n=40,i; for(i=0;i<=n;i++) p.push([x1+(x2-x1)*i/n, y1+(y2-y1)*i/n]); return p; }
+function arc(cx,cy,r,a1,a2){ var p=[],n=60,i,a; for(i=0;i<=n;i++){ a=a1+(a2-a1)*i/n; p.push([cx+r*Math.cos(a), cy+r*Math.sin(a)]); } return p; }
+function sine(x1,x2,y,amp,f){ var p=[],n=90,i; for(i=0;i<=n;i++){ var x=x1+(x2-x1)*i/n; p.push([x, y+amp*Math.sin((x-x1)/(x2-x1)*Math.PI*2*f)]); } return p; }
+function bez(p0,p1,p2,p3){ var p=[],n=60,i,t; for(i=0;i<=n;i++){ t=i/n; var u=1-t;
+  p.push([u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],
+          u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]); } return p; }
+function leafPath(cx,cy,len,ang){ // an almond/leaf outline from two beziers
+  var dx=Math.cos(ang),dy=Math.sin(ang),px=-dy,py=dx;
+  var tip=[cx+dx*len, cy+dy*len], w=len*0.30;
+  var a=bez([cx,cy],[cx+dx*len*.4+px*w, cy+dy*len*.4+py*w],[cx+dx*len*.8+px*w, cy+dy*len*.8+py*w],tip);
+  var b=bez(tip,[cx+dx*len*.8-px*w, cy+dy*len*.8-py*w],[cx+dx*len*.4-px*w, cy+dy*len*.4-py*w],[cx,cy]);
+  return a.concat(b);
+}
+var LEVELS=[
+ { name:"Straight lines", desc:"Three straight pulls. The whole craft starts here: one confident pass, matched speed, depth in the window. Long lines expose everything — drift, wobble, and depth wander all show.",
+   brief:"Mara, the tattooist whose studio this is, sets the first test herself. Nobody's skin is on the line — her trust is. Clean straight pulls on practice skin are how you earn the right to be watched while you work.",
+   meaningGood:"Mara's read: steady hands, honest depth. She nods once — the nod every apprentice remembers — and starts watching your work instead of your hands.",
+   meaningRough:"Mara's read: not yet, and she says why, line by line. The pulls wobbled or the depth wandered. That is what practice skin is for — the lesson cost nothing but time.",
+   demand:"sustained even speed and depth over a long pull — nothing to hide behind.",
+   paths:[ line(120,170,780,170), line(120,320,780,320), line(120,470,780,470) ] },
+ { name:"Curves", desc:"A wave and a half-circle. Curves punish a stiff wrist: keep the speed even through the bend — slowing into a curve digs the needle deeper exactly where the line turns.",
+   brief:"For June, who has trusted Mara's studio for twenty years: a wave line she wants along her ankle, drawn from her own sketch. You practise it on practice skin first — her piece waits until your record says the curve is yours.",
+   meaningGood:"June sees the practice sheet and smiles: the wave moves like water, not wire. Her piece stays booked — and your name is now beside it in the studio book.",
+   meaningRough:"June's piece waits, and June is told plainly why: the curve isn't ready. She would rather wait a month than wear a wobble for life — that honesty is exactly what she trusts the studio for.",
+   demand:"holding that same speed and depth while the direction keeps changing.",
+   paths:[ sine(110,790,250,70,1.5), arc(450,430,130,Math.PI,0) ] },
+ { name:"Corners", desc:"A zigzag and a square. Corners are where lines blow out: the hand slows to turn, the needle dwells, depth spikes. Ease pressure as you turn, or carry the turn in one flowing motion.",
+   brief:"A cover-up study for Tom: a bold geometric piece to sit over an old name he has carried too long and never talks about. Corners are where cover-ups fail — a blown corner over old ink is twice as visible. Practise the study until the turns are clean.",
+   meaningGood:"The study holds at every corner. Tom looks at the practice sheet for a long moment: the old name is going to disappear under something he chose. That is the appointment he has wanted for years.",
+   meaningRough:"The corners blew or faded on the study — which is the study doing its job. Over real skin and old ink there is no practice run. Tom's appointment waits until the turns hold.",
+   demand:"turning without dwelling — the hand wants to pause at corners, and the needle punishes the pause.",
+   paths:[ [[110,180],[250,330],[390,180],[530,330],[670,180],[790,330]],
+           [[300,400],[600,400],[600,560],[300,560],[300,400]] ] },
+ { name:"Sprout & Moon — a whole design", desc:"Our own small design, drawn for this page: a curved stem, two leaves, and a moon circle. Work it in a sensible order — stem first, leaves next, moon last — the way you'd build any piece from structure to detail.",
+   brief:"The honour piece. For Priya: a small sprout under a moon, for her grandmother, who kept a garden behind her house and grew tomatoes in coffee tins. It is small, it will sit where everyone sees it, and it is the most important work in this studio — not because it is hard, but because of who it is for.",
+   meaningGood:"Priya holds the practice sheet like it is already the piece. The sprout stands, the moon is round, and her grandmother's garden has a new place to live. Work like this is why the studio exists.",
+   meaningRough:"Not yet — and Priya deserves the honesty more than she deserves a date. A memorial carried at the wrong depth fades or blurs, and some pieces only get one chance to be right. Practise until it holds.",
+   demand:"endurance and working order — several skills in one piece, sequenced the way a real piece is built.",
+   paths:[ bez([450,540],[430,450],[480,380],[450,300]),
+           leafPath(452,430,120,-2.25), leafPath(458,360,105,0.55),
+           arc(450,215,62,0,Math.PI*2),
+           line(415,545,485,545), line(390,565,510,565) ] },
+ { name:"Whip shading", desc:"Shade the leaf: start your strokes along the dark base line and whip outward, toward the tip, flicking faster and lighter as you go. Strokes are graded on direction and taper — ink dense at the base, dissolving at the tip.",
+   brief:"Back to June's wave: shading is what will make it water instead of wire. She asked for the gradient soft enough to look like the tide going out. Practise the whip on this leaf until the fade dissolves the way she described it.",
+   meaningGood:"The fade dissolves exactly the way June described the tide. She runs a finger over the practice sheet and says: that. That is the one.",
+   meaningRough:"The gradient piled up or ran the wrong way on the practice leaf — cheap tuition. On June's ankle the whip only gets one direction to be right in.",
+   demand:"a stroke that changes as it travels — direction and taper in a single flick.",
+   paths:[ leafPath(300,470,300,0.35) ], shade:true,
+   base: line(315,455,330,520), dir:[Math.cos(0.35),Math.sin(0.35)] }
+];
+
+/* ---------- canvas & state ---------- */
+var canvas=document.getElementById("skin"), ctx=canvas.getContext("2d");
+var levelIdx=0, mode="trace", stretch=false, healed=false;
+var strokes=[]; // each stroke: [{x,y,d,speed}]
+var drawing=false, cur=null, lastT=0, lastPt=null;
+var sawPressure=false;
+var fatigue=100, breaksTaken=0; // hand steadiness, when the fatigue setting is on
+
+function guideSamples(){
+  var pts=[], paths=LEVELS[levelIdx].paths, i,j;
+  for(i=0;i<paths.length;i++){ var p=paths[i];
+    for(j=0;j<p.length;j++) pts.push(p[j]); }
+  return pts;
+}
+function draw(){
+  var W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // practice-skin texture
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--skin")||"#f0d2a4";
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="rgba(120,80,40,.05)";
+  for(var i=0;i<260;i++){ ctx.fillRect((i*197)%W,(i*331)%H,3,3); }
+  var L=LEVELS[levelIdx];
+  // guide
+  ctx.lineJoin="round"; ctx.lineCap="round";
+  if(L.shade){
+    ctx.strokeStyle = mode==="trace" ? "rgba(90,60,30,.85)" : "rgba(90,60,30,.18)";
+    ctx.lineWidth=2.5; ctx.setLineDash([]);
+    pathStroke(L.paths[0]);
+    // base (dark) line
+    ctx.strokeStyle = mode==="trace" ? "rgba(38,34,30,.9)" : "rgba(38,34,30,.25)";
+    ctx.lineWidth=5; pathStroke(L.base);
+    if(mode==="trace"){ // direction arrows
+      ctx.strokeStyle="rgba(169,50,38,.75)"; ctx.lineWidth=3;
+      for(var a=0;a<3;a++){ var bx=345+a*70, by=505-a*28;
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+52,by-30); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx+52,by-30); ctx.lineTo(bx+38,by-30); ctx.moveTo(bx+52,by-30); ctx.lineTo(bx+50,by-16); ctx.stroke(); }
+      ctx.fillStyle="rgba(169,50,38,.9)"; ctx.font="bold 19px sans-serif";
+      ctx.fillText("whip this way →", 350, 560);
+    }
+  } else {
+    ctx.strokeStyle = mode==="trace" ? "rgba(90,60,30,.8)" : "rgba(90,60,30,.14)";
+    ctx.lineWidth=2.5; ctx.setLineDash([10,7]);
+    for(var k=0;k<L.paths.length;k++) pathStroke(L.paths[k]);
+    ctx.setLineDash([]);
+    if(mode==="free"){ // small reference, top-right
+      ctx.save(); ctx.translate(W-190,16); ctx.scale(.2,.2);
+      ctx.strokeStyle="rgba(38,34,30,.85)"; ctx.lineWidth=9;
+      for(var m=0;m<L.paths.length;m++) pathStroke(L.paths[m]);
+      ctx.restore();
+      ctx.fillStyle="rgba(38,34,30,.75)"; ctx.font="bold 15px sans-serif";
+      ctx.fillText("reference", W-178, 152);
+    }
+  }
+  // player strokes
+  for(var s=0;s<strokes.length;s++) drawStroke(strokes[s]);
+  if(cur) drawStroke(cur);
+}
+function pathStroke(p){
+  if(!p||p.length<2) return;
+  ctx.beginPath(); ctx.moveTo(p[0][0],p[0][1]);
+  for(var i=1;i<p.length;i++) ctx.lineTo(p[i][0],p[i][1]);
+  ctx.stroke();
+}
+function segStyle(d){
+  if(d<WIN.lo) return {col:"rgba(110,95,80,.55)", w:1.6, halo:0};       // shallow
+  if(d>WIN.hi) return {col:"rgba(38,34,30,.92)", w:6.5, halo:1};       // deep / blowout
+  return {col:"rgba(38,34,30,.95)", w:3.2, halo:0};                    // in window
+}
+function drawStroke(st){
+  if(!st||st.length<2) return;
+  for(var i=1;i<st.length;i++){
+    var a=st[i-1], b=st[i], stl=segStyle(b.d);
+    var alpha=1, w=stl.w;
+    if(healed){
+      if(b.d<WIN.lo){ alpha=.28; w=1.4; }
+      else if(b.d>WIN.hi){ w=10; alpha=.8; }
+    }
+    if(stl.halo||(healed&&b.d>WIN.hi)){
+      ctx.strokeStyle="rgba(70,60,90,.28)"; ctx.lineWidth=w+7;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+    ctx.globalAlpha=alpha; ctx.strokeStyle=stl.col; ctx.lineWidth=w;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ---------- depth model ---------- */
+var pressureSlider=document.getElementById("pressure");
+var gaugeMarker=document.getElementById("gaugeMarker"), gaugeText=document.getElementById("gaugeText");
+function depthFrom(pressure, speed){ // speed in canvas px per ms
+  var base=0.25+pressure*2.05;                    // pressure sets the seat of the needle
+  var dwell=Math.max(.62, Math.min(1.5, 1.28-speed*.55)); // slow = dwell = deeper
+  return Math.max(.1, Math.min(3.0, base*dwell));
+}
+function showDepth(d){
+  var pct=(1-d/3.0)*100;
+  gaugeMarker.style.top=pct+"%";
+  var zone = d<WIN.lo ? "too shallow — this heals faint" : (d>WIN.hi ? "TOO DEEP — blowout territory" : "in the window — the dermis");
+  gaugeText.textContent="Depth now: "+d.toFixed(2)+" mm — "+zone+".";
+}
+function canvasPos(e){
+  var r=canvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*canvas.width/r.width, y:(e.clientY-r.top)*canvas.height/r.height };
+}
+canvas.addEventListener("pointerdown",function(e){
+  e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+  drawing=true; cur=[]; lastT=performance.now(); lastPt=canvasPos(e);
+  if(e.pressure&&e.pressure>0){ sawPressure=true; }
+  cur.push({x:lastPt.x,y:lastPt.y,d:depthFrom(e.pressure>0?e.pressure:pressureSlider.value/100,0),speed:0});
+});
+canvas.addEventListener("pointermove",function(e){
+  if(!drawing) return;
+  var now=performance.now(), pt=canvasPos(e);
+  var dt=Math.max(1,now-lastT);
+  var dist=Math.hypot(pt.x-lastPt.x, pt.y-lastPt.y);
+  var speed=dist/dt;
+  var pressure=(e.pressure&&e.pressure>0)?e.pressure:pressureSlider.value/100;
+  if(e.pressure&&e.pressure>0&&!sawPressure){ sawPressure=true;
+    document.getElementById("pressureNote").textContent="Your pointer is giving real pressure — the page is using it. The slider steps back in whenever pressure reads zero."; }
+  var d=depthFrom(pressure,speed);
+  var x=pt.x,y=pt.y;
+  if(!stretch){ // skin gives: small drift
+    x+=Math.sin(now*.02+pt.y*.05)*1.6; y+=Math.cos(now*.017+pt.x*.04)*1.6;
+  }
+  if(settings.fatigue==="on"){ // a tiring hand wanders
+    fatigue=Math.max(0,fatigue-dist*0.016);
+    var amp=Math.pow((100-fatigue)/100,1.4)*7;
+    x+=Math.sin(now*.031+pt.y*.09)*amp; y+=Math.cos(now*.027+pt.x*.08)*amp;
+    showFatigue();
+  }
+  cur.push({x:x,y:y,d:d,speed:speed});
+  lastT=now; lastPt=pt; showDepth(d); draw();
+});
+function endStroke(){
+  if(!drawing) return; drawing=false;
+  if(cur&&cur.length>3) strokes.push(cur);
+  cur=null; draw();
+}
+canvas.addEventListener("pointerup",endStroke);
+canvas.addEventListener("pointercancel",endStroke);
+
+/* ---------- hand fatigue ---------- */
+function showFatigue(){
+  var on=settings.fatigue==="on";
+  document.getElementById("fatigueBox").style.display=on?"block":"none";
+  if(!on) return;
+  document.getElementById("fatiguePct").textContent=Math.round(fatigue)+"%";
+  var bar=document.getElementById("fatigueBar");
+  bar.style.width=fatigue+"%";
+  bar.style.background= fatigue>55 ? "var(--green)" : (fatigue>28 ? "var(--gold)" : "var(--accent)");
+  document.getElementById("fatigueNote").textContent= fatigue>55 ?
+    "Hand fatigue is on: the longer you draw without a break, the more your hand tires and the more wobble creeps into the line — the way a real hand tires over a long session." :
+    "Your hand is tiring — the wobble in the line is fatigue, not carelessness. A break restores steadiness: shake the hand out, stretch the fingers, re-set the grip. Real sessions are planned around this; real skin tires too, swelling and taking ink poorly late in a long sitting.";
+}
+document.getElementById("breakBtn").addEventListener("click",function(){
+  fatigue=100; breaksTaken++; showFatigue();
+  document.getElementById("fatigueNote").textContent="Break taken ("+breaksTaken+" this piece). Hand shaken out, fingers stretched, grip re-set — steadiness back to full. In a real studio this is also when you check the skin: has it swollen? Is it still taking ink cleanly? The break serves the hand and the canvas at once.";
+});
+
+/* ---------- controls ---------- */
+var levelDesc=document.getElementById("levelDesc");
+function setLevel(i){
+  levelIdx=i; strokes=[]; healed=false; fatigue=100; breaksTaken=0; showFatigue();
+  document.getElementById("healedBtn").setAttribute("aria-pressed","false");
+  var btns=document.querySelectorAll("[data-level]");
+  for(var b=0;b<btns.length;b++) btns[b].setAttribute("aria-pressed", String(+btns[b].getAttribute("data-level")===i));
+  levelDesc.textContent=LEVELS[i].desc+" The one new demand on this rung: "+LEVELS[i].demand;
+  document.getElementById("briefLine").textContent=LEVELS[i].brief;
+  document.getElementById("gradeArea").innerHTML="";
+  draw();
+}
+document.querySelectorAll("[data-level]").forEach(function(btn){
+  btn.addEventListener("click",function(){ setLevel(+btn.getAttribute("data-level")); });
+});
+/* ---------- the ramp (difficulty ladder, as a setting) ---------- */
+function levelUnlocked(i){
+  if(settings.ramp==="open"||i===0) return true;
+  return record.some(function(r){ return r.level===LEVELS[i-1].name; });
+}
+function refreshRamp(){
+  var locked=[];
+  document.querySelectorAll("[data-level]").forEach(function(btn){
+    var i=+btn.getAttribute("data-level"), un=levelUnlocked(i);
+    btn.disabled=!un;
+    if(!un) locked.push(LEVELS[i].name);
+  });
+  document.getElementById("rampNote").textContent = settings.ramp==="open" ?
+    "Open bench: every rung is available. Demands stack fast out of order — the grades will show it, and that is a fair lesson too." :
+    (locked.length ? "Guided ramp: still ahead of you — "+locked.join(", ")+". A rung opens when the one before it has a graded attempt in your record (any grade). Or switch the Ramp setting to Open bench." :
+    "Guided ramp: every rung is open — your record has carried you the whole way up the ladder.");
+}
+function setMode(m){
+  mode=m;
+  document.getElementById("modeTrace").setAttribute("aria-pressed",String(m==="trace"));
+  document.getElementById("modeFree").setAttribute("aria-pressed",String(m==="free"));
+  draw();
+}
+document.getElementById("modeTrace").addEventListener("click",function(){ setMode("trace"); });
+document.getElementById("modeFree").addEventListener("click",function(){ setMode("free"); });
+var stretchBtn=document.getElementById("stretchBtn");
+stretchBtn.addEventListener("click",function(){
+  stretch=!stretch;
+  stretchBtn.setAttribute("aria-pressed",String(stretch));
+  stretchBtn.textContent=stretch?"Skin stretch: ON — tap to release":"Skin stretch: OFF — tap to stretch";
+  document.getElementById("stretchNote").textContent=stretch?
+    "Stretched taut: the skin holds still and depth stays even. This is the free hand's whole job in real work.":
+    "Stretch is off: the skin gives as you draw, so your line can drift — that wobble is the lesson.";
+});
+document.getElementById("clearBtn").addEventListener("click",function(){
+  strokes=[]; healed=false; fatigue=100; breaksTaken=0; showFatigue(); document.getElementById("healedBtn").setAttribute("aria-pressed","false");
+  document.getElementById("gradeArea").innerHTML=""; draw();
+});
+document.getElementById("healedBtn").addEventListener("click",function(){
+  healed=!healed; this.setAttribute("aria-pressed",String(healed)); draw();
+});
+
+/* ---------- grading ---------- */
+function nearestDist(p,samples){
+  var best=1e9;
+  for(var i=0;i<samples.length;i++){ var dx=p.x-samples[i][0],dy=p.y-samples[i][1],d=dx*dx+dy*dy; if(d<best)best=d; }
+  return Math.sqrt(best);
+}
+function grade(){
+  var area=document.getElementById("gradeArea");
+  var all=[];
+  strokes.forEach(function(s){ s.forEach(function(p){ all.push(p); }); });
+  if(all.length<10){ area.innerHTML='<div class="panel"><p><strong>Nothing to grade yet.</strong> Draw the design on the skin first, then tap Finish &amp; grade.</p></div>'; return; }
+  var L=LEVELS[levelIdx], samples=guideSamples();
+  // coverage: guide samples within 16px of a drawn point
+  var covered=0;
+  samples.forEach(function(sp){
+    for(var i=0;i<all.length;i+=2){ if(Math.hypot(all[i].x-sp[0],all[i].y-sp[1])<16){ covered++; return; } }
+  });
+  var coverage=covered/samples.length;
+  // depth shares
+  var inWin=0,deep=0,shallow=0;
+  all.forEach(function(p){ if(p.d<WIN.lo)shallow++; else if(p.d>WIN.hi)deep++; else inWin++; });
+  var depthShare=inWin/all.length, deepShare=deep/all.length, shallowShare=shallow/all.length;
+  // blowouts & faint sections: contiguous runs
+  function runs(pred){ var n=0,run=0;
+    strokes.forEach(function(s){ run=0;
+      s.forEach(function(p){ if(pred(p)){ run++; if(run===14)n++; } else run=0; }); });
+    return n; }
+  var blowouts=runs(function(p){return p.d>WIN.hi;});
+  var faints=runs(function(p){return p.d<WIN.lo;});
+  // consistency: mean distance to guide (non-shade) or direction/taper (shade)
+  var score, consistencyTxt, extra={};
+  if(L.shade){
+    var dirOk=0,dirN=0,taperOk=0,taperN=0;
+    strokes.forEach(function(s){
+      for(var i=4;i<s.length;i++){
+        var vx=s[i].x-s[i-4].x, vy=s[i].y-s[i-4].y, m=Math.hypot(vx,vy);
+        if(m>4){ dirN++; if((vx*L.dir[0]+vy*L.dir[1])/m>0.55) dirOk++; }
+      }
+      for(var j=6;j<s.length;j++){ taperN++; if(s[j].d<=s[j-6].d+0.12) taperOk++; }
+    });
+    var dirShare=dirN?dirOk/dirN:0, taperShare=taperN?taperOk/taperN:0;
+    extra={dirShare:dirShare,taperShare:taperShare};
+    score=Math.round(100*(0.35*dirShare+0.25*taperShare+0.40*depthShare));
+    consistencyTxt="Direction "+Math.round(dirShare*100)+"% of stroke travel whipping the right way; taper held on "+Math.round(taperShare*100)+"% of the stroke length.";
+  } else {
+    var tot=0; all.forEach(function(p){ tot+=nearestDist(p,samples); });
+    var meanDev=tot/all.length;
+    var consist=Math.max(0,Math.min(1,1-meanDev/46));
+    extra={meanDev:meanDev};
+    // re-pass share: points landing within 10px of an earlier stroke
+    var repass=0;
+    for(var si=1;si<strokes.length;si++){
+      strokes[si].forEach(function(p){
+        for(var sj=0;sj<si;sj++){ var hit=false;
+          for(var q=0;q<strokes[sj].length;q+=2){ if(Math.hypot(p.x-strokes[sj][q].x,p.y-strokes[sj][q].y)<10){ hit=true; break; } }
+          if(hit){ repass++; break; } }
+      });
+    }
+    var repassShare=strokes.length>1?repass/Math.max(1,all.length-strokes[0].length):0;
+    extra.repassShare=repassShare;
+    score=Math.round(100*(0.34*coverage+0.30*consist+0.36*depthShare) - repassShare*22 - deepShare*10);
+    score=Math.max(0,Math.min(100,score));
+    consistencyTxt="Your line sat on average "+meanDev.toFixed(1)+" px from the guide. Re-passes covered "+Math.round(repassShare*100)+"% of the work — every re-pass is another injury to the same track of skin.";
+  }
+  var letter= score>=85?"A":score>=70?"B":score>=55?"C":score>=40?"D":"F";
+  var attempt={ when:new Date().toISOString(), level:L.name, mode:mode, letter:letter, score:score,
+    depthShare:Math.round(depthShare*100), blowouts:blowouts, faints:faints,
+    win: settings.win, by: settings.alias||"",
+    fatigueEnd: settings.fatigue==="on" ? Math.round(fatigue) : null, breaks: settings.fatigue==="on" ? breaksTaken : null };
+  record.push(attempt); saveJSON(LS_REC,record); renderRecord();
+
+  var html='<div class="panel"><h3>Grade: <span class="grade-'+letter+'">'+letter+'</span> ('+score+'/100) — '+L.name+' ('+(mode==="trace"?"Trace":"Freehand")+(settings.win==="narrow"?', narrow-window variant':'')+')</h3>';
+  html+='<div class="statgrid">'
+    +'<div class="stat"><b>'+Math.round(depthShare*100)+'%</b>Depth in the window — time your needle spent in the dermis, where ink holds.</div>'
+    +'<div class="stat"><b>'+blowouts+'</b>Blowout sections — runs of line pushed too deep, into the fat, where ink spreads and cannot be retrieved.</div>'
+    +'<div class="stat"><b>'+faints+'</b>Faint sections — runs of line too shallow, parked in the epidermis, which sheds within the month.</div>'
+    +(L.shade?'':'<div class="stat"><b>'+Math.round(coverage*100)+'%</b>Coverage — how much of the design you actually laid down.</div>')
+    +(settings.fatigue==="on"?'<div class="stat"><b>'+Math.round(fatigue)+'%</b>Hand steadiness at the finish — with '+breaksTaken+' break(s) taken. A tired hand wanders; the wobble in the back half of a long piece is usually fatigue, not talent leaving.</div>':'')
+    +'</div>';
+  html+='<p>'+consistencyTxt+'</p>';
+  html+='<p><strong>What it meant:</strong> '+(score>=55?L.meaningGood:L.meaningRough)+'</p>';
+  html+=coachNote({depthShare:depthShare,deepShare:deepShare,shallowShare:shallowShare,blowouts:blowouts,faints:faints,coverage:coverage,extra:extra,shade:!!L.shade,stretch:stretch,fatigueEnd:(settings.fatigue==="on"?Math.round(fatigue):null),breaks:breaksTaken});
+  html+='<p class="small muted">This attempt is in your record below, on this device only.</p></div>';
+  area.innerHTML=html;
+}
+function coachNote(m){
+  if(settings.teaching==="off") return "";
+  var worst = m.deepShare>=m.shallowShare ? "deep" : "shallow";
+  var main="";
+  if(m.blowouts>0 && worst==="deep"){
+    main="Your biggest leak is depth downward: "+m.blowouts+" blowout section(s). Remember the cross-section — below the dermis is loose fat with no mesh to hold ink, so every deep run spreads sideways and heals as a halo you cannot undo. Ease the pressure, and pick up a little hand speed through the slow parts: corners are where the hand dwells and the needle digs. A faint line can be touched up; a blown line is forever — aim your errors upward.";
+  } else if(m.faints>0){
+    main="Your biggest leak is depth upward: "+m.faints+" faint section(s). That ink is parked in the epidermis, and the epidermis is a conveyor belt — it sheds and renews about monthly, carrying shallow ink out with it. It looked fine while you drew it; the healed view (tap \u201CSee the healed result\u201D) shows what the month does. Seat the needle a touch deeper, or slow your hand slightly so each pass dwells long enough to deposit.";
+  } else if(m.depthShare>0.85){
+    main="Your depth discipline is the story here: "+Math.round(m.depthShare*100)+"% of the line lived in the dermis window, where macrophage cells trap the pigment and hold it for decades. That is the whole game — everything else is style.";
+  } else {
+    main="Your depth wandered both ways — "+Math.round(m.depthShare*100)+"% in the window. Depth wander usually means speed wander: the needle digs where the hand slows and skips where it hurries. Pick one steady hand speed and let the pressure, not the pace, set the depth.";
+  }
+  var extraLine="";
+  if(!m.shade && m.extra.repassShare>0.25) extraLine=" And a word on re-passes: "+Math.round(m.extra.repassShare*100)+"% of this piece went over old tracks. Skin counts every pass as a fresh injury — swelling, plasma, and damaged tissue that holds ink unevenly. One confident pass is not bravado; it is tissue management.";
+  if(!m.shade && !m.stretch) extraLine+=" You drew this unstretched — the drift in your line is the skin giving under the needle. Stretch it taut next attempt and compare consistency scores; that gap is why the free hand never rests.";
+  if(m.shade) extraLine=" Whip shading lives or dies on the exit: the flick must accelerate and lighten so the dots thin out. Ink density follows dwell — slow and deep at the base, fast and shallow at the tip, always whipping away from the dark.";
+  if(m.fatigueEnd!==null && m.fatigueEnd<55) extraLine+=" Your hand finished at "+m.fatigueEnd+"% steadiness after "+m.breaks+" break(s) — the late wobble in this piece is fatigue talking. Break earlier and more often: shake the hand out, stretch the fingers wide, roll the wrist, re-set the grip. And remember the other half of it — real skin tires too. It swells as a session runs long and stops taking ink cleanly, which is why honest studios split big pieces into sittings instead of heroically finishing. Overworking a tired hand on tired skin is how good designs get muddy endings.";
+  if(settings.teaching==="light"){
+    return '<div class="coach"><h3>Teaching note</h3><p>'+main+'</p></div>';
+  }
+  return '<div class="coach"><h3>Coach</h3><p>'+main+'</p><p>'+extraLine+'</p>'
+    +'<p class="small">The theory underneath: epidermis sheds, dermis holds, fat spreads. Every grade on this page is those three facts wearing numbers.</p></div>';
+}
+document.getElementById("gradeBtn").addEventListener("click",grade);
+
+/* ---------- cross-section diagram ---------- */
+var DEPTH_INFO={
+  shallow:{needle:-104,dots:[[250,64],[264,70],[240,72],[256,58]],html:"<strong>Too shallow (the epidermis).</strong> The needle kisses the top layer only. It can look fine on the day — but the epidermis renews itself completely in about a month, shedding its cells from the surface. Ink left here rides that conveyor out, and the line heals faint, patchy, and grey. Shallow is the forgiving error: a healed faint line can be re-lined. It just cannot be called finished."},
+  window:{needle:0,dots:[[252,150],[266,158],[240,160],[258,140],[246,146]],html:"<strong>In the window (the dermis).</strong> The dermis barely renews itself, and its collagen mesh traps the ink particles. Immune cells called macrophages grab the pigment and, being long-lived and going nowhere, hold it in place for decades. This is the only layer where a tattoo is permanent <em>and</em> crisp — which is why the whole craft is aimed at a band only a millimetre or two deep."},
+  deep:{needle:118,dots:[[238,282],[262,292],[286,284],[250,300],[272,272],[226,296],[296,298]],html:"<strong>Too deep (the fat layer).</strong> Under the dermis the tissue is loose fat with no collagen mesh to fence the ink in. Pigment migrates sideways along the loose tissue, so the line heals wider, with a permanent blurry halo — a <strong>blowout</strong>. There is no way to pull spread ink back. This is the unforgiving direction, and it is why depth discipline matters more than bravery."}
+};
+var needleGroup=document.getElementById("needleGroup"), inkDots=document.getElementById("inkDots");
+function setDepthView(k){
+  var info=DEPTH_INFO[k];
+  needleGroup.setAttribute("transform","translate(0,"+info.needle+")");
+  var s=""; info.dots.forEach(function(d){ s+='<circle cx="'+d[0]+'" cy="'+d[1]+'" r="'+(k==="deep"?6:4.5)+'"/>'; });
+  inkDots.innerHTML=s;
+  document.getElementById("depthExplain").innerHTML=info.html;
+  document.querySelectorAll("[data-depth]").forEach(function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-depth")===k)); });
+}
+document.querySelectorAll("[data-depth]").forEach(function(b){
+  b.addEventListener("click",function(){ setDepthView(b.getAttribute("data-depth")); });
+});
+
+/* ---------- studio standing (stakes: trust, not money) ---------- */
+var TIERS=[
+ { name:"New hand", need:"Where everyone starts.",
+   trust:"Mara watches your hands, not your work. Practice skin only.",
+   unlock:"Standing never locks a thing on this page, and neither does money — there isn't any. (The Ramp in Settings is an order you choose for yourself, and you can switch it off any time; that is self-discipline, not a door the studio closes.)" },
+ { name:"Watched hand", need:"2 graded attempts, at least one with 60% or more of the line in the window.",
+   trust:"Mara watches the work now. Client briefs — June's wave, Tom's cover-up study — are practised with her in the room.",
+   unlock:"What this standing hands you: briefs with a person attached. They help you learn the skill underneath every skill — working well while someone who trusts you is watching." },
+ { name:"Trusted hand", need:"5 graded attempts and at least one grade of B or better.",
+   trust:"The studio book carries your name beside real appointments. Your practice sheets are shown to clients as the reason their piece is safe with the studio.",
+   unlock:"What this standing hands you: the narrow depth window becomes Mara's expected standard — it helps you train for how unforgiving real skin is, before real skin is ever involved." },
+ { name:"Honour hand", need:"A grade of C or better on Sprout & Moon, the honour piece.",
+   trust:"Pieces that carry somebody's grief, memory, or second chance are offered to your practice first. In a real studio, this is the standing money cannot buy and has nothing to do with.",
+   unlock:"What this standing hands you: the honour briefs themselves. They help you learn to carry the weight of work that matters to somebody — the part of the craft no machine setting teaches." }
+];
+function standingTier(){
+  var t=0;
+  var goodDepth=record.some(function(r){ return r.depthShare>=60; });
+  if(record.length>=2 && goodDepth) t=1;
+  var best=record.reduce(function(m,r){ return Math.max(m,r.score); },0);
+  if(record.length>=5 && best>=70) t=2;
+  var honour=record.some(function(r){ return r.level.indexOf("Sprout")===0 && r.score>=55; });
+  if(honour && t>=1) t=3;
+  return t;
+}
+function renderStanding(){
+  var t=standingTier();
+  document.getElementById("standingNow").innerHTML="Your standing: <strong>"+TIERS[t].name+"</strong> — "+TIERS[t].trust;
+  var html="";
+  TIERS.forEach(function(tier,i){
+    var mark = i<t ? "Earned ✓" : (i===t ? "You are here" : "Ahead of you");
+    html+='<div class="recorditem"><strong>'+tier.name+'</strong> <span class="muted small">— '+mark+'</span><br>'
+      +'<span class="small">Earned by: '+tier.need+'</span><br>'
+      +'<span class="small">'+tier.unlock+'</span></div>';
+  });
+  document.getElementById("standingLadder").innerHTML=html;
+}
+
+/* ---------- record ---------- */
+function renderRecord(){
+  renderStanding(); refreshRamp();
+  var list=document.getElementById("recordList"), trend=document.getElementById("trendLine"), svg=document.getElementById("trendSvg");
+  if(!record.length){ list.innerHTML=""; trend.textContent="No attempts yet. Finish a level and your depth discipline trend will draw itself here."; svg.innerHTML=""; return; }
+  var who=settings.alias?(" for "+escapeHtml(settings.alias)):"";
+  var html="<h3>Attempts"+who+" ("+record.length+")</h3>";
+  record.slice().reverse().forEach(function(r){
+    var d=new Date(r.when);
+    html+='<div class="recorditem"><strong class="grade-'+r.letter+'">'+r.letter+'</strong> · '+escapeHtml(r.level)+' · '+r.mode
+      +' · depth in window '+r.depthShare+'% · '+r.blowouts+' blowout(s), '+r.faints+' faint section(s)'
+      +(r.win==="narrow"?' · <em>narrow-window variant</em>':'')
+      +(r.fatigueEnd!=null?' · <em>hand fatigue on — finished at '+r.fatigueEnd+'% steadiness, '+r.breaks+' break(s)</em>':'')
+      +' <span class="muted small">'+d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</span></div>';
+  });
+  list.innerHTML=html;
+  // trend sparkline of depthShare
+  var pts=record.map(function(r){return r.depthShare;});
+  trend.textContent="Depth discipline trend — share of each attempt spent in the dermis window, oldest to newest. Latest: "+pts[pts.length-1]+"%.";
+  var w=560,h=90,pad=8, stepX=pts.length>1?(w-2*pad)/(pts.length-1):0;
+  var pl=pts.map(function(v,i){ return (pad+i*stepX).toFixed(1)+","+(h-pad-(v/100)*(h-2*pad)).toFixed(1); }).join(" ");
+  svg.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img" aria-label="Sparkline of depth-in-window percentage across attempts">'
+    +'<line x1="'+pad+'" y1="'+(h-pad-0.8*(h-2*pad))+'" x2="'+(w-pad)+'" y2="'+(h-pad-0.8*(h-2*pad))+'" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="5 4"/>'
+    +'<polyline points="'+pl+'" fill="none" stroke="var(--accent)" stroke-width="3"/>'
+    + pts.map(function(v,i){ return '<circle cx="'+(pad+i*stepX)+'" cy="'+(h-pad-(v/100)*(h-2*pad))+'" r="4" fill="var(--accent)"/>'; }).join("")
+    +'<text x="'+pad+'" y="14" font-size="12" fill="currentColor">dashed line = 80% in-window</text></svg>';
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+document.getElementById("alias").value=settings.alias||"";
+document.getElementById("aliasSave").addEventListener("click",function(){
+  settings.alias=document.getElementById("alias").value.trim();
+  saveJSON(LS_SET,settings); renderRecord();
+});
+document.getElementById("exportBtn").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify({name:settings.alias||"",attempts:record},null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="first-lines-record.json";
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },400);
+});
+document.getElementById("forgetBtn").addEventListener("click",function(){
+  record=[]; saveJSON(LS_REC,record); renderRecord();
+  document.getElementById("forgetMsg").textContent="Forgotten. Every attempt on this device is erased. The skill, unfortunately for the skin, stays in your hands.";
+});
+
+/* ---------- settings ---------- */
+function applySettings(){
+  document.querySelectorAll("[data-teach]").forEach(function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-teach")===settings.teaching)); });
+  document.querySelectorAll("[data-window]").forEach(function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-window")===settings.win)); });
+  document.querySelectorAll("[data-ramp]").forEach(function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-ramp")===settings.ramp)); });
+  document.querySelectorAll("[data-fatigue]").forEach(function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-fatigue")===settings.fatigue)); });
+  WIN = settings.win==="narrow" ? {lo:1.3,hi:1.8} : {lo:1.1,hi:2.0};
+  showFatigue(); refreshRamp();
+}
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click",function(){ settings.teaching=b.getAttribute("data-teach"); saveJSON(LS_SET,settings); applySettings(); });
+});
+document.querySelectorAll("[data-window]").forEach(function(b){
+  b.addEventListener("click",function(){ settings.win=b.getAttribute("data-window"); saveJSON(LS_SET,settings); applySettings(); });
+});
+document.querySelectorAll("[data-ramp]").forEach(function(b){
+  b.addEventListener("click",function(){ settings.ramp=b.getAttribute("data-ramp"); saveJSON(LS_SET,settings); applySettings(); });
+});
+document.querySelectorAll("[data-fatigue]").forEach(function(b){
+  b.addEventListener("click",function(){ settings.fatigue=b.getAttribute("data-fatigue"); if(settings.fatigue==="on"){ fatigue=100; breaksTaken=0; } saveJSON(LS_SET,settings); applySettings(); });
+});
+
+/* ---------- init ---------- */
+applySettings(); renderRecord(); setLevel(0);
+})();
+</script>
+</body>
+</html>
