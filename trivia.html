@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Quiz Table — Trivia</title>
+<style>
+  :root{
+    --bg:#f2f5f1; --surface:#ffffff; --surface2:#e8efe8; --ink:#17211b; --muted:#526158;
+    --line:#cfdacf; --green:#14532d; --green-ink:#ffffff; --amber:#92400e; --amber-bg:#fdf0dd;
+    --good:#166534; --good-bg:#dcf2e2; --bad:#991b1b; --bad-bg:#fbe3e1; --gold:#b45309;
+    --chip:#e3ece3; --shadow:0 1px 3px rgba(20,40,25,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1511; --surface:#18211a; --surface2:#1f2b21; --ink:#e8efe9; --muted:#a7b8ab;
+      --line:#33453a; --green:#2f7d4f; --green-ink:#ffffff; --amber:#e8b06a; --amber-bg:#2c2417;
+      --good:#7bc98d; --good-bg:#173324; --bad:#f0a09a; --bad-bg:#3a1d1a; --gold:#e8b06a;
+      --chip:#243428; --shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;font-size:17px}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style",Palatino,serif;line-height:1.15;margin:0}
+  button,select,input{font:inherit;min-height:44px}
+  button{cursor:pointer}
+  .wrap{max-width:880px;margin:0 auto;padding:0 16px 64px}
+  .freeline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--green);color:#fff;padding:10px 16px;font-size:15px}
+  .freeline strong{font-weight:700}
+  .freeline button{background:#fff;color:var(--green);border:0;border-radius:6px;padding:8px 14px;font-weight:700;min-height:40px}
+  header.hero{padding:28px 0 8px}
+  header.hero h1{font-size:44px;letter-spacing:-.5px}
+  header.hero p.lede{font-size:19px;color:var(--muted);max-width:62ch;margin:10px 0 0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+  nav.compass a{color:var(--ink);text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-weight:600;min-height:44px;display:inline-flex;align-items:center}
+  nav.compass a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  section{margin-top:30px}
+  section>h2{font-size:27px;margin-bottom:6px}
+  section>p.sub{color:var(--muted);margin:0 0 14px;max-width:65ch}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow)}
+  .card + .card{margin-top:14px}
+  .variant-banner{background:var(--amber-bg);border:1px solid var(--amber);color:var(--ink);border-radius:8px;padding:10px 14px;font-size:15px;margin:12px 0}
+  .variant-banner strong{color:var(--amber)}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .seg button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:10px 16px;font-weight:700}
+  .seg button[aria-pressed="true"]{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+  .seg button small{display:block;font-weight:400;font-size:12.5px;opacity:.85}
+  label.field{display:block;font-weight:700;margin:14px 0 6px}
+  label.field span{font-weight:400;color:var(--muted);font-size:14.5px}
+  select,input[type="text"]{width:100%;max-width:420px;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+  .lifelines-set{display:grid;gap:10px;margin-top:8px}
+  .life-row{display:flex;gap:12px;align-items:flex-start;background:var(--surface2);border-radius:8px;padding:12px 14px}
+  .life-row input{width:24px;height:24px;min-height:24px;margin-top:3px;flex:none}
+  .life-row b{display:block}
+  .life-row span{color:var(--muted);font-size:15px}
+  .modegrid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:640px){.modegrid{grid-template-columns:1fr 1fr 1fr}}
+  .modecard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+  .modecard h3{font-size:20px}
+  .modecard p{margin:0;color:var(--muted);font-size:15.5px;flex:1}
+  .tag{align-self:flex-start;font-size:12.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:var(--chip);border-radius:5px;padding:3px 8px}
+  .tag.variant{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber)}
+  .btn{background:var(--green);color:var(--green-ink);border:0;border-radius:8px;padding:12px 18px;font-weight:700;width:100%}
+  .btn small{display:block;font-weight:400;font-size:12.5px;opacity:.9}
+  .btn.secondary{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  /* game */
+  #gameCard{display:none}
+  .qmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:14.5px;color:var(--muted)}
+  .qmeta .where{font-weight:700;color:var(--ink)}
+  .timerbar{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:12px 0 4px;display:none}
+  .timerbar i{display:block;height:100%;background:var(--gold);width:100%;transition:width 1s linear}
+  .timertext{font-size:14px;color:var(--muted);display:none}
+  #qText{font-size:23px;font-family:Georgia,serif;line-height:1.35;margin:14px 0 16px}
+  .opts{display:grid;gap:10px}
+  .opt{display:flex;gap:12px;align-items:center;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;width:100%;color:var(--ink)}
+  .opt .letter{flex:none;width:30px;height:30px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;font-weight:800}
+  .opt.correct{border-color:var(--good);background:var(--good-bg)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .opt.gone{opacity:.35;text-decoration:line-through}
+  .opt:disabled{cursor:default}
+  .lifeline-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .lifeline-row button{border:1.5px solid var(--gold);color:var(--ink);background:var(--amber-bg);border-radius:8px;padding:9px 13px;font-weight:700;font-size:15px}
+  .lifeline-row button small{display:block;font-weight:400;font-size:12px}
+  .lifeline-row button:disabled{opacity:.4}
+  .explain{display:none;margin-top:16px;border-radius:10px;padding:15px 16px;background:var(--surface2);border:1px solid var(--line)}
+  .explain.show{display:block}
+  .explain .verdict{font-weight:800;font-size:18px;margin-bottom:4px}
+  .explain .verdict.right{color:var(--good)} .explain .verdict.wrong{color:var(--bad)}
+  .explain p{margin:6px 0}
+  .explain .hook{font-style:italic}
+  .coachbox{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+  .coachbox b{color:var(--amber)}
+  .nextrow{margin-top:16px;display:none}
+  .nextrow.show{display:block}
+  .scorebar{display:flex;flex-wrap:wrap;gap:14px;font-weight:700;margin-top:10px;font-size:15.5px}
+  .scorebar span{color:var(--muted);font-weight:400}
+  /* strategies */
+  .strat{border-left:none}
+  .strat h3{font-size:19px;margin-bottom:4px}
+  .strat p{margin:4px 0}
+  .strat .trade{color:var(--muted);font-size:15.5px}
+  .strat .trade b{color:var(--ink)}
+  /* record */
+  .statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:640px){.statgrid{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--surface2);border-radius:10px;padding:13px;text-align:center}
+  .stat .n{font-size:27px;font-weight:800;font-family:Georgia,serif}
+  .stat .l{font-size:13.5px;color:var(--muted)}
+  table.acc{width:100%;border-collapse:collapse;margin-top:8px}
+  table.acc th,table.acc td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:15.5px}
+  table.acc td.num,table.acc th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;min-width:70px}
+  .bar i{display:block;height:100%;background:var(--green)}
+  .hist{font-size:15px;color:var(--muted)}
+  .hist li{margin:4px 0}
+  .rowbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .rowbtns button{border-radius:8px;padding:11px 16px;font-weight:700;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+  .rowbtns button.danger{border-color:var(--bad);color:var(--bad)}
+  .rowbtns button small{display:block;font-weight:400;font-size:12px}
+  details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 18px;margin-top:12px}
+  summary{font-weight:700;padding:10px 0;cursor:pointer;min-height:44px}
+  details p,details li{color:var(--ink);font-size:16px}
+  @media(max-width:560px){
+    table.acc th:last-child,table.acc td:last-child{display:none}
+    table.acc th,table.acc td{padding:8px 5px;font-size:14.5px}
+    header.hero h1{font-size:36px}
+    #qText{font-size:21px}
+  }
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:14.5px}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="freeline">
+  <div><strong>Free — always free.</strong> No ads, no account, no paywall, nothing to buy.</div>
+  <button id="offlineBtn" type="button">Save for offline — tap to download this page</button>
+</div>
+
+<div class="wrap">
+<header class="hero">
+  <h1>The Quiz Table</h1>
+  <p class="lede">Pull up a chair. Every question here was written for this table, and every answer — right or wrong — comes with the story of the fact, in plain words. A trivia game that only grades teaches nothing; this one teaches first.</p>
+  <div class="chips" id="bankChips"></div>
+</header>
+
+<nav class="compass" aria-label="Page compass">
+  <a href="#play">Play</a>
+  <a href="#strategies">Strategies</a>
+  <a href="#record">Your Record</a>
+  <a href="#rules">Rules &amp; Settings</a>
+  <a href="#about">About the Bank</a>
+</nav>
+
+<section id="play">
+  <h2>Play</h2>
+  <p class="sub">Pick a run, pick how much teaching you want, and play. Your name is never required — an alias is welcome, a blank is fine.</p>
+
+  <div class="card">
+    <label class="field" for="aliasInput">Play as <span>(optional — tap the box and type any name, or leave it blank)</span></label>
+    <input type="text" id="aliasInput" placeholder="e.g. Quiz Fox — or leave blank" autocomplete="off" />
+
+    <label class="field">Teaching <span>— how much help reaches you. Saved on this device only.</span></label>
+    <div class="seg" role="group" aria-label="Teaching level">
+      <button type="button" data-teach="off" aria-pressed="false">Off<small>Tap to choose — just answers</small></button>
+      <button type="button" data-teach="light" aria-pressed="true">Light<small>Tap to choose — the fact, explained</small></button>
+      <button type="button" data-teach="coach" aria-pressed="false">Coach<small>Tap to choose — facts + strategy</small></button>
+    </div>
+    <p id="teachNote" style="color:var(--muted);font-size:15px;margin:10px 0 0"></p>
+  </div>
+
+  <div class="modegrid" style="margin-top:14px">
+    <div class="modecard">
+      <span class="tag">Standard</span>
+      <h3>Solo Run</h3>
+      <p>Ten questions drawn from every category and tier. The house game — the one your record is built on.</p>
+      <button class="btn" id="startSolo" type="button">Start a Solo Run<small>Tap to start — 10 questions</small></button>
+    </div>
+    <div class="modecard">
+      <span class="tag">Standard</span>
+      <h3>Category Run</h3>
+      <p>All nine questions from one shelf. Best way to find out what you actually know — and what you only think you know.</p>
+      <select id="catSelect" aria-label="Choose a category — tap to open the list"></select>
+      <button class="btn" id="startCat" type="button" style="margin-top:8px">Start a Category Run<small>Tap to start — 9 questions</small></button>
+    </div>
+    <div class="modecard">
+      <span class="tag variant">Variant</span>
+      <h3>Timed Run</h3>
+      <p>Ten mixed questions, 20 seconds each. The clock is the variant — everything else plays by the standard rules.</p>
+      <button class="btn" id="startTimed" type="button">Start a Timed Run<small>Tap to start — clock running</small></button>
+    </div>
+  </div>
+
+  <div id="variantBanner" class="variant-banner hidden" role="status"></div>
+
+  <div class="card" id="gameCard" aria-live="polite">
+    <div class="qmeta">
+      <span class="where" id="qWhere"></span>
+      <span id="qProgress"></span>
+    </div>
+    <div class="timerbar" id="timerBar"><i id="timerFill"></i></div>
+    <div class="timertext" id="timerText"></div>
+    <div class="scorebar">
+      <div>Score <span id="sScore">0</span></div>
+      <div>Streak <span id="sStreak">0</span></div>
+      <div>Run <span id="sMode"></span></div>
+      <div id="sPlayer"></div>
+    </div>
+    <p id="coachPre" class="coachbox hidden" style="border:1px dashed var(--line);border-radius:8px;padding:10px 12px"></p>
+    <h3 id="qText"></h3>
+    <div class="opts" id="opts"></div>
+    <div class="lifeline-row" id="lifelineRow"></div>
+    <div style="margin-top:10px">
+      <button class="btn secondary" id="passBtn" type="button" style="width:auto">Pass — tap to skip and see the answer</button>
+    </div>
+    <div class="explain" id="explainBox">
+      <div class="verdict" id="verdict"></div>
+      <p id="factText"></p>
+      <p class="hook" id="hookText"></p>
+      <div class="coachbox hidden" id="coachPost"><b>Coach:</b> <span id="coachPostText"></span></div>
+    </div>
+    <div class="nextrow" id="nextRow">
+      <button class="btn" id="nextBtn" type="button">Next question<small>Tap to continue</small></button>
+    </div>
+    <div class="nextrow" id="finishRow">
+      <h3 id="finishTitle" style="font-size:22px;margin-bottom:6px"></h3>
+      <p id="finishText" style="margin:4px 0 12px"></p>
+      <button class="btn" id="againBtn" type="button">Play again<small>Tap to start a fresh run</small></button>
+      <button class="btn secondary" id="closeGameBtn" type="button" style="margin-top:8px">Close the table<small>Tap to go back to the modes</small></button>
+    </div>
+  </div>
+</section>
+
+<section id="strategies">
+  <h2>Strategies — more than one way to play</h2>
+  <p class="sub">There is rarely one right way to approach a question. Each strategy below is a real one players use, with its trade-off printed beside it. Coach mode brings the right one to the table at the right moment.</p>
+
+  <div class="card strat">
+    <h3>1. Elimination — rule out what you can prove wrong</h3>
+    <p>You rarely need to know the answer. You need to know two answers that <em>can't</em> be right. Cross those off and a blind guess becomes a coin flip.</p>
+    <p class="trade"><b>Trade-off:</b> costs time and only works when you truly know a fact about the wrong options — a guessed elimination can cross off the right answer.</p>
+  </div>
+  <div class="card strat">
+    <h3>2. Read for the trap</h3>
+    <p>Many questions hide a familiar-but-wrong option: Sydney for Australia's capital, the famous name instead of the right one. If one option feels <em>too</em> obvious, ask why it's there.</p>
+    <p class="trade"><b>Trade-off:</b> sometimes the obvious answer is simply right. Trap-hunting everything turns easy points into overthought misses.</p>
+  </div>
+  <div class="card strat">
+    <h3>3. Guess beats pass — when the maths says so</h3>
+    <p>Here, a wrong guess costs nothing extra and a pass scores zero. So a guess always beats a pass: one-in-four blind, one-in-two after eliminating two. Passing is only for protecting a streak you care about more than the point.</p>
+    <p class="trade"><b>Trade-off:</b> in games that punish wrong answers, the maths flips. Know which game you're in before you guess.</p>
+  </div>
+  <div class="card strat">
+    <h3>4. Lifeline judgment — spend them where they change the odds</h3>
+    <p>Fifty-fifty is worth most on a question where you know <em>nothing</em> — it doubles a blind guess. Swap is worth most on a category that's your weak shelf. Extra time only helps if you were close to an answer, not if you're blank.</p>
+    <p class="trade"><b>Trade-off:</b> a lifeline spent early can't save a later question. But a lifeline never spent is worth exactly zero.</p>
+  </div>
+  <div class="card strat">
+    <h3>5. Play your shelves honestly</h3>
+    <p>Your record (below) shows accuracy by category. In a Category Run, start on a strong shelf to build a streak, then take on a weak one while you're warm — the weak shelf is where the learning is.</p>
+    <p class="trade"><b>Trade-off:</b> comfort runs feel good and teach little. Weak-shelf runs feel worse and move the numbers that matter.</p>
+  </div>
+</section>
+
+<section id="record">
+  <h2>Your Record</h2>
+  <p class="sub">Kept on this device only, in one clean shape. Nothing is sent anywhere and no account exists. Export it to keep a copy; Forget clears it in one go.</p>
+  <div class="card">
+    <div class="statgrid">
+      <div class="stat"><div class="n" id="rGames">0</div><div class="l">Runs finished</div></div>
+      <div class="stat"><div class="n" id="rAnswered">0</div><div class="l">Questions answered</div></div>
+      <div class="stat"><div class="n" id="rAcc">—</div><div class="l">Overall accuracy</div></div>
+      <div class="stat"><div class="n" id="rStreak">0</div><div class="l">Best streak</div></div>
+    </div>
+    <h3 style="margin-top:20px;font-size:20px">Accuracy by category — your strong and weak shelves</h3>
+    <div style="overflow-x:auto"><table class="acc" id="catTable"><thead><tr><th>Category</th><th class="num">Answered</th><th class="num">Correct</th><th class="num">Accuracy</th><th></th></tr></thead><tbody></tbody></table></div>
+    <h3 style="margin-top:20px;font-size:20px">Accuracy by tier</h3>
+    <div style="overflow-x:auto"><table class="acc" id="tierTable"><thead><tr><th>Tier</th><th class="num">Answered</th><th class="num">Correct</th><th class="num">Accuracy</th><th></th></tr></thead><tbody></tbody></table></div>
+    <h3 style="margin-top:20px;font-size:20px">Recent runs</h3>
+    <ul class="hist" id="histList"><li>No runs yet — your finished runs will be listed here.</li></ul>
+    <div class="rowbtns">
+      <button type="button" id="exportBtn">Export record<small>Tap to download a JSON copy</small></button>
+      <button type="button" class="danger" id="forgetBtn">Forget everything<small>Tap to erase the record on this device</small></button>
+    </div>
+    <p id="forgetMsg" style="color:var(--bad);font-weight:700" class="hidden"></p>
+  </div>
+</section>
+
+<section id="rules">
+  <h2>Rules &amp; Settings</h2>
+  <p class="sub">The rules are settings. The standard set is printed plainly; change anything and the table labels your game a variant, on the banner above the board — never quietly.</p>
+  <div class="card">
+    <h3 style="font-size:20px">The standard game</h3>
+    <ul>
+      <li>Four options per question, exactly one right.</li>
+      <li>One point per right answer. No penalty for a wrong answer. A pass scores zero and shows the answer.</li>
+      <li>No clock in Solo and Category runs. Timed Run (20 seconds a question) is a labelled variant.</li>
+      <li>Standard lifelines, one use each per run: <b>Fifty-Fifty</b>, <b>Swap the Question</b>, <b>Extra Time</b> (Timed Run only — it adds 10 seconds).</li>
+      <li>Turning any lifeline off, or playing Timed, makes the run a <b>variant</b> and the banner says so.</li>
+    </ul>
+    <label class="field">Lifelines for your runs <span>— tap a box to turn one off or on</span></label>
+    <div class="lifelines-set">
+      <label class="life-row"><input type="checkbox" id="lifeFifty" checked /><span><b>Fifty-Fifty</b><span>Removes two wrong options, leaving the right answer and one wrong one.</span></span></label>
+      <label class="life-row"><input type="checkbox" id="lifeSwap" checked /><span><b>Swap the Question</b><span>Throws this question away and deals a fresh one from the same shelf.</span></span></label>
+      <label class="life-row"><input type="checkbox" id="lifeExtra" checked /><span><b>Extra Time</b><span>Timed Run only: adds 10 seconds to the clock on this question.</span></span></label>
+    </div>
+  </div>
+
+  <details>
+    <summary>How to play — tap to open</summary>
+    <p>Start a run. Read the question, tap an answer. Right or wrong, you get the fact explained in plain words (Light and Coach), then tap Next. Lifelines sit under the options — tap one to use it; each works once per run. Hold any control (or hover with a mouse) and most browsers will show its label; every control also says its gesture in words on its face.</p>
+  </details>
+  <details>
+    <summary>What the tiers mean — tap to open</summary>
+    <p><b>Gentle</b> — facts most people meet in everyday life. <b>Steady</b> — facts you likely learned once and can reach with a think. <b>Sharp</b> — facts for people who read around the subject. The tier is printed on every question, and your record keeps accuracy per tier so the label stays honest.</p>
+  </details>
+</section>
+
+<section id="about">
+  <h2>About the Bank</h2>
+  <div class="card">
+    <p id="bankAbout"></p>
+    <p>Fact discipline: every question sticks to a fact that is well established and not commonly disputed. Where sources commonly disagree — the longest river on Earth is the classic case — the question was left out entirely. A smaller honest bank beats a bigger shaky one.</p>
+    <p>Every question and every explanation was written for this page, in our own words. No published question bank, quiz book, or show's questions were copied.</p>
+  </div>
+</section>
+
+<footer>
+  <p>The Quiz Table is free, always — no ads, ever. Copyleft: this page and its question bank are shared under CC BY-SA 4.0; take it, remix it, pass it on under the same freedom. Your record lives on this device only and leaves only if you export it yourself.</p>
+</footer>
+</div>
+
+<script>
+/* ============ THE BANK — 72 original questions, written for this page ============ */
+/* c=category, t=tier (1 Gentle, 2 Steady, 3 Sharp), q, o=options, a=index of right option,
+   why=the fact in plain words, hook=one line to make it stick */
+var QUESTIONS = [
+/* ---------- HISTORY ---------- */
+{c:"History",t:1,q:"Which ancient people built the pyramids at Giza?",o:["The Romans","The ancient Egyptians","The Greeks","The Aztecs"],a:1,why:"The pyramids at Giza were built by the ancient Egyptians about 4,500 years ago, as tombs for their pharaohs. The Romans, Greeks and Aztecs all came along much later — the pyramids were already ancient when Rome was young.",hook:"When Cleopatra lived, the pyramids were already older to her than she is to us."},
+{c:"History",t:1,q:"Who was the first President of the United States?",o:["Thomas Jefferson","Abraham Lincoln","George Washington","John Adams"],a:2,why:"George Washington led the American army in the Revolutionary War and then became the first President in 1789. John Adams was second and Jefferson third; Lincoln came decades later, during the Civil War.",hook:"Washington is the only president who was elected with every single electoral vote — twice."},
+{c:"History",t:1,q:"In which year did the Second World War end?",o:["1918","1939","1945","1950"],a:2,why:"The Second World War ended in 1945 — Germany surrendered in May and Japan in September. 1918 was the end of the First World War, and 1939 was when the Second began.",hook:"The two world wars bookend a generation: 1918 ends the first, 1945 ends the second."},
+{c:"History",t:2,q:"In which year did the Berlin Wall fall?",o:["1979","1985","1989","1991"],a:2,why:"The Berlin Wall, which had split the city between East and West since 1961, fell in November 1989 as crowds crossed freely. Germany reunited the next year, and the Soviet Union dissolved in 1991.",hook:"The wall stood for 28 years — and fell in a single night, by accident of a muddled press announcement."},
+{c:"History",t:2,q:"Which empire built the Colosseum in Rome?",o:["The Greek empire","The Ottoman Empire","The Roman Empire","The Persian Empire"],a:2,why:"The Colosseum was built by the Roman Empire, opened in the year 80, and held tens of thousands of spectators for games and spectacles. It is the largest ancient amphitheatre ever built.",hook:"The Colosseum could be flooded to stage pretend sea battles — an arena that doubled as a lake."},
+{c:"History",t:2,q:"The ancient Olympic Games were held in honour of which Greek god?",o:["Apollo","Zeus","Poseidon","Ares"],a:1,why:"The ancient Games were held at Olympia as a festival for Zeus, king of the Greek gods, and a giant statue of Zeus stood at the site. The Games ran for nearly twelve centuries.",hook:"Olympia's statue of Zeus was so grand it became one of the Seven Wonders of the ancient world."},
+{c:"History",t:3,q:"Which treaty formally ended the First World War between Germany and the Allies?",o:["The Treaty of Paris","The Treaty of Versailles","The Treaty of Vienna","The Treaty of Utrecht"],a:1,why:"The Treaty of Versailles, signed in 1919 in the palace outside Paris, formally ended the war with Germany and set reparations and new borders. Its harsh terms became one of the grievances that fed the next war.",hook:"It was signed in a hall of mirrors — in the same palace where Germany had once proclaimed its empire."},
+{c:"History",t:3,q:"In which century did Johannes Gutenberg develop his movable-type printing press?",o:["The 13th century","The 14th century","The 15th century","The 17th century"],a:2,why:"Gutenberg developed his press in Germany in the 15th century, around 1440, and printed his famous Bible soon after. Cheap books spread literacy, science and news across Europe within a few generations.",hook:"Before the press, a Bible was copied by hand for years; after it, hundreds could be printed in months."},
+{c:"History",t:3,q:"Which country was the first to give women the right to vote in national elections?",o:["The United States","Britain","New Zealand","France"],a:2,why:"New Zealand led the world in 1893, when women won the vote in national elections. The United States followed in 1920, Britain fully in 1928, and France in 1944.",hook:"New Zealand's win came after petitions rolled into parliament — one of them over 270 metres long."},
+/* ---------- SCIENCE ---------- */
+{c:"Science",t:1,q:"What is the chemical symbol for water?",o:["CO2","O2","H2O","NaCl"],a:2,why:"Water is H2O: each molecule holds two hydrogen atoms and one oxygen atom. CO2 is carbon dioxide, O2 is oxygen gas, and NaCl is table salt.",hook:"The recipe is in the name — two H, one O, nothing else."},
+{c:"Science",t:1,q:"What force pulls objects toward the Earth?",o:["Magnetism","Friction","Gravity","Static"],a:2,why:"Gravity is the pull between anything with mass. Earth's gravity is what gives you weight, holds the Moon in orbit, and brings a dropped cup to the floor. Friction resists sliding; magnetism works on metals like iron.",hook:"The same gravity that drops your cup also holds the Moon up — one force, two scales."},
+{c:"Science",t:1,q:"How many legs does an insect have?",o:["Eight","Six","Ten","Four"],a:1,why:"Every insect has six legs, attached to its middle section. Eight legs marks out spiders and their kin, which are arachnids, not insects at all.",hook:"Count the legs: six says insect, eight says spider — the quickest ID in the garden."},
+{c:"Science",t:2,q:"Which gas do plants take in from the air to make food?",o:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],a:2,why:"Plants absorb carbon dioxide and, using sunlight, turn it into sugars — photosynthesis — releasing oxygen as the leftover. That is why growing forests are often called the planet's lungs, in reverse.",hook:"Plants breathe in what we breathe out, and breathe out what we breathe in."},
+{c:"Science",t:2,q:"What is the hardest naturally occurring substance on Earth?",o:["Quartz","Steel","Diamond","Obsidian"],a:2,why:"Diamond — pure carbon packed into an exceptionally tight crystal — tops the hardness scale for natural materials. A diamond can scratch every other natural substance, and only a diamond easily cuts a diamond.",hook:"Diamond and the soft graphite in a pencil are the same element: carbon, arranged differently."},
+{c:"Science",t:2,q:"Which part of a cell holds its DNA, the instructions for building the cell?",o:["The ribosome","The nucleus","The membrane","The vacuole"],a:1,why:"The nucleus is the cell's control centre and stores its DNA. The membrane is the cell's skin, ribosomes build proteins, and vacuoles store materials — but the instruction book lives in the nucleus.",hook:"Every cell in your body carries the same instruction book; the nucleus is where it's shelved."},
+{c:"Science",t:3,q:"Roughly how fast does light travel in a vacuum?",o:["300 kilometres per second","3,000 kilometres per second","300,000 kilometres per second","3 million kilometres per second"],a:2,why:"Light travels at about 300,000 kilometres per second in a vacuum — fast enough to circle the Earth about seven and a half times in one second. Nothing with mass can reach that speed.",hook:"Sunlight is about eight minutes old when it reaches your face."},
+{c:"Science",t:3,q:"Which cells in the blood carry oxygen around the body?",o:["White blood cells","Platelets","Red blood cells","Plasma cells"],a:2,why:"Red blood cells carry oxygen from the lungs to the tissues, using a protein called haemoglobin, which is also what makes blood red. White cells fight infection and platelets help blood clot.",hook:"A single drop of blood holds millions of red cells, each one a delivery van for oxygen."},
+{c:"Science",t:3,q:"On the pH scale, what number is neutral — neither acid nor alkali?",o:["0","1","7","14"],a:2,why:"The pH scale runs from 0 to 14, with 7 in the middle as neutral — pure water sits there. Below 7 is acidic, like lemon juice; above 7 is alkaline, like soap.",hook:"Seven is the Switzerland of the scale: neutral, in the exact middle."},
+/* ---------- GEOGRAPHY ---------- */
+{c:"Geography",t:1,q:"What is the capital of France?",o:["London","Paris","Brussels","Amsterdam"],a:1,why:"Paris is the capital of France and its largest city, home to the Eiffel Tower and the seat of the French government. London, Brussels and Amsterdam are the capitals of the UK, Belgium and the Netherlands.",hook:"Paris got its nickname 'City of Light' partly from being an early city to light its streets."},
+{c:"Geography",t:1,q:"Which is the largest ocean on Earth?",o:["The Atlantic","The Indian","The Arctic","The Pacific"],a:3,why:"The Pacific is by far the largest ocean, covering roughly a third of Earth's surface — more than all the land on the planet combined. It stretches from Asia and Australia to the Americas.",hook:"You could fit every continent inside the Pacific and still have water to spare."},
+{c:"Geography",t:1,q:"On which continent is the Sahara Desert?",o:["Asia","Australia","Africa","South America"],a:2,why:"The Sahara spreads across North Africa and is the largest hot desert in the world, nearly the size of the United States. Its name simply comes from the Arabic word for desert.",hook:"The Sahara is so big that the whole United States could sit inside it."},
+{c:"Geography",t:2,q:"What is the capital of Australia?",o:["Sydney","Melbourne","Canberra","Perth"],a:2,why:"Canberra is Australia's capital — a planned city built because Sydney and Melbourne both wanted the honour and neither would give way. Sydney is the largest city, but it is not the capital. This is the classic trivia trap.",hook:"Australia built a whole new city just to settle an argument between two older ones."},
+{c:"Geography",t:2,q:"Which river flows through London?",o:["The Seine","The Danube","The Thames","The Rhine"],a:2,why:"The Thames flows through London on its way to the North Sea, passing the Tower of London and the Houses of Parliament. The Seine belongs to Paris, the Danube to Vienna and Budapest, the Rhine to western Germany.",hook:"The Thames has been London's main street for two thousand years — the city grew around it."},
+{c:"Geography",t:2,q:"Mount Everest stands on the border of Nepal and which other country?",o:["India","China","Bhutan","Pakistan"],a:1,why:"Everest, the world's highest mountain above sea level, sits on the border between Nepal and the Tibet region of China. Climbers approach from both sides.",hook:"Everest is still growing — the colliding continents push it up a few millimetres a year."},
+{c:"Geography",t:3,q:"What is the smallest country in the world by area?",o:["Monaco","Malta","Vatican City","Liechtenstein"],a:2,why:"Vatican City, inside Rome, covers less than half a square kilometre — smaller than many farms — yet it is a fully independent country with its own stamps, coins and head of state, the Pope.",hook:"You can walk across the entire country in about fifteen minutes."},
+{c:"Geography",t:3,q:"What is the capital of Iceland?",o:["Oslo","Reykjavik","Helsinki","Tallinn"],a:1,why:"Reykjavik is Iceland's capital and home to about a third of the country's people. Its name means 'smoky bay', from the steam of the hot springs the first settlers saw there.",hook:"Reykjavik runs almost entirely on geothermal power — the 'smoke' in its name is steam from the Earth itself."},
+{c:"Geography",t:3,q:"Which country has the most natural lakes in the world?",o:["Russia","The United States","Canada","Finland"],a:2,why:"Canada holds more natural lakes than any other country — by many counts, more than half of all the lakes on Earth — carved out by glaciers in the last ice age.",hook:"Finland calls itself the land of a thousand lakes; Canada quietly holds hundreds of thousands."},
+/* ---------- MUSIC ---------- */
+{c:"Music",t:1,q:"How many strings does a standard guitar have?",o:["Four","Five","Six","Twelve"],a:2,why:"A standard guitar has six strings, tuned from low E to high E. Four strings is a standard bass guitar or a ukulele; twelve-string guitars exist but are a special variant, not the standard.",hook:"Six strings, remembered by the phrase guitarists learn first: Eddie Ate Dynamite, Good Bye Eddie."},
+{c:"Music",t:1,q:"Which composer became deaf yet kept writing music, including his Ninth Symphony?",o:["Mozart","Bach","Beethoven","Chopin"],a:2,why:"Ludwig van Beethoven lost his hearing gradually and was profoundly deaf when he composed much of his greatest work, including the Ninth Symphony with its 'Ode to Joy'. He heard the music in his mind and felt vibrations through the floor.",hook:"At the Ninth's premiere, Beethoven had to be turned around to see the applause he could not hear."},
+{c:"Music",t:1,q:"How many keys does a standard piano have?",o:["76","84","88","96"],a:2,why:"A standard piano has 88 keys: 52 white and 36 black, spanning just over seven octaves. That range has been the standard since the late 1800s.",hook:"88 keys — the number every piano tuner and mover knows by heart, usually with feeling."},
+{c:"Music",t:2,q:"How many symphonies did Beethoven compose?",o:["Five","Nine","Twelve","Forty-one"],a:1,why:"Beethoven wrote nine symphonies, the last containing the 'Ode to Joy'. Forty-one was Mozart's symphony count — Mozart wrote far more, far faster, in a much shorter life.",hook:"Nine became the famous 'curse' number — later composers joked that a tenth symphony was tempting fate."},
+{c:"Music",t:2,q:"In music, what does 'tempo' describe?",o:["How loud the music is","The speed of the music","The key of the music","How many instruments play"],a:1,why:"Tempo is the speed of the beat — how fast or slow the music moves. Loudness is called dynamics, and tempo is why the same song can feel calm at one speed and frantic at another.",hook:"Tempo comes from the Latin word for time — it is literally the music's clock."},
+{c:"Music",t:2,q:"To which family of instruments does the violin belong?",o:["Brass","Woodwind","Percussion","Strings"],a:3,why:"The violin is the smallest and highest-sounding member of the string family, played with a bow drawn across its strings. Its bigger relatives are the viola, cello and double bass.",hook:"The whole string family is one idea at four sizes — violin, viola, cello, bass."},
+{c:"Music",t:3,q:"Who composed 'The Four Seasons', a set of violin concertos about the year?",o:["Handel","Vivaldi","Telemann","Bach"],a:1,why:"Antonio Vivaldi, an Italian composer and priest, wrote The Four Seasons in the 1720s — four concertos painting spring birdsong, summer storms, autumn hunts and icy winter in sound.",hook:"Vivaldi printed poems alongside the music so listeners could hear exactly which bird or storm was playing."},
+{c:"Music",t:3,q:"In the time signature 3/4, what does the 3 tell the player?",o:["Play three times","Three beats in every bar","Three sharps in the key","A tempo of three"],a:1,why:"The top number of a time signature counts the beats in each bar — so 3/4 means three beats per bar, the rhythm of a waltz. The bottom number says what kind of note gets one beat.",hook:"If you can sway 'one-two-three, one-two-three', you are counting 3/4 with your body."},
+{c:"Music",t:3,q:"Orchestras worldwide tune to a standard pitch for the note A. What is that pitch?",o:["220 vibrations per second","330 vibrations per second","440 vibrations per second","880 vibrations per second"],a:2,why:"The A above middle C is set at 440 vibrations per second (440 hertz) as the international tuning standard, agreed in the 20th century so orchestras everywhere tune to the same note.",hook:"One shared A is the handshake that lets any orchestra in the world play together in tune."},
+/* ---------- SPORTS ---------- */
+{c:"Sports",t:1,q:"How many players does a football (soccer) team have on the field at once?",o:["Nine","Ten","Eleven","Twelve"],a:2,why:"A football team fields eleven players, including the goalkeeper. Nine is baseball's number on the field, and rugby uses thirteen or fifteen depending on the code.",hook:"Eleven a side — count the goalkeeper, the one player allowed to use hands."},
+{c:"Sports",t:1,q:"In tennis, what word means a score of zero?",o:["Deuce","Ace","Love","Let"],a:2,why:"In tennis, zero is called 'love' — so 15-love means fifteen to nothing. An ace is a serve the opponent cannot touch, and deuce is the tied score at 40-40.",hook:"Nobody fully agrees where 'love' came from — one theory traces it to the French word for egg, l'oeuf, shaped like a zero."},
+{c:"Sports",t:1,q:"How many rings appear on the Olympic flag?",o:["Four","Five","Six","Seven"],a:1,why:"The Olympic flag carries five interlaced rings, standing for the inhabited continents joined by sport. Their colours, with the white background, were chosen because every nation's flag contains at least one of them.",hook:"Five rings, and every flag on Earth matches at least one colour in the design."},
+{c:"Sports",t:2,q:"About how long is a marathon?",o:["About 10 miles","About 16 miles","About 26 miles","About 40 miles"],a:2,why:"A marathon is 26.2 miles — 42.2 kilometres. The distance was standardised after the 1908 London Olympics, when the course was lengthened so the race could finish in front of the royal box.",hook:"The odd '.2' exists because of a royal viewing box at the 1908 London Games."},
+{c:"Sports",t:2,q:"How often are the Summer Olympic Games held?",o:["Every two years","Every three years","Every four years","Every five years"],a:2,why:"The Summer Olympics run on a four-year cycle, as the ancient Games did. Winter Games sit in between, so some kind of Olympics now arrives every two years.",hook:"The four-year gap between Games has its own name: an Olympiad."},
+{c:"Sports",t:2,q:"In golf, what is a score of one stroke under par on a hole called?",o:["A bogey","An eagle","A birdie","An albatross"],a:2,why:"One under par is a birdie. One over is a bogey, two under is an eagle, and three under — the rarest of the set — is an albatross.",hook:"The names climb like the birds: birdie, eagle, albatross — each rarer and bigger than the last."},
+{c:"Sports",t:3,q:"In which year and city were the first modern Olympic Games held?",o:["1900, Paris","1896, Athens","1904, St Louis","1924, Paris"],a:1,why:"The modern Olympics were revived in Athens in 1896, in the city and country where the ancient Games began. Paris hosted the second edition in 1900.",hook:"The first modern marathon was invented for those 1896 Games, retracing the legend of a Greek messenger."},
+{c:"Sports",t:3,q:"Which sport is played with a shuttlecock?",o:["Squash","Badminton","Table tennis","Lacrosse"],a:1,why:"Badminton is played with a shuttlecock — a cork base with a skirt of feathers or plastic — hit back and forth over a net with light rackets. A struck shuttlecock is among the fastest objects in all sport.",hook:"A smashed shuttlecock can leave the racket faster than a racing car at full speed — then slows almost at once."},
+{c:"Sports",t:3,q:"In baseball, how many bases are there, counting home plate?",o:["Three","Four","Five","Two"],a:1,why:"A baseball diamond has four bases: first, second, third, and home plate, where the batter starts and where runs are scored. Runners must touch them in order to complete the circuit.",hook:"The diamond is a square walked in order — miss one base and the whole trip doesn't count."},
+/* ---------- FOOD ---------- */
+{c:"Food",t:1,q:"What is the main ingredient in guacamole?",o:["Tomato","Avocado","Onion","Pepper"],a:1,why:"Guacamole is built on mashed avocado, with lime, salt, onion and chilli added around it. It comes from Mexico, where avocados have been grown for thousands of years.",hook:"The name traces back to words for 'avocado sauce' — the avocado was the point from the start."},
+{c:"Food",t:1,q:"Sushi comes from which country's cooking?",o:["China","Korea","Japan","Thailand"],a:2,why:"Sushi — seasoned rice paired with fish and other toppings — is Japanese. Its roots lie in an older method of preserving fish in fermented rice, which Japan refined into the dish the world knows.",hook:"The word sushi actually refers to the seasoned rice, not the fish on top of it."},
+{c:"Food",t:1,q:"What is the main ingredient in hummus?",o:["Lentils","Chickpeas","White beans","Peas"],a:1,why:"Hummus is made from chickpeas blended with tahini (sesame paste), lemon and garlic. It has been eaten across the Middle East for centuries and the name itself is the Arabic word for chickpeas.",hook:"Hummus simply means 'chickpeas' — the dish is named after its main act."},
+{c:"Food",t:2,q:"Which cheese is traditional on a pizza Margherita?",o:["Cheddar","Parmesan","Mozzarella","Gouda"],a:2,why:"A Margherita carries mozzarella, tomato and basil — red, white and green, the colours of the Italian flag. The pizza is named for Queen Margherita of Italy, who was served it in Naples in 1889.",hook:"It's a flag you can eat: tomato red, mozzarella white, basil green."},
+{c:"Food",t:2,q:"At sea level, at what temperature does water boil?",o:["90 degrees Celsius","100 degrees Celsius","110 degrees Celsius","120 degrees Celsius"],a:1,why:"At sea level, water boils at 100 degrees Celsius (212 Fahrenheit). Higher up a mountain the air pressure is lower, so water boils cooler — which is why cooking times change at altitude.",hook:"The Celsius scale was built around water: 0 for freezing, 100 for boiling."},
+{c:"Food",t:2,q:"Saffron, the world's priciest spice by weight, comes from which flower?",o:["The rose","The crocus","The orchid","The tulip"],a:1,why:"Saffron is the dried red stigma of the crocus flower — and each flower gives only three tiny threads, picked by hand. It takes well over a hundred thousand flowers to make a single kilogram.",hook:"Saffron costs what it costs because a kilogram of it is a hundred thousand flowers, picked one by one."},
+{c:"Food",t:3,q:"Umami, the fifth basic taste, is best described as which flavour?",o:["Sweet","Sour","Savoury","Bitter"],a:2,why:"Umami is the savoury, brothy taste found in cooked meat, mushrooms, tomatoes and aged cheese. It was identified in Japan in 1908 and is now counted alongside sweet, sour, salty and bitter.",hook:"If a food tastes 'more-ish' and deep rather than sweet or salty, that's umami introducing itself."},
+{c:"Food",t:3,q:"What gas, made by yeast, makes bread dough rise?",o:["Oxygen","Nitrogen","Carbon dioxide","Steam"],a:2,why:"Yeast feeds on sugars in the dough and gives off carbon dioxide. The gas forms bubbles that stretch the dough upward — and the oven's heat finishes the rise before the yeast dies.",hook:"Bread is a foam that got baked — every hole in a slice is a bubble the yeast blew."},
+{c:"Food",t:3,q:"Which vitamin are citrus fruits especially rich in?",o:["Vitamin A","Vitamin C","Vitamin D","Vitamin B12"],a:1,why:"Oranges, lemons and other citrus fruits are rich in vitamin C, which the body needs for skin, healing and the immune system. Sailors once carried citrus on long voyages to prevent scurvy, the disease caused by lacking it.",hook:"British sailors were nicknamed 'limeys' because of the citrus loaded onto their ships."},
+/* ---------- SPACE ---------- */
+{c:"Space",t:1,q:"Which planet is closest to the Sun?",o:["Venus","Earth","Mercury","Mars"],a:2,why:"Mercury is the closest planet to the Sun and also the smallest of the eight planets. It races around the Sun in just 88 days — the fastest orbit of any planet.",hook:"Mercury's year is 88 days: it celebrates four birthdays in one of ours."},
+{c:"Space",t:1,q:"Which planet is known as the Red Planet?",o:["Jupiter","Mars","Venus","Saturn"],a:1,why:"Mars looks red because its surface is rich in iron oxide — literally rust. Dust storms spread that rusty colour across the whole planet, which is why it glows reddish in our night sky.",hook:"The Red Planet is red for the same reason an old nail is: rust."},
+{c:"Space",t:1,q:"What sits at the centre of our solar system?",o:["The Earth","The Moon","The Sun","A black hole"],a:2,why:"The Sun — a star — sits at the centre, and its gravity holds all eight planets in orbit. It holds about 99.8 percent of all the mass in the solar system.",hook:"Everything else in the solar system is a rounding error next to the Sun's mass."},
+{c:"Space",t:2,q:"Who was the first human to travel into space?",o:["Neil Armstrong","Buzz Aldrin","Yuri Gagarin","Alan Shepard"],a:2,why:"Yuri Gagarin, a Soviet cosmonaut, orbited the Earth once in April 1961 and became the first human in space. Armstrong's Moon landing came eight years later, in 1969.",hook:"Gagarin's whole flight lasted 108 minutes — and changed what humans believed was possible."},
+{c:"Space",t:2,q:"Which is the largest planet in our solar system?",o:["Saturn","Neptune","Jupiter","Earth"],a:2,why:"Jupiter is the giant: more massive than all the other planets put together, with a storm — the Great Red Spot — wider than the Earth, which has raged for centuries.",hook:"Jupiter is so big that every other planet could fit inside it with room left over."},
+{c:"Space",t:2,q:"What mainly causes the ocean tides on Earth?",o:["Ocean winds","The Moon's gravity","Earth's rotation alone","Underwater earthquakes"],a:1,why:"The Moon's gravity pulls on Earth's oceans, raising bulges of water that we experience as high tides as the planet rotates beneath them. The Sun adds a smaller pull of its own.",hook:"Every tide is the Moon quietly tugging the sea toward it."},
+{c:"Space",t:3,q:"Roughly how long does sunlight take to reach Earth?",o:["About 8 seconds","About 8 minutes","About 8 hours","About 8 days"],a:1,why:"Light is fast but the Sun is far — about 150 million kilometres — so sunlight takes roughly eight minutes to arrive. When you look at the Sun, you see it as it was eight minutes ago.",hook:"Every sunrise is eight minutes old by the time it touches you."},
+{c:"Space",t:3,q:"Which planet spins on its side, rolling around the Sun like a barrel?",o:["Neptune","Venus","Uranus","Mercury"],a:2,why:"Uranus is tilted about 98 degrees, so it effectively rolls around the Sun on its side, with its rings standing upright. Scientists think an ancient collision with another large body knocked it over.",hook:"Uranus's seasons last about twenty years each — a pole can face the Sun for two decades straight."},
+{c:"Space",t:3,q:"What is the name of the galaxy that contains our solar system?",o:["Andromeda","The Milky Way","Triangulum","The Large Magellanic Cloud"],a:1,why:"Our solar system sits in the Milky Way, a spiral galaxy of hundreds of billions of stars. Its name comes from the pale band of starlight it makes across our night sky. Andromeda is our large neighbour galaxy.",hook:"On a dark night, that milky band overhead is our own galaxy seen edge-on from inside."},
+/* ---------- ANIMALS ---------- */
+{c:"Animals",t:1,q:"Which is the fastest land animal?",o:["The lion","The horse","The cheetah","The greyhound"],a:2,why:"The cheetah is the fastest land animal, able to reach around 60 miles per hour in short bursts. It is built for the sprint — but it can only hold that speed for well under a minute.",hook:"A cheetah accelerates faster than most sports cars — then needs a long rest to pay for it."},
+{c:"Animals",t:1,q:"How many legs does a spider have?",o:["Six","Eight","Ten","Twelve"],a:1,why:"Spiders have eight legs, which is one way to tell them from insects, which have six. Spiders belong to the arachnids, a group that also includes scorpions and ticks.",hook:"Six legs, insect. Eight legs, spider. The count never lies."},
+{c:"Animals",t:1,q:"What is a baby frog called?",o:["A tadpole","A fry","A cub","A pupa"],a:0,why:"A young frog is a tadpole: it hatches from an egg into water with a tail and gills, then slowly grows legs, loses the tail and becomes a frog that can live on land.",hook:"A tadpole is a fish-shaped beginning to a land animal's life — it rebuilds itself as it grows."},
+{c:"Animals",t:2,q:"What is the largest mammal in the world?",o:["The African elephant","The blue whale","The giraffe","The polar bear"],a:1,why:"The blue whale is the largest mammal — and the largest animal known ever to have lived — reaching around 30 metres long. Even the biggest dinosaurs were lighter than a full-grown blue whale.",hook:"A blue whale's heart is about the size of a small car."},
+{c:"Animals",t:2,q:"What is a group of wolves called?",o:["A herd","A flock","A pack","A swarm"],a:2,why:"A group of wolves is a pack — usually a family: a breeding pair and their offspring of different ages. Herds are grazers like cattle, flocks are birds or sheep, and swarms are insects.",hook:"A wolf pack is less a gang than a family with a very organised dinner table."},
+{c:"Animals",t:2,q:"Which flightless bird is an expert swimmer and lives around Antarctica?",o:["The ostrich","The penguin","The kiwi","The emu"],a:1,why:"Penguins traded flight for swimming: their wings became flippers, and they 'fly' through the water after fish and krill. Most species live in the cold waters around Antarctica and the southern continents.",hook:"A penguin is a bird that looked at the sky, looked at the sea, and chose the sea."},
+{c:"Animals",t:3,q:"How many hearts does an octopus have?",o:["One","Two","Three","Four"],a:2,why:"An octopus has three hearts: two pump blood to the gills and one pumps it around the body. Its blood is blue, because it carries oxygen using copper instead of iron.",hook:"Three hearts and blue blood — the octopus runs on a completely different design from us."},
+{c:"Animals",t:3,q:"Which mammal lays eggs instead of giving birth to live young?",o:["The platypus","The kangaroo","The bat","The hedgehog"],a:0,why:"The platypus of Australia is one of the very few egg-laying mammals, called monotremes — the echidnas are the others. After hatching, the young still feed on their mother's milk like other mammals.",hook:"The platypus mixes so many animal traits that the first scientists shown one thought it was a hoax."},
+{c:"Animals",t:3,q:"What is the only mammal that can truly fly?",o:["The flying squirrel","The bat","The sugar glider","The colugo"],a:1,why:"Bats are the only mammals capable of true, powered flight — their wings are hands, with skin stretched between very long fingers. Flying squirrels and sugar gliders only glide; they cannot gain height.",hook:"A bat's wing is a hand it learned to fly with — you can see the fingers in its outline."}
+];
+var CATS = ["History","Science","Geography","Music","Sports","Food","Space","Animals"];
+var TIERS = {1:"Gentle",2:"Steady",3:"Sharp"};
+var COACH_PRE = [
+  "Before you answer: try elimination first. Which options can you <b>prove</b> wrong? Cross those off in your head, then choose from what survives.",
+  "Coach's eye: look for the trap option — the famous name or the obvious city that is there to catch a quick tap. If one option feels too easy, ask why it's offered.",
+  "Coach's note: a guess beats a pass here — wrong answers cost nothing extra. Even a blind guess is one-in-four; eliminate one option and it's one-in-three.",
+  "Coach's note: read the question twice. The word that matters is often small — 'first', 'largest', 'not'. The trap usually lives in the word you skimmed.",
+  "Coach's eye: think about which shelf this is. Play what this category has taught you so far in the run — patterns repeat across a shelf."
+];
+var COACH_POST_RIGHT = [
+  "Notice what made that reachable: you knew a fact, or you eliminated your way to it. That move works on the next question too.",
+  "If you eliminated before choosing — that's the professional move. Certainty is nice; narrowing is reliable.",
+  "Bank that fact with its hook. Facts tied to a picture or a story are the ones still there next month."
+];
+var COACH_POST_WRONG = [
+  "No harm done — and now the fact is yours. The way to keep it: say the hook back to yourself once before tapping Next.",
+  "Check the trap: was the option you picked the famous-but-wrong one? Spotting that pattern is worth more than this one point.",
+  "This is exactly what a weak shelf looks like from inside. Your record just got more honest — that's the point of it."
+];
+</script>
+<script>
+(function(){
+"use strict";
+function $(id){return document.getElementById(id);}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
+/* ---------- settings (device only) ---------- */
+var SKEY="quiztable_settings_v1", RKEY="quiztable_record_v1";
+var settings={teaching:"light",fifty:true,swap:true,extra:true,alias:""};
+try{var s=JSON.parse(localStorage.getItem(SKEY));if(s){settings.teaching=s.teaching||"light";settings.fifty=s.fifty!==false;settings.swap=s.swap!==false;settings.extra=s.extra!==false;settings.alias=s.alias||"";}}catch(e){}
+function saveSettings(){try{localStorage.setItem(SKEY,JSON.stringify(settings));}catch(e){}}
+
+/* ---------- record (device only, one clean shape) ---------- */
+function blankRecord(){var r={games:0,answered:0,correct:0,bestStreak:0,byCat:{},byTier:{},history:[]};CATS.forEach(function(c){r.byCat[c]={answered:0,correct:0};});[1,2,3].forEach(function(t){r.byTier[t]={answered:0,correct:0};});return r;}
+var record=blankRecord();
+try{var r=JSON.parse(localStorage.getItem(RKEY));if(r&&r.byCat){record=r;CATS.forEach(function(c){if(!record.byCat[c])record.byCat[c]={answered:0,correct:0};});[1,2,3].forEach(function(t){if(!record.byTier[t])record.byTier[t]={answered:0,correct:0};});if(!record.history)record.history=[];}}catch(e){}
+function saveRecord(){try{localStorage.setItem(RKEY,JSON.stringify(record));}catch(e){}}
+
+/* ---------- bank info ---------- */
+var perCat={};CATS.forEach(function(c){perCat[c]=QUESTIONS.filter(function(q){return q.c===c;}).length;});
+$("bankChips").innerHTML="<span class='chip'>"+QUESTIONS.length+" original questions</span><span class='chip'>8 categories</span><span class='chip'>3 tiers: Gentle · Steady · Sharp</span><span class='chip'>4 options each</span><span class='chip'>Every answer explained</span>";
+$("bankAbout").textContent="The bank holds "+QUESTIONS.length+" questions: "+CATS.map(function(c){return perCat[c]+" "+c;}).join(", ")+". Each category carries three Gentle, three Steady and three Sharp questions. The bank's size is printed here plainly because a quiz should not pretend to be bigger than it is.";
+var cs=$("catSelect");CATS.forEach(function(c){var o=document.createElement("option");o.value=c;o.textContent=c+" ("+perCat[c]+" questions)";cs.appendChild(o);});
+
+/* ---------- teaching dial ---------- */
+var TEACH_NOTES={off:"Teaching off: you will see right or wrong and the correct answer, but no explanations and no coaching. The record still keeps everything.",light:"Light teaching: after every answer you get the fact explained in plain words, with one line to make it stick. No strategy coaching.",coach:"Coach: everything in Light, plus strategy coaching at the table — elimination, trap-spotting, guessing maths and lifeline judgment, tied to the question in front of you."};
+function applyTeach(){
+  document.querySelectorAll("[data-teach]").forEach(function(b){b.setAttribute("aria-pressed",b.getAttribute("data-teach")===settings.teaching?"true":"false");});
+  $("teachNote").textContent=TEACH_NOTES[settings.teaching];
+}
+document.querySelectorAll("[data-teach]").forEach(function(b){b.addEventListener("click",function(){settings.teaching=b.getAttribute("data-teach");saveSettings();applyTeach();});});
+$("aliasInput").value=settings.alias;
+$("aliasInput").addEventListener("input",function(){settings.alias=$("aliasInput").value;saveSettings();var p=$("sPlayer");if(p)p.textContent=settings.alias?("Playing as "+settings.alias):"";});
+applyTeach();
+
+/* ---------- lifeline settings ---------- */
+function syncLife(){$("lifeFifty").checked=settings.fifty;$("lifeSwap").checked=settings.swap;$("lifeExtra").checked=settings.extra;updateVariantNote();}
+function lifelinesStandard(){return settings.fifty&&settings.swap&&settings.extra;}
+function updateVariantNote(){
+  var b=$("variantBanner");
+  if(!lifelinesStandard()&&!game.active){b.classList.remove("hidden");b.innerHTML="<strong>Variant settings:</strong> one or more standard lifelines are turned off below. Runs played with these settings are variants of the standard game and your history will say so.";}
+  else if(!game.active){b.classList.add("hidden");}
+}
+["lifeFifty","lifeSwap","lifeExtra"].forEach(function(id){$(id).addEventListener("change",function(){settings.fifty=$("lifeFifty").checked;settings.swap=$("lifeSwap").checked;settings.extra=$("lifeExtra").checked;saveSettings();updateVariantNote();});});
+
+/* ---------- game state ---------- */
+var game={active:false,queue:[],spare:[],idx:0,score:0,streak:0,mode:"",timed:false,variant:false,used:{fifty:false,swap:false,extra:false},answeredFlag:false,timer:null,timeLeft:0,current:null,opts:[]};
+function stopTimer(){if(game.timer){clearInterval(game.timer);game.timer=null;}}
+function isVariantRun(){return game.timed||!lifelinesStandard();}
+
+function startRun(mode,cat){
+  stopTimer();
+  var pool;
+  if(mode==="category"){pool=QUESTIONS.filter(function(q){return q.c===cat;});}
+  else{pool=QUESTIONS.slice();}
+  pool=shuffle(pool);
+  var n=(mode==="category")?pool.length:10;
+  game.queue=pool.slice(0,n);game.spare=pool.slice(n);
+  game.idx=0;game.score=0;game.streak=0;game.modeKey=mode;game.cat=cat||null;game.mode=(mode==="category")?(cat+" Run"):(mode==="timed"?"Timed Run":"Solo Run");
+  game.timed=(mode==="timed");game.variant=isVariantRun();game.active=true;
+  game.used={fifty:false,swap:false,extra:false};
+  $("gameCard").style.display="block";
+  $("finishRow").classList.remove("show");
+  var b=$("variantBanner");
+  if(game.variant){b.classList.remove("hidden");b.innerHTML="<strong>Variant run:</strong> "+(game.timed?"the 20-second clock is on":"")+(game.timed&&!lifelinesStandard()?" and ":"")+(!lifelinesStandard()?"lifeline settings differ from the standard set":"")+". This run is labelled a variant in your history.";}
+  else{b.classList.add("hidden");}
+  $("sMode").textContent=game.mode+(game.variant?" (variant)":"");
+  $("sPlayer").textContent=settings.alias?("Playing as "+settings.alias):"";
+  renderQuestion();
+  $("gameCard").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function renderQuestion(){
+  game.answeredFlag=false;
+  var q=game.queue[game.idx];game.current=q;
+  game.opts=shuffle(q.o.map(function(t,i){return {t:t,correct:i===q.a};}));
+  $("qWhere").textContent=q.c+" · "+TIERS[q.t]+" tier";
+  $("qProgress").textContent="Question "+(game.idx+1)+" of "+game.queue.length;
+  $("sScore").textContent=game.score;$("sStreak").textContent=game.streak;
+  $("qText").textContent=q.q;
+  $("explainBox").classList.remove("show");$("nextRow").classList.remove("show");
+  $("passBtn").disabled=false;
+  var pre=$("coachPre");
+  if(settings.teaching==="coach"){pre.classList.remove("hidden");pre.innerHTML="<b>Coach:</b> "+COACH_PRE[game.idx%COACH_PRE.length];}
+  else{pre.classList.add("hidden");}
+  var box=$("opts");box.innerHTML="";
+  game.opts.forEach(function(o,i){
+    var btn=document.createElement("button");btn.type="button";btn.className="opt";
+    btn.innerHTML="<span class='letter'>"+("ABCD")[i]+"</span><span>"+o.t+"</span>";
+    btn.setAttribute("aria-label","Tap to answer: "+o.t);
+    btn.addEventListener("click",function(){answer(i,false,false);});
+    box.appendChild(btn);
+  });
+  renderLifelines();
+  /* timer */
+  stopTimer();
+  if(game.timed){
+    game.timeLeft=20;
+    $("timerBar").style.display="block";$("timerText").style.display="block";
+    tickTimer();
+    game.timer=setInterval(function(){game.timeLeft--;tickTimer();if(game.timeLeft<=0){stopTimer();answer(-1,false,true);}},1000);
+  }else{$("timerBar").style.display="none";$("timerText").style.display="none";}
+}
+function tickTimer(){$("timerFill").style.width=Math.max(0,game.timeLeft/30*100)+"%";$("timerText").textContent=game.timeLeft+" seconds left on this question";}
+
+function renderLifelines(){
+  var row=$("lifelineRow");row.innerHTML="";
+  function add(key,label,sub,fn,extraDisable){
+    if(!settings[key])return;
+    var b=document.createElement("button");b.type="button";
+    b.innerHTML=label+"<small>Tap to use — once per run</small>";
+    if(game.used[key]||extraDisable)b.disabled=true;
+    b.addEventListener("click",fn);row.appendChild(b);
+  }
+  add("fifty","Fifty-Fifty","",function(){
+    game.used.fifty=true;
+    var wrongIdx=[];game.opts.forEach(function(o,i){if(!o.correct)wrongIdx.push(i);});
+    wrongIdx=shuffle(wrongIdx).slice(0,2);
+    var btns=$("opts").children;
+    wrongIdx.forEach(function(i){btns[i].classList.add("gone");btns[i].disabled=true;});
+    renderLifelines();
+  },false);
+  add("swap","Swap the Question","",function(){
+    if(!game.spare.length)return;
+    game.used.swap=true;
+    var fresh=game.spare.splice(Math.floor(Math.random()*game.spare.length),1)[0];
+    game.spare.push(game.current);
+    game.queue[game.idx]=fresh;
+    renderQuestion();
+  },!game.spare.length);
+  add("extra","Extra Time (+10s)","",function(){
+    game.used.extra=true;game.timeLeft+=10;tickTimer();renderLifelines();
+  },!game.timed);
+}
+
+function answer(chosen,passed,timedOut){
+  if(game.answeredFlag||!game.active)return;
+  game.answeredFlag=true;stopTimer();
+  var q=game.current;
+  var right=(!passed&&!timedOut&&chosen>=0&&game.opts[chosen].correct);
+  /* reveal */
+  var btns=$("opts").children;
+  game.opts.forEach(function(o,i){btns[i].disabled=true;if(o.correct)btns[i].classList.add("correct");});
+  if(!right&&chosen>=0)btns[chosen].classList.add("wrong");
+  $("passBtn").disabled=true;
+  document.querySelectorAll("#lifelineRow button").forEach(function(b){b.disabled=true;});
+  /* score + record */
+  if(right){game.score++;game.streak++;if(game.streak>record.bestStreak)record.bestStreak=game.streak;}
+  else{game.streak=0;}
+  record.answered++;if(right)record.correct++;
+  record.byCat[q.c].answered++;if(right)record.byCat[q.c].correct++;
+  record.byTier[q.t].answered++;if(right)record.byTier[q.t].correct++;
+  saveRecord();renderRecord();
+  $("sScore").textContent=game.score;$("sStreak").textContent=game.streak;
+  /* explanation */
+  var v=$("verdict");
+  if(timedOut){v.textContent="Out of time — the answer was: "+q.o[q.a];v.className="verdict wrong";}
+  else if(passed){v.textContent="Passed — the answer was: "+q.o[q.a];v.className="verdict";}
+  else if(right){v.textContent="Right — "+q.o[q.a]+".";v.className="verdict right";}
+  else{v.textContent="Not quite — the answer was: "+q.o[q.a]+".";v.className="verdict wrong";}
+  if(settings.teaching==="off"){
+    $("factText").textContent="Teaching is off, so no explanation is shown. Turn Teaching to Light or Coach to get the story of every fact.";
+    $("hookText").textContent="";
+  }else{
+    $("factText").textContent=q.why;
+    $("hookText").textContent="Make it stick: "+q.hook;
+  }
+  var cp=$("coachPost");
+  if(settings.teaching==="coach"){
+    cp.classList.remove("hidden");
+    var pool=right?COACH_POST_RIGHT:COACH_POST_WRONG;
+    $("coachPostText").textContent=pool[game.idx%pool.length];
+  }else{cp.classList.add("hidden");}
+  $("explainBox").classList.add("show");
+  if(game.idx<game.queue.length-1){$("nextRow").classList.add("show");$("nextBtn").innerHTML="Next question<small>Tap to continue — question "+(game.idx+2)+" of "+game.queue.length+"</small>";}
+  else{$("nextRow").classList.add("show");$("nextBtn").innerHTML="See the result<small>Tap to finish this run</small>";}
+}
+
+function finishRun(){
+  game.active=false;stopTimer();
+  record.games++;
+  record.history.unshift({date:todayStr(),mode:game.mode,score:game.score,total:game.queue.length,variant:game.variant});
+  if(record.history.length>12)record.history=record.history.slice(0,12);
+  saveRecord();renderRecord();
+  $("nextRow").classList.remove("show");
+  var pct=game.queue.length?Math.round(game.score/game.queue.length*100):0;
+  $("finishTitle").textContent=game.mode+" complete — "+game.score+" of "+game.queue.length;
+  $("finishText").textContent=(pct>=80?"A strong table. ":pct>=50?"A fair table — the explanations did their work where it counted. ":"A learning table — every miss above came with its fact, which is the real score. ")+game.score+" right ("+pct+"%)"+(game.variant?", played as a variant":"")+". Your record below has already counted it, shelf by shelf.";
+  $("finishRow").classList.add("show");
+  $("opts").innerHTML="";$("lifelineRow").innerHTML="";$("passBtn").disabled=true;
+  $("qText").textContent="Run finished.";$("coachPre").classList.add("hidden");
+  $("timerBar").style.display="none";$("timerText").style.display="none";
+}
+
+$("nextBtn").addEventListener("click",function(){if(game.idx<game.queue.length-1){game.idx++;renderQuestion();}else{finishRun();}});
+$("passBtn").addEventListener("click",function(){answer(-1,true,false);});
+$("startSolo").addEventListener("click",function(){startRun("solo");});
+$("startCat").addEventListener("click",function(){startRun("category",$("catSelect").value);});
+$("startTimed").addEventListener("click",function(){startRun("timed");});
+$("againBtn").addEventListener("click",function(){startRun(game.modeKey,game.cat);});
+$("closeGameBtn").addEventListener("click",function(){stopTimer();game.active=false;$("gameCard").style.display="none";updateVariantNote();window.scrollTo({top:0,behavior:"smooth"});});
+
+/* ---------- record rendering ---------- */
+function pct(a,c){return a?Math.round(c/a*100)+"%":"—";}
+function bar(a,c){var p=a?Math.round(c/a*100):0;return "<div class='bar'><i style='width:"+p+"%'></i></div>";}
+function renderRecord(){
+  $("rGames").textContent=record.games;
+  $("rAnswered").textContent=record.answered;
+  $("rAcc").textContent=pct(record.answered,record.correct);
+  $("rStreak").textContent=record.bestStreak;
+  var tb=$("catTable").querySelector("tbody");tb.innerHTML="";
+  CATS.forEach(function(c){var d=record.byCat[c];var tr=document.createElement("tr");tr.innerHTML="<td>"+c+"</td><td class='num'>"+d.answered+"</td><td class='num'>"+d.correct+"</td><td class='num'>"+pct(d.answered,d.correct)+"</td><td>"+bar(d.answered,d.correct)+"</td>";tb.appendChild(tr);});
+  var tt=$("tierTable").querySelector("tbody");tt.innerHTML="";
+  [1,2,3].forEach(function(t){var d=record.byTier[t];var tr=document.createElement("tr");tr.innerHTML="<td>"+TIERS[t]+"</td><td class='num'>"+d.answered+"</td><td class='num'>"+d.correct+"</td><td class='num'>"+pct(d.answered,d.correct)+"</td><td>"+bar(d.answered,d.correct)+"</td>";tt.appendChild(tr);});
+  var h=$("histList");
+  if(!record.history.length){h.innerHTML="<li>No runs yet — your finished runs will be listed here.</li>";}
+  else{h.innerHTML=record.history.map(function(x){return "<li>"+x.date+" — "+x.mode+": "+x.score+" of "+x.total+(x.variant?" (variant)":"")+"</li>";}).join("");}
+}
+renderRecord();
+syncLife();
+
+/* ---------- export / forget / offline ---------- */
+$("exportBtn").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify({game:"The Quiz Table",exported:todayStr(),record:record},null,2)],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quiz-table-record.json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+  var m=$("forgetMsg");
+  if(!forgetArmed){forgetArmed=true;m.classList.remove("hidden");m.textContent="Tap Forget once more to erase the whole record on this device. This cannot be undone.";$("forgetBtn").innerHTML="Forget everything — tap again to confirm<small>This erases the record on this device</small>";setTimeout(function(){forgetArmed=false;m.classList.add("hidden");$("forgetBtn").innerHTML="Forget everything<small>Tap to erase the record on this device</small>";},6000);return;}
+  record=blankRecord();saveRecord();renderRecord();forgetArmed=false;m.textContent="Record erased. The table is clean.";$("forgetBtn").innerHTML="Forget everything<small>Tap to erase the record on this device</small>";
+});
+$("offlineBtn").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="the-quiz-table.html";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+})();
+</script>
+</body>
+</html>
