@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Look Closer — Eye Tests</title>
+<style>
+  :root{
+    --bg:#f7f4ec; --surface:#fffdf7; --surface2:#efe9da; --ink:#1c2420; --ink-soft:#46524b;
+    --line:#d8d0bd; --accent:#0e6b5c; --accent-ink:#ffffff; --warm:#b45a1f; --warm-soft:#f3e3d3;
+    --good:#1e7a3c; --bad:#b3352b; --focus:#0e6b5c;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141816; --surface:#1d2320; --surface2:#262e29; --ink:#ece7da; --ink-soft:#b9beb2;
+      --line:#3a443e; --accent:#3ec9ae; --accent-ink:#0c1a16; --warm:#e08b4d; --warm-soft:#3a2c1e;
+      --good:#5fce82; --bad:#ff8a7d; --focus:#3ec9ae;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;font-size:17px}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0}
+  h1{font-size:2.1rem;letter-spacing:-.01em}
+  h2{font-size:1.55rem;margin-bottom:.4rem}
+  h3{font-size:1.15rem}
+  p{margin:.5rem 0}
+  .wrap{max-width:880px;margin:0 auto;padding:0 18px 64px}
+  button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:44px}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--surface);color:var(--ink);padding:10px 16px;font-weight:600}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button.small{min-height:40px;padding:7px 12px;font-size:.92rem}
+  button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
+    outline:3px solid var(--focus);outline-offset:2px}
+  input[type="text"]{font:inherit;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--surface);color:var(--ink);width:100%}
+  select{font:inherit;padding:8px 10px;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--surface);color:var(--ink)}
+  a{color:var(--accent);font-weight:600}
+  .gesture{display:block;font-size:.78rem;font-weight:500;opacity:.75;letter-spacing:.01em}
+  .freebar{background:var(--accent);color:var(--accent-ink);padding:12px 18px;text-align:center;font-weight:700}
+  .freebar .gesture{opacity:.85}
+  .freebar button{background:transparent;color:inherit;border-color:currentColor;margin-top:6px}
+  .limits{border:3px solid var(--bad);border-radius:var(--radius);background:var(--surface);
+    padding:18px 20px;margin:22px 0}
+  .limits h2{color:var(--bad);font-size:1.5rem}
+  .limits p{font-size:1.05rem}
+  header.hero{padding:28px 0 6px}
+  .hero p.lede{font-size:1.15rem;color:var(--ink-soft);max-width:62ch}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px}
+  nav.compass a{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:8px 14px;
+    border:1.5px solid var(--line);border-radius:999px;background:var(--surface);text-decoration:none;color:var(--ink)}
+  nav.compass .dir{font-weight:800;color:var(--accent)}
+  .settings{display:grid;gap:14px;grid-template-columns:1fr;margin:16px 0}
+  @media(min-width:640px){.settings{grid-template-columns:1fr 1fr}}
+  .card{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .card h3{margin-bottom:4px}
+  .dial{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  section.game{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:22px 20px;margin:26px 0}
+  section.game>h2{margin-bottom:2px}
+  .whyline{color:var(--warm);font-weight:700;font-size:.95rem}
+  .stage{display:flex;flex-direction:column;align-items:center;gap:14px;margin:16px 0}
+  canvas.plate{width:min(340px,86vw);height:auto;aspect-ratio:1;border-radius:50%;
+    background:var(--surface2);max-width:100%}
+  canvas.noise{width:min(340px,86vw);height:auto;aspect-ratio:1;border-radius:12px;max-width:100%;
+    border:1.5px solid var(--line)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row.center{justify-content:center}
+  .feedback{font-weight:700;min-height:1.6em;text-align:center}
+  .feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)}
+  .score{font-weight:700;color:var(--ink-soft)}
+  .optgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px}
+  body[data-teach="off"] .teach{display:none}
+  body[data-teach="hints"] .teach-full{display:none}
+  .teach{background:var(--warm-soft);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:.97rem}
+  .teach .tlabel{font-weight:800;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--warm)}
+  details{border:1.5px solid var(--line);border-radius:10px;background:var(--surface);margin:10px 0}
+  summary{cursor:pointer;padding:12px 16px;font-weight:700;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  details .dbody{padding:0 16px 14px}
+  .calbox{height:64px;border:2.5px dashed var(--warm);border-radius:8px;margin:12px auto;
+    display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--ink-soft);
+    background:var(--surface2);max-width:100%}
+  input[type="range"]{width:100%;min-height:44px}
+  .acuityline{font-family:Georgia,serif;font-weight:700;letter-spacing:.35em;text-align:center;
+    white-space:nowrap;overflow:hidden;padding:14px 4px;line-height:1.2}
+  .crow{display:flex;align-items:center;gap:14px;padding:10px 6px;border-bottom:1px solid var(--line)}
+  .crow .letters{font-family:Georgia,serif;font-weight:700;letter-spacing:.3em;flex:1;text-align:center;font-size:26px}
+  .crow .clabel{font-size:.85rem;color:var(--ink-soft);min-width:86px}
+  table.record{width:100%;border-collapse:collapse;font-size:.95rem}
+  table.record th,table.record td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  .empty{color:var(--ink-soft)}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;
+    pointer-events:none;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;
+    max-width:min(480px,90vw);font-size:.95rem;transition:opacity .2s,transform .2s;z-index:50}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{border-top:1.5px solid var(--line);margin-top:40px;padding-top:18px;color:var(--ink-soft);font-size:.93rem}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-teach="hints">
+
+<div class="freebar">
+  Free — always free. No ads. No account. Nothing leaves your device.
+  <button type="button" id="dlBtn">Download this page for offline use
+    <span class="gesture">Tap to download — the copy on your phone works with no connection</span>
+  </button>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <h1>Look Closer</h1>
+  <p class="lede">Eye tests you play: numbers hidden in fields of coloured dots, letters that shrink and fade, and a shape buried in static. Every picture on this page is drawn fresh by the page itself, the moment you ask — no copied test plates, ever.</p>
+</header>
+
+<div class="limits" id="limits">
+  <h2>Read this first — the honest limits, at full size</h2>
+  <p><strong>This is a screening game. It is NOT an eye exam, and it cannot diagnose anything.</strong></p>
+  <p>Screen size, brightness, colour settings, viewing distance, room light, and tired eyes all move your result — sometimes a lot. A phone held close in a dark room and a big monitor across a desk will not agree, and neither one is a measurement.</p>
+  <p>A real measure of your eyes needs an eye professional with calibrated equipment. If anything here worries you — or your vision has changed, or one eye sees differently from the other — <strong>book a real eye exam</strong>. Treat every result below as a reason to look closer, never as a verdict.</p>
+  <p>Your results are recorded only on this device, in this browser. Nothing is sent anywhere. You can export them or forget them at any time, at the bottom of this page.</p>
+</div>
+
+<nav class="compass" aria-label="Compass">
+  <a href="#plates"><span class="dir">N</span> Play the tests</a>
+  <a href="#learn"><span class="dir">E</span> Learn how eyes work</a>
+  <a href="#record"><span class="dir">S</span> Your record</a>
+  <a href="#limits"><span class="dir">W</span> The honest limits</a>
+</nav>
+
+<div class="settings">
+  <div class="card">
+    <h3>Your name here — any name you like</h3>
+    <p>Alias freedom: play as yourself, a nickname, or nobody in particular. It only labels your on-device record.</p>
+    <label class="sr" for="aliasInput">Name or alias</label>
+    <input type="text" id="aliasInput" placeholder="e.g. Guest explorer" autocomplete="off" />
+  </div>
+  <div class="card">
+    <h3>Teaching dial</h3>
+    <p>How much explanation rides along with the games.</p>
+    <div class="dial" role="group" aria-label="Teaching dial">
+      <button type="button" data-dial="off">Off<span class="gesture">Tap — just play</span></button>
+      <button type="button" data-dial="hints" aria-pressed="true">Hints<span class="gesture">Tap — short whys</span></button>
+      <button type="button" data-dial="full">Full why<span class="gesture">Tap — the whole story</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GAME 1: DOT PLATES ============ -->
+<section class="game" id="plates">
+  <h2>1 · Hidden in the dots</h2>
+  <p class="whyline">Why? → Some eyes separate colours that other eyes blend — a hidden number shows you which.</p>
+  <p>A number or shape is hiding in this field of dots. The dots that form it are a different colour family from the rest — but close in brightness, so you cannot cheat by looking for “the darker ones.” Every plate is generated on the spot; press New plate and a different one appears.</p>
+
+  <div class="teach teach-hint"><span class="tlabel">Hint</span><br>Hold your phone at a comfortable reading distance and look at the whole circle, not one dot. If nothing appears after ten seconds, that itself is information — answer “I see nothing.”</div>
+  <div class="teach teach-full"><span class="tlabel">The full why</span><br>Plates like this work because the figure and the background differ mainly in <em>hue</em> (which colour) while their <em>brightness</em> is scrambled. If your colour vision separates that hue pair easily, the figure pops out. If it doesn’t, the dots merge into one speckled field and there is genuinely nothing to see — the number hasn’t faded, your visual system never received the signal that separates it. The Learn section below explains the three cone types behind this.</div>
+
+  <div class="stage">
+    <canvas class="plate" id="plateCanvas" width="360" height="360" role="img" aria-label="A circle of coloured dots with a hidden number or shape"></canvas>
+    <div class="score" id="plateMeta">Plate ready.</div>
+    <div class="row center" style="width:100%;max-width:420px">
+      <label class="sr" for="plateAnswer">What do you see?</label>
+      <input type="text" id="plateAnswer" placeholder="Type the number or shape — or: nothing" autocomplete="off" style="flex:1;min-width:200px" />
+    </div>
+    <div class="row center">
+      <button type="button" class="primary" id="plateCheck" data-explain="Checks your answer against the figure hidden in the dots, and explains what this kind of plate tests.">Check my answer<span class="gesture">Tap to check · Hold to hear what it does</span></button>
+      <button type="button" id="plateNew" data-explain="Throws this plate away and generates a brand-new one — a different number or shape, freshly drawn dots.">New plate<span class="gesture">Tap for a new plate · Hold to hear what it does</span></button>
+      <button type="button" id="plateSim" aria-pressed="false" data-explain="Redraws this same plate the way red-green colour-deficient eyes receive it, so anyone can watch the hidden number dissolve.">See it through red-green-deficient eyes<span class="gesture">Tap to toggle the simulation</span></button>
+    </div>
+    <div class="feedback" id="plateFeedback" aria-live="polite"></div>
+    <div class="score" id="plateScore"></div>
+  </div>
+
+  <details>
+    <summary>The vanishing plate — the trick, explained · Tap to open</summary>
+    <div class="dbody">
+      <p>One plate in the rotation is built to <strong>vanish for red-green-deficient eyes</strong>. Its figure dots are reds and its background dots are greens chosen to sit on the same “confusion line” — pairs of colours that look different only if your red and green cone signals are both working and distinct. The brightness of every dot is randomised, so brightness gives no clue.</p>
+      <p>To typical eyes: a clear number. To red-green-deficient eyes: the red dots and green dots produce nearly the same signal, so figure and background arrive as one undifferentiated field. The number isn’t hidden better — for those eyes, the difference it is drawn with does not exist.</p>
+      <p>Use the simulation button above on any plate to watch this happen from the outside. And remember the limits at the top: a screen can imitate the trick, but only a professional test can say anything about <em>your</em> eyes.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============ GAME 2: ACUITY ============ -->
+<section class="game" id="acuity">
+  <h2>2 · How small can you read?</h2>
+  <p class="whyline">Why? → Sharpness is a size question: the smallest letters you can read at a set distance.</p>
+  <p>A letter-acuity self-check, calibrated as honestly as a screen allows. First, calibrate: hold a bank card or ID card against the outline below and drag the slider until the outline matches the card’s width. The page then knows how big a millimetre is on <em>your</em> screen, and sizes its letters for real.</p>
+  <p><strong>Its limits, printed on its face:</strong> this estimate assumes you hold the distance you pick, your screen brightness is up, and you don’t squint or lean in. It is a rough self-check to play with — it is not a prescription, not a measurement, and it cannot replace an eye exam.</p>
+
+  <div class="teach teach-hint"><span class="tlabel">Hint</span><br>Cover one eye with your hand (don’t press on it) and test each eye separately if you like — eyes often differ, and that difference is worth noticing.</div>
+
+  <h3>Step 1 — Calibrate with a card</h3>
+  <div class="calbox" id="calBox" style="width:280px">Match this outline to your card’s width</div>
+  <label for="calSlider">Card width slider</label>
+  <input type="range" id="calSlider" min="140" max="560" value="280" />
+  <p class="score" id="calReadout"></p>
+
+  <h3>Step 2 — Pick your distance, then read</h3>
+  <div class="row">
+    <label for="distSelect">I’m holding / sitting</label>
+    <select id="distSelect">
+      <option value="400">40 cm away (phone in hand)</option>
+      <option value="1000">1 metre away</option>
+      <option value="3000">3 metres away</option>
+    </select>
+    <button type="button" class="primary" id="acuityStart" data-explain="Starts the acuity check at a large letter line, then steps smaller each time you read a line correctly.">Start the check<span class="gesture">Tap to start · Hold to hear what it does</span></button>
+  </div>
+  <div class="acuityline" id="acuityLine" aria-label="Letters to read"></div>
+  <div class="row" id="acuityAnswerRow" hidden>
+    <label class="sr" for="acuityInput">Type the letters you see</label>
+    <input type="text" id="acuityInput" placeholder="Type the letters, no spaces needed" autocomplete="off" style="flex:1;min-width:200px;text-transform:uppercase" />
+    <button type="button" class="primary" id="acuityCheck">Check line<span class="gesture">Tap to check</span></button>
+  </div>
+  <div class="feedback" id="acuityFeedback" aria-live="polite"></div>
+  <div class="score" id="acuityStatus"></div>
+</section>
+
+<!-- ============ GAME 3: CONTRAST ============ -->
+<section class="game" id="contrast">
+  <h2>3 · Letters that fade away</h2>
+  <p class="whyline">Why? → Sharpness isn’t everything — eyes also have to pull faint things out of fog, dusk, and glare.</p>
+  <p>Each row is printed fainter than the one above. Find the faintest row you can still read with confidence, tap its button, then type its letters to prove it. Contrast fades for everyone eventually — where it fades is the interesting part.</p>
+  <div class="teach teach-full"><span class="tlabel">The full why</span><br>Contrast sensitivity is a separate channel from acuity: you can read tiny black letters and still struggle with grey text on a grey day. Cataracts, glare, and some eye conditions lower contrast sensitivity before they blur sharp vision — one more reason a game like this can only ever be a pointer toward a real exam, never a substitute.</div>
+  <div id="contrastRows"></div>
+  <div class="row" style="margin-top:12px">
+    <label class="sr" for="contrastInput">Type the letters of your faintest readable row</label>
+    <input type="text" id="contrastInput" placeholder="First pick a row above, then type its letters" autocomplete="off" style="flex:1;min-width:200px;text-transform:uppercase" />
+    <button type="button" class="primary" id="contrastCheck">Check row<span class="gesture">Tap to check</span></button>
+  </div>
+  <div class="feedback" id="contrastFeedback" aria-live="polite"></div>
+  <button type="button" id="contrastNew" class="small">New letters<span class="gesture">Tap to redraw all rows</span></button>
+</section>
+
+<!-- ============ GAME 4: NOISE ============ -->
+<section class="game" id="noise">
+  <h2>4 · The shape in the static</h2>
+  <p class="whyline">Why? → Brains are figure-finding machines — this is the dot-plate trick played with texture instead of colour.</p>
+  <p>One shape is hiding in this field of static. Its speckles are tinted just slightly warmer than the rest — no outline, no brightness edge worth trusting. Squint, step back, look at the whole field. Then make your call.</p>
+  <div class="teach teach-hint"><span class="tlabel">Hint</span><br>Hold the screen farther away or half-close your eyes. Blurring away the fine speckle leaves the broad tint difference — the shape often surfaces.</div>
+  <div class="stage">
+    <canvas class="noise" id="noiseCanvas" width="360" height="360" role="img" aria-label="A field of static speckles with one hidden shape"></canvas>
+    <div class="optgrid" id="noiseOptions"></div>
+    <div class="row center">
+      <button type="button" id="noiseReveal" data-explain="Draws the outline of the hidden shape over the static so you can see where it was.">Reveal the shape<span class="gesture">Tap to reveal · Hold to hear what it does</span></button>
+      <button type="button" id="noiseNew">New static<span class="gesture">Tap for a new hidden shape</span></button>
+    </div>
+    <div class="feedback" id="noiseFeedback" aria-live="polite"></div>
+    <div class="score" id="noiseScore"></div>
+  </div>
+</section>
+
+<!-- ============ LEARN ============ -->
+<section class="game" id="learn">
+  <h2>How colour vision works</h2>
+  <p class="whyline">Why? → The games above stop being magic once you know the machinery.</p>
+
+  <details open>
+    <summary>Three kinds of colour sensors · Tap to open or close</summary>
+    <div class="dbody">
+      <p><strong>What it is:</strong> The back of your eye holds about six million cone cells, in three kinds. One kind responds most to long-wavelength light (we call its signal “red”), one to medium (“green”), and one to short (“blue”). You never see wavelengths directly — your brain compares the three signals and builds colour from the differences. A ripe tomato isn’t red in itself; it reflects light that drives the long-wave cones hard and the others weakly, and “red” is the name your brain gives that pattern.</p>
+      <p><strong>What it means:</strong> Colour is a comparison, not a label stuck on objects. Change any one of the three signals and the whole comparison shifts — which is exactly what happens in colour-vision deficiency.</p>
+      <p><strong>What it could mean for you:</strong> Two people can look at the same dot plate and honestly see different things, because their hardware sends different comparisons. Neither is “not trying.”</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Red-green deficiency, in plain words · Tap to open</summary>
+    <div class="dbody">
+      <p><strong>What it is:</strong> The most common kind of colour-vision difference, affecting roughly 1 in 12 men and 1 in 200 women. Either the green-sensitive cones respond to light shifted toward red (so red and green signals overlap more than usual), or one cone type is missing its usual pigment altogether. Reds, greens, browns, and oranges that look obviously different to typical eyes can produce near-identical signals.</p>
+      <p><strong>What it means:</strong> Certain red-green pairs become <em>confusion pairs</em> — different in the world, the same in the signal. That is the whole trick of the vanishing plate above: draw a number using only a confusion pair, scramble the brightness, and the number exists for one visual system and not the other.</p>
+      <p><strong>What it could mean for you:</strong> It’s a difference, not broken eyes — acuity is usually normal. But it matters practically: ripe vs. unripe fruit, some wiring and map colours, some jobs’ colour tests. A professional screening can say which kind and how strong; this page cannot.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Blue-yellow deficiency, in plain words · Tap to open</summary>
+    <div class="dbody">
+      <p><strong>What it is:</strong> Much rarer, and it affects men and women equally. Here the short-wave (“blue”) cone signal is weakened or missing, so blues slide toward green and yellows toward pinkish-grey. The confusion pairs are blue-with-green and yellow-with-violet/pink.</p>
+      <p><strong>What it means:</strong> A plate drawn in blue against a teal-yellow field can vanish the same way the red-green plate does — one of the plates in the rotation above is built on exactly this pair.</p>
+      <p><strong>What it could mean for you:</strong> Because it’s rare and can also be <em>acquired</em> — some eye diseases and medicines affect blue-yellow vision first — a sudden change in how blues and yellows look is a “book a real exam” signal, not a game result.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Why the hidden number vanishes — the one-paragraph version · Tap to open</summary>
+    <div class="dbody">
+      <p>Your brain finds the number by finding a <em>boundary</em> — a place where the signal changes. The plate offers only one kind of change: hue, red-family on one side, green-family on the other, with brightness deliberately scrambled so it draws no boundary of its own. If your red and green cone signals are distinct, the boundary is loud and the number stands on it. If those two signals arrive nearly identical, there is no boundary anywhere in the field — not a faint number, not a blurry number, no number at all. The information was never in the signal your brain received. That’s why these plates are a fair test of the signal, and why “try harder” is never the answer to one.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============ RECORD ============ -->
+<section class="game" id="record">
+  <h2>Your record — on this device only</h2>
+  <p>Every check you finish lands here, saved in this browser on this device. Nothing is uploaded, ever. Take a copy with Export, or wipe it all with Forget.</p>
+  <div id="recordBody"><p class="empty">Nothing yet — finish any test above and it will appear here.</p></div>
+  <div class="row" style="margin-top:14px">
+    <button type="button" id="exportBtn" data-explain="Downloads your whole record as a text file you can keep or share as you choose.">Export my record<span class="gesture">Tap to download a copy · Hold to hear what it does</span></button>
+    <button type="button" id="forgetBtn" data-explain="Erases your record and your alias from this browser on this device. This cannot be undone.">Forget everything<span class="gesture">Tap, then tap again to confirm · Hold to hear what it does</span></button>
+  </div>
+  <div class="feedback" id="recordFeedback" aria-live="polite"></div>
+</section>
+
+<footer>
+  <p><strong>How? →</strong> Every plate and static field is generated in your browser at the moment you press the button, from random dots and this page’s own drawing code. No published test plates are copied; the form is a homage to a test shape that works, expanded into a game. <strong>Act →</strong> Play, learn what your eyes do with it, and if anything surprises or worries you, book a real eye exam.</p>
+  <p>Copyleft — this page is free to copy, share, and adapt under CC BY-SA 4.0; its code under GPL. Derivatives carry the same freedom. No ads, ever.</p>
+</footer>
+
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var toastTimer=null;
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("show")},3400);}
+
+/* ---------- hold-to-explain ---------- */
+document.querySelectorAll("[data-explain]").forEach(function(el){
+  var timer=null;
+  el.addEventListener("pointerdown",function(){timer=setTimeout(function(){toast(el.getAttribute("data-explain"));timer=null;},550);});
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){el.addEventListener(ev,function(){if(timer){clearTimeout(timer);timer=null;}});});
+});
+
+/* ---------- offline download ---------- */
+$("dlBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="look-closer-eye-tests.html";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+  toast("Saved. That copy works fully offline — plates, static, and all.");
+});
+
+/* ---------- alias + teaching dial + record (on-device) ---------- */
+var RKEY="lookcloser.record.v1", AKEY="lookcloser.alias.v1", DKEY="lookcloser.dial.v1";
+var record=[];
+try{record=JSON.parse(localStorage.getItem(RKEY)||"[]");if(!Array.isArray(record))record=[];}catch(e){record=[];}
+function saveRecord(){try{localStorage.setItem(RKEY,JSON.stringify(record));}catch(e){}}
+function alias(){return ($("aliasInput").value||"").trim()||"Guest explorer";}
+try{$("aliasInput").value=localStorage.getItem(AKEY)||"";}catch(e){}
+$("aliasInput").addEventListener("change",function(){try{localStorage.setItem(AKEY,alias()==="Guest explorer"?"":$("aliasInput").value);}catch(e){}});
+function renderRecord(){
+  var b=$("recordBody");
+  if(!record.length){b.innerHTML='<p class="empty">Nothing yet — finish any test above and it will appear here.</p>';return;}
+  var h='<table class="record"><thead><tr><th>When</th><th>Name</th><th>Test</th><th>Result</th></tr></thead><tbody>';
+  record.slice().reverse().forEach(function(r){
+    h+="<tr><td>"+esc(r.when)+"</td><td>"+esc(r.name)+"</td><td>"+esc(r.game)+"</td><td>"+esc(r.result)+"</td></tr>";});
+  b.innerHTML=h+"</tbody></table>";
+}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function addRecord(game,result){
+  record.push({when:new Date().toLocaleString(),name:alias(),game:game,result:result});
+  saveRecord();renderRecord();
+}
+renderRecord();
+$("exportBtn").addEventListener("click",function(){
+  if(!record.length){$("recordFeedback").textContent="Nothing to export yet — finish a test first.";return;}
+  var lines=["Look Closer — my eye-test record (screening game, not an eye exam)","Exported "+new Date().toLocaleString(),""];
+  record.forEach(function(r){lines.push(r.when+" · "+r.name+" · "+r.game+" · "+r.result);});
+  var blob=new Blob([lines.join("\n")],{type:"text/plain"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="look-closer-record.txt";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+  $("recordFeedback").textContent="Exported — the file is yours.";
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+  if(!forgetArmed){forgetArmed=true;$("forgetBtn").firstChild.textContent="Tap again to really forget ";
+    $("recordFeedback").textContent="One more tap erases your record and alias from this device. There is no undo.";
+    setTimeout(function(){forgetArmed=false;$("forgetBtn").firstChild.textContent="Forget everything ";},5000);return;}
+  record=[];saveRecord();try{localStorage.removeItem(AKEY);}catch(e){}
+  $("aliasInput").value="";forgetArmed=false;$("forgetBtn").firstChild.textContent="Forget everything ";
+  renderRecord();$("recordFeedback").textContent="Forgotten. This device remembers nothing now.";
+});
+/* teaching dial */
+function setDial(v){
+  document.body.setAttribute("data-teach",v==="full"?"full":v);
+  document.querySelectorAll("[data-dial]").forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-dial")===v));});
+  try{localStorage.setItem(DKEY,v);}catch(e){}
+}
+document.querySelectorAll("[data-dial]").forEach(function(b){b.addEventListener("click",function(){setDial(b.getAttribute("data-dial"));});});
+try{var d0=localStorage.getItem(DKEY);if(d0)setDial(d0);}catch(e){}
+
+/* ---------- shared helpers ---------- */
+function rnd(a,b){return a+Math.random()*(b-a);}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function jitter(hex,amt){
+  var n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255,f=rnd(1-amt,1+amt);
+  function c(v){return Math.max(0,Math.min(255,Math.round(v*f)));}
+  return "rgb("+c(r)+","+c(g)+","+c(b)+")";
+}
+function deut(hex){ /* deuteranopia approximation matrix */
+  var n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  function c(v){return Math.max(0,Math.min(255,Math.round(v)));}
+  return "rgb("+c(.625*r+.375*g)+","+c(.7*r+.3*g)+","+c(.3*g+.7*b)+")";
+}
+function makeMask(size,drawFn){
+  var c=document.createElement("canvas");c.width=c.height=size;
+  var x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,size,size);
+  x.fillStyle="#fff";x.strokeStyle="#fff";drawFn(x,size);
+  return x.getImageData(0,0,size,size).data;
+}
+function maskAt(data,size,x,y){
+  var xi=Math.max(0,Math.min(size-1,Math.floor(x))),yi=Math.max(0,Math.min(size-1,Math.floor(y)));
+  return data[(yi*size+xi)*4]>120;
+}
+function digitMask(ch){
+  return makeMask(200,function(x,s){x.font="700 150px Georgia,serif";x.textAlign="center";x.textBaseline="middle";x.fillText(ch,s/2,s/2+8);});
+}
+function shapeMask(kind){
+  return makeMask(200,function(x,s){
+    x.beginPath();
+    if(kind==="triangle"){x.moveTo(100,35);x.lineTo(170,165);x.lineTo(30,165);x.closePath();}
+    else if(kind==="circle"){x.arc(100,100,62,0,Math.PI*2);}
+    else if(kind==="square"){x.rect(45,45,110,110);}
+    else if(kind==="star"){for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5,r=i%2?30:68;
+      var px=100+r*Math.cos(a),py=100+r*Math.sin(a);i?x.lineTo(px,py):x.moveTo(px,py);}x.closePath();}
+    else if(kind==="diamond"){x.moveTo(100,28);x.lineTo(172,100);x.lineTo(100,172);x.lineTo(28,100);x.closePath();}
+    x.fill();
+  });
+}
+
+/* ============ GAME 1: DOT PLATES ============ */
+var PAL={
+  control:{fig:["#2e3d4d","#3a4f63","#24313f"],gnd:["#c9b892","#bfa87e","#d6c69e"],name:"Control plate"},
+  rg:{fig:["#b85c2e","#c96f3a","#a84e28","#d07a45"],gnd:["#6d7f35","#7d8f3e","#5f702c","#8a9a4a"],name:"Red-green plate"},
+  vanish:{fig:["#b3543f","#a84a38","#bd5f47"],gnd:["#7a7a3a","#6f7038","#83823f"],name:"Vanishing plate (red-green)"},
+  by:{fig:["#3a5f9e","#46689f","#33548c"],gnd:["#7f8f4a","#5f8f7a","#8f9455"],name:"Blue-yellow plate"}
+};
+var plateKinds=["control","rg","vanish","by","shape"];
+var plateIdx=0, plate=null, plateSim=false, plateStats={done:0,right:0};
+function newPlate(forceKind){
+  var kind=forceKind||plateKinds[plateIdx%plateKinds.length]; plateIdx++;
+  var answer, mask, pal;
+  if(kind==="shape"){
+    var shapes=["star","triangle","circle","square","diamond"];
+    var sh=pick(shapes); answer=sh; mask=shapeMask(sh);
+    pal={fig:["#8a4a6e","#7c4062","#9a5578"],gnd:["#4f7a68","#5d8874","#446b5a"],name:"Shape plate"};
+  }else{
+    var digits="23456789"; var ch=digits[Math.floor(Math.random()*digits.length)];
+    if(Math.random()<0.4) ch+=digits[Math.floor(Math.random()*digits.length)];
+    answer=ch; mask=makeMask(200,function(x,s){x.font="700 "+(ch.length>1?120:150)+"px Georgia,serif";x.textAlign="center";x.textBaseline="middle";x.fillText(ch,s/2,s/2+8);});
+    pal=PAL[kind];
+  }
+  plate={kind:kind,answer:answer,mask:mask,pal:pal,dots:[]};
+  var S=360,cx=S/2,cy=S/2,R=S/2-8;
+  for(var i=0;i<1500;i++){
+    var a=rnd(0,Math.PI*2), rr=Math.sqrt(Math.random())*R;
+    var px=cx+rr*Math.cos(a), py=cy+rr*Math.sin(a);
+    var inside=maskAt(mask,200,px/S*200,py/S*200);
+    var base=pick(inside?pal.fig:pal.gnd);
+    plate.dots.push({x:px,y:py,r:rnd(3.6,8.6),base:base});
+  }
+  drawPlate();
+  $("plateMeta").textContent=pal.name+" · drawn fresh just now. What do you see?";
+  $("plateFeedback").textContent="";$("plateFeedback").className="feedback";
+  $("plateAnswer").value="";
+  updatePlateScore();
+}
+function drawPlate(){
+  var c=$("plateCanvas"),x=c.getContext("2d");var S=360;
+  x.clearRect(0,0,S,S);
+  plate.dots.forEach(function(d){
+    x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);
+    x.fillStyle=plateSim?deut(d.base):jitter(d.base,0.16);x.fill();
+  });
+}
+function updatePlateScore(){
+  $("plateScore").textContent=plateStats.done?("Plates answered: "+plateStats.done+" · spotted: "+plateStats.right):"";
+}
+$("plateNew").addEventListener("click",function(){newPlate();});
+$("plateSim").addEventListener("click",function(){
+  plateSim=!plateSim;this.setAttribute("aria-pressed",String(plateSim));drawPlate();
+  toast(plateSim?"This is the same plate with the red-green difference collapsed — watch the figure dissolve if it was drawn in reds and greens.":"Back to the plate as drawn.");
+});
+$("plateCheck").addEventListener("click",function(){
+  if(!plate)return;
+  var raw=($("plateAnswer").value||"").trim().toLowerCase();
+  var fb=$("plateFeedback");fb.style.color="";
+  var nothing=/^(nothing|none|no|can't see|cant see|i see nothing|blank)/.test(raw);
+  var correct=!nothing && raw.replace(/\s/g,"")===String(plate.answer).toLowerCase();
+  plateStats.done++;
+  if(correct){plateStats.right++;fb.className="feedback good";
+    fb.textContent="Yes — it was “"+plate.answer+".” "+plateExplain(true);
+    addRecord(plate.pal.name,"Saw “"+plate.answer+"” correctly");
+  }else if(nothing){fb.className="feedback";
+    fb.style.color="var(--warm)";
+    fb.textContent="You saw nothing — the hidden figure was “"+plate.answer+".” "+plateExplain(false,true);
+    addRecord(plate.pal.name,"Saw nothing (figure was “"+plate.answer+"”)");
+  }else{fb.className="feedback bad";
+    fb.textContent="Not this time — the hidden figure was “"+plate.answer+".” "+plateExplain(false);
+    addRecord(plate.pal.name,"Answered “"+raw+"” — figure was “"+plate.answer+"”");
+  }
+  updatePlateScore();
+});
+function plateExplain(got,nothing){
+  if(plate.kind==="control")return "This control plate differs in brightness as well as colour, so nearly every eye should catch it — it checks the setup, not your colour vision.";
+  if(plate.kind==="vanish")return "This is the vanishing plate: its reds and greens are a confusion pair at scrambled brightness. Typical eyes separate them by hue alone; red-green-deficient eyes receive them as nearly the same signal, so the figure genuinely isn’t there to see. Try the red-green simulation button on the next plate to watch it happen.";
+  if(plate.kind==="rg")return "This plate is drawn in a red-green pair: hue does all the work, brightness none. Missing it can be a hint about red-green vision — a hint only; the limits at the top of the page apply.";
+  if(plate.kind==="by")return "This plate is drawn in a blue-yellow confusion pair — the rarer deficiency, where blues slide toward green and yellows toward pink-grey.";
+  return "Shapes hide the same way numbers do: one hue family for the figure, another for the field, brightness scrambled.";
+}
+newPlate("control");
+
+/* ============ GAME 2: ACUITY ============ */
+var pxPerMm=96/25.4; /* CSS nominal until calibrated */
+var calBox=$("calBox"),calSlider=$("calSlider");
+function applyCal(){
+  var w=+calSlider.value; calBox.style.width=w+"px";
+  pxPerMm=w/85.6;
+  $("calReadout").textContent="Calibrated: a bank card is 85.6 mm wide, so this screen shows about "+pxPerMm.toFixed(2)+" pixels per millimetre.";
+}
+calSlider.addEventListener("input",applyCal);applyCal();
+var SLOAN="CDEFLNOP TZ".replace(" ","").split("");
+var LEVELS=[["20/100",5],["20/80",4],["20/63",3.15],["20/50",2.5],["20/40",2],["20/32",1.6],["20/25",1.25],["20/20",1]];
+var ac=null;
+function acuityLetters(n){var s="";var used={};while(s.length<n){var ch=pick(SLOAN);s+=ch;}return s;}
+$("acuityStart").addEventListener("click",function(){
+  ac={i:0,letters:acuityLetters(5),lastGood:null,done:false};
+  $("acuityAnswerRow").hidden=false;
+  showAcuityLine();
+  $("acuityFeedback").textContent="";
+  $("acuityStatus").textContent="Read the line out loud first, then type it. No squinting, no leaning in — hold your chosen distance.";
+});
+function showAcuityLine(){
+  var dist=+$("distSelect").value;
+  var mult=LEVELS[ac.i][1];
+  var hMm=dist*0.0014544*mult; /* 5 arcmin letter at 20/20, scaled */
+  var hPx=hMm*pxPerMm;
+  var line=$("acuityLine");
+  if(hPx>window.innerWidth*0.86/ (ac.letters.length*0.85)){
+    $("acuityFeedback").className="feedback bad";
+    $("acuityFeedback").textContent="This line is too wide for your screen at that distance — move farther away or pick a longer distance. A screen that crops the line can’t test it.";
+  } else {$("acuityFeedback").textContent="";}
+  line.style.fontSize=Math.max(10,hPx)+"px";
+  line.textContent=ac.letters.split("").join(" ");
+  $("acuityStatus").textContent="Line "+(ac.i+1)+" of "+LEVELS.length+" · testing around "+LEVELS[ac.i][0]+" at "+(dist/1000>=1?dist/1000+" m":dist/10+" cm")+".";
+  $("acuityInput").value="";
+}
+$("acuityCheck").addEventListener("click",function(){
+  if(!ac||ac.done)return;
+  var typed=($("acuityInput").value||"").toUpperCase().replace(/[^A-Z]/g,"");
+  var want=ac.letters; var right=0;
+  for(var i=0;i<want.length;i++){if(typed[i]===want[i])right++;}
+  var fb=$("acuityFeedback");
+  if(right>=4){
+    ac.lastGood=LEVELS[ac.i][0];
+    if(ac.i===LEVELS.length-1){finishAcuity("You read the smallest line this screen can honestly draw — around 20/20 at your chosen distance.");}
+    else{ac.i++;ac.letters=acuityLetters(5);fb.className="feedback good";fb.textContent="Line read ("+right+"/5). Stepping smaller…";showAcuityLine();}
+  }else{
+    finishAcuity(null);
+  }
+});
+function finishAcuity(perfectMsg){
+  ac.done=true;$("acuityAnswerRow").hidden=true;$("acuityLine").textContent="";
+  var fb=$("acuityFeedback");
+  var result=ac.lastGood?("Smallest line read: about "+ac.lastGood+" at the chosen distance (rough screen estimate, not a measurement)")
+                         :"Couldn’t read the largest line at the chosen distance — try closer, brighter, or book a real exam if that matches daily life";
+  fb.className="feedback "+(ac.lastGood?"good":"bad");
+  fb.textContent=(perfectMsg?perfectMsg+" ":"")+result+". Remember: distance, brightness and squinting all move this number.";
+  $("acuityStatus").textContent="Self-check finished.";
+  addRecord("Letter acuity self-check",result);
+}
+
+/* ============ GAME 3: CONTRAST ============ */
+var CONTRASTS=[0.85,0.60,0.42,0.29,0.19,0.12,0.07];
+var contrastRowsData=[], contrastPick=-1;
+function inkRGB(){
+  var cs=getComputedStyle(document.body);
+  var ink=cs.getPropertyValue("--ink").trim(),bg=cs.getPropertyValue("--surface").trim();
+  function parse(v){if(v[0]==="#"){var n=parseInt(v.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}return[28,36,32];}
+  return{ink:parse(ink),bg:parse(bg)};
+}
+function buildContrast(){
+  var box=$("contrastRows");box.innerHTML="";contrastRowsData=[];contrastPick=-1;
+  var cols=inkRGB();
+  CONTRASTS.forEach(function(ct,i){
+    var letters=acuityLetters(4);
+    contrastRowsData.push({letters:letters,ct:ct});
+    var mix=cols.bg.map(function(b,k){return Math.round(b+(cols.ink[k]-b)*ct);});
+    var row=document.createElement("div");row.className="crow";
+    row.innerHTML='<span class="clabel">Row '+(i+1)+" · "+Math.round(ct*100)+'% contrast</span>'+
+      '<span class="letters" style="color:rgb('+mix.join(",")+')">'+letters.split("").join(" ")+"</span>";
+    var btn=document.createElement("button");btn.type="button";btn.className="small";
+    btn.innerHTML="This is my faintest readable row<span class=\"gesture\">Tap to pick row "+(i+1)+"</span>";
+    btn.setAttribute("aria-pressed","false");
+    btn.addEventListener("click",function(){
+      contrastPick=i;
+      box.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed","false");});
+      btn.setAttribute("aria-pressed","true");
+      $("contrastFeedback").textContent="Row "+(i+1)+" picked. Now type its letters to prove it.";
+      $("contrastFeedback").className="feedback";
+    });
+    row.appendChild(btn);box.appendChild(row);
+  });
+  $("contrastInput").value="";$("contrastFeedback").textContent="";
+}
+$("contrastNew").addEventListener("click",buildContrast);
+$("contrastCheck").addEventListener("click",function(){
+  var fb=$("contrastFeedback");
+  if(contrastPick<0){fb.className="feedback bad";fb.textContent="Pick your faintest readable row first — tap its button.";return;}
+  var typed=($("contrastInput").value||"").toUpperCase().replace(/[^A-Z]/g,"");
+  var want=contrastRowsData[contrastPick].letters,right=0;
+  for(var i=0;i<want.length;i++){if(typed[i]===want[i])right++;}
+  var pct=Math.round(contrastRowsData[contrastPick].ct*100);
+  if(right>=3){fb.className="feedback good";
+    fb.textContent="Proved it — you read letters at about "+pct+"% contrast ("+right+"/4). That’s your floor in this room, on this screen, today.";
+    addRecord("Contrast rows","Read down to about "+pct+"% contrast");
+  }else{fb.className="feedback bad";
+    fb.textContent="That row didn’t check out ("+right+"/4 letters). Your honest floor is a bolder row — pick that one and prove it instead. No shame in the real number; it’s the only useful one.";
+  }
+});
+buildContrast();
+
+/* ============ GAME 4: NOISE ============ */
+var NOISE_SHAPES=[
+  {name:"Fish",draw:function(x,s){x.beginPath();x.ellipse(180,180,95,52,0,0,Math.PI*2);x.fill();
+     x.beginPath();x.moveTo(262,180);x.lineTo(322,128);x.lineTo(322,232);x.closePath();x.fill();}},
+  {name:"Key",draw:function(x,s){x.beginPath();x.arc(130,180,58,0,Math.PI*2);x.fill();
+     x.fillRect(178,164,140,32);x.fillRect(272,196,20,44);x.fillRect(308,196,20,44);}},
+  {name:"Bird",draw:function(x,s){x.beginPath();x.ellipse(185,195,88,50,-0.25,0,Math.PI*2);x.fill();
+     x.beginPath();x.arc(268,138,30,0,Math.PI*2);x.fill();
+     x.beginPath();x.moveTo(292,132);x.lineTo(330,146);x.lineTo(292,152);x.closePath();x.fill();}},
+  {name:"Umbrella",draw:function(x,s){x.beginPath();x.arc(180,185,105,Math.PI,0);x.fill();
+     x.fillRect(174,185,12,95);x.beginPath();x.arc(198,280,24,0,Math.PI*0.9);x.lineWidth=11;x.stroke();}}
+];
+var noiseCur=null,noiseStats={done:0,right:0},noiseRevealed=false;
+function newNoise(){
+  var shape=pick(NOISE_SHAPES);
+  var maskC=document.createElement("canvas");maskC.width=maskC.height=360;
+  var mx=maskC.getContext("2d");mx.fillStyle="#000";mx.fillRect(0,0,360,360);
+  mx.fillStyle="#fff";mx.strokeStyle="#fff";shape.draw(mx,360);
+  var data=mx.getImageData(0,0,360,360).data;
+  noiseCur={shape:shape,data:data};noiseRevealed=false;
+  var c=$("noiseCanvas"),x=c.getContext("2d");
+  x.clearRect(0,0,360,360);
+  for(var i=0;i<5200;i++){
+    var px=rnd(0,360),py=rnd(0,360);
+    var inside=data[(Math.floor(py)*360+Math.floor(px))*4]>120;
+    var v=Math.floor(rnd(70,190));
+    x.fillStyle=inside?("rgb("+(v+38)+","+v+","+(v-28)+")"):("rgb("+(v-22)+","+v+","+(v+30)+")");
+    x.fillRect(px,py,rnd(2,4.4),rnd(2,4.4));
+  }
+  var opts=NOISE_SHAPES.map(function(s){return s.name;});
+  var box=$("noiseOptions");box.innerHTML="";
+  opts.forEach(function(name){
+    var b=document.createElement("button");b.type="button";
+    var art=/^[aeiou]/i.test(name)?"an ":"a ";
+    b.innerHTML=name+"<span class=\"gesture\">Tap if the hidden shape is "+art+name.toLowerCase()+"</span>";
+    b.addEventListener("click",function(){
+      if(noiseRevealed)return;
+      noiseStats.done++;
+      var fb=$("noiseFeedback");
+      var art2=/^[aeiou]/i.test(name)?"an ":"a ";
+      if(name===noiseCur.shape.name){noiseStats.right++;fb.className="feedback good";
+        fb.textContent="Found it — "+art2+name.toLowerCase()+", hiding in a whisper of warmer tint. Reveal it to see the outline.";
+        addRecord("Shape in the static","Found the "+name);
+      }else{fb.className="feedback bad";
+        fb.textContent="Not "+art2+name.toLowerCase()+" — keep looking, or reveal it and study how it hid.";
+        addRecord("Shape in the static","Guessed "+name+" — the hidden shape was the "+noiseCur.shape.name);
+      }
+      $("noiseScore").textContent="Rounds: "+noiseStats.done+" · found: "+noiseStats.right;
+    });
+    box.appendChild(b);
+  });
+  $("noiseFeedback").textContent="";
+}
+$("noiseNew").addEventListener("click",newNoise);
+$("noiseReveal").addEventListener("click",function(){
+  if(!noiseCur||noiseRevealed)return;noiseRevealed=true;
+  var c=$("noiseCanvas"),x=c.getContext("2d");
+  var warm=getComputedStyle(document.body).getPropertyValue("--warm").trim()||"#b45a1f";
+  var mc=document.createElement("canvas");mc.width=mc.height=360;var mctx=mc.getContext("2d");
+  mctx.fillStyle=warm;mctx.strokeStyle=warm;mctx.lineWidth=11;
+  noiseCur.shape.draw(mctx,360);
+  x.save();x.globalAlpha=0.55;x.drawImage(mc,0,0);x.restore();
+  $("noiseFeedback").textContent="There it is — the "+noiseCur.shape.name.toLowerCase()+", tinted warm. Notice how your eye keeps it now that it knows the shape: that’s the figure-finding machinery at work.";
+  $("noiseFeedback").className="feedback";
+});
+newNoise();
+})();
+</script>
+</body>
+</html>
