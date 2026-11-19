@@ -1,0 +1,1152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>In Theatre — a surgery knowledge simulator</title>
+    <style>
+      :root{
+        --bg:#eef3f2; --panel:#ffffff; --panel2:#e3edeb; --ink:#14201f; --muted:#47605c;
+        --teal:#0d6e6a; --teal-dark:#084f4c; --teal-soft:#d7eae7;
+        --amber:#9a6206; --amber-bg:#fdf0d5; --red:#a31616; --red-bg:#fbe3e1;
+        --good:#1c6b34; --good-bg:#e0f2e4; --line:#b9cdc9; --shadow:0 2px 10px rgba(10,40,38,.10);
+        --radius:10px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0d1514; --panel:#16211f; --panel2:#1c2b28; --ink:#e7f0ee; --muted:#9db8b3;
+          --teal:#3fbdb2; --teal-dark:#8fe0d8; --teal-soft:#173b37;
+          --amber:#f0b95a; --amber-bg:#3a2c10; --red:#ff9a92; --red-bg:#3d1714;
+          --good:#7ed492; --good-bg:#17351f; --line:#33524c; --shadow:0 2px 10px rgba(0,0,0,.4);
+        }
+      }
+      *{ box-sizing:border-box; }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif; line-height:1.55; }
+      h1,h2,h3{ font-family:Georgia,"Iowan Old Style","Times New Roman",serif; line-height:1.2; margin:0 0 .4em; }
+      h1{ font-size:2rem; } h2{ font-size:1.45rem; } h3{ font-size:1.12rem; }
+      p{ margin:.45em 0; }
+      button,[role="button"],select,summary,input:not([type="checkbox"]){ min-height:2.5rem; }
+      button{ font:inherit; cursor:pointer; }
+      .wrap{ max-width:880px; margin:0 auto; padding:0 16px 64px; }
+      .freeline{ background:var(--teal-dark); color:#eafaf7; padding:10px 16px; text-align:center; font-weight:600; }
+      @media (prefers-color-scheme: dark){ .freeline{ background:#0a3532; } }
+      .freeline a{ color:#ffe9a8; }
+      .freeline button{ background:transparent; border:1px solid #eafaf7; color:#eafaf7; border-radius:6px; padding:4px 12px; margin-left:8px; min-height:2.25rem; }
+      header.hero{ padding:26px 0 6px; }
+      .hero p.lede{ font-size:1.08rem; color:var(--muted); max-width:64ch; }
+      nav.compass{ position:sticky; top:0; z-index:20; background:var(--bg); border-bottom:2px solid var(--line);
+        display:flex; flex-wrap:wrap; gap:6px; padding:8px 0; margin:14px 0 20px; }
+      nav.compass a{ color:var(--teal-dark); text-decoration:none; font-weight:600; padding:8px 12px; border:1px solid var(--line);
+        border-radius:999px; background:var(--panel); min-height:2.5rem; display:inline-flex; align-items:center; }
+      nav.compass a:active{ background:var(--teal-soft); }
+      .card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+        padding:18px; margin:0 0 20px; }
+      .limits{ border:3px solid var(--red); background:var(--red-bg); border-radius:var(--radius); padding:18px; margin:0 0 20px; }
+      .limits h2{ color:var(--red); margin-top:0; }
+      .limits p{ font-size:1.05rem; }
+      .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .btn{ background:var(--teal); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:600; }
+      .btn.secondary{ background:var(--panel2); color:var(--ink); border:1px solid var(--line); }
+      .btn.danger{ background:var(--red); color:#fff; }
+      .btn:disabled{ opacity:.45; cursor:default; }
+      .seg{ display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+      .seg button{ background:var(--panel); color:var(--ink); border:none; padding:10px 16px; font-weight:600; border-right:1px solid var(--line); }
+      .seg button:last-child{ border-right:none; }
+      .seg button[aria-pressed="true"]{ background:var(--teal); color:#fff; }
+      label.fld{ display:block; font-weight:600; margin:8px 0 4px; }
+      input[type="text"]{ font:inherit; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); width:min(320px,100%); }
+      .small{ font-size:.9rem; color:var(--muted); }
+      .variant-banner{ display:none; background:var(--amber-bg); border:2px solid var(--amber); color:var(--ink);
+        border-radius:var(--radius); padding:12px 16px; margin:0 0 20px; font-weight:600; }
+      .variant-banner.show{ display:block; }
+      details.fold{ border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); margin:0 0 12px; }
+      details.fold summary{ cursor:pointer; padding:12px 16px; font-weight:700; list-style:none; display:flex; justify-content:space-between; gap:10px; align-items:center; }
+      details.fold summary::-webkit-details-marker{ display:none; }
+      details.fold summary .gesture{ font-weight:500; font-size:.85rem; color:var(--teal-dark); white-space:nowrap; }
+      details.fold .foldbody{ padding:0 16px 16px; }
+      .stepmeta{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+      .chip{ background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.88rem; font-weight:600; }
+      .chip.bad{ background:var(--red-bg); border-color:var(--red); color:var(--red); }
+      .choices{ display:grid; gap:10px; margin-top:12px; }
+      .choice{ text-align:left; background:var(--panel); border:2px solid var(--line); border-radius:var(--radius);
+        padding:14px 16px; font-size:1rem; width:100%; }
+      .choice:hover{ border-color:var(--teal); }
+      .choice:disabled{ opacity:.5; }
+      .choice.picked-wrong{ border-color:var(--red); background:var(--red-bg); }
+      .choice.picked-right{ border-color:var(--good); background:var(--good-bg); }
+      .feedback{ display:none; border-radius:var(--radius); padding:14px 16px; margin-top:14px; }
+      .feedback.show{ display:block; }
+      .feedback.ok{ background:var(--good-bg); border:2px solid var(--good); }
+      .feedback.wrong{ background:var(--amber-bg); border:2px solid var(--amber); }
+      .feedback.grave{ background:var(--red-bg); border:3px solid var(--red); }
+      .feedback h3{ margin-top:0; }
+      .coachbox{ display:none; background:var(--teal-soft); border-left:5px solid var(--teal); border-radius:6px; padding:12px 14px; margin-top:14px; }
+      .coachbox.show{ display:block; }
+      .hintline{ display:none; font-style:italic; color:var(--muted); margin-top:10px; }
+      .hintline.show{ display:block; }
+      .tally{ font-variant-numeric:tabular-nums; }
+      table.rec{ width:100%; border-collapse:collapse; }
+      table.rec th, table.rec td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+      table.rec th{ width:46%; font-weight:600; color:var(--muted); }
+      .benchwrap{ display:flex; flex-wrap:wrap; gap:18px; }
+      .benchsvg{ background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); max-width:100%; height:auto; touch-action:manipulation; }
+      .benchside{ flex:1 1 260px; min-width:240px; }
+      .layerbtns{ display:grid; gap:8px; }
+      .layerbtn{ text-align:left; background:var(--panel); border:2px solid var(--line); border-radius:8px; padding:10px 14px; font-weight:600; width:100%; }
+      .layerbtn[aria-pressed="true"]{ border-color:var(--teal); background:var(--teal-soft); }
+      .anatomywrap{ display:flex; flex-wrap:wrap; gap:18px; }
+      .anatomyside{ flex:1 1 280px; min-width:250px; }
+      .instlist{ display:grid; gap:10px; }
+      .inst{ border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:var(--panel); }
+      .inst b{ color:var(--teal-dark); }
+      footer{ border-top:2px solid var(--line); margin-top:28px; padding-top:14px; color:var(--muted); font-size:.92rem; }
+      .kbd-note{ background:var(--panel2); border-radius:6px; padding:2px 8px; }
+      @media (max-width:560px){ h1{ font-size:1.65rem; } .card{ padding:14px; } }
+    </style>
+  </head>
+  <body>
+    <div class="freeline">Free — always free. No ads, no accounts, nothing locked.
+      <button id="downloadBtn" type="button">Tap to download this page for offline use</button>
+    </div>
+
+    <div class="wrap">
+      <header class="hero">
+        <h1>In Theatre — a surgery knowledge simulator</h1>
+        <p class="lede">Work a real operation as a chain of decisions, learn why every rule in the operating
+        theatre exists, and practise a steady hand on the suture bench. This page carries the
+        <em>knowledge</em> behind surgery — the theory, the reasons, the strategies — in full.</p>
+      </header>
+
+      <section class="limits" aria-labelledby="limits-h">
+        <h2 id="limits-h">Honest limits — read this first</h2>
+        <p><strong>This page teaches knowledge only.</strong> It explains how surgery works and why it is done
+        the way it is. It does <strong>not</strong> train you, qualify you, or license you to operate.</p>
+        <p>Real surgery takes years of supervised training — medical school, then years of operating
+        alongside surgeons who watch every move — because living tissue, bleeding, and a person's life
+        answer back in ways no page can reproduce.</p>
+        <p><strong>Nothing here is ever to be attempted on a person.</strong> The suture bench is a
+        steadiness exercise on a screen, not surgical skill. If you ever need an operation, the person
+        holding the scalpel will have spent a decade earning the right to.</p>
+      </section>
+
+      <nav class="compass" aria-label="Compass — tap to jump to a part of the page">
+        <a href="#rounds">Procedure Rounds</a>
+        <a href="#bench">Suture Bench</a>
+        <a href="#anatomy">Anatomy Layers</a>
+        <a href="#library">The Why Library</a>
+        <a href="#record">Your Record</a>
+        <a href="#settings">Settings</a>
+      </nav>
+
+      <div class="variant-banner" id="variantBanner" role="status"></div>
+
+      <section class="card" id="settings" aria-labelledby="settings-h">
+        <h2 id="settings-h">Settings — the rules are yours to set</h2>
+        <label class="fld" for="aliasInput">Your name or alias — call yourself anything you like</label>
+        <div class="row">
+          <input type="text" id="aliasInput" maxlength="40" placeholder="e.g. Guest, Sam, Dr Dreamer" autocomplete="off" />
+          <button class="btn secondary" id="aliasSave" type="button">Tap to save name</button>
+        </div>
+        <p class="small">Operating as: <strong id="aliasShow">Guest</strong>. Your name, settings, and record are
+        saved on this device only — nothing is sent anywhere.</p>
+
+        <label class="fld">Teaching dial — how much teaching rides along as you play</label>
+        <div class="seg" role="group" aria-label="Teaching dial">
+          <button type="button" data-teach="off" aria-pressed="false">Off</button>
+          <button type="button" data-teach="light" aria-pressed="true">Light</button>
+          <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+        </div>
+        <p class="small"><strong>Off:</strong> no hints — you are examined. <strong>Light</strong> (default): one
+        nudge per step. <strong>Coach:</strong> a fuller note at every step, with the strategy thinking spelled out.
+        Wrong choices always teach, at every setting — that is the point of the page. Saved on this device.</p>
+
+        <label class="fld">Variants — banner-labelled when in play</label>
+        <div class="row">
+          <button class="btn secondary" id="strictToggle" type="button" aria-pressed="false">Strict theatre: OFF — tap to turn on</button>
+          <button class="btn secondary" id="targetsToggle" type="button" aria-pressed="false">Bench memory variant: OFF — tap to turn on</button>
+        </div>
+        <p class="small"><strong>Strict theatre</strong> is a variant of the rounds: one sterile-field break ends the
+        round on the spot, the way it would end your part in a real case. <strong>Bench memory variant</strong> hides the
+        target dots on the suture bench, so spacing lives in your eye, not on the screen. A banner at the top of the
+        page names any variant in play.</p>
+      </section>
+
+      <section class="card" id="rounds" aria-labelledby="rounds-h">
+        <h2 id="rounds-h">Procedure Rounds — the appendectomy</h2>
+        <p>The appendix is a small blind-ended tube hanging off the caecum, the first part of the large
+        bowel. When it blocks and inflames — appendicitis — it can burst and spill bowel contents into
+        the abdomen, so the standard treatment is to remove it: an <strong>appendectomy</strong>, the classic
+        teaching operation. You will work it as the surgeon, decision by decision, from the checklist
+        before anyone is cut to the observations after they wake.</p>
+        <p>Wrong choices teach immediately, with the why. One kind of error stands above the rest:
+        <strong>breaking the sterile field</strong>. In a real theatre it can seed an infection that kills, so this
+        page grades it as the gravest error there is — and says why in full, every time.</p>
+        <p><strong>The stake is the patient.</strong> There is deliberately no money in this theatre — no cash
+        scores, no currency, nothing to buy. What you earn is a person recovering well, the trust of the
+        team working beside you, and knowledge that makes you more capable the next time you scrub in.
+        That is the whole economy of this page, and it is the real one.</p>
+        <div style="border:2px solid var(--teal); background:var(--teal-soft); border-radius:var(--radius); padding:14px 16px; margin:12px 0;">
+          <h3 style="margin-top:0;">Your patient</h3>
+          <p id="patientCard" style="margin:0;">Choose a case from the theatre list below and that person
+          becomes your patient. Their outcome — a clean recovery, a longer one, or a complication —
+          is decided by your decisions, and it is written into your record under their name.</p>
+          <p style="margin:.5em 0 0;"><strong>Team standing:</strong> <span id="standReadout">New to the team — nobody knows your hands yet.</span>
+          The scrub nurse, the anaesthetist, and the consultant all notice discipline. Clean work earns
+          trust; sterile breaks and sloppy counts cost it. Standing is kept in your record, in plain words.</p>
+        </div>
+        <div id="listArea">
+          <h3>The theatre list — <span id="shiftLabel">Shift 1</span></h3>
+          <p><strong>Capacity is real.</strong> This shift has <strong>3 case slots</strong>, and more patients are
+          waiting than there are slots — exactly how a real theatre list works. Choosing who goes first
+          is part of the surgery: weigh how urgent the condition is, how long it can safely wait, how
+          long the operation takes, and what your own energy allows. Cases are labelled with their
+          difficulty before you commit a slot — the list starts with straightforward cases and gets
+          harder across shifts, and an easy case and a hard case are not the same spend.</p>
+          <p><strong>Your energy:</strong> <span id="energyWords">Fresh — 100 of 100.</span></p>
+          <div style="background:var(--panel2); border:1px solid var(--line); border-radius:999px; height:18px; overflow:hidden; margin:6px 0 10px;">
+            <div id="energyBar" style="height:100%; width:100%; background:var(--teal); transition:width .4s;"></div>
+          </div>
+          <p class="small">Long cases drain more; back-to-back hard cases drain most. Tired hands are a
+          clinical fact, not a character flaw: as your energy falls, tempting shortcuts appear in the
+          rounds and your needle genuinely drifts on the suture bench — fatigue degrades fine motor
+          control and vigilance, and this page models that honestly instead of just saying it. Rest is a
+          real action with real trade-offs, below the list.</p>
+          <div id="patientList"></div>
+          <div id="restArea" style="margin-top:14px;">
+            <h3>Between cases — rest is a decision</h3>
+            <div class="row">
+              <button class="btn secondary" id="restFull" type="button">Tap to take a proper rest (+40 energy)</button>
+              <button class="btn secondary" id="restShort" type="button">Tap to take a short break (+15 energy)</button>
+              <button class="btn secondary" id="pushOn" type="button">Tap to push on (no rest)</button>
+            </div>
+            <p class="small" id="restNote">A proper rest means a colleague takes the longest-waiting patient
+            now — they are cared for, but not by you, and the record says so. A short break costs nobody
+            a case, but buys less of you back. Pushing on keeps every slot yours and spends the surgeon.</p>
+          </div>
+          <div class="row" style="margin-top:14px;">
+            <button class="btn" id="endShift" type="button">Tap to end the shift</button>
+            <button class="btn" id="nextShift" type="button" hidden>Tap to start the next shift</button>
+          </div>
+          <p id="shiftSummary" role="status"></p>
+        </div>
+        <div id="roundPlay" hidden>
+          <div class="stepmeta">
+            <span class="chip" id="stepCount">Step 1 of 14</span>
+            <span class="chip" id="phaseChip">Preparation</span>
+            <span class="chip bad" id="errChip" hidden>Errors this round: 0</span>
+            <span class="chip" id="standChip">Team standing: New to the team</span>
+          </div>
+          <h3 id="stepTitle"></h3>
+          <p id="stepBody"></p>
+          <div class="choices" id="choices"></div>
+          <p class="hintline" id="hintLine"></p>
+          <div class="coachbox" id="coachBox"><strong>Coach note.</strong> <span id="coachText"></span></div>
+          <div class="feedback" id="feedback" role="status">
+            <h3 id="fbTitle"></h3>
+            <p id="fbBody"></p>
+            <button class="btn" id="nextStep" type="button" hidden>Tap to continue</button>
+          </div>
+        </div>
+        <div id="roundDone" hidden>
+          <h3 id="roundDoneTitle">Round complete</h3>
+          <p id="roundSummary"></p>
+          <p id="roundOutcome"></p>
+          <button class="btn secondary" id="againBtn" type="button">Tap to run the round again</button>
+        </div>
+      </section>
+
+      <section class="card" id="bench" aria-labelledby="bench-h">
+        <h2 id="bench-h">The Suture Bench — a steadiness exercise</h2>
+        <p>Closing a wound well means stitches that are <strong>evenly spaced</strong>, with an
+        <strong>equal bite</strong> of tissue on each side, sitting <strong>level</strong> across the wound — too tight
+        strangles tissue, too loose leaves gaps, uneven bites pucker and weaken the line. Surgeons
+        build that evenness over thousands of supervised repetitions. This bench trains only the
+        small honest part a screen can train: a steady, even hand. <strong>It is a steadiness exercise,
+        not surgical skill.</strong></p>
+        <p><strong>How to play:</strong> tap a point on the <strong>left</strong> of the wound (the needle goes in), then tap a
+        point on the <strong>right</strong> (the needle comes out). That places one stitch. Place five stitches,
+        one per marked row — the faint dots show the ideal entry and exit. You can be graded from
+        three stitches up.</p>
+        <p class="small" id="benchEnergyNote">Your energy carries onto this bench. Fresh hands place the
+        needle where you tap; tired hands drift — watch the status line, because the drift is honestly
+        in the stitches and in the grade.</p>
+        <div class="benchwrap">
+          <svg class="benchsvg" id="benchSvg" viewBox="0 0 340 440" width="340" height="440" role="img"
+               aria-label="Suture practice pad: a vertical wound with five marked stitch rows">
+            <rect x="10" y="10" width="320" height="420" rx="14" fill="#c99b76" />
+            <rect x="10" y="10" width="320" height="420" rx="14" fill="none" stroke="#8a5a3b" stroke-width="3"/>
+            <path d="M170 60 C 164 120, 176 180, 170 240 C 164 300, 176 340, 170 385" fill="none" stroke="#7c2d22" stroke-width="5" stroke-linecap="round"/>
+            <g id="targetLayer"></g>
+            <g id="stitchLayer"></g>
+            <circle id="entryMark" r="6" fill="#ffe9a8" stroke="#7c2d22" stroke-width="2" hidden/>
+          </svg>
+          <div class="benchside">
+            <p class="tally" id="benchStatus">Stitches placed: 0 of 5. Tap the left side of the wound to begin a stitch.</p>
+            <div class="row">
+              <button class="btn secondary" id="undoStitch" type="button" disabled>Tap to undo last stitch</button>
+              <button class="btn" id="gradeBench" type="button" disabled>Tap to grade the bench</button>
+              <button class="btn secondary" id="clearBench" type="button">Tap to clear the pad</button>
+            </div>
+            <div class="feedback" id="benchFeedback" role="status">
+              <h3 id="benchFbTitle"></h3>
+              <p id="benchFbBody"></p>
+            </div>
+            <div class="coachbox" id="benchCoach"><strong>Coach note.</strong> <span id="benchCoachText"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="anatomy" aria-labelledby="anatomy-h">
+        <h2 id="anatomy-h">Anatomy — the layers you pass through</h2>
+        <p>To reach the appendix, the surgeon passes through the wall of the abdomen, layer by layer.
+        Each layer has a job, and each is handled differently — that is why the operation is taught as
+        a journey through named layers, not as "cutting in". Tap a layer to see it lit in the diagram
+        and read what it does.</p>
+        <div class="anatomywrap">
+          <svg class="benchsvg" viewBox="0 0 340 440" width="300" height="388" role="img"
+               aria-label="Layered diagram of the abdominal wall, from skin down to the appendix">
+            <g id="layerShapes"></g>
+          </svg>
+          <div class="anatomyside">
+            <div class="layerbtns" id="layerBtns"></div>
+            <div class="feedback show" id="layerInfo" style="background:var(--teal-soft); border:2px solid var(--teal); margin-top:14px;">
+              <h3 id="layerName">Tap a layer to begin</h3>
+              <p id="layerText">Eight layers stand between the skin and the appendix. Work down the list — it is the same order the surgeon meets them.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="library" aria-labelledby="library-h">
+        <h2 id="library-h">The Why Library — the knowledge behind the craft</h2>
+        <p>Everything the simulator assumes, written out in full. Each fold opens with a tap.</p>
+        <div id="folds"></div>
+      </section>
+
+      <section class="card" id="record" aria-labelledby="record-h">
+        <h2 id="record-h">Your record — saved on this device only</h2>
+        <p class="small">Kept in this browser, on this device. Nothing is sent anywhere. Export a copy
+        any time; Forget wipes it in one tap.</p>
+        <table class="rec" id="recTable" aria-label="Your on-device record"></table>
+        <div class="row" style="margin-top:14px;">
+          <button class="btn secondary" id="exportBtn" type="button">Tap to export your record</button>
+          <button class="btn danger" id="forgetBtn" type="button">Tap to forget everything</button>
+        </div>
+        <p class="small" id="forgetMsg" role="status"></p>
+      </section>
+
+      <footer>
+        <p>Copyleft — the text, diagrams, and design of this page are shared under CC BY-SA 4.0: take
+        them, teach with them, pass them on, and keep them free. The name “In Theatre” is not part of
+        the grant. No ads, ever. Original work, written for this page — no textbook, game, or show was copied.</p>
+        <p>Why? → How? → Act. Every rule above earned its place by a reason; when you find the reason,
+        the right action is usually standing next to it.</p>
+      </footer>
+    </div>
+
+    <script>
+    "use strict";
+    var LS = "inTheatre.v1";
+    function $(id){ return document.getElementById(id); }
+    function loadState(){
+      try{ var raw = localStorage.getItem(LS); if(raw){ var s = JSON.parse(raw); if(s && s.record) return s; } }catch(e){}
+      return null;
+    }
+    function freshRecord(){
+      return { roundsStarted:0, roundsCompleted:0, roundsEndedEarly:0, cleanRounds:0,
+        errors:{ sterile:0, planning:0, order:0, instrument:0, response:0, counts:0 },
+        outcomes:{ clean:0, longer:0, complication:0, handed:0 },
+        roundsByBand:{ fresh:0, working:0, tired:0, exhausted:0 },
+        standing:0, shiftsWorked:0, casesTaken:0, handedToColleague:0, handedToNextTeam:0, waitedTooLong:0,
+        benchSessions:0, suturesPlaced:0, bestBenchScore:null, bestBenchGrade:null,
+        history:[] };
+    }
+    var S = loadState() || { alias:"Guest", teaching:"light", strict:false, hideTargets:false, energy:100, record:freshRecord() };
+    if(typeof S.energy !== "number") S.energy = 100;
+    function save(){ try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){} }
+
+    /* ---------- Standing ---------- */
+    function standingLabel(v){
+      if(v <= -4) return "On thin ice — the team watches your hands";
+      if(v <= -1) return "Trust dented — the team is double-checking you";
+      if(v === 0) return "New to the team";
+      if(v <= 3) return "Trusted hands";
+      if(v <= 7) return "The team asks for you by name";
+      return "First name on the consultant's list";
+    }
+    function energyBand(e){
+      if(e >= 70) return "fresh";
+      if(e >= 40) return "working";
+      if(e >= 20) return "tired";
+      return "exhausted";
+    }
+    function energyWords(){
+      var b = energyBand(S.energy);
+      var w = b === "fresh" ? "Fresh" : b === "working" ? "Working — holding up" : b === "tired" ? "Tired — this is where lapses live" : "Exhausted — you are a risk to the next patient";
+      return w + " — " + S.energy + " of 100.";
+    }
+
+    /* ---------- Cases (the theatre list) ---------- */
+    var CASES = [
+      { id:"maya", name:"Maya R., 24", cond:"Appendicitis, caught early — sore and feverish, but stable.", diff:"Straightforward", urgency:"Needs surgery today", wait:"Can safely wait a few hours", len:"About an hour on the table", cost:20, mods:{} },
+      { id:"ana", name:"Ana M., 45", cond:"Appendicitis, a textbook presentation.", diff:"Straightforward", urgency:"Needs surgery today", wait:"Can safely wait a few hours", len:"About an hour on the table", cost:20, mods:{} },
+      { id:"tom", name:"Tom E., 61", cond:"Appendicitis — and the appendix sits tucked behind the caecum, where it is harder to reach.", diff:"Harder — hidden appendix", urgency:"Needs surgery today", wait:"Can wait a few hours, no more", len:"Longer — finding it takes time", cost:35, mods:{ hidden:true } },
+      { id:"jonah", name:"Jonah K., 17", cond:"Appendicitis, and his blood is slow to clot — bleeding will need watching from the first cut.", diff:"Harder — bleeding-prone", urgency:"Needs surgery today", wait:"Can wait a few hours", len:"About an hour, if the bleeding behaves", cost:35, mods:{ bleed:true } },
+      { id:"priya", name:"Priya S., 33", cond:"The appendix has already burst. Bowel contents have spilled into the abdomen.", diff:"Hardest — perforated", urgency:"Urgent — the list should start here if it can", wait:"Should not wait", len:"The longest case on the list", cost:40, mods:{ perforated:true } },
+      { id:"ruth", name:"Ruth D., 70", cond:"Perforated appendix, in a patient with less reserve to fight infection.", diff:"Hardest — perforated", urgency:"Urgent", wait:"Should not wait", len:"The longest case on the list", cost:40, mods:{ perforated:true } },
+      { id:"sam", name:"Sam O., 52", cond:"Appendicitis, bleeding-prone — his notes flag slow clotting.", diff:"Harder — bleeding-prone", urgency:"Needs surgery today", wait:"Can wait a few hours", len:"About an hour, if the bleeding behaves", cost:35, mods:{ bleed:true } }
+    ];
+    function listForShift(n){
+      var start = ((n - 1) * 2) % CASES.length, out = [], i;
+      for(i = 0; i < 5; i++) out.push(CASES[(start + i) % CASES.length]);
+      return out;
+    }
+    var SH = { num:1, slots:3, waiting:listForShift(1), ended:false };
+
+    /* ---------- The round script ---------- */
+    function C(t, ok, kind, why, grave){ return { t:t, ok:!!ok, kind:kind || null, why:why, grave:!!grave }; }
+    var BASE_STEPS = [
+      { id:"timeout", phase:"Preparation", title:"First: the time out",
+        body:"Your patient is on the table, the team is assembled, the anaesthetist is ready. The knife is still in its packet. What happens before anything else?",
+        hint:"Nothing is cut until the whole team has said, out loud, who this is and what is being done.",
+        coach:"The time out feels like ceremony and works like engineering. Wrong-patient and wrong-site operations almost never happen because a surgeon was careless with a scalpel — they happen because a whole team assumed. Speaking the checks aloud turns private assumptions into shared facts, and any one person can stop the line. That is why it comes before the scrub, the drapes, everything.",
+        choices:[
+          C("Stop, and run the time out aloud with the whole team: right patient, right operation, consent signed, allergies checked, antibiotics given.", true, null, "Right. Every item is a known failure caught in advance: identity and consent stop the wrong person being operated on; the allergy check stops a drug reaction on the table; antibiotics given before the incision are already in the tissue when bacteria arrive. Two minutes, bought with other people's worst days."),
+          C("The consent form is in the notes — that is enough. Start scrubbing.", false, "planning", "Paper in a folder protects nobody at the table. The time out exists because charts get swapped, lists get reordered, and memories fill gaps with what was expected. If the spoken check and the paper disagreed, you would want to know now — not with the patient open."),
+          C("Ask the patient to confirm the details once they wake up afterwards.", false, "planning", "Afterwards is too late — and in a few minutes this patient will be anaesthetised and unable to confirm anything. Consent and identity are verified while the one person who knows for certain can still speak.")
+        ]},
+      { id:"scrub", phase:"Preparation", title:"Scrubbing in",
+        body:"To the sinks. Your hands will spend the next hour inside another person's body, inches from open bowel. How do you prepare them?",
+        hint:"Skin cannot be sterilised — only cleaned down to a level the body's defences can handle, then kept that way.",
+        coach:"Hands carry two floras: transient germs picked up from the world, and resident germs living deep in the skin that no scrub fully removes. The timed antiseptic scrub strips the transient load and suppresses the resident one; the sterile gown and gloves then form the barrier for what remains. Every rule that follows — what you may touch, where your hands may rest — is just protecting that barrier. Break the barrier and the scrub was theatre in the wrong sense.",
+        choices:[
+          C("Scrub hands and forearms with antiseptic for the full timed scrub, dry on a sterile towel, then gown and gloves without touching any outer surface.", true, null, "Right — and notice the logic: the scrub lowers the germ count, the drying towel and gown are sterile, and the gloves go on so that only their sterile outside ever faces the patient. One touch of a non-sterile surface anywhere in that chain and the chain restarts."),
+          C("A quick wash, the way you would wash before lunch, then glove up.", false, "sterile", "A social wash removes visible dirt, not the bacterial load that matters. An open abdomen has almost no defences of its own — germs carried in on hands seed wound infections and deep abscesses days later, long after everyone has forgotten the shortcut. The scrub is timed because coverage and contact time are what make antiseptic work."),
+          C("Glove up first, then reach up and swing the theatre light into position yourself.", false, "sterile", "The moment a sterile glove grips a non-sterile light handle, the glove is contaminated — the light is wiped down between cases, never sterilised. From here on, lights are moved by the circulating nurse, or with sterile handles fitted for exactly this purpose.", true)
+        ]},
+      { id:"field", phase:"Preparation", title:"The sterile field",
+        body:"The patient is draped; only the operation site shows. Your gown is sterile from chest to waist, your sleeves to the cuffs. The operation is about to begin. How do you hold yourself?",
+        hint:"Sterile is not a property of things — it is a discipline of movement. If you cannot see it, you cannot vouch for it.",
+        coach:"The field's rules sound fussy until you see they are all one rule: sterility can only be guaranteed where it can be watched. Hands stay in sight and above the waist because below the waist and behind the back are places nobody — including you — can verify. The back of the gown is treated as non-sterile for the same reason. Surgeons drill this until it is posture, not thought, because mid-operation there is no attention spare for it.",
+        choices:[
+          C("Hands up in front of you, in sight and above waist level, touching only sterile surfaces — and wait like that, however long it takes.", true, null, "Right. That posture is the visible sign of the whole system: everything you touch from now on is either sterile or it ends your part in the case until you re-scrub and re-glove."),
+          C("Rest your gloved hands in your lap while the trolley is finished — you will be careful when you stand.", false, "sterile", "Below waist level is outside the watched zone, and your lap is your non-sterile gown and whatever it has brushed. In a real theatre the scrub nurse would stop you and you would re-glove — because a glove that has been somewhere nobody can vouch for is treated as contaminated, every time, without argument.", true),
+          C("Turn around and fetch a swab from the shelf behind you — it is quicker than asking.", false, "sterile", "Your back is non-sterile, the shelf is non-sterile, and turning your back on the field breaks the watched-zone rule twice in one move. Everything off the field reaches you through the circulating nurse, who opens packets so the sterile contents land without a non-sterile touch. Slow is the price of certain.", true)
+        ]},
+      { id:"counts1", phase:"Preparation", title:"The counts — before",
+        body:"On the trolley: scalpels, forceps, clamps, scissors, needle holders — and packs of gauze swabs, each with a radio-opaque thread woven in. The incision has not been made. What happens with all of it first?",
+        hint:"You cannot prove nothing was left inside unless you know exactly what you started with.",
+        coach:"Retained swabs and instruments are among the most feared 'never events' in surgery — rare, devastating, and almost entirely preventable by counting. The logic is bookkeeping, not mistrust: a baseline count before, a closing count after, and the two must agree before the patient is closed. The radio-opaque thread exists so that if a count ever fails, an X-ray can settle the question. Nobody is above the count; the count is how the team protects the patient from the team's own humanity.",
+        choices:[
+          C("Count swabs, instruments and needles aloud with the circulating nurse, and have the numbers written up on the board where everyone can see them.", true, null, "Right. Aloud, by two people, written down: three separate guards against one tired brain misremembering. This board is the baseline the whole case will be checked against before closing."),
+          C("Count everything at the end — that is when it matters.", false, "counts", "An end count with no baseline proves nothing. If the closing count finds eleven swabs and nobody recorded whether twelve or eleven started the case, the team has a mystery inside an open patient. Counting is a before-and-after pair; either half alone is worthless."),
+          C("It is a small operation. Skip the count and save the time.", false, "counts", "Retained swabs do not check the size of the operation before happening — small cases, tired teams and 'quick ones' are exactly the setting of the case reports. The count takes two minutes. Finding a forgotten swab takes a second operation.")
+        ],
+        tired:{ t:"You are tired, and the numbers are probably fine — wave the count through and get started.", kind:"counts", why:"That 'probably' is fatigue talking, and it is precisely what the count exists to overrule. A tired brain is most certain exactly when it should not be. The count is mechanical and shared out loud so that no single person's tiredness — yours included — can quietly become the patient's problem." }},
+      { id:"anaes", phase:"Preparation", title:"The other half of the operation",
+        body:"At the head of the table sits the anaesthetist, watching a screen of numbers: heart rate, blood pressure, oxygen, breathing gases. Your patient is drowsy but not yet asleep. The knife is ready. What do you do?",
+        hint:"You are not the only doctor in the room, and the patient is not ready just because you are.",
+        coach:"Anaesthesia is a second, parallel operation: the anaesthetist renders the patient unconscious, pain-free and still, secures the airway, and then flies the patient's physiology — breathing, circulation, temperature — for the whole case, adjusting drugs minute by minute. The surgeon's still, painless field exists only because of that work. Operating before the word is given risks a patient who can feel, move, or obstruct their airway mid-incision. The go-ahead is a handover of trust between two specialists sharing one patient.",
+        choices:[
+          C("Wait for the anaesthetist's word: patient fully asleep, airway secured, monitors running, pain relief and antibiotics on board. Then begin.", true, null, "Right. 'The anaesthetist is happy' is one of the great sentences in surgery — it means the patient's physiology is held steady by someone whose whole attention is on it, freeing yours for the operation."),
+          C("She looks drowsy enough — make the incision now and save a few minutes.", false, "response", "Drowsy is not anaesthetised. A patient who feels the incision will move, cry out, and surge in heart rate and blood pressure — and may obstruct their airway in the struggle. Those minutes are bought with the patient's terror and a chaotic field."),
+          C("Anaesthesia is their department. When you cut has nothing to do with them.", false, "planning", "One patient, one team. The timing of the incision is a joint decision because the consequences land on both sides of the drape — and because the anaesthetist may be mid-way through securing the airway, the one job that cannot be interrupted by a crisis you created.")
+        ]},
+      { id:"approach", phase:"The operation", title:"Choosing the approach — two honest roads",
+        body:"Now the first real fork. There are two established ways to reach this appendix, and good surgeons argue for both. Choose your road — the page will grade the reasoning, not the road.",
+        hint:"When two strategies are both legitimate, the skill is matching the road to this patient, this team, and this kit — not memorising one answer.",
+        coach:"Strategy, here: keyhole surgery trades a wide view and camera kit for small scars, a look at the whole abdomen, and usually a faster, less painful recovery. The open gridiron trades that panorama for directness — no camera, no gas, your hands and eyes at the site, and decades of track record in exactly this spot. Neither wins in the abstract. A burst appendix with widespread contamination, an unstable patient, or missing kit can each flip the answer. Naming the trade-off out loud is what senior surgeons are actually doing when they 'just decide'.",
+        choices:[
+          C("Keyhole (laparoscopic): three small ports, a camera, gentle gas pressure to lift the abdominal wall, and the whole abdomen on screen.", true, null, "A sound road. You gain a full inspection of the abdomen — valuable when the diagnosis is not certain — and small wounds that usually mean less pain and a quicker recovery. The costs: specialist kit and skill, gas the patient's heart and lungs must tolerate, and a longer setup. Chosen with those in view, it is a surgeon's decision, not a fashion."),
+          C("Open gridiron: a small incision over McBurney's point — a third of the way from the hip bone to the navel — splitting the muscle layers along their fibres.", true, null, "A sound road. Direct, fast, no camera kit to fail, and a muscle-splitting incision that heals strong because the layers fall back together. The costs: a bigger scar than keyhole ports, and a view limited to that corner of the abdomen — if the problem turns out to be something else entirely, you may have to extend or rethink. Chosen with those in view, it is a surgeon's decision, not a habit."),
+          C("A long midline incision, breastbone to pelvis — maximum room, just in case.", false, "order", "That incision exists, and has its day: catastrophic bleeding, widespread contamination, a diagnosis in ruins. For an uncomplicated appendix it is disproportionate — more pain, more hernia risk, slower recovery — harm done 'just in case' is still harm. Matching the size of the operation to the size of the problem is the discipline.")
+        ]},
+      { id:"layers", phase:"The operation", title:"Through the layers",
+        body:"Skin first, then fat. Below them, three sheets of muscle wrap the abdomen, their fibres running in different directions like plywood. You need to get through the wall without wrecking it — the patient has to heal this, and cough, and lift, for the rest of their life.",
+        hint:"The wall is not an obstacle; it is a structure you are borrowing. Leave it able to do its job.",
+        coach:"This is the anatomy section with a knife in it. Each muscle layer's fibres run a different way — down-and-in, up-and-in, straight across — which is what makes the wall strong in every direction. Splitting along the fibres and easing the layers apart lets them fall back together afterwards, healing near full strength. Cutting across fibres is quicker today and weaker forever: more pain, and a hernia — the wall giving way — months later. The gridiron incision is famous precisely because it respects the plywood.",
+        choices:[
+          C("Incise skin and fat, then split each muscle layer along the line of its fibres and hold the layers aside.", true, null, "Right. You arrive at the peritoneum — the glistening membrane lining the cavity — having divided almost nothing that cannot heal back to strength. Slow by seconds; repaid for years."),
+          C("Cut straight across the muscle fibres — the direct line is the fastest line.", false, "order", "Fastest through is not fastest healed. Severed fibres cannot pull together again; the repair relies on scar, the weakest tissue the body makes. The hernia clinic is full of direct lines."),
+          C("Use the diathermy — the electric cutting tool — for every layer, skin included.", false, "instrument", "Diathermy cuts and seals by burning, and it has its place: sealing vessels, dividing muscle under control. On skin it leaves a rim of burned edge that heals poorly and scars badly. Skin is cut cold, with a scalpel, in one clean stroke — clean edges are what knit invisibly.")
+        ]},
+      { id:"instrument", phase:"The operation", title:"The right tool",
+        body:"Through the peritoneum, there it is: the caecum, and the appendix curled from it. The appendix is fed by a fold of tissue — the mesoappendix — carrying the appendiceal artery. That artery must be held closed before the fold is divided. The scrub nurse offers the tray. What do you take?",
+        hint:"Every instrument on that tray is an answer to a specific problem. This problem is: grip a blood vessel, and keep it gripped, hands-free.",
+        coach:"Instruments are frozen reasoning. Artery forceps have long jaws and a ratchet lock because a vessel must be held closed, without a hand, while a tie is passed. A needle holder's jaws are short and cross-hatched because a curved needle must not rotate. Scissors, retractors, suction — each shape is a job description. Reaching for the nearest tool instead of the right one is how vessels tear and needles snap; the tray is laid out in order so that the right answer is also the easy one.",
+        choices:[
+          C("Artery forceps — the haemostat: ratcheted, locking jaws made to grip a vessel and hold it closed while you tie it off.", true, null, "Right. Clamp, and the ratchet holds what your fingers would tire of holding. The vessel stays closed while the tie goes on — that division of labour is exactly what the tool was designed, over a century ago, to give you."),
+          C("The needle holder — it has jaws and a ratchet too.", false, "instrument", "Look closer: its jaws are short and stubby, built to stop a needle rotating, not to close a vessel along its length. A vessel crushed in the wrong jaws can be damaged beyond the clamp point or slip free — and a bleeding artery you have already 'dealt with' is the worst kind."),
+          C("Toothed dissecting forceps, pinched hard around the artery.", false, "instrument", "Those teeth are for gripping skin edges and tough tissue — in a vessel wall they tear. And forceps hold only while you squeeze; the moment your attention moves to the tie, the artery is free. Right tool, right job is not pedantry. It is the whole craft in one sentence.")
+        ]},
+      { id:"deliver", phase:"The operation", title:"The order of work",
+        body:"The artery is clamped. The appendix is inflamed and swollen, still attached along the mesoappendix and at its base on the caecum. It has to come out in an order that keeps two promises: nothing bleeds uncontrolled, and nothing spills. What order?",
+        hint:"Free it, feed it off, then cut it free — deal with the blood supply before the organ, never after.",
+        coach:"Operation order is risk order. The mesoappendix carries the blood supply, so it is divided and tied first, while the appendix is still anchored and nothing can bleed or spill unobserved. The base — where appendix meets bowel, and where a leak would be most serious — is dealt with last, deliberately, with everything else controlled. Reverse the order and you have a cut organ, still perfused, swinging on a bleeding stalk. Almost every 'sudden' crisis in an operation is an order chosen ten minutes earlier.",
+        choices:[
+          C("Free the appendix, clamp and divide the mesoappendix with its artery tied off, then deal with the base of the appendix last.", true, null, "Right. Supply first, organ last. When the base is finally divided, there is nothing left that can bleed and nothing under tension that can tear."),
+          C("Cut across the base first — get the appendix out, then tidy up the rest.", false, "order", "Now the appendix hangs only by the fold carrying its artery — perfused, heavy, and one slip from tearing that artery or bursting and spilling its infected contents across the field. 'Tidy up' would be done in blood, at speed, which is where the next injury comes from."),
+          C("Grip it and pull firmly until it comes away — it is only a small organ.", false, "response", "Tearing is not removing. A firm pull can rip the caecum wall, burst the swollen appendix, and scatter infected contents through the abdomen — turning a controlled operation into contamination, washouts, and days of antibiotics. Small organs are removed with the same respect as large ones, because the tissue around them does not know the difference.")
+        ]}
+    ];
+</script>
+
+    <script>
+    "use strict";
+    var MORE_STEPS = [
+      { id:"bleed", phase:"Event", title:"Event: bleeding",
+        body:"As the mesoappendix is divided, the tie slips — and the appendiceal artery does what arteries do. Bright red blood wells up and starts to fill the field. The anaesthetist looks up. Everyone looks at you.",
+        hint:"You cannot fix what you cannot see. Vision first, then pressure, then precision — in that order, at whatever speed calm allows.",
+        coach:"Bleeding tests temperament, not knowledge — every trainee 'knows' this step and still has to learn to do it slowly. Suction clears the field so the bleeding point can be seen; a swab's pressure buys time without injuring anything; then, and only then, a clamp placed on the exact vessel, under vision. Blind clamping in a pool of blood crushes whatever the jaws close on — bowel, or the ureter passing behind — and converts one problem into three. The calm is not a personality trait. It is a technique.",
+        choices:[
+          C("Stay calm. Suction so you can see, gentle pressure with a swab, then clamp the exact vessel under vision and tie it.", true, null, "Right — and the patient may never know it happened. Pressure controlled the situation, vision controlled the clamp, and the tie finished it. This sequence is the answer to nearly every bleed in surgery: see it, press it, then fix precisely what you can see."),
+          C("Clamp blindly, deep in the pool of blood — grab whatever is there and sort it out after.", false, "response", "In that pool, beside the artery, lie the caecum and the ureter. Jaws closed blind can crush either — a crushed ureter leaks urine for days before anyone knows; crushed bowel can die and perforate. Speed without vision is not decisiveness. It is gambling with someone else's organs."),
+          C("Pack the wound, close quickly, and hope it settles on its own.", false, "response", "An untied artery does not settle; it fills the abdomen quietly while the charts still look calm, until the blood pressure falls off a cliff. Closing over active bleeding trades a problem you can see for a catastrophe you cannot — and a second, emergency operation to fix it.")
+        ],
+        tired:{ t:"Your eyes are swimming with tiredness. Clamp where the blood looks brightest and move on.", kind:"response", why:"That is fatigue making a clinical decision, and it is exactly how blind clamping happens in real theatres at 3 a.m. Tired eyes judge 'brightest' badly and tired hands close jaws on the wrong structure. The defence is the sequence, done by rote precisely because you are tired: suction, pressure, see it, then clamp." }},
+      { id:"dropped", phase:"Event", title:"Event: the dropped forceps",
+        body:"A clatter. An artery forceps has been knocked off the trolley and lies on the theatre floor. The circulating nurse is across the room. The operation is mid-flow and the tray is short of one instrument.",
+        hint:"Ask what that forceps is now, not what it was a second ago.",
+        coach:"This is the gravest teaching on the page, so take it slowly. The floor of an operating theatre is clean — and nowhere near sterile. Shoes walk it, wheels roll on it, and it is outside every barrier the team has built. An instrument that touches it carries the floor's entire bacterial population back into an open abdomen whose defences are, by design, held open. Wiping removes visible dirt, not bacteria. Rinsing in saline — a sterile salt solution — dilutes; it does not sterilise; sterilisation is heat, pressure and time in an autoclave, not a dip. There is no version of 'quickly clean it' that exists. The instrument is dead to the field, the team says so out loud, and a sterile replacement arrives by the proper route. Surgeons who cut this corner do not usually harm the patient in front of them theatrically — they seed an infection that declares itself days later, in fever and abscess and a second operation, to a patient who trusted the field completely. That is why this page grades a sterile break above every other error, and why in Strict theatre variant it ends your round: in a real theatre, it ends your case.",
+        choices:[
+          C("Leave it. It is dead to the field: the circulator removes it, a sterile replacement comes onto the trolley, and the team hears you say so.", true, null, "Right. Notice what the saying-so does: it makes the event shared knowledge, so nobody quietly hands it back to you later, and the count at the end still reconciles. Sterile discipline is a team sport played out loud."),
+          C("Pick it up, wipe it on the drape, and keep going — it was only on the floor a second.", false, "sterile", "A second is all contamination takes, and a wipe cannot undo it: bacteria are not dirt, and they do not come off on a drape — if anything, the drape now carries them too. Used in the wound, that forceps delivers the floor's flora directly past every defence the scrub, the drapes and the antibiotics built. This is the single most dangerous choice on this page, and in real life it is how 'unexplained' post-operative infections are explained.", true),
+          C("Rinse it in the saline bowl and put it back on the trolley.", false, "sterile", "Saline is sterile salt water — an irrigating fluid, not a sterilising one. A rinse dilutes surface contamination; it cannot kill or remove the bacterial load an instrument picks up from a floor, and the bowl itself is now suspect. Sterility is restored in an autoclave, with heat and time — never at the table, never in a hurry.", true)
+        ],
+        tired:{ t:"Nobody saw it fall, and you are exhausted. Quietly take it back — re-scrubbing costs minutes you do not have.", kind:"sterile", grave:true, why:"Read this one twice, because it is the temptation fatigue actually offers: not recklessness, but a quiet, unwitnessed shortcut. 'Nobody saw' is the most dangerous sentence in a tired theatre. The infection it risks would arrive days later, on a ward, to a patient who never knew a choice was made. If you are too tired to do the sterile thing, the honest act is to say so and hand over — that sentence, spoken aloud, is what teams are for." }},
+      { id:"stump", phase:"Closing", title:"The stump — two honest roads again",
+        body:"The appendix is out. What remains is its base on the caecum, tied where it joins the bowel. Generations of surgeons have argued over one question: is tying it enough, or should the stump be buried inside the caecum wall?",
+        hint:"Both roads are still walked. The question is what each buys, and what each costs, in time and in tissue.",
+        coach:"Strategy again, and an honest one: simple ligation is quicker, handles the stump once, and study after study has found outcomes no worse for the great majority of patients. Burying the stump with a purse-string stitch tucks the raw end inside the bowel wall — theoretically tidier — at the cost of more handling, more stitches in healthy caecum, and more time. Where the base is healthy, most modern practice ties simply. Where the base itself is diseased or fragile, the calculus changes and reinforcement earns its keep. The lesson is not which road: it is that 'we have always done it this way' is not a reason, and evidence can retire even a beautiful technique.",
+        choices:[
+          C("Simple ligation: tie the base securely and divide above the tie. Done.", true, null, "A sound road — the modern default for a healthy base. One secure tie, minimal handling of the caecum, nothing buried that could form a pocket. The evidence has been checked against the fancier operation for decades and keeps returning the same verdict: for the usual case, simple is not a shortcut. It is the answer."),
+          C("Ligate, then bury the stump: a purse-string stitch in the caecum wall, tightened to tuck the stump inside.", true, null, "A sound road — the classical technique, and still chosen where the base looks fragile or diseased. You buy a tucked-away stump with extra minutes, extra handling, and extra stitches in healthy bowel. Neither road is wrong here; what would be wrong is walking either one without knowing what it costs and what it buys."),
+          C("Leave the base long — extra stump is extra safety.", false, "order", "A long stump is a known trap: the leftover segment can inflame again years later — 'stump appendicitis', a diagnosis nobody believes because 'the appendix is out'. The tie goes at the base, flush with the caecum, precisely so nothing is left behind to cause trouble.")
+        ]},
+      { id:"counts2", phase:"Closing", title:"The counts — after, and closing",
+        body:"The wound is ready to close. The board from the start of the case still shows the numbers: swabs, instruments, needles. The team is tired, the patient has done well, and the end is in sight — which is exactly when this step matters most.",
+        hint:"The closing count is the baseline count's other half. They are one promise, made in two parts.",
+        coach:"Everything about this moment conspires against the count: fatigue, relief, the next case waiting. That is why it is ritualised — done aloud, by two people, against the written board, before closing, with the surgeon's work literally paused for it. If a swab is missing, the search is systematic and an X-ray settles it while the patient is still asleep, because the radio-opaque thread was woven in for this exact minute. 'Probably on the floor' has a name in the incident reports, and the name is a retained swab.",
+        choices:[
+          C("Count again — swabs, instruments, needles — and close only when the numbers agree with the board. If anything is missing: search, then X-ray, before this patient leaves theatre.", true, null, "Right. Count agrees, and the case is finished in every sense — not just sewn, but accounted. That agreement is the last clinical act of the operation, and it belongs to the whole team."),
+          C("Close now — the count can be finished in recovery.", false, "counts", "A count done after closing can only discover a disaster, never prevent one. If a swab is missing in recovery, the choices are a scan and a second anaesthetic to reopen a fresh wound. The count lives before the closure because that is the last moment it can still change anything."),
+          C("The count is one swab short, but it is probably on the floor somewhere. Close.", false, "counts", "'Probably' is doing all the work in that sentence, and it is not qualified to. A short count triggers a search and, if needed, an X-ray — every time, without exception, without embarrassment. The surgeons who insist on this are not the slow ones. They are the ones whose patients never come back with a swab inside them.")
+        ],
+        tired:{ t:"You are running on empty and the count is one short — surely a miscount. Close, and let recovery sort it out.", kind:"counts", why:"Notice how reasonable tiredness sounds. It is sure it is a miscount because the alternative — searching, X-raying — costs energy it does not have. That is exactly the state the ritual is designed for: the count does not ask how you feel, and its answer does not bend to it. Tired teams follow the ritual because tired teams are the ones it was written for." }},
+      { id:"postop", phase:"Aftercare", title:"After the operation",
+        body:"The wound is closed and dressed. The appendix is in a pot, the counts agree, the patient is waking. A junior colleague asks: 'Done, then?' What is the true answer?",
+        hint:"The operation ends. The care does not — most of what can still go wrong, goes wrong in the days after.",
+        coach:"Post-operative care is where operations are confirmed or lost. Recovery staff watch the airway and breathing as anaesthesia wears off; regular observations — pulse, blood pressure, temperature, urine — catch bleeding and infection while they are still small; pain is treated properly because a patient who cannot breathe deeply or move is a patient brewing a chest infection or a clot. Early mobilisation is prescribed like a drug, because it is one. And the team watches the wound and the temperature curve for the signature of infection — including the kind seeded by any sterile lapse days before. The operation is an hour. The outcome is a week.",
+        choices:[
+          C("To recovery: airway and breathing watched, regular observations charted, pain properly controlled, up and moving early, temperature and wound checked — and clear instructions for what should prompt a call.", true, null, "Right. That package is not aftercare as an afterthought; each item is aimed at a named complication — airway obstruction, hidden bleeding, infection, clots, chest infection — and timed to catch it while catching it is cheap. The surgeon's job ends when the patient is safely through all of it."),
+          C("Straight back to the ward — the operation is over, the job is done.", false, "planning", "The first hour after anaesthesia is one of the most dangerous of the whole admission: airways obstruct, blood pressure drifts, bleeding declares itself. Recovery units exist because that hour needs dedicated watchers. Skipping it saves nothing and risks everything the operation just bought."),
+          C("Keep her flat in bed for a week — rest is what heals.", false, "response", "Bed rest feels like care and acts like harm: blood pools in still legs and clots, lungs under-breathe and infect, muscles waste by the day. Modern practice mobilises patients the day of surgery where possible — not from toughness, but because movement is treatment. The kindest order on the chart is usually 'up, walking, today'.")
+        ]}
+    ];
+    var INSERT_STEPS = {
+      hidden:{ id:"hidden", phase:"The operation", title:"Event: it is not where it should be",
+        body:"The caecum is delivered — but the appendix is not hanging where the textbooks draw it. In this patient it runs behind the caecum, hidden against the back wall. The field is open, the clock is running, and the organ you came for is playing hide and seek.",
+        hint:"Anatomy varies; landmarks do not. Find the structure that cannot move, and let it lead you.",
+        coach:"Anatomical variation is the rule wearing a disguise — the appendix can point in almost any direction, and a substantial minority hide behind the caecum. The craft answer is a landmark that does not vary: the caecum's surface carries three pale bands of muscle, the taeniae, and they converge — always — at the base of the appendix. Follow the band and you arrive, however the tip has wandered. This is what anatomical knowledge is for: not the map of the average patient, but the signposts that hold in every patient.",
+        choices:[
+          C("Follow the caecum's muscle band — the taenia — down to where the bands meet. That is the appendix base, wherever the tip is hiding; then free it gently from the back wall.", true, null, "Right. Landmark found, appendix found — and freed under vision rather than by force. Difficult anatomy is a knowledge problem, and you just solved it with knowledge."),
+          C("Grip the caecum and pull harder until something gives and shows itself.", false, "response", "Force against hidden anatomy tears what you cannot see — the caecum wall, or vessels behind it — and a hidden appendix torn at its base leaves infected tissue behind in the dark. If it cannot be seen, it cannot be pulled. Widen the view; never raise the force."),
+          C("It is not findable. Close up and let antibiotics handle it.", false, "planning", "The patient came with appendicitis and would leave with it — plus an incision. An unfound appendix is a problem to escalate, not abandon: extend the view, call for senior help, change approach if needed. Senior surgeons are not the ones who never struggle; they are the ones who ask early.")
+        ]},
+      washout:{ id:"washout", phase:"The operation", title:"Event: it has burst",
+        body:"The appendix comes into view — and it has perforated. Infected contents have spilled into the pelvis and along the bowel. Removing the appendix is now only half the operation. What is the other half?",
+        hint:"The spill is now the disease. What is left behind will keep infecting, however neatly the appendix itself is removed.",
+        coach:"A perforated appendix changes the diagnosis mid-operation: from an organ to remove, to a contamination to control. Spilled contents carry bowel bacteria across surfaces that cannot fight them well, and every pocket left behind is an abscess applying for planning permission. So the field is suctioned, gently washed with warm saline until it runs clear, and every reachable pocket checked — gently, because rough handling spreads contamination and injures inflamed bowel. Afterwards: antibiotics, close observation, and an honest expectation of a longer recovery. The perforation, not the surgeon, sets that floor — clean work keeps it from becoming a ceiling of complications.",
+        choices:[
+          C("Suction the spill, wash the area gently with warm saline until it runs clear, check the pockets it could hide in — then finish, with antibiotics and close monitoring planned.", true, null, "Right. Source removed, contamination controlled, aftermath planned. This patient will still recover more slowly than a straightforward case — the burst appendix decided that before you scrubbed — but your work decides whether 'slower' is where it stops."),
+          C("Take the appendix out and close as usual — the spill looks minor.", false, "response", "Spilled bowel contents do not grade themselves by how they look at a glance. Left in the pelvis, that 'minor' spill is the classic recipe for a pelvic abscess: fever at day five, a scan, a drain, a week more in hospital. The washout is not optional garnish on this operation. It is the operation."),
+          C("Scrub the area hard with swabs until every surface is spotless.", false, "response", "Inflamed bowel is fragile, and vigorous scrubbing injures its surface, spreads contamination into new territory, and can tear what the infection has softened. The technique is suction and gentle irrigation — dilution and removal, not abrasion. Clean here means 'as clear as gentle washing gets it', pursued patiently.")
+        ]},
+      bleed2:{ id:"bleed2", phase:"Event", title:"Event: it bleeds again",
+        body:"True to this patient's notes, the tissues ooze and the divided fold bleeds again from a second point — slower than the artery, but steady, and the field will not stay clear. The anaesthetist mentions the blood pressure, quietly, the way anaesthetists do when they want you to hear it twice.",
+        hint:"Slow bleeding is still bleeding, and a falling blood pressure is the patient's whole body filing a report.",
+        coach:"Bleeding-prone patients test systems, not heroics. The answer is layered: find and deal with each point precisely, keep the field visible with suction, tell the anaesthetist what you are seeing — because they are managing fluids, blood pressure and, if needed, blood products in parallel — and re-inspect the whole area before closing, knowing this tissue has already surprised you twice. The quiet sentence from the head of the table is teamwork working as designed: two specialists, one circulation.",
+        choices:[
+          C("Suction, find the exact point, deal with it precisely — keep the anaesthetist told, and re-check the whole area before you even think about closing.", true, null, "Right. Point controlled, team informed, and a deliberate second look at tissue that has earned suspicion. In a bleeding-prone patient, the final inspection is not a formality; it is the step the whole case has been pointing at."),
+          C("It is only oozing. Close over it — pressure from the closed wound will stop it.", false, "response", "A closed abdomen hides bleeding; it does not stop it. Oozing that continues fills the pelvis silently, and the first announcement is a collapsing blood pressure in recovery. Every bleeder is dealt with under vision, in theatre, while dealing with it is still easy."),
+          C("Work faster and say nothing — the anaesthetist has their numbers, you have yours.", false, "planning", "Those numbers are your patient's circulation, and the anaesthetist is managing it blind to what the field looks like unless you speak. Theatre runs on narrated work: what you see, what you are doing, what you need. Silence between the two ends of the table is how small bleeds become big resuscitations.")
+        ]}
+    };
+    function buildSteps(mods){
+      var steps = BASE_STEPS.concat(MORE_STEPS), out = [], i, s;
+      for(i = 0; i < steps.length; i++){
+        s = steps[i]; out.push(s);
+        if(mods.hidden && s.id === "deliver") out.push(INSERT_STEPS.hidden);
+        if(mods.perforated && s.id === "deliver") out.push(INSERT_STEPS.washout);
+        if(mods.bleed && s.id === "stump") out.push(INSERT_STEPS.bleed2);
+      }
+      return out;
+    }
+</script>
+
+    <script>
+    "use strict";
+    var FOLDS = [
+      { t:"Aseptic technique — why the sterile rules are absolute",
+        b:"<p>An open abdomen cannot defend itself. Skin is a fortress wall; surgery, by definition, opens a gate in it. Everything about aseptic technique is the discipline of making sure nothing living walks through that gate except the patient's own healing.</p><p>The chain has links: hands are scrubbed to strip their bacterial load down; sterile gowns and gloves form a barrier over what scrubbing cannot remove; instruments arrive sterilised by heat in an autoclave; drapes wall off the operation site from the unsterile world around it; and movement inside the field follows the watched-zone rule — sterile only touches sterile, in sight, above the waist.</p><p>Why absolute, with no 'clean enough'? Because the dose makes the disaster quietly. A handful of skin bacteria in a wound is an infection the body usually wins. The same bacteria delivered deep, on an instrument, past every defence, into warm, damaged, poorly defended tissue, multiply for days before the fever announces them. The consequences are abscesses, sepsis, second operations, and occasionally death — from an event nobody saw, at a moment nobody remembers. Rules that guard against invisible, delayed, catastrophic harm cannot be graded by feel. They are kept absolutely precisely because no one can tell, in the moment, which lapse was the one that mattered.</p>" },
+      { t:"How an operation is planned — before anyone is cut",
+        b:"<p>An operation begins days before the theatre. The diagnosis is confirmed — history, examination, blood tests, scans — because operating on the wrong problem is the largest error available. The patient's fitness is assessed: heart, lungs, other conditions, medicines that thin the blood. Consent is a real conversation: what will be done, what it buys, what it risks, what the alternatives are — including doing nothing.</p><p>Then the logistics of safety: fasting so the stomach is empty for anaesthesia; antibiotics timed to be in the tissue at the moment of incision; blood available if the operation might need it; the right kit checked, the right team booked, the list ordered so the most urgent and the most infection-prone cases are sequenced sensibly. On the day, the time out gathers all of it into sixty spoken seconds. Planning is invisible when it works — which is the point: the operation you watch is the last ten percent of a process that was mostly thinking.</p>" },
+      { t:"The team — who is in theatre, and why each chair exists",
+        b:"<p><strong>The surgeon</strong> operates and carries responsibility for the operation's decisions. <strong>The assistant</strong> holds tissue, retracts, suctions and anticipates — a second pair of trained hands and eyes inside the field. <strong>The anaesthetist</strong>, at the head, runs the parallel operation: unconsciousness, pain relief, airway, breathing, circulation. <strong>The scrub practitioner</strong> (nurse or operating department practitioner) is scrubbed and sterile, guardian of the instruments and the field, passing the right tool before it is asked for and policing sterility — including the surgeon's. <strong>The circulating nurse</strong> is unsterile by design: fetches, opens packets, moves lights, documents the counts, the bridge between the sterile island and the hospital outside. Around them: recovery staff, porters, radiographers when imaging is needed.</p><p>Every role exists because one person cannot watch everything. The counts need two people. Sterility needs a police officer who is not holding the knife. The patient's physiology needs a doctor who never looks at the wound. Theatre teamwork is not a culture poster; it is a division of attention engineered against known ways operations fail.</p>" },
+      { t:"Instruments — what each one is for, and why it is shaped that way",
+        b:"<div class='instlist'>"
+        + "<div class='inst'><b>Scalpel.</b> Cuts skin and tissue with a cold, clean edge. One deliberate stroke; sawing tears, and torn edges heal as scars.</div>"
+        + "<div class='inst'><b>Artery forceps (haemostat).</b> Long jaws and a ratchet lock, to clamp a blood vessel closed and keep it closed, hands-free, while it is tied. The ratchet is the point: it never gets tired.</div>"
+        + "<div class='inst'><b>Dissecting forceps.</b> The precision grip for holding tissue. Toothed for skin and tough tissue, smooth for delicate structures — teeth where grip matters, never where tearing matters.</div>"
+        + "<div class='inst'><b>Needle holder.</b> Short, cross-hatched jaws that stop a curved needle rotating mid-stitch. Looks like forceps; is not. The jaws' whole job is anti-rotation.</div>"
+        + "<div class='inst'><b>Scissors.</b> Different pairs for different tissue — fine scissors for delicate structures, heavy for tough fascia and for cutting sutures. Using tissue scissors on sutures blunts them; the tray keeps the jobs separate.</div>"
+        + "<div class='inst'><b>Retractors.</b> Hold the wound open so the surgeon can see and work. Held by the assistant or self-retaining — either way, they trade gentle, constant pressure for a clear field, and must never crush what they hold.</div>"
+        + "<div class='inst'><b>Suction.</b> Clears blood and fluid so the field can be seen. In bleeding, it is the first instrument that matters: vision before clamps.</div>"
+        + "<div class='inst'><b>Diathermy.</b> Electric current that cuts tissue and seals vessels by heat. Powerful and indiscriminate — used where its burn is useful, kept away from skin edges it would ruin.</div>"
+        + "</div><p>The pattern underneath all of them: form follows the failure it prevents. Learn what each tool prevents, and the tray stops being a pile of steel and becomes a set of arguments.</p>" },
+      { t:"The counts — why everything is counted, twice",
+        b:"<p>Swabs, instruments and needles are counted before the incision and again before closing, aloud, by two people, against a written board. The reason is a specific, documented disaster: the retained item — a swab left inside a patient — which causes infection, pain, and a second operation, and which almost never happens where counting is done properly and heeded completely.</p><p>Swabs carry a radio-opaque thread so an X-ray can find one if a count fails. A failed count is never argued with: search, then image, while the patient is still asleep. The system's beauty is that it does not rely on memory, honesty, or seniority. It relies on arithmetic, performed out loud, by a team that treats a discrepancy as a fact about the world rather than an insult to anybody's competence.</p>" },
+      { t:"Anaesthesia — the other half of the operation, at knowledge level",
+        b:"<p>Modern anaesthesia does four jobs at once: unconsciousness (no awareness), analgesia (no pain), stillness (muscle relaxation, so the surgeon works in a quiet field), and physiology management (breathing, blood pressure, heart rate, temperature, fluids — flown continuously, like an aircraft, for the whole case).</p><p>The forms differ. <strong>General anaesthesia</strong>: fully asleep, airway secured with a tube or mask device, breathing supported by a machine. <strong>Regional</strong>: a spinal or epidural injection numbs a whole region while the patient may stay awake. <strong>Local</strong>: numbing at the site itself, for small procedures. The choice weighs the operation, the patient's health, and the patient's preference — and each form has its own risks, which the anaesthetist, a fully trained doctor, assesses at a pre-operative visit.</p><p>For the surgeon, the practical knowledge is this: the still, painless, stable field is manufactured and maintained by a colleague, minute by minute. Theatre etiquette — waiting for the word, narrating bleeding, announcing big steps — is the interface between the two operations happening to the same patient.</p>" },
+      { t:"After the operation — recovery principles",
+        b:"<p>Recovery is a clinical area, not a corridor: trained staff watch airway, breathing and circulation as anaesthesia lifts, because the first hour carries real risks — obstruction, drifting blood pressure, bleeding declaring itself. Back on the ward, structured observations (pulse, blood pressure, temperature, breathing, urine output) run on a schedule, often scored, so deterioration is caught by trend rather than by crisis.</p><p>The principles: treat pain properly, because pain prevents deep breathing and movement; mobilise early, because movement prevents clots and chest infections; watch the wound and the temperature for infection, remembering that a sterile lapse declares itself days late; reintroduce food and drink as the bowel wakes; and give the patient clear warnings — fever, worsening pain, wound changes — that should bring them back fast. The operation is an event. The recovery is the outcome.</p>" },
+      { t:"Strategies and their trade-offs — the honest forks",
+        b:"<p><strong>Keyhole vs open</strong> (from the round): panorama, small scars and quicker recovery, against kit, gas, setup time and a learning curve. Neither is 'the modern one' in all hands and all hospitals; the match to patient, team and equipment decides.</p><p><strong>The stump</strong>: simple ligation against burying — speed and minimal handling against a tucked stump, with decades of evidence finding no penalty for simple in the usual case. A beautiful classical technique can still be retired by data.</p><p><strong>Sutures — interrupted vs continuous.</strong> Interrupted stitches (like the bench) are independent: one can fail, or be removed to drain one spot, without unzipping the line — at the cost of time and many knots. A continuous run is fast and distributes tension evenly, but one break can loosen the whole line. Surgeons choose per tissue and per risk, exactly as you choose on the bench without knowing you are doing it.</p><p><strong>Suture material — absorbable vs not.</strong> Absorbable stitches dissolve as tissue heals: nothing to remove, ideal inside the body. Non-absorbable are stronger for longer and are used where lasting support matters — and on skin they must be taken out, a small procedure of their own. Every material is a bet about how long the tissue needs help.</p>" }
+    ];
+    var LAYERS = [
+      { n:"Skin", c:"#d9a066", t:"The barrier itself — waterproof, germ-proof, self-repairing. It is incised cleanly with a scalpel in one stroke, because clean-cut edges knit together with the least scar. Everything sterile in theatre exists to protect the body once this wall is opened." },
+      { n:"Subcutaneous fat", c:"#e8cf7a", t:"Insulation and padding, carrying small blood vessels and nerves. Its thickness varies enormously between patients, which is one reason 'how deep' is never a fixed number in surgery. Small vessels here are sealed as they are met — this layer oozes if ignored." },
+      { n:"External oblique aponeurosis", c:"#b8543f", t:"The outermost muscle sheet of the wall, ending in a strong fibrous sheet — the aponeurosis. Its fibres run down-and-in, the direction of hands going into pockets. In the gridiron approach this sheet is opened along its fibres so it can be repaired strongly." },
+      { n:"Internal oblique muscle", c:"#c96a4a", t:"The middle layer, fibres running up-and-in — across its neighbour's, which is the plywood secret of the wall's strength. In a gridiron incision it is split, not cut: eased apart along its fibres and allowed to fall back afterwards." },
+      { n:"Transversus abdominis", c:"#a84a5e", t:"The deepest muscle layer, fibres running straight across. Split along its line like the others. Together the three layers, split in three different directions, form a shutter that closes itself — the elegance the gridiron incision is famous for exploiting." },
+      { n:"Transversalis fascia", c:"#9db8b3", t:"A thin but real fascial sheet lining the inside of the wall, with a little fat beyond it. Easy to overlook on a diagram; in the theatre it is a definite layer the surgeon feels give way just before the peritoneum." },
+      { n:"Peritoneum", c:"#7fb3c8", t:"The glistening membrane that lines the whole abdominal cavity and wraps the organs. It is picked up carefully and opened under vision — because bowel lies immediately beneath it, and the first cut into the cavity must not become a cut into bowel." },
+      { n:"Caecum & appendix", c:"#8a9a5b", t:"Inside at last: the caecum, the pouch where small bowel meets large, usually sitting under McBurney's point — a third of the way from the hip bone (the anterior superior iliac spine) to the navel. The appendix hangs from it: a narrow, blind-ended tube with its own small artery in its own fold of tissue. In appendicitis it is swollen, angry red, and the reason everyone is here." }
+    ];
+</script>
+
+    <script>
+    "use strict";
+    /* This block uses globals from the blocks above: S, save, SH, CASES, listForShift,
+       buildSteps, FOLDS, LAYERS, standingLabel, energyBand, energyWords, freshRecord, LS. */
+    var R = null;
+
+    /* ---------- Shared UI ---------- */
+    function updateEnergyUI(){
+      $("energyWords").textContent = energyWords();
+      var bar = $("energyBar");
+      bar.style.width = S.energy + "%";
+      bar.style.background = S.energy >= 40 ? "var(--teal)" : S.energy >= 20 ? "var(--amber)" : "var(--red)";
+    }
+    function updateVariantBanner(){
+      var parts = [];
+      if(S.strict) parts.push("VARIANT IN PLAY — Strict theatre: one sterile-field break ends your round, the way it would end your part in a real case.");
+      if(S.hideTargets) parts.push("VARIANT IN PLAY — Bench memory: the suture target dots are hidden; spacing lives in your eye.");
+      var b = $("variantBanner");
+      if(parts.length){ b.textContent = parts.join("  "); b.className = "variant-banner show"; }
+      else { b.textContent = ""; b.className = "variant-banner"; }
+      $("strictToggle").textContent = S.strict ? "Strict theatre: ON — tap to turn off" : "Strict theatre: OFF — tap to turn on";
+      $("strictToggle").setAttribute("aria-pressed", S.strict ? "true" : "false");
+      $("targetsToggle").textContent = S.hideTargets ? "Bench memory variant: ON — tap to turn off" : "Bench memory variant: OFF — tap to turn on";
+      $("targetsToggle").setAttribute("aria-pressed", S.hideTargets ? "true" : "false");
+    }
+    function applyTeachingUI(){
+      var btns = document.querySelectorAll("[data-teach]");
+      for(var i = 0; i < btns.length; i++)
+        btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-teach") === S.teaching ? "true" : "false");
+      $("benchCoach").className = S.teaching === "coach" ? "coachbox show" : "coachbox";
+    }
+
+    /* ---------- Record ---------- */
+    function kindLine(){
+      var e = S.record.errors;
+      return "Sterile " + e.sterile + " · Planning " + e.planning + " · Order " + e.order +
+             " · Instrument " + e.instrument + " · Response " + e.response + " · Counts " + e.counts;
+    }
+    function renderRecord(){
+      var r = S.record, rows = [
+        ["Operating as", S.alias],
+        ["Rounds started", r.roundsStarted],
+        ["Rounds completed", r.roundsCompleted],
+        ["Rounds ended early (consultant took over)", r.roundsEndedEarly],
+        ["Clean rounds (no errors)", r.cleanRounds],
+        ["Errors by kind — lifetime", kindLine()],
+        ["Patient outcomes — clean recoveries", r.outcomes.clean],
+        ["Patient outcomes — longer recoveries", r.outcomes.longer],
+        ["Patient outcomes — complications", r.outcomes.complication],
+        ["Patient outcomes — case handed over mid-operation", r.outcomes.handed],
+        ["Rounds by your energy at the start", "Fresh " + r.roundsByBand.fresh + " · Working " + r.roundsByBand.working + " · Tired " + r.roundsByBand.tired + " · Exhausted " + r.roundsByBand.exhausted],
+        ["Team standing", standingLabel(r.standing) + " (" + (r.standing >= 0 ? "+" : "") + r.standing + ")"],
+        ["Shifts worked", r.shiftsWorked],
+        ["Patients a colleague took while you rested", r.handedToColleague],
+        ["Patients handed to the next team, in their safe wait", r.handedToNextTeam],
+        ["Patients who waited past the safe window", r.waitedTooLong],
+        ["Suture bench — sessions graded", r.benchSessions],
+        ["Suture bench — stitches placed, lifetime", r.suturesPlaced],
+        ["Suture bench — best grade", r.bestBenchGrade ? (r.bestBenchGrade + " (" + r.bestBenchScore + " of 100)") : "Not graded yet"],
+        ["Recent history", r.history.length ? r.history.join("  |  ") : "Nothing yet — the list is waiting."]
+      ];
+      var html = "";
+      for(var i = 0; i < rows.length; i++)
+        html += "<tr><th scope='row'>" + rows[i][0] + "</th><td>" + rows[i][1] + "</td></tr>";
+      $("recTable").innerHTML = html;
+      $("standReadout").textContent = standingLabel(r.standing) + " (" + (r.standing >= 0 ? "+" : "") + r.standing + ").";
+    }
+
+    /* ---------- The theatre list ---------- */
+    function renderList(){
+      $("shiftLabel").textContent = "Shift " + SH.num + (SH.ended ? " — ended" : "") + " · case slots left: " + SH.slots;
+      var wrap = $("patientList"); wrap.innerHTML = "";
+      if(!SH.waiting.length){
+        wrap.innerHTML = "<p class='small'>" + (SH.ended ? "The list is done for this shift." : "Nobody is left waiting — every patient on this list has been taken. End the shift when you are ready.") + "</p>";
+      }
+      SH.waiting.forEach(function(p, idx){
+        var d = document.createElement("div"); d.className = "inst"; d.style.marginBottom = "10px";
+        var info = document.createElement("p"); info.style.margin = "0";
+        info.innerHTML = "<b>" + p.name + "</b> — " + p.cond + "<br><span class='small'>Difficulty: " +
+          p.diff + " · " + p.urgency + " · Safe wait: " + p.wait + " · Length: " + p.len +
+          " · Energy cost: " + p.cost + "</span>";
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "btn"; b.style.marginTop = "8px";
+        b.textContent = "Tap to take this case";
+        b.disabled = SH.ended || SH.slots <= 0;
+        b.addEventListener("click", function(){ takeCase(idx); });
+        d.appendChild(info); d.appendChild(b); wrap.appendChild(d);
+      });
+      $("endShift").disabled = SH.ended;
+      $("nextShift").hidden = !SH.ended;
+    }
+    function takeCase(idx){
+      if(R || SH.ended || SH.slots <= 0) return;
+      var p = SH.waiting.splice(idx, 1)[0];
+      SH.slots--;
+      S.record.roundsStarted++; S.record.casesTaken++;
+      R = { patient:p, steps:buildSteps(p.mods), i:0, errors:{}, total:0, sterile:0,
+            band:energyBand(S.energy), startEnergy:S.energy, answered:false, forceEnd:false };
+      save();
+      $("listArea").style.display = "none";
+      $("roundDone").hidden = true;
+      $("roundPlay").hidden = false;
+      $("patientCard").textContent = p.name + " — " + p.cond + " Difficulty: " + p.diff +
+        ". This case costs " + p.cost + " energy. You begin it " + R.band + " (energy " + R.startEnergy + " of 100)" +
+        (R.band === "tired" || R.band === "exhausted" ? " — and the record will label this round with that, because a round worked exhausted is not the same achievement as one worked fresh." : ".");
+      renderStep(); renderRecord();
+      $("rounds").scrollIntoView();
+    }
+    function errChipUpdate(){
+      var ec = $("errChip");
+      if(R && R.total > 0){ ec.hidden = false; ec.textContent = "Errors this round: " + R.total + (R.sterile ? " · sterile breaks: " + R.sterile : ""); }
+      else ec.hidden = true;
+    }
+    function renderStep(){
+      var st = R.steps[R.i];
+      $("stepCount").textContent = "Step " + (R.i + 1) + " of " + R.steps.length;
+      $("phaseChip").textContent = st.phase + " — " + R.patient.name.split(",")[0] + "'s case";
+      $("standChip").textContent = "Team standing: " + standingLabel(S.record.standing);
+      errChipUpdate();
+      $("stepTitle").textContent = st.title;
+      $("stepBody").textContent = st.body;
+      var box = $("choices"); box.innerHTML = "";
+      var list = st.choices.slice();
+      if(S.energy < 40 && st.tired)
+        list.push({ t:st.tired.t, ok:false, kind:st.tired.kind, why:st.tired.why, grave:!!st.tired.grave, tired:true });
+      list.forEach(function(ch){
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "choice"; b.textContent = ch.t;
+        b.addEventListener("click", function(){ choose(ch, b); });
+        box.appendChild(b);
+      });
+      var hint = $("hintLine");
+      if(S.teaching === "light"){ hint.textContent = "Light nudge: " + st.hint; hint.className = "hintline show"; }
+      else hint.className = "hintline";
+      if(S.teaching === "coach"){ $("coachText").textContent = st.coach; $("coachBox").className = "coachbox show"; }
+      else $("coachBox").className = "coachbox";
+      $("feedback").className = "feedback";
+      $("nextStep").hidden = true;
+      R.answered = false;
+    }
+    function choose(ch, btn){
+      var fb = $("feedback");
+      if(ch.ok){
+        if(R.answered) return;
+        R.answered = true;
+        btn.className = "choice picked-right";
+        var all = $("choices").children;
+        for(var i = 0; i < all.length; i++) all[i].disabled = true;
+        fb.className = "feedback show ok";
+        $("fbTitle").textContent = "Right — and here is the why.";
+        $("fbBody").textContent = ch.why;
+        var nx = $("nextStep");
+        nx.hidden = false;
+        nx.textContent = R.i >= R.steps.length - 1 ? "Tap to finish the round" : "Tap to continue";
+        return;
+      }
+      if(btn.disabled || R.answered) return;
+      btn.disabled = true; btn.className = "choice picked-wrong";
+      R.total++;
+      R.errors[ch.kind] = (R.errors[ch.kind] || 0) + 1;
+      if(S.record.errors[ch.kind] !== undefined) S.record.errors[ch.kind]++;
+      if(ch.kind === "sterile") R.sterile++;
+      save(); renderRecord(); errChipUpdate();
+      if(ch.grave || ch.kind === "sterile"){
+        fb.className = "feedback show grave";
+        $("fbTitle").textContent = ch.grave ? "STERILE FIELD BROKEN — the gravest error in theatre." : "Aseptic failure — this is how infections are seeded.";
+        $("fbBody").textContent = ch.why + (ch.tired ? "" : "");
+        if(S.strict && ch.grave){
+          R.forceEnd = true; R.answered = true;
+          var all2 = $("choices").children;
+          for(var j = 0; j < all2.length; j++) all2[j].disabled = true;
+          $("fbBody").textContent = ch.why + " STRICT THEATRE: in this variant, that ends your round here — the consultant scrubs in and takes the case, and you step back. The patient stays safe. That is what the rule is for.";
+          var nx2 = $("nextStep");
+          nx2.hidden = false; nx2.textContent = "Tap to see the outcome";
+        }
+      } else {
+        fb.className = "feedback show wrong";
+        $("fbTitle").textContent = ch.tired ? "That was the tired shortcut talking — here is the why. Choose again." : "Not that — here is the why. Choose again.";
+        $("fbBody").textContent = ch.why;
+      }
+    }
+    function finishRound(){
+      var p = R.patient, outcome, oText, delta;
+      S.energy = Math.max(0, S.energy - p.cost);
+      var errKinds = Object.keys(R.errors).map(function(k){ return k + " " + R.errors[k]; }).join(", ") || "none";
+      if(R.forceEnd){
+        outcome = "handed";
+        S.record.roundsEndedEarly++;
+        oText = "The consultant completed " + p.name.split(",")[0] + "'s operation while you stepped back and re-scrubbed. The patient was kept safe — that is the system working. Your record keeps the sterile break and the handover labelled, because both are true.";
+        delta = -1 - R.sterile;
+      } else {
+        S.record.roundsCompleted++;
+        if(R.sterile > 0 || R.total >= 4) outcome = "complication";
+        else if(p.mods.perforated) outcome = "longer";
+        else if(R.total >= 2) outcome = "longer";
+        else outcome = "clean";
+        if(outcome === "clean"){
+          oText = p.name + " goes home on schedule — eating, walking, wound clean. A clean recovery, earned decision by decision. This is the reward in this theatre: not a score, a person well.";
+          delta = 2;
+        } else if(outcome === "longer" && p.mods.perforated){
+          oText = p.name + " faces a longer recovery — antibiotics, watchful days, a slower return to normal. The perforation set that floor before you ever scrubbed; your work is why a longer recovery is all it is, and not a complication.";
+          delta = 1;
+        } else if(outcome === "longer"){
+          oText = p.name + " recovers, but more slowly — extra days, extra antibiotics, a slower road back to eating and walking. The errors were paid for in the patient's time. That is the currency of this place, and it is why the steps matter.";
+          delta = 1;
+        } else {
+          oText = p.name + " develops a complication in the days after: fever, a wound infection, a drain, more procedures, a longer and harder stay." +
+            (R.sterile > 0 ? " The sterile break is the likely seed — invisible at the time, undeniable now. This is why the field's rules are absolute." : " Too many small errors compounded into harm. No single one looked decisive; together they were.");
+          delta = -2;
+        }
+        delta -= R.sterile;
+      }
+      S.record.outcomes[outcome]++;
+      if(outcome === "clean") S.record.cleanRounds++;
+      S.record.roundsByBand[R.band]++;
+      S.record.standing += delta;
+      S.record.history.unshift(p.name + " — " + outcome + " recovery · errors: " + R.total + " (" + errKinds + ") · begun " + R.band + " · standing " + (delta >= 0 ? "+" : "") + delta);
+      S.record.history = S.record.history.slice(0, 6);
+      $("roundPlay").hidden = true;
+      $("roundDone").hidden = false;
+      $("roundDoneTitle").textContent = outcome === "clean" ? "Round complete — a clean recovery" :
+        outcome === "longer" ? "Round complete — a longer recovery" :
+        outcome === "complication" ? "Round complete — a complication" : "Round ended early — the case was handed over";
+      $("roundSummary").textContent = "Case: " + p.name + " (" + p.diff + "). Errors this round: " + R.total + " — " + errKinds +
+        ". Sterile breaks: " + R.sterile + ". You began " + R.band + " (energy " + R.startEnergy + "); this case cost " + p.cost +
+        ", leaving your energy at " + S.energy + ". Rounds worked " + R.band + " are labelled as such in your record — they are not dressed as fresh rounds.";
+      $("roundOutcome").textContent = oText + " Team standing now: " + standingLabel(S.record.standing) +
+        " (" + (S.record.standing >= 0 ? "+" : "") + S.record.standing + ", " + (delta >= 0 ? "+" : "") + delta + " this round).";
+      R = null;
+      save(); renderList(); updateEnergyUI(); renderRecord();
+    }
+
+    /* ---------- Rest & shift ---------- */
+    $("restFull").addEventListener("click", function(){
+      if(R || SH.ended) return;
+      var note;
+      if(SH.waiting.length){
+        var p = SH.waiting.shift();
+        S.record.handedToColleague++;
+        S.record.history.unshift(p.name + " — taken by a colleague while you took a proper rest · cared for, but not by you");
+        S.record.history = S.record.history.slice(0, 6);
+        note = "You rested properly (+40 energy). While you did, a colleague took " + p.name + " — cared for, on time, but not by you, and the record says so plainly.";
+      } else note = "You rested properly (+40 energy). Nobody was waiting, so the rest cost nobody a case.";
+      S.energy = Math.min(100, S.energy + 40);
+      $("restNote").textContent = note;
+      save(); renderList(); updateEnergyUI(); renderRecord();
+    });
+    $("restShort").addEventListener("click", function(){
+      if(R || SH.ended) return;
+      S.energy = Math.min(100, S.energy + 15);
+      $("restNote").textContent = "A short break: +15 energy. Nobody lost a case, and you bought back less of yourself. Sometimes that is the right trade; know that you made it.";
+      save(); updateEnergyUI();
+    });
+    $("pushOn").addEventListener("click", function(){
+      if(R || SH.ended) return;
+      $("restNote").textContent = "You push on. Every slot stays yours — and the surgeon pays. Watch the energy line, and remember what tired hands do on the bench and in the field.";
+    });
+    $("endShift").addEventListener("click", function(){
+      if(R || SH.ended) return;
+      SH.ended = true; S.record.shiftsWorked++;
+      var lines = [];
+      SH.waiting.forEach(function(p){
+        if(p.wait === "Should not wait"){
+          S.record.waitedTooLong++;
+          lines.push(p.name + " waited past the safe window — handed to the night team flagged first and urgent. That wait is written here, not hidden: capacity ran out, and this is what that honestly means.");
+        } else {
+          S.record.handedToNextTeam++;
+          lines.push(p.name + " — handed to the next team, still inside the safe wait.");
+        }
+      });
+      SH.waiting = [];
+      $("shiftSummary").textContent = lines.length ? ("End of shift " + SH.num + ". " + lines.join(" ")) :
+        ("End of shift " + SH.num + " — every patient on the list was taken. The list is clear, and so is the record.");
+      save(); renderList(); renderRecord();
+    });
+    $("nextShift").addEventListener("click", function(){
+      SH = { num: SH.num + 1, slots: 3, waiting: listForShift(SH.num + 1), ended: false };
+      S.energy = 100;
+      $("shiftSummary").textContent = "A new shift, a rested surgeon, a new list — and the cases run harder from here. Yesterday's record stands as written.";
+      save(); renderList(); updateEnergyUI(); renderRecord();
+    });
+    $("nextStep").addEventListener("click", function(){
+      if(!R) return;
+      if(R.forceEnd || R.i >= R.steps.length - 1) finishRound();
+      else { R.i++; renderStep(); }
+    });
+    $("againBtn").addEventListener("click", function(){
+      $("roundDone").hidden = true;
+      $("listArea").style.display = "";
+      renderList();
+      $("listArea").scrollIntoView();
+    });
+
+    /* ---------- Suture bench ---------- */
+    var ROWS = [110, 160, 210, 260, 310], WOUND_X = 170;
+    var B = { stitches: [], pending: null, driftUsed: false };
+    var svgNS = "http://www.w3.org/2000/svg";
+    function renderTargets(){
+      var g = $("targetLayer"); g.innerHTML = "";
+      if(S.hideTargets) return;
+      ROWS.forEach(function(y){
+        [[120, y], [220, y]].forEach(function(pt){
+          var c = document.createElementNS(svgNS, "circle");
+          c.setAttribute("cx", pt[0]); c.setAttribute("cy", pt[1]); c.setAttribute("r", 7);
+          c.setAttribute("fill", "none"); c.setAttribute("stroke", "#fdf6e3"); c.setAttribute("stroke-width", "2.5");
+          g.appendChild(c);
+        });
+        var l = document.createElementNS(svgNS, "line");
+        l.setAttribute("x1", 120); l.setAttribute("y1", y); l.setAttribute("x2", 220); l.setAttribute("y2", y);
+        l.setAttribute("stroke", "#fdf6e3"); l.setAttribute("stroke-width", "1"); l.setAttribute("stroke-dasharray", "4 5"); l.setAttribute("opacity", "0.6");
+        g.appendChild(l);
+      });
+    }
+    function driftNow(){ return S.energy < 60 ? (60 - S.energy) / 4 : 0; }
+    function benchStatus(msg){
+      var d = driftNow();
+      var base = "Stitches placed: " + B.stitches.length + " of 5." +
+        (d > 0.5 ? " Tired hands (energy " + S.energy + "): each tap is drifting up to " + Math.round(d) + " units from where you aim — the drift will be in the stitches and in the grade." : "");
+      $("benchStatus").textContent = msg ? (msg + " " + base) : base;
+    }
+    function svgPoint(evt){
+      var rect = $("benchSvg").getBoundingClientRect();
+      return { x: (evt.clientX - rect.left) / rect.width * 340, y: (evt.clientY - rect.top) / rect.height * 440 };
+    }
+    function drawStitch(st){
+      var g = document.createElementNS(svgNS, "g");
+      var path = document.createElementNS(svgNS, "path");
+      var midY = (st.e.y + st.x.y) / 2;
+      path.setAttribute("d", "M " + st.e.x + " " + st.e.y + " Q " + WOUND_X + " " + (midY - 18) + " " + st.x.x + " " + st.x.y);
+      path.setAttribute("fill", "none"); path.setAttribute("stroke", "#274156"); path.setAttribute("stroke-width", "3.5"); path.setAttribute("stroke-linecap", "round");
+      g.appendChild(path);
+      [[st.e.x, st.e.y], [st.x.x, st.x.y]].forEach(function(pt){
+        var c = document.createElementNS(svgNS, "circle");
+        c.setAttribute("cx", pt[0]); c.setAttribute("cy", pt[1]); c.setAttribute("r", 4); c.setAttribute("fill", "#274156");
+        g.appendChild(c);
+      });
+      $("stitchLayer").appendChild(g);
+    }
+    $("benchSvg").addEventListener("click", function(evt){
+      var pt = svgPoint(evt), d = driftNow(), x = pt.x, y = pt.y;
+      if(d > 0.5){ x += (Math.random() * 2 - 1) * d; y += (Math.random() * 2 - 1) * d; B.driftUsed = true; }
+      if(!B.pending){
+        if(B.stitches.length >= 5){ benchStatus("The pad is full — grade it, undo one, or clear it."); return; }
+        if(x >= WOUND_X){ benchStatus("The needle goes in on the left first — tap the left side of the wound."); return; }
+        B.pending = { x: x, y: y };
+        var m = $("entryMark");
+        m.setAttribute("cx", x); m.setAttribute("cy", y); m.hidden = false;
+        benchStatus("Needle in. Now tap the right side to bring it out and complete the stitch.");
+      } else {
+        if(x < WOUND_X){ benchStatus("Now the right side — the needle comes out across the wound."); return; }
+        var st = { e: B.pending, x: { x: x, y: y } };
+        B.stitches.push(st); drawStitch(st);
+        B.pending = null; $("entryMark").hidden = true;
+        benchStatus("Stitch " + B.stitches.length + " placed.");
+        $("undoStitch").disabled = false;
+        $("gradeBench").disabled = B.stitches.length < 3;
+      }
+    });
+    $("undoStitch").addEventListener("click", function(){
+      if(!B.stitches.length) return;
+      B.stitches.pop();
+      var layer = $("stitchLayer");
+      if(layer.lastChild) layer.removeChild(layer.lastChild);
+      $("gradeBench").disabled = B.stitches.length < 3;
+      $("undoStitch").disabled = !B.stitches.length;
+      benchStatus("Last stitch removed.");
+    });
+    $("clearBench").addEventListener("click", function(){
+      B = { stitches: [], pending: null, driftUsed: false };
+      $("stitchLayer").innerHTML = "";
+      $("entryMark").hidden = true;
+      $("benchFeedback").className = "feedback";
+      $("gradeBench").disabled = true; $("undoStitch").disabled = true;
+      benchStatus("Pad cleared. Tap the left side of the wound to begin.");
+    });
+    function gradeLetter(s){ return s >= 90 ? "A" : s >= 80 ? "B" : s >= 70 ? "C" : s >= 55 ? "D" : "F"; }
+    $("gradeBench").addEventListener("click", function(){
+      if(B.stitches.length < 3) return;
+      var total = 0, details = [], mids = [];
+      B.stitches.forEach(function(st, i){
+        var midY = (st.e.y + st.x.y) / 2; mids.push(midY);
+        var rowErr = Math.min.apply(null, ROWS.map(function(r){ return Math.abs(midY - r); }));
+        var sym = Math.abs((WOUND_X - st.e.x) - (st.x.x - WOUND_X));
+        var level = Math.abs(st.e.y - st.x.y);
+        var sc = Math.max(0, Math.round(100 - sym * 1.1 - level * 0.9 - rowErr * 0.7));
+        total += sc;
+        details.push("Stitch " + (i + 1) + ": " + sc + " — bite difference " + Math.round(sym) + ", level difference " + Math.round(level) + ", off its row by " + Math.round(rowErr) + ".");
+      });
+      var avg = Math.round(total / B.stitches.length);
+      mids.sort(function(a, b){ return a - b; });
+      var gaps = [];
+      for(var i = 1; i < mids.length; i++) gaps.push(Math.abs(mids[i] - mids[i - 1] - 50));
+      var spread = gaps.length ? Math.round(gaps.reduce(function(a, b){ return a + b; }, 0) / gaps.length) : 0;
+      var letter = gradeLetter(avg);
+      S.record.benchSessions++;
+      S.record.suturesPlaced += B.stitches.length;
+      if(S.record.bestBenchScore === null || avg > S.record.bestBenchScore){ S.record.bestBenchScore = avg; S.record.bestBenchGrade = letter; }
+      save(); renderRecord();
+      var fb = $("benchFeedback");
+      fb.className = "feedback show " + (avg >= 70 ? "ok" : "wrong");
+      $("benchFbTitle").textContent = "Bench grade: " + letter + " — " + avg + " of 100 across " + B.stitches.length + " stitches.";
+      $("benchFbBody").textContent = details.join(" ") + " Spacing: your gaps stray from the ideal 50 units by " + spread +
+        " on average — spacing consistency is half the craft, because uneven gaps leave weak spots the wound can pull open at." +
+        (B.driftUsed ? " Honest note: you placed these tired (energy " + S.energy + "), and your taps drifted — that drift is inside these numbers, and the session is recorded as a tired one in everything but name: check your energy line before you judge the grade." : "") +
+        " Remember what this is: a steadiness exercise. It grades your hand's evenness, not surgical skill.";
+    });
+
+    /* ---------- Anatomy ---------- */
+    function renderLayers(){
+      var g = $("layerShapes"); g.innerHTML = "";
+      LAYERS.forEach(function(L, i){
+        var el;
+        if(i < 7){
+          el = document.createElementNS(svgNS, "rect");
+          el.setAttribute("x", 36 + i * 7); el.setAttribute("y", 24 + i * 47);
+          el.setAttribute("width", 268 - i * 14); el.setAttribute("height", 40); el.setAttribute("rx", 9);
+        } else {
+          el = document.createElementNS(svgNS, "g");
+          var c = document.createElementNS(svgNS, "circle");
+          c.setAttribute("cx", 128); c.setAttribute("cy", 24 + 7 * 47 + 20); c.setAttribute("r", 21); c.setAttribute("fill", L.c);
+          var a = document.createElementNS(svgNS, "path");
+          a.setAttribute("d", "M 146 " + (24 + 7 * 47 + 24) + " q 34 16 52 -2");
+          a.setAttribute("fill", "none"); a.setAttribute("stroke", L.c); a.setAttribute("stroke-width", "10"); a.setAttribute("stroke-linecap", "round");
+          el.appendChild(c); el.appendChild(a);
+        }
+        if(i < 7) el.setAttribute("fill", L.c);
+        el.setAttribute("data-layer", i);
+        el.style.cursor = "pointer";
+        el.addEventListener("click", function(){ selectLayer(i); });
+        g.appendChild(el);
+        var t = document.createElementNS(svgNS, "text");
+        t.setAttribute("x", 48 + i * 7); t.setAttribute("y", 24 + i * 47 + 25);
+        t.setAttribute("fill", "#14201f"); t.setAttribute("font-size", "13"); t.setAttribute("font-weight", "700");
+        t.textContent = (i + 1) + "";
+        g.appendChild(t);
+      });
+      var btns = $("layerBtns"); btns.innerHTML = "";
+      LAYERS.forEach(function(L, i){
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "layerbtn"; b.setAttribute("aria-pressed", "false");
+        b.textContent = "Tap — " + (i + 1) + ". " + L.n;
+        b.addEventListener("click", function(){ selectLayer(i); });
+        btns.appendChild(b);
+      });
+    }
+    function selectLayer(i){
+      var shapes = $("layerShapes").children, k;
+      for(k = 0; k < shapes.length; k++){
+        if(shapes[k].getAttribute("data-layer") !== null)
+          shapes[k].style.opacity = (parseInt(shapes[k].getAttribute("data-layer"), 10) === i) ? "1" : "0.35";
+      }
+      var btns = $("layerBtns").children;
+      for(k = 0; k < btns.length; k++) btns[k].setAttribute("aria-pressed", k === i ? "true" : "false");
+      $("layerName").textContent = (i + 1) + ". " + LAYERS[i].n;
+      $("layerText").textContent = LAYERS[i].t;
+    }
+
+    /* ---------- Why Library folds ---------- */
+    function renderFolds(){
+      var wrap = $("folds"); wrap.innerHTML = "";
+      FOLDS.forEach(function(f){
+        var d = document.createElement("details"); d.className = "fold";
+        var s = document.createElement("summary");
+        var title = document.createElement("span"); title.textContent = f.t;
+        var g = document.createElement("span"); g.className = "gesture"; g.textContent = "Tap to open";
+        s.appendChild(title); s.appendChild(g);
+        var body = document.createElement("div"); body.className = "foldbody"; body.innerHTML = f.b;
+        d.appendChild(s); d.appendChild(body);
+        d.addEventListener("toggle", function(){ g.textContent = d.open ? "Tap to close" : "Tap to open"; });
+        wrap.appendChild(d);
+      });
+    }
+
+    /* ---------- Settings & record actions ---------- */
+    $("aliasSave").addEventListener("click", function(){
+      var v = $("aliasInput").value.trim();
+      S.alias = v || "Guest";
+      save(); renderRecord();
+    });
+    document.querySelectorAll("[data-teach]").forEach(function(b){
+      b.addEventListener("click", function(){
+        S.teaching = b.getAttribute("data-teach");
+        save(); applyTeachingUI();
+        if(R) renderStep();
+      });
+    });
+    $("strictToggle").addEventListener("click", function(){ S.strict = !S.strict; save(); updateVariantBanner(); });
+    $("targetsToggle").addEventListener("click", function(){ S.hideTargets = !S.hideTargets; save(); updateVariantBanner(); renderTargets(); });
+    $("exportBtn").addEventListener("click", function(){
+      var blob = new Blob([JSON.stringify({ page: "In Theatre", alias: S.alias, exportedFrom: "this device only", record: S.record }, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "in-theatre-record.json"; a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    });
+    $("forgetBtn").addEventListener("click", function(){
+      try{ localStorage.removeItem(LS); }catch(e){}
+      S = { alias: "Guest", teaching: "light", strict: false, hideTargets: false, energy: 100, record: freshRecord() };
+      SH = { num: 1, slots: 3, waiting: listForShift(1), ended: false };
+      R = null;
+      $("roundPlay").hidden = true; $("roundDone").hidden = true;
+      $("listArea").style.display = "";
+      $("aliasInput").value = "";
+      $("forgetMsg").textContent = "Forgotten. This device now holds nothing — no name, no record, no settings. The theatre list is fresh.";
+      applyTeachingUI(); updateVariantBanner(); renderList(); updateEnergyUI(); renderRecord(); renderTargets();
+    });
+    $("downloadBtn").addEventListener("click", function(){
+      var blob = new Blob(["<!doctype html>\n" + document.documentElement.outerHTML], { type: "text/html" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "in-theatre.html"; a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    });
+
+    /* ---------- Init ---------- */
+    $("aliasInput").value = S.alias === "Guest" ? "" : S.alias;
+    $("againBtn").textContent = "Tap to return to the theatre list";
+    $("benchCoachText").textContent = "Aim for the dots, but think in principles: equal bite on both sides so the wound edges meet without puckering; level entry and exit so the stitch does not saw diagonally; even spacing so no gap is left to gape. If your spacing is even but your bites wander, slow down — consistency is built one honest stitch at a time, and a tired hand should rest, not practise through the shakes.";
+    applyTeachingUI(); updateVariantBanner(); renderList(); updateEnergyUI();
+    renderTargets(); renderLayers(); renderFolds(); renderRecord(); benchStatus();
+    </script>
+  </body>
+</html>
