@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Piece by Piece — Jigsaw</title>
+<style>
+:root{
+  --bg:#f7f2e7; --bg2:#efe6d4; --card:#fffdf7; --ink:#22302a; --ink-soft:#4c5a52;
+  --line:#d8cbb2; --accent:#0e6b5c; --accent-ink:#ffffff; --warm:#b45309; --warm-bg:#fdf0dc;
+  --good:#177245; --bad:#b3261e; --sel:#f59e0b; --tray:#e9dfc9; --shadow:0 2px 10px rgba(60,45,20,.14);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131a17; --bg2:#0f1512; --card:#1c2621; --ink:#e8e2d2; --ink-soft:#b3bfae;
+    --line:#3a463f; --accent:#2ea88f; --accent-ink:#08130f; --warm:#e8a04c; --warm-bg:#2c2317;
+    --good:#5fce8f; --bad:#ff8a7a; --sel:#f5b93f; --tray:#232d27; --shadow:0 2px 10px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-system,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2rem}
+h2{font-size:1.35rem}
+h3{font-size:1.05rem}
+p{margin:.4em 0}
+button,[role="button"],select,input,summary,a.btn{min-height:2.75rem}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:.55rem .9rem}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.small{min-height:2.25rem;padding:.35rem .7rem;font-size:.92rem}
+select,input[type="text"]{font:inherit;padding:.5rem .6rem;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.wrap{max-width:1020px;margin:0 auto;padding:0 16px 48px}
+.freebar{background:var(--accent);color:var(--accent-ink);text-align:center;padding:10px 14px;font-weight:700}
+.freebar a{color:inherit;text-decoration:underline}
+header.hero{padding:22px 0 6px}
+.hero p.lede{font-size:1.08rem;color:var(--ink-soft);max-width:62ch}
+nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+nav.compass a{display:inline-flex;align-items:center;min-height:2.75rem;padding:.45rem .85rem;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);text-decoration:none;font-weight:600}
+nav.compass a:hover{border-color:var(--accent)}
+section{margin-top:30px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:720px){.grid2{grid-template-columns:1fr}}
+.picgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:720px){.picgrid{grid-template-columns:1fr}}
+.picpick{border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--card);cursor:pointer;text-align:left;width:100%}
+.picpick[aria-pressed="true"]{border-color:var(--accent);outline:3px solid color-mix(in srgb,var(--accent) 30%, transparent)}
+.picpick svg{width:100%;height:auto;display:block;border-radius:8px}
+.picpick .pname{font-weight:700;margin-top:6px}
+.picpick .pdesc{font-size:.88rem;color:var(--ink-soft)}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.field{margin:12px 0}
+.field label{font-weight:700;display:block;margin-bottom:4px}
+.field .hint{font-size:.88rem;color:var(--ink-soft)}
+.switchrow{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px dashed var(--line)}
+.switchrow input{width:22px;height:22px;margin-top:2px;flex:none}
+.banner{border:2px solid var(--warm);background:var(--warm-bg);border-radius:12px;padding:10px 14px;font-weight:600;margin:12px 0}
+.statusbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-weight:600;margin-bottom:10px}
+.statusbar .stat b{font-variant-numeric:tabular-nums}
+#boardWrap{position:relative;width:100%;max-width:760px;margin:0 auto}
+#board{position:relative;width:100%;aspect-ratio:4/3;background:var(--bg2);border:2px solid var(--line);border-radius:10px;overflow:hidden;touch-action:manipulation}
+#board .ghost{position:absolute;inset:0;opacity:.16;pointer-events:none}
+#board .ghost svg{width:100%;height:100%;display:block}
+.cell{position:absolute;border:1px dashed color-mix(in srgb,var(--ink) 14%, transparent);cursor:pointer}
+.cell:hover{background:color-mix(in srgb,var(--accent) 12%, transparent)}
+.cell.targethint{background:color-mix(in srgb,var(--sel) 30%, transparent)}
+.placedPiece{position:absolute;pointer-events:none}
+.placedPiece svg{width:100%;height:100%;display:block;overflow:visible}
+#peekOverlay{position:absolute;inset:0;display:none;z-index:30;background:var(--card)}
+#peekOverlay.show{display:block}
+#peekOverlay svg{width:100%;height:100%;display:block}
+#peekOverlay .peeklabel{position:absolute;left:10px;bottom:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-weight:700}
+#trayWrap{margin-top:14px}
+#tray{background:var(--tray);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;min-height:110px;align-content:flex-start}
+.piece{position:relative;cursor:grab;flex:none;border-radius:6px}
+.piece svg{display:block;overflow:visible;pointer-events:none}
+.piece.selected{outline:3px solid var(--sel);outline-offset:2px;background:color-mix(in srgb,var(--sel) 18%, transparent)}
+.piece.edgeflash{outline:3px solid var(--accent);outline-offset:2px}
+.piece.dragging{position:fixed;z-index:60;cursor:grabbing;filter:drop-shadow(0 8px 14px rgba(0,0,0,.35))}
+.piece.wrongshake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion: reduce){.piece.wrongshake{animation:none} html{scroll-behavior:auto}}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tools .lbl{width:100%;font-size:.88rem;color:var(--ink-soft)}
+#coachBox{margin-top:14px;border-left:5px solid var(--accent);background:var(--card);border-radius:0 12px 12px 0;padding:12px 14px;box-shadow:var(--shadow)}
+#coachBox .who{font-weight:800;color:var(--accent);font-size:.85rem;letter-spacing:.04em;text-transform:uppercase}
+#winBox{display:none;margin-top:14px;border:2px solid var(--good);border-radius:12px;padding:14px;background:var(--card)}
+#winBox.show{display:block}
+table.rec{width:100%;border-collapse:collapse;font-size:.95rem}
+table.rec th,table.rec td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.rec th{font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft)}
+.recwrap{overflow-x:auto}
+@media (max-width:640px){
+  table.rec thead{display:none}
+  table.rec tr{display:block;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:6px 4px}
+  table.rec td{display:block;border-bottom:none;padding:3px 8px}
+}
+.strat{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
+.strat .trade{font-size:.92rem;color:var(--ink-soft)}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin-right:6px;background:var(--bg2)}
+footer{margin-top:40px;border-top:1px solid var(--line);padding-top:14px;color:var(--ink-soft);font-size:.92rem}
+.small{font-size:.9rem;color:var(--ink-soft)}
+.kbd-note{font-size:.88rem;color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<div class="freebar">Free — always free. No ads, no account, no purchases. <button id="downloadBtn" class="small" style="margin-left:8px">Download this page — tap to save it for offline play</button></div>
+
+<div class="wrap">
+<header class="hero">
+  <h1>Piece by Piece</h1>
+  <p class="lede">A jigsaw puzzle you play on the table rules: pick a picture, pick how many pieces to cut it into, and put it back together — edges, corners, tabs and all. Drag pieces, or tap a piece and then tap its place. Both work the same.</p>
+  <nav class="compass" aria-label="Compass">
+    <a href="#play">Play</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#record">Your record</a>
+    <a href="#about">About the jigsaw</a>
+  </nav>
+</header>
+
+<section id="setup" aria-labelledby="setupH">
+  <h2 id="setupH">Set up your puzzle</h2>
+
+  <div class="field">
+    <label>1 · Pick a picture — tap to choose</label>
+    <div class="picgrid" id="picGrid"></div>
+    <p class="hint">Every picture here is an original scene drawn for this page. Bold blocks of colour are kinder at big piece counts; fine detail rewards a smaller cut.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="field">
+        <label>2 · How many pieces? — tap to choose</label>
+        <div class="seg" id="countSeg" role="group" aria-label="Piece count">
+          <button data-count="24" aria-pressed="true">24 pieces · 6 × 4</button>
+          <button data-count="48" aria-pressed="false">48 pieces · 8 × 6</button>
+          <button data-count="96" aria-pressed="false">96 pieces · 12 × 8</button>
+        </div>
+        <p class="hint">Honest grid cuts: the number on the button is the number of pieces you get.</p>
+      </div>
+      <div class="field">
+        <label for="teachSel">3 · Teaching — how much coaching reaches you</label>
+        <select id="teachSel">
+          <option value="off">Off — no coaching</option>
+          <option value="light" selected>Light — a nudge at the big moments</option>
+          <option value="coach">Coach — full coaching, in the moment, on your board</option>
+        </select>
+        <p class="hint">Saved on this device only. The teaching is all here either way — the dial only chooses how much of it speaks up while you play.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Rules are settings</h3>
+      <div class="switchrow">
+        <input type="checkbox" id="rotChk" />
+        <div><label for="rotChk" style="font-weight:700">Piece rotation — variant</label>
+        <div class="hint">Standard jigsaw, the documented table form, is <b>no rotation</b>: pieces are already the right way up. Turn this on and pieces arrive turned — a labelled variant, and your record will say so.</div></div>
+      </div>
+      <div class="switchrow">
+        <input type="checkbox" id="helpsChk" checked />
+        <div><label for="helpsChk" style="font-weight:700">Helps allowed</label>
+        <div class="hint">Peek at the picture, highlight the edges, sort the tray. Helps are honest tools — but a finished puzzle's record always names the help it took. Turn this off for a clean, unaided solve.</div></div>
+      </div>
+      <div id="variantBannerSlot"></div>
+    </div>
+  </div>
+
+  <p style="margin-top:16px"><button class="primary" id="startBtn" style="font-size:1.05rem;padding:.8rem 1.4rem">Start the puzzle — tap to begin</button>
+  <span class="small" style="margin-left:10px">Gestures: <b>drag</b> a piece to move it · <b>tap</b> a piece, then <b>tap</b> its place · <b>hold</b> a piece in Coach mode to hear about its shape.</span></p>
+</section>
+
+<section id="play" aria-labelledby="playH">
+  <h2 id="playH">The board</h2>
+  <div id="playEmpty" class="card"><p>Nothing on the table yet. Choose a picture and a piece count above, then tap <b>Start the puzzle</b>.</p></div>
+
+  <div id="playArea" style="display:none">
+    <div class="statusbar" role="status">
+      <span class="stat">Placed <b id="stPlaced">0</b> of <b id="stTotal">0</b></span>
+      <span class="stat">Edges home <b id="stEdges">0</b> of <b id="stEdgesTotal">0</b></span>
+      <span class="stat">Time <b id="stTime">0:00</b></span>
+      <span class="stat">Misses <b id="stMiss">0</b></span>
+      <span class="stat">Helps used <b id="stHelps">none</b></span>
+    </div>
+
+    <div id="boardWrap">
+      <div id="board" aria-label="Puzzle board. Tap a square to try the selected piece there.">
+        <div class="ghost" id="ghost"></div>
+        <div id="cellLayer"></div>
+        <div id="placedLayer"></div>
+        <div id="peekOverlay" role="button" tabindex="0" aria-label="Peek: the whole picture. Tap to close the peek."><div class="peeklabel">The whole picture — tap anywhere to close the peek</div></div>
+      </div>
+    </div>
+
+    <div id="trayWrap">
+      <h3 style="margin-bottom:6px">The tray — your unplaced pieces</h3>
+      <div id="tray" aria-label="Tray of unplaced pieces"></div>
+      <p class="kbd-note">Tap a piece to pick it up, then tap its square on the board. Or press and drag it straight there. <span id="rotNote"></span></p>
+    </div>
+
+    <div class="tools" role="group" aria-label="Helps and tools">
+      <span class="lbl">Helps — one tap down. Using one is fine; your record will name it, so a clean solve stays clean on paper.</span>
+      <button id="peekBtn">Peek at the picture — tap to look</button>
+      <button id="edgeBtn">Highlight edges — tap to mark edge pieces</button>
+      <button id="sortBtn">Sort the tray — tap to group pieces</button>
+      <button id="rotateBtn" style="display:none">Turn the picked-up piece — tap to rotate 90°</button>
+      <button id="coachBtn">Coach — tap for a note on this board</button>
+      <button id="quitBtn">Leave this puzzle — tap to clear the table</button>
+    </div>
+
+    <div id="coachBox" style="display:none">
+      <div class="who">Coach</div>
+      <p id="coachText" style="margin:4px 0 0"></p>
+    </div>
+
+    <div id="winBox" role="status"></div>
+  </div>
+</section>
+
+<section id="strategies" aria-labelledby="stratH">
+  <h2 id="stratH">Strategies — more than one honest way</h2>
+  <p>There is no single correct way to work a jigsaw. These are the approaches experienced puzzlers actually use. Each one is strong somewhere and weak somewhere else; the trade-off is printed with it, because that is the part that lets you choose.</p>
+  <div class="grid2" style="margin-top:12px">
+    <div class="strat">
+      <h3>Edges first</h3>
+      <p>Find every piece with a flat side, build the frame, then work inward. The frame gives every later piece a border to lean on and shrinks the search: an inside piece can only hide in the tray, never on an edge.</p>
+      <p class="trade"><span class="tag">Strong</span> Almost always worth it; corners are the four easiest pieces in the box. <span class="tag">Weak</span> A picture whose border is all one colour (a plain sky frame) can eat a long time for little progress.</p>
+    </div>
+    <div class="strat">
+      <h3>Colour-sort</h3>
+      <p>Sort the tray into piles by colour and pattern — all the red roof pieces together, all the deep water together — then finish one pile at a time. You stop hunting through the whole tray for every piece.</p>
+      <p class="trade"><span class="tag">Strong</span> Pictures with bold, distinct blocks of colour. Very fast. <span class="tag">Weak</span> Gradients — sky, water, shadow — where every piece is nearly the same colour and the piles blur together.</p>
+    </div>
+    <div class="strat">
+      <h3>Section-hunting</h3>
+      <p>Pick one striking thing in the picture — the lighthouse, the cabin door — and hunt only for its pieces. Build it as a floating island, then grow it until it joins the frame or another island.</p>
+      <p class="trade"><span class="tag">Strong</span> Motivating and quick early wins; a finished object is easy to place. <span class="tag">Weak</span> Islands are hard to join when the pieces between them are dull, and a tempting object can distract from a nearly-done frame.</p>
+    </div>
+    <div class="strat">
+      <h3>The shape read (for the last pieces)</h3>
+      <p>When few pieces remain, stop looking at the picture and read shapes: this hole needs a piece with a tab on the left and a blank on top. Match knob to hole. Shape never lies, even when colour does.</p>
+      <p class="trade"><span class="tag">Strong</span> Endgame, and anywhere colour is uniform. <span class="tag">Weak</span> Slow as an opening strategy — early on there are too many holes to read.</p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:10px">Most experienced puzzlers blend them: edges first, colour-sort the tray, hunt one good section, and read shapes at the end. The Coach in this game reads your actual board and suggests the blend that fits what is left.</p>
+</section>
+
+<section id="record" aria-labelledby="recH">
+  <h2 id="recH">Your record</h2>
+  <div class="card">
+    <p>Kept <b>on this device only</b> — nothing is sent anywhere, and there is no account. Every finished puzzle is written in the same clean shape: when, which picture, how many pieces, how long, what help it took, and whether rotation was on.</p>
+    <div class="field">
+      <label for="aliasIn">Playing as (optional)</label>
+      <input type="text" id="aliasIn" placeholder="Leave blank if you like — no name is ever required" style="width:100%;max-width:420px" />
+      <p class="hint">An alias is free choice, never a requirement. If you write one, it is stamped on future finishes and included in the export. It lives on this device only.</p>
+    </div>
+    <p id="recSummary" class="small">No puzzles finished yet.</p>
+    <div class="recwrap"><table class="rec" id="recTable" aria-label="Finished puzzles">
+      <thead><tr><th>Finished</th><th>Picture</th><th>Pieces</th><th>Time</th><th>Helps used</th><th>Misses</th><th>Variant</th></tr></thead>
+      <tbody id="recBody"></tbody>
+    </table></div>
+    <div class="tools">
+      <button id="exportBtn">Export the record — tap to download a JSON file</button>
+      <button id="forgetBtn">Forget everything — tap to erase the record on this device</button>
+    </div>
+    <p class="small" id="forgetNote"></p>
+  </div>
+</section>
+
+<section id="about" aria-labelledby="aboutH">
+  <h2 id="aboutH">About the jigsaw</h2>
+  <div class="card">
+    <p>The jigsaw puzzle begins, as far as the documented record shows, in the 1760s, when mapmakers mounted printed maps on wood and cut them into pieces along borders — “dissected maps,” sold as teaching tools for geography. Through the 1800s the cut pictures spread from maps to scenes and stories, still mostly wood, still often for teaching. Cardboard pieces and the familiar interlocking tab-and-blank cut arrived later, and by the early 1900s the jigsaw had become the table game most people know today: a picture, cut into interlocking pieces, rebuilt by hand.</p>
+    <p>This page keeps the documented table form as its standard: pieces start the right way up (no rotation), flat-sided pieces are the true edges of the picture, and every piece's tabs and blanks are cut to fit exactly one home. Rotation is offered only as a labelled variant. The three pictures are original scenes drawn for this page, and all the words are written for this page.</p>
+    <p><b>How placing works here:</b> a piece snaps home only in its own square, the right way up. A wrong square is a miss, counted honestly in the status line and the record — never punished beyond the count.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Copyleft — this page and its pictures are free to copy and share under CC BY-SA 4.0; the code is free under the GPL. Derivatives carry the same freedom. No ads, ever.</p>
+  <p>Your record and settings stay on this device. Nothing is sent anywhere.</p>
+</footer>
+</div>
+<script>
+"use strict";
+/* ============ Original pictures (inline SVG scenes, drawn for this page) ============ */
+var W = 600, H = 450;
+var PICTURES = [
+{
+  id:"lighthouse", name:"Lighthouse Cove",
+  desc:"Bold sky, striped tower, dark sea — kind at every size.",
+  scene:
+   '<rect x="0" y="0" width="600" height="270" fill="#f4c95d"/>'
+  +'<rect x="0" y="0" width="600" height="150" fill="#7ec8e3"/>'
+  +'<circle cx="90" cy="70" r="38" fill="#ffdf6b" stroke="#e8a91c" stroke-width="5"/>'
+  +'<ellipse cx="300" cy="60" rx="90" ry="20" fill="#ffffff" opacity="0.85"/>'
+  +'<ellipse cx="470" cy="100" rx="70" ry="16" fill="#ffffff" opacity="0.8"/>'
+  +'<rect x="0" y="262" width="600" height="188" fill="#1d6f8e"/>'
+  +'<path d="M0 300 Q80 288 160 300 T320 300 T480 300 T640 300 L640 450 L0 450 Z" fill="#155e78" opacity="0.7"/>'
+  +'<path d="M0 360 Q100 348 200 360 T400 360 T600 360 L600 450 L0 450 Z" fill="#0f4c64" opacity="0.7"/>'
+  +'<path d="M180 450 L250 262 L410 262 L470 450 Z" fill="#5b4a3a"/>'
+  +'<path d="M150 450 L235 300 L300 450 Z" fill="#6e5a46"/>'
+  +'<path d="M380 450 L430 320 L500 450 Z" fill="#4a3b2d"/>'
+  +'<rect x="288" y="120" width="44" height="150" fill="#f5f0e6"/>'
+  +'<rect x="288" y="150" width="44" height="26" fill="#d43a2f"/>'
+  +'<rect x="288" y="200" width="44" height="26" fill="#d43a2f"/>'
+  +'<rect x="282" y="98" width="56" height="24" fill="#33414e"/>'
+  +'<rect x="298" y="76" width="24" height="24" fill="#ffe98a" stroke="#33414e" stroke-width="4"/>'
+  +'<path d="M322 84 L470 60 L470 108 Z" fill="#fff3a0" opacity="0.55"/>'
+  +'<rect x="300" y="238" width="20" height="32" fill="#33414e"/>'
+  +'<path d="M60 330 L150 330 L132 356 L78 356 Z" fill="#b34724"/>'
+  +'<rect x="100" y="298" width="6" height="32" fill="#5b4a3a"/>'
+  +'<path d="M106 300 L138 330 L106 330 Z" fill="#ffffff"/>'
+  +'<circle cx="520" cy="180" r="5" fill="#33414e"/><circle cx="545" cy="165" r="5" fill="#33414e"/><circle cx="495" cy="160" r="5" fill="#33414e"/>',
+  region:function(nx,ny){
+    if(nx>0.45&&nx<0.58&&ny>0.15&&ny<0.62) return "the lighthouse tower";
+    if(ny<0.33) return "the sky";
+    if(ny<0.60) return "the sky and horizon";
+    if(nx<0.28&&ny>0.62&&ny<0.82) return "the little boat";
+    if(ny>0.58) return "the sea";
+    return "the rocky point";
+  }
+},
+{
+  id:"cabin", name:"Mountain Cabin",
+  desc:"Peaks, pines and a red cabin — strong shapes, clear piles.",
+  scene:
+   '<rect x="0" y="0" width="600" height="450" fill="#a8d8ea"/>'
+  +'<rect x="0" y="0" width="600" height="200" fill="#8ec9e8"/>'
+  +'<circle cx="520" cy="60" r="32" fill="#ffdf6b" stroke="#e8a91c" stroke-width="5"/>'
+  +'<path d="M0 260 L150 90 L300 260 Z" fill="#7a8b99"/>'
+  +'<path d="M120 118 L150 90 L182 118 L162 108 L150 122 L138 108 Z" fill="#ffffff"/>'
+  +'<path d="M180 270 L340 70 L500 270 Z" fill="#66798a"/>'
+  +'<path d="M300 104 L340 70 L382 104 L356 94 L340 112 L324 94 Z" fill="#ffffff"/>'
+  +'<path d="M330 265 L470 120 L600 265 Z" fill="#7a8b99"/>'
+  +'<rect x="0" y="255" width="600" height="90" fill="#3e7d44"/>'
+  +'<rect x="0" y="330" width="600" height="120" fill="#2c5e33"/>'
+  +'<path d="M0 450 L0 385 Q200 360 330 385 L600 450 Z" fill="#4d94c4"/>'
+  +'<path d="M230 300 L370 300 L385 340 L215 340 Z" fill="#8a5a2b"/>'
+  +'<path d="M205 302 L300 252 L395 302 Z" fill="#5d3a17"/>'
+  +'<rect x="282" y="312" width="34" height="28" fill="#6e4520"/>'
+  +'<rect x="238" y="312" width="22" height="20" fill="#ffe98a" stroke="#5d3a17" stroke-width="3"/>'
+  +'<rect x="338" y="312" width="22" height="20" fill="#ffe98a" stroke="#5d3a17" stroke-width="3"/>'
+  +'<rect x="330" y="262" width="14" height="26" fill="#7a7a7a"/>'
+  +'<path d="M337 246 q6 -12 0 -22 q-6 10 0 22" fill="#cfd8dc" opacity="0.8"/>'
+  +'<g fill="#1e5631"><path d="M60 330 L85 265 L110 330 Z"/><path d="M52 305 L85 245 L118 305 Z"/><path d="M470 335 L495 270 L520 335 Z"/><path d="M462 310 L495 250 L528 310 Z"/><path d="M130 345 L152 290 L174 345 Z"/><path d="M405 348 L425 296 L445 348 Z"/></g>'
+  +'<g stroke="#5d3a17" stroke-width="5"><line x1="85" y1="330" x2="85" y2="345"/><line x1="495" y1="335" x2="495" y2="350"/><line x1="152" y1="345" x2="152" y2="356"/><line x1="425" y1="348" x2="425" y2="358"/></g>'
+  +'<g fill="#ffd54f"><circle cx="70" cy="370" r="5"/><circle cx="180" cy="385" r="5"/><circle cx="450" cy="375" r="5"/><circle cx="540" cy="360" r="5"/><circle cx="250" cy="362" r="5"/></g>',
+  region:function(nx,ny){
+    if(ny<0.58 && nx>0.28 && nx<0.85) return "the snowy peaks";
+    if(ny<0.45) return "the sky";
+    if(nx>0.34&&nx<0.66&&ny>0.52&&ny<0.78) return "the cabin";
+    if(ny>0.82) return "the lake";
+    if((nx<0.2||nx>0.75)&&ny>0.5&&ny<0.8) return "the pine trees";
+    return "the meadow";
+  }
+},
+{
+  id:"garden", name:"Garden Gate",
+  desc:"Path, hedge and flower beds — many small colour piles.",
+  scene:
+   '<rect x="0" y="0" width="600" height="450" fill="#bfe6f5"/>'
+  +'<circle cx="80" cy="62" r="34" fill="#ffdf6b" stroke="#e8a91c" stroke-width="5"/>'
+  +'<ellipse cx="420" cy="55" rx="85" ry="18" fill="#ffffff" opacity="0.9"/>'
+  +'<rect x="0" y="200" width="600" height="70" fill="#2f7a3d"/>'
+  +'<g fill="#35924a"><circle cx="60" cy="205" r="30"/><circle cx="160" cy="195" r="34"/><circle cx="450" cy="198" r="36"/><circle cx="555" cy="208" r="30"/><circle cx="300" cy="192" r="30"/></g>'
+  +'<rect x="0" y="262" width="600" height="188" fill="#57a657"/>'
+  +'<path d="M262 450 L292 268 L308 268 L338 450 Z" fill="#d9c39a"/>'
+  +'<path d="M262 450 L292 268 L300 268 L292 450 Z" fill="#c9b183" opacity="0.6"/>'
+  +'<g stroke="#7a4a21" stroke-width="9" fill="none"><path d="M252 268 L252 180"/><path d="M348 268 L348 180"/><path d="M252 190 L348 190"/><path d="M252 232 L348 232"/></g>'
+  +'<path d="M252 182 Q300 140 348 182" stroke="#7a4a21" stroke-width="9" fill="none"/>'
+  +'<g fill="#d43a2f"><circle cx="255" cy="168" r="9"/><circle cx="300" cy="150" r="9"/><circle cx="345" cy="168" r="9"/></g>'
+  +'<g><circle cx="90" cy="330" r="13" fill="#e75480"/><circle cx="90" cy="330" r="5" fill="#ffe98a"/><circle cx="140" cy="370" r="13" fill="#e75480"/><circle cx="140" cy="370" r="5" fill="#ffe98a"/><circle cx="70" cy="395" r="13" fill="#9b59d0"/><circle cx="70" cy="395" r="5" fill="#ffe98a"/><circle cx="170" cy="320" r="12" fill="#ff8c42"/><circle cx="170" cy="320" r="5" fill="#fff3e0"/></g>'
+  +'<g><circle cx="505" cy="330" r="13" fill="#e75480"/><circle cx="505" cy="330" r="5" fill="#ffe98a"/><circle cx="455" cy="372" r="13" fill="#9b59d0"/><circle cx="455" cy="372" r="5" fill="#ffe98a"/><circle cx="535" cy="398" r="13" fill="#e75480"/><circle cx="535" cy="398" r="5" fill="#ffe98a"/><circle cx="430" cy="318" r="12" fill="#ff8c42"/><circle cx="430" cy="318" r="5" fill="#fff3e0"/></g>'
+  +'<g stroke="#2f7a3d" stroke-width="4"><line x1="90" y1="343" x2="90" y2="368"/><line x1="505" y1="343" x2="505" y2="368"/><line x1="140" y1="383" x2="140" y2="405"/><line x1="455" y1="385" x2="455" y2="407"/></g>'
+  +'<path d="M395 130 q10 -14 22 -4 q-10 12 -22 4 Z" fill="#f59e0b"/><path d="M395 130 q-12 -12 -22 -2 q10 12 22 2 Z" fill="#d43a2f"/><line x1="395" y1="118" x2="395" y2="142" stroke="#33414e" stroke-width="3"/>',
+  region:function(nx,ny){
+    if(nx>0.4&&nx<0.6&&ny>0.3&&ny<0.62) return "the garden gate";
+    if(ny<0.42) return "the sky";
+    if(ny>=0.42&&ny<0.62) return "the hedge";
+    if(nx>0.42&&nx<0.58&&ny>=0.6) return "the path";
+    if(ny>=0.6) return "the flower beds";
+    return "the lawn";
+  }
+}
+];
+var GRIDS = {24:{cols:6,rows:4}, 48:{cols:8,rows:6}, 96:{cols:12,rows:8}};
+
+/* ============ Small helpers ============ */
+function $(id){ return document.getElementById(id); }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function fmtTime(s){ var m=Math.floor(s/60), r=s%60; return m+":"+(r<10?"0":"")+r; }
+function sceneSVG(pic, extra){ return '<svg viewBox="0 0 '+W+' '+H+'" '+(extra||"")+' role="img" aria-label="'+pic.name+'">'+pic.scene+'</svg>'; }
+
+/* ============ Settings + record (this device only) ============ */
+var SET_KEY="piecebypiece.settings.v1", REC_KEY="piecebypiece.record.v1";
+var settings={ teaching:"light", picture:"lighthouse", count:24, rotation:false, helps:true, alias:"" };
+try{ var s=JSON.parse(localStorage.getItem(SET_KEY)||"null"); if(s){ for(var k in settings){ if(s[k]!==undefined) settings[k]=s[k]; } } }catch(e){}
+function saveSettings(){ try{ localStorage.setItem(SET_KEY, JSON.stringify(settings)); }catch(e){} }
+var record={ version:1, entries:[] };
+try{ var r=JSON.parse(localStorage.getItem(REC_KEY)||"null"); if(r && r.entries) record=r; }catch(e){}
+function saveRecord(){ try{ localStorage.setItem(REC_KEY, JSON.stringify(record)); }catch(e){} }
+
+/* ============ Game state ============ */
+var G=null; /* {pic, count, cols, rows, pieces:[], edgesTotal, startedAt, elapsedBase, timerId, misses, helpsUsed:{}, helpUses, finished, selectedId} */
+var uidCounter=0;
+
+function isEdge(p){ return p.row===0||p.col===0||p.row===G.rows-1||p.col===G.cols-1; }
+function isCorner(p){ return (p.row===0||p.row===G.rows-1)&&(p.col===0||p.col===G.cols-1); }
+
+function buildEdges(cols,rows){
+  /* edges[r][c] = {top,right,bottom,left} 0 flat, 1 tab out, -1 blank in */
+  var e=[], r, c;
+  for(r=0;r<rows;r++){ e.push([]); for(c=0;c<cols;c++) e[r].push({top:0,right:0,bottom:0,left:0}); }
+  for(r=0;r<rows;r++) for(c=0;c<cols;c++){
+    if(c<cols-1){ var v=Math.random()<0.5?1:-1; e[r][c].right=v; e[r][c+1].left=-v; }
+    if(r<rows-1){ var v2=Math.random()<0.5?1:-1; e[r][c].bottom=v2; e[r+1][c].top=-v2; }
+  }
+  return e;
+}
+function piecePath(x0,y0,w,h,ed,tab){
+  var kw=w*0.13, kh=h*0.13, cx=x0+w/2, cy=y0+h/2, d="", s;
+  d="M "+x0+" "+y0;
+  /* top, left -> right, outward is -y */
+  if(ed.top===0){ d+=" L "+(x0+w)+" "+y0; }
+  else{ s=ed.top; d+=" L "+(cx-kw)+" "+y0+" Q "+(cx-kw)+" "+(y0-s*tab)+" "+cx+" "+(y0-s*tab)+" Q "+(cx+kw)+" "+(y0-s*tab)+" "+(cx+kw)+" "+y0+" L "+(x0+w)+" "+y0; }
+  /* right, top -> bottom, outward is +x */
+  if(ed.right===0){ d+=" L "+(x0+w)+" "+(y0+h); }
+  else{ s=ed.right; d+=" L "+(x0+w)+" "+(cy-kh)+" Q "+(x0+w+s*tab)+" "+(cy-kh)+" "+(x0+w+s*tab)+" "+cy+" Q "+(x0+w+s*tab)+" "+(cy+kh)+" "+(x0+w)+" "+(cy+kh)+" L "+(x0+w)+" "+(y0+h); }
+  /* bottom, right -> left, outward is +y */
+  if(ed.bottom===0){ d+=" L "+x0+" "+(y0+h); }
+  else{ s=ed.bottom; d+=" L "+(cx+kw)+" "+(y0+h)+" Q "+(cx+kw)+" "+(y0+h+s*tab)+" "+cx+" "+(y0+h+s*tab)+" Q "+(cx-kw)+" "+(y0+h+s*tab)+" "+(cx-kw)+" "+(y0+h)+" L "+x0+" "+(y0+h); }
+  /* left, bottom -> top, outward is -x */
+  if(ed.left===0){ d+=" Z"; }
+  else{ s=ed.left; d+=" L "+x0+" "+(cy+kh)+" Q "+(x0-s*tab)+" "+(cy+kh)+" "+(x0-s*tab)+" "+cy+" Q "+(x0-s*tab)+" "+(cy-kh)+" "+x0+" "+(cy-kh)+" Z"; }
+  return d;
+}
+function pieceSVG(p, pw, ph){
+  var w=W/G.cols, h=H/G.rows, tab=Math.min(w,h)*0.24;
+  var x0=p.col*w, y0=p.row*h;
+  var d=piecePath(x0,y0,w,h,p.edges,tab);
+  uidCounter++;
+  var cid="cp"+uidCounter;
+  return '<svg width="'+pw+'" height="'+ph+'" viewBox="'+(x0-tab)+' '+(y0-tab)+' '+(w+2*tab)+' '+(h+2*tab)+'" aria-hidden="true">'
+    +'<defs><clipPath id="'+cid+'"><path d="'+d+'"/></clipPath></defs>'
+    +'<g clip-path="url(#'+cid+')">'+G.pic.scene+'<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="none"/></g>'
+    +'<path d="'+d+'" fill="none" stroke="rgba(20,20,20,0.55)" stroke-width="2"/></svg>';
+}
+function shapeWords(p){
+  function w(v, out, inn){ return v===0?"flat":(v===1?out:inn); }
+  return "flat sides and knobs read like this — top: "+w(p.edges.top,"tab sticking up","blank cut in")
+    +", right: "+w(p.edges.right,"tab sticking out","blank cut in")
+    +", bottom: "+w(p.edges.bottom,"tab sticking down","blank cut in")
+    +", left: "+w(p.edges.left,"tab sticking out","blank cut in")+".";
+}
+</script>
+<script>
+"use strict";
+/* ============ Setup UI ============ */
+function renderPicGrid(){
+  var g=$("picGrid"); g.innerHTML="";
+  PICTURES.forEach(function(pic){
+    var b=document.createElement("button");
+    b.className="picpick"; b.type="button";
+    b.setAttribute("aria-pressed", settings.picture===pic.id?"true":"false");
+    b.innerHTML=sceneSVG(pic)+'<div class="pname">'+pic.name+'</div><div class="pdesc">'+pic.desc+'</div>';
+    b.addEventListener("click",function(){ settings.picture=pic.id; saveSettings(); renderPicGrid(); });
+    g.appendChild(b);
+  });
+}
+function renderVariantBanner(){
+  var slot=$("variantBannerSlot");
+  slot.innerHTML = settings.rotation
+    ? '<div class="banner">Variant in play: <b>rotation ON</b>. Pieces arrive turned and must be turned back before they fit. Standard jigsaw is no rotation — your record will label this finish as a variant.</div>'
+    : "";
+  $("rotateBtn").style.display = (G && settings.rotation) ? "" : "none";
+  $("rotNote").textContent = settings.rotation ? "Rotation variant is on: use the Turn button (or double-tap a piece) to turn the picked-up piece." : "";
+}
+function syncSetup(){
+  $("teachSel").value=settings.teaching;
+  $("rotChk").checked=!!settings.rotation;
+  $("helpsChk").checked=!!settings.helps;
+  $("aliasIn").value=settings.alias||"";
+  var btns=$("countSeg").querySelectorAll("button");
+  for(var i=0;i<btns.length;i++){ btns[i].setAttribute("aria-pressed", (+btns[i].getAttribute("data-count")===settings.count)?"true":"false"); }
+  renderPicGrid(); renderVariantBanner();
+}
+
+/* ============ Coach ============ */
+function coachSay(text, force){
+  if(settings.teaching==="off" && !force) return;
+  if(settings.teaching==="light" && !force && !coachSay.lightOk) return;
+  $("coachBox").style.display="block";
+  $("coachText").textContent=text;
+}
+function unplaced(){ return G.pieces.filter(function(p){return !p.placed;}); }
+function coachNote(){
+  if(!G || G.finished) return "That puzzle is finished — the note now is in your record: picture, time, misses, and the help it took, all written down honestly.";
+  var left=unplaced();
+  var corners=left.filter(isCorner), edges=left.filter(function(p){return isEdge(p)&&!isCorner(p);});
+  var placedCount=G.pieces.length-left.length;
+  if(left.length===1){
+    var p=left[0];
+    return "One piece left — stop looking at the picture and read the shape. The last piece is "+(isCorner(p)?"a corner":isEdge(p)?"an edge piece":"an inside piece")+". Its "+shapeWords(p)+" Only one hole can match that. This is the shape read, and at the end of a puzzle it never lies.";
+  }
+  if(corners.length){
+    return "Start with the corners — there "+(corners.length===1?"is 1 corner":"are "+corners.length+" corners")+" still in the tray. A corner has two flat sides, so it is the easiest piece in the box to spot, and each one you place nails down a whole end of the frame. Edges first is the classic opening for a reason: the frame shrinks every later search.";
+  }
+  if(edges.length){
+    return "The corners are home and "+edges.length+" edge piece"+(edges.length===1?" is":"s are")+" still out. Finish the frame before diving inside: every edge piece has a flat side, and once the border stands, inside pieces have a wall to be measured against. Trade-off to know: if the border is all one colour this can be slow — then sort the tray by colour (a help, below) and work the frame in colour piles.";
+  }
+  if(placedCount < G.pieces.length*0.35){
+    /* region analysis */
+    var counts={}, best=null, bestN=0;
+    left.forEach(function(p){ var rg=G.pic.region((p.col+0.5)/G.cols,(p.row+0.5)/G.rows); counts[rg]=(counts[rg]||0)+1; if(counts[rg]>bestN){bestN=counts[rg];best=rg;} });
+    return "The frame stands. Two honest ways forward, with their trade-offs. Colour-sort: "+bestN+" of the pieces left belong to "+best+" — pile them together and finish that block; it is fast when colours are bold, weaker where colours blend. Section-hunting: pick one striking object and build it as an island; quicker wins, but islands can be slow to join. On this board the colour pile is the bigger prize, so I would start there.";
+  }
+  var counts2={}, best2=null, bestN2=0;
+  left.forEach(function(p){ var rg=G.pic.region((p.col+0.5)/G.cols,(p.row+0.5)/G.rows); counts2[rg]=(counts2[rg]||0)+1; if(counts2[rg]>bestN2){bestN2=counts2[rg];best2=rg;} });
+  return "You are building sections now — good. Grow what stands: look for pieces that touch two placed pieces at once, because a piece with two neighbours is nearly found already. The biggest unfinished area is "+best2+" ("+bestN2+" pieces out). When two sections are one piece apart, hunt that single joining piece by shape, not colour — its neighbours tell you exactly which tabs and blanks it needs.";
+}
+function milestoneCoach(){
+  if(!G) return;
+  var placed=G.pieces.filter(function(p){return p.placed;}).length;
+  var total=G.pieces.length;
+  if(settings.teaching==="coach"){ coachSay(coachNote(), true); }
+  else if(settings.teaching==="light"){
+    if(placed===total-1) coachSay("One piece left. Read its shape, not its picture — flat sides, tabs, blanks. That read never lies.", true);
+    else if(placed===Math.floor(total/2)) coachSay("Halfway home. If the going slows, grow from two placed neighbours at once — a piece touching two known pieces is nearly found.", true);
+    else if(placed>0 && G.pieces.filter(function(p){return p.placed&&isEdge(p);}).length===G.edgesTotal) coachSay("The whole frame stands. Now the inside is a smaller, kinder puzzle.", true);
+  }
+}
+
+/* ============ Helps ============ */
+function useHelp(name){
+  if(!G) return;
+  if(!G.helpsUsed[name]){ G.helpsUsed[name]=0; }
+  G.helpsUsed[name]++; G.helpUses++;
+  updateStatus();
+}
+function helpsSummary(){
+  if(!G) return "none";
+  var names=Object.keys(G.helpsUsed);
+  if(!names.length) return "none";
+  var label={peek:"Peek",edges:"Highlight edges",sort:"Sort tray"};
+  return names.map(function(n){ return label[n]+" ×"+G.helpsUsed[n]; }).join(", ");
+}
+
+/* ============ Status / timer ============ */
+function elapsed(){ if(!G) return 0; if(G.finished) return G.finalSeconds; return G.elapsedBase + Math.floor((Date.now()-G.startedAt)/1000); }
+function updateStatus(){
+  if(!G) return;
+  var placed=G.pieces.filter(function(p){return p.placed;}).length;
+  var edgesPlaced=G.pieces.filter(function(p){return p.placed&&isEdge(p);}).length;
+  $("stPlaced").textContent=placed; $("stTotal").textContent=G.pieces.length;
+  $("stEdges").textContent=edgesPlaced; $("stEdgesTotal").textContent=G.edgesTotal;
+  $("stTime").textContent=fmtTime(elapsed());
+  $("stMiss").textContent=G.misses;
+  $("stHelps").textContent=helpsSummary();
+}
+
+/* ============ Board + tray rendering ============ */
+function trayPieceSize(){
+  var boardW=$("board").clientWidth||700;
+  var cell=boardW/G.cols;
+  return Math.max(44, Math.min(92, Math.round(cell*1.15)));
+}
+function makePieceEl(p){
+  var size=trayPieceSize();
+  var el=document.createElement("div");
+  el.className="piece"; el.id="piece-"+p.id;
+  el.setAttribute("role","button");
+  el.setAttribute("aria-label","Puzzle piece, row "+(p.row+1)+", column "+(p.col+1)+(isEdge(p)?", edge piece":"")+". Tap to pick up, then tap its place on the board. Hold to hear its shape in Coach mode.");
+  el.style.width=size+"px"; el.style.height=Math.round(size* (H/G.rows) / (W/G.cols))+"px";
+  el.innerHTML=pieceSVG(p, size, Math.round(size*(H/G.rows)/(W/G.cols)));
+  el.style.transform="rotate("+(p.rotation||0)+"deg)";
+  attachPieceHandlers(el,p);
+  return el;
+}
+function renderTray(order){
+  var tray=$("tray"); tray.innerHTML="";
+  var list=unplaced();
+  if(order) list=order;
+  list.forEach(function(p){ tray.appendChild(makePieceEl(p)); });
+  markSelected();
+}
+function renderBoardCells(){
+  var layer=$("cellLayer"); layer.innerHTML="";
+  for(var r=0;r<G.rows;r++) for(var c=0;c<G.cols;c++){
+    var cell=document.createElement("div");
+    cell.className="cell";
+    cell.style.left=(c*100/G.cols)+"%"; cell.style.top=(r*100/G.rows)+"%";
+    cell.style.width=(100/G.cols)+"%"; cell.style.height=(100/G.rows)+"%";
+    cell.setAttribute("data-r",r); cell.setAttribute("data-c",c);
+    cell.setAttribute("role","button"); cell.tabIndex=0;
+    cell.setAttribute("aria-label","Board square, row "+(r+1)+", column "+(c+1)+". Tap to try the picked-up piece here.");
+    (function(rr,cc){
+      cell.addEventListener("click",function(){ trySelectedAt(rr,cc); });
+      cell.addEventListener("keydown",function(ev){ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); trySelectedAt(rr,cc); } });
+    })(r,c);
+    layer.appendChild(cell);
+  }
+  $("ghost").innerHTML=sceneSVG(G.pic);
+  $("peekOverlay").innerHTML=sceneSVG(G.pic)+'<div class="peeklabel">The whole picture — tap anywhere to close the peek</div>';
+}
+function renderPlaced(){
+  var layer=$("placedLayer"); layer.innerHTML="";
+  G.pieces.filter(function(p){return p.placed;}).forEach(function(p){
+    var el=document.createElement("div");
+    el.className="placedPiece";
+    el.style.left=(p.col*100/G.cols)+"%"; el.style.top=(p.row*100/G.rows)+"%";
+    el.style.width=(100/G.cols)+"%"; el.style.height=(100/G.rows)+"%";
+    var wpx=$("board").clientWidth/G.cols, hpx=$("board").clientWidth*(H/W)/G.rows;
+    el.innerHTML=pieceSVG(p, Math.round(wpx), Math.round(hpx));
+    layer.appendChild(el);
+  });
+}
+function markSelected(){
+  var els=document.querySelectorAll(".piece");
+  for(var i=0;i<els.length;i++){ els[i].classList.toggle("selected", G && G.selectedId===+els[i].id.replace("piece-","")); }
+}
+
+/* ============ Placing ============ */
+function selectPiece(p){
+  if(!G||G.finished||p.placed) return;
+  G.selectedId = (G.selectedId===p.id)? null : p.id;
+  markSelected();
+}
+function trySelectedAt(r,c){
+  if(!G||G.finished||G.selectedId===null||G.selectedId===undefined) return;
+  var p=G.pieces[G.selectedId];
+  if(!p||p.placed) return;
+  attemptPlace(p,r,c);
+}
+function attemptPlace(p,r,c){
+  if(p.placed||G.finished) return false;
+  if(p.row===r&&p.col===c&&(p.rotation||0)===0){
+    p.placed=true; G.selectedId=null;
+    var el=$("piece-"+p.id); if(el) el.remove();
+    renderPlaced(); updateStatus(); milestoneCoach();
+    if(unplaced().length===0) finishPuzzle();
+    return true;
+  }
+  G.misses++; updateStatus();
+  var el2=$("piece-"+p.id);
+  if(el2){ el2.classList.remove("wrongshake"); void el2.offsetWidth; el2.classList.add("wrongshake"); }
+  if(settings.teaching==="coach"){
+    var hint;
+    if((p.rotation||0)!==0 && p.row===r&&p.col===c) hint="Right square, wrong way up — this is the rotation variant talking. Turn the piece until it stands the way the picture does, then try again.";
+    else if(isEdge(p)!==(r===0||c===0||r===G.rows-1||c===G.cols-1)) hint=isEdge(p)?"Not there. That piece has a flat side — it belongs on the frame, not in the middle. Flat sides only ever live on the outside.":"Not there. That piece has no flat side, so it cannot live on the frame — it belongs inside.";
+    else hint="Not there. Look at the colours crossing that square in the ghost picture under the board, then find the piece carrying those same colours meeting at the same corner.";
+    coachSay(hint,true);
+  } else if(settings.teaching==="light"){
+    coachSay.lightOk=true; coachSay("Not that square — counted as a miss, nothing worse. The ghost picture under the board shows what belongs there.", true); coachSay.lightOk=false;
+  }
+  return false;
+}
+
+/* ============ Drag + tap + hold on pieces ============ */
+function attachPieceHandlers(el,p){
+  var startX=0,startY=0,dragging=false,moved=false,holdTimer=null,holdFired=false;
+  el.addEventListener("pointerdown",function(ev){
+    if(!G||G.finished) return;
+    var po=$("peekOverlay"); if(po) po.classList.remove("show"); /* picking up a piece ends a peek */
+    startX=ev.clientX; startY=ev.clientY; moved=false; dragging=true; holdFired=false;
+    el.setPointerCapture(ev.pointerId);
+    holdTimer=setTimeout(function(){
+      holdFired=true;
+      if(settings.teaching==="coach"){
+        coachSay("That piece, read plainly: it is "+(isCorner(p)?"a corner piece":isEdge(p)?"an edge piece":"an inside piece")+" from "+G.pic.region((p.col+0.5)/G.cols,(p.row+0.5)/G.rows)+". Its "+shapeWords(p), true);
+      }
+    },550);
+  });
+  el.addEventListener("pointermove",function(ev){
+    if(!dragging) return;
+    var dx=ev.clientX-startX, dy=ev.clientY-startY;
+    if(!moved && Math.hypot(dx,dy)>7){ moved=true; clearTimeout(holdTimer); var r0=el.getBoundingClientRect(); el.classList.add("dragging"); el.style.left=r0.left+"px"; el.style.top=r0.top+"px"; el.style.width=r0.width+"px"; el.style.height=r0.height+"px"; }
+    if(moved){ el.style.left=(ev.clientX-el.clientWidth/2)+"px"; el.style.top=(ev.clientY-el.clientHeight/2)+"px"; }
+  });
+  function endDrag(ev){
+    if(!dragging) return; dragging=false; clearTimeout(holdTimer);
+    if(holdFired){ el.classList.remove("dragging"); return; }
+    if(moved){
+      el.classList.remove("dragging"); el.style.left=""; el.style.top="";
+      var br=$("board").getBoundingClientRect();
+      if(ev.clientX>=br.left&&ev.clientX<=br.right&&ev.clientY>=br.top&&ev.clientY<=br.bottom){
+        var c=Math.floor((ev.clientX-br.left)/br.width*G.cols), r=Math.floor((ev.clientY-br.top)/br.height*G.rows);
+        G.selectedId=p.id;
+        attemptPlace(p,r,c);
+        if(!p.placed){ /* keep it where it was in the tray */ }
+      }
+    } else {
+      selectPiece(p);
+    }
+  }
+  el.addEventListener("pointerup",endDrag);
+  el.addEventListener("pointercancel",function(){ dragging=false; clearTimeout(holdTimer); el.classList.remove("dragging"); el.style.left=""; el.style.top=""; });
+  el.addEventListener("dblclick",function(){ if(settings.rotation && !p.placed){ p.rotation=((p.rotation||0)+90)%360; el.style.transform="rotate("+p.rotation+"deg)"; G.selectedId=p.id; markSelected(); } });
+}
+
+/* ============ Finish + record ============ */
+function finishPuzzle(){
+  G.finished=true; G.finalSeconds=elapsed();
+  if(G.timerId) clearInterval(G.timerId);
+  var label={peek:"Peek",edges:"Highlight edges",sort:"Sort tray"};
+  var helpNames=Object.keys(G.helpsUsed).map(function(n){return label[n];});
+  var entry={
+    finishedAt:new Date().toISOString(),
+    alias: settings.alias||"",
+    pictureId:G.pic.id, picture:G.pic.name,
+    pieces:G.pieces.length, cols:G.cols, rows:G.rows,
+    seconds:G.finalSeconds, misses:G.misses,
+    helps:helpNames, helpUses:G.helpUses,
+    rotation:!!settings.rotation, teaching:settings.teaching
+  };
+  record.entries.push(entry); saveRecord(); renderRecord();
+  updateStatus();
+  var wb=$("winBox"); wb.classList.add("show");
+  wb.innerHTML="<h3 style='margin-top:0'>Finished — "+G.pic.name+" is whole again.</h3>"
+    +"<p>"+entry.pieces+" pieces in <b>"+fmtTime(entry.seconds)+"</b>, with "+entry.misses+" miss"+(entry.misses===1?"":"es")+". "
+    +(helpNames.length? "Help it took: <b>"+helpNames.join(", ")+"</b> — written into the record, plainly." : "No helps used — a clean solve, and the record says so.")
+    +(entry.rotation?" Finished under the <b>rotation variant</b>.":"")
+    +"</p><p class='small'>The finish is saved in your record below, on this device only.</p>";
+  coachSay("Puzzle complete. Look at how it came together: the frame first, then the sections — that order is the whole game, and your record below shows exactly what this solve took.", true);
+  document.getElementById("play").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderRecord(){
+  var tb=$("recBody"); tb.innerHTML="";
+  if(!record.entries.length){ $("recSummary").textContent="No puzzles finished yet."; return; }
+  var totalSecs=record.entries.reduce(function(a,e){return a+e.seconds;},0);
+  var clean=record.entries.filter(function(e){return !e.helps||!e.helps.length;}).length;
+  $("recSummary").textContent=record.entries.length+" puzzle"+(record.entries.length===1?"":"s")+" finished · total table time "+fmtTime(totalSecs)+" · "+clean+" clean (no helps).";
+  record.entries.slice().reverse().forEach(function(e){
+    var tr=document.createElement("tr");
+    var when=new Date(e.finishedAt);
+    tr.innerHTML="<td>"+when.toLocaleDateString()+" "+when.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+"</td>"
+      +"<td>"+e.picture+(e.alias?" · "+e.alias:"")+"</td>"
+      +"<td>"+e.pieces+" ("+e.cols+"×"+e.rows+")</td>"
+      +"<td>"+fmtTime(e.seconds)+"</td>"
+      +"<td>"+(e.helps&&e.helps.length? e.helps.join(", "):"none — clean")+"</td>"
+      +"<td>"+e.misses+"</td>"
+      +"<td>"+(e.rotation?"rotation variant":"standard")+"</td>";
+    tb.appendChild(tr);
+  });
+}
+
+/* ============ Start / quit ============ */
+function startPuzzle(){
+  var pic=PICTURES.filter(function(x){return x.id===settings.picture;})[0]||PICTURES[0];
+  var grid=GRIDS[settings.count];
+  var edges=buildEdges(grid.cols,grid.rows);
+  var pieces=[];
+  for(var r=0;r<grid.rows;r++) for(var c=0;c<grid.cols;c++){
+    pieces.push({ id:pieces.length, row:r, col:c, edges:edges[r][c], placed:false,
+      rotation: settings.rotation? [0,90,180,270][Math.floor(Math.random()*4)] : 0 });
+  }
+  if(G&&G.timerId) clearInterval(G.timerId);
+  G={ pic:pic, count:settings.count, cols:grid.cols, rows:grid.rows, pieces:pieces,
+      edgesTotal: pieces.filter(function(p){return (p.row===0||p.col===0||p.row===grid.rows-1||p.col===grid.cols-1);}).length,
+      startedAt:Date.now(), elapsedBase:0, misses:0, helpsUsed:{}, helpUses:0, finished:false, selectedId:null, finalSeconds:0,
+      timerId:setInterval(updateStatus,500) };
+  $("playEmpty").style.display="none";
+  $("playArea").style.display="block";
+  $("winBox").classList.remove("show"); $("winBox").innerHTML="";
+  renderBoardCells(); renderPlaced(); renderTray(shuffle(unplaced().slice()));
+  renderVariantBanner(); updateStatus();
+  if(settings.teaching==="coach") coachSay("New table: "+pic.name+", "+settings.count+" pieces. Opening move, the classic one: find the four corners — two flat sides each — then every other flat-sided piece, and stand the frame up first. Why: the frame gives every later piece a wall to lean on and shrinks the hunt. Tap Coach any time and I will read this exact board.", true);
+  else if(settings.teaching==="light") coachSay("Edges first is the classic opening: corners and flat-sided pieces make the frame, and the frame makes everything after it easier.", true);
+  document.getElementById("play").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function quitPuzzle(){
+  if(G&&G.timerId) clearInterval(G.timerId);
+  G=null;
+  $("playArea").style.display="none";
+  $("playEmpty").style.display="block";
+  $("playEmpty").innerHTML="<p>The table is clear. An unfinished puzzle is not written to the record — only finishes are. Choose a picture above and tap <b>Start the puzzle</b> whenever you are ready.</p>";
+}
+
+/* ============ Wiring ============ */
+$("countSeg").addEventListener("click",function(ev){
+  var b=ev.target.closest("button"); if(!b) return;
+  settings.count=+b.getAttribute("data-count"); saveSettings(); syncSetup();
+});
+$("teachSel").addEventListener("change",function(){ settings.teaching=$("teachSel").value; saveSettings(); if(settings.teaching==="off") $("coachBox").style.display="none"; });
+$("rotChk").addEventListener("change",function(){ settings.rotation=$("rotChk").checked; saveSettings(); renderVariantBanner(); });
+$("helpsChk").addEventListener("change",function(){ settings.helps=$("helpsChk").checked; saveSettings(); applyHelpsGate(); });
+$("aliasIn").addEventListener("change",function(){ settings.alias=$("aliasIn").value.trim(); saveSettings(); });
+$("startBtn").addEventListener("click",startPuzzle);
+$("quitBtn").addEventListener("click",quitPuzzle);
+function applyHelpsGate(){
+  var off=!settings.helps;
+  ["peekBtn","edgeBtn","sortBtn"].forEach(function(id){ $(id).disabled=off; });
+}
+$("peekBtn").addEventListener("click",function(){
+  if(!G) return; useHelp("peek");
+  $("peekOverlay").classList.add("show");
+  $("board").scrollIntoView({behavior:"smooth",block:"center"});
+});
+$("peekOverlay").addEventListener("click",function(){ $("peekOverlay").classList.remove("show"); });
+$("peekOverlay").addEventListener("keydown",function(ev){ if(ev.key==="Enter"||ev.key===" "||ev.key==="Escape"){ ev.preventDefault(); $("peekOverlay").classList.remove("show"); } });
+$("edgeBtn").addEventListener("click",function(){
+  if(!G) return; useHelp("edges");
+  var els=document.querySelectorAll(".piece");
+  var anyOn=false;
+  for(var i=0;i<els.length;i++){ if(els[i].classList.contains("edgeflash")) anyOn=true; }
+  for(var j=0;j<els.length;j++){
+    var p=G.pieces[+els[j].id.replace("piece-","")];
+    els[j].classList.toggle("edgeflash", !anyOn && p && isEdge(p));
+  }
+  if(settings.teaching!=="off") coachSay(anyOn?"Edge marks off.":"Every edge piece in the tray is now outlined — flat side and all. Notice the corners: two flat sides. That outline is a help, and the record will name it.", true);
+});
+$("sortBtn").addEventListener("click",function(){
+  if(!G) return; useHelp("sort");
+  var list=unplaced().slice();
+  list.sort(function(a,b){
+    var ga=isCorner(a)?0:isEdge(a)?1:2, gb=isCorner(b)?0:isEdge(b)?1:2;
+    if(ga!==gb) return ga-gb;
+    var ra=G.pic.region((a.col+0.5)/G.cols,(a.row+0.5)/G.rows), rb=G.pic.region((b.col+0.5)/G.cols,(b.row+0.5)/G.rows);
+    return ra<rb?-1:ra>rb?1:0;
+  });
+  renderTray(list);
+  if(settings.teaching!=="off") coachSay("Tray sorted: corners first, then edges, then inside pieces grouped by the part of the picture they belong to. Sorting is colour-sort strategy done for you — a help, and the record will name it. Doing it by hand next time is the skill itself.", true);
+});
+$("rotateBtn").addEventListener("click",function(){
+  if(!G||G.selectedId===null||G.selectedId===undefined) { if(settings.teaching!=="off") coachSay("Pick a piece up first — tap one in the tray — then tap Turn.", true); return; }
+  var p=G.pieces[G.selectedId]; if(!p||p.placed) return;
+  p.rotation=((p.rotation||0)+90)%360;
+  var el=$("piece-"+p.id); if(el) el.style.transform="rotate("+p.rotation+"deg)";
+});
+$("coachBtn").addEventListener("click",function(){
+  if(!G) return;
+  if(settings.teaching==="off"){ $("coachBox").style.display="block"; $("coachText").textContent="Teaching is set to Off in the setup above. Switch it to Light or Coach and I will read your board."; return; }
+  coachSay(coachNote(), true);
+});
+$("exportBtn").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="piece-by-piece-record.json"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+  if(!forgetArmed){ forgetArmed=true; $("forgetBtn").textContent="Tap again to erase the record on this device — this cannot be undone"; $("forgetNote").textContent="One more tap erases every finished-puzzle entry stored on this device."; return; }
+  record={version:1,entries:[]}; saveRecord(); renderRecord();
+  forgetArmed=false; $("forgetBtn").textContent="Forget everything — tap to erase the record on this device"; $("forgetNote").textContent="Done. The record on this device is empty.";
+});
+$("downloadBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="piece-by-piece.html"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+});
+window.addEventListener("resize",function(){ if(G){ renderPlaced(); } });
+
+syncSetup(); applyHelpsGate(); renderRecord();
+</script>
+</body>
+</html>
