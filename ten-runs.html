@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Ten Runs</title>
+<style>
+  :root{
+    --bg:#eef2f0; --panel:#ffffff; --panel2:#e3ebe7; --ink:#17211d; --muted:#4c5b54;
+    --line:#c3d2c9; --accent:#0b6b57; --accent-ink:#ffffff; --gold:#9a6a00; --danger:#a4262c;
+    --table:#14532d; --table2:#1a6b3c; --card:#ffffff; --card-ink:#17211d;
+    --ruby:#b4232f; --amber:#9a6a00; --teal:#0b6b7a; --slate:#33549e;
+    --chip:#dcebe2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#101613; --panel:#1a221e; --panel2:#232d28; --ink:#e8efeb; --muted:#a9bab1;
+      --line:#3a4a41; --accent:#2fae8d; --accent-ink:#0b1512; --gold:#e0aa3e; --danger:#ff8a8f;
+      --table:#0d3520; --table2:#12502e; --card:#f4f6f4; --card-ink:#17211d;
+      --chip:#2a3a32;
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:Verdana,Geneva,Tahoma,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+  button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:.5rem .85rem;font-weight:700}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 14px 48px}
+  .freebar{background:var(--ink);color:var(--bg);padding:10px 14px;text-align:center;font-weight:700;font-size:.95rem}
+  .freebar button{margin-left:10px;background:var(--gold);color:#1a1405;border-color:var(--gold);min-height:2.25rem}
+  h1{font-family:Georgia,'Times New Roman',serif;font-size:2.4rem;line-height:1.1;margin:22px 0 6px}
+  h2{font-family:Georgia,serif;font-size:1.45rem;margin:0 0 8px}
+  h3{font-size:1.05rem;margin:14px 0 6px}
+  .lede{font-size:1.08rem;max-width:44em}
+  .homage{border-left:5px solid var(--gold);background:var(--panel);padding:12px 16px;border-radius:0 12px 12px 0;margin:16px 0}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+  nav.compass a{flex:1 1 140px;text-align:center;text-decoration:none;font-weight:700;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:10px 8px;min-height:2.75rem}
+  nav.compass a span{display:block;font-size:.78rem;font-weight:400;color:var(--muted)}
+  section{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+  .gesture{font-size:.78rem;font-weight:400;color:var(--muted);display:block}
+  button .gesture{color:inherit;opacity:.8}
+  button:not(.primary) .gesture{color:var(--muted);opacity:1}
+  /* Table */
+  #table{background:linear-gradient(160deg,var(--table2),var(--table));color:#f2f7f3;border-color:#0a2c18}
+  #table h2,#table .gesture{color:#f2f7f3}
+  .opponents{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .opp{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:10px}
+  .opp.active{border-color:#ffd968;box-shadow:0 0 0 2px #ffd968 inset}
+  .opp .nm{font-weight:700}
+  .opp .meta{font-size:.85rem;opacity:.9}
+  .laidrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .group{background:rgba(0,0,0,.25);border-radius:8px;padding:4px 8px;font-size:.82rem}
+  .group button{margin-left:6px;padding:2px 8px;min-height:2rem;font-size:.8rem}
+  .centre{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;margin:14px 0}
+  .pile{text-align:center}
+  .pile .lbl{font-size:.85rem;font-weight:700;margin-bottom:4px}
+  .playing-card{width:64px;height:92px;border-radius:9px;background:var(--card);color:var(--card-ink);border:2px solid #9aa79f;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;position:relative;user-select:none}
+  .playing-card .num{font-size:1.5rem;line-height:1}
+  .playing-card .sym{font-size:1rem}
+  .playing-card .corner{position:absolute;top:3px;left:6px;font-size:.7rem}
+  .playing-card.ruby{color:var(--ruby)} .playing-card.amber{color:var(--amber)}
+  .playing-card.teal{color:var(--teal)} .playing-card.slate{color:var(--slate)}
+  .playing-card.wild{color:#6d28a8;border-color:#6d28a8;background:#f3eafd}
+  .playing-card.skip{color:var(--danger);border-color:var(--danger)}
+  .playing-card.back{background:repeating-linear-gradient(45deg,#0b6b57 0 8px,#095644 8px 16px);border-color:#083f33;color:#fff}
+  .playing-card.mini{width:40px;height:56px;border-radius:6px}
+  .playing-card.mini .num{font-size:.95rem}
+  button.pilebtn{background:transparent;border:none;padding:4px}
+  .hand{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .hand .playing-card{cursor:pointer}
+  .hand .playing-card.selected{transform:translateY(-12px);border-color:var(--gold);box-shadow:0 0 0 3px var(--gold)}
+  .hand button.cardbtn{background:none;border:none;padding:0;min-height:0}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  #coach{background:#fff8dc;color:#3d3205;border:1.5px solid var(--gold);border-radius:10px;padding:12px 14px;margin:12px 0}
+  @media (prefers-color-scheme: dark){#coach{background:#3a2f08;color:#ffeeb0}}
+  #log{background:rgba(0,0,0,.28);border-radius:10px;padding:10px 14px;font-size:.92rem;max-height:170px;overflow:auto}
+  #log p{margin:3px 0}
+  table.score{border-collapse:collapse;width:100%}
+  table.score th,table.score td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.score td.num,table.score th.num{text-align:right}
+  .phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .phasecard{border:1.5px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2)}
+  .phasecard.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .phasecard .pn{font-weight:800;color:var(--accent)}
+  label.field{display:block;margin:10px 0;font-weight:700}
+  label.field input[type="text"],label.field select{display:block;width:100%;max-width:340px;margin-top:4px;font:inherit;padding:.5rem;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+  .setrow{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+  .setrow input{width:26px;height:26px;margin-top:4px;flex:none}
+  .setrow .t{font-weight:700}
+  .small{font-size:.9rem;color:var(--muted)}
+  #table .small{color:#d7e6da}
+  .botcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:var(--panel2)}
+  footer{font-size:.9rem;color:var(--muted);padding:8px 2px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media (max-width:560px){ h1{font-size:1.9rem} .playing-card{width:56px;height:82px} }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .hand .playing-card.selected{transform:none} }
+</style>
+</head>
+<body>
+<div class="freebar">Free — always free. No ads, no account, no paywall.
+  <button type="button" id="dlBtn">Download for offline<span class="gesture">Tap to save this page to your device</span></button>
+</div>
+<div class="wrap">
+
+<h1>Ten Runs</h1>
+<p class="lede">Ten phases of sets and runs. One phase at a time: build exactly the phase in front of you, lay it down, hit extra cards onto phases already on the table, then shed your whole hand. First to finish all ten phases with the lowest score wins.</p>
+
+<div class="homage">
+<strong>Homage, said out loud.</strong> Ten Runs borrows a proven shape — the phase-climbing card game families have played for decades: ten contracts, one at a time, wilds, skips, and points for whatever is left in your hand. It works, so we kept what works, paid homage here, and expanded it: our own name, our own card art, our own tuned phase list below, a teaching dial that explains the <em>why</em>, and bots whose real skill differences are printed honestly — no rubber-banding, no hidden help.
+</div>
+
+<nav class="compass" aria-label="Compass">
+  <a href="#table">▲ North — Play<span>Tap to jump to the table</span></a>
+  <a href="#phases">▶ East — The Ten Phases<span>Tap to read the phase list</span></a>
+  <a href="#why">▼ South — Why It Works<span>Tap for the scoring lesson</span></a>
+  <a href="#bots">◀ West — Bots &amp; Settings<span>Tap for bot honesty and rules</span></a>
+</nav>
+
+<section id="table" aria-label="Game table">
+  <h2>The table</h2>
+  <p id="turnBanner" style="font-weight:700;font-size:1.05rem">Press New Game to start.</p>
+  <div class="opponents" id="opponents"></div>
+  <div class="centre">
+    <div class="pile">
+      <div class="lbl">Draw pile — <span id="deckCount">0</span> left</div>
+      <button type="button" class="pilebtn" id="deckBtn" aria-label="Draw from the deck. Tap to draw.">
+        <span class="playing-card back"><span class="num">?</span><span class="sym">TEN RUNS</span></span>
+      </button>
+      <span class="gesture">Tap the deck to draw</span>
+    </div>
+    <div class="pile">
+      <div class="lbl">Discard pile</div>
+      <button type="button" class="pilebtn" id="discardBtn" aria-label="Take the top discard. Tap to take it.">
+        <span id="discardTop"></span>
+      </button>
+      <span class="gesture">Tap the discard to take it instead</span>
+    </div>
+    <div style="flex:1;min-width:220px">
+      <div id="coach" role="status">The coach speaks here when the Teaching dial is on. Set it below the table.</div>
+      <div class="actions">
+        <button type="button" id="newGameBtn" class="primary">New game<span class="gesture">Tap to shuffle and deal</span></button>
+        <button type="button" id="practiceBtn">Teaching hand<span class="gesture">Tap to deal a hand one card from Phase 1</span></button>
+      </div>
+    </div>
+  </div>
+
+  <h3>Your hand — <span id="yourPhaseLbl">Phase 1</span>: <span id="yourPhaseNeed"></span></h3>
+  <p class="small">Tap a card to select it. Tap it again to put it back. Wilds (★) stand for any number or colour. Skips (⊘) are discarded to make the next player lose a turn.</p>
+  <div class="hand" id="hand"></div>
+  <div class="actions">
+    <button type="button" id="layBtn" class="primary">Lay down selected<span class="gesture">Tap after selecting your phase cards</span></button>
+    <button type="button" id="hitBtn">Hit selected card<span class="gesture">Tap, then tap a Hit button on a laid group</span></button>
+    <button type="button" id="discardSelBtn">Discard selected card<span class="gesture">Tap to end your turn with one card</span></button>
+    <button type="button" id="sortBtn">Sort hand<span class="gesture">Tap to sort by number</span></button>
+  </div>
+  <p id="hitHint" class="small" aria-live="polite"></p>
+  <div>
+    <h3>Laid phases on the table</h3>
+    <div id="laidArea"></div>
+  </div>
+  <h3>What happened</h3>
+  <div id="log" aria-live="polite"></div>
+  <h3>Scores — lowest wins</h3>
+  <div id="scoreArea"></div>
+  <div class="actions">
+    <button type="button" id="nextRoundBtn" class="primary" hidden>Next round<span class="gesture">Tap to deal the next round</span></button>
+  </div>
+</section>
+
+<section id="setup" aria-label="Your name and teaching dial">
+  <h2>Your name &amp; the Teaching dial</h2>
+  <label class="field">Your table name — any alias you like, it never leaves this device
+    <input type="text" id="aliasInput" maxlength="24" placeholder="e.g. Captain Runs" />
+  </label>
+  <div class="actions">
+    <button type="button" id="aliasBtn">Use this name<span class="gesture">Tap to set your table name</span></button>
+  </div>
+  <label class="field">Teaching dial
+    <select id="teachSelect">
+      <option value="off">Off — no coaching, just play</option>
+      <option value="hints" selected>Hints — a nudge when a move is there</option>
+      <option value="full">Teach me — hints plus the why behind them</option>
+    </select>
+  </label>
+  <p class="small">Hold (or hover) on any button to hear what it does — every control on this page explains itself that way. Tap does the thing; hold explains and offers more.</p>
+</section>
+
+<section id="phases" aria-label="The ten phases">
+  <h2>The ten phases — our list, tuned by us</h2>
+  <p>This is Ten Runs' own list, tuned by us — not the classic contract order with a new coat of paint. It opens fast: a short set and a short run together in Phase 1, so you learn both shapes in the first round. Colour arrives early (Phase 3) instead of near the end, the long pure runs are spaced between set climbs rather than stacked in a row, and the last three phases are the real wall — a quintet with a run, a ten-card run, then the two biggest sets in the game back to back. A <strong>set</strong> is cards of one number. A <strong>run</strong> is cards in counting order, any colours mixed. A <strong>colour phase</strong> is any numbers, all one colour.</p>
+  <div class="phases" id="phaseList"></div>
+  <h3>Card points when a round ends</h3>
+  <p>Cards left in your hand cost: <strong>1–9 = 5 points</strong> each, <strong>10–12 = 10 points</strong> each, <strong>Skip = 15</strong>, <strong>Wild = 25</strong>. Only players who laid down their phase move up to the next one; everyone else plays the same phase again next round.</p>
+</section>
+
+<section id="why" aria-label="Why chasing your phase wins">
+  <h2>Why chasing your phase beats hoarding</h2>
+  <p><strong>What it is:</strong> every round, exactly one contract matters — the phase printed beside your name. Cards that do not build toward it are not an investment; they are future points against you.</p>
+  <p><strong>What it means:</strong> a pretty pair for a phase you are <em>not</em> on cannot be laid down, cannot be hit, and costs 5–10 points each when someone goes out. Meanwhile the player who went all-in on their own phase advances, and advancing is the only way the game ends in your favour. Hoarding also hides information from yourself: you stop counting what you actually need, so you pass up discards that would finish you.</p>
+  <p><strong>What it could mean for you:</strong> the one exception is the Wild. A Wild is worth holding only while it plausibly completes <em>this</em> phase — because at 25 points it is the most expensive card in the game to be caught holding. The teaching dial will tell you, in the moment, when your hand can lay down and when a card you love is just a points risk. That is the whole strategy of Ten Runs in one line: <strong>build the phase in front of you, shed everything else.</strong></p>
+</section>
+
+<section id="bots" aria-label="Bot honesty and settings">
+  <h2>The bots — honestly different, stated plainly</h2>
+  <p><strong>Bot-honesty statement (read this before you trust a difficulty label):</strong> these bots do not cheat and do not quietly adjust. No bot sees your hand, the deck order, or any hidden card. The differences below are the <em>whole</em> difference — real decision rules, printed here, exactly as coded:</p>
+  <div class="botcard"><strong>Wren — Learner (easiest).</strong> Draws from the deck or discard pile by coin flip. Only notices a lay-down about half the time, even when holding one. Hits only by accident (roughly 1 time in 3 when a hit exists). Discards a random card. Wren is a warm-up and a confidence builder, and is labelled that way on purpose.</div>
+  <div class="botcard"><strong>Milo — Steady (middle).</strong> Always lays down when a lay-down is in hand, and takes a discard that completes the phase. Hits whenever a hit is available. Discards the highest-point card that is not part of the phase being built. Milo never bluffs and never holds a Wild past the phase it completes.</div>
+  <div class="botcard"><strong>Ada — Sharp (hardest).</strong> Everything Milo does, plus: chooses the lay-down that spends the fewest Wilds, takes a discard that merely <em>advances</em> the phase (not only one that completes it), remembers the number another player just picked up from the discard pile — a card taken is a want shown — and avoids discarding that same number for the next player to grab, and discards the card that is both high-point and least useful. Ada is genuinely harder for those stated reasons — not because she peeks.</div>
+
+  <h3>Rules are settings — change them, the game obeys</h3>
+  <div class="setrow"><input type="checkbox" id="setHit" checked /><div><span class="t">Hitting allowed</span><br /><span class="small">When on, laid-down players may add cards to any phase on the table. When off, your hand only shrinks by discarding.</span></div></div>
+  <div class="setrow"><input type="checkbox" id="setSkip" checked /><div><span class="t">Skip cards in the deck</span><br /><span class="small">When on, four Skips are shuffled in. Discarding a Skip makes the next player lose their turn.</span></div></div>
+  <div class="setrow"><input type="checkbox" id="setWild25" checked /><div><span class="t">Wilds cost 25 points</span><br /><span class="small">The classic price. Turn off to make a caught Wild cost 15 instead — friendlier for new players.</span></div></div>
+  <label class="field">Opponents
+    <select id="oppSelect">
+      <option value="2">2 bots — Wren + Milo</option>
+      <option value="3" selected>3 bots — Wren, Milo + Ada</option>
+    </select>
+  </label>
+  <p class="small">Settings apply from the next New Game. Tap a setting to change it; there is no save button because there is nothing to save it to — it just takes effect.</p>
+</section>
+
+<section id="record" aria-label="Your record on this device">
+  <h2>Your record — on this device only</h2>
+  <p id="recordText">No games recorded yet on this device.</p>
+  <p class="small">Your record (games, wins, best score, your alias, and the teaching dial) is saved only in this browser on this device. Nothing is sent anywhere. Export it to keep a copy; Forget wipes it from this device for good.</p>
+  <div class="actions">
+    <button type="button" id="exportBtn">Export my record<span class="gesture">Tap to download it as a file</span></button>
+    <button type="button" id="forgetBtn">Forget everything<span class="gesture">Tap to wipe your record from this device</span></button>
+  </div>
+  <p id="forgetMsg" class="small" aria-live="polite"></p>
+</section>
+
+<footer>
+  <p>Copyleft — Ten Runs is free to copy, share, and build on under CC BY-SA 4.0 (writings and design) and GPL (code). Derivatives carry the same freedom. The name “Ten Runs” is ours; the shape it honours belongs to everyone who ever played it at a kitchen table. No ads — ever. No accounts. No tracking.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var PHASES=[
+ {label:"A trio + a run of 3", groups:[{kind:"set",size:3},{kind:"run",size:3}]},
+ {label:"A run of 6", groups:[{kind:"run",size:6}]},
+ {label:"Five cards of one colour + a pair", groups:[{kind:"color",size:5},{kind:"set",size:2}]},
+ {label:"A quartet + a trio", groups:[{kind:"set",size:4},{kind:"set",size:3}]},
+ {label:"A trio + a run of 5", groups:[{kind:"set",size:3},{kind:"run",size:5}]},
+ {label:"A run of 9", groups:[{kind:"run",size:9}]},
+ {label:"Eight cards of one colour", groups:[{kind:"color",size:8}]},
+ {label:"A quintet + a run of 4", groups:[{kind:"set",size:5},{kind:"run",size:4}]},
+ {label:"A run of 10", groups:[{kind:"run",size:10}]},
+ {label:"A quintet + a quartet", groups:[{kind:"set",size:5},{kind:"set",size:4}]}
+];
+var COLORS=[["ruby","●"],["amber","▲"],["teal","◆"],["slate","■"]];
+var uid=1;
+function mkCard(type,num,color){return {id:uid++,type:type,num:num,color:color};}
+function buildDeck(){
+  var d=[];
+  for(var c=0;c<4;c++)for(var n=1;n<=12;n++){d.push(mkCard("num",n,COLORS[c][0]));d.push(mkCard("num",n,COLORS[c][0]));}
+  for(var w=0;w<8;w++)d.push(mkCard("wild",0,null));
+  if(document.getElementById("setSkip").checked)for(var s=0;s<4;s++)d.push(mkCard("skip",0,null));
+  return d;
+}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function pointsOf(card){
+  if(card.type==="wild")return document.getElementById("setWild25").checked?25:15;
+  if(card.type==="skip")return 15;
+  return card.num>=10?10:5;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];});}
+function cardName(c){
+  if(c.type==="wild")return "Wild";
+  if(c.type==="skip")return "Skip";
+  return c.num+" "+c.color;
+}
+function symOf(c){
+  if(c.type==="wild")return "★";
+  if(c.type==="skip")return "⊘";
+  for(var i=0;i<4;i++)if(COLORS[i][0]===c.color)return COLORS[i][1];
+  return "";
+}
+function cardHTML(c,mini){
+  var cls="playing-card"+(mini?" mini":"")+" "+(c.type==="num"?c.color:c.type);
+  if(c.type==="wild")return '<span class="'+cls+'"><span class="corner">★</span><span class="num">★</span><span class="sym">WILD</span></span>';
+  if(c.type==="skip")return '<span class="'+cls+'"><span class="corner">⊘</span><span class="num">⊘</span><span class="sym">SKIP</span></span>';
+  return '<span class="'+cls+'"><span class="corner">'+c.num+symOf(c)+'</span><span class="num">'+c.num+'</span><span class="sym">'+symOf(c)+' '+c.color+'</span></span>';
+}
+/* ---------- validation ---------- */
+function isSet(cards){
+  if(cards.some(function(c){return c.type==="skip";}))return false;
+  var nums=cards.filter(function(c){return c.type==="num";});
+  if(!nums.length)return cards.length>0;
+  return nums.every(function(c){return c.num===nums[0].num;});
+}
+function isRun(cards){
+  if(cards.some(function(c){return c.type==="skip";}))return false;
+  var nums=cards.filter(function(c){return c.type==="num";}).map(function(c){return c.num;});
+  nums.sort(function(a,b){return a-b;});
+  for(var i=1;i<nums.length;i++)if(nums[i]===nums[i-1])return false;
+  if(!nums.length)return cards.length>0;
+  return (nums[nums.length-1]-nums[0])<=cards.length-1;
+}
+function isColor(cards){
+  if(cards.some(function(c){return c.type==="skip";}))return false;
+  var cs=cards.filter(function(c){return c.type==="num";});
+  if(!cs.length)return cards.length>0;
+  return cs.every(function(c){return c.color===cs[0].color;});
+}
+function groupOK(kind,cards,size){ if(cards.length!==size)return false;
+  return kind==="set"?isSet(cards):kind==="run"?isRun(cards):isColor(cards); }
+/* Try to split `cards` into the phase groups. Returns array of groups or null. */
+function splitIntoGroups(cards,groups){
+  if(cards.length!==groups.reduce(function(s,g){return s+g.size;},0))return null;
+  function rec(remaining,gi){
+    if(gi===groups.length)return remaining.length===0?[]:null;
+    var g=groups[gi],combos=combinations(remaining,g.size);
+    for(var i=0;i<combos.length;i++){
+      if(groupOK(g.kind,combos[i],g.size)){
+        var rest=remaining.filter(function(c){return combos[i].indexOf(c)<0;});
+        var tail=rec(rest,gi+1);
+        if(tail)return [combos[i]].concat(tail);
+      }
+    }
+    return null;
+  }
+  return rec(cards.slice(),0);
+}
+function combinations(arr,k){
+  var out=[];
+  (function rec(start,cur){
+    if(cur.length===k){out.push(cur.slice());return;}
+    for(var i=start;i<arr.length;i++){cur.push(arr[i]);rec(i+1,cur);cur.pop();}
+  })(0,[]);
+  return out;
+}
+/* Find any subset of hand that lays down the phase. Prefer fewest wilds if prefWild. */
+function findLaydown(hand,phase,prefFewWilds){
+  var total=phase.groups.reduce(function(s,g){return s+g.size;},0);
+  var combos=combinations(hand,total),best=null,bestWilds=99;
+  for(var i=0;i<combos.length;i++){
+    var split=splitIntoGroups(combos[i],phase.groups);
+    if(split){
+      var w=combos[i].filter(function(c){return c.type==="wild";}).length;
+      if(!prefFewWilds)return split;
+      if(w<bestWilds){bestWilds=w;best=split;}
+    }
+  }
+  return best;
+}
+function canHit(card,group,kind){
+  if(card.type==="skip")return false;
+  var test=group.concat([card]);
+  if(kind==="set")return isSet(test);
+  if(kind==="color")return isColor(test);
+  /* run: card must extend the sequence by one at either end (or be wild) */
+  if(card.type==="wild")return true;
+  var nums=group.filter(function(c){return c.type==="num";}).map(function(c){return c.num;});
+  if(!nums.length)return true;
+  if(nums.indexOf(card.num)>=0)return false;
+  /* reconstruct the run window: laid runs may include wilds inside; a hit fits if the whole test can be a run of its length */
+  return isRun(test);
+}
+/* ---------- state ---------- */
+var S=null;
+var selected=[]; /* card ids in human hand */
+var hitArmed=false;
+function newPlayers(){
+  var n=parseInt(document.getElementById("oppSelect").value,10);
+  var bots=[{name:"Wren",level:"learner"},{name:"Milo",level:"steady"},{name:"Ada",level:"sharp"}].slice(0,n);
+  var ps=[{name:humanName(),bot:false,level:"human",phase:0,score:0,hand:[],laid:null,laidGroups:null}];
+  bots.forEach(function(b){ps.push({name:b.name,bot:true,level:b.level,phase:0,score:0,hand:[],laid:null,laidGroups:null});});
+  return ps;
+}
+function humanName(){
+  var v=(document.getElementById("aliasInput").value||"").trim();
+  return v||"You";
+}
+function log(msg){
+  var el=document.getElementById("log");
+  var p=document.createElement("p");p.textContent=msg;el.prepend(p);
+}
+function dealRound(){
+  S.deck=shuffle(buildDeck());S.discard=[];S.roundOver=false;S.tookDiscardNum=null;
+  S.players.forEach(function(p){p.hand=[];p.laid=null;p.laidGroups=null;p.skipNext=false;});
+  for(var r=0;r<10;r++)S.players.forEach(function(p){p.hand.push(S.deck.pop());});
+  S.discard.push(S.deck.pop());
+  while(S.discard[S.discard.length-1].type==="wild"){S.deck.unshift(S.discard.pop());S.discard.push(S.deck.pop());}
+  S.current=0;S.stage="draw";selected=[];hitArmed=false;
+  document.getElementById("nextRoundBtn").hidden=true;
+  log("Round dealt. Everyone gets 10 cards. "+S.players[0].name+" to play.");
+  render();
+}
+function startGame(practice){
+  S={players:newPlayers(),deck:[],discard:[],current:0,stage:"draw",round:1,roundOver:false,gameOver:false,lastDiscardWant:null};
+  dealRound();
+  if(practice){
+    /* Teaching hand: a ready trio + two cards of a run + fillers, one card short of Phase 1 (needs the 6 to finish the run of 3). Fillers are spaced so no other set of 3 or run of 3 hides in the hand. */
+    var h=S.players[0];
+    h.hand=[mkCard("num",7,"ruby"),mkCard("num",7,"teal"),mkCard("num",7,"slate"),mkCard("num",4,"amber"),mkCard("num",5,"ruby"),mkCard("num",12,"teal"),mkCard("num",9,"slate"),mkCard("num",2,"amber"),mkCard("num",12,"slate"),mkCard("num",1,"ruby")];
+    var six=S.deck.findIndex(function(c){return c.type==="num"&&c.num===6;});
+    if(six>=0){S.discard.push(S.deck.splice(six,1)[0]);}
+    log("Teaching hand dealt: you hold three 7s and a 4–5 start on a run. Take the 6 on the discard pile, and Phase 1 (a trio + a run of 3) is yours — select the three 7s and the 4, 5 and 6, then tap Lay down selected.");
+  }
+  render();
+}
+/* ---------- rendering ---------- */
+function render(){
+  var phaseList=document.getElementById("phaseList");
+  if(!phaseList.children.length){
+    PHASES.forEach(function(ph,i){
+      var d=document.createElement("div");d.className="phasecard";d.id="phasecard"+i;
+      d.innerHTML='<span class="pn">Phase '+(i+1)+'</span> — <strong>'+ph.label+'</strong><br><span class="small">'+ph.groups.map(function(g){return g.size+"-card "+(g.kind==="set"?"set":g.kind==="run"?"run":"one-colour group");}).join(" + ")+'</span>';
+      phaseList.appendChild(d);
+    });
+  }
+  if(!S){renderRecord();return;}
+  PHASES.forEach(function(ph,i){document.getElementById("phasecard"+i).classList.toggle("current",S.players[0].phase===i&&!S.gameOver);});
+  var me=S.players[0];
+  document.getElementById("yourPhaseLbl").textContent="Phase "+(me.phase+1);
+  document.getElementById("yourPhaseNeed").textContent=PHASES[me.phase].label+(me.laid?" — laid down ✓, now hit and shed":"");
+  document.getElementById("deckCount").textContent=S.deck.length;
+  document.getElementById("discardTop").innerHTML=S.discard.length?cardHTML(S.discard[S.discard.length-1]):'<span class="playing-card"><span class="sym">empty</span></span>';
+  /* opponents */
+  var opp=document.getElementById("opponents");opp.innerHTML="";
+  S.players.forEach(function(p,i){
+    if(i===0)return;
+    var d=document.createElement("div");d.className="opp"+(S.current===i&&!S.roundOver?" active":"");
+    d.innerHTML='<span class="nm">'+p.name+'</span> <span class="meta">('+p.level+")</span><div class=\"meta\">Phase "+(p.phase+1)+": "+PHASES[p.phase].label+"</div><div class=\"meta\">"+p.hand.length+" cards in hand · Score "+p.score+(p.laid?" · laid down ✓":"")+(p.skipNext?" · will be skipped":"")+"</div>";
+    opp.appendChild(d);
+  });
+  /* banner */
+  var banner=document.getElementById("turnBanner");
+  if(S.gameOver){banner.textContent="Game over — see the scores below.";}
+  else if(S.roundOver){banner.textContent="Round over — see the scores, then tap Next round.";}
+  else if(S.current===0){banner.textContent=S.stage==="draw"?"Your turn — draw a card to begin.":"Your turn — lay down, hit, then discard one card to end your turn.";}
+  else{banner.textContent=S.players[S.current].name+" is playing…";}
+  /* hand */
+  var handEl=document.getElementById("hand");handEl.innerHTML="";
+  me.hand.forEach(function(c){
+    var b=document.createElement("button");b.type="button";b.className="cardbtn";
+    b.setAttribute("aria-label",cardName(c)+(selected.indexOf(c.id)>=0?", selected":", not selected")+". Tap to select or deselect.");
+    b.setAttribute("title",cardName(c)+" — tap to select; hold to hear: this card is worth "+pointsOf(c)+" points if you are caught holding it.");
+    b.innerHTML=cardHTML(c);
+    if(selected.indexOf(c.id)>=0)b.firstChild.classList.add("selected");
+    b.addEventListener("click",function(){
+      if(S.current!==0||S.roundOver)return;
+      var i=selected.indexOf(c.id);
+      if(i>=0)selected.splice(i,1);else selected.push(c.id);
+      hitArmed=false;document.getElementById("hitHint").textContent="";
+      render();
+    });
+    handEl.appendChild(b);
+  });
+  /* laid area */
+  var la=document.getElementById("laidArea");la.innerHTML="";
+  var anyLaid=false;
+  S.players.forEach(function(p,pi){
+    if(!p.laidGroups)return;anyLaid=true;
+    var row=document.createElement("div");
+    var title=document.createElement("strong");title.textContent=(pi===0?humanName():p.name)+" — Phase "+(p.phase+1)+": ";
+    row.appendChild(title);
+    p.laidGroups.forEach(function(g,gi){
+      var span=document.createElement("span");span.className="group";
+      span.textContent=PHASES[p.phase].groups[gi].kind+" · "+g.map(cardName).join(", ");
+      if(hitArmed&&document.getElementById("setHit").checked){
+        var hb=document.createElement("button");hb.type="button";hb.textContent="Hit here";
+        hb.setAttribute("aria-label","Hit this group with your selected card. Tap to hit.");
+        hb.addEventListener("click",function(){doHit(pi,gi);});
+        span.appendChild(hb);
+      }
+      row.appendChild(span);
+    });
+    la.appendChild(row);
+  });
+  if(!anyLaid)la.innerHTML='<p class="small" style="color:#d7e6da">Nobody has laid down yet this round.</p>';
+  /* scores */
+  var sa=document.getElementById("scoreArea");
+  var rows=S.players.map(function(p){return "<tr><td>"+esc(p.bot?p.name+" ("+p.level+")":p.name)+"</td><td>Phase "+(p.phase+1)+"</td><td class='num'>"+p.score+"</td></tr>";}).join("");
+  sa.innerHTML='<table class="score"><tr><th>Player</th><th>On phase</th><th class="num">Total points (low wins)</th></tr>'+rows+"</table>";
+  /* buttons */
+  var myTurn=S.current===0&&!S.roundOver&&!S.gameOver;
+  document.getElementById("deckBtn").disabled=!(myTurn&&S.stage==="draw");
+  document.getElementById("discardBtn").disabled=!(myTurn&&S.stage==="draw");
+  document.getElementById("layBtn").disabled=!(myTurn&&S.stage==="play"&&!me.laid);
+  document.getElementById("hitBtn").disabled=!(myTurn&&S.stage==="play"&&!!me.laid&&document.getElementById("setHit").checked);
+  document.getElementById("discardSelBtn").disabled=!(myTurn&&S.stage==="play");
+  coach();
+  renderRecord();
+}
+function teachMode(){return document.getElementById("teachSelect").value;}
+function coach(){
+  var box=document.getElementById("coach"),mode=teachMode();
+  if(!S||S.current!==0||S.roundOver){box.textContent=mode==="off"?"Coaching is off.":"Waiting for your turn — watch what the bots throw away; a discard is a free clue about what they do not need.";return;}
+  if(mode==="off"){box.textContent="Coaching is off. The Teaching dial is below the table whenever you want it.";return;}
+  var me=S.players[0],phase=PHASES[me.phase];
+  if(S.stage==="draw"){box.textContent="Draw first: the deck is a surprise, the discard pile is a known card. Take the discard only if it builds your phase — "+phase.label+".";return;}
+  if(!me.laid){
+    var split=findLaydown(me.hand,phase,false);
+    if(split){box.textContent="You can lay down right now. Select these cards: "+split.map(function(g){return g.map(cardName).join(", ");}).join("  +  ")+", then tap Lay down selected."+(mode==="full"?" Why: laying down is the only way to advance, and every card still in your hand at round's end costs points.":"");return;}
+    var dead=me.hand.filter(function(c){return pointsOf(c)>=10;});
+    box.textContent="No lay-down yet — you need "+phase.label+". Keep cards that build toward it and plan to discard your most expensive spare."+(dead.length&&mode==="full"?" Right now "+dead.map(cardName).join(", ")+" would cost you "+dead.reduce(function(s,c){return s+pointsOf(c);},0)+" points if the round ended — that is the hoarding tax, charged for cards that are not building your phase.":"");
+    return;
+  }
+  box.textContent="You are laid down. Now hit any card that fits a group on the table, and discard your most expensive leftover — going out ends the round and everyone else pays for what they are holding.";
+}
+/* ---------- human actions ---------- */
+function humanDraw(fromDiscard){
+  if(!S||S.current!==0||S.stage!=="draw"||S.roundOver)return;
+  if(fromDiscard&&!S.discard.length)return;
+  var c=fromDiscard?S.discard.pop():drawFromDeck();
+  if(fromDiscard&&c.type==="num")S.tookDiscardNum=c.num; /* a taken discard is a want shown — Ada remembers it */
+  S.players[0].hand.push(c);
+  S.stage="play";
+  log(humanName()+" drew "+(fromDiscard?cardName(c):"from the deck")+".");
+  render();
+}
+function drawFromDeck(){
+  if(!S.deck.length){var top=S.discard.pop();S.deck=shuffle(S.discard);S.discard=top?[top]:[];log("Discard pile shuffled back into the deck.");}
+  return S.deck.pop();
+}
+function doLayDown(){
+  var me=S.players[0],phase=PHASES[me.phase];
+  var cards=me.hand.filter(function(c){return selected.indexOf(c.id)>=0;});
+  var split=splitIntoGroups(cards,phase.groups);
+  if(!split){log("That selection is not "+phase.label+". Check the phase list — sets are one number, runs count in order.");render();return;}
+  me.hand=me.hand.filter(function(c){return selected.indexOf(c.id)<0;});
+  me.laid=true;me.laidGroups=split;selected=[];
+  log(humanName()+" laid down Phase "+(me.phase+1)+": "+phase.label+".");
+  if(!me.hand.length){endRound(0);return;}
+  render();
+}
+function doHit(pi,gi){
+  var me=S.players[0];
+  var cards=me.hand.filter(function(c){return selected.indexOf(c.id)>=0;});
+  if(cards.length!==1){document.getElementById("hitHint").textContent="Select exactly one card to hit with.";return;}
+  var target=S.players[pi],kind=PHASES[target.phase].groups[gi].kind;
+  if(!canHit(cards[0],target.laidGroups[gi],kind)){document.getElementById("hitHint").textContent=cardName(cards[0])+" does not fit that "+kind+".";return;}
+  target.laidGroups[gi].push(cards[0]);
+  me.hand=me.hand.filter(function(c){return c.id!==cards[0].id;});
+  selected=[];hitArmed=false;document.getElementById("hitHint").textContent="";
+  log(humanName()+" hit "+cardName(cards[0])+" onto "+(pi===0?"their own":target.name+"'s")+" phase.");
+  if(!me.hand.length){endRound(0);return;}
+  render();
+}
+function humanDiscard(){
+  var me=S.players[0];
+  var cards=me.hand.filter(function(c){return selected.indexOf(c.id)>=0;});
+  if(cards.length!==1){log("Select exactly one card to discard.");return;}
+  var c=cards[0];
+  me.hand=me.hand.filter(function(x){return x.id!==c.id;});
+  selected=[];
+  if(me.hand.length===0&&me.laid){ /* discarding last card after laying down = out */
+    S.discard.push(c);log(humanName()+" discarded "+cardName(c)+" and went out.");endRound(0);return;
+  }
+  if(me.hand.length===0&&!me.laid){S.discard.push(c);log(humanName()+" discarded "+cardName(c)+".");endRound(0);return;}
+  applyDiscard(c,0);
+  advanceTurn();
+}
+function applyDiscard(c,byIdx){
+  S.discard.push(c);
+  S.lastDiscardWant=null;
+  log(S.players[byIdx].name+" discarded "+cardName(c)+".");
+  if(c.type==="skip"&&document.getElementById("setSkip").checked){
+    var nxt=(byIdx+1)%S.players.length;
+    S.players[nxt].skipNext=true;
+    log("Skip! "+S.players[nxt].name+" loses their next turn.");
+  }
+}
+function advanceTurn(){
+  if(S.roundOver||S.gameOver)return;
+  var n=S.players.length;
+  S.current=(S.current+1)%n;
+  S.stage="draw";
+  var guard=0;
+  while(S.players[S.current].skipNext&&guard++<n){
+    S.players[S.current].skipNext=false;
+    log(S.players[S.current].name+" was skipped.");
+    S.current=(S.current+1)%n;
+  }
+  render();
+  if(S.players[S.current].bot)setTimeout(botTurn,650);
+}
+/* ---------- bots ---------- */
+function botTurn(){
+  if(!S||S.roundOver||S.gameOver)return;
+  var p=S.players[S.current],phase=PHASES[p.phase];
+  /* draw */
+  var top=S.discard[S.discard.length-1];
+  var take=false;
+  if(top&&top.type==="num"){
+    if(p.level==="learner")take=Math.random()<0.5;
+    else if(p.level==="steady")take=!!findLaydown(p.hand.concat([top]),phase,false);
+    else{ /* sharp: take if it completes OR advances (pairs with hand toward phase) */
+      take=!!findLaydown(p.hand.concat([top]),phase,true)||advancesPhase(p.hand,top,phase);
+    }
+  }
+  var drawn=take?S.discard.pop():drawFromDeck();
+  if(take&&drawn.type==="num")S.tookDiscardNum=drawn.num; /* a taken discard is a want shown — Ada remembers it */
+  p.hand.push(drawn);
+  log(p.name+" drew "+(take?cardName(drawn):"from the deck")+".");
+  /* lay down */
+  var notice=p.level==="learner"?(Math.random()<0.5):true;
+  if(!p.laid&&notice){
+    var split=findLaydown(p.hand,phase,p.level==="sharp");
+    if(split){
+      var used=[];
+      split.forEach(function(g){g.forEach(function(c){used.push(c.id);});});
+      p.hand=p.hand.filter(function(c){return used.indexOf(c.id)<0;});
+      p.laid=true;p.laidGroups=split;
+      log(p.name+" laid down Phase "+(p.phase+1)+": "+phase.label+".");
+      if(!p.hand.length){finishDiscardPhase(p,null);return;}
+    }
+  }
+  /* hit */
+  if(p.laid&&document.getElementById("setHit").checked){
+    var tryHit=p.level==="learner"?(Math.random()<0.34):true;
+    if(tryHit){
+      var moved=true;
+      while(moved){
+        moved=false;
+        for(var hi=0;hi<p.hand.length&&!moved;hi++){
+          for(var pi=0;pi<S.players.length&&!moved;pi++){
+            var tp=S.players[pi];if(!tp.laidGroups)continue;
+            for(var gi=0;gi<tp.laidGroups.length&&!moved;gi++){
+              var kind=PHASES[tp.phase].groups[gi].kind;
+              if(canHit(p.hand[hi],tp.laidGroups[gi],kind)){
+                var hc=p.hand.splice(hi,1)[0];tp.laidGroups[gi].push(hc);
+                log(p.name+" hit "+cardName(hc)+" onto a "+kind+".");moved=true;
+              }
+            }
+          }
+        }
+        if(!p.hand.length){finishDiscardPhase(p,null);return;}
+      }
+    }
+  }
+  /* discard */
+  var discard=chooseDiscard(p,phase);
+  p.hand=p.hand.filter(function(c){return c.id!==discard.id;});
+  if(!p.hand.length){finishDiscardPhase(p,discard);return;}
+  applyDiscard(discard,S.current);
+  render();
+  advanceTurn();
+}
+function finishDiscardPhase(p,lastCard){
+  if(lastCard)applyDiscard(lastCard,S.players.indexOf(p));
+  endRound(S.players.indexOf(p));
+}
+function advancesPhase(hand,card,phase){
+  /* crude but honest: card pairs toward a set, extends a run, or matches a colour group in hand */
+  if(card.type!=="num")return card.type==="wild";
+  var sameNum=hand.filter(function(c){return c.type==="num"&&c.num===card.num;}).length;
+  if(sameNum>=1&&phase.groups.some(function(g){return g.kind==="set";}))return true;
+  var near=hand.some(function(c){return c.type==="num"&&Math.abs(c.num-card.num)<=2;});
+  if(near&&phase.groups.some(function(g){return g.kind==="run";}))return true;
+  var sameCol=hand.filter(function(c){return c.type==="num"&&c.color===card.color;}).length;
+  if(sameCol>=3&&phase.groups.some(function(g){return g.kind==="color";}))return true;
+  return false;
+}
+function chooseDiscard(p,phase){
+  if(p.level==="learner")return p.hand[Math.floor(Math.random()*p.hand.length)];
+  /* cards that build toward the phase are useful; keep them */
+  var keepIds={};
+  /* mark cards by near-phase usefulness: same-number groups of 2+, run neighbours, colour matches */
+  p.hand.forEach(function(c){
+    if(c.type==="wild")keepIds[c.id]=3;
+    else if(c.type==="num"){
+      var same=p.hand.filter(function(x){return x.type==="num"&&x.num===c.num;}).length;
+      var near=p.hand.filter(function(x){return x.type==="num"&&Math.abs(x.num-c.num)===1;}).length;
+      var col=p.hand.filter(function(x){return x.type==="num"&&x.color===c.color;}).length;
+      keepIds[c.id]=(same-1)*2+near+(phase.groups.some(function(g){return g.kind==="color";})?col*0.5:0);
+    } else keepIds[c.id]=0;
+  });
+  var best=null,bestScore=-1;
+  p.hand.forEach(function(c){
+    var score=pointsOf(c)*10-(keepIds[c.id]||0)*6;
+    if(p.level==="sharp"){
+      /* avoid feeding a shown want: if any player just took a discard of this number, they want it — keep yours */
+      if(S.tookDiscardNum&&c.type==="num"&&c.num===S.tookDiscardNum)score-=40;
+      if(c.type==="skip")score+=5; /* skips are handy; shed them late — slight keep bias corrected by points */
+    }
+    if(score>bestScore){bestScore=score;best=c;}
+  });
+  return best||p.hand[0];
+}
+/* ---------- round / game end ---------- */
+function endRound(outIdx){
+  S.roundOver=true;
+  var summary=[];
+  S.players.forEach(function(p,i){
+    var pts=p.hand.reduce(function(s,c){return s+pointsOf(c);},0);
+    if(i===outIdx)pts=0;
+    p.score+=pts;
+    var advanced=p.laid;
+    summary.push(p.name+" +"+pts+(advanced?" — advances to Phase "+(p.phase+2>10?"done":p.phase+2):" — stays on Phase "+(p.phase+1)));
+    if(advanced)p.phase++;
+    p.hand=[];
+  });
+  log("Round over — "+S.players[outIdx].name+" went out. "+summary.join(" · ")+".");
+  var finished=S.players.filter(function(p){return p.phase>=10;});
+  if(finished.length){
+    S.gameOver=true;
+    var winner=S.players.slice().sort(function(a,b){return a.score-b.score;})[0];
+    log("Game over! "+winner.name+" wins with "+winner.score+" points — lowest score takes it.");
+    recordGame(winner===S.players[0]);
+  } else {
+    document.getElementById("nextRoundBtn").hidden=false;
+  }
+  render();
+}
+/* ---------- record (this device only) ---------- */
+var REC_KEY="tenRunsRecordV1";
+function loadRec(){try{return JSON.parse(localStorage.getItem(REC_KEY))||{games:0,wins:0,best:null};}catch(e){return {games:0,wins:0,best:null};}}
+function saveRec(r){try{localStorage.setItem(REC_KEY,JSON.stringify(r));}catch(e){}}
+function recordGame(won){
+  var r=loadRec();r.games++;if(won)r.wins++;
+  var myScore=S.players[0].score;
+  if(r.best===null||myScore<r.best)r.best=myScore;
+  saveRec(r);
+}
+function renderRecord(){
+  var el=document.getElementById("recordText");if(!el)return;
+  var r=loadRec();
+  el.textContent=r.games?("Games finished on this device: "+r.games+" · Won by you: "+r.wins+" · Your best (lowest) final score: "+(r.best===null?"—":r.best)+"."):"No games recorded yet on this device.";
+}
+/* ---------- wiring ---------- */
+document.getElementById("newGameBtn").addEventListener("click",function(){startGame(false);});
+document.getElementById("practiceBtn").addEventListener("click",function(){startGame(true);});
+document.getElementById("deckBtn").addEventListener("click",function(){humanDraw(false);});
+document.getElementById("discardBtn").addEventListener("click",function(){humanDraw(true);});
+document.getElementById("layBtn").addEventListener("click",doLayDown);
+document.getElementById("discardSelBtn").addEventListener("click",humanDiscard);
+document.getElementById("hitBtn").addEventListener("click",function(){
+  var cards=S.players[0].hand.filter(function(c){return selected.indexOf(c.id)>=0;});
+  if(cards.length!==1){document.getElementById("hitHint").textContent="Select exactly one card first, then tap Hit here on a group below.";return;}
+  hitArmed=true;
+  document.getElementById("hitHint").textContent="Now tap a “Hit here” button on any laid group below to place "+cardName(cards[0])+".";
+  render();
+});
+document.getElementById("sortBtn").addEventListener("click",function(){
+  if(!S)return;
+  S.players[0].hand.sort(function(a,b){
+    var av=a.type==="num"?a.num:a.type==="wild"?99:50, bv=b.type==="num"?b.num:b.type==="wild"?99:50;
+    return av-bv;
+  });
+  render();
+});
+document.getElementById("nextRoundBtn").addEventListener("click",function(){S.round++;dealRound();});
+document.getElementById("aliasBtn").addEventListener("click",function(){
+  try{localStorage.setItem("tenRunsAlias",humanName());}catch(e){}
+  if(S){S.players[0].name=humanName();}
+  log("Table name set to "+humanName()+".");
+  render();
+});
+document.getElementById("teachSelect").addEventListener("change",function(){try{localStorage.setItem("tenRunsTeach",teachMode());}catch(e){}render();});
+document.getElementById("dlBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ten-runs.html";a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+document.getElementById("exportBtn").addEventListener("click",function(){
+  var data={game:"Ten Runs",exported:new Date().toISOString(),alias:humanName(),record:loadRec()};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ten-runs-record.json";a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+document.getElementById("forgetBtn").addEventListener("click",function(){
+  try{localStorage.removeItem(REC_KEY);localStorage.removeItem("tenRunsAlias");localStorage.removeItem("tenRunsTeach");}catch(e){}
+  document.getElementById("aliasInput").value="";
+  document.getElementById("forgetMsg").textContent="Forgotten. Your record, alias, and teaching-dial choice are wiped from this device.";
+  renderRecord();
+});
+/* hold-to-explain: long-press / hover title text is on every control via title attributes added here */
+document.querySelectorAll("button").forEach(function(b){
+  if(!b.getAttribute("title"))b.setAttribute("title",b.textContent.trim().replace(/\s+/g," ")+" — tap does this; holding (or hovering) shows this explanation.");
+});
+/* restore alias + dial */
+try{
+  var savedAlias=localStorage.getItem("tenRunsAlias");if(savedAlias)document.getElementById("aliasInput").value=savedAlias;
+  var savedTeach=localStorage.getItem("tenRunsTeach");if(savedTeach)document.getElementById("teachSelect").value=savedTeach;
+}catch(e){}
+render();
+})();
+</script>
+</body>
+</html>
