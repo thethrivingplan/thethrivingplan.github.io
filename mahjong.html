@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Mahjong Solitaire</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#e9ede1; --panel:#fbfbf5; --panel2:#f1f2e6; --ink:#1d2620; --ink-soft:#47534a;
+        --line:#c9cfba; --felt:#1e5c3a; --felt-deep:#17492d; --accent:#b3392c; --accent-ink:#ffffff;
+        --gold:#a87b1f; --good:#1e7a3c; --warn-bg:#fdf3d7; --warn-line:#d9b64a; --warn-ink:#5c4a08;
+        --tile-face:#fdfaf0; --tile-edge:#c9b995; --tile-side:#a89468; --free-ring:#2f9e5f;
+        --shadow:0 1px 3px rgba(20,30,20,.25);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0f1511; --panel:#1a211b; --panel2:#212a22; --ink:#e9ecdc; --ink-soft:#aebba9;
+          --line:#39443a; --felt:#123c26; --felt-deep:#0d2f1d; --accent:#d95f4e; --accent-ink:#ffffff;
+          --gold:#d3a94e; --good:#5cc47e; --warn-bg:#3a3319; --warn-line:#8a7433; --warn-ink:#f0df9e;
+          --tile-face:#f4efdd; --tile-edge:#b3a37e; --tile-side:#7d6c47; --free-ring:#5cc47e;
+          --shadow:0 1px 3px rgba(0,0,0,.6);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif; line-height:1.5; }
+      .wrap{ max-width:1060px; margin:0 auto; padding:0 14px 48px; }
+      h1,h2,h3{ font-family:Georgia,"Iowan Old Style","Times New Roman",serif; line-height:1.15; }
+      h1{ font-size:2rem; margin:.35em 0 .15em; }
+      h2{ font-size:1.35rem; margin:0 0 .4em; }
+      h3{ font-size:1.05rem; margin:.9em 0 .3em; }
+      p{ margin:.45em 0; }
+      .freeline{ background:var(--felt-deep); color:#f2f4e4; padding:10px 14px; font-size:.98rem;
+        display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; }
+      .freeline strong{ letter-spacing:.01em; }
+      .freeline button{ background:#f2f4e4; color:#17492d; border:0; border-radius:6px; padding:8px 14px;
+        font-weight:700; cursor:pointer; font-size:.92rem; }
+      nav.compass{ display:flex; flex-wrap:wrap; gap:6px; padding:10px 0 2px; }
+      nav.compass a{ color:var(--ink); text-decoration:none; border:1px solid var(--line);
+        background:var(--panel); border-radius:999px; padding:8px 14px; font-size:.92rem; min-height:2.25rem;
+        display:inline-flex; align-items:center; }
+      nav.compass a:hover{ border-color:var(--gold); }
+      .lede{ color:var(--ink-soft); max-width:65ch; }
+      .panel{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin:14px 0; box-shadow:var(--shadow); }
+      .controls{ display:flex; flex-wrap:wrap; gap:10px 18px; align-items:end; }
+      .field{ display:flex; flex-direction:column; gap:4px; font-size:.85rem; font-weight:600; min-width:0; flex:1 1 210px; }
+      .field select, .field input[type="text"]{ font:inherit; font-weight:400; padding:6px 8px; border-radius:6px;
+        border:1px solid var(--line); background:var(--panel); color:var(--ink); width:100%; max-width:100%; }
+      .seg{ align-self:flex-start; max-width:100%; }
+      .seg{ display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+      .seg button{ border:0; background:var(--panel2); color:var(--ink); padding:8px 13px; cursor:pointer; font:inherit; font-size:.9rem; }
+      .seg button[aria-pressed="true"]{ background:var(--felt); color:#fff; font-weight:700; }
+      .seg button + button{ border-left:1px solid var(--line); }
+      .btn{ border:1px solid var(--line); background:var(--panel2); color:var(--ink); border-radius:8px;
+        padding:9px 14px; cursor:pointer; font:inherit; font-size:.93rem; box-shadow:var(--shadow); }
+      .btn:hover{ border-color:var(--gold); }
+      .btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700; }
+      .btn.on{ background:var(--felt); color:#fff; border-color:var(--felt); font-weight:700; }
+      .btn.small{ padding:6px 10px; font-size:.86rem; }
+      .statusbar{ display:flex; flex-wrap:wrap; gap:8px 22px; font-size:1rem; padding:10px 2px 2px; }
+      .statusbar b{ font-variant-numeric:tabular-nums; }
+      .statusbar .lab{ color:var(--ink-soft); font-size:.82rem; display:block; font-weight:600; text-transform:none; }
+      #boardShell{ background:var(--felt); border-radius:14px; padding:14px 10px 18px; margin-top:8px;
+        box-shadow:inset 0 0 0 2px rgba(0,0,0,.15), var(--shadow); }
+      #board{ position:relative; margin:0 auto; }
+      .tile{ position:absolute; border:0; padding:0; cursor:pointer; background:var(--tile-face);
+        border-radius:9% / 7%; box-shadow:inset 0 -6px 0 var(--tile-edge), inset -3px 0 0 #e7dfc8, 3px 5px 6px rgba(0,0,0,.45);
+        display:flex; align-items:center; justify-content:center; transition:transform .15s ease, box-shadow .15s ease; }
+      .tile svg{ width:82%; height:82%; pointer-events:none; }
+      .tile .cap{ position:absolute; top:2px; left:4px; font-size:9px; font-weight:700; color:#6d6248;
+        letter-spacing:.02em; pointer-events:none; font-family:"Avenir Next","Segoe UI",sans-serif; }
+      .tile.freeish{ } /* free state is only outlined when the labelled help is on */
+      .tile.showfree{ box-shadow:inset 0 -6px 0 var(--tile-edge), inset -3px 0 0 #e7dfc8, 0 0 0 3px var(--free-ring), 3px 5px 6px rgba(0,0,0,.45); }
+      .tile.selected{ box-shadow:inset 0 -6px 0 var(--tile-edge), 0 0 0 3px var(--accent), 3px 8px 10px rgba(0,0,0,.5); transform:translateY(-5px); }
+      .tile.hintpair{ box-shadow:inset 0 -6px 0 var(--tile-edge), 0 0 0 3px var(--gold), 0 0 14px 3px rgba(212,175,55,.75); }
+      .tile.covered{ filter:brightness(.94); }
+      @keyframes shake{ 0%,100%{ margin-left:0 } 25%{ margin-left:-4px } 75%{ margin-left:4px } }
+      .tile.shake{ animation:shake .25s ease 2; }
+      .msg{ min-height:1.6em; font-size:1rem; margin:10px 2px 0; }
+      .msg b{ color:var(--accent); }
+      .tip{ background:var(--panel2); border-left:4px solid var(--gold); border-radius:0 8px 8px 0;
+        padding:9px 12px; margin:10px 0 0; font-size:.95rem; }
+      .tip .who{ font-weight:700; color:var(--gold); }
+      #coachPanel{ border:1px solid var(--gold); }
+      #coachPanel h3{ margin-top:0; }
+      #coachPanel ul{ margin:.3em 0 .3em 1.1em; padding:0; }
+      #coachPanel li{ margin:.25em 0; }
+      .banner{ border-radius:10px; padding:12px 16px; margin:12px 0; font-size:1rem; }
+      .banner.variant{ background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink); }
+      .banner.dead{ background:#fbe9e6; border:1px solid var(--accent); color:#571d16; }
+      .banner.win{ background:#e2f3e4; border:1px solid var(--good); color:#14401f; }
+      @media (prefers-color-scheme: dark){
+        .banner.dead{ background:#3d1d18; color:#f3c1b8; }
+        .banner.win{ background:#17301c; color:#bfe6c8; }
+      }
+      .banner .row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+      .helps{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+      .helps .note{ width:100%; font-size:.85rem; color:var(--ink-soft); margin:2px 0 0; }
+      .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:0 26px; }
+      @media (max-width:720px){ .grid2{ grid-template-columns:1fr; } }
+      .strat{ border-top:1px solid var(--line); padding:10px 0; }
+      .strat:first-of-type{ border-top:0; }
+      .strat .trade{ color:var(--ink-soft); }
+      .strat .trade b{ color:var(--ink); }
+      table.rec{ border-collapse:collapse; width:100%; font-size:.92rem; }
+      table.rec th, table.rec td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+      table.rec th{ font-size:.8rem; color:var(--ink-soft); }
+      .recwrap{ overflow-x:auto; }
+      @media (max-width:560px){
+        table.rec thead{ display:none; }
+        table.rec, table.rec tbody, table.rec tr, table.rec td{ display:block; width:100%; }
+        table.rec tr{ border:1px solid var(--line); border-radius:8px; margin:8px 0; padding:6px; }
+        table.rec td{ border-bottom:0; padding:3px 6px; }
+        table.rec td::before{ content:attr(data-l) " — "; font-weight:700; color:var(--ink-soft); font-size:.8rem; }
+      }
+      .totals{ display:flex; flex-wrap:wrap; gap:8px 24px; font-size:1rem; margin-bottom:8px; }
+      .totals b{ font-variant-numeric:tabular-nums; }
+      footer{ border-top:1px solid var(--line); margin-top:26px; padding-top:12px; color:var(--ink-soft); font-size:.88rem; }
+      .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+      .kbd-note{ font-size:.85rem; color:var(--ink-soft); }
+    </style>
+  </head>
+  <body>
+    <div class="freeline">
+      <span><strong>Free — always free.</strong> No ads, no account, no paywall. Every tile, layout, and Coach note is included.</span>
+      <button type="button" id="downloadBtn">Tap to download this page for offline play</button>
+    </div>
+    <div class="wrap">
+      <nav class="compass" aria-label="Compass">
+        <a href="#play">Play</a>
+        <a href="#how">How to play</a>
+        <a href="#strategies">Strategies</a>
+        <a href="#record">Your record</a>
+        <a href="#about">About this game</a>
+      </nav>
+
+      <h1>Mahjong Solitaire</h1>
+      <p class="lede">The tile-matching solitaire: a stacked layout of tiles, taken away two at a time.
+        Match two <strong>free</strong> tiles with the same face to remove them. Clear the whole board to win —
+        and if no moves are left, this page says so plainly instead of letting you hunt forever.</p>
+
+      <section id="play" aria-label="Game">
+        <div class="panel" style="margin-bottom:0;">
+          <div class="controls">
+            <label class="field">Layout — tap to choose
+              <select id="layoutSel">
+                <option value="turtle">Turtle — our own arrangement of the classic shape</option>
+                <option value="bridge">The Bridge — two towers and a span (original)</option>
+                <option value="fortress">Fortress Steps — a deep stacked pyramid (original)</option>
+              </select>
+            </label>
+            <div class="field">Teaching — tap to set how much teaching reaches you
+              <div class="seg" role="group" aria-label="Teaching level">
+                <button type="button" data-teach="off" aria-pressed="false">Off</button>
+                <button type="button" data-teach="light" aria-pressed="true">Light</button>
+                <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+              </div>
+            </div>
+            <label class="field">Helps allowed — tap to choose
+              <select id="helpsSel">
+                <option value="all">All helps</option>
+                <option value="no-shuffle">Hints &amp; undo, no shuffle</option>
+                <option value="none">No helps — clean board</option>
+              </select>
+            </label>
+            <div class="field">Timer — tap to switch
+              <div class="seg" role="group" aria-label="Timer">
+                <button type="button" data-timer="on" aria-pressed="true">On</button>
+                <button type="button" data-timer="off" aria-pressed="false">Off</button>
+              </div>
+            </div>
+            <button type="button" class="btn primary" id="newDealBtn">Tap for a new deal</button>
+          </div>
+          <p class="kbd-note" style="margin-bottom:0;">An unfinished board is recorded as given up when you start a new deal. The teaching level, layout, helps, and timer are saved on this device only.</p>
+        </div>
+
+        <div class="statusbar" aria-live="polite">
+          <span><span class="lab">Tiles left</span><b id="stTiles">–</b></span>
+          <span><span class="lab">Moves available</span><b id="stMoves">–</b></span>
+          <span><span class="lab">Free tiles</span><b id="stFree">–</b></span>
+          <span><span class="lab">Pairs removed</span><b id="stPairs">0</b></span>
+          <span id="timerWrap"><span class="lab">Time</span><b id="stTime">0:00</b></span>
+        </div>
+
+        <div id="variantBanner" class="banner variant" hidden>
+          <strong>Variant rule in play:</strong> the documented game has no shuffle. You shuffled the remaining
+          tiles, so this board is recorded as a <strong>shuffle variant</strong> in your record below.
+        </div>
+        <div id="endBanner" class="banner" hidden></div>
+
+        <div id="boardShell"><div id="board" role="group" aria-label="Mahjong board. Tap a free tile to select it, then tap a second free tile with the same face to remove the pair."></div></div>
+
+        <p class="msg" id="msg" aria-live="polite">Tap a layout above, or tap <b>New deal</b> to begin.</p>
+        <div class="tip" id="tipBox" hidden><span class="who">Light teaching:</span> <span id="tipText"></span></div>
+
+        <div class="panel" id="coachPanel" hidden>
+          <h3>Coach — reading your actual board</h3>
+          <div id="coachBody"></div>
+        </div>
+
+        <div class="helps" role="group" aria-label="Helps">
+          <button type="button" class="btn" id="hlBtn">Tap to highlight free tiles (help — counted)</button>
+          <button type="button" class="btn" id="hintBtn">Tap to show a possible match (help — counted)</button>
+          <button type="button" class="btn" id="undoBtn">Tap to undo the last pair (help — counted)</button>
+          <button type="button" class="btn" id="shuffleBtn">Tap to shuffle remaining tiles (variant rule — counted)</button>
+          <button type="button" class="btn" id="giveUpBtn">Tap to give up and record this board</button>
+          <p class="note">Every help you use is counted and written into this board's record — nothing is hidden. Shuffle is a variant: the documented game has no shuffle, so using it labels the record.</p>
+        </div>
+      </section>
+
+      <section id="how" class="panel">
+        <h2>How to play</h2>
+        <div class="grid2">
+          <div>
+            <h3>The one rule that runs everything</h3>
+            <p>A tile is <strong>free</strong> when two things are both true:</p>
+            <p>1. <strong>Nothing sits on top of it</strong> — no other tile overlaps it from a higher layer.<br />
+               2. <strong>At least one long side is open</strong> — the left edge or the right edge has no neighbour
+               at the same height. Blocked on both long sides means not free, even with nothing on top.</p>
+            <p>Tap a free tile to select it. Tap a second free tile with the <strong>same face</strong> to remove
+               both. Flowers all match each other (any flower with any flower), and seasons all match each other —
+               that is part of the documented tile set. Everything else must match exactly.</p>
+            <p>Removing tiles frees the tiles underneath and beside them. Clear every tile to win. If tiles remain
+               but no two free tiles match, the board is <strong>dead</strong> — the page declares it, and you can
+               undo, shuffle (a variant), or end the board and have it recorded honestly as a dead board.</p>
+          </div>
+          <div>
+            <h3>The tiles</h3>
+            <p>Faces follow the documented suits, drawn here in our own hand as original artwork:
+               <strong>Dots</strong> 1–9, <strong>Bamboo</strong> 1–9, <strong>Characters</strong> 1–9,
+               the four <strong>Winds</strong> (East, South, West, North), the three <strong>Dragons</strong>
+               (red, green, white), four <strong>Flowers</strong>, and four <strong>Seasons</strong>.
+               Each tile also carries a small printed code in its corner (like B4 for Bamboo 4) so faces can be
+               told apart by more than colour alone.</p>
+            <h3>Gestures, in plain words</h3>
+            <p><strong>Tap</strong> a tile to select or match it. <strong>Tap</strong> a selected tile again to put
+               it back. Every button on this page says its tap on its face. There are no hidden gestures.</p>
+            <h3>The deal</h3>
+            <p>Faces are shuffled onto the layout at random, so a deal is not promised solvable — that is true of
+               the documented game too. The honest tools for a stuck board are undo, a fresh deal, or the labelled
+               shuffle variant.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="strategies" class="panel">
+        <h2>Strategies — more than one way, each with its trade-off</h2>
+        <p>The Coach uses these on your live board. None of them is always right; the trade-offs are the lesson.</p>
+        <div class="strat">
+          <h3>1. Free the most-buried tiles first</h3>
+          <p>Prefer the pair whose removal uncovers the deepest, most-covered tiles. Buried tiles hide the most
+             unknown faces, and every tile you can see is information.</p>
+          <p class="trade"><b>Trade-off:</b> the pair that frees the most is not always available — chasing it can
+             mean passing up a pair that opens a long row right now.</p>
+        </div>
+        <div class="strat">
+          <h3>2. Open long rows before short stacks</h3>
+          <p>A tile in a long row is blocked by neighbours on both sides; only end tiles are free. Working a long
+             row from both ends opens many tiles in sequence.</p>
+          <p class="trade"><b>Trade-off:</b> rows open slowly, one end at a time. A short stack can collapse in a
+             single pair and drop a whole layer — sometimes the stack is the faster door.</p>
+        </div>
+        <div class="strat">
+          <h3>3. Watch the three-of-a-kind trap</h3>
+          <p>When three copies of a face are free and the fourth is buried, <em>which</em> two you take decides what
+             gets freed. Take the pair that uncovers the most — taking the wrong pair can leave the fourth copy
+             buried behind the very tile you left standing.</p>
+          <p class="trade"><b>Trade-off:</b> there is no undoing a careless pick except the undo help, and the undo
+             is counted in your record.</p>
+        </div>
+        <div class="strat">
+          <h3>4. Keep a pair of last resort</h3>
+          <p>A free pair that uncovers nothing new will still be there later. Leaving it untouched keeps one
+             guaranteed move in hand while you spend your other moves opening the board.</p>
+          <p class="trade"><b>Trade-off:</b> a saved pair can also be a blocker — if one of its tiles is sitting on
+             something you need, saving it saves the problem too. Check what each tile covers before you save it.</p>
+        </div>
+        <div class="strat">
+          <h3>5. Spend flowers and seasons carefully</h3>
+          <p>Any flower matches any flower, so flower and season tiles are flexible keys — they can rescue a board
+             that is one match short.</p>
+          <p class="trade"><b>Trade-off:</b> that same flexibility makes them easy to waste early on a pair that
+             opened nothing, exactly when a stricter pair would have done the same job.</p>
+        </div>
+      </section>
+
+      <section id="record" class="panel">
+        <h2>Your record — on this device only</h2>
+        <p>Your games are kept in one clean shape on this device, in this browser. Nothing is sent anywhere,
+           there is no account, and no name is ever required to play.</p>
+        <label class="field" style="max-width:320px;">Table name (optional — only used to label your export)
+          <input type="text" id="aliasInput" placeholder="Play as… (leave blank if you like)" autocomplete="off" />
+        </label>
+        <div class="totals" id="recTotals" style="margin-top:12px;"></div>
+        <div class="recwrap"><table class="rec" id="recTable">
+          <thead><tr><th>Date</th><th>Layout</th><th>Result</th><th>Time</th><th>Pairs</th><th>Helps used</th><th>Notes</th></tr></thead>
+          <tbody id="recBody"></tbody>
+        </table></div>
+        <p id="recEmpty">No boards recorded yet. Finish a board, hit a dead board and end it, or give one up — it will be written here.</p>
+        <div class="helps">
+          <button type="button" class="btn" id="exportBtn">Tap to export your record as a file</button>
+          <button type="button" class="btn" id="forgetBtn">Tap to forget everything — erase the record on this device</button>
+        </div>
+      </section>
+
+      <section id="about" class="panel">
+        <h2>About this game</h2>
+        <p>Mahjong solitaire is the documented tile-matching solitaire: the first computer version was written in
+           1981 for the PLATO system, and the form spread from there. This page is our own version of that
+           documented form — the layouts are arranged by us (the Turtle is our own arrangement of the classic
+           turtle shape; the Bridge and the Fortress Steps are originals), and every tile face is drawn by us as
+           original SVG artwork in the documented suits. No commercial game's tile art, layout files, or text
+           are used.</p>
+        <p>The rules are settings, not stone: helps can be turned down or off, the timer can be switched off, and
+           the one true variant — the shuffle — is labelled as a variant on the board and in the record whenever
+           it is used.</p>
+      </section>
+
+      <footer>
+        <p>Copyleft — this page and its tile artwork are shared under CC BY-SA 4.0 and its code under the GPL:
+           copy it, change it, pass it on, keep it free. No ads, ever.</p>
+        <p>Saved on your device only: teaching level, settings, and your game record. Nothing leaves the device.</p>
+      </footer>
+    </div>
+<script>
+(function(){
+"use strict";
+/* ---------- Tile faces: original SVG artwork, drawn in our own hand ---------- */
+var DOT_POS = {
+  1:[[1,1]], 2:[[0,0],[2,2]], 3:[[0,0],[1,1],[2,2]],
+  4:[[0,0],[2,0],[0,2],[2,2]], 5:[[0,0],[2,0],[1,1],[0,2],[2,2]],
+  6:[[0,0],[2,0],[0,1],[2,1],[0,2],[2,2]],
+  7:[[0,0],[2,0],[1,0],[0,1],[2,1],[0,2],[2,2]],
+  8:[[0,0],[2,0],[0,1],[2,1],[0,2],[2,2],[0,3],[2,3]],
+  9:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]]
+};
+var DOT_COL = ["#2b5ea7","#2e7d32","#b3392c"];
+function dotsSVG(n){
+  var pos = DOT_POS[n], rows = (n===8)?4:3, s = '<circle cx="20" cy="26" r="15" fill="none" stroke="#d8cfb2" stroke-width="1"/>';
+  if(n===1){ return '<circle cx="20" cy="26" r="12" fill="none" stroke="#b3392c" stroke-width="3"/><circle cx="20" cy="26" r="6.5" fill="#2b5ea7"/><circle cx="20" cy="26" r="2.6" fill="#2e7d32"/>'; }
+  pos.forEach(function(p,i){
+    var cx = 11 + p[0]*9, cy = (rows===4? 9 + p[1]*11 : 12 + p[1]*14);
+    s += '<circle cx="'+cx+'" cy="'+cy+'" r="4.6" fill="none" stroke="'+DOT_COL[i%3]+'" stroke-width="2.2"/><circle cx="'+cx+'" cy="'+cy+'" r="1.5" fill="'+DOT_COL[i%3]+'"/>';
+  });
+  return s;
+}
+function bamSVG(n){
+  if(n===1){ return '<rect x="16" y="8" width="8" height="30" rx="4" fill="#2e7d32"/><rect x="16" y="21" width="8" height="3" fill="#fdfaf0"/><circle cx="20" cy="14" r="2.4" fill="#b3392c"/><path d="M20 6 q-7 -4 -10 2 q6 2 10 -2 M20 6 q7 -4 10 2 q-6 2 -10 -2" fill="#66a35a"/>'; }
+  var pos = DOT_POS[n], rows = (n===8)?4:3, s="";
+  pos.forEach(function(p,i){
+    var cx = 11 + p[0]*9, cy = (rows===4? 8 + p[1]*11 : 11 + p[1]*14), col = i%3===2 ? "#b3392c" : "#2e7d32";
+    s += '<rect x="'+(cx-2.6)+'" y="'+(cy-6)+'" width="5.2" height="12" rx="2.6" fill="'+col+'"/><rect x="'+(cx-2.6)+'" y="'+(cy-0.8)+'" width="5.2" height="1.6" fill="#fdfaf0" opacity=".85"/>';
+  });
+  return s;
+}
+var NUMCHAR = ["","一","二","三","四","五","六","七","八","九"];
+function charSVG(n){
+  return '<text x="20" y="20" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#263238">'+NUMCHAR[n]+'</text>'
+       + '<text x="20" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="bold" fill="#b3392c">萬</text>';
+}
+var WINDS = {E:["東","E"],S:["南","S"],W:["西","W"],N:["北","N"]};
+function windSVG(w){
+  return '<text x="20" y="34" text-anchor="middle" font-family="Georgia,serif" font-size="24" font-weight="bold" fill="#263238">'+WINDS[w][0]+'</text>'
+       + '<text x="20" y="48" text-anchor="middle" font-family="Georgia,sans-serif" font-size="9" font-weight="bold" fill="#6d6248">'+WINDS[w][1]+'</text>';
+}
+function dragonSVG(d){
+  if(d==="R") return '<text x="20" y="36" text-anchor="middle" font-family="Georgia,serif" font-size="25" font-weight="bold" fill="#b3392c">中</text>';
+  if(d==="G") return '<text x="20" y="36" text-anchor="middle" font-family="Georgia,serif" font-size="25" font-weight="bold" fill="#2e7d32">發</text>';
+  return '<rect x="9" y="10" width="22" height="30" rx="3" fill="none" stroke="#2b5ea7" stroke-width="2.4"/><rect x="14.5" y="16" width="11" height="18" rx="2" fill="none" stroke="#2b5ea7" stroke-width="1.8" transform="rotate(45 20 25)"/>';
+}
+var FLOWER_COL = ["#c65b8f","#7d4f9e","#d98a2b","#3f7fbf"];
+function flowerSVG(v){
+  var c = FLOWER_COL[v-1], s="";
+  for(var i=0;i<5;i++){ var a = (i/5)*Math.PI*2 - Math.PI/2, px = 20+Math.cos(a)*7.5, py = 24+Math.sin(a)*7.5;
+    s += '<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="5.4" fill="'+c+'" opacity=".88"/>'; }
+  s += '<circle cx="20" cy="24" r="3.6" fill="#e9b949"/>';
+  s += '<text x="20" y="49" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#6d6248">FLOWER '+v+'</text>';
+  return s;
+}
+function seasonSVG(v){
+  var s="";
+  if(v===1){ s = '<path d="M20 38 q-1 -16 3 -26 q12 3 10 15 q-1 9 -13 11 M20 38 q-2 -10 -11 -13 q1 11 11 13" fill="#4c9a4c"/>'; }
+  else if(v===2){ s = '<circle cx="20" cy="23" r="6.5" fill="#e9a13b"/>'; for(var i=0;i<8;i++){ var a=i*Math.PI/4; s += '<line x1="'+(20+Math.cos(a)*9)+'" y1="'+(23+Math.sin(a)*9)+'" x2="'+(20+Math.cos(a)*13)+'" y2="'+(23+Math.sin(a)*13)+'" stroke="#e9a13b" stroke-width="2.2" stroke-linecap="round"/>'; } }
+  else if(v===3){ s = '<path d="M20 8 q9 9 3 17 q10 -1 8 9 q-9 2 -11 -6 q-2 8 -11 6 q-2 -10 8 -9 q-6 -8 3 -17" fill="#c96a26"/>'; }
+  else { s = '<g stroke="#3f7fbf" stroke-width="2.2" stroke-linecap="round"><line x1="20" y1="10" x2="20" y2="36"/><line x1="9" y1="16" x2="31" y2="30"/><line x1="31" y1="16" x2="9" y2="30"/></g>'; }
+  s += '<text x="20" y="49" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#6d6248">SEASON '+v+'</text>';
+  return s;
+}
+function faceSVG(t){
+  var inner = "";
+  if(t.kind==="dot") inner = dotsSVG(t.n);
+  else if(t.kind==="bam") inner = bamSVG(t.n);
+  else if(t.kind==="char") inner = charSVG(t.n);
+  else if(t.kind==="wind") inner = windSVG(t.n);
+  else if(t.kind==="dragon") inner = dragonSVG(t.n);
+  else if(t.kind==="flower") inner = flowerSVG(t.variant);
+  else inner = seasonSVG(t.variant);
+  return '<svg viewBox="0 0 40 52" aria-hidden="true">'+inner+'</svg>';
+}
+function baseTypes(){
+  var arr = [], i;
+  for(i=1;i<=9;i++){ arr.push({kind:"dot", n:i, key:"dot"+i, label:"Dots "+i, cap:"D"+i});
+                     arr.push({kind:"bam", n:i, key:"bam"+i, label:"Bamboo "+i, cap:"B"+i});
+                     arr.push({kind:"char", n:i, key:"char"+i, label:"Characters "+i, cap:"C"+i}); }
+  ["E","S","W","N"].forEach(function(w){ arr.push({kind:"wind", n:w, key:"wind"+w, label:"Wind "+({E:"East",S:"South",W:"West",N:"North"})[w], cap:"W"+w}); });
+  arr.push({kind:"dragon", n:"R", key:"dragR", label:"Red Dragon", cap:"DR"});
+  arr.push({kind:"dragon", n:"G", key:"dragG", label:"Green Dragon", cap:"DG"});
+  arr.push({kind:"dragon", n:"W", key:"dragW", label:"White Dragon", cap:"DW"});
+  return arr;
+}
+var BASE = baseTypes();
+
+/* ---------- Layouts: positions (x, y, z); a tile spans 2x2 units ---------- */
+function rowTiles(out, z, y, cx, count){
+  var x0 = cx - count;
+  for(var i=0;i<count;i++) out.push({x:x0 + i*2, y:y, z:z});
+}
+function blockTiles(out, z, x0, y0, w, h, off){
+  for(var r=0;r<h;r++) for(var c=0;c<w;c++) out.push({x:x0 + c*2 + (off||0), y:y0 + r*2 + (off||0), z:z});
+}
+var LAYOUTS = {
+  turtle: { name:"Turtle", build:function(){
+    var o=[], cx=14, rows0=[4,7,8,8,8,7,4], rows1=[3,5,6,6,5,3], rows2=[3,4,3], r;
+    for(r=0;r<rows0.length;r++) rowTiles(o,0,r*2,cx,rows0[r]);
+    o.push({x:0,y:6,z:0}); o.push({x:26,y:6,z:0}); /* the classic side wings, our placement */
+    for(r=0;r<rows1.length;r++) rowTiles(o,1,1+r*2,cx,rows1[r]);
+    for(r=0;r<rows2.length;r++) rowTiles(o,2,4+r*2,cx,rows2[r]);
+    rowTiles(o,3,6,cx,2); o.push({x:13,y:5,z:4}); o.push({x:13,y:7,z:4});
+    return o; } },
+  bridge: { name:"The Bridge", build:function(){
+    var o=[], r, c;
+    blockTiles(o,0,0,0,4,4,0); blockTiles(o,0,20,0,4,4,0);
+    for(c=0;c<6;c++) o.push({x:8+c*2, y:4, z:0});
+    o.push({x:8,y:2,z:0}); o.push({x:18,y:2,z:0}); o.push({x:8,y:6,z:0}); o.push({x:18,y:6,z:0});
+    blockTiles(o,1,0,0,3,3,1); blockTiles(o,1,20,0,3,3,1);
+    for(c=0;c<6;c++) o.push({x:8+c*2, y:3, z:1});
+    o.push({x:3,y:3,z:2}); o.push({x:23,y:3,z:2});
+    return o; } },
+  fortress: { name:"Fortress Steps", build:function(){
+    var o=[];
+    blockTiles(o,0,0,0,8,5,0); blockTiles(o,1,0,0,6,4,1);
+    blockTiles(o,2,0,0,4,3,0); blockTiles(o,3,0,0,2,2,1);
+    o.push({x:2,y:2,z:4}); o.push({x:4,y:2,z:4});
+    return o; } }
+};
+
+/* ---------- Settings & record (this device only) ---------- */
+var SET_KEY="mahjong-settings-v1", REC_KEY="mahjong-record-v1";
+function loadJSON(k, d){ try{ var v = localStorage.getItem(k); return v? JSON.parse(v) : d; }catch(e){ return d; } }
+function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+var settings = loadJSON(SET_KEY, {teaching:"light", timerOn:true, helps:"all", layout:"turtle", alias:""});
+if(!LAYOUTS[settings.layout]) settings.layout = "turtle";
+var record = loadJSON(REC_KEY, {version:1, games:[]});
+if(!record.games) record = {version:1, games:[]};
+
+/* ---------- Game state ---------- */
+var G = null;
+function shuffleArr(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function dealFaces(count){
+  var pairs = count/2, faces = [], i, t;
+  if(pairs >= 4){ for(i=1;i<=4;i++){ faces.push({kind:"flower", variant:i, key:"flower", label:"Flower "+i, cap:"F"+i}); }
+                  for(i=1;i<=4;i++){ faces.push({kind:"season", variant:i, key:"season", label:"Season "+i, cap:"S"+i}); }
+                  pairs -= 4; }
+  for(i=0;i<pairs;i++){ t = BASE[Math.floor(Math.random()*BASE.length)];
+    faces.push(t); faces.push({kind:t.kind, n:t.n, key:t.key, label:t.label, cap:t.cap}); }
+  return shuffleArr(faces);
+}
+function newGame(layoutId){
+  if(G && !G.recorded && G.pairsRemoved>0 && !G.finished){ finishGame("gave-up"); }
+  var pos = LAYOUTS[layoutId].build();
+  if(pos.length % 2 === 1) pos.pop();
+  var faces = dealFaces(pos.length);
+  G = { layout: layoutId, tiles: pos.map(function(p,i){ return {id:i, x:p.x, y:p.y, z:p.z, face:faces[i], removed:false}; }),
+        selected:null, history:[], helps:{highlight:0, hint:0, undo:0, shuffle:0},
+        pairsRemoved:0, variantShuffle:false, deadHit:false, recorded:false, finished:false,
+        result:null, startedAt:Date.now(), elapsed:0, highlightOn:false };
+  stopTimer(); startTimer();
+  hideEnd(); document.getElementById("variantBanner").hidden = true;
+  setMsg("A fresh "+LAYOUTS[layoutId].name+" is dealt — "+pos.length+" tiles. Tap a free tile to select it, then tap its match.");
+  renderAll();
+  lightTip("Free means: nothing on top, and a long side open. The Highlight help shows every free tile — it is counted, honestly.");
+}
+function present(){ return G.tiles.filter(function(t){ return !t.removed; }); }
+function overlap(a,b){ return a.x < b.x+2 && b.x < a.x+2 && a.y < b.y+2 && b.y < a.y+2; }
+function yOverlap(a,b){ return a.y < b.y+2 && b.y < a.y+2; }
+function coverers(t){ return present().filter(function(u){ return u!==t && u.z>t.z && overlap(u,t); }); }
+function isCovered(t){ return coverers(t).length>0; }
+function sideBlocked(t, dir){ return present().some(function(u){ return u!==t && u.z===t.z && yOverlap(u,t) && (dir<0 ? (u.x+2===t.x) : (u.x===t.x+2)); }); }
+function isFree(t){ return !t.removed && !isCovered(t) && !(sideBlocked(t,-1) && sideBlocked(t,1)); }
+function freeTiles(){ return present().filter(isFree); }
+function movesList(){
+  var free = freeTiles(), byKey = {}, moves = [];
+  free.forEach(function(t){ (byKey[t.face.key] = byKey[t.face.key] || []).push(t); });
+  Object.keys(byKey).forEach(function(k){ var g = byKey[k];
+    for(var i=0;i<g.length;i++) for(var j=i+1;j<g.length;j++) moves.push([g[i], g[j]]); });
+  return moves;
+}
+function newlyFreedAfter(a, b){
+  var gone = {}; gone[a.id]=1; gone[b.id]=1;
+  return present().filter(function(t){ return !gone[t.id]; }).filter(function(t){
+    if(isFree(t)) return false;
+    /* would it be free with a,b gone? */
+    var others = present().filter(function(u){ return !gone[u.id]; });
+    var cov = others.some(function(u){ return u!==t && u.z>t.z && overlap(u,t); });
+    if(cov) return false;
+    var l = others.some(function(u){ return u!==t && u.z===t.z && yOverlap(u,t) && u.x+2===t.x; });
+    var r = others.some(function(u){ return u!==t && u.z===t.z && yOverlap(u,t) && u.x===t.x+2; });
+    return !(l && r);
+  });
+}
+function burialScore(t){ return t.z*2 + coverers(t).length; }
+
+/* ---------- Rendering ---------- */
+var boardEl = document.getElementById("board");
+var tileEls = {};
+function renderBoard(){
+  boardEl.innerHTML = ""; tileEls = {};
+  var maxX = 0, maxY = 0, maxZ = 0;
+  G.tiles.forEach(function(t){ maxX = Math.max(maxX, t.x+2); maxY = Math.max(maxY, t.y+2); maxZ = Math.max(maxZ, t.z); });
+  boardEl.dataset.maxX = maxX; boardEl.dataset.maxY = maxY; boardEl.dataset.maxZ = maxZ;
+  G.tiles.forEach(function(t){
+    if(t.removed) return;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "tile" + (isCovered(t) ? " covered" : "");
+    b.dataset.id = t.id;
+    b.setAttribute("aria-label", t.face.label + (isFree(t) ? ", free — tap to select" : ", not free"));
+    b.innerHTML = '<span class="cap">'+t.face.cap+'</span>' + faceSVG(t.face);
+    b.addEventListener("click", function(){ onTileTap(t.id, b); });
+    boardEl.appendChild(b); tileEls[t.id] = b;
+  });
+  layoutTiles(); refreshTileStates();
+}
+function layoutTiles(){
+  var maxX = +boardEl.dataset.maxX || 28, maxY = +boardEl.dataset.maxY || 14, maxZ = +boardEl.dataset.maxZ || 0;
+  var W = boardEl.parentElement.clientWidth - 20;
+  var ux = W / maxX, tileW = ux*2, tileH = tileW*1.3, uy = tileH/2;
+  boardEl.style.width = W+"px"; boardEl.style.height = (maxY*uy + maxZ*7 + 8)+"px";
+  Object.keys(tileEls).forEach(function(id){
+    var t = G.tiles[+id], el = tileEls[id];
+    el.style.width = tileW+"px"; el.style.height = tileH+"px";
+    el.style.left = (t.x*ux - t.z*3)+"px"; el.style.top = (t.y*uy - t.z*7)+"px";
+    el.style.zIndex = String(t.z*1000 + t.y*10 + t.x);
+    el.style.fontSize = Math.max(8, tileW*0.2)+"px";
+  });
+}
+function refreshTileStates(){
+  var free = freeTiles(), freeSet = {};
+  free.forEach(function(t){ freeSet[t.id]=1; });
+  Object.keys(tileEls).forEach(function(id){
+    var el = tileEls[id], t = G.tiles[+id];
+    el.classList.toggle("showfree", !!G.highlightOn && !!freeSet[+id]);
+    el.classList.toggle("selected", G.selected === +id);
+    el.setAttribute("aria-label", t.face.label + (freeSet[+id] ? ", free — tap to select" : ", not free"));
+  });
+  document.getElementById("stTiles").textContent = present().length;
+  document.getElementById("stFree").textContent = free.length;
+  document.getElementById("stMoves").textContent = movesList().length;
+  document.getElementById("stPairs").textContent = G.pairsRemoved;
+}
+function renderAll(){ renderBoard(); updateCoach(); updateHelpButtons(); }
+
+/* ---------- Messages & teaching ---------- */
+function setMsg(html){ document.getElementById("msg").innerHTML = html; }
+function lightTip(text){
+  var box = document.getElementById("tipBox");
+  if(settings.teaching === "light" && text){ box.hidden = false; document.getElementById("tipText").textContent = text; }
+  else if(settings.teaching !== "coach"){ box.hidden = true; }
+  else { box.hidden = true; }
+}
+function contextualTip(){
+  if(settings.teaching === "off") return;
+  var moves = movesList(); if(!moves.length) return;
+  var trap = findTrap();
+  if(trap){ lightTip("Three "+trap.label+" are free and one is still buried — which pair you take decides what gets freed. Check what each tile is sitting on before you choose."); return; }
+  var best = scoreMoves()[0];
+  if(best && best.freed.length >= 2){ lightTip("A strong move is on the board: "+best.a.face.label+" frees "+best.freed.length+" tiles when it goes. Pairs that uncover the most are usually worth the most."); return; }
+  if(best && best.freed.length === 0){ lightTip("Every move right now opens nothing new. That is exactly when a pair of last resort earns its keep — spend one, and keep watching the buried tiles."); return; }
+  lightTip("Look one move ahead: before taking a pair, ask what each of its two tiles is covering or blocking.");
+}
+
+/* ---------- Coach ---------- */
+function findTrap(){
+  var counts = {}, buried = {};
+  present().forEach(function(t){ if(isFree(t)) counts[t.face.key] = (counts[t.face.key]||0)+1; else buried[t.face.key] = true; });
+  var key = Object.keys(counts).filter(function(k){ return counts[k]===3 && buried[k]; })[0];
+  if(!key) return null;
+  var any = present().filter(function(t){ return t.face.key===key; })[0];
+  return { key:key, label:any.face.label };
+}
+function scoreMoves(){
+  return movesList().map(function(m){
+    var freed = newlyFreedAfter(m[0], m[1]);
+    var depth = freed.reduce(function(s,t){ return s + burialScore(t); }, 0);
+    return { a:m[0], b:m[1], freed:freed, depth:depth, score: freed.length*10 + depth };
+  }).sort(function(p,q){ return q.score - p.score; });
+}
+function updateCoach(){
+  var panel = document.getElementById("coachPanel"), body = document.getElementById("coachBody");
+  if(settings.teaching !== "coach"){ panel.hidden = true; return; }
+  panel.hidden = false;
+  if(!G || G.finished){ body.innerHTML = "<p>Start a deal and the Coach reads the board move by move.</p>"; return; }
+  var scored = scoreMoves(), free = freeTiles();
+  if(!scored.length){ body.innerHTML = "<p><strong>No moves left.</strong> The board is dead as it stands — undo can reopen it, the shuffle variant can re-deal the faces, or end the board and let the record say so.</p>"; return; }
+  var best = scored[0], html = "";
+  html += "<p><strong>Best move I can see:</strong> take the two <strong>"+best.a.face.label+"</strong> tiles. "
+        + (best.freed.length ? "It frees "+best.freed.length+" tile"+(best.freed.length>1?"s":"")+" ("+best.freed.map(function(t){return t.face.label;}).join(", ")+")."
+                             : "It frees nothing new — right now no move does, so spending a safe pair is correct.") + "</p>";
+  var trap = findTrap();
+  if(trap){ var tm = scored.filter(function(s){ return s.a.face.key === trap.key; });
+    html += "<p><strong>Three-of-a-kind trap:</strong> three "+trap.label+" are free and the fourth is buried. "
+          + (tm.length>1 ? "The pairs are not equal — the best of them scores "+tm[0].score+" against "+tm[tm.length-1].score+" for the worst, because they uncover different tiles. Take the pair that uncovers the most."
+                         : "Only one pairing is on offer; take it knowing the fourth copy stays buried for now.") + "</p>"; }
+  var savers = scored.filter(function(s){ return s.freed.length===0 && s !== best; });
+  if(savers.length && best.freed.length>0){ var sv = savers[0];
+    html += "<p><strong>Pair of last resort:</strong> the "+sv.a.face.label+" pair frees nothing. Leave it in hand — it is a guaranteed move for later, <em>unless</em> one of its tiles is covering something you need. Trade-off, stated plainly: saving it also saves whatever it blocks.</p>"; }
+  var alts = scored.slice(1,3);
+  if(alts.length){ html += "<p><strong>Alternatives, with trade-offs:</strong></p><ul>" + alts.map(function(s){
+      return "<li><strong>"+s.a.face.label+"</strong> — frees "+s.freed.length+" tile"+(s.freed.length===1?"":"s")+". "
+           + (s.freed.length < best.freed.length ? "Opens less than the best move; take it only if it unblocks a long row you are working." : "Just as open as the best move; the difference is which buried faces it reveals.") + "</li>"; }).join("") + "</ul>"; }
+  var buriedCount = present().filter(function(t){ return isCovered(t); }).length;
+  html += "<p>"+free.length+" tiles are free, "+buriedCount+" still have something on top of them. Long rows open from their ends; short stacks collapse in one pair — the Coach weighs both on every move.</p>";
+  body.innerHTML = html;
+}
+
+/* ---------- Play ---------- */
+function onTileTap(id, el){
+  if(!G || G.finished) return;
+  var t = G.tiles[id];
+  if(G.selected === id){ G.selected = null; refreshTileStates(); setMsg(t.face.label+" put back. Tap another free tile."); return; }
+  if(!isFree(t)){
+    var why;
+    if(isCovered(t)){ var c = coverers(t); why = "it has "+c.length+" tile"+(c.length>1?"s":"")+" on top of it ("+c.map(function(u){return u.face.label;}).join(", ")+"). A tile is free only when nothing sits on top of it and a long side is open."; }
+    else { why = "both of its long sides are blocked by neighbours at the same height. A tile is free only when nothing sits on top of it and at least one long side is open."; }
+    setMsg("<b>"+t.face.label+" is not free</b> — "+why);
+    if(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+    if(settings.teaching !== "off") lightTip("Not-free tiles cannot be picked up at all. Look for the pair that removes what is covering or flanking this one.");
+    return;
+  }
+  if(G.selected === null){ G.selected = id; refreshTileStates(); setMsg("<b>"+t.face.label+"</b> selected. Tap another free "+t.face.label+" to remove the pair — or tap it again to put it back."); return; }
+  var s = G.tiles[G.selected];
+  if(s.face.key === t.face.key){
+    s.removed = true; t.removed = true; G.selected = null; G.pairsRemoved++;
+    G.history.push([s.id, t.id]);
+    setMsg("Pair removed: <b>"+t.face.label+"</b>. "+present().length+" tiles left, "+movesList().length+" moves available.");
+    afterMove();
+  } else {
+    G.selected = id; refreshTileStates();
+    setMsg("Those faces differ — <b>"+s.face.label+"</b> does not match <b>"+t.face.label+"</b>. The "+t.face.label+" is now selected instead.");
+  }
+}
+function afterMove(){
+  renderAll();
+  if(present().length === 0){ finishGame("cleared"); showEnd(true); return; }
+  if(movesList().length === 0){
+    G.deadHit = true;
+    showDead();
+    if(settings.teaching !== "off") lightTip("No two free tiles match — that is a dead board, declared honestly. Undo reopens it, shuffle re-deals it as a labelled variant, or end the board and let the record say dead.");
+  } else { contextualTip(); }
+}
+function showDead(){
+  var b = document.getElementById("endBanner");
+  b.className = "banner dead"; b.hidden = false;
+  b.innerHTML = "<strong>Dead board — no moves left.</strong> "+present().length+" tiles remain and no two free tiles match. "
+    + "This is declared, not hidden: you never have to hunt a board that cannot move."
+    + '<div class="row"><button type="button" class="btn" id="deadUndo">Tap to undo the last pair</button>'
+    + '<button type="button" class="btn" id="deadEnd">Tap to end this board and record it as dead</button></div>';
+  document.getElementById("deadUndo").addEventListener("click", doUndo);
+  document.getElementById("deadEnd").addEventListener("click", function(){ finishGame("dead"); showEnd(false); });
+}
+function showEnd(won){
+  var b = document.getElementById("endBanner");
+  b.className = "banner " + (won ? "win" : "dead"); b.hidden = false;
+  var mins = fmtTime(G.elapsed);
+  b.innerHTML = won
+    ? "<strong>Board cleared — you win.</strong> "+LAYOUTS[G.layout].name+" cleared in "+mins+" with "+totalHelps()+" help"+(totalHelps()===1?"":"s")+" used"+(G.variantShuffle?", as a shuffle variant":"")+". The board has been written to your record."
+    : "<strong>Board ended.</strong> Result: <strong>"+G.result+"</strong> after "+mins+", "+G.pairsRemoved+" pairs removed"+(G.deadHit?", having hit a dead board":"")+". It has been written to your record.";
+}
+function hideEnd(){ var b = document.getElementById("endBanner"); b.hidden = true; b.innerHTML = ""; }
+function totalHelps(){ return G.helps.highlight + G.helps.hint + G.helps.undo + G.helps.shuffle; }
+
+/* ---------- Helps ---------- */
+function helpsAllowed(kind){
+  if(settings.helps === "none") return false;
+  if(settings.helps === "no-shuffle" && kind === "shuffle") return false;
+  return true;
+}
+function updateHelpButtons(){
+  var active = !!G && !G.finished;
+  document.getElementById("hlBtn").disabled = !active || !helpsAllowed("highlight");
+  document.getElementById("hintBtn").disabled = !active || !helpsAllowed("hint");
+  document.getElementById("undoBtn").disabled = !active || !helpsAllowed("undo") || !G || G.history.length===0;
+  document.getElementById("shuffleBtn").disabled = !active || !helpsAllowed("shuffle");
+  document.getElementById("giveUpBtn").disabled = !active;
+  var hl = document.getElementById("hlBtn");
+  hl.classList.toggle("on", !!(G && G.highlightOn));
+  hl.textContent = G && G.highlightOn ? "Tap to turn off the free-tile highlight (help — counted)" : "Tap to highlight free tiles (help — counted)";
+}
+function doUndo(){
+  if(!G || !G.history.length) return;
+  var last = G.history.pop(), a = G.tiles[last[0]], b = G.tiles[last[1]];
+  a.removed = false; b.removed = false; G.pairsRemoved--; G.selected = null; G.helps.undo++;
+  if(G.finished && (G.result === "dead")){ /* undoing out of a dead end reopens the board */ }
+  G.finished = false; hideEnd();
+  setMsg("Undone — the <b>"+a.face.label+"</b> pair is back on the board. Undo count for this board: "+G.helps.undo+".");
+  renderAll(); contextualTip();
+}
+document.getElementById("hlBtn").addEventListener("click", function(){
+  if(!G || G.finished) return;
+  G.highlightOn = !G.highlightOn;
+  if(G.highlightOn){ G.helps.highlight++; setMsg("Free tiles are now ringed in green — every tile with nothing on top and a long side open. Highlight used "+G.helps.highlight+" time"+(G.helps.highlight>1?"s":"")+" this board."); }
+  else setMsg("Free-tile highlight off.");
+  refreshTileStates(); updateHelpButtons();
+});
+document.getElementById("hintBtn").addEventListener("click", function(){
+  if(!G || G.finished) return;
+  var scored = scoreMoves(); if(!scored.length){ setMsg("No match exists on this board right now — that is a dead board, not a hint failure."); return; }
+  G.helps.hint++;
+  var m = scored[0];
+  [m.a.id, m.b.id].forEach(function(id){ if(tileEls[id]) tileEls[id].classList.add("hintpair"); });
+  setTimeout(function(){ [m.a.id, m.b.id].forEach(function(id){ if(tileEls[id]) tileEls[id].classList.remove("hintpair"); }); }, 2600);
+  setMsg("Hint: the two <b>"+m.a.face.label+"</b> tiles are glowing gold — a possible match"
+       + (settings.teaching === "coach" ? ", and the Coach's best-scoring one: it frees "+m.freed.length+" tile"+(m.freed.length===1?"":"s") : "") + ". Hint count: "+G.helps.hint+".");
+  updateHelpButtons();
+});
+document.getElementById("undoBtn").addEventListener("click", doUndo);
+document.getElementById("shuffleBtn").addEventListener("click", function(){
+  if(!G || G.finished) return;
+  var rem = present(); if(rem.length < 2) return;
+  var faces = shuffleArr(rem.map(function(t){ return t.face; }));
+  rem.forEach(function(t, i){ t.face = faces[i]; });
+  G.helps.shuffle++; G.variantShuffle = true; G.selected = null;
+  document.getElementById("variantBanner").hidden = false;
+  hideEnd();
+  setMsg("<b>Shuffled.</b> The faces on the remaining "+rem.length+" tiles were re-dealt where they stand. This is a variant rule — the documented game has no shuffle — so this board's record is labelled a shuffle variant. Moves available now: "+movesList().length+".");
+  renderAll();
+  if(movesList().length === 0 && present().length > 0){ G.deadHit = true; showDead(); }
+});
+document.getElementById("giveUpBtn").addEventListener("click", function(){
+  if(!G || G.finished) return;
+  finishGame("gave-up"); showEnd(false);
+  setMsg("Board given up and recorded. Tap <b>New deal</b> whenever you are ready for another.");
+});
+
+/* ---------- Timer ---------- */
+var timerId = null;
+function fmtTime(s){ var m = Math.floor(s/60), r = s%60; return m+":"+(r<10?"0":"")+r; }
+function startTimer(){
+  stopTimer();
+  timerId = setInterval(function(){
+    if(!G || G.finished) return;
+    G.elapsed = Math.floor((Date.now() - G.startedAt)/1000);
+    if(settings.timerOn) document.getElementById("stTime").textContent = fmtTime(G.elapsed);
+  }, 500);
+}
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
+
+/* ---------- Record ---------- */
+function finishGame(result){
+  if(!G || G.recorded) return;
+  G.finished = true; G.result = result; G.recorded = true;
+  G.elapsed = Math.floor((Date.now() - G.startedAt)/1000);
+  record.games.push({ date:new Date().toISOString(), layout:LAYOUTS[G.layout].name, result:result,
+    seconds:G.elapsed, pairsRemoved:G.pairsRemoved, tilesTotal:G.tiles.length,
+    helps:{highlight:G.helps.highlight, hint:G.helps.hint, undo:G.helps.undo, shuffle:G.helps.shuffle},
+    deadHit:!!G.deadHit, variantShuffle:!!G.variantShuffle, teaching:settings.teaching });
+  saveJSON(REC_KEY, record); renderRecord(); updateHelpButtons();
+}
+function helpsText(h){ var parts = []; if(h.highlight) parts.push("highlight ×"+h.highlight); if(h.hint) parts.push("hint ×"+h.hint); if(h.undo) parts.push("undo ×"+h.undo); if(h.shuffle) parts.push("shuffle ×"+h.shuffle); return parts.length ? parts.join(", ") : "none"; }
+function renderRecord(){
+  var games = record.games, body = document.getElementById("recBody");
+  document.getElementById("recEmpty").style.display = games.length ? "none" : "block";
+  var attempted = games.length,
+      cleared = games.filter(function(g){ return g.result==="cleared"; }).length,
+      dead = games.filter(function(g){ return g.deadHit || g.result==="dead"; }).length,
+      helps = games.reduce(function(s,g){ return s + g.helps.highlight + g.helps.hint + g.helps.undo + g.helps.shuffle; }, 0),
+      best = games.filter(function(g){ return g.result==="cleared"; }).sort(function(a,b){ return a.seconds-b.seconds; })[0];
+  document.getElementById("recTotals").innerHTML =
+    "<span>Boards attempted <b>"+attempted+"</b></span><span>Cleared <b>"+cleared+"</b></span>"
+    + "<span>Dead boards hit <b>"+dead+"</b></span><span>Helps used, all boards <b>"+helps+"</b></span>"
+    + (best ? "<span>Fastest clear <b>"+fmtTime(best.seconds)+"</b> ("+best.layout+")</span>" : "");
+  body.innerHTML = games.slice().reverse().slice(0, 20).map(function(g){
+    var d = new Date(g.date);
+    return "<tr><td data-l='Date'>"+d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"})+"</td>"
+      + "<td data-l='Layout'>"+g.layout+"</td><td data-l='Result'>"+g.result+"</td>"
+      + "<td data-l='Time'>"+fmtTime(g.seconds)+"</td><td data-l='Pairs'>"+g.pairsRemoved+" of "+(g.tilesTotal/2)+"</td>"
+      + "<td data-l='Helps'>"+helpsText(g.helps)+"</td>"
+      + "<td data-l='Notes'>"+[g.variantShuffle?"shuffle variant":"", g.deadHit && g.result!=="dead" ? "hit a dead board":"", "teaching: "+g.teaching].filter(Boolean).join("; ")+"</td></tr>";
+  }).join("");
+}
+document.getElementById("exportBtn").addEventListener("click", function(){
+  var payload = { game:"Mahjong Solitaire", tableName: settings.alias || "", exported:new Date().toISOString(), record: record };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mahjong-record.json"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+var forgetArmed = false;
+document.getElementById("forgetBtn").addEventListener("click", function(){
+  var btn = this;
+  if(!forgetArmed){ forgetArmed = true; btn.textContent = "Tap again to confirm — erase the whole record on this device"; 
+    setTimeout(function(){ forgetArmed = false; btn.textContent = "Tap to forget everything — erase the record on this device"; }, 5000); return; }
+  record = {version:1, games:[]}; saveJSON(REC_KEY, record); renderRecord();
+  forgetArmed = false; btn.textContent = "Tap to forget everything — erase the record on this device";
+  setMsg("Record erased from this device. The board in front of you is untouched.");
+});
+
+/* ---------- Controls ---------- */
+function applySettingsUI(){
+  document.querySelectorAll("[data-teach]").forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.teach === settings.teaching)); });
+  document.querySelectorAll("[data-timer]").forEach(function(b){ b.setAttribute("aria-pressed", String((b.dataset.timer === "on") === settings.timerOn)); });
+  document.getElementById("helpsSel").value = settings.helps;
+  document.getElementById("layoutSel").value = settings.layout;
+  document.getElementById("aliasInput").value = settings.alias || "";
+  document.getElementById("timerWrap").style.display = settings.timerOn ? "" : "none";
+}
+function persistSettings(){ saveJSON(SET_KEY, settings); }
+document.querySelectorAll("[data-teach]").forEach(function(b){ b.addEventListener("click", function(){
+  settings.teaching = b.dataset.teach; persistSettings(); applySettingsUI(); updateCoach();
+  setMsg("Teaching set to <b>"+({off:"Off", light:"Light", coach:"Coach"})[settings.teaching]+"</b> — saved on this device."
+    + (settings.teaching === "coach" ? " The Coach panel now reads your board after every move." : settings.teaching === "light" ? " Short notes will appear under the board as you play." : " No tips or Coach notes will be shown; the rules stay under How to play."));
+  if(settings.teaching !== "off") contextualTip(); else lightTip(null);
+}); });
+document.querySelectorAll("[data-timer]").forEach(function(b){ b.addEventListener("click", function(){
+  settings.timerOn = b.dataset.timer === "on"; persistSettings(); applySettingsUI();
+  if(settings.timerOn && G) document.getElementById("stTime").textContent = fmtTime(G.elapsed);
+}); });
+document.getElementById("helpsSel").addEventListener("change", function(){ settings.helps = this.value; persistSettings(); updateHelpButtons();
+  setMsg("Helps allowed: <b>"+this.options[this.selectedIndex].text+"</b>. Helps already used on this board stay counted — changing the setting never rewrites a record."); });
+document.getElementById("layoutSel").addEventListener("change", function(){ settings.layout = this.value; persistSettings(); newGame(settings.layout); });
+document.getElementById("aliasInput").addEventListener("change", function(){ settings.alias = this.value.trim(); persistSettings(); });
+document.getElementById("newDealBtn").addEventListener("click", function(){ newGame(settings.layout); });
+document.getElementById("downloadBtn").addEventListener("click", function(){
+  var blob = new Blob(["<!doctype html>\n" + document.documentElement.outerHTML], {type:"text/html"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mahjong.html"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+var resizeT = null;
+window.addEventListener("resize", function(){ clearTimeout(resizeT); resizeT = setTimeout(function(){ if(G) layoutTiles(); }, 120); });
+
+/* ---------- Go ---------- */
+applySettingsUI();
+renderRecord();
+newGame(settings.layout);
+})();
+</script>
+</body>
+</html>
