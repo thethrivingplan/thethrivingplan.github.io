@@ -1,0 +1,41 @@
+name: Move Scenario Table into place (temporary)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  move-scenario-table:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Move staged file to scenario/index.html
+        run: |
+          set -euo pipefail
+          test -s scenario/the-scenario-table.html
+          mv scenario/the-scenario-table.html scenario/index.html
+          ls -l scenario/
+          wc -c scenario/index.html
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "thethrivingplan"
+          git config user.email "thethrivingplan@users.noreply.github.com"
+          git add -A scenario/
+          git status --short
+          git commit -m "Scenario Table: launch basics — tap-list claim, one-tap join, Vote #1 open"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push failed, retry $i - pulling latest and rebasing"
+            sleep 10
+            git pull --rebase
+          done
+          echo "Push failed after retries"
+          exit 1
