@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Hidden Object</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      [hidden]{ display:none !important; }
+      :root{
+        --bg:#f6f4ec; --panel:#fffdf6; --panel2:#efe9d8; --ink:#26302a; --muted:#5d685c;
+        --line:#d9d2bd; --accent:#2e6b34; --accent-ink:#ffffff; --amber:#b97f26; --amber-soft:#fdf3dd;
+        --danger:#a33b2e; --chip:#e9f0e2; --shadow:0 1px 3px rgba(38,48,42,.14);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#161a15; --panel:#20261e; --panel2:#2a3126; --ink:#e9eddc; --muted:#a9b39e;
+          --line:#3d4636; --accent:#7cc47f; --accent-ink:#12240f; --amber:#e0aa4e; --amber-soft:#38301c;
+          --danger:#e08a7d; --chip:#2c3826; --shadow:0 1px 3px rgba(0,0,0,.5);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.5; }
+      main{ max-width:960px; margin:0 auto; padding:16px 16px 48px; }
+      h1,h2,h3{ font-family:"Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif; line-height:1.15; margin:0 0 .4em; }
+      h1{ font-size:2rem; }
+      h2{ font-size:1.35rem; }
+      h3{ font-size:1.08rem; }
+      p{ margin:.45em 0; }
+      .muted{ color:var(--muted); }
+      .small{ font-size:.9rem; }
+      .free-line{ background:var(--chip); border:1px solid var(--line); border-radius:10px;
+        padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; justify-content:space-between; }
+      .free-line strong{ font-size:1.02rem; }
+      .compass{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 4px; }
+      .compass span{ font-weight:600; }
+      .compass a{ display:inline-flex; align-items:center; min-height:2.25rem; padding:4px 12px;
+        border:1px solid var(--line); border-radius:999px; background:var(--panel); color:var(--ink); text-decoration:none; }
+      .panel{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:14px 0; box-shadow:var(--shadow); }
+      .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .row.between{ justify-content:space-between; }
+      button{ font:inherit; cursor:pointer; border:1px solid var(--line); background:var(--panel);
+        color:var(--ink); border-radius:9px; padding:6px 14px; }
+      button:hover{ border-color:var(--accent); }
+      button.primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+      button[disabled]{ opacity:.5; cursor:default; }
+      button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+      .seg{ display:inline-flex; flex-wrap:wrap; gap:6px; }
+      .seg button{ border-radius:999px; }
+      label.field{ display:block; font-weight:600; margin:8px 0 4px; }
+      input[type="text"]{ font:inherit; padding:6px 10px; border:1px solid var(--line); border-radius:9px;
+        background:var(--panel); color:var(--ink); width:min(280px,100%); min-height:2.25rem; }
+      select{ font:inherit; padding:6px 10px; border:1px solid var(--line); border-radius:9px; background:var(--panel); color:var(--ink); }
+      .banner{ background:var(--amber-soft); border:1px solid var(--amber); border-radius:10px; padding:9px 13px; margin:12px 0; }
+      .banner[hidden]{ display:none; }
+      .scene-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 12px; }
+      .scene-tabs button{ font-size:1.02rem; padding:8px 16px; }
+      .scene-frame{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#00000010; }
+      .scene-svg{ display:block; width:100%; height:auto; }
+      .scene-svg *{ pointer-events:none; }
+      .scene-svg .hit, .scene-svg .scenery{ pointer-events:all; }
+      .target{ cursor:pointer; }
+      .target .hit{ fill:rgba(0,0,0,0); }
+      .target .ring{ fill:none; stroke:#f0a832; stroke-width:3; opacity:0; }
+      .target.found .ring{ opacity:1; }
+      .target.found .shape{ filter:brightness(1.18) saturate(1.25); }
+      .target:focus-visible .ring{ opacity:.65; }
+      .target.hinting .ring{ opacity:1; animation:pulse 0.7s ease-in-out 4; }
+      @keyframes pulse{ 0%,100%{ stroke-width:3; } 50%{ stroke-width:7; } }
+      @media (prefers-reduced-motion: reduce){ .target.hinting .ring{ animation:none; } html{ scroll-behavior:auto; } }
+      .statusbar{ display:flex; flex-wrap:wrap; gap:6px 18px; font-weight:600; margin:10px 0 4px; }
+      .objlist{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+      .objlist li{ border:1px solid var(--line); border-radius:999px; padding:6px 13px; background:var(--panel2); min-height:2.25rem; display:inline-flex; align-items:center; gap:7px; }
+      .objlist li .box{ width:1.05em; height:1.05em; border:2px solid var(--muted); border-radius:4px; display:inline-flex; align-items:center; justify-content:center; font-size:.85em; line-height:1; color:var(--accent); }
+      .objlist li.done{ opacity:.75; text-decoration:line-through; }
+      .objlist li.done .box{ border-color:var(--accent); font-weight:700; }
+      .hintbox{ background:var(--amber-soft); border:1px solid var(--amber); border-radius:10px; padding:9px 13px; margin-top:10px; }
+      .hintbox[hidden]{ display:none; }
+      .complete{ background:var(--chip); border:1px solid var(--accent); border-radius:10px; padding:12px 14px; margin-top:12px; }
+      .complete[hidden]{ display:none; }
+      details{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px 16px 12px; margin:14px 0; box-shadow:var(--shadow); }
+      summary{ cursor:pointer; font-weight:600; padding:8px 0; font-family:"Iowan Old Style", Palatino, Georgia, serif; font-size:1.12rem; }
+      .strat{ border-top:1px solid var(--line); padding:10px 0 4px; }
+      .strat:first-of-type{ border-top:none; }
+      .record-list{ list-style:none; margin:8px 0; padding:0; }
+      .record-list li{ border:1px solid var(--line); border-radius:10px; padding:9px 13px; margin:8px 0; background:var(--panel2); }
+      footer{ border-top:1px solid var(--line); margin-top:26px; padding-top:14px; }
+      .kbd-note{ font-size:.88rem; color:var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="free-line">
+        <strong>Free — always free. No ads, no account, nothing to buy.</strong>
+        <button type="button" id="downloadPage">Tap to download this page for offline play</button>
+      </div>
+
+      <h1 style="margin-top:16px;">Hidden Object</h1>
+      <p>Find the things hiding in plain sight. Each scene is a busy little picture with everyday
+      objects tucked into it — worked into the colours and shapes around them. Tap an object when
+      you spot it and it checks off your list. Find them all to finish the scene.</p>
+      <p class="small muted">The game's roots: hidden-picture puzzles have run in children's
+      magazines for generations — the <em>Highlights</em> tradition of a big drawing with small
+      things concealed in it — and picture-book hunts in the <em>I Spy</em> style pair a cluttered
+      photograph with a list of things to find. This page keeps that same honest shape — one busy
+      picture, one list, your eyes — with every scene drawn fresh here, in our own lines and colours.</p>
+
+      <nav class="compass" aria-label="Compass">
+        <span>Compass — tap to jump:</span>
+        <a href="#play">Play</a>
+        <a href="#strategies">Strategies</a>
+        <a href="#roots">The game's roots</a>
+        <a href="#record">Your record</a>
+      </nav>
+
+      <section class="panel" aria-label="Play settings">
+        <div class="row between">
+          <div>
+            <label class="field" id="aliasLabel">Your play name — optional, tap to type</label>
+            <input type="text" id="alias" autocomplete="off" placeholder="Player" aria-labelledby="aliasLabel" />
+            <p class="small muted" style="margin-top:4px;">No name is ever required. Play as Player, or use any
+            temporary alias you like — it is never claimed, checked, or saved; it lives only while this page is open.</p>
+          </div>
+        </div>
+
+        <label class="field">Teaching — tap to choose how much help the game gives</label>
+        <div class="seg" role="group" aria-label="Teaching dial" id="teachingSeg">
+          <button type="button" data-teaching="off" aria-pressed="false">Off — no hints, just your eyes</button>
+          <button type="button" data-teaching="light" aria-pressed="true">Light — a hint when you ask, after a spell of searching</button>
+          <button type="button" data-teaching="coach" aria-pressed="false">Coach — searching strategies taught as you play, plus a hint glow</button>
+        </div>
+        <p class="small muted">Your teaching choice is saved on this device only, so the dial is where you left it next visit.</p>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label class="field" for="modeSel">How the clock runs</label>
+            <select id="modeSel">
+              <option value="relaxed" selected>Relaxed — no clock pressure (standard)</option>
+              <option value="timed">Timed — 30 seconds per object on the clock (variant)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field" for="countSel">Objects to find in each scene</label>
+            <select id="countSel">
+              <option value="8" selected>8 — the full scene (standard)</option>
+              <option value="6">6 — a shorter hunt (variant)</option>
+              <option value="5">5 — the shortest hunt (variant)</option>
+            </select>
+          </div>
+        </div>
+        <p class="small muted">Changing a setting starts the current scene over, so the try you are scored on always matches the rules you picked.</p>
+        <div class="banner" id="variantBanner" hidden></div>
+      </section>
+      <section class="panel" id="play" aria-label="Play">
+        <h2>Play — tap a scene to open it</h2>
+        <div class="scene-tabs" role="group" aria-label="Scenes">
+          <button type="button" data-scene="workshop" aria-pressed="true">Tap to open — The Workshop</button>
+          <button type="button" data-scene="garden" aria-pressed="false">Tap to open — The Garden</button>
+          <button type="button" data-scene="kitchen" aria-pressed="false">Tap to open — The Kitchen</button>
+        </div>
+        <p class="small muted">Tap the picture where you see a hidden object. Tapping the scenery counts as a miss —
+        misses are part of your record, so look first, tap second. On a keyboard, Tab moves between hidden objects and Enter taps the one you are on.</p>
+
+        <!-- ============ SCENE: WORKSHOP ============ -->
+        <div class="scene-wrap" data-wrap="workshop">
+          <div class="scene-frame">
+          <svg class="scene-svg" viewBox="0 0 400 300" role="img" aria-label="A cluttered workshop: pegboard, workbench, shelves, a window and a crate">
+            <rect class="scenery" width="400" height="300" fill="#e6d6b0"/>
+            <rect class="scenery" y="238" width="400" height="62" fill="#96754e"/>
+            <path d="M0 252 H400 M0 270 H400 M0 286 H400" stroke="#7d5f3c" stroke-width="2"/>
+            <!-- window -->
+            <g>
+              <rect x="290" y="22" width="92" height="96" fill="#a8d4e6" stroke="#6e5138" stroke-width="6"/>
+              <path d="M336 22 V118 M290 70 H382" stroke="#6e5138" stroke-width="4"/>
+              <circle cx="310" cy="42" r="9" fill="#f4cf5a"/>
+            </g>
+            <!-- poster -->
+            <g>
+              <rect x="212" y="28" width="58" height="74" fill="#d9e2c8" stroke="#a3906a" stroke-width="3"/>
+              <path d="M218 88 L240 56 L254 76 L262 66 L266 88 Z" fill="#9db38a"/>
+            </g>
+            <!-- pegboard -->
+            <g>
+              <rect x="22" y="22" width="176" height="122" fill="#bb905e" stroke="#8a6238" stroke-width="4"/>
+              <g fill="#9a7443"><circle cx="44" cy="44" r="2.4"/><circle cx="84" cy="44" r="2.4"/><circle cx="124" cy="44" r="2.4"/><circle cx="164" cy="44" r="2.4"/><circle cx="44" cy="92" r="2.4"/><circle cx="84" cy="92" r="2.4"/><circle cx="124" cy="92" r="2.4"/><circle cx="164" cy="92" r="2.4"/><circle cx="44" cy="128" r="2.4"/><circle cx="164" cy="128" r="2.4"/></g>
+              <rect x="118" y="52" width="8" height="42" fill="#8a6238"/>
+              <rect x="104" y="44" width="36" height="13" rx="3" fill="#7d7d7d"/>
+              <path d="M28 116 L102 116 L94 132 L28 132 Z" fill="#b9c0c4"/>
+              <rect x="96" y="114" width="16" height="16" fill="#8a6238"/>
+            </g>
+            <!-- shelf with jars -->
+            <g>
+              <rect x="262" y="150" width="126" height="10" fill="#7a5636"/>
+              <rect x="330" y="120" width="20" height="30" rx="3" fill="#c8cfd4"/>
+              <rect x="356" y="126" width="16" height="24" rx="3" fill="#b9c8b4"/>
+              <rect x="268" y="124" width="18" height="26" rx="3" fill="#d3c39a"/>
+            </g>
+            <!-- workbench -->
+            <g>
+              <rect x="14" y="208" width="248" height="36" fill="#6d4f30" opacity="0.35"/>
+              <rect x="14" y="196" width="248" height="12" fill="#7a5636"/>
+              <rect x="24" y="208" width="10" height="34" fill="#5f452a"/>
+              <rect x="240" y="208" width="10" height="34" fill="#5f452a"/>
+              <rect x="30" y="182" width="30" height="14" fill="#8fa3b8"/>
+              <circle cx="222" cy="189" r="7" fill="#7d7d7d"/>
+            </g>
+            <!-- toolbox -->
+            <g>
+              <path d="M160 162 a13 9 0 0 1 26 0" fill="none" stroke="#8c4232" stroke-width="5"/>
+              <rect x="148" y="162" width="68" height="34" rx="4" fill="#b0503c"/>
+              <rect x="176" y="172" width="12" height="9" fill="#d9c27a"/>
+            </g>
+            <!-- crate -->
+            <g>
+              <rect x="292" y="200" width="74" height="46" fill="#a97e4e" stroke="#7d5a33" stroke-width="3"/>
+              <path d="M292 200 L366 246 M366 200 L292 246" stroke="#7d5a33" stroke-width="2.5"/>
+            </g>
+            <!-- planks on floor -->
+            <g fill="#8a6238"><rect x="20" y="256" width="66" height="9"/><rect x="26" y="268" width="66" height="9"/></g>
+            <!-- hidden objects -->
+            <g class="target" data-obj="heart" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="182" cy="181" r="19"/>
+              <g class="shape"><path d="M182 190 c-8 -7 -11.5 -10.5 -11.5 -14.5 a6.2 6.2 0 0 1 11.5 -3.2 a6.2 6.2 0 0 1 11.5 3.2 c0 4 -3.5 7.5 -11.5 14.5z" fill="#c46a55"/></g>
+              <circle class="ring" cx="182" cy="181" r="16"/>
+            </g>
+            <g class="target" data-obj="wrench" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="94" cy="189" r="19"/>
+              <g class="shape"><g transform="translate(96,188) rotate(-10)"><rect x="-3" y="-3" width="27" height="6" rx="3" fill="#989ea3"/><circle cx="-7" cy="0" r="7.5" fill="#989ea3"/><path d="M-14.5 -7.5 L-6 0 L-14.5 7.5 Z" fill="#7a5636"/></g></g>
+              <circle class="ring" cx="94" cy="189" r="16"/>
+            </g>
+            <g class="target" data-obj="star" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="329" cy="223" r="19"/>
+              <g class="shape"><polygon points="329,212 332.2,219.5 340,219.8 333.9,224.6 335.8,232.2 329,227.8 322.2,232.2 324.1,224.6 318,219.8 325.8,219.5" fill="#cfa75e"/></g>
+              <circle class="ring" cx="329" cy="223" r="16"/>
+            </g>
+            <g class="target" data-obj="key" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="60" cy="60" r="19"/>
+              <g class="shape"><circle cx="53" cy="53" r="6" fill="none" stroke="#8f6b1f" stroke-width="3.5"/><path d="M57.5 57.5 L71 71 M65 65 l5.5 -1 M68.5 68.5 l5.5 -1" stroke="#8f6b1f" stroke-width="3.5" fill="none"/></g>
+              <circle class="ring" cx="60" cy="60" r="16"/>
+            </g>
+            <g class="target" data-obj="bell" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="298" cy="133" r="19"/>
+              <g class="shape"><path d="M298 123 a8.5 8.5 0 0 1 8.5 8.5 l2 5.5 h-21 l2 -5.5 a8.5 8.5 0 0 1 8.5 -8.5z" fill="#c2a054"/><circle cx="298" cy="139.5" r="2.3" fill="#8f6b1f"/></g>
+              <circle class="ring" cx="298" cy="133" r="16"/>
+            </g>
+            <g class="target" data-obj="fish" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="240" cy="84" r="19"/>
+              <g class="shape"><path d="M224 84 q11 -10 22 0 q-11 10 -22 0z" fill="#7d9c72"/><path d="M246 84 l11 -7 v14z" fill="#7d9c72"/><circle cx="230" cy="82" r="1.7" fill="#4c6647"/></g>
+              <circle class="ring" cx="240" cy="84" r="16"/>
+            </g>
+            <g class="target" data-obj="moon" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="356" cy="94" r="19"/>
+              <g class="shape"><circle cx="353" cy="95" r="10.5" fill="#ead98c"/><circle cx="359.5" cy="91" r="9" fill="#a8d4e6"/></g>
+              <circle class="ring" cx="356" cy="94" r="16"/>
+            </g>
+            <g class="target" data-obj="mushroom" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="122" cy="254" r="19"/>
+              <g class="shape"><path d="M109 253 a13 9 0 0 1 26 0z" fill="#b0603f"/><rect x="118" y="253" width="8" height="10" fill="#e0cdb2"/><circle cx="116" cy="249" r="1.9" fill="#e8dcc4"/><circle cx="127" cy="250" r="1.5" fill="#e8dcc4"/></g>
+              <circle class="ring" cx="122" cy="254" r="16"/>
+            </g>
+            <g class="grid-overlay" hidden>
+              <path d="M133 0 V300 M266 0 V300 M0 100 H400 M0 200 H400" stroke="#2e6b34" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+            </g>
+          </svg>
+          </div>
+        </div>
+
+        <!-- ============ SCENE: GARDEN ============ -->
+        <div class="scene-wrap" data-wrap="garden" hidden>
+          <div class="scene-frame">
+          <svg class="scene-svg" viewBox="0 0 400 300" role="img" aria-label="A sunny garden: fence, tree, flowerbed, pond, path and a watering can">
+            <rect class="scenery" width="400" height="300" fill="#bfe0ee"/>
+            <rect class="scenery" y="170" width="400" height="130" fill="#79a95c"/>
+            <g>
+              <circle cx="46" cy="42" r="19" fill="#f4cf5a"/>
+              <g stroke="#f4cf5a" stroke-width="3"><path d="M46 14 V6 M46 78 V70 M18 42 H10 M82 42 H74 M26 22 L20 16 M66 22 L72 16"/></g>
+              <g fill="#ffffff" opacity="0.92"><ellipse cx="150" cy="38" rx="30" ry="11"/><ellipse cx="172" cy="30" rx="20" ry="9"/><ellipse cx="300" cy="26" rx="24" ry="9"/></g>
+            </g>
+            <!-- tree -->
+            <g>
+              <rect x="322" y="112" width="16" height="92" fill="#7a5636"/>
+              <circle cx="330" cy="80" r="42" fill="#5d8a48"/>
+              <circle cx="298" cy="102" r="27" fill="#6b9a52"/>
+              <circle cx="362" cy="102" r="26" fill="#54803f"/>
+              <circle cx="318" cy="66" r="20" fill="#6b9a52"/>
+              <circle cx="352" cy="70" r="7" fill="#c0453a" opacity="0.55"/>
+              <circle cx="306" cy="88" r="6" fill="#c0453a" opacity="0.5"/>
+            </g>
+            <!-- fence -->
+            <g>
+              <rect x="0" y="146" width="400" height="10" fill="#e7dfc9"/>
+              <rect x="0" y="168" width="400" height="10" fill="#e7dfc9"/>
+              <g fill="#ddd2b4"><rect x="8" y="140" width="9" height="46"/><rect x="62" y="140" width="9" height="46"/><rect x="116" y="140" width="9" height="46"/><rect x="224" y="140" width="9" height="46"/><rect x="278" y="140" width="9" height="46"/><rect x="368" y="140" width="9" height="46"/></g>
+              <rect x="182" y="140" width="9" height="52" fill="#c9b992"/>
+              <path d="M191 142 H222 M191 188 H222" stroke="#c9b992" stroke-width="5"/>
+            </g>
+            <!-- bush -->
+            <g fill="#5d8a48"><circle cx="18" cy="196" r="20"/><circle cx="42" cy="204" r="15"/></g>
+            <!-- watering can -->
+            <g>
+              <path d="M62 200 L82 188 L84 196 L66 208 Z" fill="#54755f"/>
+              <rect x="26" y="196" width="36" height="25" rx="4" fill="#5f7f6a"/>
+              <path d="M28 200 a10 10 0 0 1 4 -12" fill="none" stroke="#54755f" stroke-width="4"/>
+            </g>
+            <!-- pond -->
+            <g>
+              <ellipse cx="66" cy="240" rx="48" ry="21" fill="#79bcd8"/>
+              <ellipse cx="66" cy="237" rx="36" ry="14" fill="#93cde4"/>
+            </g>
+            <!-- path stones -->
+            <g fill="#cfc8b4"><ellipse cx="206" cy="222" rx="21" ry="8"/><ellipse cx="200" cy="246" rx="19" ry="8"/><ellipse cx="212" cy="272" rx="22" ry="8"/></g>
+            <!-- flowerbed -->
+            <g>
+              <rect x="0" y="264" width="400" height="36" fill="#6e5138"/>
+              <g><circle cx="30" cy="278" r="5" fill="#d96a4a"/><circle cx="86" cy="286" r="5" fill="#e8b4c8"/><circle cx="120" cy="276" r="5" fill="#f0d060"/><circle cx="238" cy="284" r="5" fill="#d96a4a"/><circle cx="292" cy="277" r="5" fill="#e8b4c8"/><circle cx="330" cy="287" r="5" fill="#f0d060"/><circle cx="372" cy="278" r="5" fill="#d96a4a"/></g>
+              <g stroke="#4e7a3a" stroke-width="2"><path d="M30 283 V292 M86 291 V296 M120 281 V290 M238 289 V296 M292 282 V291 M330 292 V297 M372 283 V292"/></g>
+            </g>
+            <!-- grass tufts -->
+            <g stroke="#5d8a48" stroke-width="2.4"><path d="M100 232 l-3 -9 M106 232 l0 -10 M112 232 l3 -9 M262 214 l-3 -9 M268 214 l0 -10 M340 236 l-3 -9 M346 236 l0 -10"/></g>
+            <!-- hidden objects -->
+            <g class="target" data-obj="apple" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="330" cy="98" r="19"/>
+              <g class="shape"><circle cx="330" cy="100" r="8.5" fill="#c0453a"/><path d="M330 92 v-4" stroke="#5f452a" stroke-width="2.4"/><ellipse cx="335" cy="88" rx="4.5" ry="2.4" fill="#4e7a3a" transform="rotate(-24 335 88)"/></g>
+              <circle class="ring" cx="330" cy="98" r="16"/>
+            </g>
+            <g class="target" data-obj="butterfly" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="152" cy="280" r="19"/>
+              <g class="shape"><ellipse cx="144" cy="276" rx="7" ry="4.6" fill="#d98a4a" transform="rotate(-28 144 276)"/><ellipse cx="160" cy="276" rx="7" ry="4.6" fill="#d98a4a" transform="rotate(28 160 276)"/><ellipse cx="145" cy="285" rx="5.4" ry="3.6" fill="#c4743a" transform="rotate(24 145 285)"/><ellipse cx="159" cy="285" rx="5.4" ry="3.6" fill="#c4743a" transform="rotate(-24 159 285)"/><rect x="150.6" y="272" width="2.8" height="15" rx="1.4" fill="#5b4632"/></g>
+              <circle class="ring" cx="152" cy="280" r="16"/>
+            </g>
+            <g class="target" data-obj="heart" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="252" cy="160" r="19"/>
+              <g class="shape"><path d="M252 169 c-7.4 -6.4 -10.6 -9.6 -10.6 -13.4 a5.7 5.7 0 0 1 10.6 -2.9 a5.7 5.7 0 0 1 10.6 2.9 c0 3.8 -3.2 7 -10.6 13.4z" fill="#c9836b"/></g>
+              <circle class="ring" cx="252" cy="160" r="16"/>
+            </g>
+            <g class="target" data-obj="snail" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="200" cy="243" r="19"/>
+              <g class="shape"><path d="M188 248 q14 -3 24 -1 l1 3 q-13 2 -25 1z" fill="#a98f66"/><circle cx="197" cy="240" r="7.5" fill="#b08954"/><path d="M193.5 240 a3.6 3.6 0 1 1 3.6 3.6 a2 2 0 1 0 -2 -2" fill="none" stroke="#7d5f36" stroke-width="1.6"/><path d="M210 243 l4 -5 M213 244 l6 -3" stroke="#a98f66" stroke-width="1.8"/></g>
+              <circle class="ring" cx="200" cy="243" r="16"/>
+            </g>
+            <g class="target" data-obj="star" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="44" cy="208" r="19"/>
+              <g class="shape"><polygon points="44,198 46.9,205 54.4,205.3 48.5,209.8 50.3,217.1 44,212.9 37.7,217.1 39.5,209.8 33.6,205.3 41.1,205" fill="#ccd36a"/></g>
+              <circle class="ring" cx="44" cy="208" r="16"/>
+            </g>
+            <g class="target" data-obj="fish" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="66" cy="238" r="19"/>
+              <g class="shape"><path d="M52 238 q10 -9 20 0 q-10 9 -20 0z" fill="#d9903f"/><path d="M72 238 l10 -6 v12z" fill="#d9903f"/><circle cx="57.5" cy="236" r="1.6" fill="#8a5a1d"/></g>
+              <circle class="ring" cx="66" cy="238" r="16"/>
+            </g>
+            <g class="target" data-obj="key" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="128" cy="212" r="19"/>
+              <g class="shape"><circle cx="121" cy="205" r="5.6" fill="none" stroke="#a8862a" stroke-width="3.2"/><path d="M125 209.5 L137.5 222 M131 216 l5 -1 M134.5 219.5 l5 -1" stroke="#a8862a" stroke-width="3.2" fill="none"/></g>
+              <circle class="ring" cx="128" cy="212" r="16"/>
+            </g>
+            <g class="target" data-obj="bell" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="186" cy="158" r="19"/>
+              <g class="shape"><path d="M186 148 a8 8 0 0 1 8 8 l1.8 5 h-19.6 l1.8 -5 a8 8 0 0 1 8 -8z" fill="#c2a054"/><circle cx="186" cy="163.4" r="2.1" fill="#8f6b1f"/><path d="M186 140 v8" stroke="#8a7a52" stroke-width="2.4"/></g>
+              <circle class="ring" cx="186" cy="158" r="16"/>
+            </g>
+            <g class="grid-overlay" hidden>
+              <path d="M133 0 V300 M266 0 V300 M0 100 H400 M0 200 H400" stroke="#2e6b34" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+            </g>
+          </svg>
+          </div>
+        </div>
+
+        <!-- ============ SCENE: KITCHEN ============ -->
+        <div class="scene-wrap" data-wrap="kitchen" hidden>
+          <div class="scene-frame">
+          <svg class="scene-svg" viewBox="0 0 400 300" role="img" aria-label="A busy kitchen: cabinets, fridge, stove with a pot, a shelf of jars and a table">
+            <rect class="scenery" width="400" height="300" fill="#eee0bd"/>
+            <rect class="scenery" y="238" width="400" height="62" fill="#c9b18c"/>
+            <path d="M0 258 H400 M0 278 H400 M60 238 V300 M150 238 V300 M240 238 V300 M330 238 V300" stroke="#b39a72" stroke-width="2"/>
+            <!-- top cabinets -->
+            <g>
+              <rect x="14" y="18" width="106" height="66" fill="#93a983"/>
+              <rect x="20" y="24" width="44" height="54" fill="none" stroke="#74886a" stroke-width="3"/>
+              <rect x="70" y="24" width="44" height="54" fill="none" stroke="#74886a" stroke-width="3"/>
+              <circle cx="60" cy="52" r="3" fill="#5f7057"/><circle cx="74" cy="52" r="3" fill="#5f7057"/>
+              <rect x="234" y="18" width="150" height="66" fill="#93a983"/>
+              <rect x="240" y="24" width="66" height="54" fill="none" stroke="#74886a" stroke-width="3"/>
+              <rect x="312" y="24" width="66" height="54" fill="none" stroke="#74886a" stroke-width="3"/>
+              <circle cx="302" cy="52" r="3" fill="#5f7057"/><circle cx="316" cy="52" r="3" fill="#5f7057"/>
+            </g>
+            <!-- window -->
+            <g>
+              <rect x="130" y="18" width="94" height="66" fill="#bfe0ea" stroke="#8a6238" stroke-width="4"/>
+              <path d="M177 18 V84 M130 51 H224" stroke="#8a6238" stroke-width="3"/>
+              <path d="M130 18 h16 v40 l-16 8z" fill="#c46a55" opacity="0.85"/>
+              <path d="M224 18 h-16 v40 l16 8z" fill="#c46a55" opacity="0.85"/>
+              <circle cx="198" cy="36" r="7" fill="#f4cf5a"/>
+            </g>
+            <!-- shelf with jars -->
+            <g>
+              <rect x="232" y="98" width="86" height="8" fill="#8a6238"/>
+              <rect x="240" y="72" width="17" height="26" rx="3" fill="#c8cfd4"/>
+              <rect x="262" y="76" width="14" height="22" rx="3" fill="#d9b878"/>
+              <rect x="282" y="70" width="18" height="28" rx="3" fill="#b9c8b4"/>
+            </g>
+            <!-- fridge -->
+            <g>
+              <rect x="14" y="96" width="58" height="144" fill="#ccd6da" stroke="#9fb2ba" stroke-width="3"/>
+              <path d="M14 138 H72" stroke="#9fb2ba" stroke-width="3"/>
+              <rect x="64" y="106" width="4" height="22" fill="#8fa3ac"/>
+              <rect x="64" y="146" width="4" height="26" fill="#8fa3ac"/>
+              <rect x="24" y="196" width="16" height="12" fill="#e8b4c8"/>
+              <rect x="48" y="206" width="13" height="10" fill="#f0d060"/>
+            </g>
+            <!-- counter and lower cabinets -->
+            <g>
+              <rect x="80" y="180" width="320" height="60" fill="#a8bfa0"/>
+              <path d="M150 184 V236 M225 184 V236" stroke="#87a07f" stroke-width="3"/>
+              <rect x="80" y="168" width="320" height="12" fill="#8a6238"/>
+              <rect x="96" y="200" width="26" height="4" fill="#6e7f68"/>
+              <rect x="168" y="200" width="26" height="4" fill="#6e7f68"/>
+            </g>
+            <!-- kettle -->
+            <g>
+              <path d="M250 168 a13 11 0 0 1 26 0z" fill="#8b939a"/>
+              <path d="M248 160 l-8 4 7 4z" fill="#8b939a"/>
+              <path d="M254 156 a9 7 0 0 1 18 0" fill="none" stroke="#6e757b" stroke-width="3"/>
+            </g>
+            <!-- stove and pot -->
+            <g>
+              <rect x="296" y="156" width="96" height="12" fill="#44484c"/>
+              <circle cx="316" cy="162" r="6" fill="#33373b"/><circle cx="372" cy="162" r="6" fill="#33373b"/>
+              <rect x="300" y="180" width="88" height="60" fill="#5b5f63"/>
+              <rect x="312" y="192" width="64" height="34" fill="#3f4348"/>
+              <rect x="312" y="188" width="64" height="5" fill="#c8cfd4"/>
+              <rect x="318" y="126" width="52" height="31" rx="3" fill="#7d8891"/>
+              <ellipse cx="344" cy="126" rx="26" ry="5" fill="#98a4ad"/>
+              <rect x="338" y="118" width="12" height="6" fill="#5f686f"/>
+              <path d="M318 134 h-8 M370 134 h8" stroke="#5f686f" stroke-width="4"/>
+            </g>
+            <!-- towel -->
+            <g>
+              <rect x="288" y="186" width="15" height="36" fill="#e8e2d2"/>
+              <path d="M288 196 H303 M288 214 H303" stroke="#cbbfa4" stroke-width="2.4"/>
+            </g>
+            <!-- table -->
+            <g>
+              <rect x="126" y="222" width="156" height="10" rx="4" fill="#7a5636"/>
+              <rect x="138" y="232" width="9" height="22" fill="#5f452a"/>
+              <rect x="262" y="232" width="9" height="22" fill="#5f452a"/>
+              <ellipse cx="234" cy="219" rx="20" ry="5" fill="#e8e2d2"/>
+              <ellipse cx="234" cy="217.5" rx="14" ry="3.4" fill="#d8cfba"/>
+              <rect x="96" y="206" width="10" height="16" fill="#b9c8b4"/>
+            </g>
+            <!-- hidden objects -->
+            <g class="target" data-obj="heart" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="43" cy="118" r="19"/>
+              <g class="shape"><path d="M43 127 c-7.4 -6.4 -10.6 -9.6 -10.6 -13.4 a5.7 5.7 0 0 1 10.6 -2.9 a5.7 5.7 0 0 1 10.6 2.9 c0 3.8 -3.2 7 -10.6 13.4z" fill="#c0453a"/></g>
+              <circle class="ring" cx="43" cy="118" r="16"/>
+            </g>
+            <g class="target" data-obj="spoon" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="196" cy="226" r="19"/>
+              <g class="shape"><g transform="rotate(-14 196 226)"><ellipse cx="184" cy="226" rx="7.5" ry="5" fill="#b9c0c4"/><rect x="190" y="223.6" width="22" height="4.6" rx="2.3" fill="#aeb6bb"/></g></g>
+              <circle class="ring" cx="196" cy="226" r="16"/>
+            </g>
+            <g class="target" data-obj="star" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="344" cy="142" r="19"/>
+              <g class="shape"><polygon points="344,132.5 346.9,139.9 354.7,140.2 348.6,144.9 350.4,152.4 344,148.1 337.6,152.4 339.4,144.9 333.3,140.2 341.1,139.9" fill="#a9b6be"/></g>
+              <circle class="ring" cx="344" cy="142" r="16"/>
+            </g>
+            <g class="target" data-obj="egg" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="160" cy="212" r="19"/>
+              <g class="shape"><ellipse cx="160" cy="210" rx="7" ry="9.5" fill="#f2ead8"/><path d="M141 216 a19 10 0 0 0 38 0z" fill="#b0503c"/></g>
+              <circle class="ring" cx="160" cy="212" r="16"/>
+            </g>
+            <g class="target" data-obj="bell" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="120" cy="156" r="19"/>
+              <g class="shape"><path d="M120 146 a8.5 8.5 0 0 1 8.5 8.5 l2 5.5 h-21 l2 -5.5 a8.5 8.5 0 0 1 8.5 -8.5z" fill="#c2a054"/><circle cx="120" cy="162.5" r="2.3" fill="#8f6b1f"/></g>
+              <circle class="ring" cx="120" cy="156" r="16"/>
+            </g>
+            <g class="target" data-obj="fish" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="295" cy="204" r="19"/>
+              <g class="shape"><path d="M285 204 q7.5 -7 15 0 q-7.5 7 -15 0z" fill="#7fa3b8"/><path d="M300 204 l7.5 -4.6 v9.2z" fill="#7fa3b8"/><circle cx="289" cy="202.4" r="1.2" fill="#4a6a7d"/></g>
+              <circle class="ring" cx="295" cy="204" r="16"/>
+            </g>
+            <g class="target" data-obj="key" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="273" cy="51" r="19"/>
+              <g class="shape"><circle cx="266" cy="44" r="5.6" fill="none" stroke="#8f6b1f" stroke-width="3.2"/><path d="M270 48.5 L282.5 61 M276 55 l5 -1 M279.5 58.5 l5 -1" stroke="#8f6b1f" stroke-width="3.2" fill="none"/></g>
+              <circle class="ring" cx="273" cy="51" r="16"/>
+            </g>
+            <g class="target" data-obj="mushroom" tabindex="0" role="button" aria-label="A hidden object">
+              <circle class="hit" cx="306" cy="86" r="19"/>
+              <g class="shape"><path d="M294 85 a12 8.4 0 0 1 24 0z" fill="#a85a41"/><rect x="302.4" y="85" width="7.2" height="9" fill="#e0cdb2"/><circle cx="301" cy="81.4" r="1.7" fill="#e8dcc4"/><circle cx="311" cy="82.2" r="1.3" fill="#e8dcc4"/></g>
+              <circle class="ring" cx="306" cy="86" r="16"/>
+            </g>
+            <g class="grid-overlay" hidden>
+              <path d="M133 0 V300 M266 0 V300 M0 100 H400 M0 200 H400" stroke="#2e6b34" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+            </g>
+          </svg>
+          </div>
+        </div>
+
+        <div class="statusbar" aria-live="polite">
+          <span id="statFound">Found 0 of 8</span>
+          <span id="statTime">Time 0:00</span>
+          <span id="statMisses">Misses 0</span>
+          <span id="statHints">Hints 0</span>
+          <span id="statScene">The Workshop</span>
+        </div>
+        <p class="small muted" id="missNote" aria-live="polite"></p>
+
+        <ul class="objlist" id="objList" aria-label="Objects to find"></ul>
+
+        <div id="coachPanel" hidden>
+          <h3 style="margin-top:12px;">Coach — pick a way to search</h3>
+          <div class="seg" role="group" aria-label="Searching strategies" id="stratSeg">
+            <button type="button" data-strat="grid" aria-pressed="true">Grid sweep</button>
+            <button type="button" data-strat="edge" aria-pressed="false">Edge-first</button>
+            <button type="button" data-strat="shape" aria-pressed="false">Shape, not colour</button>
+          </div>
+          <p id="coachNote" style="margin-top:8px;"></p>
+          <button type="button" id="gridToggle">Tap to show the search grid on the picture</button>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <button type="button" id="hintBtn" class="primary">Tap to get a hint</button>
+          <button type="button" id="restartBtn">Tap to start this scene over</button>
+          <button type="button" id="endBtn">Tap to end this try and save it to your record</button>
+        </div>
+        <div class="hintbox" id="hintBox" hidden></div>
+        <div class="complete" id="completeBox" hidden></div>
+      </section>
+
+      <details id="strategies">
+        <summary><span class="sum-text">Tap to open — Three ways to search, and what each one costs</span></summary>
+        <div class="strat">
+          <h3>1. Grid sweep</h3>
+          <p>Divide the picture into nine boxes in your mind — three across, three down — and search each box
+          completely before moving to the next. In Coach mode you can lay the grid right over the picture.</p>
+          <p><strong>Trade-off:</strong> the most thorough way there is, and the calmest — nothing gets skipped.
+          The cost is speed: on an easy scene it feels slow, because it is.</p>
+        </div>
+        <div class="strat">
+          <h3>2. Edge-first</h3>
+          <p>Search the borders first: the picture's edges and corners, then the edges of the big things in it —
+          the rim of the bench, the frame of the window, the line of the fence. Hiders tuck objects along edges
+          because the eye slides past them there.</p>
+          <p><strong>Trade-off:</strong> fast finds when objects hug edges, which is often. The cost: anything
+          hidden mid-picture waits until last, so finish with one honest pass over the middles.</p>
+        </div>
+        <div class="strat">
+          <h3>3. Shape, not colour</h3>
+          <p>Pick one object from your list, hold its outline in your mind, and look only for that outline.
+          Hidden objects borrow the colours around them, so colour is the camouflage — shape is the tell.</p>
+          <p><strong>Trade-off:</strong> it beats camouflage better than any other way. The cost: it takes
+          practice, it tires the eyes sooner, and it works one object at a time.</p>
+        </div>
+        <p class="small muted">There is no single right way — most good searchers mix all three: edges first,
+        then a grid sweep, reading shapes as they go.</p>
+      </details>
+
+      <details id="roots">
+        <summary><span class="sum-text">Tap to open — The game's roots, and how this page is made</span></summary>
+        <p>Hidden-picture puzzles are a documented, generations-old form. Children's magazines — the
+        <em>Highlights</em> tradition above all — have long printed one big, busy drawing with small objects
+        concealed inside the lines of the scene itself: a spoon in the folds of a curtain, a fish in the
+        planks of a fence. Picture-book hunts in the <em>I Spy</em> style work the same way from the other
+        side: a cluttered scene, a short list in rhyme or plain words, and the reader's eye doing all the work.</p>
+        <p>This page follows that form in its own words and its own drawings. All three scenes — the workshop,
+        the garden, the kitchen — were drawn for this page as original vector art; no published puzzle, picture,
+        or scene is copied or traced, and no brand's artwork appears anywhere in it. The hidden objects are the
+        ordinary small things these puzzles have always hidden: a key, a bell, a fish, a heart.</p>
+        <p>Your record (below) is kept in a clean, consistent shape — one entry per finished try, with the scene,
+        the rules in play, the time, the hints, and the misses — the same intake shape the whole games shelf uses,
+        so your searching patterns can be read honestly over time: which scenes run long, whether hints are
+        falling, whether misses drop as a strategy beds in.</p>
+      </details>
+
+      <section class="panel" id="record" aria-label="Your record">
+        <h2>Your record — saved on this device only</h2>
+        <p class="small muted">Every finished try is written here: scene, rules in play, time, hints used, and misses.
+        Nothing leaves this device. Download a copy any time, or forget it all in one tap.</p>
+        <p id="recordSummary" class="muted">No finished tries yet — finish a scene, or end a try early, and it lands here.</p>
+        <ul class="record-list" id="recordList"></ul>
+        <div class="row">
+          <button type="button" id="exportJson">Tap to download your record (JSON)</button>
+          <button type="button" id="exportCsv">Tap to download your record (CSV)</button>
+          <button type="button" id="forgetBtn">Tap to forget your whole record</button>
+        </div>
+      </section>
+
+      <footer>
+        <p><strong>Copyleft.</strong> This page and its drawings are free to copy, share, and build on under
+        CC BY-SA 4.0; the game code is under the GPL. The name of the shelf it sits on is not part of the grant.
+        No ads — ever, on anything we make.</p>
+        <p class="small muted">Hidden Object — one of the house games shelf. Every game on the shelf is free,
+        teaches as much or as little as you ask, and keeps your record on your own device.</p>
+      </footer>
+    </main>
+
+    <script>
+    (function(){
+      "use strict";
+      function $(id){ return document.getElementById(id); }
+      function fmt(sec){ sec = Math.max(0, Math.round(sec)); var m = Math.floor(sec/60), s = sec%60; return m + ":" + (s<10?"0":"") + s; }
+
+      var SCENES = {
+        workshop: { title:"The Workshop", objects:[
+          {id:"heart", label:"Heart", hint:"Middle of the picture. Something warm-coloured is sitting on the front of the red toolbox.", shape:"Look for two round lobes meeting at a point at the bottom — a heart's outline, whatever colour it wears."},
+          {id:"wrench", label:"Wrench", hint:"On the workbench, left of middle. It lies flat along the bench top, the same grey as the other tools.", shape:"Look for a straight handle ending in an open, notched circle — a jaw, not a ring."},
+          {id:"star", label:"Star", hint:"Lower right. It is worked into the front of the wooden crate, barely lighter than the wood.", shape:"Five points, small. Crates carry crosses and planks — this one shape has points instead of corners."},
+          {id:"key", label:"Key", hint:"Upper left, on the pegboard. It hangs among the honest tools, small and brass.", shape:"A small ring with a short stem and two little teeth. Rings on a pegboard are worth a second look."},
+          {id:"bell", label:"Bell", hint:"On the shelf at the right, standing with the jars. Brass, and easy to mistake for one more jar.", shape:"A dome with a flared skirt and a tiny ball underneath — rounder at the top than any jar."},
+          {id:"fish", label:"Fish", hint:"Upper middle, on the poster. It swims in the poster's green hills.", shape:"An almond body with a triangle tail. On paper, a fish is just an outline — look for the outline."},
+          {id:"moon", label:"Crescent moon", hint:"In the window, lower right pane. A pale crescent against the daytime blue.", shape:"A curve within a curve — the only crescent in the scene. Windows are worth searching pane by pane."},
+          {id:"mushroom", label:"Mushroom", hint:"Down on the floorboards, under the bench's shadow, left of middle. Something is growing where it shouldn't.", shape:"A wide cap on a short pale stem. Nothing else in a workshop has that silhouette."}
+        ]},
+        garden: { title:"The Garden", objects:[
+          {id:"apple", label:"Apple", hint:"Up in the tree. One red fruit is a little rounder and a little brighter than the rest.", shape:"A circle with a stem and one small leaf. The tree holds several red dots — only one has the leaf."},
+          {id:"butterfly", label:"Butterfly", hint:"Down in the flowerbed, left of middle, resting on the soil between the flowers.", shape:"Four wings around a thin body. Among round flower heads, wings are the odd shape out."},
+          {id:"heart", label:"Heart", hint:"On the fence, right of the gate, worked into the rails in a colour close to the paint.", shape:"Two lobes and a point, sitting between the two horizontal rails. Fences are all straight lines — a curve stands out."},
+          {id:"snail", label:"Snail", hint:"On the stepping-stone path, middle stone. It is in no hurry, and neither is its colour — stone-brown on stone.", shape:"A spiral shell is the tell: one curling circle on a low, flat body."},
+          {id:"star", label:"Star", hint:"On the watering can at the left, pale against the green metal.", shape:"Five points on a round can — the only pointed shape on that whole side of the garden."},
+          {id:"fish", label:"Fish", hint:"In the pond, of course — but flat and orange under the blue, easy to slide past.", shape:"An almond body and triangle tail, floating at the pond's centre. Look through the blue, not at it."},
+          {id:"key", label:"Key", hint:"In the grass below the fence, left of middle. Dropped, brass, and half in the green.", shape:"A ring and a toothed stem. Grass is all blades and tufts — a ring is a foreign shape there."},
+          {id:"bell", label:"Bell", hint:"Hanging on the gate post, left of centre, at the height of the top rail.", shape:"A little dome with a flared skirt, hanging still. Gate hardware is square — a dome is not."}
+        ]},
+        kitchen: { title:"The Kitchen", objects:[
+          {id:"heart", label:"Heart", hint:"On the fridge door, upper half — a magnet, brighter than the notes beside it.", shape:"Two lobes and a point. Fridges collect rectangles; a heart is the one curved thing on the door."},
+          {id:"spoon", label:"Spoon", hint:"On the table, lying across the wood near the plate, silver on brown.", shape:"A small oval bowl running into a long thin handle. Lay the object's outline over the tabletop and scan."},
+          {id:"star", label:"Star", hint:"On the front of the pot on the stove, a shade lighter than the metal around it.", shape:"Five points on a plain pot. Cookware is all circles and rectangles — points give it away."},
+          {id:"egg", label:"Egg", hint:"In the red bowl on the table, left side — pale, and sitting higher than the bowl's rim.", shape:"A plain oval, taller than it is wide. Bowls hide their contents; this one rides above the rim."},
+          {id:"bell", label:"Bell", hint:"On the counter, left of middle, near the backsplash — brass among the green cabinets.", shape:"A dome with a flared skirt and a ball underneath. Nothing else on that counter is domed."},
+          {id:"fish", label:"Fish", hint:"Printed on the tea towel hanging by the stove — blue on cream, small.", shape:"An almond and a triangle tail, hanging vertically. Towels carry stripes; this one carries a fish."},
+          {id:"key", label:"Key", hint:"High on the right-hand top cabinet, hanging by its door. Small, brass, easy to pass over.", shape:"A ring with a toothed stem, up at picture height. Cabinet doors are rectangles — look for the one small ring."},
+          {id:"mushroom", label:"Mushroom", hint:"On the little shelf at the right, standing with the jars — red-capped and entirely out of place.", shape:"A wide cap on a short pale stem, up among straight-sided jars. The silhouette gives it away."}
+        ]}
+      };
+
+      var STRATS = {
+        grid: "Grid sweep: picture the scene in nine boxes — three across, three down — and finish each box before moving on. Trade-off: the most thorough way there is, and the calmest; the cost is speed. Use the button below to lay the grid over the picture.",
+        edge: "Edge-first: search the picture's borders and corners, then the edges of the big things — bench rim, window frame, fence line. Trade-off: quick finds, because hiders love edges; the cost is that anything mid-picture waits, so end with one honest pass over the middles.",
+        shape: "Shape, not colour: hold one unfound object's outline in your mind and look only for that outline, ignoring colour entirely — hidden objects borrow the colours around them. Trade-off: it beats camouflage best of all; the cost is practice, tired eyes, and one object at a time."
+      };
+
+      var SET_KEY = "hidden-object-settings-v1", REC_KEY = "hidden-object-record-v1";
+      var memFallback = {};
+      function storeGet(k){ try { var v = window.localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return memFallback[k] || null; } }
+      function storeSet(k,v){ try { window.localStorage.setItem(k, JSON.stringify(v)); } catch(e){ memFallback[k] = v; } }
+      function storeDel(k){ try { window.localStorage.removeItem(k); } catch(e){ delete memFallback[k]; } }
+
+      var settings = storeGet(SET_KEY) || { teaching:"light", mode:"relaxed", count:8 };
+      if (["off","light","coach"].indexOf(settings.teaching) < 0) settings.teaching = "light";
+      if (["relaxed","timed"].indexOf(settings.mode) < 0) settings.mode = "relaxed";
+      if ([5,6,8].indexOf(settings.count) < 0) settings.count = 8;
+      var record = storeGet(REC_KEY) || { v:1, entries:[] };
+      if (!record.entries) record.entries = [];
+
+      var scene = "workshop";
+      var attempt = null;
+      var timerInt = null;
+      var forgetArmed = false, forgetTimeout = null;
+
+      function saveSettings(){ storeSet(SET_KEY, settings); }
+      function saveRecord(){ storeSet(REC_KEY, record); }
+      function alias(){ var v = $("alias").value.replace(/^\s+|\s+$/g,""); return v || "Player"; }
+      function elapsed(){ return attempt ? (Date.now() - attempt.start)/1000 : 0; }
+      function timeLeft(){ return settings.count*30 - elapsed(); }
+
+      function wrapEl(){ return document.querySelector('[data-wrap="' + scene + '"]'); }
+      function svgEl(){ var w = wrapEl(); return w ? w.querySelector("svg") : null; }
+
+      function activeObjects(){ return SCENES[scene].objects.slice(0, settings.count); }
+
+      function renderList(){
+        var ul = $("objList"); ul.innerHTML = "";
+        activeObjects().forEach(function(o){
+          var li = document.createElement("li");
+          if (attempt && attempt.found[o.id]) li.className = "done";
+          var box = document.createElement("span"); box.className = "box";
+          box.textContent = (attempt && attempt.found[o.id]) ? "✓" : "";
+          li.appendChild(box);
+          li.appendChild(document.createTextNode(o.label));
+          ul.appendChild(li);
+        });
+      }
+
+      function updateStatus(){
+        if (!attempt) return;
+        var n = Object.keys(attempt.found).length;
+        $("statFound").textContent = "Found " + n + " of " + settings.count;
+        $("statTime").textContent = settings.mode === "timed" ? ("Time left " + fmt(timeLeft())) : ("Time " + fmt(elapsed()));
+        $("statMisses").textContent = "Misses " + attempt.misses;
+        $("statHints").textContent = "Hints " + attempt.hints;
+        $("statScene").textContent = SCENES[scene].title;
+        updateHintBtn();
+      }
+
+      function updateHintBtn(){
+        var b = $("hintBtn");
+        if (settings.teaching === "off" || !attempt || attempt.over){ b.hidden = settings.teaching === "off"; b.disabled = true; return; }
+        b.hidden = false;
+        if (settings.teaching === "light" && elapsed() < 20){
+          b.disabled = true;
+          b.textContent = "Tap to get a hint — unlocks after 20 seconds of searching (" + Math.ceil(20 - elapsed()) + "s)";
+        } else {
+          b.disabled = false;
+          b.textContent = settings.teaching === "coach" ? "Tap to get a hint — the Coach will glow it for you" : "Tap to get a hint";
+        }
+      }
+
+      function applyTeaching(){
+        var seg = $("teachingSeg").querySelectorAll("button");
+        for (var i=0;i<seg.length;i++) seg[i].setAttribute("aria-pressed", seg[i].getAttribute("data-teaching") === settings.teaching ? "true" : "false");
+        $("coachPanel").hidden = settings.teaching !== "coach";
+        if (settings.teaching === "off") $("hintBtn").hidden = true;
+        updateHintBtn();
+      }
+
+      function applyVariantBanner(){
+        var diffs = [];
+        if (settings.mode !== "relaxed") diffs.push("Timed mode — 30 seconds per object");
+        if (settings.count !== 8) diffs.push(settings.count + " objects instead of the full 8");
+        var b = $("variantBanner");
+        if (diffs.length){
+          b.hidden = false;
+          b.innerHTML = "<strong>Non-standard play:</strong> " + diffs.join(" · ") + ". This try will be recorded under these rules, labelled as played — never dressed up as a standard try.";
+        } else {
+          b.hidden = true; b.textContent = "";
+        }
+      }
+
+      function startAttempt(){
+        if (timerInt) clearInterval(timerInt);
+        attempt = { start: Date.now(), found:{}, hints:0, misses:0, over:false };
+        var svg = svgEl();
+        if (svg){
+          var targets = svg.querySelectorAll(".target");
+          for (var i=0;i<targets.length;i++){
+            var t = targets[i], id = t.getAttribute("data-obj");
+            var active = activeObjects().some(function(o){ return o.id === id; });
+            t.style.display = active ? "" : "none";
+            t.classList.remove("found"); t.classList.remove("hinting");
+          }
+          var go = svg.querySelector(".grid-overlay"); if (go) go.setAttribute("hidden", "");
+          $("gridToggle").textContent = "Tap to show the search grid on the picture";
+        }
+        $("hintBox").hidden = true; $("hintBox").textContent = "";
+        $("completeBox").hidden = true; $("completeBox").textContent = "";
+        $("missNote").textContent = "";
+        $("endBtn").disabled = false; $("restartBtn").disabled = false;
+        renderList(); updateStatus(); applyTeaching();
+        timerInt = setInterval(function(){
+          if (!attempt || attempt.over) return;
+          updateStatus();
+          if (settings.mode === "timed" && timeLeft() <= 0) endAttempt(false, "time");
+        }, 400);
+      }
+
+      function switchScene(name){
+        scene = name;
+        var tabs = document.querySelectorAll("[data-scene]");
+        for (var i=0;i<tabs.length;i++) tabs[i].setAttribute("aria-pressed", tabs[i].getAttribute("data-scene") === name ? "true" : "false");
+        var wraps = document.querySelectorAll(".scene-wrap");
+        for (var j=0;j<wraps.length;j++) wraps[j].hidden = wraps[j].getAttribute("data-wrap") !== name;
+        startAttempt();
+      }
+
+      function findObject(g){
+        if (!attempt || attempt.over) return;
+        var id = g.getAttribute("data-obj");
+        if (attempt.found[id]) return;
+        attempt.found[id] = true;
+        g.classList.add("found"); g.classList.remove("hinting");
+        $("missNote").textContent = "";
+        renderList(); updateStatus();
+        if (Object.keys(attempt.found).length >= settings.count) endAttempt(true, "found");
+      }
+
+      function endAttempt(completed, reason){
+        if (!attempt || attempt.over) return;
+        attempt.over = true;
+        if (timerInt) clearInterval(timerInt);
+        var secs = Math.round(elapsed());
+        var entry = {
+          ts: new Date().toISOString(),
+          scene: scene,
+          sceneTitle: SCENES[scene].title,
+          mode: settings.mode,
+          objects: settings.count,
+          found: Object.keys(attempt.found).length,
+          completed: !!completed,
+          seconds: secs,
+          hints: attempt.hints,
+          misses: attempt.misses,
+          teaching: settings.teaching,
+          player: alias()
+        };
+        record.entries.push(entry); saveRecord(); renderRecord();
+        var box = $("completeBox");
+        box.hidden = false;
+        var head = completed ? ("Scene complete — well searched, " + alias() + "!") :
+          (reason === "time" ? "Time is up — the clock got this one." : "Try ended and saved.");
+        box.innerHTML = "<strong>" + head + "</strong><br>" +
+          SCENES[scene].title + ": found " + entry.found + " of " + entry.objects +
+          " in " + fmt(secs) + " · " + entry.hints + (entry.hints === 1 ? " hint" : " hints") +
+          " · " + entry.misses + (entry.misses === 1 ? " miss" : " misses") +
+          " · " + (settings.mode === "timed" ? "Timed" : "Relaxed") + ". Written to your record below." +
+          '<div class="row" style="margin-top:10px;"><button type="button" id="againBtn">Tap to play this scene again</button>' +
+          '<button type="button" id="nextBtn">Tap to open the next scene</button></div>';
+        $("againBtn").addEventListener("click", function(){ startAttempt(); });
+        $("nextBtn").addEventListener("click", function(){
+          var order = ["workshop","garden","kitchen"];
+          switchScene(order[(order.indexOf(scene)+1) % order.length]);
+        });
+        $("endBtn").disabled = true;
+        updateStatus();
+      }
+
+      function takeHint(){
+        if (!attempt || attempt.over || settings.teaching === "off") return;
+        if (settings.teaching === "light" && elapsed() < 20) return;
+        var next = null;
+        activeObjects().forEach(function(o){ if (!next && !attempt.found[o.id]) next = o; });
+        if (!next) return;
+        attempt.hints++;
+        var box = $("hintBox");
+        box.hidden = false;
+        if (settings.teaching === "coach"){
+          box.innerHTML = "<strong>Coach's hint — the " + next.label + ":</strong> " + next.hint + "<br><em>" + next.shape + "</em> Watch for the gentle glow.";
+          var svg = svgEl();
+          if (svg){
+            var g = svg.querySelector('.target[data-obj="' + next.id + '"]');
+            if (g){ g.classList.add("hinting"); setTimeout(function(){ g.classList.remove("hinting"); }, 3000); }
+          }
+        } else {
+          box.innerHTML = "<strong>Hint — the " + next.label + ":</strong> " + next.hint;
+        }
+        updateStatus();
+      }
+
+      function renderRecord(){
+        var list = $("recordList"); list.innerHTML = "";
+        var entries = record.entries;
+        if (!entries.length){
+          $("recordSummary").textContent = "No finished tries yet — finish a scene, or end a try early, and it lands here.";
+          return;
+        }
+        var done = entries.filter(function(e){ return e.completed; }).length;
+        var hints = entries.reduce(function(a,e){ return a + e.hints; }, 0);
+        var misses = entries.reduce(function(a,e){ return a + e.misses; }, 0);
+        $("recordSummary").textContent = entries.length + (entries.length === 1 ? " finished try" : " finished tries") +
+          " · " + done + " scene" + (done === 1 ? "" : "s") + " completed · " + hints + " hints used · " + misses + " misses, all told.";
+        entries.slice().reverse().slice(0, 30).forEach(function(e){
+          var li = document.createElement("li");
+          var d = new Date(e.ts);
+          li.textContent = e.sceneTitle + " — " + (e.completed ? "completed" : "not finished") +
+            " · found " + e.found + " of " + e.objects + " · " + fmt(e.seconds) +
+            " · " + e.hints + (e.hints === 1 ? " hint" : " hints") +
+            " · " + e.misses + (e.misses === 1 ? " miss" : " misses") +
+            " · " + (e.mode === "timed" ? "Timed (variant)" : "Relaxed") +
+            (e.objects !== 8 ? " · " + e.objects + " objects (variant)" : "") +
+            " · teaching: " + e.teaching + " · " + d.toLocaleDateString() + ", " + d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+          list.appendChild(li);
+        });
+      }
+
+      function download(name, text, type){
+        var blob = new Blob([text], { type: type });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 800);
+      }
+
+      /* ---- wiring ---- */
+      document.querySelectorAll("[data-scene]").forEach(function(b){
+        b.addEventListener("click", function(){ switchScene(b.getAttribute("data-scene")); });
+      });
+      document.querySelectorAll(".scene-svg").forEach(function(svg){
+        svg.addEventListener("click", function(e){
+          if (!attempt || attempt.over) return;
+          if (e.target.classList && e.target.classList.contains("hit")){
+            var g = e.target.closest(".target");
+            if (g && g.style.display !== "none") findObject(g);
+          } else {
+            attempt.misses++;
+            $("missNote").textContent = "That's the scenery — have another look. Misses so far: " + attempt.misses + ".";
+            updateStatus();
+          }
+        });
+      });
+      document.querySelectorAll(".target").forEach(function(g){
+        g.addEventListener("keydown", function(e){
+          if (e.key === "Enter" || e.key === " "){ e.preventDefault(); findObject(g); }
+        });
+      });
+      $("teachingSeg").querySelectorAll("button").forEach(function(b){
+        b.addEventListener("click", function(){
+          settings.teaching = b.getAttribute("data-teaching"); saveSettings(); applyTeaching();
+        });
+      });
+      $("modeSel").value = settings.mode;
+      $("countSel").value = String(settings.count);
+      $("modeSel").addEventListener("change", function(){ settings.mode = this.value; saveSettings(); applyVariantBanner(); startAttempt(); });
+      $("countSel").addEventListener("change", function(){ settings.count = parseInt(this.value, 10); saveSettings(); applyVariantBanner(); startAttempt(); });
+      document.querySelectorAll("#stratSeg button").forEach(function(b){
+        b.addEventListener("click", function(){
+          document.querySelectorAll("#stratSeg button").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+          b.setAttribute("aria-pressed","true");
+          $("coachNote").textContent = STRATS[b.getAttribute("data-strat")];
+        });
+      });
+      $("coachNote").textContent = STRATS.grid;
+      $("gridToggle").addEventListener("click", function(){
+        var svg = svgEl(); if (!svg) return;
+        var go = svg.querySelector(".grid-overlay"); if (!go) return;
+        var nowHidden;
+        if (go.hasAttribute("hidden")){ go.removeAttribute("hidden"); nowHidden = false; }
+        else { go.setAttribute("hidden", ""); nowHidden = true; }
+        this.textContent = nowHidden ? "Tap to show the search grid on the picture" : "Tap to hide the search grid";
+      });
+      $("hintBtn").addEventListener("click", takeHint);
+      $("restartBtn").addEventListener("click", function(){ startAttempt(); });
+      $("endBtn").addEventListener("click", function(){ endAttempt(Object.keys(attempt.found).length >= settings.count, "ended"); });
+      $("downloadPage").addEventListener("click", function(){
+        var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+        download("hidden-object.html", html, "text/html");
+      });
+      $("exportJson").addEventListener("click", function(){
+        download("hidden-object-record.json", JSON.stringify({ game:"Hidden Object", exported:new Date().toISOString(), entries:record.entries }, null, 2), "application/json");
+      });
+      $("exportCsv").addEventListener("click", function(){
+        var rows = ["timestamp,scene,mode,objects,found,completed,seconds,hints,misses,teaching"];
+        record.entries.forEach(function(e){
+          rows.push([e.ts, e.scene, e.mode, e.objects, e.found, e.completed, e.seconds, e.hints, e.misses, e.teaching].join(","));
+        });
+        download("hidden-object-record.csv", rows.join("\n"), "text/csv");
+      });
+      $("forgetBtn").addEventListener("click", function(){
+        if (!forgetArmed){
+          forgetArmed = true;
+          this.textContent = "Tap again to confirm — this forgets your whole record";
+          var btn = this;
+          forgetTimeout = setTimeout(function(){ forgetArmed = false; btn.textContent = "Tap to forget your whole record"; }, 4500);
+          return;
+        }
+        clearTimeout(forgetTimeout); forgetArmed = false;
+        record = { v:1, entries:[] }; storeDel(REC_KEY); saveRecord(); renderRecord();
+        this.textContent = "Tap to forget your whole record";
+      });
+      document.querySelectorAll("details").forEach(function(d){
+        var span = d.querySelector(".sum-text");
+        if (!span) return;
+        var label = span.textContent.replace(/^Tap to (open|close) — /, "");
+        d.addEventListener("toggle", function(){
+          span.textContent = (d.open ? "Tap to close — " : "Tap to open — ") + label;
+        });
+      });
+
+      applyVariantBanner();
+      renderRecord();
+      switchScene("workshop");
+    })();
+    </script>
+  </body>
+</html>
