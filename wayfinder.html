@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Wayfinder — GPS Navigation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      :root{
+        --bg:#f4f6f5; --panel:#ffffff; --panel2:#e9efec; --ink:#14201c; --ink2:#3d4f48;
+        --line:#c9d4cf; --accent:#b45309; --accent-ink:#ffffff; --route:#0f766e;
+        --good:#166534; --warn-bg:#fdf3e3; --warn-line:#d97706; --warn-ink:#5b3a08;
+        --big-bg:#10231f; --big-ink:#f5fbf8; --big-sub:#bfe3d6;
+        --radius:14px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0d1512; --panel:#16211d; --panel2:#1d2b26; --ink:#e8f1ed; --ink2:#a9beb5;
+          --line:#2e423b; --accent:#f59e0b; --accent-ink:#1a1206; --route:#2dd4bf;
+          --good:#4ade80; --warn-bg:#2b2110; --warn-line:#b45309; --warn-ink:#fde9c8;
+          --big-bg:#e8f1ed; --big-ink:#10231f; --big-sub:#33524a;
+        }
+      }
+      *{ box-sizing:border-box; }
+      html{ -webkit-text-size-adjust:100%; }
+      body{
+        margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+        line-height:1.5;
+      }
+      main{ max-width:1060px; margin:0 auto; padding:14px 14px 40px; }
+      h1{ font-size:1.65rem; line-height:1.15; margin:6px 0 2px; letter-spacing:-.01em; }
+      h2{ font-size:1.2rem; margin:0 0 8px; }
+      p{ margin:0 0 10px; }
+      .sub{ color:var(--ink2); margin-bottom:12px; }
+      button, [role="button"], select, summary, input:not([type="checkbox"],[type="radio"]){ min-height:44px; }
+      button{
+        font:inherit; font-weight:600; cursor:pointer; border-radius:10px;
+        border:1.5px solid var(--line); background:var(--panel); color:var(--ink);
+        padding:10px 14px;
+      }
+      button:active{ transform:translateY(1px); }
+      button.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+      button.teal{ background:var(--route); border-color:var(--route); color:#fff; }
+      button.on{ background:var(--route); border-color:var(--route); color:#fff; }
+      button.danger-armed{ background:#b91c1c; border-color:#b91c1c; color:#fff; }
+      button:disabled{ opacity:.55; cursor:default; }
+      input[type="text"]{
+        font:inherit; width:100%; padding:11px 12px; border-radius:10px;
+        border:1.5px solid var(--line); background:var(--panel); color:var(--ink);
+      }
+      label.flabel{ display:block; font-weight:700; margin:12px 0 5px; }
+      .panel{
+        background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+        padding:16px; margin:14px 0;
+      }
+      .free-line{
+        font-size:1.08rem; font-weight:700; background:var(--panel);
+        border:1.5px solid var(--route); border-radius:var(--radius); padding:12px 16px; margin:10px 0 0;
+      }
+      .free-line .dl{ margin-top:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .free-line .note{ font-weight:400; font-size:.98rem; color:var(--ink2); }
+      .safety{
+        font-size:1.25rem; font-weight:800; line-height:1.35;
+        background:var(--warn-bg); border:2px solid var(--warn-line); color:var(--warn-ink);
+        border-radius:var(--radius); padding:14px 16px; margin:14px 0 0;
+      }
+      /* Next-turn panel — the driving surface */
+      .nextturn{
+        background:var(--big-bg); color:var(--big-ink); border-radius:18px;
+        padding:20px 18px; margin:14px 0 0;
+      }
+      .nextturn .nt-label{ font-size:.95rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--big-sub); }
+      .nextturn .nt-dist{ font-size:3.4rem; font-weight:800; line-height:1.05; margin:2px 0; }
+      .nextturn .nt-inst{ font-size:1.9rem; font-weight:700; line-height:1.2; }
+      .nextturn .nt-then{ font-size:1.05rem; color:var(--big-sub); margin-top:8px; }
+      /* Map */
+      #map{ height:52vh; min-height:320px; border-radius:var(--radius); border:1px solid var(--line); margin-top:14px; z-index:0; }
+      .map-wrap{ position:relative; }
+      .compass{
+        position:absolute; top:12px; right:12px; z-index:600; width:58px; height:58px;
+        border-radius:50%; background:var(--panel); border:1.5px solid var(--line);
+        display:flex; align-items:center; justify-content:center; padding:0;
+      }
+      .compass svg{ display:block; transition:transform .3s linear; }
+      .controls{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
+      .controls button{ width:100%; font-size:1.02rem; padding:12px 10px; }
+      .ctl-state{ display:block; font-size:.85rem; font-weight:400; opacity:.85; }
+      .status{ margin-top:10px; color:var(--ink2); }
+      .status strong{ color:var(--ink); }
+      .results{ list-style:none; margin:8px 0 0; padding:0; }
+      .results li{ margin:6px 0; }
+      .results button{ width:100%; text-align:left; font-weight:500; }
+      .picked{ margin-top:8px; font-weight:600; }
+      .picked .clearpick{ margin-left:8px; font-weight:600; }
+      .route-summary{ font-size:1.15rem; font-weight:700; margin-top:10px; }
+      ol.turns{ margin:10px 0 0; padding-left:1.4em; }
+      ol.turns li{ padding:7px 4px; border-bottom:1px solid var(--line); }
+      ol.turns li.now{ background:var(--panel2); font-weight:700; border-radius:6px; }
+      ol.turns .td{ color:var(--ink2); font-weight:600; margin-right:8px; }
+      .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+      .chips button{ font-weight:500; }
+      .empty{ color:var(--ink2); }
+      table.trips{ width:100%; border-collapse:collapse; margin-top:8px; }
+      table.trips th, table.trips td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+      .row-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+      .limits{ border:2px solid var(--warn-line); background:var(--warn-bg); color:var(--warn-ink); }
+      .limits h2{ color:var(--warn-ink); }
+      .limits li{ margin:7px 0; font-size:1.02rem; }
+      details.panel summary{ cursor:pointer; font-weight:700; font-size:1.1rem; padding:4px 0; }
+      details.panel h3{ margin:16px 0 4px; font-size:1.05rem; }
+      .seg{ display:flex; gap:8px; }
+      .seg button{ flex:1; }
+      footer{ margin-top:22px; color:var(--ink2); font-size:.95rem; }
+      footer a, .panel a{ color:var(--route); }
+      .leaflet-container{ font:inherit; }
+      @media (max-width:560px){
+        .nextturn .nt-dist{ font-size:2.7rem; }
+        .nextturn .nt-inst{ font-size:1.55rem; }
+        #map{ height:46vh; }
+        table.trips thead{ display:none; }
+        table.trips, table.trips tbody, table.trips tr, table.trips td{ display:block; width:100%; }
+        table.trips tr{ padding:8px 0; border-bottom:1px solid var(--line); }
+        table.trips td{ border:none; padding:2px 6px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Wayfinder — GPS Navigation</h1>
+      <p class="sub">A working navigator built only from free parts: your phone&rsquo;s own GPS, OpenStreetMap maps, and the free OSRM routing service. No account. Use any name you like, or none at all — no name is ever asked for.</p>
+
+      <div class="free-line">
+        Free — always free. No ads, no sign-up, no locked features.
+        <div class="dl">
+          <button type="button" id="downloadBtn">Tap to download this page</button>
+          <span class="note">The download carries this page&rsquo;s shell so it opens offline — but a map cannot truly live offline in one file: map pictures, address search, and routes still need an internet connection. That is stated plainly here, beside the door, because it is true.</span>
+        </div>
+      </div>
+
+      <p class="safety">Safety first: set your destination before you move. While driving, check the road — not just the screen. If the dot and the road ever disagree, believe the road.</p>
+
+      <!-- DRIVING SURFACE -->
+      <section class="nextturn" aria-live="polite">
+        <div class="nt-label">Next turn</div>
+        <div class="nt-dist" id="ntDist">—</div>
+        <div class="nt-inst" id="ntInst">Plan a route below and your next turn shows here, big.</div>
+        <div class="nt-then" id="ntThen">Voice guidance is off. Tap the Voice button below to hear turns spoken.</div>
+      </section>
+
+      <div class="controls" role="group" aria-label="Driving controls">
+        <button type="button" id="voiceBtn">🔊 Voice: OFF<span class="ctl-state">Tap to turn voice on or off</span></button>
+        <button type="button" id="followBtn" class="on">◎ Follow me: ON<span class="ctl-state">Tap to turn follow on or off</span></button>
+        <button type="button" id="locateBtn">⌖ Use my location<span class="ctl-state">Tap to ask for your GPS position</span></button>
+        <button type="button" id="nightBtn">☾ Map: Day<span class="ctl-state">Tap to switch day / night map</span></button>
+      </div>
+      <div class="controls" role="group" aria-label="Distance units">
+        <div class="seg" style="grid-column:1/-1;">
+          <button type="button" id="miBtn" class="on">Miles — tap to use miles</button>
+          <button type="button" id="kmBtn">Kilometres — tap to use km</button>
+        </div>
+      </div>
+      <p class="status" id="gpsStatus"><strong>GPS:</strong> not started yet. Tap &ldquo;Use my location&rdquo; and your browser will ask permission in plain words — allow it to see your blue dot and count down to turns. Deny it, and everything else on this page still works: browse the map and plan routes between typed places.</p>
+
+      <div class="map-wrap">
+        <div id="map" aria-label="Map"></div>
+        <button type="button" class="compass" id="compassBtn" aria-label="Compass. Tap to centre the map on my position.">
+          <svg id="compassRose" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+            <polygon points="20,4 24,20 16,20" fill="#b91c1c"/>
+            <polygon points="20,36 24,20 16,20" fill="currentColor" opacity=".45"/>
+            <text x="20" y="15.5" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff">N</text>
+          </svg>
+        </button>
+      </div>
+      <p class="status">Map data © OpenStreetMap contributors. Night map styling © CARTO, built on OpenStreetMap data. The compass needle turns with your direction of travel when GPS reports one; north is up on the map itself.</p>
+
+      <!-- ROUTE PLANNER -->
+      <section class="panel" aria-labelledby="planH">
+        <h2 id="planH">Plan a route</h2>
+
+        <label class="flabel" for="fromInput">From</label>
+        <input type="text" id="fromInput" placeholder="Type a place, or tap &ldquo;Use my location&rdquo; above" autocomplete="off" />
+        <button type="button" id="fromSearch" style="margin-top:8px;">Tap to search for the From place</button>
+        <ul class="results" id="fromResults"></ul>
+        <p class="picked" id="fromPicked" hidden></p>
+
+        <label class="flabel" for="toInput">To</label>
+        <input type="text" id="toInput" placeholder="Type where you are going" autocomplete="off" />
+        <button type="button" id="toSearch" style="margin-top:8px;">Tap to search for the To place</button>
+        <ul class="results" id="toResults"></ul>
+        <p class="picked" id="toPicked" hidden></p>
+
+        <div class="row-actions">
+          <button type="button" class="primary" id="routeBtn">Tap to plan the route</button>
+          <button type="button" class="teal" id="startBtn" disabled>Tap to start the trip</button>
+          <button type="button" id="endBtn" disabled>Tap to end &amp; save the trip</button>
+          <button type="button" id="clearRouteBtn">Tap to clear the route</button>
+        </div>
+        <p class="route-summary" id="routeSummary" hidden></p>
+        <p class="status" id="routeStatus"></p>
+        <ol class="turns" id="turnList"></ol>
+      </section>
+
+      <!-- RECENTS -->
+      <section class="panel" aria-labelledby="recentH">
+        <h2 id="recentH">Recent destinations</h2>
+        <p>Saved on this device only — never sent anywhere. Tap one to use it as your destination.</p>
+        <div class="chips" id="recentChips"></div>
+        <p class="empty" id="recentEmpty">No recent destinations yet. Plan a route and the destination lands here.</p>
+        <div class="row-actions">
+          <button type="button" id="forgetRecentsBtn">Tap to forget all recent destinations</button>
+        </div>
+      </section>
+
+      <!-- TRIP RECORD -->
+      <section class="panel" aria-labelledby="recordH">
+        <h2 id="recordH">Your trip record</h2>
+        <p>Trips you end with &ldquo;End &amp; save the trip&rdquo; are written here — from, to, distance, and date. The record lives on this device only. Your position itself is never stored; only the trip summary is.</p>
+        <div id="tripWrap">
+          <table class="trips" id="tripTable">
+            <thead><tr><th>Date</th><th>From</th><th>To</th><th>Distance</th></tr></thead>
+            <tbody id="tripBody"></tbody>
+          </table>
+          <p class="empty" id="tripEmpty">No trips recorded yet.</p>
+        </div>
+        <div class="row-actions">
+          <button type="button" id="exportTripsBtn">Tap to export the trip record</button>
+          <button type="button" id="forgetTripsBtn">Tap to forget the whole trip record</button>
+        </div>
+        <p class="status" id="recordStatus"></p>
+      </section>
+
+      <!-- HONEST LIMITS -->
+      <section class="panel limits" aria-labelledby="limitsH">
+        <h2 id="limitsH">Honest limits — read these at full size, because they matter</h2>
+        <ul>
+          <li><strong>No live traffic.</strong> Traffic data is gated behind paid services, and we don&rsquo;t pretend otherwise. Route times are the free-flow estimate: what the drive takes on a clear road. A jam will make it longer and this page will not know.</li>
+          <li><strong>Maps and routes need an internet connection.</strong> The download door above carries this page&rsquo;s shell, but map pictures, address search, and routes come from the network. No connection, no new map.</li>
+          <li><strong>The routing server is a shared public service.</strong> OSRM&rsquo;s free demo server can be slow or refuse at busy times. If it does, this page says so plainly — it never invents or fakes a route.</li>
+          <li><strong>GPS can drift.</strong> In tunnels, parking garages, and between tall buildings the blue dot can jump or lag. Believe the road and the road signs first.</li>
+          <li><strong>Your position stays on your device.</strong> It never leaves this page — except the start and finish points of a route request, which are sent to the routing service so it can draw your route. Address searches go to the search service (Nominatim) the same way, and nothing else is sent anywhere.</li>
+        </ul>
+      </section>
+
+      <!-- TEACHING -->
+      <details class="panel">
+        <summary>How this works — tap to open, tap to close</summary>
+        <p style="margin-top:10px;">Offered, never forced. This fold is the teaching layer for this page (chosen over a dial, because a driver needs the controls big and few — the teaching sits one tap away instead).</p>
+
+        <h3>How GPS knows where you are</h3>
+        <p>GPS satellites circle the Earth broadcasting the time, over and over, from atomic clocks. Your phone listens to several at once. Each signal arrives a fraction of a second late, and that delay tells the phone how far away that satellite is — because the signal travels at the speed of light, distance is just delay multiplied by that speed. Knowing you are exactly <em>this</em> far from one satellite puts you somewhere on a giant sphere around it. A second satellite gives a second sphere, and two spheres cross in a circle. A third sphere cuts that circle down to two points — and one of them is usually absurd (far out in space), so three satellites make a point. A fourth signal lets the phone correct its own cheap clock, which is why real fixes use four or more.</p>
+
+        <h3>Why the blue dot can jump</h3>
+        <p>Signals bounce. Between tall buildings a signal can reflect off glass and arrive late by a detour, and a late signal reads as &ldquo;farther away,&rdquo; so the dot slides. In a tunnel there is no sky at all, and the phone coasts on its last good fix and its motion sensors. Thin fixes — few satellites, wide spread — come with a wide accuracy circle, and you can see that circle around the dot on this map. A small circle means the phone is confident; a big one means it is guessing politely.</p>
+
+        <h3>What the route time knows — and what it doesn&rsquo;t</h3>
+        <p>The time is distance divided by the typical speed of each road on the way, added up. It knows the road&rsquo;s class and length. It does <strong>not</strong> know about traffic, weather, roadworks, school zones at bell time, or the train that crosses your route twice a day. Treat it as the clear-road estimate it honestly is.</p>
+
+        <h3>How the route is chosen</h3>
+        <p>OSRM lays the road network out as a web of junctions and road segments, each segment carrying a cost (mostly time). It then finds the chain of segments from your start to your finish with the lowest total cost — the same family of shortest-path maths used since the 1950s, sped up enormously by pre-computing shortcuts across the web. It prefers fast roads because they cost less time, which is why a route sometimes looks longer on the map yet arrives sooner.</p>
+
+        <h3>When the dot and the road disagree</h3>
+        <p>Believe the road. Maps age, roads close, new ones open, and GPS drifts. If a sign says the road is closed, it is closed, whatever the screen says. Slow down, follow the signed detour, and the route can be re-planned from wherever you actually are — tap &ldquo;Use my location,&rdquo; then plan again.</p>
+
+        <h3>Who built the parts (all free, all legal for us to use)</h3>
+        <p>Map data: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, shared under the Open Database Licence. Map library: <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>, free and open source. Address search: <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener">Nominatim</a>, the OpenStreetMap search service, used gently — searches are spaced out, one at a time. Routes: the <a href="https://router.project-osrm.org" target="_blank" rel="noopener">OSRM</a> public routing server. Voice: your own device&rsquo;s speech voice — nothing recorded, nothing sent.</p>
+      </details>
+
+      <footer>
+        <p>Copyleft: this page is shared under CC BY-SA 4.0 — copy it, change it, pass it on, keep it free. No ads, ever. Map data © OpenStreetMap contributors; routing by OSRM; search by Nominatim; map library Leaflet.</p>
+        <p>Wayfinder is a plain-words navigator built from free parts. It is an aid, not an authority — the road in front of you always wins.</p>
+      </footer>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      (function(){
+        "use strict";
+        var $ = function(id){ return document.getElementById(id); };
+
+        /* ---------- State ---------- */
+        var state = {
+          myPos: null,            // {lat, lon, accuracy, heading}
+          from: null,             // {name, lat, lon}
+          to: null,               // {name, lat, lon}
+          route: null,            // OSRM route object
+          steps: [],              // [{instruction, lat, lon, segDist}]
+          stepIdx: 0,
+          navigating: false,
+          follow: true,
+          voice: false,
+          units: "mi",
+          night: false,
+          watchId: null,
+          searchBusy: false,
+          lastSpokenIdx: -1
+        };
+
+        /* ---------- Storage (this device only) ---------- */
+        var RECENT_KEY = "wayfinder.recents.v1";
+        var TRIP_KEY = "wayfinder.trips.v1";
+        function loadList(key){
+          try { var v = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(v) ? v : []; }
+          catch(e){ return []; }
+        }
+        function saveList(key, list){
+          try { localStorage.setItem(key, JSON.stringify(list)); } catch(e){}
+        }
+
+        /* ---------- Units ---------- */
+        function fmtDist(m){
+          if (m == null || isNaN(m)) return "—";
+          if (state.units === "mi"){
+            var mi = m / 1609.344;
+            if (mi < 0.1) return Math.round(m * 3.28084) + " ft";
+            return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + " mi";
+          }
+          var km = m / 1000;
+          if (km < 0.1) return Math.round(m) + " m";
+          return (km < 10 ? km.toFixed(1) : Math.round(km)) + " km";
+        }
+        function fmtTime(sec){
+          var mins = Math.round(sec / 60);
+          if (mins < 60) return mins + " min";
+          var h = Math.floor(mins / 60), r = mins % 60;
+          return h + " hr" + (r ? " " + r + " min" : "");
+        }
+
+        /* ---------- Map ---------- */
+        var map = null, dayLayer = null, nightLayer = null, posMarker = null, accCircle = null, routeLine = null, destMarker = null;
+        var ARLINGTON = [32.7357, -97.1081];
+        function initMap(){
+          if (typeof L === "undefined"){
+            $("gpsStatus").innerHTML = "<strong>Map library did not load.</strong> The map needs an internet connection for its free Leaflet library and OpenStreetMap tiles. Check your connection and reload — the rest of this page still works.";
+            return;
+          }
+          map = L.map("map", { zoomControl: true }).setView(ARLINGTON, 12);
+          dayLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19, attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+          });
+          nightLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            maxZoom: 19, attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors &copy; <a href='https://carto.com/attributions'>CARTO</a>"
+          });
+          dayLayer.addTo(map);
+          map.on("dragstart", function(){
+            if (state.follow){ setFollow(false, "Follow paused — you moved the map by hand."); }
+          });
+        }
+
+        /* ---------- Follow / voice / night / units controls ---------- */
+        function setFollow(on, note){
+          state.follow = on;
+          var b = $("followBtn");
+          b.classList.toggle("on", on);
+          b.firstChild.textContent = on ? "◎ Follow me: ON" : "◎ Follow me: OFF";
+          if (note) $("gpsStatus").innerHTML = "<strong>GPS:</strong> " + note;
+          if (on && state.myPos && map) map.panTo([state.myPos.lat, state.myPos.lon]);
+        }
+        $("followBtn").addEventListener("click", function(){
+          setFollow(!state.follow);
+          if (state.follow && state.myPos && map) map.panTo([state.myPos.lat, state.myPos.lon]);
+        });
+
+        function speak(text){
+          if (!state.voice) return;
+          try {
+            if (!("speechSynthesis" in window)) return;
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(text);
+            u.rate = 1.0;
+            window.speechSynthesis.speak(u);
+          } catch(e){}
+        }
+        $("voiceBtn").addEventListener("click", function(){
+          state.voice = !state.voice;
+          var b = $("voiceBtn");
+          b.classList.toggle("on", state.voice);
+          b.firstChild.textContent = state.voice ? "🔊 Voice: ON" : "🔊 Voice: OFF";
+          $("ntThen").textContent = state.voice
+            ? "Voice is on — turns will be spoken by your device's own voice."
+            : "Voice guidance is off. Tap the Voice button to hear turns spoken.";
+          if (state.voice){
+            if (!("speechSynthesis" in window)){
+              $("ntThen").textContent = "This device has no speech voice available, so voice guidance cannot speak here. The big text still works.";
+              state.voice = false; b.classList.remove("on"); b.firstChild.textContent = "🔊 Voice: OFF";
+              return;
+            }
+            speak("Voice guidance on.");
+            if (state.steps.length) speakNext(true);
+          } else {
+            try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
+          }
+        });
+
+        $("nightBtn").addEventListener("click", function(){
+          state.night = !state.night;
+          var b = $("nightBtn");
+          b.classList.toggle("on", state.night);
+          b.firstChild.textContent = state.night ? "☀ Map: Night" : "☾ Map: Day";
+          if (map){
+            if (state.night){ map.removeLayer(dayLayer); nightLayer.addTo(map); }
+            else { map.removeLayer(nightLayer); dayLayer.addTo(map); }
+          }
+        });
+
+        function setUnits(u){
+          state.units = u;
+          $("miBtn").classList.toggle("on", u === "mi");
+          $("kmBtn").classList.toggle("on", u === "km");
+          if (state.route) renderRouteSummary();
+          renderTurnList();
+          updateNextTurn();
+        }
+        $("miBtn").addEventListener("click", function(){ setUnits("mi"); });
+        $("kmBtn").addEventListener("click", function(){ setUnits("km"); });
+
+        $("compassBtn").addEventListener("click", function(){
+          if (state.myPos && map){ map.panTo([state.myPos.lat, state.myPos.lon]); setFollow(true); }
+          else $("gpsStatus").innerHTML = "<strong>GPS:</strong> no position yet — tap &ldquo;Use my location&rdquo; first, then the compass can centre on you.";
+        });
+
+        /* ---------- Geolocation ---------- */
+        function haversine(aLat, aLon, bLat, bLon){
+          var R = 6371000, dLat = (bLat - aLat) * Math.PI / 180, dLon = (bLon - aLon) * Math.PI / 180;
+          var s = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(aLat * Math.PI/180) * Math.cos(bLat * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+          return 2 * R * Math.asin(Math.sqrt(s));
+        }
+        function onPos(pos){
+          var lat = pos.coords.latitude, lon = pos.coords.longitude;
+          state.myPos = { lat: lat, lon: lon, accuracy: pos.coords.accuracy, heading: pos.coords.heading };
+          $("gpsStatus").innerHTML = "<strong>GPS:</strong> position found" +
+            (pos.coords.accuracy ? ", accurate to about " + fmtDist(pos.coords.accuracy) : "") +
+            ". Follow mode " + (state.follow ? "is keeping you centred." : "is off — tap Follow me to centre.");
+          if (map && typeof L !== "undefined"){
+            if (!posMarker){
+              posMarker = L.circleMarker([lat, lon], { radius: 9, color: "#fff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 }).addTo(map);
+              accCircle = L.circle([lat, lon], { radius: pos.coords.accuracy || 0, color: "#2563eb", weight: 1, fillOpacity: 0.12 }).addTo(map);
+              map.setView([lat, lon], Math.max(map.getZoom(), 15));
+            } else {
+              posMarker.setLatLng([lat, lon]);
+              accCircle.setLatLng([lat, lon]);
+              if (pos.coords.accuracy) accCircle.setRadius(pos.coords.accuracy);
+            }
+            if (state.follow) map.panTo([lat, lon]);
+          }
+          if (state.myPos.heading != null && !isNaN(state.myPos.heading)){
+            $("compassRose").style.transform = "rotate(" + (-state.myPos.heading) + "deg)";
+          }
+          if (!state.from){
+            state.from = { name: "My location", lat: lat, lon: lon };
+            showPicked("from", state.from);
+          } else if (state.from.name === "My location"){
+            state.from.lat = lat; state.from.lon = lon;
+          }
+          updateNextTurn();
+        }
+        function onPosErr(err){
+          var msg;
+          if (err.code === 1) msg = "location permission was denied. That is fine — the map and route planning between typed places still work. To use GPS later, allow location for this page in your browser settings and tap the button again.";
+          else if (err.code === 2) msg = "your position is unavailable right now (no signal, or the device could not fix). The map and typed-place routing still work.";
+          else if (err.code === 3) msg = "finding your position timed out. Try again somewhere with a clearer view of the sky.";
+          else msg = "something went wrong finding your position. The map and typed-place routing still work.";
+          $("gpsStatus").innerHTML = "<strong>GPS:</strong> " + msg;
+        }
+        $("locateBtn").addEventListener("click", function(){
+          if (!("geolocation" in navigator)){
+            $("gpsStatus").innerHTML = "<strong>GPS:</strong> this browser does not offer location at all. The map and route planning between typed places still work.";
+            return;
+          }
+          $("gpsStatus").innerHTML = "<strong>GPS:</strong> asking… your browser will ask permission in plain words.";
+          if (state.watchId != null){ return; }
+          state.watchId = navigator.geolocation.watchPosition(onPos, onPosErr, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+          navigator.geolocation.getCurrentPosition(onPos, onPosErr, { enableHighAccuracy: true, timeout: 20000 });
+        });
+
+        /* ---------- Search (Nominatim, debounced, one at a time) ---------- */
+        var debounceTimers = {};
+        function scheduleSearch(which){
+          clearTimeout(debounceTimers[which]);
+          debounceTimers[which] = setTimeout(function(){ doSearch(which); }, 650);
+        }
+        function doSearch(which){
+          if (state.searchBusy) return; // one search at a time, respectfully
+          var q = $(which + "Input").value.trim();
+          var listEl = $(which + "Results");
+          listEl.innerHTML = "";
+          if (q.length < 3){ listEl.innerHTML = "<li class='empty'>Type at least 3 letters of a place name first.</li>"; return; }
+          state.searchBusy = true;
+          listEl.innerHTML = "<li class='empty'>Searching OpenStreetMap…</li>";
+          fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&addressdetails=0&q=" + encodeURIComponent(q), { headers: { "Accept": "application/json" } })
+            .then(function(r){ if (!r.ok) throw new Error("search " + r.status); return r.json(); })
+            .then(function(rows){
+              state.searchBusy = false;
+              listEl.innerHTML = "";
+              if (!rows.length){ listEl.innerHTML = "<li class='empty'>No place found by that name. Try adding a town or state, like &ldquo;Arlington, Texas&rdquo;.</li>"; return; }
+              rows.forEach(function(row){
+                var li = document.createElement("li");
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = "Tap to choose: " + row.display_name;
+                btn.addEventListener("click", function(){
+                  var place = { name: row.display_name, lat: parseFloat(row.lat), lon: parseFloat(row.lon) };
+                  if (which === "from") state.from = place; else state.to = place;
+                  showPicked(which, place);
+                  listEl.innerHTML = "";
+                  if (map) map.panTo([place.lat, place.lon]);
+                });
+                li.appendChild(btn);
+                listEl.appendChild(li);
+              });
+            })
+            .catch(function(){
+              state.searchBusy = false;
+              listEl.innerHTML = "<li class='empty'>The search service did not answer — it is a free, shared service and can be busy, or you may be offline. Wait a moment and tap search again.</li>";
+            });
+        }
+        function showPicked(which, place){
+          var el = $(which + "Picked");
+          el.hidden = false;
+          el.innerHTML = "";
+          var span = document.createElement("span");
+          span.textContent = (which === "from" ? "From: " : "To: ") + place.name;
+          el.appendChild(span);
+          var clear = document.createElement("button");
+          clear.type = "button"; clear.className = "clearpick"; clear.textContent = "Tap to clear";
+          clear.addEventListener("click", function(){
+            if (which === "from") state.from = null; else state.to = null;
+            el.hidden = true; $(which + "Input").value = "";
+          });
+          el.appendChild(clear);
+        }
+        ["from", "to"].forEach(function(which){
+          $(which + "Search").addEventListener("click", function(){ doSearch(which); });
+          $(which + "Input").addEventListener("input", function(){ scheduleSearch(which); });
+          $(which + "Input").addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); doSearch(which); } });
+        });
+
+        /* ---------- Routing (OSRM) ---------- */
+        function instructionFor(step){
+          var m = step.maneuver || {}, type = m.type || "", mod = m.modifier || "";
+          var name = step.name && step.name !== "-" ? step.name : "";
+          var onto = name ? " onto " + name : "";
+          var on = name ? " on " + name : "";
+          switch (type){
+            case "depart": return "Head out" + on;
+            case "turn":
+              if (mod === "left") return "Turn left" + onto;
+              if (mod === "right") return "Turn right" + onto;
+              if (mod === "slight left") return "Bear left" + onto;
+              if (mod === "slight right") return "Bear right" + onto;
+              if (mod === "sharp left") return "Turn sharply left" + onto;
+              if (mod === "sharp right") return "Turn sharply right" + onto;
+              if (mod === "uturn") return "Make a U-turn" + onto;
+              return "Continue" + on;
+            case "new name": return "Continue" + on;
+            case "continue": return "Continue" + on;
+            case "merge": return "Merge" + onto;
+            case "on ramp": case "off ramp": return "Take the ramp" + onto;
+            case "fork":
+              if (mod.indexOf("left") >= 0) return "Keep left at the fork" + onto;
+              if (mod.indexOf("right") >= 0) return "Keep right at the fork" + onto;
+              return "Take the fork" + onto;
+            case "end of road":
+              if (mod.indexOf("left") >= 0) return "At the end of the road, turn left" + onto;
+              if (mod.indexOf("right") >= 0) return "At the end of the road, turn right" + onto;
+              return "At the end of the road, continue" + onto;
+            case "roundabout": case "rotary":
+              return "At the roundabout, take exit " + (m.exit || "") + onto;
+            case "arrive": return "You have arrived at your destination";
+            default: return "Continue" + on;
+          }
+        }
+        function planRoute(){
+          var st = $("routeStatus");
+          if (!state.from){ st.textContent = "Pick a From place first — search for one, or tap “Use my location.”"; return; }
+          if (!state.to){ st.textContent = "Pick a To place first — search for where you are going."; return; }
+          st.textContent = "Asking the routing service for a route…";
+          var url = "https://router.project-osrm.org/route/v1/driving/" +
+            state.from.lon + "," + state.from.lat + ";" + state.to.lon + "," + state.to.lat +
+            "?overview=full&geometries=geojson&steps=true";
+          fetch(url)
+            .then(function(r){ if (!r.ok) throw new Error("osrm " + r.status); return r.json(); })
+            .then(function(data){
+              if (!data || data.code !== "Ok" || !data.routes || !data.routes.length){
+                st.textContent = "The routing service could not find a driving route between those two places. No route has been drawn — check the places and try again.";
+                return;
+              }
+              state.route = data.routes[0];
+              var leg = state.route.legs[0];
+              state.steps = leg.steps.map(function(s){
+                return { instruction: instructionFor(s), lat: s.maneuver.location[1], lon: s.maneuver.location[0], segDist: s.distance || 0 };
+              });
+              state.stepIdx = 0; state.lastSpokenIdx = -1;
+              if (map && typeof L !== "undefined"){
+                if (routeLine) map.removeLayer(routeLine);
+                if (destMarker) map.removeLayer(destMarker);
+                var latlngs = state.route.geometry.coordinates.map(function(c){ return [c[1], c[0]]; });
+                routeLine = L.polyline(latlngs, { color: "#0f766e", weight: 6, opacity: 0.9 }).addTo(map);
+                var popupEl = document.createElement("div");
+                popupEl.textContent = state.to.name;
+                destMarker = L.marker([state.to.lat, state.to.lon]).addTo(map).bindPopup(popupEl);
+                map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+              }
+              st.textContent = "";
+              $("startBtn").disabled = false;
+              renderRouteSummary();
+              renderTurnList();
+              updateNextTurn();
+              addRecent(state.to);
+            })
+            .catch(function(){
+              st.textContent = "The routing service did not answer. It is a free, shared public service and can be slow or refuse at busy times — and this page never fakes a route. Wait a moment and tap “Plan the route” again.";
+            });
+        }
+        function renderRouteSummary(){
+          if (!state.route) return;
+          var el = $("routeSummary");
+          el.hidden = false;
+          el.textContent = fmtDist(state.route.distance) + " · about " + fmtTime(state.route.duration) + " on a clear road (no live traffic — see Honest limits)";
+        }
+        function renderTurnList(){
+          var ol = $("turnList");
+          ol.innerHTML = "";
+          state.steps.forEach(function(s, i){
+            if (s.instruction.indexOf("You have arrived") === 0 && i !== state.steps.length - 1) return;
+            var li = document.createElement("li");
+            if (state.navigating && i === state.stepIdx) li.className = "now";
+            var d = document.createElement("span");
+            d.className = "td";
+            d.textContent = i === 0 ? "Start" : fmtDist(s.segDist);
+            li.appendChild(d);
+            li.appendChild(document.createTextNode(s.instruction));
+            ol.appendChild(li);
+          });
+        }
+        $("routeBtn").addEventListener("click", planRoute);
+        $("clearRouteBtn").addEventListener("click", function(){
+          state.route = null; state.steps = []; state.stepIdx = 0; state.navigating = false;
+          if (map){
+            if (routeLine){ map.removeLayer(routeLine); routeLine = null; }
+            if (destMarker){ map.removeLayer(destMarker); destMarker = null; }
+          }
+          $("routeSummary").hidden = true;
+          $("turnList").innerHTML = "";
+          $("routeStatus").textContent = "Route cleared.";
+          $("startBtn").disabled = true; $("endBtn").disabled = true;
+          $("ntDist").textContent = "—";
+          $("ntInst").textContent = "Plan a route below and your next turn shows here, big.";
+          renderTurnList();
+        });
+
+        /* ---------- Navigation / next turn countdown ---------- */
+        function speakNext(force){
+          var s = state.steps[state.stepIdx];
+          if (!s) return;
+          if (!force && state.lastSpokenIdx === state.stepIdx) return;
+          state.lastSpokenIdx = state.stepIdx;
+          speak(s.instruction);
+        }
+        function updateNextTurn(){
+          if (!state.steps.length) return;
+          var idx = state.stepIdx;
+          var cur = state.steps[idx];
+          var next = state.steps[idx + 1];
+          var display = next || cur;
+          var distText = "—";
+          if (state.myPos && display){
+            var d = haversine(state.myPos.lat, state.myPos.lon, display.lat, display.lon);
+            distText = fmtDist(d);
+            if (state.navigating && next && d < 30 && idx + 1 < state.steps.length){
+              state.stepIdx = idx + 1;
+              speakNext(false);
+              renderTurnList();
+              updateNextTurn();
+              return;
+            }
+            if (state.navigating && !next && d < 50){
+              $("ntDist").textContent = "Here";
+              $("ntInst").textContent = "You have arrived at your destination.";
+              $("ntThen").textContent = "Tap “End & save the trip” to write it into your trip record.";
+              speak("You have arrived at your destination.");
+              return;
+            }
+          }
+          $("ntDist").textContent = distText;
+          $("ntInst").textContent = display ? display.instruction : "—";
+          var after = state.steps[idx + 2];
+          $("ntThen").textContent = after ? ("Then: " + after.instruction) :
+            (state.voice ? "Voice is on — turns will be spoken by your device's own voice." : "Voice guidance is off. Tap the Voice button to hear turns spoken.");
+        }
+        $("startBtn").addEventListener("click", function(){
+          if (!state.route) return;
+          state.navigating = true;
+          state.stepIdx = 0; state.lastSpokenIdx = -1;
+          $("startBtn").disabled = true; $("endBtn").disabled = false;
+          setFollow(true);
+          if (!state.myPos){
+            $("gpsStatus").innerHTML = "<strong>GPS:</strong> trip started, but no position yet — tap &ldquo;Use my location&rdquo; so the countdown can follow you. The turn list below works without it.";
+          }
+          renderTurnList();
+          updateNextTurn();
+          speakNext(true);
+        });
+        $("endBtn").addEventListener("click", function(){
+          if (!state.route) return;
+          state.navigating = false;
+          $("endBtn").disabled = true; $("startBtn").disabled = false;
+          var trips = loadList(TRIP_KEY);
+          trips.unshift({
+            date: new Date().toISOString().slice(0, 10),
+            from: state.from ? state.from.name : "—",
+            to: state.to ? state.to.name : "—",
+            meters: Math.round(state.route.distance)
+          });
+          saveList(TRIP_KEY, trips);
+          renderTrips();
+          $("recordStatus").textContent = "Trip saved to your record on this device.";
+          $("ntThen").textContent = "Trip ended and saved. Plan another route whenever you like.";
+        });
+
+        /* ---------- Recents ---------- */
+        function addRecent(place){
+          var recents = loadList(RECENT_KEY);
+          recents = recents.filter(function(r){ return r.name !== place.name; });
+          recents.unshift({ name: place.name, lat: place.lat, lon: place.lon });
+          recents = recents.slice(0, 8);
+          saveList(RECENT_KEY, recents);
+          renderRecents();
+        }
+        function renderRecents(){
+          var recents = loadList(RECENT_KEY);
+          var wrap = $("recentChips");
+          wrap.innerHTML = "";
+          $("recentEmpty").style.display = recents.length ? "none" : "block";
+          recents.forEach(function(r){
+            var b = document.createElement("button");
+            b.type = "button";
+            b.textContent = "Tap to go to: " + r.name;
+            b.addEventListener("click", function(){
+              state.to = { name: r.name, lat: r.lat, lon: r.lon };
+              showPicked("to", state.to);
+              if (map) map.panTo([r.lat, r.lon]);
+            });
+            wrap.appendChild(b);
+          });
+        }
+        armForget($("forgetRecentsBtn"), "Tap to forget all recent destinations", function(){
+          saveList(RECENT_KEY, []);
+          renderRecents();
+        });
+
+        /* ---------- Trip record ---------- */
+        function renderTrips(){
+          var trips = loadList(TRIP_KEY);
+          var body = $("tripBody");
+          body.innerHTML = "";
+          $("tripEmpty").style.display = trips.length ? "none" : "block";
+          $("tripTable").style.display = trips.length ? "" : "none";
+          trips.forEach(function(t){
+            var tr = document.createElement("tr");
+            [t.date, t.from, t.to, fmtDist(t.meters)].forEach(function(v){
+              var td = document.createElement("td");
+              td.textContent = v;
+              tr.appendChild(td);
+            });
+            body.appendChild(tr);
+          });
+        }
+        $("exportTripsBtn").addEventListener("click", function(){
+          var trips = loadList(TRIP_KEY);
+          if (!trips.length){ $("recordStatus").textContent = "Nothing to export yet — the record is empty."; return; }
+          var lines = ["date,from,to,distance"];
+          trips.forEach(function(t){
+            var esc = function(s){ return '"' + String(s).replace(/"/g, '""') + '"'; };
+            lines.push([t.date, esc(t.from), esc(t.to), fmtDist(t.meters)].join(","));
+          });
+          download("wayfinder-trips.csv", lines.join("\n"), "text/csv");
+          $("recordStatus").textContent = "Trip record downloaded as a file. It is yours — keep it wherever you like.";
+        });
+        armForget($("forgetTripsBtn"), "Tap to forget the whole trip record", function(){
+          saveList(TRIP_KEY, []);
+          renderTrips();
+          $("recordStatus").textContent = "Trip record forgotten. It is gone from this device.";
+        });
+
+        /* ---------- Forget helper (one extra confirming tap, in-page) ---------- */
+        function armForget(btn, label, action){
+          var armed = false, timer = null;
+          btn.addEventListener("click", function(){
+            if (!armed){
+              armed = true;
+              btn.textContent = "Tap again to confirm — this cannot be undone";
+              btn.classList.add("danger-armed");
+              timer = setTimeout(function(){
+                armed = false; btn.textContent = label; btn.classList.remove("danger-armed");
+              }, 4000);
+              return;
+            }
+            clearTimeout(timer);
+            armed = false; btn.textContent = label; btn.classList.remove("danger-armed");
+            action();
+          });
+        }
+
+        /* ---------- Download door ---------- */
+        function download(name, content, type){
+          var blob = new Blob([content], { type: type || "text/plain" });
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+        }
+        $("downloadBtn").addEventListener("click", function(){
+          var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+          download("wayfinder.html", html, "text/html");
+        });
+
+        /* ---------- Go ---------- */
+        initMap();
+        renderRecents();
+        renderTrips();
+      })();
+    </script>
+  </body>
+</html>
