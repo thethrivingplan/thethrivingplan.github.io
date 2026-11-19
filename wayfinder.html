@@ -116,6 +116,12 @@
       footer{ margin-top:22px; color:var(--ink2); font-size:.95rem; }
       footer a, .panel a{ color:var(--route); }
       .leaflet-container{ font:inherit; }
+      /* Night is a treatment of the same OpenStreetMap tiles, not a second source:
+         darken and desaturate the tile images only — controls, markers, route line,
+         panels and text keep their normal colours so they stay readable. */
+      #map.night .leaflet-tile{
+        filter:brightness(0.7) contrast(1.05) saturate(0.7) hue-rotate(-8deg);
+      }
       @media (max-width:560px){
         .nextturn .nt-dist{ font-size:2.7rem; }
         .nextturn .nt-inst{ font-size:1.55rem; }
@@ -175,7 +181,7 @@
           </svg>
         </button>
       </div>
-      <p class="status">Map data © OpenStreetMap contributors. Night map styling © CARTO, built on OpenStreetMap data. The compass needle turns with your direction of travel when GPS reports one; north is up on the map itself.</p>
+      <p class="status">Map data © OpenStreetMap contributors. Night is the same OpenStreetMap map, darkened for night driving — there is no separate night map. The compass needle turns with your direction of travel when GPS reports one; north is up on the map itself.</p>
 
       <!-- ROUTE PLANNER -->
       <section class="panel" aria-labelledby="planH">
@@ -330,7 +336,7 @@
         }
 
         /* ---------- Map ---------- */
-        var map = null, dayLayer = null, nightLayer = null, posMarker = null, accCircle = null, routeLine = null, destMarker = null;
+        var map = null, dayLayer = null, posMarker = null, accCircle = null, routeLine = null, destMarker = null;
         var ARLINGTON = [32.7357, -97.1081];
         function initMap(){
           if (typeof L === "undefined"){
@@ -340,9 +346,6 @@
           map = L.map("map", { zoomControl: true }).setView(ARLINGTON, 12);
           dayLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19, attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
-          });
-          nightLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-            maxZoom: 19, attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors &copy; <a href='https://carto.com/attributions'>CARTO</a>"
           });
           dayLayer.addTo(map);
           map.on("dragstart", function(){
@@ -400,10 +403,10 @@
           var b = $("nightBtn");
           b.classList.toggle("on", state.night);
           b.firstChild.textContent = state.night ? "☀ Map: Night" : "☾ Map: Day";
-          if (map){
-            if (state.night){ map.removeLayer(dayLayer); nightLayer.addTo(map); }
-            else { map.removeLayer(nightLayer); dayLayer.addTo(map); }
-          }
+          // Same OpenStreetMap tiles in both modes — night only adds the
+          // darkening treatment (the .night CSS filter on the tile images).
+          var mapEl = $("map");
+          if (mapEl) mapEl.classList.toggle("night", state.night);
         });
 
         function setUnits(u){
