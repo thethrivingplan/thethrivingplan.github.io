@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark"><link rel="icon" href="data:,"><title>The City System</title>
+<style>
+:root{--bg:#eef1ec;--card:#fff;--ink:#17201a;--mut:#536158;--line:#cbd5cc;--accent:#0f766e;--accent2:#b45309;--bad:#b91c1c;--good:#15803d;--chip:#e6efe8;--mapbg:#dfe8d8}
+@media(prefers-color-scheme:dark){:root{--bg:#121714;--card:#1c2420;--ink:#eef4ef;--mut:#a7b8ac;--line:#334139;--accent:#2dd4bf;--accent2:#fbbf24;--chip:#26332b;--mapbg:#1e2a22}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,serif;line-height:1.5}
+.sans{font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+.free{background:var(--accent);color:#fff;padding:12px 16px;border-radius:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-family:system-ui}
+.free b{font-size:1.05rem}.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:10px;cursor:pointer;font-family:system-ui;font-weight:600;min-height:44px}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.warn{border-color:var(--bad);color:var(--bad)}.btn small{display:block;font-weight:400;font-size:.72rem;opacity:.85}
+h1{font-size:2.2rem;line-height:1.05;margin:16px 0 6px}h2{margin:0 0 8px}h3{margin:0 0 6px}
+.lede{font-size:1.08rem;color:var(--mut);max-width:70ch}
+.grid{display:grid;grid-template-columns:1.65fr .95fr;gap:16px;margin-top:16px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+canvas{width:100%;height:auto;display:block;background:var(--mapbg);border-radius:10px;border:1px solid var(--line);touch-action:manipulation}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}@media(max-width:560px){.hud{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--chip);border-radius:10px;padding:10px}.stat b{display:block;font-size:1.25rem;font-family:system-ui}.stat span{font-size:.8rem;color:var(--mut);font-family:system-ui}
+.heat{font-size:1.3rem;letter-spacing:2px;color:var(--bad)}
+.meter{height:10px;background:var(--line);border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:var(--accent)}
+.dpad{display:grid;grid-template-columns:repeat(3,84px);gap:6px;justify-content:center;margin:10px 0}.dpad button{min-height:48px;font-size:1.1rem}.dpad small{white-space:nowrap}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:480px){.actions{grid-template-columns:1fr}}
+.actions .btn{text-align:left}
+label{font-family:system-ui;font-size:.85rem;font-weight:700}input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);min-height:44px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.log{height:170px;overflow:auto;background:#0f1712;color:#d1fae5;padding:12px;border-radius:10px;font-family:ui-monospace,monospace;font-size:.85rem;white-space:pre-wrap}
+.dist{border-top:1px solid var(--line);padding:10px 0}.dist:first-of-type{border-top:0}
+details{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:var(--card)}summary{cursor:pointer;font-weight:700;min-height:36px}
+.pill{display:inline-block;background:var(--chip);padding:3px 9px;border-radius:99px;font-size:.78rem;font-family:system-ui;margin:2px}
+.notice{border:2px solid var(--accent2);border-radius:12px;padding:14px;background:var(--card)}
+.teach-full .why-deep{display:block}.teach-light .why-deep,.teach-off .why-deep,.teach-off .why{display:none}.why{font-size:.92rem;color:var(--mut);border-left:3px solid var(--accent);padding-left:10px;margin-top:8px}.why-deep{font-size:.92rem}
+.compass{font-family:system-ui;text-align:center}.compass b{font-size:1.4rem}
+.warhead{background:#1c2420;color:#eef4ef;border-radius:14px;padding:18px;margin-top:26px}
+@media(prefers-color-scheme:dark){.warhead{background:#0f1712;border:1px solid var(--line)}}
+.warhead h2{font-size:1.7rem;line-height:1.1;margin:0 0 6px}.warhead p{color:#c7d2c9;max-width:72ch;margin:0}
+.alloc{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:560px){.alloc{grid-template-columns:1fr}}
+.alloc .row{align-items:center}.alloc output{font-family:system-ui;font-weight:800;font-size:1.2rem;min-width:28px;text-align:center}
+.stepper{display:flex;gap:6px}.stepper button{min-width:44px;min-height:44px}
+.doctrine{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:560px){.doctrine{grid-template-columns:1fr}}
+.doctrine .btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.principles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}@media(max-width:860px){.principles{grid-template-columns:1fr 1fr}}@media(max-width:560px){.principles{grid-template-columns:1fr}}
+.principle{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}.principle h3{font-size:1rem}.principle p{font-size:.92rem;margin:6px 0}
+footer{color:var(--mut);font-size:.88rem;padding:24px 0}
+a{color:var(--accent)}
+</style></head>
+<body class="teach-light"><div class="wrap">
+<div class="free"><span><b>Free — always free.</b> No ads. No account. Play here, or take the whole city with you.</span><button class="btn" id="dlBtn">⬇ Download for offline <small>Tap to save this page</small></button></div>
+
+<h1>The City System</h1>
+<p class="lede">An open-city sandbox about <strong>how a city works</strong> — not how to beat it. Walk or drive four districts, work, trade, help or cut corners, and watch the systems answer back: money moves, neglected blocks slide, territory shifts, and police attention rises — then fades — for reasons you can see. <strong>New below: War Strategies</strong> — the same systems thinking at campaign scale, playable in the War Room.</p>
+<div class="row sans" style="margin:10px 0"><a class="btn" href="#city" style="text-align:center;text-decoration:none">The City <small>Tap · districts &amp; attention</small></a><a class="btn" href="#war" style="text-align:center;text-decoration:none">War Strategies ↓ <small>Tap · War Room &amp; playbook</small></a><a class="btn" href="#systems" style="text-align:center;text-decoration:none">How systems work <small>Tap · one tap down</small></a></div>
+<div class="notice"><strong>Plainly:</strong> this page simulates systems at the map level. It does <em>not</em> teach real crime techniques, evasion, or wrongdoing. “Risky” choices here are abstract buttons (“speed”, “unlicensed stall”) so you can study attention, incentives and consequences — fines and lost time — not methods.</div>
+
+<div class="row" style="margin-top:14px">
+<div><label for="alias">Your name in the city — any alias you like</label><input id="alias" value="Walker" maxlength="24"></div>
+<div><label for="dial">Teaching dial — Tap to change</label><select id="dial"><option value="teach-off">Off — just play</option><option value="teach-light" selected>Light — why, in the moment</option><option value="teach-full">Full — why + the deeper loop</option></select></div>
+<div><label>Compass</label><div class="compass card" style="padding:8px"><div style="display:flex;justify-content:center;gap:14px;white-space:nowrap"><span>◀ W</span><b>↑ N</b><span>E ▶</span><span>↓ S</span></div><small>Districts: Heights NW · Market NE · Harbor SW · Old Yards SE</small></div></div>
+</div>
+
+<div class="grid" id="city">
+<section class="card">
+<canvas id="map" width="800" height="560" aria-label="Top-down drawn city map with four districts and streets"></canvas>
+<div class="hud">
+<div class="stat"><span>Cash · <span id="who">Walker</span></span><b id="cash">$60</b></div>
+<div class="stat"><span>Time</span><b id="clock">Day 1 · 8am</b></div>
+<div class="stat"><span>Goods carried (max 5)</span><b id="inv">0</b></div>
+<div class="stat"><span>Police attention</span><b class="heat" id="heat">○○○○○</b></div>
+</div>
+<p class="sans" style="margin:6px 0"><strong id="here">You are in Market.</strong> <span id="hereDesc"></span></p>
+<div class="dpad" aria-label="Move">
+<span></span><button class="btn" data-move="0,-1">↑<small style="display:block;font-size:.65rem">Tap: North</small></button><span></span>
+<button class="btn" data-move="-1,0">←<small style="display:block;font-size:.65rem">Tap: West</small></button>
+<button class="btn" id="waitBtn">•<small style="display:block;font-size:.65rem">Tap: Lay low</small></button>
+<button class="btn" data-move="1,0">→<small style="display:block;font-size:.65rem">Tap: East</small></button>
+<span></span><button class="btn" data-move="0,1">↓<small style="display:block;font-size:.65rem">Tap: South</small></button><span></span>
+</div>
+<p class="sans" style="text-align:center;color:var(--mut);font-size:.85rem">Keyboard: arrow keys / WASD move · Tap a street on the map to walk toward it · Hold any action button to hear what it does (title text)</p>
+
+<h3>Act here — Tap a button</h3>
+<div class="actions">
+<button class="btn primary" id="workBtn" title="Hold to explain: Work pays this district's wage. Richer districts pay more — and charge more.">Work a shift <small>Tap · +1 hr, earn the local wage</small></button>
+<button class="btn" id="buyBtn" title="Hold to explain: Buy low in a poor district, sell high in a rich one. That gap is the economy talking.">Buy goods <small>Tap · pay local price, carry +1</small></button>
+<button class="btn" id="sellBtn" title="Hold to explain: Selling pays this district's price.">Sell goods <small>Tap · sell all carried at local price</small></button>
+<button class="btn" id="helpBtn" title="Hold to explain: An unpaid hour that lowers neglect. Watch what neglect drags with it.">Community hour <small>Tap · unpaid, −neglect here</small></button>
+<button class="btn warn" id="speedBtn" title="Hold to explain: Abstract risky shortcut. Faster, but draws police attention. No real technique is shown.">Speed through <small>Tap · move 3 blocks, +attention</small></button>
+<button class="btn warn" id="stallBtn" title="Hold to explain: Abstract risky shortcut. Earns more than a shift, draws more attention, risks a fine.">Run an unlicensed stall <small>Tap · earn more, ++attention</small></button>
+</div>
+<p class="why" data-why>Why attention fades: police attention is a <em>resource-allocation system</em>, not a memory that lasts forever. Reports age, patrols rotate, and new calls compete. Lay low, stay lawful, and the system’s focus moves on — that decay is built into the model below.</p>
+<p class="why-deep" data-why>Deeper loop: attention ↑ → patrols ↑ in that district → safety ↑ briefly, but fines land on the poorest first (they can least afford them) → cash leaves the district → neglect ↑ → the very conditions that drew attention return. A loop, not a ladder.</p>
+<h3 style="margin-top:16px">City log</h3><div class="log" id="log" aria-live="polite"></div>
+</section>
+
+<aside>
+<section class="card"><h2>Systems, live</h2><div id="districts"></div>
+<p class="why">Why districts differ: starting wealth is history — port jobs left Harbor, shops clustered in Market. No district is “bad people”; each is a set of incentives and a starting hand.</p></section>
+
+<section class="card" style="margin-top:14px"><h2>Systems debrief</h2><p id="debrief" class="sans" style="font-size:.94rem">Play a few hours and your own choices will be drawn out here — what you did, what the city did back, and why.</p><button class="btn primary" id="debriefBtn" style="width:100%">Read my debrief <small>Tap to open</small></button><div id="debriefFull"></div></section>
+
+<section class="card" style="margin-top:14px"><h2>Your record — in this tab only</h2><p class="sans" style="font-size:.9rem;color:var(--mut)">Kept in memory on this page. Nothing is sent anywhere. Export it to keep it; Forget clears it.</p><div class="row"><button class="btn" id="exportBtn">Export record <small>Tap · downloads JSON</small></button><button class="btn warn" id="forgetBtn">Forget <small>Tap · clears &amp; restarts</small></button></div></section>
+</aside>
+</div>
+
+<!-- ============ WAR STRATEGIES ============ -->
+<div class="warhead" id="war"><p class="sans" style="font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Same map · Bigger scale</p><h2>War Strategies — campaigns are systems too</h2><p>A city and a campaign run on the same hidden machinery: supply lines instead of streets, morale instead of neglect, intelligence instead of police attention. Battles get the paintings. <strong>Systems win or lose the war around them.</strong> This War Room teaches strategy at the map level — history, incentives and logistics — as abstract choices. It does not teach real-world tactics, weapons, or operations.</p></div>
+
+<div class="grid">
+<section class="card">
+<h2>War Room — play a campaign in 6 turns</h2>
+<p class="sans" style="font-size:.94rem">Pick a campaign, spend <strong>10 effort points</strong>, choose <strong>one doctrine</strong>, then resolve the turn. The opponent adapts: repeat the same doctrine and it stops working. Starve supply or morale and the campaign collapses no matter how bold the plan was.</p>
+<label for="scenario">Campaign — Tap to change</label>
+<select id="scenario">
+<option value="river">1 · The River Crossing — defender holds the far bank; supply is hard, knowing the crossing matters most</option>
+<option value="hill">2 · Hill Town Defence — you hold high ground; morale and holding together matter most</option>
+<option value="siege">3 · The Long Supply War — no single battle decides it; food, fuel and time decide it</option>
+</select>
+<p id="scenDesc" class="sans" style="font-size:.92rem;color:var(--mut);margin:8px 0"></p>
+
+<div class="hud">
+<div class="stat"><span>Turn</span><b id="wTurn">1 / 6</b></div>
+<div class="stat"><span>Ground held</span><b id="wGround">35%</b></div>
+<div class="stat"><span>Supply</span><b id="wSupply">60</b></div>
+<div class="stat"><span>Morale</span><b id="wMorale">60</b></div>
+</div>
+<div style="margin:10px 0">
+<span class="sans" style="font-size:.82rem;color:var(--mut)">Opponent strength</span><div class="meter"><i id="wOppBar" style="width:65%;background:#b91c1c"></i></div>
+<span class="sans" style="font-size:.82rem;color:var(--mut)">Intel advantage</span><div class="meter"><i id="wIntelBar" style="width:30%"></i></div>
+<span class="sans" style="font-size:.82rem;color:var(--mut)">Effort left to spend: <strong id="wLeft">2</strong> of 10 — you do not have to spend it all</span>
+</div>
+
+<h3>1 · Spend effort — Tap − / +</h3>
+<div class="alloc" id="alloc"></div>
+<p class="why" data-why>Why only 10 points? Because scarcity <em>is</em> strategy. Every real commander, mayor and household faces the same shape: not enough time, people and material for everything. A plan that needs everything is not a plan — it is a wish. Choosing what to starve is the strategy.</p>
+
+<h3 style="margin-top:14px">2 · Choose a doctrine — Tap one</h3>
+<div class="doctrine" id="doctrines">
+<button class="btn" data-doc="frontal" aria-pressed="false" title="Hold to explain: Direct pressure on the strongest point. Simple, costly, and only sensible with a large supply and strength advantage.">Frontal pressure <small>Tap · direct, costly, predictable</small></button>
+<button class="btn" data-doc="flank" aria-pressed="false" title="Hold to explain: Manoeuvre around the strong point instead of through it. Needs intel to find the weak side and supply to move.">Flank / manoeuvre <small>Tap · go around, needs intel + supply</small></button>
+<button class="btn" data-doc="feint" aria-pressed="false" title="Hold to explain: A visible threat in one place draws the opponent's reserves, while the real effort lands elsewhere. Needs intel; fails if seen through.">Feint &amp; deception <small>Tap · mislead, needs intel, risky</small></button>
+<button class="btn" data-doc="hold" aria-pressed="false" title="Hold to explain: Hold ground, rest, resupply and let time and attrition work. Unglamorous — and often how campaigns are actually survived.">Hold &amp; resupply <small>Tap · rest, rebuild supply + morale</small></button>
+<button class="btn" data-doc="negotiate" aria-pressed="false" title="Hold to explain: Try to end it short of total victory. The outcome depends on how strong your position looks — negotiate from weakness and the terms show it.">Negotiate / seek terms <small>Tap · end it early, terms depend on position</small></button>
+</div>
+
+<div class="row" style="margin-top:12px"><button class="btn primary" id="resolveBtn">Resolve turn <small>Tap · see what the system does back</small></button><button class="btn" id="warResetBtn">Restart campaign <small>Tap · same or new scenario</small></button></div>
+<p class="why-deep" data-why>Deeper loop: bold move → supply burned → next turn weaker → opponent counter-moves → morale dips → desertion / retreat pressure → ground lost. And the mirror: resupply → rest → intel gathered → one well-chosen move lands harder than three hungry ones. Tempo is a resource, not a mood.</p>
+<h3 style="margin-top:16px">War log</h3><div class="log" id="warLog" aria-live="polite" style="height:190px"></div>
+</section>
+
+<aside>
+<section class="card"><h2>War debrief</h2><p id="warDebrief" class="sans" style="font-size:.94rem">Play at least two turns, then open your debrief — it reads your actual pattern: what you fed, what you starved, and whether you adapted.</p><button class="btn primary" id="warDebriefBtn" style="width:100%">Read my war debrief <small>Tap to open</small></button><div id="warDebriefFull"></div></section>
+<section class="card" style="margin-top:14px"><h2>The one-line version</h2><p style="font-size:1.05rem"><strong>Amateurs talk battles. Systems talk supply.</strong></p><p class="sans" style="font-size:.92rem;color:var(--mut)">A force that cannot eat, move, communicate or believe in what it is doing stops being a force — whatever its courage. That is why this page grades every doctrine by what it does to supply, morale and information first, and ground second.</p><p class="why" data-why>Why does this belong on a city page? Because Harbor is a supply problem, gang territory is a morale-and-legitimacy problem, and police attention is an intelligence problem — at street scale. Learn the shape once, see it everywhere. That is The Flow Is One Knowledge, applied.</p></section>
+<section class="card" style="margin-top:14px"><h2>Read the opponent</h2><p class="sans" style="font-size:.94rem">The opponent in this War Room does three honest things real opponents do:</p><p class="sans" style="font-size:.94rem">1. <strong>Adapts</strong> — your repeated doctrine loses power.<br>2. <strong>Attacks your weakest system</strong> — low supply or low morale gets punished.<br>3. <strong>Trades ground for time</strong> when losing — so a fast early gain can still lose a long campaign.</p></section>
+</aside>
+</div>
+
+<h2 style="margin-top:26px">The War Playbook — seven principles, each with its failure mode</h2>
+<div class="principles">
+<article class="principle"><h3>1. Logistics first</h3><p><strong>What:</strong> Food, fuel, transport and repair decide how far and how long any force can operate.</p><p><strong>Why it works:</strong> effort cannot be spent twice; a unit at the end of a broken supply line has courage but no options.</p><p><strong>When it fails:</strong> when leaders treat supply as paperwork and spend it all on the visible fight. In the War Room: watch what a frontal turn does to Supply.</p></article>
+<article class="principle"><h3>2. Terrain is a multiplier</h3><p><strong>What:</strong> Rivers, hills, streets and weather multiply or divide the same force.</p><p><strong>Why it works:</strong> ground channels movement and visibility — the defender who chose it starts ahead before anything happens.</p><p><strong>When it fails:</strong> attacking prepared ground head-on because it is the shortest line on the map. Shortest ≠ cheapest.</p></article>
+<article class="principle"><h3>3. Concentrate at the decisive point</h3><p><strong>What:</strong> Be strong where it decides, even if that means being thin elsewhere.</p><p><strong>Why it works:</strong> spreading evenly is strong nowhere; outcomes are usually decided locally, not on average.</p><p><strong>When it fails:</strong> when “decisive point” is guessed without intel — concentration on the wrong place is just a bigger mistake, faster.</p></article>
+<article class="principle"><h3>4. Information &amp; deception</h3><p><strong>What:</strong> Know more than the opponent, and let them confidently know something false.</p><p><strong>Why it works:</strong> every plan is a bet on a picture of the opponent. A wrong picture makes even a strong force spend itself in the wrong place.</p><p><strong>When it fails:</strong> when deception is used once too often — opponents learn, and a seen-through feint costs the force you split off for it.</p></article>
+<article class="principle"><h3>5. Morale &amp; legitimacy</h3><p><strong>What:</strong> People hold, advance or quit based on whether they believe the cause, the plan and each other.</p><p><strong>Why it works:</strong> morale is not decoration — it is the system that turns supply and numbers into actual behaviour under stress.</p><p><strong>When it fails:</strong> when victories are bought by spending trust. It does not refill at the depot. In the city above, this is the same system as community presence vs. gang recruitment.</p></article>
+<article class="principle"><h3>6. Attrition vs. manoeuvre</h3><p><strong>What:</strong> Two grand shapes: wear the opponent down (attrition) or make their position useless (manoeuvre).</p><p><strong>Why each works:</strong> attrition favours whoever has deeper supply and can afford the exchange; manoeuvre favours whoever has better intel and mobility.</p><p><strong>When it fails:</strong> picking the shape your resources <em>don't</em> support — attrition on a short supply line, or manoeuvre blind. Most real disasters are this mismatch.</p></article>
+<article class="principle"><h3>7. The political end — and the exit</h3><p><strong>What:</strong> Wars end politically, not just militarily: terms, exhaustion, legitimacy and outside pressure close them.</p><p><strong>Why it matters:</strong> “Winning” ground without an end you can actually hold is how a campaign victory becomes a longer problem.</p><p><strong>When it fails:</strong> when no one defined what “done” looks like. The best possible outcome is re-asked whenever information changes — negotiate from the position you have, not the one you wish for.</p></article>
+<article class="principle"><h3>History, graded honestly</h3><p><span class="pill">Well supported</span> Cannae (216 BCE) is the classic encirclement taught for two millennia: a weaker centre that gave ground drew the opponent in while strength closed from the sides — manoeuvre + deception, not raw numbers.</p><p><span class="pill">Well supported</span> Long campaigns repeatedly turn on supply — armies that outran their food and transport shrank without losing a headline battle.</p><p><span class="pill">Contested</span> “One genius general / one decisive battle won the war” stories are usually compressed: they leave out supply, allies, money and politics that made the battle matter. Enjoy the story; grade it as a story.</p></article>
+<article class="principle"><h3>From war room to city street</h3><p>Run the translation yourself: supply line → Harbor's jobs and prices · morale → whether a district believes help is coming · intel → what police attention can and cannot see · terrain → which streets and blocks channel everything · exit → any intervention without a “done” defined just drifts. One knowledge, many faces.</p></article>
+</div>
+
+<details><summary>Tap to open · Why the opponent adapting is the whole lesson</summary><p>Static puzzles teach you to find <em>the</em> answer. Opponents remove that comfort: any pattern you repeat becomes information for the other side. That is true in campaigns, in markets, and in the district game above — a stall run the same way every day draws attention the same way every day. Strategy is not a move. It is a sequence played against someone who is learning you while you learn them.</p></details>
+<details><summary>Tap to open · Friction: why no plan survives contact — graded plainly</summary><p>Historians and theorists call it <em>friction</em>: weather, fatigue, misunderstanding, delay and chance pile up until the real operation barely resembles the plan. This War Room models a small, honest slice of it — small random swings, supply burn, and morale drift. The lesson is not “planning is useless.” It is the opposite: plan for the system, keep reserves, keep an exit, and never build a plan that only works if everything goes right.</p></details>
+
+<h2 style="margin-top:26px" id="systems">How each system works — one tap down</h2>
+<details><summary>Tap to open · Economy: wages, prices &amp; the gap between districts</summary><p>Work pays the local wage; goods cost the local price. Heights pays $34 and charges $18; Harbor pays $20 and charges $8. Buying in Harbor and selling in Heights earns the gap — that is arbitrage, and it is also why money tends to flow <em>out</em> of poor districts unless someone deliberately spends it there. Your community hour is the opposite flow: time spent where it earns nothing cash, but changes the block.</p></details>
+<details><summary>Tap to open · Police attention: a system, not a score for its own sake</summary><p>Attention rises when visible rule-breaking happens where patrols can see it, and falls with time and lawful behaviour. At 3+ stars, an interception becomes likely each hour: the consequence in this model is a <strong>fine and lost time</strong> — the two costs real systems actually impose most often. Notice who fines hurt most: $40 is an annoyance in Heights and a week’s margin in Harbor. Same rule, unequal weight — that asymmetry is the lesson.</p></details>
+<details><summary>Tap to open · Neglect, wealth &amp; “broken windows” — graded honestly</summary><p><span class="pill">Contested claim</span> The “broken windows” idea says visible disorder invites more disorder. This simulation includes a mild version: high neglect slowly raises gang influence and lowers safety. <strong>Honest grading:</strong> the strong version of the claim — that cracking down on minor disorder causes major-crime drops — is <em>contested</em> in real research; cities that cleaned up also changed many other things at once. What is well supported is narrower: neglected places get fewer services, fewer customers, and less investment, and that feedback loop is real whether or not the strong claim holds.</p></details>
+<details><summary>Tap to open · Territory &amp; gangs: incentives, not monsters</summary><p>Gang influence here is a number driven by inputs: it grows where neglect is high and lawful income is scarce (recruitment is easier when the lawful path pays least and slowest), and shrinks when neglect falls and community presence rises. That framing matters: if influence is produced by conditions, changing conditions changes influence. Enforcement alone, in this model, only pauses it — patrols raise safety while they last, then the inputs reassert themselves.</p></details>
+<details><summary>Tap to open · Feedback loops: the whole game in one paragraph</summary><p>Wealth → investment → lower neglect → higher safety → more customers → more wealth. And the mirror: poverty → neglect → low safety → no customers → deeper poverty. Most city policy, good and bad, is an attempt to push a district from one loop into the other. Watch your own log: nearly everything you do nudges one of those arrows.</p></details>
+
+<footer>Copyleft — writings &amp; design CC BY-SA 4.0 · code GPL · derivatives carry the same freedom. No ads, ever. The city, its districts and its people are original and abstract — no copied art, names or assets from any game. Built to teach systems literacy: incentives, feedback loops, and cause &amp; effect you can watch happen.</footer>
+</div>
+<script>
+var D=[
+{name:"The Heights",x:0,y:0,wealth:78,neglect:18,safety:72,gang:12,wage:34,price:18,desc:"Leafy, well-served, expensive. Patrols are frequent; fines are survivable here."},
+{name:"Market",x:1,y:0,wealth:58,neglect:32,safety:60,gang:28,wage:26,price:13,desc:"Shops, stalls and buses. The city's trading heart — prices sit in the middle."},
+{name:"Harbor",x:0,y:1,wealth:32,neglect:64,safety:38,gang:58,wage:20,price:8,desc:"The docks shrank a generation ago. Cheapest goods, lowest wages, most neglect."},
+{name:"Old Yards",x:1,y:1,wealth:44,neglect:48,safety:46,gang:42,wage:22,price:10,desc:"Workshops and rail yards. In between — which way it tips is the story."}];
+var S={px:12,py:3,cash:60,inv:0,invCost:0,heat:0,day:1,hour:8,work:0,buy:0,sell:0,help:0,risky:0,fines:0,fined:0,visited:{Market:true},log:[]};
+var cv=document.getElementById('map'),ctx=cv.getContext('2d');
+function distAt(px,py){return D[(py>=7?2:0)+(px>=10?1:0)]}
+function log(m){S.log.push("Day "+S.day+" "+fmtH(S.hour)+" — "+m);var el=document.getElementById('log');el.textContent=S.log.slice(-30).join("\n");el.scrollTop=el.scrollHeight}
+function fmtH(h){return h===12?"12pm":h>12?(h-12)+"pm":h+"am"}
+function draw(){ctx.clearRect(0,0,800,560);var cols=["#b7d1a8","#e8d29a","#c9a89a","#aebfd1"];
+D.forEach(function(d,i){ctx.fillStyle=cols[i];ctx.fillRect(d.x*400,d.y*280,400,280);ctx.fillStyle="rgba(0,0,0,.62)";ctx.font="bold 22px system-ui";ctx.fillText(d.name.toUpperCase(),d.x*400+18,d.y*280+32);ctx.font="14px system-ui";ctx.fillText("Wealth "+Math.round(d.wealth)+" · Neglect "+Math.round(d.neglect)+" · Gang "+Math.round(d.gang),d.x*400+18,d.y*280+54);});
+// buildings
+ctx.fillStyle="rgba(255,255,255,.55)";for(var i=0;i<70;i++){var bx=(i*97)%760+10,by=(i*61)%520+10;if(Math.abs(bx-400)<28||Math.abs(by-280)<24)continue;if((by%280)<68)continue;ctx.fillRect(bx,by,26,18)}
+// roads
+ctx.fillStyle="#5b6560";ctx.fillRect(388,0,24,560);ctx.fillRect(0,268,800,24);
+// player + police if heat
+ctx.fillStyle="#111";ctx.beginPath();ctx.arc(S.px*40+20,S.py*40+20,13,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(S.px*40+20,S.py*40+20,8,0,7);ctx.fill();
+if(S.heat>=2){ctx.fillStyle="#1d4ed8";ctx.fillRect(Math.max(0,S.px*40-50),S.py*40+6,22,14);ctx.fillStyle="#fff";ctx.font="bold 9px system-ui";ctx.fillText("POL",Math.max(0,S.px*40-48),S.py*40+16)}
+render()}
+function render(){document.getElementById('cash').textContent="$"+S.cash;document.getElementById('inv').textContent=S.inv;document.getElementById('clock').textContent="Day "+S.day+" · "+fmtH(S.hour);
+document.getElementById('heat').textContent="★".repeat(S.heat)+"○".repeat(5-S.heat)||"○○○○○";if(S.heat===0)document.getElementById('heat').textContent="○○○○○";
+var d=distAt(S.px,S.py);document.getElementById('here').textContent="You are in "+d.name+".";document.getElementById('hereDesc').textContent=d.desc+" Wage $"+d.wage+" · Goods $"+d.price+".";
+document.getElementById('districts').innerHTML=D.map(function(x){return '<div class="dist"><strong>'+x.name+'</strong><br><span class="sans" style="font-size:.82rem;color:var(--mut)">Wealth</span><div class="meter"><i style="width:'+x.wealth+'%;background:#b45309"></i></div><span class="sans" style="font-size:.82rem;color:var(--mut)">Neglect</span><div class="meter"><i style="width:'+x.neglect+'%;background:#b91c1c"></i></div><span class="sans" style="font-size:.82rem;color:var(--mut)">Safety '+Math.round(x.safety)+' · Gang influence '+Math.round(x.gang)+' · Wage $'+x.wage+' · Price $'+x.price+'</span></div>'}).join("")}
+function tick(){S.hour++;if(S.hour>20){S.hour=8;S.day++;log("A new day. Attention resets a little; neglect does not — it waits.")}
+// city drift
+D.forEach(function(d){d.neglect=Math.min(92,Math.max(5,d.neglect+(d.wealth<40?0.7:-0.3)));d.gang=Math.min(90,Math.max(4,d.gang+(d.neglect>55?0.6:d.neglect<30?-0.5:0)));d.safety=Math.min(90,Math.max(10,50+(d.wealth-d.neglect)*0.4-d.gang*0.2));d.wealth=Math.min(90,Math.max(15,d.wealth+(d.safety>55?0.3:d.safety<40?-0.3:0)))});
+// heat decay + interception
+if(S.heat>0&&Math.random()<0.65){S.heat--;if(S.heat===0)log("Police attention has faded to zero. Time and lawful hours did that — no trick.")}
+if(S.heat>=3&&Math.random()<0.55){var fine=Math.min(S.cash,40);S.cash-=fine;S.fines++;S.fined+=fine;S.heat=Math.max(1,S.heat-2);log("🚔 Intercepted in "+distAt(S.px,S.py).name+". Fine $"+fine+" and the hour is gone. Consequence landed as money + time — exactly as the debrief warned.")}
+draw()}
+function move(dx,dy){S.px=Math.max(0,Math.min(19,S.px+dx));S.py=Math.max(0,Math.min(13,S.py+dy));var d=distAt(S.px,S.py);if(!S.visited[d.name]){S.visited[d.name]=true;log("Entered "+d.name+" for the first time. Compare its wage, price and neglect with where you came from.")}draw()}
+document.querySelectorAll('[data-move]').forEach(function(b){b.onclick=function(){var p=b.getAttribute('data-move').split(',');move(+p[0],+p[1])}});
+cv.onclick=function(e){var r=cv.getBoundingClientRect(),tx=Math.floor((e.clientX-r.left)/r.width*20),ty=Math.floor((e.clientY-r.top)/r.height*14);move(Math.sign(tx-S.px),Math.sign(ty-S.py))};
+document.addEventListener('keydown',function(e){var k=e.key.toLowerCase();if(k==='arrowup'||k==='w')move(0,-1);if(k==='arrowdown'||k==='s')move(0,1);if(k==='arrowleft'||k==='a')move(-1,0);if(k==='arrowright'||k==='d')move(1,0)});
+document.getElementById('waitBtn').onclick=function(){log("You lay low for an hour in "+distAt(S.px,S.py).name+".");tick()};
+document.getElementById('workBtn').onclick=function(){var d=distAt(S.px,S.py);S.cash+=d.wage;S.work++;log("Worked a shift in "+d.name+": +$"+d.wage+". "+(d.wage>=30?"High wage — but remember goods here cost $"+d.price+".":"Low wage. The lawful path pays slowest exactly where people have least."));tick()};
+document.getElementById('buyBtn').onclick=function(){var d=distAt(S.px,S.py);if(S.inv>=5)return log("Hands full (5). Sell somewhere — ideally where prices are higher.");if(S.cash<d.price)return log("Not enough cash to buy at $"+d.price+".");S.cash-=d.price;S.inv++;S.invCost+=d.price;S.buy++;log("Bought goods in "+d.name+" for $"+d.price+". Carry them somewhere pricier.");draw()};
+document.getElementById('sellBtn').onclick=function(){var d=distAt(S.px,S.py);if(!S.inv)return log("Nothing to sell.");var gain=d.price*S.inv,profit=gain-S.invCost;S.cash+=gain;S.sell++;log("Sold "+S.inv+" goods in "+d.name+" for $"+gain+" ("+(profit>=0?"+":"")+"$"+profit+" vs what you paid). That gap is district inequality, pocketed.");S.inv=0;S.invCost=0;tick()};
+document.getElementById('helpBtn').onclick=function(){var d=distAt(S.px,S.py);d.neglect=Math.max(5,d.neglect-6);d.gang=Math.max(4,d.gang-4);d.safety=Math.min(90,d.safety+3);S.help++;log("Community hour in "+d.name+": neglect −6, gang influence −4, safety +3. Unpaid — and the only action that moves those bars directly.");tick()};
+document.getElementById('speedBtn').onclick=function(){S.heat=Math.min(5,S.heat+1);S.risky++;move(3,0);log("You sped through (abstract shortcut). Attention +1 → "+S.heat+"★. Fast now; the system noticed.");tick()};
+document.getElementById('stallBtn').onclick=function(){var d=distAt(S.px,S.py),earn=d.wage+16;S.cash+=earn;S.heat=Math.min(5,S.heat+2);S.risky++;log("Unlicensed stall in "+d.name+": +$"+earn+" (more than a shift's $"+d.wage+") — and attention +2 → "+S.heat+"★. Higher pay, higher visibility: that trade-off IS the incentive.");tick()};
+document.getElementById('dial').onchange=function(e){document.body.className=e.target.value};
+document.getElementById('alias').oninput=function(e){document.getElementById('who').textContent=e.target.value||"You"};
+document.getElementById('debriefBtn').onclick=function(){var v=Object.keys(S.visited).length;var txt="<p><strong>Districts visited:</strong> "+v+" of 4 ("+Object.keys(S.visited).join(", ")+").</p><p><strong>Your pattern:</strong> "+S.work+" lawful shifts, "+S.buy+" buys, "+S.sell+" sales, "+S.help+" community hours, "+S.risky+" risky shortcuts. Fines: "+S.fines+" totalling $"+S.fined+". Cash now $"+S.cash+".</p><p><strong>What the city taught:</strong> "+(S.risky?"Your risky choices paid faster per hour — and the fines ("+"$"+S.fined+") clawed back part of it while attention cost you freedom to move. That is the attention system working as designed: not morality, arithmetic.":"You stayed lawful, so attention never became a cost — slower cash, zero fines. ")+(S.help?"Your community hours lowered neglect where you gave them; watch that district's gang bar — it follows neglect down, slowly.":"You gave no community hours, so neglect only drifted on its own — mostly upward in Harbor. Nobody's hour, nobody's improvement.")+"</p><p><strong>Try next:</strong> buy 5 goods in Harbor ($8), sell them in the Heights ($18) — then spend one hour helping in Harbor and compare which action changed Harbor itself.</p>";document.getElementById('debriefFull').innerHTML=txt;document.getElementById('debrief').textContent="Debrief opened below — your choices, drawn out."};
+function download(name,content,type){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:type}));a.download=name;a.click()}
+document.getElementById('dlBtn').onclick=function(){download('the-city-system.html','<!doctype html>\n'+document.documentElement.outerHTML,'text/html')};
+/* ===== WAR ROOM ===== */
+var SCEN={river:{desc:"Far bank is held. Crossing blind or hungry fails expensively. Intel and Supply are worth double here; Frontal is at its worst.",w:{supply:2,intel:2,strength:1,morale:1},opp:68,ground:30},hill:{desc:"You hold the hill town. You do not need to advance far — you need to still be together, fed and believing on turn 6. Morale and Supply are worth double.",w:{supply:2,intel:1,strength:1,morale:2},opp:60,ground:45},siege:{desc:"No decisive battle is on offer. Every turn burns supply on both sides. Supply is worth triple; a negotiated end from strength is a real victory here.",w:{supply:3,intel:1,strength:1,morale:1},opp:62,ground:35}};
+var W={turn:1,ground:30,supply:60,morale:60,intel:30,opp:68,alloc:{supply:3,intel:2,strength:3,morale:2},doc:null,lastDoc:null,repeats:0,history:[],over:false,log:[]};
+var ALLOCDEF=[["supply","Supply & transport","Food, fuel, repair — how long you can keep going"],["intel","Intel & scouting","Knowing where the opponent is — and is not"],["strength","Front strength","Effort at the point of contact"],["morale","Rest & morale","Sleep, rotation, belief — the human system"]];
+function wlog(m){W.log.push("Turn "+W.turn+" — "+m);var el=document.getElementById('warLog');el.textContent=W.log.slice(-30).join("\n");el.scrollTop=el.scrollHeight}
+function wRender(){document.getElementById('wTurn').textContent=Math.min(W.turn,6)+" / 6";document.getElementById('wGround').textContent=Math.round(W.ground)+"%";document.getElementById('wSupply').textContent=Math.round(W.supply);document.getElementById('wMorale').textContent=Math.round(W.morale);document.getElementById('wOppBar').style.width=Math.max(0,Math.min(100,W.opp))+"%";document.getElementById('wIntelBar').style.width=Math.max(0,Math.min(100,W.intel))+"%";var spent=W.alloc.supply+W.alloc.intel+W.alloc.strength+W.alloc.morale;document.getElementById('wLeft').textContent=10-spent;
+document.getElementById('alloc').innerHTML=ALLOCDEF.map(function(a){return '<div class="card" style="padding:10px"><div class="row" style="align-items:center"><div><label>'+a[1]+'</label><div class="sans" style="font-size:.8rem;color:var(--mut)">'+a[2]+'</div></div><div class="stepper"><button class="btn" data-aloc="'+a[0]+',-1" aria-label="Less '+a[1]+'">−</button><output>'+W.alloc[a[0]]+'</output><button class="btn" data-aloc="'+a[0]+',1" aria-label="More '+a[1]+'">+</button></div></div></div>'}).join("");
+document.querySelectorAll('[data-aloc]').forEach(function(b){b.onclick=function(){var p=b.getAttribute('data-aloc').split(','),k=p[0],d=+p[1],spent=W.alloc.supply+W.alloc.intel+W.alloc.strength+W.alloc.morale;if(d>0&&spent>=10)return wlog("No effort left. Strategy is choosing what to starve — take a point from somewhere else first.");W.alloc[k]=Math.max(0,Math.min(5,W.alloc[k]+d));wRender()}})}
+function wReset(){var sc=SCEN[document.getElementById('scenario').value];W={turn:1,ground:sc.ground,supply:60,morale:60,intel:30,opp:sc.opp,alloc:{supply:3,intel:2,strength:3,morale:2},doc:null,lastDoc:null,repeats:0,history:[],over:false,log:W.log};document.getElementById('scenDesc').textContent=sc.desc;document.querySelectorAll('#doctrines .btn').forEach(function(b){b.setAttribute('aria-pressed','false')});document.getElementById('warDebriefFull').innerHTML="";wRender();wlog("New campaign: "+document.getElementById('scenario').selectedOptions[0].textContent.split('—')[0].trim()+". Spend effort, pick a doctrine, resolve.")}
+document.querySelectorAll('#doctrines .btn').forEach(function(b){b.onclick=function(){W.doc=b.getAttribute('data-doc');document.querySelectorAll('#doctrines .btn').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')})}});
+document.getElementById('scenario').onchange=wReset;
+document.getElementById('warResetBtn').onclick=wReset;
+document.getElementById('resolveBtn').onclick=function(){if(W.over)return wlog("This campaign is over. Restart to play the system again — differently.");if(!W.doc)return wlog("Pick a doctrine first. Effort without a shape is just spending.");var sc=SCEN[document.getElementById('scenario').value],a=W.alloc;
+if(W.doc===W.lastDoc){W.repeats++}else{W.repeats=0}W.lastDoc=W.doc;
+var base=(a.supply*sc.w.supply+a.intel*sc.w.intel+a.strength*sc.w.strength+a.morale*sc.w.morale)/3;
+var bonus=0,note="",costS=4,costM=3;
+if(W.doc==='frontal'){bonus=a.strength*2-4;costS=9;costM=6;note="Frontal pressure: simple and expensive."}
+if(W.doc==='flank'){bonus=(a.intel>=3&&a.supply>=2)?9:-6;costS=7;costM=3;note=bounsafe(bonus)}
+if(W.doc==='feint'){bonus=(a.intel>=3)?10:-8;costS=5;costM=3;note=bounsafe(bonus)}
+if(W.doc==='hold'){bonus=2;costS=-8;costM=-6;W.ground=Math.max(10,W.ground-2);note="Hold & resupply: you gave a little ground and bought back the systems that keep you alive."}
+if(W.doc==='negotiate'){var pos=(W.ground+W.supply+W.morale-W.opp)/4;if(pos>12){W.over=true;wlog("Terms agreed from strength. Ground held "+Math.round(W.ground)+"%, your force intact. In the Long Supply War especially, this IS a victory — the political end, reached on purpose.");W.history.push('negotiate-win');wRender();return}if(pos<-5){bonus=-8;note="You negotiated from weakness and the opponent read it instantly. Terms refused; morale dips."}else{bonus=3;note="Talks stall, but contact is made. Position slightly improved — terms get better as your systems do."}}
+function bounsafe(b){return b>=0?"Manoeuvre/deception landed — your intel and supply supported the shape you chose.":"The shape did not match your systems: this doctrine needs intel ≥3 (and supply ≥2) and you did not fund it. A bigger mistake, faster."}
+var adapt=W.repeats*5;if(adapt)note+=" Opponent adaptation: same doctrine again −"+adapt+" (they are learning you).";
+var swing=Math.round(Math.random()*6-3),score=base+bonus-adapt+swing;
+var gain=Math.max(-10,Math.min(14,score/2-2));if(W.doc!=='hold')W.ground=Math.max(0,Math.min(100,W.ground+gain));
+W.opp=Math.max(0,Math.min(100,W.opp-(gain>0?gain*0.7:-2)));
+W.supply=Math.max(0,Math.min(100,W.supply-costS+a.supply));W.morale=Math.max(0,Math.min(100,W.morale-costM+a.morale-(gain<-3?5:0)));W.intel=Math.max(0,Math.min(90,W.intel+a.intel*2-(W.doc==='feint'?4:1)));
+if(W.supply<30||W.morale<30){W.opp=Math.min(100,W.opp+4);note+=" The opponent smells your weakest system (supply/morale under 30) and presses it."}
+W.history.push(W.doc+" → "+(gain>=0?"+":"")+Math.round(gain)+"% ground");
+wlog(note+" Net: ground "+(gain>=0?"+":"")+Math.round(gain)+"% → "+Math.round(W.ground)+"%, supply "+Math.round(W.supply)+", morale "+Math.round(W.morale)+".");
+W.turn++;
+if(W.ground>=80||W.opp<=15){W.over=true;wlog("CAMPAIGN WON on the map — but read the debrief: check what it cost in supply and morale. A win that spends the force is a loan, not a victory.")}
+else if(W.supply<=5||W.morale<=5){W.over=true;wlog("CAMPAIGN COLLAPSED — not in battle, in the systems. "+(W.supply<=5?"Supply hit zero: a force that cannot eat or move stops being a force.":"Morale hit zero: people stopped believing, and no order fixes that from the top."))}
+else if(W.turn>6){W.over=true;wlog("Turn 6 ends the campaign. Ground "+Math.round(W.ground)+"% · Opponent "+Math.round(W.opp)+"% · Supply "+Math.round(W.supply)+" · Morale "+Math.round(W.morale)+". "+(W.ground>=55?"A held, live position — in most real campaigns, that is the honest win.":"The opponent holds the better position. The debrief shows which system starved first."))}
+wRender()};
+document.getElementById('warDebriefBtn').onclick=function(){if(W.history.length<1){document.getElementById('warDebriefFull').innerHTML="<p>Resolve at least one turn first — a debrief needs a record, not a guess.</p>";return}
+var used={};W.history.forEach(function(h){var d=h.split(' ')[0];used[d]=(used[d]||0)+1});var kinds=Object.keys(used).length;
+var txt="<p><strong>Your campaign:</strong> "+W.history.join(" · ")+".</p><p><strong>Your pattern:</strong> "+kinds+" doctrine(s) used. "+(kinds===1?"One doctrine, repeated — and you felt the opponent adapt. Real opponents do exactly that; variety is not flair, it is refusing to be predicted.":kinds>=3?"You varied your shape, which kept adaptation low — that is strategy as a sequence, not a single clever move.":"Some variety — push it further; the second use of anything is already information for the other side.")+"</p><p><strong>Your systems at the end:</strong> Supply "+Math.round(W.supply)+", Morale "+Math.round(W.morale)+", Intel "+Math.round(W.intel)+". "+(W.supply<35?"Supply was your starved system — logistics first is not a slogan, it was your campaign.":W.morale<35?"Morale was your starved system — rest and belief are not soft extras, they are load-bearing.":"You kept the base systems alive, which is why your moves kept landing.")+"</p><p><strong>Try next:</strong> replay the same campaign funding the system you starved this time, and hold once in the middle instead of attacking. Compare turn 6 — most people are surprised which run ends stronger.</p>";document.getElementById('warDebriefFull').innerHTML=txt};
+document.getElementById('exportBtn').onclick=function(){download('city-system-record.json',JSON.stringify({alias:document.getElementById('alias').value,stats:S,districts:D,war:{history:W.history,ground:W.ground,supply:W.supply,morale:W.morale,scenario:document.getElementById('scenario').value}},null,2),'application/json')};
+document.getElementById('forgetBtn').onclick=function(){location.reload()};
+wReset();
+log("Welcome. Start in Market: work a shift, then walk west to the Heights or south-west to Harbor and compare the numbers. Try one risky shortcut — then lay low and watch attention fade.");
+draw();
+</script></body></html>
