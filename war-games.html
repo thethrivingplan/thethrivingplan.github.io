@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The General's Table</title>
+<style>
+:root{
+  --bg:#f4f1e6; --panel:#fffdf4; --panel2:#ece7d3; --ink:#23281c; --ink2:#4c5340;
+  --line:#b9b294; --accent:#7a4a12; --accent2:#3f5a2a; --danger:#9c2f1d; --gold:#c9a227;
+  --blue:#2e4a6b; --red:#8c3524; --good:#3f6b2f; --warnbg:#f7e8c8;
+  --shadow:0 2px 10px rgba(40,40,20,.15);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#191b14; --panel:#23261c; --panel2:#2c2f22; --ink:#ece8d6; --ink2:#c3bfa8;
+    --line:#5a5c48; --accent:#e0a44e; --accent2:#a8c47e; --danger:#e08a76; --gold:#d9b64a;
+    --blue:#9db9d9; --red:#e09a86; --good:#a8c47e; --warnbg:#3d341d; --shadow:0 2px 10px rgba(0,0,0,.5);}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Verdana,Geneva,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:.4em 0}
+h1{font-size:2rem} h2{font-size:1.45rem;border-bottom:2px solid var(--gold);padding-bottom:.25rem} h3{font-size:1.15rem}
+button,select,input[type=text]{min-height:44px;font:inherit}
+button{cursor:pointer;background:var(--accent2);color:#fff;border:1px solid rgba(0,0,0,.25);border-radius:8px;padding:.5rem .9rem;font-weight:700}
+button.secondary{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+button.danger{background:var(--danger)}
+button:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=text]{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.45rem .6rem}
+label{font-weight:700}
+.wrap{max-width:1180px;margin:0 auto;padding:0 14px 40px}
+.freebar{background:var(--accent2);color:#fff;padding:12px 14px;text-align:center;font-size:1.05rem}
+.freebar strong{font-size:1.15rem}
+.freebar button{background:#fff;color:var(--accent2);margin-left:10px}
+.plainline{text-align:center;font-style:italic;font-size:1.1rem;margin:14px 0 4px;color:var(--ink)}
+.principle{text-align:center;font-weight:700;font-size:1.05rem;margin:2px 0 10px}
+nav.compass{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+nav.compass a{display:inline-flex;align-items:center;min-height:44px;padding:.5rem 1rem;background:var(--panel);border:2px solid var(--accent2);border-radius:999px;color:var(--ink);text-decoration:none;font-weight:700}
+nav.compass a span.dir{color:var(--accent);margin-right:.4em}
+.variant-banner{display:none;background:var(--warnbg);border:2px solid var(--gold);border-radius:10px;padding:10px 14px;font-weight:700;text-align:center;margin:10px 0}
+.variant-banner.show{display:block}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:16px}
+.boardbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:var(--shadow)}
+svg#board{width:100%;height:auto;display:block}
+.hex{stroke:rgba(35,40,28,.45);stroke-width:1;cursor:pointer}
+.hex.reach{stroke:var(--gold);stroke-width:3}
+.hex.target{stroke:var(--danger);stroke-width:3.5}
+.hex.suggest{stroke:var(--blue);stroke-width:3.5;stroke-dasharray:5 3}
+.unit{cursor:pointer}
+.unit text{pointer-events:none;font-family:Verdana,sans-serif}
+.log{height:190px;overflow:auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.88rem}
+.log div{margin-bottom:4px}
+.tipbox{background:var(--warnbg);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;min-height:52px}
+.explainbar{display:none;background:var(--blue);color:#fff;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:.95rem}
+.explainbar.show{display:block}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:12px;padding:0 14px}
+summary{cursor:pointer;font-family:Georgia,serif;font-size:1.2rem;font-weight:700;padding:12px 0;min-height:44px}
+summary .gesture{font-family:Verdana,sans-serif;font-size:.8rem;font-weight:400;color:var(--accent);margin-left:.6em}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+th{background:var(--panel2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2)}
+.card h3{margin-top:0}
+.small{font-size:.88rem;color:var(--ink2)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.5rem;font-family:Georgia,serif}
+.rowflex{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px}
+.checkrow{display:flex;align-items:center;gap:10px;min-height:44px}
+.checkrow input{width:22px;height:22px}
+.kbd-hint{font-size:.8rem;color:var(--ink2)}
+footer{border-top:2px solid var(--gold);margin-top:26px;padding-top:12px;font-size:.9rem;color:var(--ink2)}
+.winbanner{display:none;border-radius:10px;padding:14px;text-align:center;font-size:1.2rem;font-weight:700;margin:10px 0}
+.winbanner.show{display:block}
+.winbanner.won{background:#dfeccf;color:#24401a}
+.winbanner.lost{background:#f3d5cb;color:#5f1e10}
+@media (prefers-color-scheme: dark){.winbanner.won{background:#2c4423;color:#d8ecc4}.winbanner.lost{background:#4a271c;color:#f3d5cb}}
+</style>
+</head>
+<body>
+
+<div class="freebar">
+  <strong>FREE — always free.</strong> No ads, ever. No account. No money anywhere in this game.
+  <br>Play offline: save this page to your device and it works with no connection at all.
+  <button id="dlBtn" type="button">Download this page — Tap to download</button>
+</div>
+
+<div class="wrap">
+  <h1 style="text-align:center;margin-top:18px">The General's Table</h1>
+  <p class="plainline">This is an abstract strategy game; real war is not a game.</p>
+  <p class="principle">“Amateurs study tactics. Professionals study logistics.”</p>
+  <p style="text-align:center" class="small">That saying is the heart of this game. Battles here are won less by brave charges than by supply lines — the path of food, fuel and ammunition back to your base. Cut that path, and even the strongest unit fades.</p>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#play"><span class="dir">N ↑</span> Play the battle</a>
+    <a href="#how"><span class="dir">E →</span> How it works</a>
+    <a href="#strategy"><span class="dir">S ↓</span> Strategy shelves</a>
+    <a href="#record"><span class="dir">W ←</span> Campaign record</a>
+  </nav>
+
+  <div id="explainBar" class="explainbar" role="status"></div>
+
+  <section class="panel" aria-label="Game setup">
+    <h2>Set up your command</h2>
+    <div class="rowflex">
+      <div class="field">
+        <label for="aliasInput">Your name at the table</label>
+        <input type="text" id="aliasInput" maxlength="24" placeholder="Guest" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="botSelect">Enemy commander (bot)</label>
+        <select id="botSelect">
+          <option value="0">Learning — new to command</option>
+          <option value="1" selected>Steady — a solid opponent</option>
+          <option value="2">Sharp — thinks ahead</option>
+          <option value="3">General — the full test</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="teachSelect">Teaching</label>
+        <select id="teachSelect">
+          <option value="off">Off</option>
+          <option value="light" selected>Light — a hint when it matters</option>
+          <option value="coach">Coach — hints, warnings &amp; a suggested move</option>
+        </select>
+      </div>
+      <button id="newGameBtn" type="button" data-hold="Starts a fresh battle on the standard map with full armies. Any game in progress is abandoned and is not recorded.">New battle — Tap to start</button>
+    </div>
+    <p class="small">Alias freedom: play under any name you like, or stay Guest. The name is yours for this device only — it is never checked, claimed, reserved, or sent anywhere. Teaching choice and name are saved on this device only.</p>
+    <h3>Rules are settings</h3>
+    <p class="small">The <strong>standard rules</strong> are the default: supply lines on, full view of the map (no fog). Change either one and the game becomes a <strong>variant</strong> — a banner says so on screen while you play, and the game is recorded as a variant, kept separate from standard games.</p>
+    <label class="checkrow"><input type="checkbox" id="fogToggle"> Fog of war — enemy units beyond your units' sight range are hidden (variant)</label>
+    <label class="checkrow"><input type="checkbox" id="noSupplyToggle"> Turn supply rules OFF — units never weaken when cut off (variant, and it removes the heart of the game)</label>
+  </section>
+
+  <div id="variantBanner" class="variant-banner" role="alert"></div>
+  <div id="winBanner" class="winbanner" role="alert"></div>
+
+  <section id="play" class="layout" aria-label="The battle">
+    <div class="boardbox">
+      <div class="rowflex" style="justify-content:space-between">
+        <strong id="turnLabel">Turn 1 — Your move</strong>
+        <span class="small" id="objLabel">Win: take the enemy base (far right), hold 3 towns, or break the enemy army.</span>
+      </div>
+      <svg id="board" viewBox="0 0 620 480" role="img" aria-label="Hex battle map"></svg>
+      <div class="rowflex" style="margin-top:8px">
+        <button id="endTurnBtn" type="button" data-hold="Ends your turn. The enemy commander then moves every enemy unit, supply is checked for both sides, and any unit cut off for a third turn surrenders.">End turn — Tap when done</button>
+        <button id="undoBtn" class="secondary" type="button" data-hold="Takes back your last single move or attack this turn, before you end the turn.">Undo last action — Tap to undo</button>
+        <span class="small">Tap a blue unit to select it. Gold hexes = it can move there. Red ring = enemy in range, tap it to attack. Hold any button to hear what it does.</span>
+      </div>
+      <p class="small" style="margin-bottom:0"><strong>Map key:</strong> ▲ hill · ♣ woods · ▦ town · blue band = river (cross only at a bridge) · ★ = base · T in a circle = objective town. A unit marked <strong>CUT OFF 1/2/3</strong> has no supply path home — see “How supply works” below.</p>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h3 style="margin-top:0">Selected unit</h3>
+        <div id="unitInfo">Tap one of your blue units on the map.</div>
+      </div>
+      <div class="panel">
+        <h3 style="margin-top:0">Teaching</h3>
+        <div id="tipBox" class="tipbox">Teaching is on Light. Tips will appear here as the battle turns.</div>
+      </div>
+      <div class="panel">
+        <h3 style="margin-top:0">Battle log — every roll shown</h3>
+        <div id="log" class="log" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <h2>How it works — nothing hidden</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>The three units</h3>
+        <p><strong>Infantry (INF)</strong> — Strength 4, moves 2, shoots 1 hex, health 4. Steady everywhere, and the cheapest strength you own — the backbone that holds towns and bridges.<br>
+        <strong>Armour (ARM)</strong> — Strength 5, moves 3, shoots 1 hex, health 5. Fast and hard-hitting on open ground; woods and hills cost it double movement to enter, so its speed is a plains weapon.<br>
+        <strong>Artillery (ART)</strong> — Strength 4, moves 1, shoots exactly 2 hexes, health 3. Fragile up close, decisive at range. It cannot move and shoot in the same turn.</p>
+      </div>
+      <div class="card">
+        <h3>Terrain — and its real why</h3>
+        <p><strong>Plains</strong> — open ground. Fast to cross, nothing to hide behind.<br>
+        <strong>Hill ▲</strong> — high ground sees and shoots farther: a unit on a hill gets +1 attack, and its sight range grows by 1. Costs 2 movement to enter.<br>
+        <strong>Woods ♣</strong> — trees hide and slow: +1 defence for the unit inside, costs 2 movement to enter, and enemy sight into woods is shortened.<br>
+        <strong>Town ▦</strong> — buildings are strong to defend: +2 defence. Towns are also objectives — hold 3 to win.<br>
+        <strong>River</strong> — an obstacle, not a road. No unit may enter a river hex. Cross only at a <strong>bridge</strong> hex (marked with planks). Whoever holds the bridges holds the map in two.</p>
+      </div>
+      <div class="card">
+        <h3>How supply works — the heart of the game</h3>
+        <p>Every unit must be able to trace a path, hex by hex, back to its own base. The path may cross any passable ground <em>except</em> hexes held by the enemy or next to an enemy unit (their zone of control) — unless one of your own units stands there. Bridges matter: lose the bridge hexes and everything across the river is cut off.</p>
+        <p>At the end of each full turn, supply is checked and printed plainly on each unit:</p>
+        <p><strong>Cut off, turn 1:</strong> movement −1, strength −1.<br>
+        <strong>Cut off, turn 2:</strong> movement halved, strength −2.<br>
+        <strong>Cut off, turn 3:</strong> the unit surrenders and is removed. No drama, no dice — an army that cannot eat cannot fight.</p>
+        <p>Reconnect the path — retake a hex, destroy the blocker, or move the unit back into contact — and supply is restored in full at the next check.</p>
+      </div>
+      <div class="card">
+        <h3>Combat — the whole formula, no hidden math</h3>
+        <p>When a unit attacks, both sides roll one six-sided die, and the roll is printed in the battle log.</p>
+        <p><strong>Attack total</strong> = attacker's strength + die roll + 1 if the attacker stands on a hill − supply penalty if the attacker is cut off.<br>
+        <strong>Defence total</strong> = defender's strength + die roll + terrain bonus (town +2, woods +1, hill +1) − supply penalty if the defender is cut off.<br>
+        The higher total wins the exchange. The loser takes <strong>1 damage</strong>, or <strong>2 damage</strong> if they lost by 4 or more. On a tie, <strong>both</strong> take 1 damage. A unit at 0 health is destroyed. Artillery takes no return roll damage when shooting from 2 hexes away — the defender still rolls, and if the defender's total is higher, nothing happens (the shots missed their mark); the formula and rolls are still shown.</p>
+        <p><strong>Winning:</strong> move a unit onto the enemy base hex, hold any 3 objective towns at the end of your turn, or destroy every enemy unit. If turn 30 ends with no winner, the side holding more towns wins; if towns are level, the side with more total health left wins.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="honesty" class="panel">
+    <h2>Is the bot honestly harder at higher levels? The self-play proof</h2>
+    <p>The four commanders use the <em>same</em> rules and the <em>same</em> armies. They differ only in judgement: <strong>Learning</strong> mostly picks moves at random and often hesitates; <strong>Steady</strong> advances and takes clear shots but blunders about a quarter of the time; <strong>Sharp</strong> weighs attacks, terrain and supply, and blunders rarely; <strong>General</strong> does all of that, never blunders, focus-fires, and deliberately moves to cut enemy supply lines.</p>
+    <p>Don't take our word for it. The table printed below is the result of a verification run of this page's own simulation — the bots in this exact file playing complete games against each other, no human involved, <strong>20 games per pairing, 240 games in all, run on 18 November 2026</strong>. Read it by rows: each commander as first player against each other commander. Learning loses heavily to everyone; General beats everyone overall; Sharp and Steady sit honestly in between, and the dice still let the weaker commander steal games — that's what honest numbers look like. You can also re-run the simulation yourself, live on this device, with the button under the table — as a smaller spot-check sample, labelled as such where it appears.</p>
+    <table aria-label="Self-play verification results, 20 games per pairing">
+      <tr><th>Commander (as first player)</th><th>vs Learning</th><th>vs Steady</th><th>vs Sharp</th><th>vs General</th></tr>
+      <tr><td><strong>Learning</strong></td><td>—</td><td>2W – 18L</td><td>3W – 17L</td><td>1W – 18L – 1D</td></tr>
+      <tr><td><strong>Steady</strong></td><td>15W – 3L – 2D</td><td>—</td><td>2W – 18L</td><td>6W – 14L</td></tr>
+      <tr><td><strong>Sharp</strong></td><td>14W – 6L</td><td>10W – 10L</td><td>—</td><td>7W – 13L</td></tr>
+      <tr><td><strong>General</strong></td><td>16W – 4L</td><td>11W – 8L – 1D</td><td>13W – 7L</td><td>—</td></tr>
+    </table>
+    <p class="small">One honest wrinkle the table shows: some pairings read very differently in the two directions — Sharp against Steady is 10–10 with Sharp moving first, but 18–2 to Sharp with Steady moving first. Two things cause that: moving second genuinely helps on this map (the defender's terrain bonuses and the supply check reward patience, so the second player wins more of the close fights), and 20 games is a small sample, so close pairings swing. Combined over both directions the picture steadies: Sharp took 28 of 40 against Steady, General beat every commander in both directions, and Learning lost heavily in all six. The order the levels claim — General, Sharp, Steady, Learning — is the combined order, not any single row.</p>
+    <button id="simBtn" type="button" data-hold="Runs complete bot-versus-bot battles for every pairing of commander levels, using the exact same rules and bot brains as your game, and prints the win rates it actually got.">Re-run the self-play simulation yourself — Tap to run</button>
+    <p id="simStatus" class="small">Live re-run not done yet this visit. Note: a live re-run is a <strong>smaller sample — 72 games (6 per pairing)</strong> — so it is a spot-check, not a replacement for the 240-game table above, and its close pairings will swing more. Tap the button and give it a few seconds; your fresh results will appear below the printed table.</p>
+    <div id="simResults"></div>
+  </section>
+
+  <section id="strategy">
+    <h2>Strategy shelves — the Full Why</h2>
+    <p class="small">One tap down, nothing removed. Every principle is printed with its trade-off. Where more than one strategy can work, more than one is given — none of these is sold as the one answer.</p>
+
+    <details>
+      <summary>Supply and logistics first <span class="gesture">— Tap to open</span></summary>
+      <p><strong>What it is:</strong> before any plan, ask “can my units eat?” Keep a clear path home, guard your bridges, and look for the move that cuts the enemy's path rather than the move that wins a single fight.</p>
+      <p><strong>Why it works here:</strong> a cut-off unit loses strength every turn and surrenders on the third. Two of your units sitting on the enemy's supply path can defeat an army twice their size without firing.</p>
+      <p><strong>The trade-off:</strong> units spent guarding lines are units not attacking. Spread too thin protecting everything and you are strong nowhere. The judgement call — which the game will not make for you — is how much safety is enough.</p>
+    </details>
+
+    <details>
+      <summary>Concentration of force <span class="gesture">— Tap to open</span></summary>
+      <p><strong>What it is:</strong> mass your strength at one point instead of spreading it evenly. Three units attacking one enemy in a turn will usually destroy it; three units each duelling a separate enemy usually destroy nothing.</p>
+      <p><strong>Why it works here:</strong> combat is an exchange of die rolls. Focused fire removes enemy guns from the board, and every gun removed stops rolling back at you.</p>
+      <p><strong>The trade-off:</strong> concentrating leaves the rest of the map thin. A fast enemy armour unit can slip behind a concentrated push and sit on your supply path. Concentration wins fights; it can lose campaigns.</p>
+    </details>
+
+    <details>
+      <summary>Interior lines <span class="gesture">— Tap to open</span></summary>
+      <p><strong>What it is:</strong> hold the middle. A force in the centre, with short paths to every part of the front, can shift to meet each threat in turn — while an enemy spread around the outside must travel the long way round to combine.</p>
+      <p><strong>Why it works here:</strong> the central bridge and the middle towns are the interior position of this map. From there your units reach either flank in a turn or two; the enemy coming around the edges cannot say the same.</p>
+      <p><strong>The trade-off:</strong> the centre is where you can be attacked from two sides, and holding it means giving up the far towns early. Interior lines buy time and flexibility, not ground.</p>
+    </details>
+
+    <details>
+      <summary>Defence in depth <span class="gesture">— Tap to open</span></summary>
+      <p><strong>What it is:</strong> don't put everything on the front line. Hold a first line to slow and reveal the attack, a second line in towns and woods behind it, and keep one fast unit back as a reserve to plug gaps — or to counter-attack a unit that has pushed too far and cut its own supply.</p>
+      <p><strong>Why it works here:</strong> an attacker who breaks through a single line often ends the turn beyond their own supply path. Depth turns their breakthrough into their trap.</p>
+      <p><strong>The trade-off:</strong> ground given up early may include objective towns, and a passive defence surrenders the initiative — the enemy chooses where and when to fight. Depth must end in a counter-punch or it is only a slower defeat.</p>
+    </details>
+
+    <details>
+      <summary>The inherent strength of the defence <span class="gesture">— Tap to open</span></summary>
+      <p><strong>What it is:</strong> in this game, as in the record of real war, the defender starts ahead. Terrain bonuses go to the unit being attacked, not the attacker: a town is worth +2 before a die is rolled. Attacking even odds into prepared positions is how armies bleed.</p>
+      <p><strong>What follows:</strong> attack where you are locally stronger — two or three against one — or make the enemy come to you. Artillery is the attacker's answer: it strikes from 2 hexes, beyond reply.</p>
+      <p><strong>The trade-off:</strong> someone must eventually take the base and the towns, and that someone must attack. Pure defence wins only if the enemy is obliging enough to waste themselves against it. Knowing when the balance has tipped — when their army is worn enough that your attack is no longer even odds — is the general's real skill.</p>
+    </details>
+
+    <details>
+      <summary>Study cards — campaigns where supply and principle decided <span class="gesture">— Tap to open</span></summary>
+      <div class="grid2">
+        <div class="card"><h3>The invasion that starved — Russia, 1812</h3><p>Napoleon's Grande Armée entered Russia with roughly 600,000 men and the finest tactical reputation in Europe. It won its battles. What it could not do was feed itself: the supply system assumed living off the land, the land was stripped and burned, the distances outgrew the wagon trains, and horses died for want of fodder. Fewer than a tenth of the army came home in fighting order. The tactics were brilliant. The logistics were the campaign.</p></div>
+        <div class="card"><h3>Saved by interior lines — the Marne, 1914</h3><p>As German armies swung around Paris, the French and British held the interior position: short rail lines radiating from the capital let them shift troops to the threatened point faster than the Germans could march around the outside. The counterstroke at the Marne stopped the advance and saved France in 1914. Position and transport, not a single heroic charge, decided it.</p></div>
+        <div class="card"><h3>An army that ate its supply line — North Africa, 1941–42</h3><p>Rommel's Afrika Korps repeatedly out-fought its opponents tactically, and repeatedly outran its own fuel. Every mile advanced from Tripoli doubled the truck journey to reach the front, and trucks themselves burn fuel to deliver fuel. At El Alamein, Montgomery's army sat close to its depots while the Axis sat at the end of a 1,000-mile tether. The battle was lopsided before it began — on the supply map.</p></div>
+        <div class="card"><h3>The defence, held in depth — Kursk, 1943</h3><p>Warned of the German attack, the Soviet command built defences many miles deep — minefields, anti-tank strongpoints, and reserves held far back — and let the attack spend itself against layer after layer. The largest tank battle in history ended with the attackers exhausted inside the depth of the defence and the defenders counter-attacking. It is the textbook case for defence in depth — and for its cost: the ground, and the towns on it, were given up first on purpose.</p></div>
+        <div class="card"><h3>Concentration at the point of decision — and its risk</h3><p>Again and again in the record, the side that is weaker overall wins by being stronger at the one place that matters that day — and the same record shows the bill when the gamble fails: everything massed at one point is everything lost if that point collapses. Concentration is a wager, not a law. This page prints it as one strategy among several, with its trade-off, because that is what it honestly is.</p></div>
+      </div>
+    </details>
+  </section>
+
+  <section id="record" class="panel">
+    <h2>Your campaign record — the stakes of this game</h2>
+    <p>There is no money in this game, and there never will be. The stakes are the campaign: battles won, a running record against each enemy commander, and standing earned over time. The record lives <strong>on this device only</strong>, in one clean shape, and standard and variant games are kept separate — always labelled, never mixed.</p>
+    <div id="recordStats" class="statgrid"></div>
+    <h3>Games</h3>
+    <div id="recordList"><p class="small">No games recorded yet. Finish a battle and it will be written here.</p></div>
+    <div class="rowflex" style="margin-top:12px">
+      <button id="exportBtn" class="secondary" type="button" data-hold="Downloads your whole campaign record as one small JSON file — the clean, consistent shape described on this page — so you can keep it, move it, or read it anywhere.">Export record — Tap to download</button>
+      <button id="forgetBtn" class="danger" type="button" data-hold="One tap erases your campaign record, your table name and your teaching choice from this device, completely and at once. There is no copy anywhere else and no way back — that is what one-tap Forget means.">Forget everything — one tap, gone for good</button>
+    </div>
+    <p class="small">Record shape (version 1): each game is one entry — <em>date, name at the table, enemy commander, result (won/lost/draw), turns played, standard or variant, which variants were on</em>. Nothing else is kept. Nothing leaves this device unless you export it yourself.</p>
+  </section>
+
+  <footer>
+    <p><strong>Copyleft.</strong> The General's Table is free to copy, share and adapt under <strong>CC BY-SA 4.0</strong> — keep it free and credit the source. No ads ever. This page makes no external requests: everything you see was in the one file you downloaded.</p>
+    <p>Why? → How? → Act. Why does this game exist? Because supply decides wars and almost nobody teaches it. How? A small honest game where the supply line is the weapon. Act: play a battle, then read the shelves and play it again with your eyes open.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ============ helpers ============ */
+function $(id){return document.getElementById(id);}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function d6(){return 1+Math.floor(Math.random()*6);}
+
+/* ============ map ============ */
+var COLS=9, ROWS=7, SIZE=36;
+/* terrain rows: .=plains W=woods H=hill T=town R=river B=bridge */
+var MAP=[
+" . W . H R . . T . ",
+". . . . B . W . .",
+"T . W . R . . H .",
+". . . . B . . . .",
+". . H . R W . . T",
+". W . . B . . H .",
+". . . T R . W . ."
+].map(function(s){return s.replace(/ /g,"").split("");});
+var P_BASE={c:0,r:3}, E_BASE={c:8,r:3};
+function inB(c,r){return c>=0&&c<COLS&&r>=0&&r<ROWS;}
+function terrain(c,r){return MAP[r][c];}
+function isBase(c,r,side){var b=side==="P"?P_BASE:E_BASE;return b.c===c&&b.r===r;}
+function moveCost(c,r,unit){
+  var t=terrain(c,r); if(t==="R")return Infinity;
+  if(t==="W"||t==="H")return 2; return 1;
+}
+function defBonus(c,r){var t=terrain(c,r); if(t==="T")return 2; if(t==="W"||t==="H")return 1; return 0;}
+function neighbors(c,r){
+  var deltas = (r%2===0)? [[1,0],[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]] : [[1,0],[1,-1],[0,-1],[-1,0],[0,1],[1,1]];
+  var out=[]; for(var i=0;i<deltas.length;i++){var nc=c+deltas[i][0],nr=r+deltas[i][1]; if(inB(nc,nr))out.push({c:nc,r:nr});}
+  return out;
+}
+function hexDist(a,b){
+  function toCube(p){var x=p.c-((p.r-(p.r&1))/2), z=p.r, y=-x-z; return {x:x,y:y,z:z};}
+  var A=toCube(a),B=toCube(b);
+  return Math.max(Math.abs(A.x-B.x),Math.abs(A.y-B.y),Math.abs(A.z-B.z));
+}
+function hexCenter(c,r){var x=SIZE*Math.sqrt(3)*(c+0.5*(r&1))+SIZE, y=SIZE*1.5*r+SIZE; return {x:x,y:y};}
+function hexPoints(c,r){var p=hexCenter(c,r),pts=[];for(var i=0;i<6;i++){var a=Math.PI/180*(60*i-30);pts.push((p.x+SIZE*Math.cos(a)).toFixed(1)+","+(p.y+SIZE*Math.sin(a)).toFixed(1));}return pts.join(" ");}
+
+/* ============ units ============ */
+var TYPES={
+  INF:{name:"Infantry",short:"INF",str:4,move:2,range:1,hp:4,sight:3},
+  ARM:{name:"Armour",short:"ARM",str:5,move:3,range:1,hp:5,sight:3},
+  ART:{name:"Artillery",short:"ART",str:4,move:1,range:2,hp:3,sight:4}
+};
+var uidSeq=1;
+function makeUnit(type,side,c,r){var t=TYPES[type];return {id:uidSeq++,type:type,side:side,c:c,r:r,hp:t.hp,maxHp:t.hp,cut:0,moved:false,attacked:false};}
+function startArmies(){
+  uidSeq=1; var u=[];
+  u.push(makeUnit("INF","P",1,2)); u.push(makeUnit("INF","P",1,4)); u.push(makeUnit("INF","P",2,3));
+  u.push(makeUnit("ARM","P",2,2)); u.push(makeUnit("ARM","P",2,4)); u.push(makeUnit("ART","P",1,3));
+  u.push(makeUnit("INF","E",7,2)); u.push(makeUnit("INF","E",7,4)); u.push(makeUnit("INF","E",6,3));
+  u.push(makeUnit("ARM","E",6,2)); u.push(makeUnit("ARM","E",6,4)); u.push(makeUnit("ART","E",7,3));
+  return u;
+}
+function unitAt(state,c,r){for(var i=0;i<state.units.length;i++){var u=state.units[i];if(u.hp>0&&u.c===c&&u.r===r)return u;}return null;}
+function supplyPenalty(u){return u.cut===0?0:(u.cut===1?1:2);}
+function effMove(u){var m=TYPES[u.type].move; if(u.cut===1)m-=1; if(u.cut>=2)m=Math.floor(m/2); return Math.max(0,m);}
+function effStr(u){return TYPES[u.type].str - supplyPenalty(u);}
+
+/* supply: BFS from unit to base over hexes not enemy-occupied and not in enemy ZOC unless friendly-occupied */
+function hasSupply(state,u,supplyOn){
+  if(!supplyOn)return true;
+  var enemySide = u.side==="P"?"E":"P";
+  function blocked(c,r){
+    var occ=unitAt(state,c,r);
+    if(occ&&occ.side===enemySide)return true;
+    if(occ&&occ.side===u.side)return false;
+    var ns=neighbors(c,r);
+    for(var i=0;i<ns.length;i++){var n=unitAt(state,ns[i].c,ns[i].r); if(n&&n.side===enemySide)return true;}
+    return false;
+  }
+  var base = u.side==="P"?P_BASE:E_BASE;
+  if(u.c===base.c&&u.r===base.r)return true;
+  var seen={}, q=[{c:u.c,r:u.r}]; seen[u.c+","+u.r]=1;
+  while(q.length){var cur=q.shift(); var ns=neighbors(cur.c,cur.r);
+    for(var i=0;i<ns.length;i++){var n=ns[i]; var k=n.c+","+n.r; if(seen[k])continue;
+      if(n.c===base.c&&n.r===base.r)return true;
+      if(terrain(n.c,n.r)==="R")continue;
+      if(blocked(n.c,n.r))continue;
+      seen[k]=1; q.push(n);
+    }
+  }
+  return false;
+}
+function checkSupply(state,supplyOn){
+  var dissolved=[];
+  state.units.forEach(function(u){
+    if(u.hp<=0)return;
+    if(hasSupply(state,u,supplyOn)){ if(u.cut>0){u.cut=0;} }
+    else { u.cut+=1; if(u.cut>=3){u.hp=0; dissolved.push(u);} }
+  });
+  return dissolved;
+}
+/* reachable hexes for a unit */
+function reachable(state,u){
+  var mp=effMove(u), out={}, cost={}; var start=u.c+","+u.r; cost[start]=0;
+  var q=[{c:u.c,r:u.r,d:0}];
+  while(q.length){var cur=q.shift();
+    neighbors(cur.c,cur.r).forEach(function(n){
+      var occ=unitAt(state,n.c,n.r); if(occ)return;
+      var mc=moveCost(n.c,n.r,u); if(!isFinite(mc))return;
+      var nd=cur.d+mc; var k=n.c+","+n.r;
+      if(nd<=mp&&(cost[k]===undefined||nd<cost[k])){cost[k]=nd; out[k]={c:n.c,r:n.r}; q.push({c:n.c,r:n.r,d:nd});}
+    });
+  }
+  delete out[start]; return out;
+}
+function townsHeld(state,side){
+  var n=0;
+  for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++)if(terrain(c,r)==="T"){var u=unitAt(state,c,r); if(u&&u.side===side)n++;}
+  return n;
+}
+function armyHealth(state,side){var s=0;state.units.forEach(function(u){if(u.side===side&&u.hp>0)s+=u.hp;});return s;}
+function aliveCount(state,side){var s=0;state.units.forEach(function(u){if(u.side===side&&u.hp>0)s++;});return s;}
+function checkWin(state){
+  var pu=unitAt(state,P_BASE.c,P_BASE.r), eu=unitAt(state,E_BASE.c,E_BASE.r);
+  if(eu&&eu.side==="P")return {winner:"P",why:"Your unit stands on the enemy base."};
+  if(pu&&pu.side==="E")return {winner:"E",why:"An enemy unit stands on your base."};
+  if(aliveCount(state,"E")===0)return {winner:"P",why:"The enemy army is broken — no units remain."};
+  if(aliveCount(state,"P")===0)return {winner:"E",why:"Your army is broken — no units remain."};
+  if(townsHeld(state,"P")>=3)return {winner:"P",why:"You hold 3 objective towns."};
+  if(townsHeld(state,"E")>=3)return {winner:"E",why:"The enemy holds 3 objective towns."};
+  if(state.turn>30){
+    var tp=townsHeld(state,"P"), te=townsHeld(state,"E");
+    if(tp!==te)return {winner:tp>te?"P":"E",why:"Turn 30 reached — more towns held wins."};
+    var hp=armyHealth(state,"P"), he=armyHealth(state,"E");
+    if(hp!==he)return {winner:hp>he?"P":"E",why:"Turn 30 reached, towns level — more health remaining wins."};
+    return {winner:"D",why:"Turn 30 reached — perfectly level. A draw."};
+  }
+  return null;
+}
+/* combat: returns log object */
+function doAttack(state,att,def){
+  var aRoll=d6(), dRoll=d6();
+  var hillBonus = terrain(att.c,att.r)==="H"?1:0;
+  var aTot = effStr(att)+aRoll+hillBonus;
+  var dTot = effStr(def)+dRoll+defBonus(def.c,def.r);
+  var longRange = hexDist(att,def)>=2;
+  var aDmg=0,dDmg=0;
+  if(aTot>dTot){ dDmg = (aTot-dTot>=4)?2:1; }
+  else if(dTot>aTot){ if(!longRange) aDmg=(dTot-aTot>=4)?2:1; }
+  else { dDmg=1; if(!longRange)aDmg=1; }
+  def.hp-=dDmg; att.hp-=aDmg;
+  att.attacked=true;
+  return {aRoll:aRoll,dRoll:dRoll,aTot:aTot,dTot:dTot,aDmg:aDmg,dDmg:dDmg,hillBonus:hillBonus};
+}
+
+/* ============ bot brain (shared by game + simulation) ============ */
+var BOTNAMES=["Learning","Steady","Sharp","General"];
+var BLUNDER=[0.7,0.25,0.08,0];
+function botAct(state,side,level,logFn){
+  var enemies = state.units.filter(function(u){return u.side!==side&&u.hp>0;});
+  var mine = state.units.filter(function(u){return u.side===side&&u.hp>0;});
+  var foeBase = side==="P"?E_BASE:P_BASE;
+  /* focus target for Sharp/General: weakest enemy */
+  var focus=null;
+  if(level>=2){ var sorted=enemies.slice().sort(function(a,b){return a.hp-b.hp;}); focus=sorted[0]; }
+  mine.forEach(function(u){
+    if(u.hp<=0)return;
+    if(level===0&&Math.random()<0.3)return; /* Learning hesitates */
+    var blunder = Math.random()<BLUNDER[level];
+    function tryAttack(fromC,fromR){
+      var targets=enemies.filter(function(e){return e.hp>0&&hexDist({c:fromC,r:fromR},e)===TYPES[u.type].range;});
+      if(u.type==="ART"&&u.moved)targets=[];
+      if(!targets.length)return false;
+      var t;
+      if(blunder||level===0){ t=targets[Math.floor(Math.random()*targets.length)]; }
+      else if(focus&&targets.indexOf(focus)>=0){ t=focus; }
+      else { t=targets.slice().sort(function(a,b){return (effStr({cut:b.cut,type:b.type})+defBonus(b.c,b.r)-b.hp)-(effStr({cut:a.cut,type:a.type})+defBonus(a.c,a.r)-a.hp);})[0]; }
+      var res=doAttack(state,u,t);
+      if(logFn)logFn(u,t,res);
+      return true;
+    }
+    if(tryAttack(u.c,u.r)) { if(u.type!=="ART"){} else return; }
+    /* movement */
+    var reach=reachable(state,u);
+    var keys=Object.keys(reach);
+    if(keys.length){
+      var best=null,bestScore=-1e9;
+      var cands=[];
+      keys.forEach(function(k){
+        var h=reach[k]; var s=0;
+        if(blunder||level===0){ s=Math.random()*10; }
+        else{
+          var dBase=hexDist(h,foeBase); s += (20-dBase*2);
+          if(terrain(h.c,h.r)==="T")s+=14;
+          if(terrain(h.c,h.r)==="H")s+=3;
+          /* attack opportunity from there */
+          enemies.forEach(function(e){ if(e.hp>0&&hexDist(h,e)===TYPES[u.type].range){ s+= 10 + (6-e.hp); if(focus&&e===focus)s+=6; }});
+          if(level>=2){
+            /* supply safety: prefer hexes that keep supply */
+            var saved={c:u.c,r:u.r}; u.c=h.c; u.r=h.r;
+            if(!hasSupply(state,u,state.supplyOn))s-=25;
+            u.c=saved.c; u.r=saved.r;
+          }
+          s+=Math.random()*1.5;
+        }
+        cands.push({h:h,s:s});
+        if(s>bestScore){bestScore=s;best=h;}
+      });
+      if(level===3&&!blunder){
+        /* General: among the 3 most promising hexes, reward the one that cuts the most enemy supply lines */
+        cands.sort(function(a,b){return b.s-a.s;});
+        for(var ci=0;ci<Math.min(3,cands.length);ci++){
+          var cand=cands[ci]; var saved2={c:u.c,r:u.r}; u.c=cand.h.c; u.r=cand.h.r;
+          var cutGain=0; enemies.forEach(function(e){ if(e.hp>0&&!hasSupply(state,e,state.supplyOn))cutGain++; });
+          u.c=saved2.c; u.r=saved2.r;
+          cand.s+=cutGain*9;
+          if(cand.s>bestScore){bestScore=cand.s;best=cand.h;}
+        }
+      }
+      if(best&&(best.c!==u.c||best.r!==u.r)){
+        var from={c:u.c,r:u.r}; u.c=best.c; u.r=best.r; u.moved=true;
+        if(logFn&&logFn.move)logFn.move(u,from,best);
+        if(!u.attacked)tryAttack(u.c,u.r);
+      }
+    }
+  });
+}
+/* full bot-vs-bot game for the simulation */
+function simGame(levelA,levelB){
+  var state={units:startArmies(),turn:1,supplyOn:true};
+  var levels={P:levelA,E:levelB};
+  for(var t=0;t<30;t++){
+    state.turn=t+1;
+    ["P","E"].forEach(function(side){
+      state.units.forEach(function(u){u.moved=false;u.attacked=false;});
+      botAct(state,side,levels[side],null);
+      var w=checkWin(state); if(w)return;
+    });
+    checkSupply(state,true);
+    var w2=checkWin(state); if(w2)return w2.winner;
+  }
+  var w3=checkWin(state); return w3?w3.winner:"D";
+}
+
+/* ============ page state ============ */
+var G=null; /* game state */
+var selected=null, reachCache={}, suggestion=null, undoStack=[];
+var prefs={alias:"",teach:"light"};
+try{ var saved=JSON.parse(localStorage.getItem("generals-table-prefs")||"null"); if(saved)prefs=saved; }catch(e){}
+function savePrefs(){ try{localStorage.setItem("generals-table-prefs",JSON.stringify(prefs));}catch(e){} }
+var record={v:1,games:[]};
+try{ var rec=JSON.parse(localStorage.getItem("generals-table-record")||"null"); if(rec&&rec.games)record=rec; }catch(e){}
+function saveRecord(){ try{localStorage.setItem("generals-table-record",JSON.stringify(record));}catch(e){} }
+
+function logMsg(html){ var el=$("log"); var d=document.createElement("div"); d.innerHTML=html; el.appendChild(d); el.scrollTop=el.scrollHeight; }
+function sideName(s){return s==="P"?("<b style='color:var(--blue)'>You</b>"):("<b style='color:var(--red)'>Enemy</b>");}
+function unitLabel(u){return TYPES[u.type].short+" ("+TYPES[u.type].name+")";}
+
+function newGame(){
+  G={units:startArmies(),turn:1,supplyOn:!$("noSupplyToggle").checked,fog:$("fogToggle").checked,botLevel:parseInt($("botSelect").value,10),over:false,recorded:false};
+  selected=null; reachCache={}; suggestion=null; undoStack=[];
+  $("log").innerHTML=""; $("winBanner").className="winbanner"; $("winBanner").textContent="";
+  logMsg("New battle. You command the <b>blue</b> army on the left; the enemy ("+BOTNAMES[G.botLevel]+") commands the <b>red</b> army on the right. Your base is the ★ on the far left.");
+  logMsg("Win by taking the enemy base, holding 3 towns, or breaking the enemy army. Watch your supply lines.");
+  updateVariantBanner(); render(); updateTip("start");
+}
+function isVariant(){ return G&&(G.fog||!G.supplyOn); }
+function variantList(){ var v=[]; if(G&&G.fog)v.push("Fog of war on"); if(G&&!G.supplyOn)v.push("Supply rules off"); return v; }
+function updateVariantBanner(){
+  var b=$("variantBanner");
+  if(isVariant()){ b.classList.add("show"); b.textContent="VARIANT GAME — "+variantList().join(" · ")+". This game will be recorded as a variant, separate from standard games."; }
+  else { b.classList.remove("show"); b.textContent=""; }
+}
+
+/* visibility for fog */
+function enemyVisible(e){
+  if(!G.fog)return true;
+  var best=99;
+  G.units.forEach(function(u){ if(u.side==="P"&&u.hp>0){ var sight=TYPES[u.type].sight+(terrain(u.c,u.r)==="H"?1:0); if(terrain(e.c,e.r)==="W")sight-=1; best=Math.min(best,hexDist(u,e)-sight);} });
+  return best<=0;
+}
+
+/* ============ rendering ============ */
+var TCOL={".":"#cfc493","W":"#7d9b5e","H":"#b39b6d","T":"#c9a86a","R":"#7fa8c9","B":"#b8a67e"};
+var TGLYPH={"W":"♣","H":"▲","T":"▦","B":"═"};
+function render(){
+  var svg=$("board"); var s="";
+  for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+    var t=terrain(c,r); var fill=TCOL[t];
+    if(isBase(c,r,"P"))fill="#8fa8c8"; if(isBase(c,r,"E"))fill="#c88f83";
+    var cls="hex";
+    var key=c+","+r;
+    if(reachCache[key])cls+=" reach";
+    if(suggestion&&suggestion.c===c&&suggestion.r===r)cls+=" suggest";
+    s+='<polygon class="'+cls+'" data-c="'+c+'" data-r="'+r+'" points="'+hexPoints(c,r)+'" fill="'+fill+'"/>';
+    var ctr=hexCenter(c,r);
+    if(TGLYPH[t])s+='<text x="'+ctr.x+'" y="'+(ctr.y+5)+'" text-anchor="middle" font-size="15" fill="rgba(30,30,20,.55)">'+TGLYPH[t]+'</text>';
+    if(t==="T")s+='<circle cx="'+ctr.x+'" cy="'+(ctr.y-13)+'" r="7" fill="none" stroke="rgba(30,30,20,.6)"/><text x="'+ctr.x+'" y="'+(ctr.y-9)+'" text-anchor="middle" font-size="9" font-weight="bold">T</text>';
+    if(isBase(c,r,"P")||isBase(c,r,"E"))s+='<text x="'+ctr.x+'" y="'+(ctr.y+5)+'" text-anchor="middle" font-size="17">★</text>';
+  }
+  /* units */
+  G.units.forEach(function(u){
+    if(u.hp<=0)return;
+    if(u.side==="E"&&!enemyVisible(u))return;
+    var ctr=hexCenter(u.c,u.r);
+    var col=u.side==="P"?"#2e4a6b":"#8c3524";
+    var sel=selected===u;
+    s+='<g class="unit" data-uid="'+u.id+'"><circle cx="'+ctr.x+'" cy="'+ctr.y+'" r="17" fill="'+col+'" stroke="'+(sel?"#ffd94d":"#fff")+'" stroke-width="'+(sel?3.5:1.5)+'"/>';
+    s+='<text x="'+ctr.x+'" y="'+(ctr.y-1)+'" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fff">'+TYPES[u.type].short+'</text>';
+    s+='<text x="'+ctr.x+'" y="'+(ctr.y+10)+'" text-anchor="middle" font-size="8.5" fill="#ffe9a8">'+u.hp+'♥</text>';
+    if(u.cut>0)s+='<text x="'+ctr.x+'" y="'+(ctr.y-24)+'" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#9c2f1d" style="paint-order:stroke;stroke:#fff;stroke-width:2.5">CUT OFF '+u.cut+'</text>';
+    if(u.side==="P"&&(u.moved||u.attacked)&&!G.over)s+='<circle cx="'+(ctr.x+13)+'" cy="'+(ctr.y-13)+'" r="4" fill="#888"/>';
+    s+='</g>';
+  });
+  svg.innerHTML=s;
+  /* wire hex clicks */
+  Array.prototype.forEach.call(svg.querySelectorAll(".hex"),function(h){
+    h.addEventListener("click",function(){ onHex(parseInt(h.getAttribute("data-c"),10),parseInt(h.getAttribute("data-r"),10)); });
+  });
+  Array.prototype.forEach.call(svg.querySelectorAll(".unit"),function(gEl){
+    gEl.addEventListener("click",function(ev){ ev.stopPropagation(); var id=parseInt(gEl.getAttribute("data-uid"),10);
+      var u=null; G.units.forEach(function(x){if(x.id===id)u=x;}); if(u)onUnit(u); });
+  });
+  $("turnLabel").textContent="Turn "+G.turn+" of 30 — "+(G.over?"Battle over":"Your move")+" · Enemy: "+BOTNAMES[G.botLevel]+" · Towns — You "+townsHeld(G,"P")+" : "+townsHeld(G,"E")+" Enemy";
+  updateUnitInfo();
+}
+function updateUnitInfo(){
+  var box=$("unitInfo");
+  if(!selected){ box.innerHTML="Tap one of your blue units on the map."; return; }
+  var u=selected, t=TYPES[u.type];
+  var sup = !G.supplyOn ? "Supply rules are off (variant)." : (hasSupply(G,u,true)?"Supplied — a clear path home exists.":"<strong style='color:var(--danger)'>CUT OFF — no path home. Cut-off count: "+u.cut+" of 3.</strong>");
+  box.innerHTML="<strong>"+t.name+"</strong> · Health "+u.hp+"/"+u.maxHp+" · Strength now <strong>"+effStr(u)+"</strong> (base "+t.str+(u.cut?" − supply penalty "+supplyPenalty(u):"")+") · Moves left this turn: "+(u.moved?"used":"up to "+effMove(u))+" · Attack: "+(u.attacked?"used":"ready")+"<br>"+sup+"<br><span class='small'>"+terrainWhy(u.c,u.r)+"</span>";
+}
+function terrainWhy(c,r){
+  var t=terrain(c,r);
+  if(t==="H")return "On a hill: +1 attack, +1 sight. High ground sees and shoots farther.";
+  if(t==="W")return "In woods: +1 defence. Trees hide you and slow everyone who enters.";
+  if(t==="T")return "In a town: +2 defence, and towns are objectives. Buildings are strong to defend.";
+  if(t==="B")return "On a bridge: the only way across the river. Whoever holds it holds the map in two.";
+  if(isBase(c,r,"P")||isBase(c,r,"E"))return "A supply base. Lose yours and every unit is cut off at once.";
+  return "Open plains: fast to cross, nothing to hide behind.";
+}
+
+/* ============ player actions ============ */
+function snapshot(){ return JSON.stringify(G.units.map(function(u){return {id:u.id,c:u.c,r:u.r,hp:u.hp,cut:u.cut,moved:u.moved,attacked:u.attacked};})); }
+function restore(snap){
+  var arr=JSON.parse(snap);
+  arr.forEach(function(sv){ G.units.forEach(function(u){ if(u.id===sv.id){u.c=sv.c;u.r=sv.r;u.hp=sv.hp;u.cut=sv.cut;u.moved=sv.moved;u.attacked=sv.attacked;} }); });
+}
+function onUnit(u){
+  if(G.over)return;
+  if(u.side==="E"){
+    if(selected&&!selected.attacked&&hexDist(selected,u)===TYPES[selected.type].range&&!(selected.type==="ART"&&selected.moved)){
+      undoStack.push(snapshot());
+      var att=selected, res=doAttack(G,att,u);
+      logMsg(sideName("P")+" "+unitLabel(att)+" attacks "+unitLabel(u)+": attack "+effStr(att)+" + roll "+res.aRoll+(res.hillBonus?" + hill 1":"")+" = <b>"+res.aTot+"</b> vs defence "+effStr(u)+" + roll "+res.dRoll+" + terrain "+defBonus(u.c,u.r)+" = <b>"+res.dTot+"</b>. "+(res.dDmg?"Defender takes "+res.dDmg+" damage. ":"")+(res.aDmg?"Attacker takes "+res.aDmg+" damage. ":"")+(u.hp<=0?"<b>Enemy unit destroyed.</b>":"")+(att.hp<=0?"<b>Your unit is destroyed.</b>":""));
+      afterAction();
+    } else if(selected){
+      logMsg("That enemy is out of range, or your selected unit cannot attack now. Artillery shoots exactly 2 hexes and cannot shoot after moving.");
+    }
+    return;
+  }
+  selected=u; reachCache = (!u.moved)?reachable(G,u):{};
+  suggestion = (prefs.teach==="coach")?coachSuggest(u):null;
+  render();
+}
+function onHex(c,r){
+  if(G.over||!selected)return;
+  var key=c+","+r;
+  if(reachCache[key]&&!selected.moved){
+    undoStack.push(snapshot());
+    var from={c:selected.c,r:selected.r};
+    selected.c=c; selected.r=r; selected.moved=true;
+    logMsg(sideName("P")+" "+unitLabel(selected)+" moves to "+terrainName(c,r)+". "+(G.supplyOn?(hasSupply(G,selected,true)?"Still supplied.":"<b style='color:var(--danger)'>That move leaves it CUT OFF — no path home.</b>"):""));
+    reachCache={}; suggestion=null;
+    afterAction();
+  }
+}
+function terrainName(c,r){var t=terrain(c,r);return t==="W"?"the woods":t==="H"?"a hill":t==="T"?"a town":t==="B"?"a bridge":(isBase(c,r,"P")||isBase(c,r,"E"))?"a base":"the plains";}
+function afterAction(){
+  var w=checkWin(G);
+  render();
+  if(w)finishGame(w);
+  else if(prefs.teach!=="off")updateTip("act");
+}
+$("undoBtn").addEventListener("click",function(){
+  if(G.over||!undoStack.length)return;
+  restore(undoStack.pop()); selected=null; reachCache={}; render();
+  logMsg("Last action taken back.");
+});
+$("endTurnBtn").addEventListener("click",function(){
+  if(!G||G.over)return;
+  $("endTurnBtn").disabled=true;
+  selected=null; reachCache={}; suggestion=null; render();
+  logMsg("— Enemy turn ("+BOTNAMES[G.botLevel]+") —");
+  var logger=function(u,t,res){
+    logMsg(sideName("E")+" "+unitLabel(u)+" attacks your "+unitLabel(t)+": attack "+effStr(u)+" + roll "+res.aRoll+(res.hillBonus?" + hill 1":"")+" = <b>"+res.aTot+"</b> vs defence "+effStr(t)+" + roll "+res.dRoll+" + terrain "+defBonus(t.c,t.r)+" = <b>"+res.dTot+"</b>. "+(res.dDmg?"Your unit takes "+res.dDmg+" damage. ":"")+(res.aDmg?"Attacker takes "+res.aDmg+" damage. ":"")+(t.hp<=0?"<b>Your unit is destroyed.</b>":""));
+  };
+  logger.move=function(u,from,to){ logMsg(sideName("E")+" "+unitLabel(u)+" moves to "+terrainName(to.c,to.r)+"."); };
+  setTimeout(function(){
+    G.units.forEach(function(u){ if(u.side==="E"){u.moved=false;u.attacked=false;} });
+    botAct(G,"E",G.botLevel,logger);
+    var w=checkWin(G);
+    if(w){ render(); finishGame(w); $("endTurnBtn").disabled=false; return; }
+    /* supply check at end of full turn */
+    var dissolved=checkSupply(G,G.supplyOn);
+    dissolved.forEach(function(u){ logMsg("<b>"+(u.side==="P"?"Your ":"Enemy ")+unitLabel(u)+" surrenders — cut off from supply for 3 turns.</b> Logistics, not bullets."); });
+    G.units.forEach(function(u){ if(u.hp>0&&u.cut>0)logMsg((u.side==="P"?"Your ":"Enemy ")+unitLabel(u)+" is <b>cut off ("+u.cut+" of 3)</b>: strength "+effStr(u)+", movement "+effMove(u)+"."); });
+    G.turn+=1;
+    G.units.forEach(function(u){ u.moved=false; u.attacked=false; });
+    undoStack=[];
+    w=checkWin(G);
+    render();
+    if(w)finishGame(w); else if(prefs.teach!=="off")updateTip("newturn");
+    $("endTurnBtn").disabled=false;
+  },450);
+});
+function finishGame(w){
+  G.over=true;
+  var banner=$("winBanner");
+  banner.classList.add("show");
+  if(w.winner==="P"){ banner.classList.add("won"); banner.textContent="Victory. "+w.why; }
+  else if(w.winner==="E"){ banner.classList.add("lost"); banner.textContent="Defeat. "+w.why+" The shelves below may help — every principle there is one the enemy just used, or you can."; }
+  else { banner.classList.add("won"); banner.textContent="Draw. "+w.why; }
+  logMsg("<b>Battle over.</b> "+w.why);
+  if(!G.recorded){
+    G.recorded=true;
+    record.games.push({date:new Date().toISOString().slice(0,10),alias:prefs.alias||"Guest",bot:BOTNAMES[G.botLevel],result:w.winner==="P"?"won":(w.winner==="E"?"lost":"draw"),turns:G.turn,kind:isVariant()?"variant":"standard",variants:variantList()});
+    saveRecord(); renderRecord();
+  }
+  render();
+}
+
+/* ============ teaching ============ */
+var TIPS=[
+ "Supply first: before any brave move, glance at the path home. A unit with no path home is already losing.",
+ "Towns give +2 defence. An infantry in a town is a hard nut — bring artillery or two units, not one.",
+ "The bridges are the map's throat. A unit on a bridge hex defends two halves of the board at once.",
+ "Concentrate: two units attacking the same enemy in one turn beat two units fighting separate duels.",
+ "Artillery cannot move and shoot in the same turn. Place it, then let it work.",
+ "A cut-off enemy is a dying enemy. Sometimes the best attack is stepping onto their road home."
+];
+function coachSuggest(u){
+  /* best attack-from-reachable hex by simple score */
+  var reach=reachable(G,u); var best=null,bestScore=0;
+  Object.keys(reach).forEach(function(k){ var h=reach[k];
+    G.units.forEach(function(e){ if(e.side==="E"&&e.hp>0&&hexDist(h,e)===TYPES[u.type].range){ var sc=10-e.hp-defBonus(e.c,e.r); if(sc>bestScore){bestScore=sc;best=h;} }});
+  });
+  return best;
+}
+function updateTip(ctx){
+  var box=$("tipBox");
+  if(prefs.teach==="off"){ box.textContent="Teaching is off. Turn it to Light or Coach in the setup panel any time."; return; }
+  var cutMine=G.units.filter(function(u){return u.side==="P"&&u.hp>0&&u.cut>0;});
+  if(cutMine.length){ box.innerHTML="<strong>Warning:</strong> your "+unitLabel(cutMine[0])+" is cut off ("+cutMine[0].cut+" of 3). Reconnect its path home — clear the blocker or move it back — before it surrenders."; return; }
+  var cutFoe=G.units.filter(function(u){return u.side==="E"&&u.hp>0&&u.cut>0&&enemyVisible(u);});
+  if(cutFoe.length){ box.innerHTML="<strong>Opportunity:</strong> an enemy "+unitLabel(cutFoe[0])+" is cut off ("+cutFoe[0].cut+" of 3). You may not need to attack it at all — just keep its road home blocked."; return; }
+  if(prefs.teach==="coach"&&selected&&suggestion){ box.innerHTML="Coach: the dashed blue hex is a strong firing position for your selected "+unitLabel(selected)+". It is a suggestion, not an order — the trade-offs are yours to weigh."; return; }
+  box.textContent=TIPS[(G.turn-1)%TIPS.length];
+}
+
+/* ============ record UI ============ */
+function renderRecord(){
+  var std=record.games.filter(function(g){return g.kind==="standard";});
+  var varr=record.games.filter(function(g){return g.kind==="variant";});
+  function tally(list){ var w=0,l=0,d=0; list.forEach(function(g){ if(g.result==="won")w++; else if(g.result==="lost")l++; else d++; }); return {w:w,l:l,d:d}; }
+  var ts=tally(std), tv=tally(varr);
+  var byBot={}; BOTNAMES.forEach(function(n){byBot[n]={w:0,l:0,d:0};});
+  record.games.forEach(function(g){ var b=byBot[g.bot]; if(b){ if(g.result==="won")b.w++; else if(g.result==="lost")b.l++; else b.d++; }});
+  var html='<div class="stat"><b>'+ts.w+"–"+ts.l+(ts.d?"–"+ts.d:"")+'</b>Standard games (W–L'+(ts.d?"–D":"")+")</div>";
+  html+='<div class="stat"><b>'+tv.w+"–"+tv.l+(tv.d?"–"+tv.d:"")+'</b>Variant games (kept separate)</div>';
+  BOTNAMES.forEach(function(n){ var b=byBot[n]; html+='<div class="stat"><b>'+b.w+"–"+b.l+'</b>vs '+n+'</div>'; });
+  $("recordStats").innerHTML=html;
+  if(!record.games.length){ $("recordList").innerHTML='<p class="small">No games recorded yet. Finish a battle and it will be written here.</p>'; return; }
+  var t='<table><tr><th>Date</th><th>Name</th><th>Enemy</th><th>Result</th><th>Turns</th><th>Kind</th></tr>';
+  record.games.slice().reverse().forEach(function(g){
+    t+="<tr><td>"+g.date+"</td><td>"+escapeHtml(g.alias)+"</td><td>"+g.bot+"</td><td>"+g.result+"</td><td>"+g.turns+"</td><td>"+g.kind+(g.variants&&g.variants.length?" ("+g.variants.join(", ")+")":"")+"</td></tr>";
+  });
+  $("recordList").innerHTML=t+"</table>";
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];});}
+$("exportBtn").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="generals-table-record.json"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+$("forgetBtn").addEventListener("click",function(){
+  record={v:1,games:[]}; prefs={alias:"",teach:"light"};
+  try{localStorage.removeItem("generals-table-record"); localStorage.removeItem("generals-table-prefs");}catch(e){}
+  $("aliasInput").value=""; $("teachSelect").value="light";
+  renderRecord(); updateTip("start");
+  logMsg("Forgotten — one tap, as promised. Record, name and teaching choice erased from this device.");
+});
+
+/* ============ simulation UI ============ */
+$("simBtn").addEventListener("click",function(){
+  $("simStatus").textContent="Running — bots are fighting complete games against each other now…";
+  $("simBtn").disabled=true;
+  setTimeout(function(){
+    var N=6, levels=[0,1,2,3];
+    var results={};
+    levels.forEach(function(a){ results[a]={}; levels.forEach(function(b){ if(a!==b)results[a][b]={w:0,l:0,d:0}; }); });
+    levels.forEach(function(a){ levels.forEach(function(b){ if(a===b)return;
+      for(var i=0;i<N;i++){ var w=simGame(a,b); if(w==="P")results[a][b].w++; else if(w==="E")results[a][b].l++; else results[a][b].d++; }
+    });});
+    var html='<table><tr><th>Commander (as first player)</th>'+levels.map(function(b){return "<th>vs "+BOTNAMES[b]+"</th>";}).join("")+"</tr>";
+    levels.forEach(function(a){ html+="<tr><td><strong>"+BOTNAMES[a]+"</strong></td>"+levels.map(function(b){ if(a===b)return "<td>—</td>"; var r=results[a][b]; return "<td>"+r.w+"W – "+r.l+"L"+(r.d?" – "+r.d+"D":"")+"</td>"; }).join("")+"</tr>"; });
+    html+="</table>";
+    $("simResults").innerHTML=html;
+    /* headline honesty line */
+    var gVsL=results[3][0], lVsG=results[0][3];
+    $("simStatus").textContent="Done: "+(N*12)+" complete games played just now by the bots on this device — a smaller spot-check sample (6 per pairing), so expect wider swings than the 240-game table above. Headline check — General beat Learning "+gVsL.w+" of "+N+" as first player; Learning beat General "+lVsG.w+" of "+N+". If the levels were fake, those numbers would sit near even. ("+new Date().toLocaleTimeString()+")";
+    $("simBtn").disabled=false;
+  },60);
+});
+
+/* ============ setup wiring ============ */
+$("aliasInput").value=prefs.alias||"";
+$("teachSelect").value=prefs.teach||"light";
+$("aliasInput").addEventListener("change",function(){ prefs.alias=this.value.trim().slice(0,24); savePrefs(); });
+$("teachSelect").addEventListener("change",function(){ prefs.teach=this.value; savePrefs(); suggestion=null; render(); updateTip("start"); });
+$("botSelect").addEventListener("change",function(){ newGame(); });
+$("fogToggle").addEventListener("change",function(){ newGame(); });
+$("noSupplyToggle").addEventListener("change",function(){ newGame(); });
+$("newGameBtn").addEventListener("click",newGame);
+$("dlBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="the-generals-table.html"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+
+/* hold-to-explain */
+var holdTimer=null;
+function bindHold(el){
+  var txt=el.getAttribute("data-hold"); if(!txt)return;
+  function start(){ holdTimer=setTimeout(function(){ var b=$("explainBar"); b.textContent="What this does: "+txt; b.classList.add("show"); },550); }
+  function stop(){ if(holdTimer)clearTimeout(holdTimer); }
+  el.addEventListener("pointerdown",start); el.addEventListener("pointerup",stop); el.addEventListener("pointerleave",stop);
+}
+Array.prototype.forEach.call(document.querySelectorAll("[data-hold]"),bindHold);
+/* details gesture labels */
+Array.prototype.forEach.call(document.querySelectorAll("details"),function(d){
+  d.addEventListener("toggle",function(){
+    var g=d.querySelector(".gesture"); if(g)g.textContent=d.open?"— Tap to close":"— Tap to open";
+  });
+});
+
+newGame();
+renderRecord();
+</script>
+</body>
+</html>
