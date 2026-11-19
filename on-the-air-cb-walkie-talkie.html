@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>On the Air — CB &amp; Walkie-Talkie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#e9ede7; --panel:#fbfcfa; --panel2:#f0f3ee; --ink:#17211b; --muted:#48584e;
+        --line:#c3cfc2; --accent:#0d7a43; --accent-ink:#ffffff; --amber:#a85b06; --amber-bg:#fdf0dc;
+        --danger:#b3261e; --lcd-bg:#0c1710; --lcd-ink:#7de2a8; --lcd-dim:#3f7d5c;
+        --shadow:0 1px 3px rgba(20,40,25,.14);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0c110d; --panel:#151c16; --panel2:#1a231b; --ink:#e7eee7; --muted:#a3b5a6;
+          --line:#2b3a2d; --accent:#43c47e; --accent-ink:#08130c; --amber:#e8a33d; --amber-bg:#2b2110;
+          --danger:#ff8a7a; --lcd-bg:#060d08; --lcd-ink:#7de2a8; --lcd-dim:#35634a;
+          --shadow:0 1px 3px rgba(0,0,0,.5);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size:17px; line-height:1.55; }
+      .wrap{ max-width:960px; margin:0 auto; padding:0 16px 130px; }
+      h1{ font-size:2rem; line-height:1.15; margin:.2em 0 .3em; font-weight:800; letter-spacing:-.01em; }
+      h2{ font-size:1.45rem; margin:0 0 .4em; font-weight:800; }
+      h3{ font-size:1.1rem; margin:1.1em 0 .35em; font-weight:700; }
+      p{ margin:.55em 0; }
+      .muted{ color:var(--muted); }
+      .small{ font-size:.88rem; }
+      .freeline{ background:var(--accent); color:var(--accent-ink); font-weight:700;
+        padding:12px 16px; border-radius:0 0 10px 10px; display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; justify-content:space-between;}
+      .freeline button{ background:transparent; color:inherit; border:2px solid currentColor; border-radius:8px;
+        font:inherit; font-weight:700; padding:6px 14px; cursor:pointer; min-height:2.75rem; }
+      nav.compass{ position:sticky; top:0; z-index:20; background:var(--bg); border-bottom:2px solid var(--line);
+        display:flex; flex-wrap:wrap; gap:.35rem; padding:.5rem 0; margin-bottom:20px; }
+      nav.compass a{ flex:1 1 auto; text-align:center; color:var(--ink); text-decoration:none; font-weight:700;
+        border:2px solid var(--line); border-radius:.5rem; padding:.55rem .3rem; min-height:2.75rem;
+        display:flex; align-items:center; justify-content:center; background:var(--panel2); }
+      nav.compass a:hover, nav.compass a:focus{ outline:2px solid var(--accent); }
+      section.panel{ background:var(--panel); border:1px solid var(--line); border-radius:12px;
+        padding:20px; margin:0 0 22px; box-shadow:var(--shadow); }
+      .honest{ border:3px solid var(--amber); background:var(--amber-bg); border-radius:10px; padding:14px 16px; margin:14px 0; }
+      .honest h3{ margin-top:0; color:var(--amber); }
+      .lcd{ background:var(--lcd-bg); color:var(--lcd-ink); font-family:"IBM Plex Mono", ui-monospace, monospace;
+        border-radius:10px; padding:14px 16px; border:2px solid var(--lcd-dim); }
+      .lcd .dim{ color:var(--lcd-dim); }
+      .lcd-log{ max-height:260px; overflow-y:auto; font-size:.92rem; line-height:1.5; }
+      .lcd-log p{ margin:.3em 0; }
+      label{ font-weight:700; display:block; margin:.7em 0 .25em; }
+      input[type="text"], select{ width:100%; padding:10px 12px; border:2px solid var(--line); border-radius:8px;
+        background:var(--panel); color:var(--ink); font:inherit; }
+      input[type="range"]{ width:100%; min-height:2.75rem; accent-color:var(--accent); }
+      .row{ display:flex; flex-wrap:wrap; gap:12px; }
+      .row > *{ flex:1 1 200px; }
+      button.btn{ font:inherit; font-weight:700; border-radius:9px; border:2px solid var(--accent);
+        background:var(--accent); color:var(--accent-ink); padding:10px 18px; cursor:pointer; }
+      button.btn.secondary{ background:transparent; color:var(--accent); }
+      button.btn.plain{ background:var(--panel2); color:var(--ink); border-color:var(--line); }
+      button.btn:disabled{ opacity:.45; cursor:not-allowed; }
+      .seg{ display:inline-flex; border:2px solid var(--line); border-radius:9px; overflow:hidden; }
+      .seg button{ font:inherit; font-weight:700; border:0; background:var(--panel); color:var(--ink);
+        padding:10px 16px; cursor:pointer; min-height:2.75rem; }
+      .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+      #ptt{ display:block; width:100%; min-height:6.5rem; border-radius:16px; border:4px solid var(--danger);
+        background:var(--panel2); color:var(--ink); font-size:1.35rem; font-weight:800; cursor:pointer;
+        touch-action:none; user-select:none; -webkit-user-select:none; margin-top:14px; }
+      #ptt.held{ background:var(--danger); color:#fff; }
+      #ptt:disabled{ border-color:var(--line); color:var(--muted); cursor:not-allowed; }
+      .floor{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-weight:600; }
+      .roster{ list-style:none; margin:.5em 0; padding:0; }
+      .roster li{ padding:8px 12px; border:1px solid var(--line); border-radius:8px; margin:6px 0; background:var(--panel2); font-weight:600;}
+      .station{ border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; background:var(--panel2); }
+      .station h4{ margin:0 0 .2em; font-size:1.02rem; }
+      .bar{ height:14px; background:var(--bg); border:1px solid var(--line); border-radius:7px; overflow:hidden; margin:6px 0; }
+      .bar > div{ height:100%; background:var(--accent); transition:width .3s; }
+      .bar.batt > div{ background:var(--amber); }
+      details.fold{ border:1px solid var(--line); border-radius:10px; margin:12px 0; background:var(--panel); }
+      details.fold > summary{ cursor:pointer; font-weight:800; padding:14px 16px; list-style:none; display:flex; justify-content:space-between; gap:10px; align-items:center;}
+      details.fold > summary::-webkit-details-marker{ display:none; }
+      details.fold > summary .tap{ font-size:.8rem; font-weight:700; color:var(--accent); white-space:nowrap; }
+      details.fold .body{ padding:0 16px 16px; border-top:1px solid var(--line); }
+      table{ width:100%; border-collapse:collapse; margin:.6em 0; }
+      th, td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+      th{ font-weight:800; }
+      .phon{ display:grid; grid-template-columns:repeat(auto-fill, minmax(118px,1fr)); gap:8px; margin:.6em 0; }
+      .phon div{ border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:var(--panel2); }
+      .phon b{ font-family:"IBM Plex Mono", ui-monospace, monospace; color:var(--accent); }
+      .choices{ display:grid; gap:10px; margin:12px 0; }
+      .choices button{ text-align:left; }
+      .grade{ border:3px solid var(--accent); border-radius:10px; padding:14px 16px; margin:14px 0; background:var(--panel2); }
+      .grade h3{ margin-top:0; }
+      body[data-teach="off"] .why-light, body[data-teach="off"] .why-coach,
+      body[data-teach="light"] .why-coach{ display:none; }
+      .why-light, .why-coach{ border-left:5px solid var(--accent); background:var(--panel2);
+        padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; }
+      .why-coach{ border-left-color:var(--amber); }
+      .why-light p:first-child, .why-coach p:first-child{ margin-top:0; }
+      .why-light p:last-child, .why-coach p:last-child{ margin-bottom:0; }
+      .tag{ display:inline-block; font-size:.75rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+        color:var(--accent); border:1.5px solid var(--accent); border-radius:20px; padding:2px 9px; margin-bottom:6px; }
+      footer{ border-top:2px solid var(--line); padding-top:16px; color:var(--muted); font-size:.92rem; }
+      .dock{ position:fixed; left:0; right:0; bottom:0; background:var(--panel); border-top:2px solid var(--line);
+        display:grid; grid-template-columns:1fr 1fr 1fr; z-index:50; padding-bottom:env(safe-area-inset-bottom); }
+      .dock button{ background:none; border:none; border-right:1px solid var(--line); display:flex; flex-direction:column;
+        align-items:center; padding:8px 4px 6px; cursor:pointer; color:var(--ink); font:inherit; min-height:3.4rem; }
+      .dock button:last-child{ border-right:none; }
+      .dock .ic{ font-size:1.3rem; line-height:1; }
+      .dock .lb{ font-weight:700; font-size:.85rem; }
+      .dock .gs{ font-size:.65rem; color:var(--muted); }
+      .dockpanel{ display:none; position:fixed; left:0; right:0; bottom:76px; max-height:70vh; overflow:auto;
+        background:var(--panel); border-top:2px solid var(--ink); z-index:49; padding:18px 16px 24px; }
+      .dockpanel.open{ display:block; }
+      .dockpanel a{ display:block; color:var(--ink); font-weight:700; text-decoration:none; padding:10px 4px; border-bottom:1px solid var(--line); min-height:2.75rem; }
+      .dockpanel a small{ display:block; color:var(--muted); font-weight:400; }
+      .kbd{ font-family:"IBM Plex Mono", monospace; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
+      @media (max-width:560px){
+        h1{ font-size:1.6rem; } section.panel{ padding:16px; }
+        table, tbody, tr, th, td{ display:block; width:100%; }
+        tr{ border-bottom:2px solid var(--line); padding:6px 0; }
+        th, td{ border-bottom:none; padding:4px 10px; }
+      }
+      @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } .bar > div{ transition:none; } }
+    </style>
+  </head>
+  <body data-teach="light">
+    <div class="wrap">
+      <div class="freeline">
+        <span>Free — always free. No ads, no account, nothing to buy.</span>
+        <button type="button" id="downloadBtn">Tap to download this page — read and practise offline</button>
+      </div>
+
+      <nav class="compass" aria-label="Page compass — tap a word to jump">
+        <a href="#setup">Your callsign</a>
+        <a href="#link">The Real Link</a>
+        <a href="#sim">Practice Radio</a>
+        <a href="#learn">Learn Real Radio</a>
+      </nav>
+
+      <h1>On the Air — CB &amp; Walkie-Talkie</h1>
+      <p>Two things live on this page, and they are not the same thing. There is a <strong>real voice link</strong> that connects you to other people on this page through the internet, the way a walkie-talkie works — hold to talk, one voice at a time. And there is the <strong>real radio teaching</strong>: how actual CB and walkie-talkie radios reach each other through the air, which is the part that matters when networks go down. A practice radio sits between them so you can learn the manners of the air before you ever key a real microphone.</p>
+
+      <section class="panel" id="setup">
+        <h2>Your callsign &amp; the teaching dial</h2>
+        <p>On the radio you are your callsign — a handle you pick for yourself. It is not registered anywhere, it claims nothing, and you can change it whenever you like. Pick one, or let the page make one up.</p>
+        <div class="row">
+          <div>
+            <label for="callsign">Your callsign (tap to type your own)</label>
+            <input type="text" id="callsign" maxlength="24" placeholder="e.g. Copper Fox" autocomplete="off" />
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button type="button" class="btn secondary" id="genCall" style="width:100%;">Tap to make one up for me</button>
+          </div>
+        </div>
+        <h3>Teaching dial</h3>
+        <p class="small muted">How much explaining the page does. <strong>Light</strong> shows the short reason under each thing. <strong>Coach</strong> adds the deeper coaching. <strong>Off</strong> hides the teaching and leaves just the tools. Your choice is saved on this device only — nothing is sent anywhere, and no account is involved.</p>
+        <div class="seg" role="group" aria-label="Teaching dial">
+          <button type="button" data-dial="off" aria-pressed="false">Off</button>
+          <button type="button" data-dial="light" aria-pressed="true">Light</button>
+          <button type="button" data-dial="coach" aria-pressed="false">Coach</button>
+        </div>
+      </section>
+
+      <section class="panel" id="link">
+        <span class="tag">Part one</span>
+        <h2>The Real Link — talk to people on your channel</h2>
+        <p>This is a working push-to-talk voice link. You and your people open this page, agree on a <strong>channel code</strong> (any word you make up together, like <span class="kbd">elm-street</span>), type the same code, and join. Whoever holds the talk button holds the floor — everybody else hears them, one voice at a time, like a real walkie-talkie. When a transmission ends, you hear a short roger beep.</p>
+
+        <div class="honest" role="note">
+          <h3>The honest limits — read these at full size</h3>
+          <p><strong>This link rides the internet.</strong> It is <strong>not radio</strong>. Your voice travels through a connection service on the web, not through the air, so it is <strong>not limited by distance</strong> — it can reach the next street or the next country, and it works only while a network does.</p>
+          <p><strong>In a true shutdown — no internet, no local network — no web page can connect anybody.</strong> Not this one, not anyone's. Anyone who tells you a web page works with no network at all is selling you something. What a page <em>can</em> honestly do for a shutdown is teach you real radio (Part Three below) and work for as long as any network lives.</p>
+          <p><strong>Testing note:</strong> some browsers, work networks, and test environments block the connection service this link uses. If that happens here, the panel below will say so in plain words — nothing will be faked. The link's real test is two real devices, on two real networks or one shared one, with the same channel code.</p>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="chanCode">Channel code (a word your group agrees on)</label>
+            <input type="text" id="chanCode" maxlength="24" placeholder="e.g. elm-street" autocomplete="off" />
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button type="button" class="btn" id="joinBtn" style="flex:1;">Tap to join the channel</button>
+            <button type="button" class="btn plain" id="leaveBtn" disabled>Tap to leave</button>
+          </div>
+        </div>
+
+        <div class="lcd" style="margin-top:16px;" aria-live="polite">
+          <p style="margin:.1em 0;"><span class="dim">STATUS</span> <span id="rlStatus">Not connected. Set a callsign above and a channel code, then tap join.</span></p>
+          <p style="margin:.1em 0;"><span class="dim">FLOOR</span> <span class="floor" id="rlFloor">The floor is open — nobody is talking.</span></p>
+          <p style="margin:.1em 0 .3em;"><span class="dim">ON CHANNEL</span></p>
+          <ul class="roster" id="rlRoster" style="color:var(--lcd-ink);">
+            <li style="background:transparent; border-color:var(--lcd-dim);">Just you, so far — or nobody yet, until you join.</li>
+          </ul>
+        </div>
+
+        <button type="button" id="ptt" disabled>HOLD TO TALK</button>
+        <p class="small muted">Press and hold the button to talk; let go to finish. On a keyboard: tab to the button, then hold <span class="kbd">Space</span>. While somebody else holds the floor, this button switches off and says so — one voice at a time, like a real radio. The page will ask for your microphone the first time you join; no microphone, no voice — that part can't be faked either.</p>
+
+        <div class="why-light">
+          <p><strong>Why one voice at a time?</strong> Real radios share one channel: two people transmitting at once just garble each other. The floor rule isn't politeness decoration — it's what makes a shared channel work at all. This link copies the rule on purpose, so the habit you build here is the habit a real radio needs.</p>
+        </div>
+        <div class="why-coach">
+          <p><strong>Coach note:</strong> practise the real shape of a transmission even here — listen a moment, hold, say who you are and who you're calling, talk, say "over," let go. The people on the other end will thank you, and on a real radio that discipline is the difference between a channel that works and a wall of noise.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="sim">
+        <span class="tag">Part two</span>
+        <h2>The Practice Radio — a simulated channel</h2>
+        <p>A make-believe radio channel with make-believe stations on it, so you can practise real procedure with nobody listening. The static, the squelch, and the battery all behave the way the real things behave — that's the point of the practice. Everything labelled <em>simulator feature</em> is part of the lesson, not decoration.</p>
+
+        <div class="lcd">
+          <div class="row" style="align-items:flex-end;">
+            <div>
+              <p style="margin:.1em 0;"><span class="dim">POWER</span> <span id="simPowerState">OFF</span></p>
+              <p style="margin:.1em 0;"><span class="dim">CHANNEL</span> CB 19 — the highway channel (simulated)</p>
+            </div>
+            <div>
+              <p style="margin:.1em 0;"><span class="dim">BATTERY (simulator feature)</span> <span id="battPct">100%</span></p>
+              <div class="bar batt" aria-hidden="true"><div id="battBar" style="width:100%;"></div></div>
+            </div>
+          </div>
+          <div class="lcd-log" id="simLog" aria-live="polite">
+            <p class="dim">The radio is off. Tap "Switch the radio on" below.</p>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px;">
+          <button type="button" class="btn" id="simPower">Tap to switch the radio on</button>
+          <button type="button" class="btn plain" id="swapBatt" disabled>Tap to swap in fresh batteries (simulator feature)</button>
+          <button type="button" class="btn secondary" id="voiceToggle" aria-pressed="false">Tap to turn bot voices on</button>
+        </div>
+        <p class="small muted">Bot voices, if your device has them, are your device's own speech voice reading the bots' lines — nobody recorded anything. The battery drains fast while you transmit and slowly while you listen, like a real handheld. Run it dry and the session ends until you swap batteries — short transmissions are a real radio habit, and this is where it comes from.</p>
+
+        <h3>Squelch — tap and slide</h3>
+        <label for="squelch">Squelch level: <span id="squelchVal">30</span> (slide up to cut weak signals out, down to let everything in)</label>
+        <input type="range" id="squelch" min="0" max="90" step="5" value="30" />
+        <p class="small">Squelch is a gate on the speaker. Signals weaker than the gate are silenced — along with the static. Raise it and weak, far stations drop out. Lower it and the static comes back, but so do the faint voices. Try it: slide it all the way up and watch the far stations below drop off the air; slide it down and listen to the static return.</p>
+
+        <div class="row">
+          <div>
+            <label for="terrain">Terrain between you and them</label>
+            <select id="terrain">
+              <option value="open" selected>Open fields / flat water</option>
+              <option value="hills">Rolling hills</option>
+              <option value="woods">Dense woods</option>
+              <option value="city">City blocks</option>
+            </select>
+          </div>
+          <div>
+            <label for="weather">Weather</label>
+            <select id="weather">
+              <option value="clear" selected>Clear</option>
+              <option value="rain">Rain</option>
+              <option value="storm">Storm</option>
+            </select>
+          </div>
+          <div>
+            <label for="antenna">Your antenna</label>
+            <select id="antenna">
+              <option value="hand" selected>Handheld, held at head height</option>
+              <option value="roof">Rooftop antenna, about 30 feet up</option>
+            </select>
+          </div>
+        </div>
+        <p class="small muted">These three settings change your range the way they change a real radio's range — the numbers come straight from the teaching in Part Three. Height does the most. Weather does the least. That ordering is itself the lesson.</p>
+
+        <h3>Stations on this channel</h3>
+        <div id="stationList"></div>
+
+        <h3>Make a call</h3>
+        <div id="exchange">
+          <p>Good radio starts before the microphone: <strong>listen first</strong>. Tap the listen button and give the channel a few seconds. If somebody is mid-conversation, you wait — keying up over them helps nobody.</p>
+          <div class="row">
+            <button type="button" class="btn secondary" id="listenBtn" disabled>Tap to listen first (3 seconds)</button>
+            <button type="button" class="btn" id="callBtn" disabled>Tap to call the station you picked</button>
+          </div>
+          <p class="small muted" id="pickedNote">Pick a station above first — tap its "Pick this station" button. You can only call a station your squelch lets you hear.</p>
+          <div id="exchangeSteps"></div>
+          <div id="gradeBox"></div>
+        </div>
+
+        <div class="why-light">
+          <p><strong>Why practise on a fake channel?</strong> Because procedure is a habit, and habits are built by repetition, not by reading. Every exchange here runs the real shape — listen, identify, talk, close — so when it matters, your hands and mouth already know it.</p>
+        </div>
+        <div class="why-coach">
+          <p><strong>Coach note:</strong> after each exchange the Coach grades what you actually did — not what you meant to do. If you skipped listening, it will say so. Run the same exchange again right away and fix the one thing it named; that's the fastest way this gets into your hands.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="learn">
+        <span class="tag">Part three</span>
+        <h2>Learn Real Radio — the genuine shutdown preparation</h2>
+        <p>Everything below is about <strong>real radios</strong> — the kind that work with no network at all, because they talk through the air itself. This is the half of the page that still works in a true shutdown, and it's the half worth learning before you need it. Each shelf opens with a tap.</p>
+
+        <details class="fold">
+          <summary>How range actually works — and why height beats power <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <p>Radio waves at CB and walkie-talkie frequencies travel in roughly straight lines. The Earth curves. So the real limit on most handheld conversations is not the radio's strength — it's the <strong>horizon</strong>. Your signal runs straight until the ground falls away beneath it.</p>
+            <p>The horizon distance grows with height, and the maths is simple enough to carry in your head: <strong>horizon in miles ≈ 1.23 × the square root of your antenna height in feet.</strong></p>
+            <table>
+              <tr><th>Antenna height</th><th>Your horizon</th><th>Talking to the same height</th></tr>
+              <tr><td>Held in your hand, ~6 ft</td><td>~3 miles</td><td>~6 miles on a perfect day</td></tr>
+              <tr><td>On a car roof, ~5–6 ft</td><td>~3 miles</td><td>~6 miles on a perfect day</td></tr>
+              <tr><td>Rooftop, ~30 ft</td><td>~6.7 miles</td><td>~13 miles on a perfect day</td></tr>
+              <tr><td>A hill or tower, ~100 ft</td><td>~12 miles</td><td>~24 miles on a perfect day</td></tr>
+            </table>
+            <p>Those are <em>perfect-day, nothing-in-the-way</em> numbers. Real life is less: honest typical ranges for a handheld are roughly <strong>half a mile to 2 miles in woods or city streets, 1 to 3 miles in open country, and up to about 5 miles over flat open ground or water</strong>. Trees, buildings, and hills eat signal; a valley can cut you off from a station a mile away while a hilltop reaches twenty.</p>
+            <h3>Why height beats power</h3>
+            <p>Power spreads out as it travels — double the distance and the same energy is smeared over four times the area, so doubling your range by power alone takes roughly <em>four times</em> the wattage, and sixteen times for triple. Meanwhile a wall, a ridge, or the curve of the Earth blocks a strong signal just as completely as a weak one. Height removes the blockage itself. Ten extra feet of antenna regularly does more than ten extra watts — and it costs no battery. <strong>Get high first; add power second.</strong></p>
+            <h3>The honest exception: skip</h3>
+            <p>CB frequencies can sometimes bounce off a charged layer of the upper atmosphere ("skip") and land hundreds of miles away. It's real, it's fun, and it is <strong>weather in the sky</strong> — it comes and goes by the hour and cannot be scheduled or relied on. Never plan an emergency around it.</p>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>The bands in plain words — CB, FRS, GMRS, ham <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <p>A "band" is a neighbourhood of frequencies set aside for a kind of use, with its own rules. The four that matter for ordinary people:</p>
+            <table>
+              <tr><th>Band</th><th>What it is</th><th>Licence (US)</th><th>Honest reach</th></tr>
+              <tr><td><strong>CB</strong> (Citizens Band)</td><td>40 channels around 27 MHz. <strong>Channel 9</strong> is the emergency channel; <strong>channel 19</strong> is the highway and trucker channel, the busiest on the road.</td><td>None</td><td>A few miles; more from a good base antenna. The trucker's network — help on 19 is often a stranger who's already rolling.</td></tr>
+              <tr><td><strong>FRS</strong> (Family Radio Service)</td><td>The walkie-talkies sold in pairs at any store, 22 channels. Small power, antenna built in.</td><td>None</td><td>Short — half a mile to 2 miles in real terrain. Perfect for a campsite, a convoy, a work crew.</td></tr>
+              <tr><td><strong>GMRS</strong> (General Mobile Radio Service)</td><td>FRS's bigger sibling: more power allowed, better antennas, and <strong>repeaters</strong> — stations on high ground that hear your signal and rebroadcast it across a whole area.</td><td>Yes — you apply and pay a fee; no exam. One licence covers your immediate family.</td><td>Miles on its own; tens of miles through a repeater.</td></tr>
+              <tr><td><strong>Ham</strong> (amateur radio)</td><td>The widest world of all: local repeaters, regional nets, and frequencies that cross oceans. The backbone of volunteer emergency communication.</td><td>Yes — by exam (the first level is a multiple-choice test many people pass with a few weeks of study).</td><td>Local to worldwide, depending on band and conditions.</td></tr>
+            </table>
+            <p><strong>The honest rider:</strong> these rules are set by the FCC and they change over time. What this page says is the shape of things as generally understood — <strong>check the current rules before you transmit</strong>, especially power limits and which channels allow what. Transmitting on a band you're not licensed for, or with power above its limit, is against the rules even in an emergency-minded spirit; genuine life-and-death emergencies are the recognised exception in the rules themselves.</p>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>Procedure — how to behave on the air <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <p>Procedure is not etiquette for its own sake. A channel is one shared conversation space, and procedure is what keeps it usable when many strangers share it.</p>
+            <h3>Listen first</h3>
+            <p>Before you transmit, listen for a few seconds. <em>Why:</em> you cannot hear anyone while you are transmitting — a radio talks or listens, never both. Keying up blind means talking over somebody, and in an emergency that somebody might be the call that matters.</p>
+            <h3>Identify yourself</h3>
+            <p>Open with who you're calling and who you are: <em>"Hilltop, this is Copper Fox, do you copy?"</em> <em>Why:</em> on a voice-only channel, your callsign is your face. People decide whether to answer — and whether to trust what you say — by whether they can place you.</p>
+            <h3>"Over"</h3>
+            <p>Say <strong>over</strong> when you've finished a thought and expect a reply. <em>Why:</em> the other side can't see your face or your hand leaving the button. "Over" is the sound of the floor being handed over — without it, both sides sit in silence wondering whose turn it is, or talk at once.</p>
+            <h3>"Roger" and "copy"</h3>
+            <p><strong>Roger</strong> means "I heard and understood." <em>Why:</em> on a crackly channel, the sender needs to know the message landed; a bare silence could mean anything, including a dead battery.</p>
+            <h3>"Break"</h3>
+            <p>Say <strong>break</strong> to join a conversation in progress with something urgent — and then wait to be invited in. <em>Why:</em> it asks for the floor instead of seizing it. Save it for things that genuinely can't wait; a channel where everyone breaks for trivia soon has no floor worth breaking into.</p>
+            <h3>Close properly</h3>
+            <p>End with your callsign and "clear" or "out": <em>"Copper Fox clear."</em> <em>Why:</em> it tells everyone listening that the channel is free again — and tells the station you were talking to that you're gone, not just quiet.</p>
+            <h3>Keep it short</h3>
+            <p>Say the thing, then stop. <em>Why:</em> your battery, their battery, and everybody else's wait all drain while you talk. The practice radio above meters this on purpose.</p>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>The phonetic alphabet — all 26, as a learnable shelf <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <p>Letters blur together through static — B, D, E, P and T can sound like the same grunt. The NATO phonetic alphabet gives every letter a whole word that sounds like nothing else, so a callsign or a street name survives a bad channel. Learn it in chunks of five, out loud; it sticks faster spoken than read.</p>
+            <div class="phon">
+              <div><b>A</b> — Alfa</div><div><b>B</b> — Bravo</div><div><b>C</b> — Charlie</div>
+              <div><b>D</b> — Delta</div><div><b>E</b> — Echo</div><div><b>F</b> — Foxtrot</div>
+              <div><b>G</b> — Golf</div><div><b>H</b> — Hotel</div><div><b>I</b> — India</div>
+              <div><b>J</b> — Juliett</div><div><b>K</b> — Kilo</div><div><b>L</b> — Lima</div>
+              <div><b>M</b> — Mike</div><div><b>N</b> — November</div><div><b>O</b> — Oscar</div>
+              <div><b>P</b> — Papa</div><div><b>Q</b> — Quebec</div><div><b>R</b> — Romeo</div>
+              <div><b>S</b> — Sierra</div><div><b>T</b> — Tango</div><div><b>U</b> — Uniform</div>
+              <div><b>V</b> — Victor</div><div><b>W</b> — Whiskey</div><div><b>X</b> — X-ray</div>
+              <div><b>Y</b> — Yankee</div><div><b>Z</b> — Zulu</div>
+            </div>
+            <p class="small muted">Spell your own callsign with it once — that's the first one you'll ever actually send.</p>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>Common 10-codes — and the honest case for plain speech <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <p>Ten-codes are shorthand from the early days of police radio, when transmissions were weak and every saved syllable helped. You'll still hear these on CB:</p>
+            <table>
+              <tr><th>Code</th><th>Means</th></tr>
+              <tr><td>10-1</td><td>Receiving poorly — you're coming in weak or broken</td></tr>
+              <tr><td>10-2</td><td>Receiving well — loud and clear</td></tr>
+              <tr><td>10-4</td><td>Okay — message received and understood (the famous one)</td></tr>
+              <tr><td>10-7</td><td>Out of service — signing off / unavailable</td></tr>
+              <tr><td>10-9</td><td>Repeat — say that again</td></tr>
+              <tr><td>10-10</td><td>Transmission complete, standing by</td></tr>
+              <tr><td>10-20</td><td>Location — "what's your 20?" means "where are you?"</td></tr>
+              <tr><td>10-33</td><td>Emergency traffic — clear the channel</td></tr>
+            </table>
+            <p><strong>The honest note:</strong> codes were never standardised everywhere — the same code can mean different things in different agencies and counties — so emergency professionals now recommend <strong>plain speech</strong> when it matters. "I need help at the Elm Street bridge" lands with everyone; "10-33" lands only with people who share your codebook. Use the codes for flavour on the highway if you like; use plain words when anything is actually at stake.</p>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>Squelch, channels, and interference — the three puzzles <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <h3>Squelch</h3>
+            <p>An open radio with nobody talking hisses — that hiss is the sound of the receiver amplifying empty air. Squelch is a gate that keeps the speaker silent until a signal stronger than the gate arrives. Set it just above where the hiss stops and you have it right: quiet when the channel is empty, open when a real signal lands. Set it too high and weak, far voices get gated out with the hiss — that's exactly what the slider on the practice radio does to the far stations. Too low and you listen to static all day, which trains you to ignore the radio — the most dangerous setting of all.</p>
+            <h3>Channels</h3>
+            <p>A channel is one agreed frequency inside a band. Everyone on channel 19 hears everyone else on channel 19 — there is no privacy on analogue radio, and anyone with a receiver can listen. <em>Why it matters:</em> pick your channel like you pick a room — 19 for the highway and general calling, 9 for emergencies, a quieter channel for your own group's working talk once you've found each other.</p>
+            <h3>Interference</h3>
+            <p>Signals compete. A nearer or stronger station covers a weaker one ("capture"), power lines and cheap LED lights spray noise across whole bands, and two transmitters at once garble into each other. When a channel turns to mush: move (a few feet can do it), get higher, wait for a gap, or change channel — in roughly that order of effort. The one cure that never works is shouting louder into the same pile-up.</p>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>Buying &amp; setting up — a basic real radio shelf <span class="tap">Tap to open</span></summary>
+          <div class="body">
+            <p>Information only — nothing here is for sale and nothing on this page costs anything. Prices, where given, are <strong>rough general ranges as of late 2026</strong>, the kind of span you'd expect across ordinary stores; check current prices yourself before believing any of them.</p>
+            <h3>The simplest start: an FRS pair</h3>
+            <p>Two handhelds in a blister pack, batteries or a charging cradle, done. Roughly <strong>$25–$60 a pair</strong> in general. No licence, no setup — charge them, pick the same channel on both, talk. This is the right first radio for a family, a campsite, or two cars travelling together.</p>
+            <h3>A basic CB setup</h3>
+            <p>A mobile CB radio (roughly <strong>$50–$120</strong> in general) plus the part that actually decides your range: <strong>the antenna</strong> (roughly <strong>$25–$60</strong>). A cheap radio on a good, well-mounted, properly tuned antenna will out-talk an expensive radio on a poor one — that sentence is the whole shelf in miniature, and it follows straight from the height-and-blockage lesson above. A handheld CB (roughly <strong>$80–$130</strong>) trades range for walk-anywhere convenience.</p>
+            <h3>GMRS, when you're ready</h3>
+            <p>Handhelds roughly <strong>$30–$80 each</strong> in general, plus the licence fee (a government fee, not a store price — check the current amount with the FCC). The draw is repeaters: if your area has one on a hill or tower, your few-mile radio becomes a whole-county radio.</p>
+            <h3>Whatever you buy</h3>
+            <p>Budget for batteries or a way to charge off a car, keep the manual (channel plans differ), and — the step everyone skips — <strong>practise with it on an ordinary day</strong>. A radio you have never keyed is not equipment; it's a hope in a box.</p>
+          </div>
+        </details>
+      </section>
+
+      <footer>
+        <p><strong>On the Air</strong> — free forever, no ads, no account. Copyleft: this page's words and design are shared under <strong>CC BY-SA 4.0</strong> — copy it, teach from it, build on it, keep it free. Radio facts here (channel plans, the phonetic alphabet, 10-codes) are public facts, taught in our own words. Rules for real transmitting are set by the FCC and change — check the current rules before you transmit.</p>
+        <p>Built for the day the networks are fine, and for the day they aren't.</p>
+      </footer>
+    </div>
+
+    <!-- HOUSE COMPASS DOCK -->
+    <nav class="dock" aria-label="House compass">
+      <button type="button" id="dockFeedback"><span class="ic">✉️</span><span class="lb">Feedback</span><span class="gs">Tap to open</span></button>
+      <button type="button" id="dockNav"><span class="ic">🧭</span><span class="lb">Navigate</span><span class="gs">Tap to open</span></button>
+      <button type="button" id="dockSettings"><span class="ic">⚙️</span><span class="lb">Settings</span><span class="gs">Tap to open</span></button>
+    </nav>
+    <div class="dockpanel" id="panelFeedback">
+      <h3>Say the thing</h3>
+      <p>Found an error, a gap, or a better way? Feedback is how this page grows. Write to the house through the Start Page's feedback door, or tell the person who shared this page with you what was missing — "What are we missing?" is a standing question on every page.</p>
+      <button type="button" class="btn plain" data-close>Close — Tap to close</button>
+    </div>
+    <div class="dockpanel" id="panelNav">
+      <h3>On this page</h3>
+      <a href="#setup" data-close-link>Your callsign &amp; the teaching dial<small>Pick your handle, set how much teaching you want</small></a>
+      <a href="#link" data-close-link>The Real Link<small>Push-to-talk voice over the internet — with its honest limits</small></a>
+      <a href="#sim" data-close-link>Practice Radio<small>The simulated channel: squelch, static, battery, and a Coach</small></a>
+      <a href="#learn" data-close-link>Learn Real Radio<small>Range, bands, procedure, phonetics, 10-codes, buying</small></a>
+      <h3>Other pages</h3>
+      <a href="#">Start Page<small>The front door — everything begins there</small></a>
+      <a href="#">The Thriving Plan<small>The plan this page is part of</small></a>
+      <a href="#">For Veterans — The Record<small>Serious pages</small></a>
+      <a href="#">The Legal Record<small>Serious pages</small></a>
+      <a href="#">Tools<small>Calculators, builders, and working tools</small></a>
+      <a href="#">The Cookbook<small>For fun — and dinner</small></a>
+      <a href="#">Games Shelf<small>For fun</small></a>
+      <a href="#">Still growing…<small>New pages land here as they are built — this shelf is not finished, and says so</small></a>
+      <button type="button" class="btn plain" data-close style="margin-top:10px;">Close — Tap to close</button>
+    </div>
+    <div class="dockpanel" id="panelSettings">
+      <h3>Settings — this copy only</h3>
+      <p class="small muted">Settings change your copy on this device only. They never affect anyone else's page.</p>
+      <button type="button" class="btn plain" id="bigText">Bigger text<small style="display:block; font-weight:400;">Tap to toggle</small></button>
+      <p class="small muted" style="margin-top:10px;">Gestures on this page: <strong>Tap</strong> does the thing. <strong>Hold</strong> the talk button to transmit — the button says so on itself. Every control says its gesture on itself, where it applies.</p>
+      <button type="button" class="btn plain" data-close>Close — Tap to close</button>
+    </div>
+    <script>
+    (function(){
+      var panels = { dockFeedback:"panelFeedback", dockNav:"panelNav", dockSettings:"panelSettings" };
+      function closeAll(){ document.querySelectorAll(".dockpanel").forEach(function(x){ x.classList.remove("open"); }); }
+      Object.keys(panels).forEach(function(id){
+        document.getElementById(id).addEventListener("click", function(){
+          var p = document.getElementById(panels[id]);
+          var was = p.classList.contains("open");
+          closeAll();
+          if(!was){ p.classList.add("open"); }
+        });
+      });
+      document.querySelectorAll("[data-close]").forEach(function(b){ b.addEventListener("click", closeAll); });
+      document.querySelectorAll("[data-close-link]").forEach(function(a){ a.addEventListener("click", closeAll); });
+      var big = false;
+      document.getElementById("bigText").addEventListener("click", function(){
+        big = !big;
+        document.body.style.fontSize = big ? "1.15rem" : "";
+      });
+    })();
+    </script>
+
+    <script>
+    (function(){
+      "use strict";
+      function $(id){ return document.getElementById(id); }
+      function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+      /* ---------- Teaching dial (saved on this device only, nothing sent) ---------- */
+      var dialBtns = document.querySelectorAll("[data-dial]");
+      function applyDial(level){
+        document.body.setAttribute("data-teach", level);
+        dialBtns.forEach(function(x){ x.setAttribute("aria-pressed", x.getAttribute("data-dial")===level ? "true" : "false"); });
+      }
+      var savedDial = "light";
+      try{ savedDial = window.localStorage.getItem("ota_teach") || "light"; }catch(e){}
+      if(["off","light","coach"].indexOf(savedDial) < 0){ savedDial = "light"; }
+      applyDial(savedDial);
+      dialBtns.forEach(function(b){
+        b.addEventListener("click", function(){
+          var level = b.getAttribute("data-dial");
+          applyDial(level);
+          try{ window.localStorage.setItem("ota_teach", level); }catch(e){}
+        });
+      });
+
+      /* ---------- Offline download door ---------- */
+      $("downloadBtn").addEventListener("click", function(){
+        var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+        var blob = new Blob([html], {type:"text/html"});
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "on-the-air.html";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+      });
+
+      /* ---------- Callsign ---------- */
+      var FIRST = ["Copper","Dusty","Juniper","Rusty","Willow","Amber","Slate","Maple","Iron","Velvet","Prairie","Hollow"];
+      var SECOND = ["Fox","Owl","Creek","Ridge","Lantern","Wheel","Hawk","Pine","Anchor","Meadow","Comet","Sparrow"];
+      function myCall(){ return ($("callsign").value || "").trim(); }
+      $("genCall").addEventListener("click", function(){
+        var c = FIRST[Math.floor(Math.random()*FIRST.length)] + " " + SECOND[Math.floor(Math.random()*SECOND.length)];
+        $("callsign").value = c;
+        simLog("Your callsign is now " + c + ". Say it with pride; it's yours because you picked it.", "dim");
+      });
+
+      /* ---------- Shared audio: beeps and static ---------- */
+      var AC = null;
+      function audio(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC = null; } } if(AC && AC.state==="suspended"){ AC.resume(); } return AC; }
+      function beep(freq, dur, when){
+        var ac = audio(); if(!ac) return;
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = "sine"; o.frequency.value = freq || 880;
+        var t = ac.currentTime + (when||0);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.22, t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t+(dur||0.16));
+        o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+(dur||0.16)+0.05);
+      }
+      function rogerBeeps(){ beep(880, 0.13, 0); }
+
+      /* ---------- Noise engine for the practice radio ---------- */
+      var noise = { src:null, gain:null, filter:null };
+      function noiseStart(){
+        var ac = audio(); if(!ac || noise.src) return;
+        var len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+        for(var i=0;i<len;i++){ d[i] = Math.random()*2-1; }
+        noise.src = ac.createBufferSource(); noise.src.buffer = buf; noise.src.loop = true;
+        noise.filter = ac.createBiquadFilter(); noise.filter.type = "bandpass"; noise.filter.frequency.value = 1400; noise.filter.Q.value = 0.45;
+        noise.gain = ac.createGain(); noise.gain.gain.value = 0;
+        noise.src.connect(noise.filter); noise.filter.connect(noise.gain); noise.gain.connect(ac.destination);
+        noise.src.start();
+      }
+      function noiseLevel(v){ if(noise.gain && AC){ noise.gain.gain.setTargetAtTime(v, AC.currentTime, 0.08); } }
+      function noiseStop(){ noiseLevel(0); }
+
+      /* ============================================================
+         PART ONE — THE REAL LINK (PeerJS / WebRTC voice)
+         Channel directory pattern: one peer holds the channel's
+         "directory" id and keeps the roster; everyone else connects
+         to it. Floor messages are relayed by the directory. Voice
+         goes peer-to-peer as media calls.
+         ============================================================ */
+      var RL = {
+        peer:null, isDir:false, dirConn:null, members:{}, roster:[],
+        myId:null, chan:"", floor:null, floorCall:"", stream:null,
+        calls:{}, audios:{}, joined:false, joining:false, pttActive:false
+      };
+      function slug(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,20) || "anon"; }
+      function rlStatus(msg){ $("rlStatus").textContent = msg; }
+      function rlFloorText(){
+        if(!RL.joined){ $("rlFloor").textContent = "The floor is open — nobody is talking."; return; }
+        if(!RL.floor){ $("rlFloor").textContent = "The floor is open — hold the talk button when you're ready."; }
+        else if(RL.floor === RL.myId){ $("rlFloor").textContent = "YOU hold the floor — you are transmitting."; }
+        else { $("rlFloor").textContent = RL.floorCall + " holds the floor — please wait."; }
+        var ptt = $("ptt");
+        if(RL.floor && RL.floor !== RL.myId){
+          ptt.disabled = true;
+          ptt.textContent = RL.floorCall.toUpperCase() + " IS TALKING — PLEASE WAIT";
+        } else if(RL.joined){
+          ptt.disabled = false;
+          ptt.textContent = RL.pttActive ? "TRANSMITTING — LET GO TO FINISH" : "HOLD TO TALK";
+        }
+      }
+      function rlRosterRender(){
+        var ul = $("rlRoster"); ul.innerHTML = "";
+        if(!RL.joined || !RL.roster.length){
+          var li = document.createElement("li");
+          li.style.background = "transparent"; li.style.borderColor = "var(--lcd-dim)";
+          li.textContent = RL.joined ? "Just you on this channel so far." : "Just you, so far — or nobody yet, until you join.";
+          ul.appendChild(li); return;
+        }
+        RL.roster.forEach(function(m){
+          var li = document.createElement("li");
+          li.style.background = "transparent"; li.style.borderColor = "var(--lcd-dim)";
+          li.textContent = m.call + (m.id === RL.myId ? " (you)" : "") + (RL.floor === m.id ? " — talking now" : "");
+          ul.appendChild(li);
+        });
+      }
+      function rlBroadcast(msg){
+        Object.keys(RL.members).forEach(function(id){ var c = RL.members[id].conn; if(c && c.open){ try{ c.send(msg); }catch(e){} } });
+      }
+      function rlSendToDir(msg){ if(RL.isDir){ rlDirHandle(RL.myId, msg); } else if(RL.dirConn && RL.dirConn.open){ try{ RL.dirConn.send(msg); }catch(e){} } }
+      function rlSetFloor(holderId, holderCall){
+        RL.floor = holderId; RL.floorCall = holderCall || "";
+        rlFloorText(); rlRosterRender();
+      }
+      /* Directory-side message handling */
+      function rlDirHandle(fromId, msg){
+        if(!msg || !msg.type) return;
+        if(msg.type === "hello"){
+          if(RL.members[fromId]){ RL.members[fromId].call = msg.call; }
+          rlDirSyncRoster();
+        }
+        if(msg.type === "floor-take"){
+          if(!RL.floor){ rlSetFloor(fromId, msg.call); rlBroadcast({type:"floor", holder:fromId, call:msg.call}); }
+        }
+        if(msg.type === "floor-release"){
+          if(RL.floor === fromId){ rlSetFloor(null, ""); rlBroadcast({type:"floor", holder:null, call:""}); rlBroadcast({type:"roger"}); }
+        }
+      }
+      function rlDirSyncRoster(){
+        var list = [{id:RL.myId, call:myCall() || "Unnamed"}];
+        Object.keys(RL.members).forEach(function(id){ list.push({id:id, call:RL.members[id].call || "Unnamed"}); });
+        RL.roster = list;
+        rlBroadcast({type:"roster", peers:list});
+        rlRosterRender(); rlFloorText();
+      }
+      /* Member-side message handling */
+      function rlMemberHandle(msg){
+        if(!msg || !msg.type) return;
+        if(msg.type === "roster"){ RL.roster = msg.peers || []; rlRosterRender(); rlFloorText(); }
+        if(msg.type === "floor"){ rlSetFloor(msg.holder, msg.call); }
+        if(msg.type === "roger"){ rogerBeeps(); }
+      }
+      function rlWireCommon(peer){
+        peer.on("call", function(call){
+          call.answer();
+          call.on("stream", function(remote){
+            var a = document.createElement("audio");
+            a.srcObject = remote; a.autoplay = true; a.setAttribute("playsinline","");
+            document.body.appendChild(a);
+            RL.audios[call.peer] = a;
+            var pl = a.play(); if(pl && pl.catch){ pl.catch(function(){}); }
+          });
+          call.on("close", function(){
+            if(RL.audios[call.peer]){ RL.audios[call.peer].remove(); delete RL.audios[call.peer]; }
+            rogerBeeps();
+          });
+          call.on("error", function(){});
+        });
+        peer.on("disconnected", function(){
+          rlStatus("The connection to the service dropped. Trying to reconnect…");
+          try{ peer.reconnect(); }catch(e){}
+        });
+        peer.on("error", function(err){
+          var t = err && err.type ? err.type : "";
+          if(RL.joining && t === "unavailable-id"){ return; } /* handled by the join flow */
+          if(t === "network" || t === "server-error" || t === "socket-error" || t === "socket-closed"){
+            rlStatus("The connection service didn't answer (" + t + "). This can be a blocked network or a test environment — the rest of the page works fine. The link's real test is two real devices.");
+          } else if(t === "peer-unavailable"){
+            rlStatus("That channel's host couldn't be reached — they may have just left. Tap leave, wait a few seconds, and join again.");
+          } else {
+            rlStatus("Connection problem (" + (t || "unknown") + "). Nothing was faked — try joining again, and the rest of the page works either way.");
+          }
+        });
+      }
+      function rlBecomeDir(peer, chan){
+        RL.isDir = true; RL.joined = true; RL.joining = false; RL.myId = peer.id;
+        peer.on("connection", function(conn){
+          conn.on("open", function(){
+            RL.members[conn.peer] = {conn:conn, call:"Unnamed"};
+            conn.on("data", function(msg){ rlDirHandle(conn.peer, msg); });
+            conn.on("close", function(){
+              delete RL.members[conn.peer];
+              if(RL.floor === conn.peer){ rlSetFloor(null, ""); rlBroadcast({type:"floor", holder:null, call:""}); }
+              rlDirSyncRoster();
+            });
+          });
+        });
+        rlStatus("Connected. You opened channel \"" + chan + "\" — you're hosting it. Others who join with the same code will appear below.");
+        $("joinBtn").disabled = true; $("leaveBtn").disabled = false;
+        rlDirSyncRoster();
+      }
+      function rlBecomeMember(peer, chan, dirId){
+        RL.isDir = false; RL.myId = peer.id;
+        var conn = peer.connect(dirId, {reliable:true});
+        RL.dirConn = conn;
+        conn.on("open", function(){
+          RL.joined = true; RL.joining = false;
+          conn.send({type:"hello", call:myCall() || "Unnamed"});
+          rlStatus("Connected to channel \"" + chan + "\". You're on the air — hold the talk button to transmit.");
+          $("joinBtn").disabled = true; $("leaveBtn").disabled = false;
+          rlFloorText();
+        });
+        conn.on("data", function(msg){ rlMemberHandle(msg); });
+        conn.on("close", function(){
+          if(RL.joined){ rlStatus("The channel host left, so the channel closed. Tap leave, then join again — you may become the new host."); rlReset(false); }
+        });
+      }
+      function rlReset(destroyPeer){
+        if(RL.stream){ RL.stream.getTracks().forEach(function(t){ t.stop(); }); RL.stream = null; }
+        Object.keys(RL.calls).forEach(function(id){ try{ RL.calls[id].close(); }catch(e){} });
+        RL.calls = {};
+        Object.keys(RL.audios).forEach(function(id){ RL.audios[id].remove(); });
+        RL.audios = {};
+        if(destroyPeer !== false && RL.peer){ try{ RL.peer.destroy(); }catch(e){} }
+        RL.peer = null; RL.isDir = false; RL.dirConn = null; RL.members = {}; RL.roster = [];
+        RL.floor = null; RL.floorCall = ""; RL.joined = false; RL.joining = false; RL.pttActive = false;
+        $("joinBtn").disabled = false; $("leaveBtn").disabled = true;
+        $("ptt").disabled = true; $("ptt").textContent = "HOLD TO TALK"; $("ptt").classList.remove("held");
+        rlRosterRender(); rlFloorText();
+      }
+      $("joinBtn").addEventListener("click", function(){
+        var call = myCall();
+        if(!call){ rlStatus("Pick a callsign first — the box at the top of the page. On the air, you are your callsign."); $("callsign").focus(); return; }
+        var chan = slug($("chanCode").value);
+        if(!chan || chan === "anon"){ rlStatus("Type a channel code — any word you and your group agree on, like elm-street."); $("chanCode").focus(); return; }
+        $("chanCode").value = chan; RL.chan = chan;
+        if(typeof window.Peer === "undefined"){
+          rlStatus("The connection library didn't load — this network may be blocking it. Nothing was faked: the real link can't start here, but the practice radio and all the teaching below work fully.");
+          return;
+        }
+        RL.joining = true;
+        rlStatus("Contacting the connection service…");
+        var dirId = "ota1-dir-" + chan;
+        var tried = new window.Peer(dirId);
+        var settled = false;
+        tried.on("open", function(){ if(settled) return; settled = true; RL.peer = tried; rlWireCommon(tried); rlBecomeDir(tried, chan); });
+        tried.on("error", function(err){
+          if(settled) return;
+          if(err && err.type === "unavailable-id"){
+            settled = true;
+            try{ tried.destroy(); }catch(e){}
+            var mine = "ota1-m-" + chan + "-" + Math.random().toString(36).slice(2, 9);
+            var member = new window.Peer(mine);
+            member.on("open", function(){ RL.peer = member; rlWireCommon(member); rlBecomeMember(member, chan, dirId); });
+            member.on("error", function(e2){
+              if(RL.joining){ RL.joining = false; rlStatus("Couldn't reach the connection service (" + (e2 && e2.type ? e2.type : "error") + "). This network or test environment may be blocking it — nothing was faked, and the rest of the page works fully. The link's real test is two real devices."); }
+            });
+          } else {
+            settled = true; RL.joining = false;
+            rlStatus("The connection service didn't answer (" + (err && err.type ? err.type : "error") + "). This can be a blocked network or a test environment — nothing was faked, and the rest of the page works fully. The link's real test is two real devices.");
+          }
+        });
+        /* If the microphone is available, warm it up now so the first transmission is instant. Denial is fine — we'll ask again on the talk button. */
+        if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+          navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){ RL.stream = s; }).catch(function(){});
+        }
+      });
+      $("leaveBtn").addEventListener("click", function(){
+        if(RL.pttActive){ rlPttEnd(); }
+        rlReset(true);
+        rlStatus("You left the channel. Join again any time — same code, same people, if they're still there.");
+      });
+      /* Push-to-talk: hold to transmit, half-duplex floor control */
+      function rlPttStart(){
+        if(!RL.joined || RL.pttActive) return;
+        if(RL.floor && RL.floor !== RL.myId) return;
+        RL.pttActive = true;
+        rlSendToDir({type:"floor-take", call:myCall() || "Unnamed"});
+        if(RL.isDir){ rlSetFloor(RL.myId, myCall() || "Unnamed"); }
+        $("ptt").classList.add("held");
+        $("ptt").textContent = "TRANSMITTING — LET GO TO FINISH";
+        function beginCalls(stream){
+          RL.roster.forEach(function(m){
+            if(m.id === RL.myId || !RL.peer) return;
+            try{
+              var c = RL.peer.call(m.id, stream);
+              if(c){ RL.calls[m.id] = c; c.on("error", function(){}); }
+            }catch(e){}
+          });
+        }
+        if(RL.stream){ beginCalls(RL.stream); }
+        else if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+          navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){ RL.stream = s; if(RL.pttActive){ beginCalls(s); } })
+          .catch(function(){ rlStatus("No microphone permission, so your voice can't go out. You can still listen. Check the browser's microphone permission for this page."); });
+        } else {
+          rlStatus("This browser has no microphone access, so your voice can't go out. You can still listen.");
+        }
+      }
+      function rlPttEnd(){
+        if(!RL.pttActive) return;
+        RL.pttActive = false;
+        Object.keys(RL.calls).forEach(function(id){ try{ RL.calls[id].close(); }catch(e){} delete RL.calls[id]; });
+        rlSendToDir({type:"floor-release"});
+        if(RL.isDir){ rlSetFloor(null, ""); rlBroadcast({type:"floor", holder:null, call:""}); rlBroadcast({type:"roger"}); }
+        $("ptt").classList.remove("held");
+        rlFloorText();
+        beep(660, 0.1, 0);
+      }
+      var pttEl = $("ptt");
+      pttEl.addEventListener("pointerdown", function(e){ e.preventDefault(); rlPttStart(); });
+      pttEl.addEventListener("pointerup", function(){ rlPttEnd(); });
+      pttEl.addEventListener("pointerleave", function(){ rlPttEnd(); });
+      pttEl.addEventListener("pointercancel", function(){ rlPttEnd(); });
+      pttEl.addEventListener("keydown", function(e){ if(e.code === "Space" || e.code === "Enter"){ e.preventDefault(); rlPttStart(); } });
+      pttEl.addEventListener("keyup", function(e){ if(e.code === "Space" || e.code === "Enter"){ e.preventDefault(); rlPttEnd(); } });
+      pttEl.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+
+      /* ============================================================
+         PART TWO — THE PRACTICE RADIO (simulator)
+         ============================================================ */
+      var STATIONS = [
+        { id:"redbarn", name:"Red Barn", dist:1.2, desc:"A farm a mile and change away, open fields between you.",
+          reply:"Copy you loud and clear. We're just shelling peas and listening to the channel. What's your situation? Over.",
+          ack:"Roger that. Good to hear a new voice on the channel. Stay safe out there. Over." },
+        { id:"hilltop", name:"Hilltop House", dist:3.5, desc:"A house on the ridge, three and a half miles out.",
+          reply:"Got you, a little scratchy but readable. We're watching the weather from the ridge. What's your situation? Over.",
+          ack:"Copy. If the weather turns, this ridge hears it first — call us. Over." },
+        { id:"lakecamp", name:"Lake Camp", dist:5.0, desc:"A camp on the far shore of the lake, five miles.",
+          reply:"...copy... you're breaking up a bit but I have you. We're down at the water. What's your situation? Over.",
+          ack:"Roger... stay on the high ground if you come this way... the low road floods. Over." },
+        { id:"farridge", name:"Far Ridge", dist:9.0, desc:"A lookout on the far ridge, nine miles — a stretch for any handheld.",
+          reply:"...barely... copy you in and out of the static... say again slowly if it matters. What's your situation? Over.",
+          ack:"...roger... good copy for nine miles... ridge to ridge helps. Over." }
+      ];
+      var SIM = {
+        on:false, battery:100, squelch:30, picked:null, listened:false,
+        listeningNow:false, step:0, flags:null, voices:false, tickTimer:null,
+        ambientTimer:null, txTimer:null
+      };
+      function simLog(msg, cls){
+        var log = $("simLog");
+        var p = document.createElement("p");
+        if(cls){ p.className = cls; }
+        p.textContent = msg;
+        log.appendChild(p);
+        while(log.children.length > 40){ log.removeChild(log.firstChild); }
+        log.scrollTop = log.scrollHeight;
+      }
+      function effRange(){
+        var base = $("antenna").value === "roof" ? 9 : 4;
+        var tf = {open:1, hills:0.7, woods:0.5, city:0.45}[$("terrain").value] || 1;
+        var wf = {clear:1, rain:0.85, storm:0.6}[$("weather").value] || 1;
+        return base * tf * wf;
+      }
+      function strength(st){
+        var horizon = effRange() * 1.35;
+        return Math.round(100 * clamp(1 - st.dist / horizon, 0, 1));
+      }
+      function hearable(st){ return strength(st) > SIM.squelch; }
+      function whyText(st){
+        var s = strength(st);
+        if(s <= 0){ return "Nothing gets through — " + st.dist + " miles is past what this setup can reach in these conditions. Get higher or wait for better conditions."; }
+        if(!hearable(st)){ return "Signal strength " + s + " is under your squelch gate at " + SIM.squelch + " — the gate is silencing this station along with the static. Lower the squelch to hear it."; }
+        if(s >= 65){ return "Signal strength " + s + " — strong and clear at this squelch."; }
+        if(s >= 35){ return "Signal strength " + s + " — readable, with some static riding along."; }
+        return "Signal strength " + s + " — weak and scratchy, just above your squelch gate. Every word counts.";
+      }
+      function renderStations(){
+        var box = $("stationList"); box.innerHTML = "";
+        STATIONS.forEach(function(st){
+          var s = strength(st), hear = hearable(st);
+          var div = document.createElement("div"); div.className = "station";
+          var h = document.createElement("h4");
+          h.textContent = st.name + " — " + st.dist + " miles" + (hear ? "" : "  ·  NOT HEARD at this squelch");
+          var desc = document.createElement("p"); desc.className = "small muted"; desc.style.margin = ".1em 0"; desc.textContent = st.desc;
+          var bar = document.createElement("div"); bar.className = "bar";
+          var fill = document.createElement("div"); fill.style.width = s + "%"; bar.appendChild(fill);
+          var why = document.createElement("p"); why.className = "small"; why.style.margin = ".2em 0"; why.textContent = whyText(st);
+          var btn = document.createElement("button");
+          btn.type = "button"; btn.className = "btn secondary"; btn.style.marginTop = "6px";
+          btn.textContent = SIM.picked === st.id ? "This is your pick ✓ — tap the call button below" : "Tap to pick this station";
+          btn.disabled = !SIM.on || !hear;
+          if(!SIM.on){ btn.textContent = "Switch the radio on to pick a station"; }
+          else if(!hear){ btn.textContent = "Can't pick — your squelch is gating this station out"; }
+          btn.addEventListener("click", function(){
+            SIM.picked = st.id; SIM.listened = false; SIM.step = 0; SIM.flags = null;
+            $("gradeBox").innerHTML = ""; $("exchangeSteps").innerHTML = "";
+            $("pickedNote").textContent = "Your pick: " + st.name + ". Now listen first, then call.";
+            $("listenBtn").disabled = false; $("callBtn").disabled = false;
+            renderStations();
+            simLog("You've got " + st.name + " in mind. Listen first — the channel may already be busy.", "dim");
+          });
+          div.appendChild(h); div.appendChild(desc); div.appendChild(bar); div.appendChild(why); div.appendChild(btn);
+          box.appendChild(div);
+        });
+      }
+      function idleNoise(){
+        if(!SIM.on){ noiseLevel(0); return; }
+        /* Squelch closed (gate above the hiss) = silent speaker. Gate open = static. */
+        noiseLevel(SIM.squelch <= 5 ? 0.055 : 0);
+      }
+      function botSpeak(text){
+        if(!SIM.voices) return;
+        try{
+          var u = new SpeechSynthesisUtterance(text.replace(/\.\.\./g, ", "));
+          u.rate = 1.02;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        }catch(e){}
+      }
+      function botTx(st, text, done){
+        var s = strength(st);
+        /* Noise ducks as a readable signal lands; weaker signal, more static stays. */
+        noiseLevel(0.004 + 0.05 * (1 - s/100));
+        simLog(st.name + ": \"" + text + "\"");
+        botSpeak(text);
+        clearTimeout(SIM.txTimer);
+        SIM.txTimer = setTimeout(function(){ idleNoise(); if(done){ done(); } }, 1400 + text.length * 28);
+      }
+      function drainTick(){
+        if(!SIM.on) return;
+        SIM.battery = Math.max(0, SIM.battery - 0.04);
+        battRender();
+        if(SIM.battery <= 0){
+          simPowerOff(true);
+          simLog("The battery is dead. The session is over until you swap in fresh batteries — that's the discipline: every second on the air costs power.", "dim");
+          $("swapBatt").disabled = false;
+        }
+      }
+      function battRender(){
+        $("battPct").textContent = Math.round(SIM.battery) + "%";
+        $("battBar").style.width = SIM.battery + "%";
+      }
+      function simPowerOff(dead){
+        SIM.on = false;
+        noiseStop();
+        clearInterval(SIM.tickTimer); clearInterval(SIM.ambientTimer);
+        try{ window.speechSynthesis.cancel(); }catch(e){}
+        $("simPowerState").textContent = dead ? "OFF — BATTERY DEAD" : "OFF";
+        $("simPower").textContent = "Tap to switch the radio on";
+        $("listenBtn").disabled = true; $("callBtn").disabled = true;
+        renderStations();
+      }
+      $("simPower").addEventListener("click", function(){
+        if(SIM.on){ simPowerOff(false); simLog("Radio off. Channel's still out there — you're just not on it.", "dim"); return; }
+        if(SIM.battery <= 0){ simLog("Nothing happens. Dead batteries are dead — tap the swap button.", "dim"); return; }
+        SIM.on = true;
+        audio(); noiseStart(); idleNoise();
+        $("simPowerState").textContent = "ON";
+        $("simPower").textContent = "Tap to switch the radio off";
+        $("swapBatt").disabled = true;
+        simLog("Radio on. CB channel 19, simulated. Static, stations, and weather are all make-believe — the procedure you practise is real.", "dim");
+        clearInterval(SIM.tickTimer); SIM.tickTimer = setInterval(drainTick, 1000);
+        clearInterval(SIM.ambientTimer);
+        SIM.ambientTimer = setInterval(ambient, 21000);
+        renderStations();
+      });
+      $("swapBatt").addEventListener("click", function(){
+        SIM.battery = 100; battRender();
+        $("swapBatt").disabled = true;
+        simLog("Fresh batteries in (simulator feature). Full power — spend it like it matters, because out there it does.", "dim");
+      });
+      $("voiceToggle").addEventListener("click", function(){
+        SIM.voices = !SIM.voices;
+        this.setAttribute("aria-pressed", SIM.voices ? "true" : "false");
+        this.textContent = SIM.voices ? "Tap to turn bot voices off" : "Tap to turn bot voices on";
+        if(!SIM.voices){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+      });
+      function ambient(){
+        if(!SIM.on) return;
+        var pairs = [
+          { st: STATIONS[0], text:"...anyone got a copy on the road conditions past the river bridge? Over." },
+          { st: STATIONS[1], text:"Hilltop here — wind's picking up on the ridge, batten down if you're camped low. Over." },
+          { st: STATIONS[2], text:"Lake Camp, Lake Camp — your lantern's still lit on the dock, we can see it from here. Over." },
+          { st: STATIONS[0], text:"Red Barn clear for now. Back to shelling peas. Out." }
+        ];
+        var p = pairs[Math.floor(Math.random()*pairs.length)];
+        if(hearable(p.st)){ botTx(p.st, p.text); }
+      }
+      $("squelch").addEventListener("input", function(){
+        SIM.squelch = parseInt(this.value, 10);
+        $("squelchVal").textContent = SIM.squelch;
+        if(SIM.on){
+          if(SIM.squelch <= 5){ noiseLevel(0.055); simLog("Squelch wide open — that's the raw static of an empty channel. Every faint voice will get through, along with all of this.", "dim"); }
+          else { idleNoise(); }
+        }
+        renderStations();
+      });
+      ["terrain","weather","antenna"].forEach(function(id){
+        $(id).addEventListener("change", function(){
+          renderStations();
+          if(SIM.on){ simLog("Conditions changed. Look at the station list — who you can hear, and why, just changed with them.", "dim"); }
+        });
+      });
+      /* ----- The scripted exchange ----- */
+      function pickedStation(){ return STATIONS.filter(function(s){ return s.id === SIM.picked; })[0] || null; }
+      $("listenBtn").addEventListener("click", function(){
+        if(!SIM.on || SIM.listeningNow) return;
+        var st = pickedStation(); if(!st) return;
+        SIM.listeningNow = true; $("listenBtn").disabled = true;
+        simLog("You listen. Three seconds of channel before you say a word…", "dim");
+        noiseLevel(0.03);
+        setTimeout(function(){
+          noiseLevel(0);
+          if(Math.random() < 0.35){
+            var other = STATIONS[1];
+            simLog("— and the channel is busy: Hilltop House is mid-conversation. You wait for a gap instead of talking over them. That's the whole habit, right there.", "dim");
+            setTimeout(function(){ SIM.listened = true; SIM.listeningNow = false; $("listenBtn").disabled = false; simLog("The channel goes quiet. Now it's yours to call on.", "dim"); }, 1600);
+          } else {
+            simLog("Quiet. Nothing but a breath of static. The channel is free.", "dim");
+            SIM.listened = true; SIM.listeningNow = false; $("listenBtn").disabled = false;
+          }
+          idleNoise();
+        }, 3000);
+      });
+      $("callBtn").addEventListener("click", function(){
+        if(!SIM.on) return;
+        var st = pickedStation();
+        if(!st){ simLog("Pick a station first — you can't call nobody.", "dim"); return; }
+        if(!hearable(st)){ simLog("You key up, but " + st.name + " is under your squelch gate — if they answered, you'd never hear it. Lower the squelch or pick a nearer station.", "dim"); return; }
+        var call = myCall();
+        if(!call){ simLog("You need a callsign before you call — set one at the top of the page. On the air, you are your callsign.", "dim"); $("callsign").focus(); return; }
+        if(SIM.step !== 0){ simLog("Finish the exchange you're in first — one conversation at a time, like a real channel.", "dim"); return; }
+        SIM.flags = { listened: SIM.listened, identified: true, replyGood: null, closedGood: null };
+        SIM.step = 1;
+        SIM.battery = Math.max(0, SIM.battery - 2); battRender();
+        simLog("You: \"" + st.name + ", this is " + call + ", do you copy? Over.\"");
+        beep(990, 0.07, 0);
+        setTimeout(function(){
+          botTx(st, st.reply, function(){ showReplyChoices(st); });
+        }, 1200);
+      });
+      function choiceButton(text, fn){
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "btn plain"; b.textContent = text;
+        b.addEventListener("click", fn);
+        return b;
+      }
+      function showReplyChoices(st){
+        var box = $("exchangeSteps"); box.innerHTML = "";
+        var p = document.createElement("p"); p.innerHTML = "<strong>" + st.name + " asked about your situation.</strong> Tap the reply you'd actually send:";
+        var grid = document.createElement("div"); grid.className = "choices";
+        var call = myCall() || "Unnamed";
+        grid.appendChild(choiceButton("Tap to reply properly: \"All good here, just checking the channel. Thanks for the copy. " + call + ", over.\"", function(){ sendReply(st, true, "All good here, just checking the channel. Thanks for the copy. " + call + ", over."); }));
+        grid.appendChild(choiceButton("Tap to reply without signing your name: \"Yeah we're fine. Over.\"", function(){ sendReply(st, false, "Yeah we're fine. Over."); }));
+        grid.appendChild(choiceButton("Tap to reply and keep the mic (long story about your whole day, no \"over\")", function(){ sendReply(st, false, "(You talk for a long while about your whole day, and never say \"over\" — " + st.name + " can't tell when it's their turn.)"); }));
+        box.appendChild(p); box.appendChild(grid);
+      }
+      function sendReply(st, good, text){
+        SIM.flags.replyGood = good; SIM.step = 2;
+        SIM.battery = Math.max(0, SIM.battery - (good ? 1.5 : 3.5)); battRender();
+        $("exchangeSteps").innerHTML = "";
+        simLog("You: \"" + text + "\"");
+        setTimeout(function(){
+          botTx(st, st.ack, function(){ showCloseChoices(st); });
+        }, 1100);
+      }
+      function showCloseChoices(st){
+        var box = $("exchangeSteps"); box.innerHTML = "";
+        var p = document.createElement("p"); p.innerHTML = "<strong>The exchange is done.</strong> Tap how you leave it:";
+        var grid = document.createElement("div"); grid.className = "choices";
+        var call = myCall() || "Unnamed";
+        grid.appendChild(choiceButton("Tap to close properly: \"" + call + " clear. Out.\"", function(){ sendClose(st, true, call + " clear. Out."); }));
+        grid.appendChild(choiceButton("Tap to just let go of the button and wander off (no closing)", function(){ sendClose(st, false, "(You release the button and say nothing. " + st.name + " is left wondering if your battery died.)"); }));
+        box.appendChild(p); box.appendChild(grid);
+      }
+      function sendClose(st, good, text){
+        SIM.flags.closedGood = good; SIM.step = 0;
+        $("exchangeSteps").innerHTML = "";
+        simLog("You: \"" + text + "\"");
+        rogerBeeps();
+        grade(st);
+        SIM.listened = false;
+      }
+      function grade(st){
+        var f = SIM.flags || {listened:false, identified:false, replyGood:false, closedGood:false};
+        var box = $("gradeBox"); box.innerHTML = "";
+        var div = document.createElement("div"); div.className = "grade";
+        var good = 0, total = 4;
+        var lines = [];
+        if(f.listened){ good++; lines.push("✓ Listened first — you checked the channel before keying up. That's the habit everything else stands on."); }
+        else { lines.push("✗ You called without listening first. This time the channel was free; on a busy day you'd have talked straight over somebody — possibly the one call that mattered. Listen first, every time."); }
+        if(f.identified){ good++; lines.push("✓ Identified yourself — \"" + st.name + "\" heard your callsign in your opening call, so they knew who was asking."); }
+        else { lines.push("✗ No callsign in your call — an unnamed voice on a voice-only channel is a stranger asking to be trusted."); }
+        if(f.replyGood){ good++; lines.push("✓ Your reply was short, signed, and ended with \"over\" — the floor passed cleanly both ways."); }
+        else { lines.push("✗ Your reply had a hole in it — unsigned, or it never handed the floor back with \"over.\" On a crackly channel those holes are where conversations fall apart."); }
+        if(f.closedGood){ good++; lines.push("✓ Closed properly — your callsign and \"clear\" told everyone listening the channel was free again."); }
+        else { lines.push("✗ You vanished without closing. Everyone on the channel is left guessing whether you're done, quiet, or in trouble. Two words — your callsign and \"clear\" — fix it."); }
+        var verdict = good === total ? "Clean exchange. That's exactly how it should sound." :
+                      good >= 2 ? "Worked — the message got through — with rough edges worth sanding off." :
+                      "Rough. The station was kind; the procedure wasn't. Run it again and fix one thing at a time.";
+        var h = document.createElement("h3"); h.textContent = "Coach grade — " + good + " of " + total + ": " + verdict;
+        div.appendChild(h);
+        lines.forEach(function(t){ var p = document.createElement("p"); p.textContent = t; div.appendChild(p); });
+        var note = document.createElement("p"); note.className = "small muted";
+        note.textContent = "Battery after this exchange: " + Math.round(SIM.battery) + "%. Notice the long reply cost more than the short one — on a real handheld, that's not a metaphor.";
+        div.appendChild(note);
+        box.appendChild(div);
+        simLog("Coach graded your exchange with " + st.name + ": " + good + " of " + total + ". The grade is written under the exchange buttons.", "dim");
+      }
+      /* ----- init ----- */
+      battRender();
+      renderStations();
+      rlRosterRender();
+      rlFloorText();
+    })();
+    </script>
+  </body>
+</html>
