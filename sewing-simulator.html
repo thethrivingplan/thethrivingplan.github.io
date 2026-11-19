@@ -1,0 +1,1310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Stitch by Stitch — Sewing Simulator</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#f2ede1; --bg2:#e9e1cd; --card:#fffdf6; --ink:#22312c; --ink-soft:#4c5d55;
+        --teal:#175e52; --teal-deep:#0f453c; --rust:#b5502a; --rust-soft:#f3ddd2;
+        --gold:#a87b1e; --line:#d5c9ac; --good:#2e7d46; --warn:#9a6a12; --bad:#b03a2e;
+        --shadow:0 2px 10px rgba(34,49,44,.12);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#131e1a; --bg2:#0f1714; --card:#1e2b26; --ink:#ece4d0; --ink-soft:#b3bfa9;
+          --teal:#8fd0bd; --teal-deep:#bfe6d8; --rust:#eda06f; --rust-soft:#3d2c22;
+          --gold:#d9b45c; --line:#3a4a40; --good:#7fce96; --warn:#e0b95e; --bad:#f0927f;
+          --shadow:0 2px 10px rgba(0,0,0,.45);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif; line-height:1.55; }
+      h1,h2,h3{ font-family:Georgia, "Iowan Old Style", "Times New Roman", serif; line-height:1.2; }
+      main{ max-width:1060px; margin:0 auto; padding:0 16px 64px; }
+      a{ color:var(--teal); }
+      .freeline{ background:var(--teal-deep); color:#fdf6e3; padding:12px 16px; }
+      @media (prefers-color-scheme: dark){ .freeline{ background:#0a2e27; color:#eaf5ee; } }
+      .freeline .wrap{ max-width:1060px; margin:0 auto; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+      .freeline strong{ font-size:1.05rem; }
+      .btn{ appearance:none; border:2px solid var(--teal); background:var(--card); color:var(--ink);
+        border-radius:10px; padding:10px 16px; font:inherit; font-weight:600; cursor:pointer; min-height:44px; }
+      .btn:hover{ border-color:var(--rust); }
+      .btn.primary{ background:var(--teal); color:#fff; border-color:var(--teal); }
+      @media (prefers-color-scheme: dark){ .btn.primary{ color:#0c1a16; } }
+      .btn.rust{ background:var(--rust); border-color:var(--rust); color:#fff; }
+      .btn.small{ padding:6px 12px; min-height:40px; font-size:.92rem; }
+      .btn[disabled]{ opacity:.45; cursor:not-allowed; }
+      .btn .gesture, .gesture{ display:block; font-size:.72rem; font-weight:500; opacity:.75; letter-spacing:.02em; }
+      .hero{ padding:28px 4px 6px; }
+      .hero h1{ font-size:clamp(2rem,6vw,3.2rem); margin:0 0 6px; color:var(--teal-deep); }
+      .hero p.lede{ font-size:1.12rem; max-width:44em; margin:0; color:var(--ink-soft); }
+      .compass{ display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 4px; }
+      .compass a{ flex:1 1 150px; text-decoration:none; background:var(--card); border:2px solid var(--line);
+        border-radius:12px; padding:10px 12px; color:var(--ink); box-shadow:var(--shadow); }
+      .compass a b{ display:block; color:var(--teal); font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; }
+      .compass a span{ font-weight:600; }
+      .limits{ border:3px solid var(--rust); background:var(--rust-soft); border-radius:14px; padding:16px 18px; margin:20px 0; }
+      .limits h2{ margin:0 0 6px; font-size:1.25rem; }
+      .limits p{ margin:6px 0; }
+      section{ margin:34px 0; }
+      section > h2{ font-size:1.7rem; margin:0 0 4px; color:var(--teal-deep); }
+      section > .sub{ color:var(--ink-soft); margin:0 0 14px; max-width:46em; }
+      .card{ background:var(--card); border:2px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); }
+      .grid{ display:grid; gap:14px; }
+      @media (min-width:760px){ .grid.two{ grid-template-columns:1fr 1fr; } .grid.four{ grid-template-columns:repeat(4,1fr); } .grid.three{ grid-template-columns:repeat(3,1fr); } }
+      .setupbar{ display:flex; flex-wrap:wrap; gap:14px; align-items:end; }
+      .field{ display:flex; flex-direction:column; gap:4px; }
+      .field label{ font-weight:700; font-size:.9rem; }
+      .field .why{ font-size:.8rem; color:var(--ink-soft); max-width:22em; }
+      select, input[type="text"]{ font:inherit; padding:8px 10px; border:2px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); min-height:44px; }
+      .seg{ display:inline-flex; border:2px solid var(--teal); border-radius:12px; overflow:hidden; }
+      .seg button{ border:0; background:var(--card); color:var(--ink); padding:10px 14px; font:inherit; font-weight:600; cursor:pointer; min-height:44px; }
+      .seg button[aria-pressed="true"]{ background:var(--teal); color:#fff; }
+      @media (prefers-color-scheme: dark){ .seg button[aria-pressed="true"]{ color:#0c1a16; } }
+      .project{ cursor:pointer; text-align:left; width:100%; font:inherit; }
+      .project h3{ margin:0 0 4px; font-size:1.12rem; }
+      .project p{ margin:4px 0; font-size:.92rem; color:var(--ink-soft); }
+      .project .status{ font-weight:700; color:var(--teal); font-size:.88rem; }
+      .project[aria-pressed="true"]{ border-color:var(--rust); outline:3px solid var(--rust-soft); }
+      .badge{ display:inline-block; border-radius:999px; padding:2px 10px; font-size:.78rem; font-weight:700; background:var(--bg2); border:1px solid var(--line); }
+      .badge.done{ background:var(--good); color:#fff; border-color:var(--good); }
+      .variant{ display:none; border:2px dashed var(--gold); background:color-mix(in srgb, var(--gold) 12%, var(--card));
+        border-radius:12px; padding:12px 14px; margin:12px 0; }
+      .variant.show{ display:block; }
+      .variant b{ color:var(--gold); }
+      .stagewrap{ position:relative; }
+      canvas#stage{ width:100%; height:auto; display:block; border:3px solid var(--teal-deep); border-radius:14px; background:#cfe0d8; touch-action:none; }
+      .readout{ display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+      .readout .stat{ flex:1 1 130px; background:var(--bg2); border-radius:10px; padding:8px 12px; }
+      .readout .stat b{ display:block; font-size:1.25rem; }
+      .readout .stat span{ font-size:.8rem; color:var(--ink-soft); }
+      .coach{ border-left:6px solid var(--gold); background:color-mix(in srgb, var(--gold) 10%, var(--card));
+        border-radius:0 12px 12px 0; padding:12px 16px; margin:14px 0; display:none; }
+      .coach.show{ display:block; }
+      .coach h3{ margin:0 0 4px; font-size:1rem; }
+      .coach p{ margin:4px 0; }
+      .coach .deep{ display:none; }
+      .coach.full .deep{ display:block; }
+      .grade{ display:none; }
+      .grade.show{ display:block; }
+      .grade .big{ font-size:2.6rem; font-family:Georgia, serif; color:var(--teal-deep); }
+      .meter{ height:14px; border-radius:7px; background:var(--bg2); overflow:hidden; border:1px solid var(--line); }
+      .meter i{ display:block; height:100%; background:var(--teal); }
+      .faults li{ margin:4px 0; }
+      details.shelf{ background:var(--card); border:2px solid var(--line); border-radius:14px; margin:12px 0; box-shadow:var(--shadow); }
+      details.shelf summary{ cursor:pointer; padding:14px 18px; font-family:Georgia, serif; font-size:1.2rem; font-weight:700; list-style:none; }
+      details.shelf summary::-webkit-details-marker{ display:none; }
+      details.shelf summary .gesture{ font-family:inherit; }
+      details.shelf .body{ padding:0 18px 18px; }
+      details.shelf h3{ margin:18px 0 4px; }
+      details.shelf h3:first-child{ margin-top:2px; }
+      table{ border-collapse:collapse; width:100%; margin:10px 0; font-size:.95rem; }
+      th, td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+      th{ color:var(--teal-deep); }
+      .scrollx{ overflow-x:auto; }
+      .video{ display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--line); }
+      .video:last-child{ border-bottom:0; }
+      .video .play{ flex:0 0 auto; width:52px; height:52px; border-radius:50%; background:var(--rust); color:#fff;
+        display:flex; align-items:center; justify-content:center; font-size:1.3rem; text-decoration:none; }
+      .video p{ margin:2px 0; }
+      .recordlist{ margin:8px 0; padding-left:20px; }
+      footer{ border-top:2px solid var(--line); margin-top:44px; padding-top:16px; color:var(--ink-soft); font-size:.92rem; }
+      .steerrow{ display:none; gap:10px; margin-top:10px; }
+      .steerrow.show{ display:flex; }
+      .steerrow .btn{ flex:1; }
+      .kbd{ background:var(--bg2); border:1px solid var(--line); border-bottom-width:3px; border-radius:6px; padding:0 6px; font-family:inherit; font-size:.85em; }
+      .note{ font-size:.9rem; color:var(--ink-soft); }
+      svg text{ font-family:inherit; }
+    </style>
+  </head>
+  <body>
+    <div class="freeline">
+      <div class="wrap">
+        <div><strong>Free — always free.</strong> No ads, no account, no locked stitches, ever.</div>
+        <button class="btn small" id="downloadBtn" type="button">Download this page
+          <span class="gesture">Tap to save the file and use it offline</span></button>
+      </div>
+    </div>
+    <main>
+      <div class="hero">
+        <h1>Stitch by Stitch</h1>
+        <p class="lede">A sewing simulator that teaches the whole craft behind the seam — why a backstitch locks and a running stitch doesn't, why fabric has a grain, why tension puckers — while your hands practise keeping the line, the spacing, and the pace. The knowledge is all here. The only thing left to you is the skill, and that grows stitch by stitch.</p>
+      </div>
+
+      <nav class="compass" aria-label="Compass">
+        <a href="#play"><b>North</b><span>The Workbench</span><span class="gesture">Tap to jump to sewing</span></a>
+        <a href="#learn"><b>East</b><span>Learn the Why</span><span class="gesture">Tap to jump to the knowledge shelves</span></a>
+        <a href="#watch"><b>West</b><span>Watch It Done</span><span class="gesture">Tap to jump to the videos</span></a>
+        <a href="#record"><b>South</b><span>Your Record</span><span class="gesture">Tap to jump to your record</span></a>
+      </nav>
+
+      <div class="limits" role="note">
+        <h2>Honest limits, at full size</h2>
+        <p><strong>This page teaches knowledge and planning — it cannot teach your hands.</strong> The feel of fabric feeding, the weight of scissors, the moment a needle starts to bend: those come only from real fabric and a real machine. The real door is a real sewing session — a borrowed machine, a library makerspace, a class, a friend's kitchen table. Use this page to arrive knowing <em>why</em> everything works, so your real practice time teaches your hands instead of your confusion.</p>
+        <p><strong>Safety, plainly:</strong> a sewing machine needle moves fast enough to pierce a fingernail — fingers stay behind the presser foot, never in front of the needle, and the machine is off (or the handwheel locked) while you thread it. Rotary cutters are razor discs: blade closed the second a cut ends, always cut away from your body, and treat a dropped cutter like a dropped knife. Pins and needles live in a pincushion, never in clothing, carpet, or a mouth — a lost needle is found before anyone walks barefoot. This simulator has blunt pixels; the real tools do not.</p>
+      </div>
+
+      <section id="play">
+        <h2>The Workbench</h2>
+        <p class="sub">Pick a project, set up like a real sewer would — stitch, fabric, needle, tension — then sew it. Every choice has a reason, and the grade at the end shows its working.</p>
+
+        <div class="card">
+          <div class="setupbar">
+            <div class="field">
+              <label for="aliasInput">Your name or alias</label>
+              <input type="text" id="aliasInput" maxlength="30" placeholder="e.g. Sam the Stitcher" autocomplete="off" />
+              <span class="why">Any name you like — alias freedom is the house rule. It lives only on this device.</span>
+            </div>
+            <div class="field">
+              <span style="font-weight:700;font-size:.9rem;">Teaching</span>
+              <div class="seg" role="group" aria-label="Teaching dial">
+                <button type="button" data-teach="off" aria-pressed="false">Off</button>
+                <button type="button" data-teach="light" aria-pressed="true">Light</button>
+                <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+              </div>
+              <span class="why">Off: sew in peace. Light: one-line nudges. Coach: the full why, strategies, and trade-offs. Saved on this device.</span>
+            </div>
+            <div class="field">
+              <span style="font-weight:700;font-size:.9rem;">How you sew</span>
+              <div class="seg" role="group" aria-label="Sewing mode">
+                <button type="button" data-mode="machine" aria-pressed="true">Machine</button>
+                <button type="button" data-mode="hand" aria-pressed="false">By hand</button>
+              </div>
+              <span class="why">Machine: the fabric feeds itself and you steer. Hand: you place every stitch yourself, tap by tap.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <h3 style="margin-top:0;">What's at stake here — and it isn't money</h3>
+          <p>There is no money anywhere in this game: no coins, no shop, no selling your work. Sewing's real stakes were never money. <strong>The stake is trust.</strong> You start as the new pair of hands. Every piece that comes back holding earns you the next, harder piece — a neighbour's cloth, a bag that has to carry weight, a favourite garment somebody can't replace. Work that fails sends trust the other way, exactly like real mending. <strong>The reward is usefulness:</strong> the finished thing itself, and what it now does — stated plainly on every grade card, from your actual grades.</p>
+          <div class="setupbar">
+            <div class="field">
+              <label for="basketSizeSel">Mending basket size</label>
+              <select id="basketSizeSel">
+                <option value="0">No limit</option>
+                <option value="2">Small basket — 2 pieces</option>
+                <option value="3" selected>Standard basket — 3 pieces</option>
+                <option value="5">Big basket — 5 pieces</option>
+              </select>
+              <span class="why">One pair of hands, one pile of mending. Pieces you take on wait in the basket; a full basket means somebody's piece can't be taken until you finish one or set one aside. This is a setting — change it any time.</span>
+            </div>
+            <div class="field">
+              <label for="rampSel">Difficulty ramp</label>
+              <select id="rampSel">
+                <option value="gentle">Gentle — straighter, slower</option>
+                <option value="standard" selected>Standard — as patterned</option>
+                <option value="steep">Steep — curvier, faster</option>
+              </select>
+              <span class="why">The ladder itself is the ramp: each project is longer, curvier, or more jagged than the last. This setting bends the ramp — a variant, labelled as one wherever it applies.</span>
+            </div>
+            <div class="field">
+              <span style="font-weight:700;font-size:.9rem;">A real day's sewing <span class="badge">variant</span></span>
+              <button class="btn small" id="energyBtn" type="button" aria-pressed="false">Off — tap to turn on</button>
+              <span class="why">Sewing tires hands and eyes, and tired hands sew a shakier line. Turn this on and your energy drains as you sew; working tired honestly costs accuracy until you rest. Off is standard play.</span>
+            </div>
+          </div>
+          <p style="margin:12px 0 4px;"><strong>Your mending basket:</strong> <span id="basketInfo">empty</span></p>
+          <div id="basketList"></div>
+          <div id="energyBox" style="display:none;margin-top:12px;">
+            <p style="margin:0 0 4px;"><strong>Hands &amp; eyes:</strong> <span id="energyTxt">100%</span> — rested and steady.</p>
+            <div class="meter"><i id="energyMeter" style="width:100%"></i></div>
+            <button class="btn small" id="restBtn" type="button" style="margin-top:8px;">Rest<span class="gesture">Tap to rest your hands and eyes back to full</span></button>
+          </div>
+        </div>
+
+        <h3 style="margin:22px 0 8px;">The project ladder</h3>
+        <p class="note" style="margin:0 0 10px;">The ramp, plainly: a straight seam first, then a hem that must hide, then a long curving seam that must carry weight, then a jagged real-shaped tear. Each step asks for everything the last one taught, plus one new thing.</p>
+        <div class="grid four" id="projectGrid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));"></div>
+
+        <div class="card" style="margin-top:16px;">
+          <h3 id="projTitle" style="margin-top:0;">Project</h3>
+          <p id="projIntro"></p>
+          <p id="projWhy" class="note"></p>
+          <div id="strategyBox"></div>
+
+          <div class="setupbar" style="margin-top:14px;">
+            <div class="field">
+              <label for="stitchSel">Stitch</label>
+              <select id="stitchSel"></select>
+              <span class="why" id="stitchWhy"></span>
+            </div>
+            <div class="field">
+              <label for="fabricSel">Fabric</label>
+              <select id="fabricSel">
+                <option value="cotton">Cotton (quilting / shirting)</option>
+                <option value="denim">Denim / canvas</option>
+                <option value="knit">Knit jersey (T-shirt fabric)</option>
+                <option value="silk">Silk / slippery lightweight</option>
+              </select>
+              <span class="why">Fabric decides the needle and the tension. That matching is half of real sewing.</span>
+            </div>
+            <div class="field">
+              <label for="needleSel">Needle</label>
+              <select id="needleSel">
+                <option value="universal">Universal 80/12</option>
+                <option value="ballpoint">Ballpoint (for knits)</option>
+                <option value="denim">Denim / Jeans 100/16</option>
+                <option value="microtex">Microtex / Sharp 70/10</option>
+              </select>
+              <span class="why" id="needleWhy"></span>
+            </div>
+            <div class="field">
+              <label for="tensionSel">Thread tension</label>
+              <select id="tensionSel">
+                <option value="1">Low</option>
+                <option value="2" selected>Medium</option>
+                <option value="3">High</option>
+              </select>
+              <span class="why">Tension balances the two threads inside the fabric. Wrong balance = puckers or loops. Theory is on the Learn shelf.</span>
+            </div>
+            <div class="field" id="speedField">
+              <label for="speedSel">Machine speed</label>
+              <select id="speedSel">
+                <option value="1">Slow — learning pace</option>
+                <option value="2" selected>Steady</option>
+                <option value="3">Fast</option>
+              </select>
+              <span class="why">Speed is a strategy, not a virtue: fast feeds straighter on long seams but punishes every wobble and can skip stitches in thick fabric.</span>
+            </div>
+          </div>
+
+          <div class="variant" id="variantBanner" role="note"></div>
+
+          <div class="stagewrap" style="margin-top:14px;">
+            <canvas id="stage" width="900" height="360" aria-label="Sewing stage. In machine mode, drag up or down to steer the needle. In hand mode, tap the cloth to place each stitch."></canvas>
+          </div>
+          <p class="note" id="stageHint"></p>
+          <div class="steerrow" id="steerRow">
+            <button class="btn" id="steerUp" type="button">Steer up<span class="gesture">Hold to steer the needle up</span></button>
+            <button class="btn" id="steerDown" type="button">Steer down<span class="gesture">Hold to steer the needle down</span></button>
+          </div>
+
+          <div class="readout" aria-live="polite">
+            <div class="stat"><b id="statStitches">0</b><span>stitches placed</span></div>
+            <div class="stat"><b id="statLine">—</b><span>line accuracy so far</span></div>
+            <div class="stat"><b id="statSpace">—</b><span>spacing evenness so far</span></div>
+            <div class="stat"><b id="statState">Ready</b><span id="statStateSub">pick settings, then start</span></div>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <button class="btn primary" id="startBtn" type="button">Start sewing<span class="gesture">Tap to start</span></button>
+            <button class="btn" id="undoBtn" type="button" disabled>Undo last stitch<span class="gesture">Tap to remove it (hand mode)</span></button>
+            <button class="btn" id="placeBtn" type="button" disabled>Place stitch at the guide<span class="gesture">Tap to place — arrow keys move the guide (keyboard sewing)</span></button>
+            <button class="btn rust" id="finishBtn" type="button" disabled>Finish &amp; grade<span class="gesture">Tap to finish and see the grade</span></button>
+            <button class="btn" id="resetBtn" type="button">Start over<span class="gesture">Tap to clear the cloth</span></button>
+          </div>
+
+          <div class="coach" id="coachBox" aria-live="polite">
+            <h3 id="coachTitle">Coach</h3>
+            <p id="coachText"></p>
+            <p class="deep" id="coachDeep"></p>
+          </div>
+
+          <div class="grade card" id="gradeCard" style="margin-top:16px;">
+            <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+              <div class="big" id="gradeLetter">—</div>
+              <div>
+                <h3 style="margin:0;" id="gradeTitle">Grade</h3>
+                <p class="note" id="gradeSummary" style="margin:2px 0 0;"></p>
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <p style="margin:8px 0 2px;"><strong>Line accuracy — <span id="gLineTxt"></span></strong></p>
+              <div class="meter"><i id="gLine" style="width:0%"></i></div>
+              <p class="note" id="gLineWhy"></p>
+              <p style="margin:8px 0 2px;"><strong>Spacing evenness — <span id="gSpaceTxt"></span></strong></p>
+              <div class="meter"><i id="gSpace" style="width:0%"></i></div>
+              <p class="note" id="gSpaceWhy"></p>
+              <p style="margin:8px 0 2px;"><strong>Finished strength — <span id="gStrTxt"></span></strong> <span class="badge">a model, not a lab test</span></p>
+              <div class="meter"><i id="gStr" style="width:0%"></i></div>
+              <p class="note" id="gStrWhy"></p>
+            </div>
+            <h4 style="margin:14px 0 4px;">Faults found in this piece</h4>
+            <ul class="faults" id="faultList"></ul>
+            <p id="gradeUse" style="font-weight:600;"></p>
+            <p class="note">Strength is this page's honest model: stitch type sets the ceiling, needle and tension matches scale it, and your line and spacing quality finish it. A real seam's strength also depends on thread, fabric wear, and washing — things only real cloth can tell you.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="learn">
+        <h2>Learn the Why</h2>
+        <p class="sub">Everything on these shelves is the real knowledge behind the game — the same reasons the Coach quotes while you sew. Nothing here is "just done this way."</p>
+
+        <details class="shelf">
+          <summary>The four stitches — and why each one works <span class="gesture">Tap to open · tap again to close</span></summary>
+          <div class="body">
+            <h3>Running stitch — the sprinter</h3>
+            <p>The needle dives down and surfaces a stitch-length later, over and over, so the thread shows as dashes on top and dashes underneath, never both at once. <strong>Why it works:</strong> each dash lies flat and carries load only along its own length; nothing crosses or locks anything. <strong>Why it's weak:</strong> cut or wear through one dash and the thread can ladder out along the whole seam, because every stitch depends on the thread staying unbroken — there's no knot anywhere. <strong>Real uses:</strong> basting (temporary holding, meant to be pulled out), gathering fabric into ruffles (the dashes slide, which is exactly what gathering needs), quick tacking, and visible decorative sashiko-style work where the dash pattern <em>is</em> the point.</p>
+            <h3>Backstitch — the lock</h3>
+            <p>Each new stitch goes <em>back</em> to the end of the previous one before stepping forward, so on top the thread forms one unbroken line and underneath each stitch overlaps its neighbour. <strong>Why it locks:</strong> every stitch is anchored by the one before it — the thread doubles back through the same hole, so a break in one place can't unzip the seam; the damage stays local. <strong>The trade-off:</strong> it uses roughly twice the thread and takes longer per inch. <strong>Real uses:</strong> any seam that must hold under stress by hand — repairs, tote straps, garment seams where no machine is available. It is the strongest common hand stitch, and it is what a machine's straight stitch imitates: a machine locks differently (two threads looped together, below), but the goal is the same — no single point of failure.</p>
+            <h3>Zigzag — the stretcher</h3>
+            <p>The needle swings side to side as the fabric feeds, laying a row of diagonal stitches. <strong>Why it works:</strong> the diagonals act like a row of tiny springs — a knit can stretch and the stitches give instead of snapping, where a straight stitch would pop. The swing also straddles a raw fabric edge, wrapping it so the edge fibres can't fray out. <strong>The trade-off:</strong> weaker in pure pull along the seam than a straight or back stitch, uses more thread, and on thin fabric a dense zigzag can tunnel and pucker it. <strong>Real uses:</strong> sewing knits and stretch fabric, finishing raw edges, appliqué (satin stitch is just a zigzag with the length turned nearly to zero), and bar tacks — short, dense zigzags that reinforce pocket corners and belt loops.</p>
+            <h3>Blind hem — the invisible one</h3>
+            <p>The hem is folded and the needle takes a long glide inside the fold, then catches just one or two threads of the main fabric, over and over. <strong>Why it's invisible:</strong> the long glides hide inside the fold where nobody sees them, and the tiny catch is too small to show as more than a pinprick dimple on the outside. <strong>Why it's delicate:</strong> each catch holds by a thread or two of fabric — it's a hem, not a structural seam, and a hard tug on one catch can pull the whole hem down like a zipper. <strong>Real uses:</strong> trouser and skirt hems, curtains, any edge where a visible stitch line would spoil the look. Done by hand for control, or by machine with a blind-hem foot that folds as it feeds.</p>
+            <h3>How a machine stitch actually locks</h3>
+            <p>A machine uses <em>two</em> threads. The needle thread dives through the fabric carrying a loop; below, a rotating hook catches that loop and wraps it around the bobbin thread; then the take-up lever pulls everything snug. The two threads interlock <em>inside</em> the fabric layers — that's the lockstitch. It can't unravel from one end the way a single-thread chain can, which is why nearly every home machine is built around it. This is also the whole basis of tension theory, below: a good stitch is the one where the interlock lands in the middle of the fabric, hidden and balanced.</p>
+          </div>
+        </details>
+
+        <details class="shelf">
+          <summary>Seam allowances and fabric grain — the invisible architecture <span class="gesture">Tap to open · tap again to close</span></summary>
+          <div class="body">
+            <h3>Why seam allowances exist</h3>
+            <p>The seam allowance is the strip of fabric between your stitch line and the cut edge — most patterns use ⅝ inch (15 mm) for garments, ¼ inch (6 mm) for quilting. It exists for four reasons. <strong>Strength:</strong> stitches too close to a cut edge tear out through it, because there isn't enough fabric — and enough woven threads — on the edge side to hold the load. <strong>Fray room:</strong> woven fabric unravels from a cut edge; the allowance is the sacrificial zone that can fray a little without ever reaching the stitches. <strong>Fitting:</strong> a generous allowance is fabric you can let out later; a seam sewn at ¼ inch can never be loosened. <strong>Accuracy:</strong> the allowance gives the presser foot and feed dogs something to grip, and gives <em>you</em> a guide edge to steer by — most sewers steer by watching the fabric edge against a guide, not by watching the needle. In this game, your guide line sits a fixed distance from the cloth's edge for exactly that reason.</p>
+            <h3>Grain: straight, cross, and bias</h3>
+            <p>Woven fabric is a grid: lengthwise <em>warp</em> threads run along the roll, crosswise <em>weft</em> threads run across it. The <strong>straight grain</strong> (along the warp) barely stretches — warp threads are held taut on the loom and are the stronger, stabler direction. The <strong>cross grain</strong> gives a little. At 45° between them lies the <strong>bias</strong>, where the grid can shear like a trellis — bias-cut fabric drapes, flows, and stretches noticeably even though no thread in it is elastic. <strong>Why a garment hangs differently:</strong> a skirt cut on the straight grain hangs in crisp folds and keeps its length; the same skirt cut on the bias clings, swirls, and grows longer as the grid shears under its own weight (bias garments are hung for a day before hemming, so the growth happens <em>before</em> the hem is levelled, not after). Pattern pieces carry a grainline arrow because rotating a piece even a few degrees off-grain makes trouser legs twist and hems flare unevenly forever — the fabric's grid, not the sewing, decides. <strong>Knits are different:</strong> a knit is loops, not a grid; it stretches across its width far more than along its length, which is why T-shirt patterns align the stretch around the body.</p>
+            <h3>Which stitch for which job — the pairing logic</h3>
+            <p>Match the stitch to the load and the fabric, the way you'd match a sauce to a pasta shape: <strong>structural seam in woven fabric</strong> → straight/backstitch (maximum hold, no stretch needed because the fabric has none). <strong>Seam in a knit</strong> → zigzag or a stretch stitch (the seam must stretch as far as the fabric or it pops the first time the garment moves). <strong>Raw edge</strong> → zigzag over the edge, or a French seam that encloses it (fraying is the enemy, so wrap or enclose). <strong>Hem that must not show</strong> → blind hem (invisibility beats strength here because a hem carries almost no load). <strong>Temporary hold</strong> → running stitch / basting (weakness is the feature: it must come out cleanly). When a job fails in real sewing, the post-mortem is almost always a pairing failure — strong stitch, wrong fabric behaviour — not a sewing failure.</p>
+          </div>
+        </details>
+
+        <details class="shelf">
+          <summary>The machine — parts, threading, and why the path matters <span class="gesture">Tap to open · tap again to close</span></summary>
+          <div class="body">
+            <svg viewBox="0 0 660 380" role="img" aria-label="Diagram of a sewing machine showing the spool pin, thread guide, tension discs, take-up lever, needle, presser foot, feed dogs, bobbin area, handwheel, and stitch dial" style="width:100%;height:auto;background:var(--bg2);border-radius:12px;">
+              <!-- machine body -->
+              <rect x="70" y="300" width="520" height="26" rx="6" fill="var(--teal)" opacity="0.85"/>
+              <path d="M120 300 L120 130 Q120 96 160 96 L470 96 Q520 96 520 150 L520 300 L440 300 L440 210 Q440 176 400 176 L200 176 Q120 176 120 240 Z" fill="var(--teal)" opacity="0.35" stroke="var(--teal-deep)" stroke-width="3"/>
+              <!-- spool -->
+              <rect x="330" y="58" width="10" height="38" fill="var(--ink)"/>
+              <rect x="312" y="66" width="46" height="24" rx="4" fill="var(--rust)"/>
+              <!-- handwheel -->
+              <circle cx="556" cy="150" r="30" fill="none" stroke="var(--teal-deep)" stroke-width="7"/>
+              <circle cx="556" cy="150" r="6" fill="var(--teal-deep)"/>
+              <!-- tension discs -->
+              <circle cx="150" cy="150" r="14" fill="var(--gold)"/>
+              <!-- take-up lever -->
+              <line x1="176" y1="120" x2="205" y2="88" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="207" cy="86" r="6" fill="var(--ink)"/>
+              <!-- needle bar + needle -->
+              <rect x="128" y="176" width="12" height="52" fill="var(--ink-soft)"/>
+              <line x1="134" y1="228" x2="134" y2="292" stroke="var(--ink)" stroke-width="3"/>
+              <circle cx="134" cy="272" r="3.5" fill="var(--bg)"/>
+              <!-- presser foot -->
+              <path d="M150 236 L150 282 L186 282 L186 292 L146 292 L146 236 Z" fill="var(--ink-soft)"/>
+              <!-- needle plate + feed dogs -->
+              <rect x="96" y="296" width="150" height="8" fill="var(--ink-soft)"/>
+              <rect x="160" y="290" width="8" height="7" fill="var(--ink)"/><rect x="174" y="290" width="8" height="7" fill="var(--ink)"/><rect x="188" y="290" width="8" height="7" fill="var(--ink)"/>
+              <!-- bobbin cover -->
+              <rect x="100" y="308" width="90" height="12" rx="5" fill="var(--gold)" opacity="0.8"/>
+              <!-- stitch dial -->
+              <circle cx="480" cy="248" r="17" fill="var(--card)" stroke="var(--teal-deep)" stroke-width="3"/>
+              <line x1="480" y1="248" x2="480" y2="235" stroke="var(--rust)" stroke-width="3"/>
+              <!-- thread path -->
+              <polyline points="335,66 250,104 152,138 196,92 168,196 136,268" fill="none" stroke="var(--rust)" stroke-width="3" stroke-dasharray="7 5"/>
+              <!-- numbers -->
+              <g font-size="15" font-weight="700" fill="var(--card)">
+                <circle cx="335" cy="44" r="11" fill="var(--rust)"/><text x="335" y="49" text-anchor="middle">1</text>
+                <circle cx="238" cy="96" r="11" fill="var(--rust)"/><text x="238" y="101" text-anchor="middle">2</text>
+                <circle cx="128" cy="128" r="11" fill="var(--rust)"/><text x="128" y="133" text-anchor="middle">3</text>
+                <circle cx="222" cy="70" r="11" fill="var(--rust)"/><text x="222" y="75" text-anchor="middle">4</text>
+                <circle cx="112" cy="262" r="11" fill="var(--rust)"/><text x="112" y="267" text-anchor="middle">5</text>
+                <circle cx="196" cy="262" r="11" fill="var(--rust)"/><text x="196" y="267" text-anchor="middle">6</text>
+                <circle cx="66" cy="312" r="11" fill="var(--rust)"/><text x="66" y="317" text-anchor="middle">7</text>
+                <circle cx="592" cy="118" r="11" fill="var(--rust)"/><text x="592" y="123" text-anchor="middle">8</text>
+                <circle cx="480" cy="206" r="11" fill="var(--rust)"/><text x="480" y="211" text-anchor="middle">9</text>
+              </g>
+            </svg>
+            <ol>
+              <li><strong>Spool pin.</strong> Holds the thread spool. The thread must unwind freely — a catching spool jerks the tension with every snag.</li>
+              <li><strong>Thread guide.</strong> First waypoint; it aims the thread into the tension discs at the right angle so the discs grip evenly.</li>
+              <li><strong>Tension discs.</strong> Two spring-loaded plates the thread passes between. The dial squeezes or releases them — this is the top half of tension theory.</li>
+              <li><strong>Take-up lever.</strong> The arm that rises and falls with every stitch. It pulls the stitch tight at the top of its stroke — and if you thread the machine with the lever down and miss its eye, the thread has no pull, so the first stitches explode into a nest underneath. Always thread with the lever fully up.</li>
+              <li><strong>Needle.</strong> Carries the thread through the fabric. Its eye sits just above the point; the long groove down the front protects the thread from friction as it passes through the cloth.</li>
+              <li><strong>Presser foot.</strong> Holds the fabric against the feed dogs. Its pressure is a quiet variable: too little and fabric skates, too much and stretchy fabric gets stretched as it sews.</li>
+              <li><strong>Feed dogs.</strong> The toothed bars under the plate. They rise, grip the fabric, pull it back one stitch length, and drop — that cycle <em>is</em> the machine's pace, and stitch length is simply how far they travel per cycle. You steer; they feed. Pulling the fabric through yourself fights them and bends needles.</li>
+              <li><strong>Handwheel.</strong> Turns the whole mechanism by hand — always toward you, because turning it backward tangles the loop timing the lockstitch depends on.</li>
+              <li><strong>Stitch dial.</strong> Sets stitch length/width. Longer stitches = fewer holes and weaker per inch but faster and easier to unpick; shorter = stronger and neater, more holes in the fabric.</li>
+              <li><strong>Bobbin (under the plate, gold cover in the diagram).</strong> The small spool that supplies the bottom thread of the lockstitch.</li>
+            </ol>
+            <h3>Threading, in order, with the why of each step</h3>
+            <p>Presser foot <strong>up</strong> first — lifting the foot opens the tension discs, so the thread can seat between them instead of riding on top (threading with the foot down is the single most common cause of "my machine is broken": the thread never enters the discs, tension is zero, and the underside becomes a bird's nest). Then: spool → guide → down to the tension discs → up through the take-up lever's eye (lever at its highest, so the eye is reachable and the thread gets its full pull) → down the front guide → through the needle eye, front to back or as your machine directs. Leave a tail of thread pulled to the back, so the first stitch has something to hold instead of being sucked down into the bobbin area.</p>
+          </div>
+        </details>
+
+        <details class="shelf">
+          <summary>Tension theory and troubleshooting — reading what the cloth tells you <span class="gesture">Tap to open · tap again to close</span></summary>
+          <div class="body">
+            <h3>The theory: a tug-of-war that should end in a draw</h3>
+            <p>Every lockstitch is a tug-of-war between the top thread (held back by the tension discs) and the bobbin thread (held back by the bobbin case spring). When the take-up lever pulls the stitch snug, the two threads interlock wherever their pulls balance. <strong>Balanced:</strong> the interlock hides in the middle of the fabric — the stitch looks the same top and bottom, and the seam can flex without either thread taking the whole load. <strong>Top tension too high (or bobbin too loose):</strong> the top thread wins, the interlock is dragged to the top surface, bobbin thread shows as dots on top, and the fabric puckers along the seam because the winning thread is effectively shorter than the fabric it sews. <strong>Top tension too low:</strong> the bobbin wins, loops of top thread hang underneath, and the seam feels loose and grins open under strain. Thick fabric needs the balance point to travel further, fine fabric needs a gentler pull overall — which is why tension is set per fabric, and why you test on a scrap of the <em>same</em> fabric, folded to the same number of layers, before touching the real piece.</p>
+            <div class="scrollx"><table>
+              <tr><th>What you see</th><th>What it means</th><th>The fix — and why</th></tr>
+              <tr><td>Puckering along the seam</td><td>Thread is pulling shorter than the fabric — tension too high, or stitch length too short for the fabric</td><td>Lower the tension a step, or lengthen the stitch. Short stitches pack more thread pulls into each inch; on light fabric that alone can pucker it.</td></tr>
+              <tr><td>Loose loops / a nest underneath</td><td>Top thread has almost no tension — usually it never entered the tension discs</td><td>Re-thread with the presser foot UP and the take-up lever at the top. Changing the dial won't help a thread that isn't in the discs at all.</td></tr>
+              <tr><td>Bobbin thread dots showing on top</td><td>Top tension winning the tug-of-war</td><td>Lower top tension one step at a time, testing on scrap. Small steps: the balance point is narrow.</td></tr>
+              <tr><td>Top thread visible underneath</td><td>Bobbin side winning</td><td>Raise top tension a step. (Bobbin tension exists too, but it's set with a tiny screw and is the last resort, not the first.)</td></tr>
+              <tr><td>Skipped stitches</td><td>The hook missed the needle's loop — needle bent, wrong needle for the fabric, or feeding too fast through thickness</td><td>Fit a fresh, correct needle first (a knit needs a ballpoint that slips between loops instead of spearing them, which is what makes the loop form wrong). Slow down through thick seams.</td></tr>
+              <tr><td>Thread keeps snapping</td><td>Too much friction or pull somewhere: high tension, a burr on the needle eye, old thread, or the thread path snagging</td><td>Re-thread fully, change the needle, then lower tension. Needles are consumables — a needle that's sewn for hours is dull and damages both thread and fabric.</td></tr>
+              <tr><td>Seam "grins" open when pulled</td><td>Stitches too long for the load, or tension so low the interlock sits on the surface</td><td>Shorten the stitch (more interlocks per inch share the load) and check the balance on scrap.</td></tr>
+            </table></div>
+            <p class="note">Golden rule of troubleshooting: change <strong>one</strong> thing, sew a test line on scrap, read it, repeat. Changing two things at once destroys the evidence — you learn that <em>something</em> worked and nothing about why.</p>
+          </div>
+        </details>
+
+        <details class="shelf">
+          <summary>Fabric, needle, thread — matching with reasons <span class="gesture">Tap to open · tap again to close</span></summary>
+          <div class="body">
+            <div class="scrollx"><table>
+              <tr><th>Fabric</th><th>Needle</th><th>Tension</th><th>Why this pairing</th></tr>
+              <tr><td>Cotton (quilting, shirting)</td><td>Universal 80/12</td><td>Medium</td><td>The reference case: a medium-weight weave, a general point that pierces cleanly without cutting fibres, and a mid-range pull. Most machines ship calibrated around exactly this.</td></tr>
+              <tr><td>Denim / canvas</td><td>Denim/Jeans 100/16</td><td>Medium–High</td><td>Thick twill needs a stiffer, stronger shaft that won't deflect crossing seam ridges (deflection = skipped stitches and snapped needles), a slim sharp point to penetrate dense weave, and more tension to pull the interlock into thick layers.</td></tr>
+              <tr><td>Knit jersey</td><td>Ballpoint</td><td>Low–Medium</td><td>A knit is loops; a sharp point spears and cuts a loop, and the cut ladder-runs like a stocking. The ballpoint's rounded tip pushes between loops instead. Gentler tension because the fabric itself stretches — high tension would sew it pre-stretched and the seam would pucker when it relaxes.</td></tr>
+              <tr><td>Silk / slippery lightweight</td><td>Microtex/Sharp 70/10</td><td>Low</td><td>Fine fabric shows every hole: a slim sharp point slips between fine threads without snagging or leaving visible punctures. Low tension because a light fabric puckers under a pull that cotton wouldn't notice — and hold the fabric taut behind and in front of the foot, since slippery layers creep against each other.</td></tr>
+            </table></div>
+            <h3>Needle numbers, decoded</h3>
+            <p>Needle sizes are written like 80/12: the first number is the shaft diameter in hundredths of a millimetre (80 = 0.8 mm, European), the second is the American size for the same needle. Bigger number = thicker, stronger needle for heavier fabric. A needle that's too fine for denim flexes and snaps; too coarse for silk, it punches holes the fabric can't close. Needles are the cheapest consumable in sewing and the cause of a wildly disproportionate share of "machine problems" — changing the needle is step one of almost every real diagnosis.</p>
+            <h3>Thread, briefly</h3>
+            <p>All-purpose polyester thread is the workhorse: strong, slightly elastic, and forgiving. Cotton thread is weaker and is chosen for quilting, where it should age and soften with cotton fabric. The rule of pairing: thread should be the same weight or lighter than the fabric expects — heavy thread in fine fabric acts like rope through tissue, and the seam fails at the holes. In this game, thread is a given; in real sewing, it's the third leg of the match.</p>
+          </div>
+        </details>
+
+        <details class="shelf">
+          <summary>Strategies — more than one way, with the trade-offs printed <span class="gesture">Tap to open · tap again to close</span></summary>
+          <div class="body">
+            <h3>Holding fabric before you sew it</h3>
+            <p><strong>Pins, perpendicular to the seam:</strong> fast and precise; the machine can sew over perpendicular pins slowly (though hitting one can break a needle — many sewers pull each pin just before the foot reaches it). Pins can distort knits and leave holes in silk and leather. <strong>Clips:</strong> no holes, great for thick layers and knits, but bulky near the needle and they can't hold a curve as precisely. <strong>Hand-basting (long running stitches):</strong> the slowest and the most control — nothing shifts, nothing to hit, and it holds slippery or matched-pattern seams that pins let creep. The trade is time now versus unpicking later; on a repair or a slippery fabric, basting usually wins on total time.</p>
+            <h3>Securing the ends of a seam</h3>
+            <p>A machine seam is locked in the middle but naked at both ends — the first and last stitches can pull out. <strong>Backtack</strong> (sew backward 3–4 stitches over the seam's ends): quick, standard, slightly bulky. <strong>Knot the thread tails by hand:</strong> neatest finish, slowest, best where the seam end will show. <strong>By hand with backstitch:</strong> the lock is built into every stitch, so ends just need a small knot or a few stitches worked back over themselves. Skipping end-securing entirely is the classic beginner failure: the seam passes inspection and unzips in the first wash.</p>
+            <h3>Speed strategy</h3>
+            <p><strong>Slow:</strong> maximum steering accuracy, and on thick fabric it gives the needle time to form each loop — the fix for skipped stitches. Costs time and can make long seams wander if your attention fades. <strong>Fast:</strong> on a long straight seam, momentum and the feed dogs actually help the line stay true — but every wobble is amplified, corrections come too late, and thick or slippery fabric punishes you. Most real sewers sew slow at the start, the end, and every curve, and open up only on the safe straights — exactly the rhythm this game's speed setting lets you practise.</p>
+            <h3>When it goes wrong: the seam ripper is a tool, not a verdict</h3>
+            <p>Every experienced sewer unpicks constantly. The strategy: stop early (a wandering line caught at two inches costs two inches of unpicking; caught at twenty, it costs the seam), rip from the bobbin-thread side where the loops are visible, and re-sew once with the lesson in hand. Pressing matters too: press every seam flat with an iron before judging it — half of all "bad seams" are good seams that were never pressed, because pressing sets the interlock into the fabric and melts the fibres' memory of being handled.</p>
+          </div>
+        </details>
+      </section>
+
+      <section id="watch">
+        <h2>Watch It Done</h2>
+        <p class="sub">Four videos, each opened and checked before it earned a place here. Watching a real pair of hands for three minutes teaches your eyes what to copy.</p>
+        <div class="card">
+          <div class="video">
+            <a class="play" href="https://www.youtube.com/watch?v=ouJsvyD-hv4" target="_blank" rel="noopener" aria-label="Watch: How to Thread a Sewing Machine">▶</a>
+            <div>
+              <p><strong><a href="https://www.youtube.com/watch?v=ouJsvyD-hv4" target="_blank" rel="noopener">How to Thread a Sewing Machine</a></strong></p>
+              <p class="note">Tilly and the Buttons · The threading path from the diagram above, done by hand — watch for the presser foot going up first, and the take-up lever at the top.</p>
+            </div>
+          </div>
+          <div class="video">
+            <a class="play" href="https://www.youtube.com/watch?v=SQbPtXmNBBc" target="_blank" rel="noopener" aria-label="Watch: How to Backstitch">▶</a>
+            <div>
+              <p><strong><a href="https://www.youtube.com/watch?v=SQbPtXmNBBc" target="_blank" rel="noopener">How to Backstitch</a></strong></p>
+              <p class="note">Wendi Gratz (Shiny Happy World) · The locking stitch, stitch by stitch — see how each new stitch returns to the end of the last, which is the whole secret of its strength.</p>
+            </div>
+          </div>
+          <div class="video">
+            <a class="play" href="https://www.youtube.com/watch?v=FpNciWmnY3Q" target="_blank" rel="noopener" aria-label="Watch: Sewing Machine Tension">▶</a>
+            <div>
+              <p><strong><a href="https://www.youtube.com/watch?v=FpNciWmnY3Q" target="_blank" rel="noopener">Sewing Machine Tension</a></strong></p>
+              <p class="note">Melly Sews · The tug-of-war made visible: what balanced, too-tight, and too-loose stitches actually look like, top and bottom.</p>
+            </div>
+          </div>
+          <div class="video">
+            <a class="play" href="https://www.youtube.com/watch?v=nIu7-Hy4HKg" target="_blank" rel="noopener" aria-label="Watch: How to Prevent Puckering">▶</a>
+            <div>
+              <p><strong><a href="https://www.youtube.com/watch?v=nIu7-Hy4HKg" target="_blank" rel="noopener">How to Prevent Puckering | Sewing Machine</a></strong></p>
+              <p class="note">Howcast · Puckering is the fault this game grades most — here is the real-world diagnosis, in the same order the troubleshooting shelf gives it.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="record">
+        <h2>Your Record</h2>
+        <p class="sub">Kept on this device only — nothing is sent anywhere. Export it to keep a copy; Forget wipes it in one tap.</p>
+        <div class="card">
+          <p style="margin-top:0;"><strong id="recName">Sewer</strong> · <span id="recSummary">No finished projects yet. Your first seam is waiting on the Workbench.</span></p>
+          <h3>Projects finished</h3>
+          <ul class="recordlist" id="recProjects"><li>None yet.</li></ul>
+          <h3>Stitches learned</h3>
+          <p id="recStitches">None yet — finish a project with a stitch to learn it.</p>
+          <h3>Common faults seen (from your own work)</h3>
+          <ul class="recordlist" id="recFaults"><li>None yet — a clean sheet.</li></ul>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
+            <button class="btn" id="exportBtn" type="button">Export my record<span class="gesture">Tap to download it as a file</span></button>
+            <button class="btn rust" id="forgetBtn" type="button">Forget everything<span class="gesture">Tap once, then tap again to confirm the wipe</span></button>
+          </div>
+          <p class="note" id="forgetNote"></p>
+        </div>
+      </section>
+
+      <footer>
+        <p><strong>Copyleft.</strong> This page's text, design, and code are free to copy and share: writings and design under CC BY-SA 4.0, code under GPL. Derivatives carry the same freedom. Take it, teach with it, keep it free.</p>
+        <p>No ads — ever. No accounts, no tracking, no locked content. Your record never leaves this device unless you export it yourself. The offline download at the top saves this page as a file; your on-device record stays with the copy you normally open.</p>
+      </footer>
+    </main>
+
+    <script>
+    "use strict";
+    /* ---------- Data: the knowledge, in machine-readable form ---------- */
+    var STITCHES = {
+      running: { name:"Running stitch", base:35,
+        use:"Basting, gathering, quick tacking",
+        why:"Dashes of thread, top and bottom in turn — nothing locks, so it's fast and pulls out cleanly. That weakness is the point when the hold is meant to be temporary." },
+      backstitch: { name:"Backstitch", base:92,
+        use:"Strong hand seams and repairs",
+        why:"Every stitch doubles back into the end of the last, so each one anchors the next. A break can't unzip the seam — the strongest common hand stitch." },
+      zigzag: { name:"Zigzag", base:78,
+        use:"Knits, stretch fabric, raw edges",
+        why:"Diagonal stitches act like tiny springs: the seam stretches with knit fabric instead of popping, and the swing wraps raw edges so they can't fray." },
+      blindhem: { name:"Blind hem stitch", base:55,
+        use:"Invisible hems on trousers, skirts, curtains",
+        why:"Long glides hide inside the fold; only a one-thread catch shows outside. Nearly invisible — and deliberately light-duty, because a hem carries almost no load." }
+    };
+    var FABRICS = {
+      cotton: { name:"Cotton", needle:"universal", needleAlt:null, tension:2, thick:0,
+        note:"The reference fabric: medium weave, medium pull. Most machines are calibrated around it." },
+      denim: { name:"Denim / canvas", needle:"denim", needleAlt:"universal", tension:3, thick:1,
+        note:"Dense twill needs a stiff 100/16 denim needle that won't deflect, and higher tension to pull the interlock into thick layers. A universal can survive it — barely, and it will tell you so in skipped stitches." },
+      knit: { name:"Knit jersey", needle:"ballpoint", needleAlt:null, tension:1, thick:0,
+        note:"A knit is loops, not a grid. A ballpoint slips between loops; a sharp point cuts them and the hole ladder-runs. Low tension, because the fabric stretches and a hard pull sews it pre-stretched." },
+      silk: { name:"Silk / lightweight", needle:"microtex", needleAlt:"universal", tension:1, thick:0,
+        note:"Fine fabric shows every hole: a slim Microtex point slips between threads. Low tension — a pull cotton wouldn't notice will pucker silk. A universal works in a pinch but leaves bigger punctures." }
+    };
+    var NEEDLE_NAMES = { universal:"Universal 80/12", ballpoint:"Ballpoint", denim:"Denim/Jeans 100/16", microtex:"Microtex/Sharp 70/10" };
+
+    function seamPath(){ return [{x:60,y:180},{x:840,y:180}]; }
+    function hemPath(){ return [{x:60,y:238},{x:840,y:238}]; }
+    function totePath(){ var pts=[]; for(var i=0;i<=40;i++){ var t=i/40; pts.push({x:60+780*t, y:180+52*Math.sin(t*Math.PI*1.5)}); } return pts; }
+    function tearPath(){ return [{x:60,y:180},{x:170,y:148},{x:255,y:206},{x:375,y:138},{x:495,y:202},{x:615,y:152},{x:730,y:198},{x:840,y:168}]; }
+
+    var PROJECTS = [
+      { id:"seam", title:"1 · Sew a Seam", stitch:"running", fabric:"cotton", path:seamPath,
+        short:"Two pieces of cotton, one straight seam — the atom of all sewing.",
+        intro:"Join two pieces of cotton along one straight line. The pattern recommends a running stitch here, and the recommendation is honest about why: this first seam is a basting seam — a rehearsal seam. Real sewers baste first, check the fit, and only then commit.",
+        why:"A running stitch holds by friction alone — dashes of thread with no lock anywhere — so it can be pulled out in one tug when the rehearsal is over. Sew this same line in backstitch later and feel the difference in the grade: same hands, same line, completely different strength. The stitch is the strength.",
+        strategies:[
+          { name:"Baste first with running stitch, then commit", pro:"You can check the join and pull the whole seam out in seconds if it's wrong.", con:"Two passes over every seam — slower on a piece you're already sure of." },
+          { name:"Go straight to backstitch", pro:"One pass, full strength, nothing to remove.", con:"Unpicking a locked seam is slow, and every removed stitch leaves holes in the cloth." }
+        ] },
+      { id:"hem", title:"2 · Hem a Cloth", stitch:"blindhem", fabric:"cotton", path:hemPath,
+        short:"Fold the edge, hide the stitches — a hem that doesn't show.",
+        intro:"The cloth's raw edge is folded up (the fold line is drawn on the stage) and your stitch line runs just above it. The blind hem stitch is the tool: long glides hidden inside the fold, tiny catches on the main cloth.",
+        why:"A hem carries almost no load — gravity on a fold of cloth is nothing next to a tote strap — so this job trades strength for invisibility on purpose. A visible line of strong stitching would be worse work here, not better. Matching the stitch to the job, not to maximum strength, is the real skill.",
+        strategies:[
+          { name:"Blind hem by hand", pro:"The most invisible finish; you control every catch, one thread at a time.", con:"Slowest method there is — a long curtain hem is an evening's work." },
+          { name:"Straight stitch near the fold (topstitched hem)", pro:"Fast, strong, and on casual cloth — tea towels, tote bags — the visible line looks deliberate and neat.", con:"The line shows. On dress trousers it would look like a repair, not a finish." }
+        ] },
+      { id:"tote", title:"3 · Make a Simple Tote", stitch:"backstitch", fabric:"denim", path:totePath,
+        short:"A long curving seam in denim that has to carry real weight.",
+        intro:"One long side seam of a tote bag, in denim-weight cloth, with a gentle curve. This seam will carry books and groceries, so the pattern calls for backstitch — and for the denim needle and higher tension the fabric demands.",
+        why:"A tote seam fails at its weakest inch, under load, usually at the curve where stress concentrates. Backstitch's overlapping anchors mean no single break can run. And the curve is the lesson: on a curve, line accuracy matters more, not less, because the fabric is being asked to turn — wander off the line and the bag twists when it hangs.",
+        strategies:[
+          { name:"Slow and steady the whole way", pro:"Best line on the curve; the needle forms every loop cleanly even in thick denim.", con:"Slow — and a long slow seam tests your attention, which is itself a real sewing skill." },
+          { name:"Steady pace, ease off only at the curve", pro:"Nearly as accurate, much quicker; momentum helps the straights stay true.", con:"You must judge where the curve really starts — brake late and the wobble lands exactly where strength matters most." }
+        ] },
+      { id:"repair", title:"4 · Repair a Torn Seam", stitch:"backstitch", fabric:"cotton", path:tearPath,
+        short:"Mend a real-shaped tear — jagged, uneven, and worth saving.",
+        intro:"The dashed line follows the tear itself — clothing tears along the weave and around stress points, never in a tidy straight line. Your job: stitch the two edges back together along the tear, close enough that the mend holds, even enough that it doesn't pucker the cloth around it.",
+        why:"A repair is backstitch country: the cloth around a tear is already weakened, so the mend must not depend on any single stitch — and it must be sewn slightly into the sound fabric at both ends of the tear, because a mend that ends exactly at the tear's end leaves the weakest point exactly where the next tear starts. Run past the ends. Always.",
+        strategies:[
+          { name:"Stitch directly over the tear", pro:"Least added bulk; invisible-ish on patterned cloth; nothing extra to buy.", con:"Only as strong as the weakened cloth around the tear — on a badly worn area it will tear again beside your mend." },
+          { name:"Patch behind, then stitch (the real-world upgrade)", pro:"A patch of sound cloth behind the tear carries the load; the stitching just marries patch to garment. Strongest repair there is.", con:"Adds bulk and a visible outline; on a knee or elbow it changes how the garment flexes. In this simulator you sew the stitch line either way — the patch is the strategy to carry to real cloth." }
+        ] }
+    ];
+
+    /* ---------- State ---------- */
+    var LS_KEY = "stitchByStitch.v1";
+    var state = {
+      mode:"machine", teach:"light", project:PROJECTS[0],
+      running:false, finished:false,
+      handPoints:[],           /* hand mode: placed stitch endpoints */
+      mStitches:[],            /* machine mode: {dist, offset, skipped} */
+      mDist:0, mOffset:0, mTarget:0, raf:0, lastTs:0,
+      faultsSeen:[]
+    };
+    var record = loadRecord();
+
+    function loadRecord(){
+      try{ var raw = localStorage.getItem(LS_KEY); if(raw){ var r = JSON.parse(raw); if(r && r.projects) return r; } }catch(e){}
+      return { alias:"", teach:"light", projects:{}, stitches:{}, faults:{}, finishes:0 };
+    }
+    function saveRecord(){
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(record)); }catch(e){}
+    }
+
+    /* ---------- DOM helpers ---------- */
+    function $(id){ return document.getElementById(id); }
+    var canvas = $("stage"), ctx = canvas.getContext("2d");
+
+    function pathPoints(){ return state.project.path(); }
+    function pathLength(pts){ var L=0; for(var i=1;i<pts.length;i++){ L += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y); } return L; }
+    function pointAt(pts, d){
+      var acc=0;
+      for(var i=1;i<pts.length;i++){
+        var seg = Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+        if(d <= acc+seg){ var t = seg? (d-acc)/seg : 0; return { x: pts[i-1].x+(pts[i].x-pts[i-1].x)*t, y: pts[i-1].y+(pts[i].y-pts[i-1].y)*t, ang: Math.atan2(pts[i].y-pts[i-1].y, pts[i].x-pts[i-1].x) }; }
+        acc += seg;
+      }
+      var a=pts[pts.length-2], b=pts[pts.length-1];
+      return { x:b.x, y:b.y, ang: Math.atan2(b.y-a.y, b.x-a.x) };
+    }
+    function distToPath(pts, p){
+      var best=1e9;
+      for(var i=1;i<pts.length;i++){
+        var ax=pts[i-1].x, ay=pts[i-1].y, bx=pts[i].x, by=pts[i].y;
+        var dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy;
+        var t = L2? ((p.x-ax)*dx+(p.y-ay)*dy)/L2 : 0; t=Math.max(0,Math.min(1,t));
+        var d = Math.hypot(p.x-(ax+dx*t), p.y-(ay+dy*t));
+        if(d<best) best=d;
+      }
+      return best;
+    }
+    function distAlongPath(pts, p){
+      var best=1e9, bestD=0, acc=0;
+      for(var i=1;i<pts.length;i++){
+        var ax=pts[i-1].x, ay=pts[i-1].y, bx=pts[i].x, by=pts[i].y;
+        var dx=bx-ax, dy=by-ay, seg=Math.hypot(dx,dy), L2=dx*dx+dy*dy;
+        var t = L2? ((p.x-ax)*dx+(p.y-ay)*dy)/L2 : 0; t=Math.max(0,Math.min(1,t));
+        var d = Math.hypot(p.x-(ax+dx*t), p.y-(ay+dy*t));
+        if(d<best){ best=d; bestD=acc+seg*t; }
+        acc+=seg;
+      }
+      return bestD;
+    }
+
+    /* ---------- Stakes: who each piece is for (no money anywhere in this game) ---------- */
+    var FOR_LINES = {
+      seam:   "For you — your rehearsal seam, the one every later piece stands on.",
+      hem:    "For a neighbour's kitchen — a cloth that will be used daily, with a hem nobody notices.",
+      tote:   "For whoever carries it — a bag that has to hold real weight, every trip, without letting go.",
+      repair: "For somebody's favourite jacket — it lives again because your mend holds."
+    };
+    var TRUST_LINES = [
+      "Nobody knows your work yet. The first seam is where trust starts.",
+      "One piece held. Word travels — the basket gets a little braver.",
+      "Two pieces out in the world, still holding. People bring you the cloth they care about now.",
+      "The tote carries weight daily and hasn't let go. You're trusted with weight now.",
+      "A favourite garment lives again because of your hands. In this small world, you're the mender."
+    ];
+
+    /* ---------- Settings derived from the controls ---------- */
+    function sel(id){ return $(id).value; }
+    function curStitch(){ return sel("stitchSel"); }
+    function curFabric(){ return FABRICS[sel("fabricSel")]; }
+    function curFabricKey(){ return sel("fabricSel"); }
+    function curNeedle(){ return sel("needleSel"); }
+    function curTension(){ return parseInt(sel("tensionSel"),10); }
+    function rampFactor(){ var r=sel("rampSel"); return r==="gentle"?0.55 : r==="steep"?1.45 : 1; }
+    function rampSpeed(){ var r=sel("rampSel"); return r==="gentle"?0.85 : r==="steep"?1.25 : 1; }
+    var energy = { on:false, level:100 };
+
+    function needleMatch(){
+      var f=curFabric(), n=curNeedle();
+      if(n===f.needle) return { level:"good", factor:1, msg:"Right needle for "+f.name+": "+NEEDLE_NAMES[n]+"." };
+      if(f.needleAlt && n===f.needleAlt) return { level:"workable", factor:0.85, msg:"Workable: "+NEEDLE_NAMES[n]+" will sew "+f.name+", but "+NEEDLE_NAMES[f.needle]+" is the matched needle — expect a small strength cost." };
+      return { level:"wrong", factor:0.6, msg:"Wrong needle for "+f.name+". The matched needle is "+NEEDLE_NAMES[f.needle]+" — see the matching shelf for why. This will cost strength and may skip or damage the cloth." };
+    }
+    function tensionMatch(){
+      var want=curFabric().tension, t=curTension();
+      if(t===want) return { level:"good", factor:1, fault:null, msg:"Tension matches "+curFabric().name+"." };
+      if(t>want) return { level:"high", factor:0.72, fault:"pucker", msg:"Tension is higher than "+curFabric().name+" wants — expect puckering: the top thread wins the tug-of-war and pulls the seam shorter than the cloth." };
+      return { level:"low", factor:0.72, fault:"loops", msg:"Tension is lower than "+curFabric().name+" wants — expect loose loops underneath: the bobbin side wins and the interlock lands on the surface instead of inside the cloth." };
+    }
+
+    /* ---------- Coach ---------- */
+    function coach(title, text, deep){
+      var box=$("coachBox");
+      if(state.teach==="off"){ box.className="coach"; return; }
+      box.className = "coach show" + (state.teach==="coach" ? " full" : "");
+      $("coachTitle").textContent = title;
+      $("coachText").textContent = text;
+      $("coachDeep").textContent = (state.teach==="coach" && deep) ? deep : "";
+    }
+    function coachOff(){ $("coachBox").className="coach"; }
+
+    /* ---------- Basket (capacity seed) ---------- */
+    var basket = (record.basket && record.basket.slice) ? record.basket.slice() : [];
+    function basketSize(){ return parseInt(sel("basketSizeSel"),10); }
+    function basketHasRoom(){ var s=basketSize(); return s===0 || basket.length < s; }
+    function inBasket(id){ return basket.indexOf(id)>=0; }
+    function takeOn(id){
+      if(inBasket(id)) return true;
+      if(!basketHasRoom()){
+        coach("The basket is full", "You can't take this piece on yet — the basket holds "+basketSize()+" and it's full. Finish a piece, or set one aside. Somebody's piece waits: that's the honest shape of one pair of hands.",
+          "Capacity is a real limit in real sewing, not a game punishment. A mender who takes everything finishes nothing well; the queue is part of the craft.");
+        renderBasket(); return false;
+      }
+      basket.push(id); record.basket=basket.slice(); saveRecord(); renderBasket(); renderProjects();
+      return true;
+    }
+    function setAside(id){
+      basket = basket.filter(function(x){ return x!==id; });
+      record.basket=basket.slice(); saveRecord(); renderBasket(); renderProjects(); updateSetupUI();
+    }
+    function renderBasket(){
+      var s=basketSize();
+      $("basketInfo").textContent = basket.length===0 ? "empty — tap a project below to take it on." :
+        basket.length + (s===0 ? " pieces (no limit set)" : " of "+s+" pieces") + " waiting.";
+      var html="";
+      basket.forEach(function(id){
+        var p=PROJECTS.filter(function(x){return x.id===id;})[0];
+        html += '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0;"><span class="badge">'+p.title+'</span><span class="note">'+FOR_LINES[id]+'</span><button class="btn small" type="button" data-aside="'+id+'">Set aside<span class="gesture">Tap to take it out of the basket</span></button></div>';
+      });
+      $("basketList").innerHTML = html || '<p class="note" style="margin:4px 0;">Nothing waiting. A quiet basket is a rested mender.</p>';
+      var btns=$("basketList").querySelectorAll("[data-aside]");
+      for(var i=0;i<btns.length;i++){ btns[i].addEventListener("click", function(){ setAside(this.getAttribute("data-aside")); }); }
+    }
+
+    /* ---------- Project cards ---------- */
+    function renderProjects(){
+      var g=$("projectGrid"), html="";
+      PROJECTS.forEach(function(p){
+        var rec=record.projects[p.id];
+        var status = rec ? ('Best grade '+rec.bestLetter+' · finished '+rec.finishes+'×') : 'Not finished yet';
+        if(inBasket(p.id)) status += ' · in your basket';
+        html += '<button type="button" class="card project" data-proj="'+p.id+'" aria-pressed="'+(state.project.id===p.id)+'">'
+          + '<h3>'+p.title+'</h3><p>'+p.short+'</p><p><em>'+FOR_LINES[p.id]+'</em></p>'
+          + '<p>Pattern calls for: <strong>'+STITCHES[p.stitch].name+'</strong> on <strong>'+FABRICS[p.fabric].name+'</strong></p>'
+          + '<span class="status">'+status+'</span>'
+          + '<span class="gesture">Tap to choose this project</span></button>';
+      });
+      g.innerHTML=html;
+      var cards=g.querySelectorAll("[data-proj]");
+      for(var i=0;i<cards.length;i++){ cards[i].addEventListener("click", function(){ selectProject(this.getAttribute("data-proj")); }); }
+    }
+    function selectProject(id){
+      var p=PROJECTS.filter(function(x){return x.id===id;})[0];
+      state.project=p;
+      $("stitchSel").value=p.stitch;
+      $("fabricSel").value=p.fabric;
+      resetStage();
+      takeOn(id);
+      renderProjects(); updateSetupUI(); draw();
+      coach("Project: "+p.title, FOR_LINES[id]+" Pattern calls for "+STITCHES[p.stitch].name+" — "+STITCHES[p.stitch].use.toLowerCase()+".",
+        p.strategies.map(function(s){ return s.name+": "+s.pro+" Cost: "+s.con; }).join("  ·  "));
+    }
+
+    /* ---------- Setup UI: whys, variant banner, hints ---------- */
+    function updateSetupUI(){
+      var st=STITCHES[curStitch()];
+      $("stitchWhy").textContent = st.use+". "+st.why;
+      $("needleWhy").textContent = needleMatch().msg;
+      var parts=[];
+      if(curStitch()!==state.project.stitch) parts.push("stitch — you chose "+st.name+"; the pattern calls for "+STITCHES[state.project.stitch].name+". A variant: it will sew, and the grade will show the real trade-off.");
+      var nm=needleMatch(); if(nm.level!=="good") parts.push("needle — "+nm.msg);
+      var tm=tensionMatch(); if(tm.fault) parts.push("tension — "+tm.msg);
+      if(sel("rampSel")!=="standard") parts.push("difficulty ramp set to "+sel("rampSel")+" — the seam's curves are bent from the pattern and the pace changes with it.");
+      if(energy.on) parts.push("“A real day's sewing” is on — tired hands will cost accuracy until you rest. Finishes in this mode are labelled in your record.");
+      if(!inBasket(state.project.id)) parts.push("this piece is not in your basket yet — choosing its project card takes it on, and Start sewing does too when the basket has room. A full basket is the one hard stop: the piece waits until you finish a piece or set one aside.");
+      var vb=$("variantBanner");
+      if(parts.length){ vb.className="variant show"; vb.innerHTML="<b>Variant in play:</b> "+parts.join(" "); }
+      else { vb.className="variant"; vb.innerHTML=""; }
+      $("stageHint").textContent = state.mode==="machine"
+        ? "Tap Start sewing, then steer: drag up or down on the cloth, hold the steer buttons, or use the ↑ and ↓ keys. The fabric feeds itself — your job is the line."
+        : "Tap Start sewing, then tap the cloth stitch by stitch along the dashed line. On the line, evenly spaced — that's the whole craft. No pointer? Keyboard sewing works too: ← and → walk the guide along the seam, ↑ and ↓ nudge it off the line, and the Place stitch button puts the stitch down. Tap Finish & grade at the end.";
+      $("steerRow").className = "steerrow" + (state.mode==="machine" ? " show" : "");
+      $("speedField").style.display = state.mode==="machine" ? "" : "none";
+      $("startBtn").disabled = state.running;
+      $("placeBtn").disabled = !(state.mode==="hand" && state.running && !state.finished);
+      $("finishBtn").disabled = !(state.mode==="hand" && state.running && state.handPoints.length>=5);
+      $("undoBtn").disabled = !(state.mode==="hand" && state.handPoints.length>0 && !state.finished);
+    }
+
+    /* ---------- Drawing ---------- */
+    var FABRIC_FILL = { cotton:"#e7dfc8", denim:"#b9c6d4", knit:"#dce5cf", silk:"#efe3d3" };
+    function scaledPath(){
+      var pts=pathPoints(), f=rampFactor();
+      var my=0; pts.forEach(function(p){ my+=p.y; }); my/=pts.length;
+      return pts.map(function(p){ return { x:p.x, y: my+(p.y-my)*f }; });
+    }
+    function draw(){
+      var W=900,H=360, pts=scaledPath(), fk=curFabricKey();
+      ctx.clearRect(0,0,W,H);
+      /* cloth */
+      ctx.fillStyle=FABRIC_FILL[fk]; ctx.fillRect(30,40,840,280);
+      ctx.strokeStyle="rgba(60,60,40,.25)"; ctx.lineWidth=1;
+      for(var y=52;y<320;y+=9){ ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(870,y); ctx.stroke(); }
+      for(var x=42;x<870;x+=9){ ctx.beginPath(); ctx.moveTo(x,40); ctx.lineTo(x,320); ctx.stroke(); }
+      ctx.strokeStyle="#8a7f5f"; ctx.lineWidth=3; ctx.strokeRect(30,40,840,280);
+      /* project dressing */
+      if(state.project.id==="hem"){ ctx.strokeStyle="#b5502a"; ctx.setLineDash([4,5]); ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(30,292); ctx.lineTo(870,292); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle="#7a4a21"; ctx.font="15px sans-serif"; ctx.fillText("fold line — the raw edge folds up to here", 44, 312); }
+      if(state.project.id==="seam"){ ctx.strokeStyle="rgba(90,80,50,.6)"; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(30,180); ctx.lineTo(870,180); ctx.stroke();
+        ctx.fillStyle="#7a4a21"; ctx.font="15px sans-serif"; ctx.fillText("two pieces, edges matched", 44, 66); }
+      if(state.project.id==="repair"){ ctx.fillStyle="rgba(176,58,46,.16)";
+        ctx.beginPath(); pts.forEach(function(p,i){ if(i===0) ctx.moveTo(p.x,p.y-16); else ctx.lineTo(p.x,p.y-16); });
+        for(var i=pts.length-1;i>=0;i--){ ctx.lineTo(pts[i].x, pts[i].y+16); } ctx.closePath(); ctx.fill();
+        ctx.fillStyle="#8c2f24"; ctx.font="15px sans-serif"; ctx.fillText("the tear — stitch along it, and run past both ends into sound cloth", 44, 66); }
+      if(state.project.id==="tote"){ ctx.fillStyle="#7a4a21"; ctx.font="15px sans-serif"; ctx.fillText("tote side seam — this line carries the weight", 44, 66); }
+      /* seam allowance note */
+      ctx.fillStyle="#5c5546"; ctx.font="13px sans-serif";
+      ctx.fillText("guide line sits a seam-allowance from the edge — steer by the line, not the needle", 44, 342);
+      /* guide path */
+      ctx.strokeStyle="#175e52"; ctx.lineWidth=2.5; ctx.setLineDash([10,8]);
+      ctx.beginPath(); pts.forEach(function(p,i){ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); }); ctx.stroke(); ctx.setLineDash([]);
+      /* puckering, drawn honestly when tension is too high */
+      var tm=tensionMatch();
+      if(tm.fault==="pucker" && (state.mStitches.length>2 || state.handPoints.length>2)){
+        ctx.strokeStyle="rgba(154,106,18,.75)"; ctx.lineWidth=1.6;
+        var upto = state.mode==="machine" ? state.mDist : pathLength(pts);
+        for(var d=20; d<Math.min(upto, pathLength(pts)); d+=16){
+          var pos=pointAt(pts,d);
+          ctx.beginPath(); ctx.arc(pos.x, pos.y-13, 6, Math.PI*0.15, Math.PI*0.85); ctx.stroke();
+          ctx.beginPath(); ctx.arc(pos.x, pos.y+13, 6, Math.PI*1.15, Math.PI*1.85); ctx.stroke();
+        }
+      }
+      drawStitches(pts);
+      /* needle in machine mode */
+      if(state.mode==="machine"){
+        var pos=pointAt(pts, Math.min(state.mDist, pathLength(pts)));
+        var nx=-Math.sin(pos.ang), ny=Math.cos(pos.ang);
+        var px=pos.x+nx*state.mOffset, py=pos.y+ny*state.mOffset;
+        ctx.strokeStyle="#333"; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(px,py-46); ctx.lineTo(px,py+6); ctx.stroke();
+        ctx.fillStyle="#b5502a"; ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle="rgba(181,80,42,.8)"; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(px,py-46); ctx.quadraticCurveTo(px+26,py-70,px+52,py-58); ctx.stroke();
+      }
+      if(state.mode==="hand" && state.handPoints.length){
+        var lp=state.handPoints[state.handPoints.length-1];
+        ctx.fillStyle="#b5502a"; ctx.beginPath(); ctx.arc(lp.x,lp.y,5,0,Math.PI*2); ctx.fill();
+      }
+      if(state.mode==="hand" && state.running && !state.finished && state.guide){
+        var gp=pointAt(pts, Math.min(state.guide.dist, pathLength(pts)));
+        var gnx=-Math.sin(gp.ang), gny=Math.cos(gp.ang);
+        var gx=gp.x+gnx*state.guide.off, gy=gp.y+gny*state.guide.off;
+        ctx.strokeStyle="#b5502a"; ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.moveTo(gx-11,gy); ctx.lineTo(gx+11,gy); ctx.moveTo(gx,gy-11); ctx.lineTo(gx,gy+11); ctx.stroke();
+        ctx.beginPath(); ctx.arc(gx,gy,8,0,Math.PI*2); ctx.stroke();
+      }
+    }
+    function drawStitches(pts){
+      var type=curStitch();
+      ctx.lineCap="round";
+      var segs=[];
+      if(state.mode==="hand"){
+        for(var i=1;i<state.handPoints.length;i++) segs.push([state.handPoints[i-1], state.handPoints[i]]);
+      } else {
+        state.mStitches.forEach(function(s){
+          if(s.skipped) return;
+          var pos=pointAt(pts, s.dist);
+          var nx=-Math.sin(pos.ang), ny=Math.cos(pos.ang);
+          var cx=pos.x+nx*s.offset, cy=pos.y+ny*s.offset;
+          var dx=Math.cos(pos.ang)*11, dy=Math.sin(pos.ang)*11;
+          segs.push([{x:cx-dx,y:cy-dy},{x:cx+dx,y:cy+dy}]);
+        });
+      }
+      segs.forEach(function(sg, idx){
+        if(type==="running"){
+          if(idx%2===0){ ctx.strokeStyle="#b5502a"; ctx.lineWidth=3.5; line(sg); }
+          else { ctx.strokeStyle="rgba(181,80,42,.35)"; ctx.lineWidth=2; ctx.setLineDash([3,4]); line(sg); ctx.setLineDash([]); }
+        } else if(type==="backstitch"){
+          ctx.strokeStyle="#b5502a"; ctx.lineWidth=4; line(sg);
+        } else if(type==="zigzag"){
+          ctx.strokeStyle="#b5502a"; ctx.lineWidth=3; line(sg);
+        } else if(type==="blindhem"){
+          ctx.strokeStyle="rgba(181,80,42,.30)"; ctx.lineWidth=2; line(sg);
+          ctx.strokeStyle="#b5502a"; ctx.lineWidth=3.5;
+          ctx.beginPath(); ctx.moveTo(sg[1].x, sg[1].y); ctx.lineTo(sg[1].x-7, sg[1].y-9); ctx.stroke();
+        }
+      });
+      function line(sg){ ctx.beginPath(); ctx.moveTo(sg[0].x, sg[0].y); ctx.lineTo(sg[1].x, sg[1].y); ctx.stroke(); }
+    }
+
+    /* ---------- Live stats ---------- */
+    function currentStats(){
+      var pts=scaledPath(), devs=[], lens=[];
+      if(state.mode==="hand"){
+        state.handPoints.forEach(function(p){ devs.push(distToPath(pts,p)); });
+        for(var i=1;i<state.handPoints.length;i++) lens.push(Math.hypot(state.handPoints[i].x-state.handPoints[i-1].x, state.handPoints[i].y-state.handPoints[i-1].y));
+      } else {
+        state.mStitches.forEach(function(s){ if(!s.skipped) devs.push(s.dev); });
+        for(var j=1;j<state.mStitches.length;j++) lens.push(Math.abs(state.mStitches[j].offset-state.mStitches[j-1].offset));
+      }
+      var meanDev = devs.length? devs.reduce(function(a,b){return a+b;},0)/devs.length : 0;
+      var line = devs.length? Math.max(0, Math.round(100 - meanDev*2.4)) : null;
+      var space=null;
+      if(lens.length>=2){
+        if(state.mode==="hand"){
+          var m=lens.reduce(function(a,b){return a+b;},0)/lens.length;
+          var sd=Math.sqrt(lens.reduce(function(a,b){return a+(b-m)*(b-m);},0)/lens.length);
+          space=Math.max(0, Math.round(100 - (m? sd/m:0)*170));
+        } else {
+          var mj=lens.reduce(function(a,b){return a+b;},0)/lens.length;
+          space=Math.max(0, Math.round(100 - mj*5.5));
+        }
+      }
+      return { line:line, space:space, count:(state.mode==="hand"? Math.max(0,state.handPoints.length-1) : state.mStitches.length) };
+    }
+    function refreshStats(sub){
+      var s=currentStats();
+      $("statStitches").textContent=s.count;
+      $("statLine").textContent = s.line===null? "—" : s.line+"%";
+      $("statSpace").textContent = s.space===null? "—" : s.space+"%";
+      if(sub){ $("statState").textContent=sub.t; $("statStateSub").textContent=sub.s; }
+    }
+
+    /* ---------- Energy (self-energy seed, variant mode) ---------- */
+    function drainEnergy(amount){
+      if(!energy.on) return;
+      energy.level=Math.max(0, energy.level-amount);
+      renderEnergy();
+    }
+    function renderEnergy(){
+      $("energyBox").style.display = energy.on? "" : "none";
+      $("energyMeter").style.width = energy.level+"%";
+      var word = energy.level>70? "rested and steady." : energy.level>40? "tiring — small wobbles creeping in." : energy.level>15? "tired. The line is honestly suffering now." : "exhausted. Rest — this is your hands telling you the truth.";
+      $("energyTxt").textContent = Math.round(energy.level)+"% — "+word;
+    }
+    function wobbleAmount(){ return energy.on? Math.max(0,(60-energy.level))/60 : 0; }
+
+    /* ---------- Machine mode engine ---------- */
+    var steerHold=0, keysDown={};
+    function machineFrame(ts){
+      if(!state.running) return;
+      var dt=Math.min(0.05,(ts-state.lastTs)/1000||0.016); state.lastTs=ts;
+      var pts=scaledPath(), total=pathLength(pts);
+      var speed=[0,55,95,150][parseInt(sel("speedSel"),10)]*rampSpeed();
+      if(steerHold!==0) state.mTarget=Math.max(-42,Math.min(42, state.mTarget + steerHold*dt*130));
+      if(keysDown.up) state.mTarget=Math.max(-42, state.mTarget - dt*130);
+      if(keysDown.down) state.mTarget=Math.min(42, state.mTarget + dt*130);
+      state.mOffset += (state.mTarget-state.mOffset)*Math.min(1, dt*9);
+      state.mDist += speed*dt;
+      var stitchLen=26;
+      var nextMark=(state.mStitches.length? state.mStitches[state.mStitches.length-1].dist : 0)+stitchLen;
+      while(state.mDist>=nextMark && nextMark<=total){
+        var pos=pointAt(pts,nextMark);
+        var wob=wobbleAmount()*11*Math.sin(nextMark/17);
+        var off=state.mOffset + wob;
+        if(curStitch()==="zigzag") off += (state.mStitches.length%2===0? 11 : -11);
+        var nx=-Math.sin(pos.ang), ny=Math.cos(pos.ang);
+        var np={x:pos.x+nx*off, y:pos.y+ny*off};
+        var skip=false;
+        var thick=curFabric().thick, spd=parseInt(sel("speedSel"),10);
+        if(thick && spd===3 && Math.random()<0.18) skip=true;
+        if(curFabricKey()==="silk" && spd===3 && Math.random()<0.10) skip=true;
+        state.mStitches.push({ dist:nextMark, offset:off, dev:distToPath(pts,np), skipped:skip });
+        drainEnergy(0.45);
+        nextMark+=stitchLen;
+      }
+      draw(); refreshStats({t:"Sewing…", s: Math.round(Math.min(100, state.mDist/total*100))+"% along the seam"});
+      if(state.mDist>=total){ finishSewing(); return; }
+      state.raf=requestAnimationFrame(machineFrame);
+    }
+
+    /* ---------- Start / reset / hand input ---------- */
+    function resetStage(){
+      state.running=false; state.finished=false;
+      state.handPoints=[]; state.mStitches=[]; state.mDist=0; state.mOffset=0; state.mTarget=0;
+      state.guide={ dist:70, off:0 };
+      if(state.raf) cancelAnimationFrame(state.raf);
+      $("gradeCard").className="grade card";
+      refreshStats({t:"Ready", s:"pick settings, then start"});
+      updateSetupUI(); draw();
+    }
+    function startSewing(){
+      if(!inBasket(state.project.id)){
+        if(!takeOn(state.project.id)){ updateSetupUI(); return; }
+      }
+      resetStage();
+      state.running=true;
+      $("startBtn").disabled=true;
+      var st=STITCHES[curStitch()];
+      if(state.mode==="machine"){
+        state.lastTs=performance.now();
+        state.raf=requestAnimationFrame(machineFrame);
+        refreshStats({t:"Sewing…", s:"the fabric is feeding — steer the needle"});
+        coach("Under way — "+st.name, "Keep the needle on the dashed line. The feed dogs set the pace; you only steer, exactly like the real machine.",
+          "Strategy check: "+state.project.strategies[0].name+" — "+state.project.strategies[0].pro+" The cost: "+state.project.strategies[0].con+" And remember the allowance: sewers steer by watching the guide, not the needle, because the needle moves too fast to follow.");
+      } else {
+        refreshStats({t:"Sewing by hand", s:"tap the cloth to place each stitch"});
+        coach("Under way — "+st.name, "Tap along the dashed line, one stitch at a time. Even spacing is a rhythm: real hand sewers count it like music.",
+          st.why+" Strategy: place stitches a touch shorter than you think — hand stitches drift longer as your rhythm settles, and short, even stitches beat long, uneven ones for both looks and strength.");
+      }
+      updateSetupUI(); draw();
+    }
+    function canvasPoint(evt){
+      var r=canvas.getBoundingClientRect();
+      return { x:(evt.clientX-r.left)*900/r.width, y:(evt.clientY-r.top)*360/r.height };
+    }
+    canvas.addEventListener("pointerdown", function(evt){
+      var p=canvasPoint(evt);
+      if(state.mode==="hand"){
+        if(!state.running || state.finished) return;
+        var pts=scaledPath();
+        if(state.handPoints.length){
+          var last=state.handPoints[state.handPoints.length-1];
+          if(p.x < last.x-30){ coach("Stitches run forward", "That tap was well behind your last stitch. Hand sewing advances along the seam — work toward the far end.", "Real seams are sewn in one direction so the thread tension stays even; doubling back is what the backstitch does deliberately, inside each stitch, not by wandering."); return; }
+        }
+        var wob=wobbleAmount();
+        if(wob>0){ p={ x:p.x+(Math.random()*2-1)*wob*13, y:p.y+(Math.random()*2-1)*wob*13 }; }
+        state.handPoints.push(p);
+        drainEnergy(1.1);
+        refreshStats({t:"Sewing by hand", s: state.handPoints.length+" points placed"});
+        if(state.handPoints.length>=5) $("finishBtn").disabled=false;
+        $("undoBtn").disabled=false;
+        if(wob>0.45 && state.handPoints.length>2) coach("Tired hands", "That stitch landed shaky — your energy is low and the wobble is real, not a scolding. Rest, or accept the wobble as today's honest work.", "Real sewers stop for the day for exactly this reason: tired stitching gets unpicked tomorrow, and unpicking costs more time than resting does.");
+        draw();
+      } else if(state.running){
+        var pos=pointAt(scaledPath(), Math.min(state.mDist, pathLength(scaledPath())));
+        state.mTarget=Math.max(-42, Math.min(42, p.y-pos.y));
+      }
+    });
+    canvas.addEventListener("pointermove", function(evt){
+      if(state.mode!=="machine" || !state.running) return;
+      if(evt.buttons===0 && evt.pointerType==="mouse") { /* hover steers on desktop */ }
+      else if(evt.buttons===0) return;
+      var p=canvasPoint(evt);
+      var pos=pointAt(scaledPath(), Math.min(state.mDist, pathLength(scaledPath())));
+      state.mTarget=Math.max(-42, Math.min(42, p.y-pos.y));
+    });
+    function bindHold(id, dir){
+      var el=$(id);
+      var on=function(e){ e.preventDefault(); steerHold=dir; };
+      var off=function(){ if(steerHold===dir) steerHold=0; };
+      el.addEventListener("pointerdown", on); el.addEventListener("pointerup", off);
+      el.addEventListener("pointerleave", off); el.addEventListener("pointercancel", off);
+    }
+    document.addEventListener("keydown", function(e){
+      if(e.key==="ArrowUp"){ keysDown.up=true; } if(e.key==="ArrowDown"){ keysDown.down=true; }
+      if(state.mode==="hand" && state.running && !state.finished && state.guide){
+        var pts=scaledPath(), total=pathLength(pts), used=true;
+        if(e.key==="ArrowLeft") state.guide.dist=Math.max(15, state.guide.dist-18);
+        else if(e.key==="ArrowRight") state.guide.dist=Math.min(total-8, state.guide.dist+18);
+        else if(e.key==="ArrowUp") state.guide.off=Math.max(-42, state.guide.off-4);
+        else if(e.key==="ArrowDown") state.guide.off=Math.min(42, state.guide.off+4);
+        else used=false;
+        if(used){ e.preventDefault(); draw(); }
+      }
+    });
+    document.addEventListener("keyup", function(e){
+      if(e.key==="ArrowUp"){ keysDown.up=false; } if(e.key==="ArrowDown"){ keysDown.down=false; }
+    });
+
+    /* ---------- Grading & faults ---------- */
+    function finishSewing(){
+      if(state.finished) return;
+      state.finished=true; state.running=false;
+      if(state.raf) cancelAnimationFrame(state.raf);
+      var pts=scaledPath(), total=pathLength(pts);
+      var s=currentStats();
+      var line=(s.line===null?0:s.line), space=(s.space===null?0:s.space);
+      var coverage=1;
+      if(state.mode==="hand"){
+        coverage = state.handPoints.length? Math.min(1, distAlongPath(pts, state.handPoints[state.handPoints.length-1])/total) : 0;
+      }
+      var nm=needleMatch(), tm=tensionMatch(), st=STITCHES[curStitch()];
+      var skipped=state.mStitches.filter(function(x){return x.skipped;}).length;
+      var strength=Math.round(st.base * nm.factor * tm.factor * (0.55+0.45*((line+space)/200)) * (coverage<0.9? 0.6+coverage*0.44 : 1));
+      if(skipped>0) strength=Math.round(strength*(1-Math.min(0.3, skipped*0.06)));
+      strength=Math.max(3, Math.min(99, strength));
+      var overall=Math.round((line+space+strength)/3);
+      var letter= overall>=85?"A": overall>=70?"B": overall>=55?"C": overall>=40?"D":"Not yet";
+      var faults=[];
+      if(line<78) faults.push({ name:"Drifted off the line", why:"Average wander pulled the grade down. On a real seam this shows as a wavy join — and on a curve it twists the finished piece when it hangs." });
+      if(space<72) faults.push({ name:"Uneven spacing", why: state.mode==="hand" ? "Stitch lengths varied a lot. Uneven stitches concentrate stress on the longest ones — the seam fails at its longest stitch first." : "Jerky steering dragged the cloth, so the feed came unevenly. Smooth, small corrections feed evenly." });
+      if(tm.fault==="pucker") faults.push({ name:"Puckering — tension too tight", why:"The top thread won the tug-of-war and pulled the seam shorter than the cloth. Lower the tension for this fabric, and test on scrap." });
+      if(tm.fault==="loops") faults.push({ name:"Loose loops — tension too loose", why:"The interlock landed on the surface instead of inside the cloth, so the seam can grin open. Raise the tension for this fabric." });
+      if(nm.level==="wrong") faults.push({ name:"Wrong needle for the fabric", why:nm.msg });
+      if(nm.level==="workable") faults.push({ name:"Workable needle, not the matched one", why:nm.msg });
+      if(skipped>0) faults.push({ name:"Skipped stitches", why:"The hook missed its loop "+skipped+"× — full speed through this fabric asks more than the needle can form. Slow down through thickness; a fresh, matched needle is the other half of the fix." });
+      if((state.project.id==="tote"||state.project.id==="repair") && st.base<70) faults.push({ name:"A light-duty stitch on a load-bearing job", why:st.name+" tops out low on strength by design. This job carries weight or holds a tear — it needs a locking stitch. Right stitch for the job is the pairing law." });
+      if(coverage<0.9) faults.push({ name:"Seam left unfinished", why:"You stopped at "+Math.round(coverage*100)+"% of the line. An unfinished seam is a seam that ends where the next tear starts — run to the end, and past it on a repair." });
+      if(energy.on && energy.level<20) faults.push({ name:"Sewn tired", why:"You finished on empty. The wobble in the late stitches is in the grade — rest is part of the craft, not a break from it." });
+      if(!faults.length) faults.push({ name:"No faults found", why:"Clean work: line held, spacing even, setup matched. This is what the grade card of a careful sewer looks like." });
+
+      /* record write */
+      var id=state.project.id;
+      var rec=record.projects[id] || { finishes:0, best:0, bestLetter:"—", energyFinishes:0 };
+      rec.finishes++; rec.energyFinishes += energy.on?1:0;
+      if(overall>rec.best){ rec.best=overall; rec.bestLetter=letter; }
+      record.projects[id]=rec;
+      record.stitches[curStitch()]=true;
+      record.finishes=(record.finishes||0)+1;
+      faults.forEach(function(f){ if(f.name!=="No faults found"){ record.faults[f.name]=(record.faults[f.name]||0)+1; } });
+      var doneCount=Object.keys(record.projects).length;
+      if(inBasket(id)) setAside(id);
+      saveRecord(); renderRecord(); renderProjects();
+
+      /* grade card */
+      $("gradeCard").className="grade card show";
+      $("gradeLetter").textContent=letter;
+      $("gradeTitle").textContent=state.project.title+" — graded";
+      $("gradeSummary").textContent="Overall "+overall+" of 100 · "+st.name+" on "+curFabric().name+" · sewn "+(state.mode==="machine"?"by machine":"by hand")+(energy.on?" · on A Real Day's Sewing (variant)":"")+(sel("rampSel")!=="standard"?" · ramp: "+sel("rampSel")+" (variant)":"");
+      $("gLine").style.width=line+"%"; $("gLineTxt").textContent=line+"%";
+      $("gLineWhy").textContent="How close your stitches stayed to the guide line. The line is where the pattern's maths lives — off it, pieces stop matching and curves twist.";
+      $("gSpace").style.width=space+"%"; $("gSpaceTxt").textContent=space+"%";
+      $("gSpaceWhy").textContent= state.mode==="hand" ? "Even stitches share the load equally; the seam is as strong as its longest, loneliest stitch." : "On a machine, spacing evenness is smooth feeding: small, calm steering keeps every stitch the same length.";
+      $("gStr").style.width=strength+"%"; $("gStrTxt").textContent=strength+"%";
+      $("gStrWhy").textContent="The stitch sets the ceiling ("+st.name+": "+st.base+"), the needle match ×"+nm.factor+" and tension ×"+tm.factor+" scale it, and your line and spacing finish it.";
+      var useLine;
+      if(id==="seam") useLine = strength>=60? "What it does now: this rehearsal seam holds the two pieces true while you check the fit — and because it's honest work, it will pull out cleanly when the real seam replaces it." : "What it does now: it holds the pieces together for a fitting — loosely, which for a rehearsal is acceptable, but don't trust it past the fitting.";
+      if(id==="hem") useLine = line>=70? "What it does now: the cloth hangs with a clean, invisible edge — it will be used daily and nobody will ever notice your stitches, which is the highest praise a hem can earn." : "What it does now: the hem holds, but the wandering line will show as an uneven edge when the cloth hangs. A hem is judged at a glance, from across the room.";
+      if(id==="tote") useLine = strength>=70? "What it does now: this tote will carry its loads — the seam you sewed is the reason why, stitch by locking stitch." : "What it does now: the tote exists, but its seam is the weak point — carry light, and know that the fix is a locking stitch and a matched needle, not more stitches of the same kind.";
+      if(id==="repair") useLine = strength>=70? "What it does now: the favourite jacket lives again. Your mend holds because every stitch anchors the next — wear it." : "What it does now: the tear is closed, but gently — this mend wants a patch behind it before the jacket goes back to hard wear. The patch strategy is on the project's card.";
+      $("gradeUse").textContent=useLine;
+      var fl=""; faults.forEach(function(f){ fl+="<li><strong>"+f.name+".</strong> "+f.why+"</li>"; });
+      $("faultList").innerHTML=fl;
+      refreshStats({t:"Finished", s: TRUST_LINES[Math.min(doneCount, TRUST_LINES.length-1)]});
+      coach("Graded: "+letter+" ("+overall+")", faults.length===1 && faults[0].name==="No faults found" ? "Clean work — and the trust line under your stats just moved. That's the stake in this game: work that holds." : "Read the faults — each one names its cause, and every cause has a fix on the Learn shelves. That's the whole method: sew, read, adjust one thing.",
+        "The strength number is a model, and it says so on its face. What is not a model: "+st.why);
+      $("gradeCard").scrollIntoView({ behavior:"smooth", block:"nearest" });
+      updateSetupUI(); draw();
+    }
+
+    /* ---------- Record shelf ---------- */
+    function renderRecord(){
+      var name=(record.alias||"").trim();
+      $("recName").textContent = name? name : "Sewer";
+      var ids=Object.keys(record.projects);
+      $("recSummary").textContent = ids.length===0 ? "No finished projects yet. Your first seam is waiting on the Workbench."
+        : (record.finishes||0)+" finished piece"+((record.finishes||0)===1?"":"s")+" · "+ids.length+" of 4 projects done · "+TRUST_LINES[Math.min(ids.length, TRUST_LINES.length-1)];
+      if(ids.length===0){ $("recProjects").innerHTML="<li>None yet.</li>"; }
+      else {
+        var html="";
+        PROJECTS.forEach(function(p){
+          var r=record.projects[p.id]; if(!r) return;
+          html+="<li><strong>"+p.title+"</strong> — best grade "+r.bestLetter+" ("+r.best+") · finished "+r.finishes+"×"+(r.energyFinishes? " · "+r.energyFinishes+" of them on A Real Day's Sewing (variant, kept separate)":"")+"</li>";
+        });
+        $("recProjects").innerHTML=html;
+      }
+      var learned=Object.keys(record.stitches||{});
+      $("recStitches").textContent = learned.length===0 ? "None yet — finish a project with a stitch to learn it."
+        : learned.map(function(k){ return STITCHES[k].name; }).join(" · ")+" — "+learned.length+" of 4. A stitch is learned by finishing real work with it, not by reading about it.";
+      var fk=Object.keys(record.faults||{});
+      if(fk.length===0){ $("recFaults").innerHTML="<li>None yet — a clean sheet.</li>"; }
+      else {
+        fk.sort(function(a,b){ return record.faults[b]-record.faults[a]; });
+        $("recFaults").innerHTML = fk.map(function(k){ return "<li>"+k+" — seen "+record.faults[k]+"×</li>"; }).join("");
+      }
+    }
+
+    /* ---------- Wiring ---------- */
+    function download(name, text, type){
+      var blob=new Blob([text], {type:type||"text/plain"});
+      var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    }
+    $("downloadBtn").addEventListener("click", function(){
+      download("stitch-by-stitch.html", "<!doctype html>\n"+document.documentElement.outerHTML, "text/html");
+    });
+    $("exportBtn").addEventListener("click", function(){
+      download("stitch-by-stitch-record.json", JSON.stringify(record, null, 2), "application/json");
+    });
+    var forgetArmed=false;
+    $("forgetBtn").addEventListener("click", function(){
+      if(!forgetArmed){ forgetArmed=true; this.innerHTML='Tap again to confirm the wipe<span class="gesture">This erases the whole record on this device</span>'; return; }
+      record={ alias:"", teach:state.teach, projects:{}, stitches:{}, faults:{}, finishes:0, basket:[] };
+      basket=[]; forgetArmed=false;
+      this.innerHTML='Forget everything<span class="gesture">Tap once, then tap again to confirm the wipe</span>';
+      try{ localStorage.removeItem(LS_KEY); }catch(e){}
+      saveRecord();
+      $("aliasInput").value="";
+      $("forgetNote").textContent="Forgotten. The sheet is clean — the next seam starts a new record.";
+      renderRecord(); renderProjects(); renderBasket(); resetStage();
+    });
+    $("aliasInput").addEventListener("input", function(){
+      record.alias=this.value; saveRecord(); renderRecord();
+    });
+    document.querySelectorAll("[data-teach]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.teach=this.getAttribute("data-teach"); record.teach=state.teach; saveRecord();
+        document.querySelectorAll("[data-teach]").forEach(function(b){ b.setAttribute("aria-pressed", b===btn? "true":"false"); });
+        if(state.teach==="off") coachOff();
+        else coach("Teaching: "+state.teach, state.teach==="coach" ? "Coach is on: full explanations, strategies, and trade-offs as you sew." : "Light is on: a one-line nudge when it matters, silence when it doesn't.", "The dial changes how much the page says, never what it grades. Your sewing is judged the same at every setting.");
+      });
+    });
+    document.querySelectorAll("[data-mode]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.mode=this.getAttribute("data-mode");
+        document.querySelectorAll("[data-mode]").forEach(function(b){ b.setAttribute("aria-pressed", b===btn? "true":"false"); });
+        resetStage();
+      });
+    });
+    ["stitchSel","fabricSel","needleSel","tensionSel","speedSel","rampSel","basketSizeSel"].forEach(function(id){
+      $(id).addEventListener("change", function(){
+        if(id==="basketSizeSel"){ renderBasket(); }
+        if(!state.running){ updateSetupUI(); draw(); }
+        else updateSetupUI();
+      });
+    });
+    $("energyBtn").addEventListener("click", function(){
+      energy.on=!energy.on;
+      this.setAttribute("aria-pressed", energy.on? "true":"false");
+      this.textContent = energy.on? "On — tap to turn off" : "Off — tap to turn on";
+      if(energy.on && energy.level<100){ /* keep level */ }
+      renderEnergy(); updateSetupUI();
+      coach("A real day's sewing: "+(energy.on?"on":"off"), energy.on? "Your hands and eyes now tire as you sew. Watch the meter — below about 40% the wobble is real and it lands in your grades." : "Standard play: steady hands, all day.",
+        "This mode is a variant and your record labels finishes made under it, kept separate from standard finishes — because comparing tired work to rested work without a label would be a lie about both.");
+    });
+    $("restBtn").addEventListener("click", function(){
+      energy.level=100; renderEnergy();
+      coach("Rested", "Hands shaken out, eyes rested on something far away. Back to full — that was a real technique, not a game button.", "Real sewing ergonomics: look at distance every twenty minutes, unclench your jaw and shoulders, and never push through hand pain. Repetitive strain is the craft's occupational hazard.");
+    });
+    $("startBtn").addEventListener("click", startSewing);
+    $("resetBtn").addEventListener("click", function(){ resetStage(); coachOff(); });
+    $("undoBtn").addEventListener("click", function(){
+      if(state.mode==="hand" && state.handPoints.length){ state.handPoints.pop(); refreshStats({t:"Sewing by hand", s:state.handPoints.length+" points placed"}); if(state.handPoints.length<5) $("finishBtn").disabled=true; if(!state.handPoints.length) $("undoBtn").disabled=true; draw(); }
+    });
+    $("finishBtn").addEventListener("click", function(){
+      if(state.mode==="hand" && state.running) finishSewing();
+    });
+    $("placeBtn").addEventListener("click", function(){
+      if(state.mode!=="hand" || !state.running || state.finished || !state.guide) return;
+      var pts=scaledPath();
+      var pos=pointAt(pts, Math.min(state.guide.dist, pathLength(pts)));
+      var nx=-Math.sin(pos.ang), ny=Math.cos(pos.ang);
+      var p={ x:pos.x+nx*state.guide.off, y:pos.y+ny*state.guide.off };
+      var wob=wobbleAmount();
+      if(wob>0){ p={ x:p.x+(Math.random()*2-1)*wob*13, y:p.y+(Math.random()*2-1)*wob*13 }; }
+      state.handPoints.push(p);
+      drainEnergy(1.1);
+      state.guide.dist=Math.min(pathLength(pts)-8, state.guide.dist+48);
+      refreshStats({t:"Sewing by hand", s: state.handPoints.length+" points placed"});
+      if(state.handPoints.length>=5) $("finishBtn").disabled=false;
+      $("undoBtn").disabled=false;
+      draw();
+    });
+    bindHold("steerUp", -1); bindHold("steerDown", 1);
+
+    /* ---------- Init ---------- */
+    (function init(){
+      var stSel=$("stitchSel");
+      Object.keys(STITCHES).forEach(function(k){
+        var o=document.createElement("option"); o.value=k; o.textContent=STITCHES[k].name+" — "+STITCHES[k].use; stSel.appendChild(o);
+      });
+      if(record.teach){ state.teach=record.teach; }
+      document.querySelectorAll("[data-teach]").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-teach")===state.teach? "true":"false"); });
+      if(record.alias) $("aliasInput").value=record.alias;
+      if(record.basketSize){ /* basket size is a live setting; default stays */ }
+      state.project=PROJECTS[0];
+      $("projTitle").textContent=PROJECTS[0].title;
+      $("projIntro").textContent=PROJECTS[0].intro;
+      $("projWhy").textContent=PROJECTS[0].why;
+      renderStrategy(PROJECTS[0]);
+      renderProjects(); renderBasket(); renderRecord(); renderEnergy();
+      takeOn(PROJECTS[0].id);
+      updateSetupUI(); draw(); refreshStats({t:"Ready", s:"pick settings, then start"});
+    })();
+    function renderStrategy(p){
+      $("projTitle").textContent=p.title;
+      $("projIntro").textContent=p.intro;
+      $("projWhy").textContent=p.why;
+      var html="<h4 style='margin:12px 0 4px;'>Strategies for this piece — more than one honest way</h4>";
+      p.strategies.forEach(function(s){
+        html+="<p style='margin:6px 0;'><strong>"+s.name+".</strong> "+s.pro+" <em>Cost:</em> "+s.con+"</p>";
+      });
+      $("strategyBox").innerHTML=html;
+    }
+    /* keep the project panel in step when a card is chosen */
+    var origSelect=selectProject;
+    selectProject=function(id){
+      var p=PROJECTS.filter(function(x){return x.id===id;})[0];
+      renderStrategy(p);
+      origSelect(id);
+    };
+    </script>
+  </body>
+</html>
