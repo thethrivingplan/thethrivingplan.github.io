@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Tile Slide</title>
+<style>
+  :root{
+    --bg:#edf1ec; --panel:#ffffff; --panel2:#e2e9e1; --ink:#1d2621; --soft:#4c5a51;
+    --line:#bfcfc0; --teal:#0d5c52; --teal-ink:#fff; --amber:#a96f14; --amberbg:#f6e3b4;
+    --tileface:#fffdf6; --tileshadow:#b9a888; --blank:#d8dfd6; --good:#1d6b35; --warnbg:#fdf3d7; --warnline:#d9b64a;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131a17; --panel:#1d2622; --panel2:#242f2a; --ink:#e8efe9; --soft:#a9bbae;
+      --line:#39493f; --teal:#2f9c8a; --teal-ink:#0c1714; --amber:#e0a83e; --amberbg:#3a2f14;
+      --tileface:#2c362f; --tileshadow:#0a0e0c; --blank:#232c27; --good:#7ed492; --warnbg:#33290f; --warnline:#8a6d1f;
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-system,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:.5rem .9rem;font-weight:600}
+  button.primary{background:var(--teal);color:var(--teal-ink);border-color:var(--teal)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.45;cursor:default;transform:none}
+  select,input[type="text"]{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.45rem .6rem}
+  a{color:var(--teal)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 48px}
+  .freebar{background:var(--teal);color:var(--teal-ink);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:center;text-align:center;font-weight:700}
+  .freebar button{background:transparent;color:inherit;border:1.5px solid currentColor;border-radius:999px;padding:.35rem .9rem;font-weight:700}
+  header.pagehead{padding:26px 0 6px;text-align:left}
+  header.pagehead h1{font-size:2.4rem;letter-spacing:.01em}
+  header.pagehead p.lede{font-size:1.08rem;color:var(--soft);max-width:62ch;margin:.5rem 0 0}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+  nav.compass a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.35rem .85rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);text-decoration:none;font-weight:600;color:var(--ink)}
+  .variant-banner{display:none;background:var(--warnbg);border:1px solid var(--warnline);border-radius:12px;padding:10px 14px;margin:12px 0;font-weight:600}
+  .variant-banner.show{display:block}
+  .playgrid{display:grid;grid-template-columns:minmax(0,520px) 1fr;gap:22px;align-items:start;margin-top:14px}
+  @media (max-width:820px){.playgrid{grid-template-columns:1fr}}
+  .boardcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .statusrow{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .stat{background:var(--panel2);border-radius:10px;padding:6px 12px;min-width:86px}
+  .stat b{display:block;font-size:1.2rem;font-variant-numeric:tabular-nums}
+  .stat span{font-size:.78rem;color:var(--soft);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .board{position:relative;display:grid;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none}
+  .tile{position:relative;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--tileface);border:1px solid var(--line);box-shadow:0 2px 0 var(--tileshadow);font-family:Georgia,serif;font-weight:700;aspect-ratio:1/1;cursor:pointer;background-size:cover}
+  .tile .num{font-size:clamp(1.2rem,7vw,2rem)}
+  .tile.pic .num{position:absolute;left:5px;top:3px;font-size:.8rem;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:0 5px;font-family:inherit}
+  .tile.blank{background:var(--blank);box-shadow:inset 0 0 0 2px var(--line);cursor:default}
+  .tile.right{outline:3px solid var(--good);outline-offset:-3px}
+  .board.peeked .tile .num{visibility:hidden}
+  .peekimg{position:absolute;inset:8px;border-radius:10px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:cover;display:none;z-index:3}
+  .board.peeked .peekimg{display:block}
+  .peekgrid{position:absolute;inset:8px;display:none;z-index:2;background:var(--panel2);border-radius:10px;padding:0}
+  .board.peeked .peekgrid{display:grid}
+  .msg{min-height:1.6em;font-weight:700;margin:12px 0 4px}
+  .msg.win{color:var(--good);font-size:1.15rem}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .gesture-note{font-size:.85rem;color:var(--soft);margin-top:8px}
+  .sidecard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+  .sidecard h2{font-size:1.3rem;margin-bottom:8px}
+  .sidecard h3{font-size:1.05rem;margin:14px 0 4px}
+  .coachbox{background:var(--panel2);border-radius:10px;padding:12px 14px;margin-top:8px}
+  .coachbox p{margin:.35rem 0}
+  .coachmove{font-weight:800;font-size:1.05rem}
+  fieldset{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px}
+  legend{font-weight:800;padding:0 6px}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .seg label{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:.5rem .8rem;cursor:pointer;font-weight:600;min-height:2.25rem;background:var(--panel)}
+  .seg input{width:1.15rem;height:1.15rem}
+  section.block{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:22px}
+  section.block h2{font-size:1.55rem;margin-bottom:8px}
+  section.block p,section.block li{max-width:72ch}
+  table.rec{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  table.rec th,table.rec td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  table.rec th{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--soft)}
+  .recwrap{overflow-x:auto}
+  @media (max-width:560px){
+    table.rec thead{display:none}
+    table.rec tr{display:block;border-bottom:2px solid var(--line);padding:6px 0}
+    table.rec td{display:block;border-bottom:none;padding:2px 8px}
+    table.rec td::before{content:attr(data-l) " — ";font-weight:700;color:var(--soft)}
+  }
+  .tag{display:inline-block;background:var(--amberbg);color:var(--ink);border:1px solid var(--warnline);border-radius:999px;padding:.05rem .6rem;font-size:.8rem;font-weight:700}
+  footer{margin-top:26px;color:var(--soft);font-size:.92rem}
+  .kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:0 6px;font-family:inherit;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="freebar">
+  <span>Free — always free. No ads, no account, no sign-up, nothing to buy.</span>
+  <button type="button" id="dlPage">Download this page for offline play — tap to save</button>
+</div>
+
+<div class="wrap">
+  <header class="pagehead">
+    <h1>Tile Slide</h1>
+    <p class="lede">Slide the numbered tiles into the one empty gap until they run 1, 2, 3 … in order. It is our version of the 15-puzzle, the sliding-tile craze of 1879 — rebuilt here with one promise kept on every deal: <strong>every shuffle we hand you can be solved.</strong></p>
+  </header>
+
+  <nav class="compass" aria-label="On this page">
+    <a href="#play">Play</a>
+    <a href="#how">How to play</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#story">The story</a>
+    <a href="#record">Your record</a>
+    <a href="#settings">Settings</a>
+  </nav>
+
+  <div class="variant-banner" id="variantBanner" role="status"></div>
+
+  <div class="playgrid">
+    <div class="boardcard" id="play">
+      <div class="statusrow" aria-live="polite">
+        <div class="stat"><span>Moves</span><b id="stMoves">0</b></div>
+        <div class="stat"><span>Time</span><b id="stTime">0:00</b></div>
+        <div class="stat"><span>Par</span><b id="stPar">–</b></div>
+        <div class="stat"><span>Board</span><b id="stSize">4 × 4</b></div>
+      </div>
+
+      <div class="board" id="board" aria-label="Sliding tile board"></div>
+
+      <p class="msg" id="msg">Tap “New game” to shuffle a fresh, solvable board.</p>
+
+      <div class="controls">
+        <button type="button" class="primary" id="btnNew">New game — tap to shuffle</button>
+        <button type="button" id="btnPractice">Quick practice — tap for a 6-move shuffle</button>
+        <button type="button" id="btnUndo">Undo — tap to take back a move</button>
+        <button type="button" id="btnPeek">Peek at solved board — hold to look</button>
+        <button type="button" id="btnNudge">Nudge — tap for one hint</button>
+      </div>
+      <p class="gesture-note">How to move a tile: <strong>tap</strong> a tile next to the gap, or <strong>swipe</strong> it toward the gap. On a keyboard, use the <span class="kbd">arrow keys</span> to slide a tile into the gap. The timer starts on your first move.</p>
+    </div>
+
+    <div>
+      <div class="sidecard" id="settings">
+        <h2>Settings</h2>
+        <fieldset>
+          <legend>Board size — tap to choose</legend>
+          <div class="seg" id="sizeSeg">
+            <label><input type="radio" name="size" value="3"> 3 × 3 — gentlest</label>
+            <label><input type="radio" name="size" value="4" checked> 4 × 4 — the standard 15-puzzle</label>
+            <label><input type="radio" name="size" value="5"> 5 × 5 — the long game</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Tile face — tap to choose</legend>
+          <div class="seg" id="styleSeg">
+            <label><input type="radio" name="tstyle" value="numbers" checked> Numbers</label>
+            <label><input type="radio" name="tstyle" value="picture"> Picture — our own drawn hillside, cut into tiles</label>
+          </div>
+          <p style="margin:.5rem 0 0;color:var(--soft);font-size:.92rem">Picture tiles carry a small corner number so you can still tell where each piece belongs. The finished picture is the hillside scene drawn for this page — no borrowed art.</p>
+        </fieldset>
+        <fieldset>
+          <legend>Teaching — tap to choose</legend>
+          <div class="seg" id="teachSeg">
+            <label><input type="radio" name="teach" value="off"> Off — no hints</label>
+            <label><input type="radio" name="teach" value="light" checked> Light — a nudge when you ask</label>
+            <label><input type="radio" name="teach" value="coach"> Coach — step-by-step teaching on your board</label>
+          </div>
+          <p style="margin:.5rem 0 0;color:var(--soft);font-size:.92rem">Your teaching choice is saved on this device only. Nothing leaves the device.</p>
+        </fieldset>
+        <label for="alias" style="font-weight:700;display:block;margin-bottom:4px">Play name — optional, never required</label>
+        <input type="text" id="alias" maxlength="24" placeholder="Leave blank and play as you are" style="width:100%">
+        <p style="margin:.4rem 0 0;color:var(--soft);font-size:.92rem">Alias freedom: no claimed name is ever needed to play. A name you type here is only written next to your own results in your record, on this device.</p>
+      </div>
+
+      <div class="sidecard" id="coachCard">
+        <h2>Coach</h2>
+        <div id="coachBody">
+          <p>Set Teaching to <strong>Coach</strong> and the method is taught step by step on the board in front of you — what to aim for next, why, and the exact next tile to tap when the board allows one.</p>
+          <p>On <strong>Light</strong>, use the “Nudge — tap for one hint” button under the board whenever you want a single pointer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="block" id="how">
+    <h2>How to play</h2>
+    <p><strong>What it is:</strong> a grid of tiles with one square empty. Tiles next to the gap can slide into it. You win when the tiles read in order — 1 across the top row, then the next row, and so on — with the gap in the bottom-right corner.</p>
+    <p><strong>What it means:</strong> every slide moves the gap as much as the tile. Good solving is mostly gap-wrangling: putting the empty square where the next tile needs it, without wrecking tiles you have already placed.</p>
+    <p><strong>What it could mean for you:</strong> start on 3 × 3 with a quick-practice shuffle, learn the row-by-row method below with the Coach on, then take on the standard 4 × 4. Your times and move counts are kept in <a href="#record">your record</a> so you can watch the method pay off.</p>
+    <p><strong>The honesty rule, in plain words:</strong> half of all possible arrangements of this puzzle can never be solved — that is a proven mathematical fact, not a difficulty setting. So this page never shuffles by randomising the tiles. It starts from the solved board and scrambles it with real slides, which means a solution always exists: at worst, you could undo the scramble. The “par” shown above the board is that scramble length — the deal in front of you can always be finished in at most that many moves, and often in fewer.</p>
+  </section>
+
+  <section class="block" id="strategies">
+    <h2>Strategies — more than one honest way</h2>
+    <h3>Row by row (the standard method, and what the Coach teaches)</h3>
+    <p>Finish the top row left to right, then the next row, and so on — until only the last two rows remain. Solve those last two rows <em>in columns</em>, one column at a time, left to right. <strong>Trade-off:</strong> it always works and is easy to hold in your head, but it is not the fastest — the last rows cost extra moves because you are protecting everything above them.</p>
+    <h3>Why the last rows are solved in columns</h3>
+    <p>With two rows left, there is no spare row to hide tiles in. If you try to finish the second-to-last row across, the final tile of that row has nowhere to go without breaking the row above. Working down each column instead treats the two tiles in a column as a pair: park the upper tile one square below its home with its partner beside it, then swing the pair up together. That swing is the <strong>endgame pair technique</strong> — the Coach walks you through it on your own board when you get there.</p>
+    <h3>The last-tile-of-a-row pair</h3>
+    <p>The same trick appears earlier: the final two tiles of any row are hard to place one at a time. Bring them together as a pair — one sitting under the other's home square — then rotate both into place in one short sequence. Placing them separately usually ends with the pair swapped, and a swapped pair in a finished row cannot be fixed inside that row.</p>
+    <h3>Column by column (the mirror method)</h3>
+    <p>Everything above, turned sideways: finish the left column top to bottom, then the next column, and solve the last two columns in rows. <strong>Trade-off:</strong> identical in power to row by row — pick whichever direction your eyes read the board better. Some players find the endgame pairs easier to see in columns; others in rows. Neither is “the real way.”</p>
+    <h3>Fringe / layer solving (for the patient)</h3>
+    <p>Solve the whole outer frame first, leaving a smaller puzzle in the middle, then solve that. <strong>Trade-off:</strong> elegant on 5 × 5, where it shrinks a big board fast — but the frame's last tiles need the same pair technique, and one mistake in the frame is expensive to repair. Row by row is the safer first method; fringe is a good second language.</p>
+  </section>
+
+  <section class="block" id="story">
+    <h2>The story <span class="tag">Story / history</span></h2>
+    <p><strong>The craze.</strong> The sliding-tile puzzle appeared in 1879, made by Noyes Chapman, a postmaster in Canastota, New York. Within months — through the winter of 1879–80 — it swept Boston and then the world: students solved it in lectures, drivers were forbidden from solving it on duty, and it was denounced from pulpits as a work of the devil. Few toys have ever spread faster.</p>
+    <p><strong>The proof.</strong> In 1879, mathematicians William Johnson and William Story proved the fact that still defines this puzzle: exactly half of all possible arrangements can never be solved, no matter how long you slide. Whether an arrangement is solvable depends on a parity count — the number of tile swaps hidden in the layout, together with where the gap sits. Change one pair of tiles and you cross from the solvable half into the impossible half.</p>
+    <p><strong>The famous impossible challenge.</strong> The puzzle's most famous story is the “14–15” challenge, popularised by puzzle-maker Sam Loyd, who offered a $1,000 prize for solving a board that differed from solved in just one way: tiles 14 and 15 swapped. People worked on it for years. It could never be done — that single swap puts the board in the unsolvable half Johnson and Story had already described. Loyd also claimed, wrongly, to have invented the puzzle himself; the record credits Chapman. We tell it here as what it is: a story about a prize that mathematics had already made unwinnable.</p>
+    <p><strong>Why this page deals only solvable boards:</strong> a game that can secretly hand you an impossible board is not a hard game, it is a rigged one. Every shuffle here is made by sliding tiles from the solved state, so every board you will ever see on this page sits in the solvable half — guaranteed by construction, and stated plainly so you never have to take it on trust.</p>
+  </section>
+
+  <section class="block" id="record">
+    <h2>Your record</h2>
+    <p>Kept on this device only, in one consistent shape: every finished game is one entry with its date, board size, tile face, seconds, moves, par, teaching level, and play name if you gave one. Nothing is sent anywhere.</p>
+    <p id="recSummary">No finished games yet. Solve a board and it will be written here.</p>
+    <div class="recwrap">
+      <table class="rec" id="recTable" aria-label="Your finished games">
+        <thead><tr><th>Date</th><th>Board</th><th>Face</th><th>Time</th><th>Moves</th><th>Par</th><th>Vs par</th><th>Teaching</th><th>Name</th></tr></thead>
+        <tbody id="recBody"></tbody>
+      </table>
+    </div>
+    <div class="controls">
+      <button type="button" id="btnJson">Download record as JSON — tap to save</button>
+      <button type="button" id="btnCsv">Download record as CSV — tap to save</button>
+      <button type="button" id="btnForget">Forget my record — tap to erase it from this device</button>
+    </div>
+    <p id="forgetMsg" style="font-weight:700"></p>
+  </section>
+
+  <footer>
+    <p>Copyleft: this page and its text are shared under CC BY-SA 4.0 and its code under the GPL — take it, share it, improve it, and pass the same freedom on. The puzzle form is a documented 19th-century classic in the public domain; the name Tile Slide, the wording, and the drawn hillside picture are original to this page. No ads — ever.</p>
+  </footer>
+</div>
+
+<canvas id="artCanvas" width="720" height="720" style="display:none" aria-hidden="true"></canvas>
+
+<script>
+(function(){
+"use strict";
+var LS_SET="tile-slide-settings-v1", LS_REC="tile-slide-record-v1";
+function lsGet(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+
+var settings = lsGet(LS_SET) || {};
+var size = [3,4,5].indexOf(settings.size)>=0 ? settings.size : 4;
+var tstyle = settings.tstyle==="picture" ? "picture" : "numbers";
+var teach = ["off","light","coach"].indexOf(settings.teach)>=0 ? settings.teach : "light";
+var alias = typeof settings.alias==="string" ? settings.alias : "";
+
+var board=[], moves=0, par=0, started=false, solved=false, seconds=0, timerId=null;
+var scramblePath=[]; // list of states (as strings) from solved -> scrambled, index 0 = solved
+var history=[]; // tile values moved, for undo
+var artURL=null;
+
+var el=function(id){return document.getElementById(id);};
+var boardEl=el("board"), msgEl=el("msg");
+
+function saveSettings(){ lsSet(LS_SET,{size:size,tstyle:tstyle,teach:teach,alias:alias}); }
+function solvedArr(n){ var a=[]; for(var i=1;i<n*n;i++) a.push(i); a.push(0); return a; }
+function key(a){ return a.join(","); }
+function idxOf(a,v){ return a.indexOf(v); }
+function neighbours(pos,n){
+  var r=Math.floor(pos/n), c=pos%n, out=[];
+  if(r>0) out.push(pos-n); if(r<n-1) out.push(pos+n);
+  if(c>0) out.push(pos-1); if(c<n-1) out.push(pos+1);
+  return out;
+}
+function isSolved(a){ for(var i=0;i<a.length-1;i++){ if(a[i]!==i+1) return false; } return a[a.length-1]===0; }
+
+/* ---------- original drawn picture ---------- */
+function drawArt(){
+  var cv=el("artCanvas"), x=cv.getContext("2d"), W=720;
+  var sky=x.createLinearGradient(0,0,0,430); sky.addColorStop(0,"#8ec9e8"); sky.addColorStop(1,"#dff0f7");
+  x.fillStyle=sky; x.fillRect(0,0,W,430);
+  x.fillStyle="#f7c948"; x.beginPath(); x.arc(590,120,62,0,7); x.fill();
+  x.fillStyle="rgba(247,201,72,.35)"; x.beginPath(); x.arc(590,120,92,0,7); x.fill();
+  x.fillStyle="#ffffff";
+  [[150,95,52],[205,95,40],[110,105,34],[430,70,44],[478,70,32]].forEach(function(c){ x.beginPath(); x.arc(c[0],c[1],c[2],0,7); x.fill(); });
+  x.fillStyle="#7d9b76"; x.beginPath(); x.moveTo(0,430); x.lineTo(180,210); x.lineTo(360,430); x.closePath(); x.fill();
+  x.fillStyle="#5d8268"; x.beginPath(); x.moveTo(240,430); x.lineTo(470,180); x.lineTo(720,430); x.closePath(); x.fill();
+  x.fillStyle="#eef4ee"; x.beginPath(); x.moveTo(470,180); x.lineTo(522,238); x.lineTo(492,252); x.lineTo(470,232); x.lineTo(448,252); x.lineTo(418,238); x.closePath(); x.fill();
+  var gr=x.createLinearGradient(0,430,0,720); gr.addColorStop(0,"#79a95c"); gr.addColorStop(1,"#4e7d3a");
+  x.fillStyle=gr; x.fillRect(0,430,W,290);
+  x.fillStyle="#6db3d8"; x.beginPath(); x.moveTo(330,720); x.bezierCurveTo(360,620,300,560,345,470); x.lineTo(395,470); x.bezierCurveTo(360,560,430,630,405,720); x.closePath(); x.fill();
+  x.fillStyle="#8a5a33"; x.fillRect(96,470,16,86);
+  x.fillStyle="#3f7a37"; x.beginPath(); x.arc(104,442,58,0,7); x.fill(); x.beginPath(); x.arc(66,470,38,0,7); x.fill(); x.beginPath(); x.arc(142,470,38,0,7); x.fill();
+  x.fillStyle="#c94f38"; x.beginPath(); x.arc(84,430,7,0,7); x.arc(124,452,7,0,7); x.arc(104,478,7,0,7); x.fill();
+  x.fillStyle="#f2e3c6"; x.fillRect(520,452,120,92);
+  x.fillStyle="#a33b2e"; x.beginPath(); x.moveTo(505,452); x.lineTo(580,408); x.lineTo(655,452); x.closePath(); x.fill();
+  x.fillStyle="#5b4632"; x.fillRect(562,486,34,58); x.fillStyle="#ffe9a8"; x.fillRect(532,472,26,26); x.fillRect(606,472,26,26);
+  x.strokeStyle="#8a5a33"; x.lineWidth=6; x.beginPath(); x.moveTo(0,600); x.lineTo(300,600); x.moveTo(430,640); x.lineTo(720,640); x.stroke();
+  x.lineWidth=4; [40,110,180,250].forEach(function(px){ x.beginPath(); x.moveTo(px,584); x.lineTo(px,616); x.stroke(); });
+  [470,540,610,680].forEach(function(px){ x.beginPath(); x.moveTo(px,624); x.lineTo(px,656); x.stroke(); });
+  x.fillStyle="#e85d75"; [180,215,520,560,250].forEach(function(px,i){ x.beginPath(); x.arc(px,640+((i*29)%50),8,0,7); x.fill(); });
+  x.fillStyle="#f7c948"; [197,540,268].forEach(function(px,i){ x.beginPath(); x.arc(px,652+((i*37)%44),7,0,7); x.fill(); });
+  artURL=cv.toDataURL("image/png");
+}
+
+/* ---------- game ---------- */
+function scramble(count){
+  var n=size, a=solvedArr(n), path=[key(a)], lastBlank=-1;
+  for(var i=0;i<count;i++){
+    var blank=idxOf(a,0), opts=neighbours(blank,n).filter(function(p){return p!==lastBlank;});
+    var pick=opts[Math.floor(Math.random()*opts.length)];
+    lastBlank=blank;
+    a[blank]=a[pick]; a[pick]=0; path.push(key(a));
+  }
+  if(isSolved(a)) return scramble(count);
+  return {arr:a, path:path, par:count};
+}
+function fullScrambleCount(){ return size===3?40:(size===4?80:120); }
+
+function newGame(practice){
+  var s=scramble(practice?6:fullScrambleCount());
+  board=s.arr; scramblePath=s.path; par=s.par;
+  moves=0; seconds=0; started=false; solved=false; history=[];
+  stopTimer(); render(); updateStatus(); updateBanner();
+  msgEl.className="msg";
+  msgEl.textContent = practice
+    ? "Practice board dealt — 6 slides from solved, and solvable by construction. Tap a tile next to the gap."
+    : "New board dealt — solvable by construction, as always. Tap a tile next to the gap to start the clock.";
+  renderCoach();
+}
+function startTimer(){
+  if(timerId) return;
+  timerId=setInterval(function(){ seconds++; el("stTime").textContent=fmtTime(seconds); },1000);
+}
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+function fmtTime(s){ return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+
+function render(){
+  var n=size;
+  boardEl.style.gridTemplateColumns="repeat("+n+",1fr)";
+  boardEl.innerHTML="";
+  boardEl.classList.remove("peeked");
+  var peek=document.createElement("div"); peek.className="peekgrid"; peek.id="peekGrid";
+  peek.style.gridTemplateColumns="repeat("+n+",1fr)"; peek.style.gap="6px";
+  var solvedA=solvedArr(n);
+  solvedA.forEach(function(v,i){
+    var d=document.createElement("div"); d.className="tile"+(v===0?" blank":"");
+    if(v!==0){ if(tstyle==="picture"){ d.classList.add("pic"); d.style.backgroundImage="url("+artURL+")"; d.style.backgroundSize=(n*100)+"% "+(n*100)+"%"; d.style.backgroundPosition=(((v-1)%n)/(n-1)*100)+"% "+(Math.floor((v-1)/n)/(n-1)*100)+"%"; } 
+      d.innerHTML='<span class="num">'+v+"</span>"; }
+    peek.appendChild(d);
+  });
+  boardEl.appendChild(peek);
+  if(tstyle==="picture" && artURL){
+    var img=document.createElement("img"); img.className="peekimg"; img.src=artURL; img.alt="The finished hillside picture"; boardEl.appendChild(img);
+  }
+  board.forEach(function(v,i){
+    var d=document.createElement("div");
+    d.className="tile"+(v===0?" blank":"");
+    d.setAttribute("role","button");
+    if(v!==0){
+      d.dataset.tile=v; d.dataset.pos=i;
+      d.setAttribute("aria-label","Tile "+v+". Tap to slide it into the gap if it is next to it.");
+      if(tstyle==="picture"){
+        d.classList.add("pic");
+        d.style.backgroundImage="url("+artURL+")";
+        d.style.backgroundSize=(n*100)+"% "+(n*100)+"%";
+        d.style.backgroundPosition=(((v-1)%n)/(n-1)*100)+"% "+(Math.floor((v-1)/n)/(n-1)*100)+"%";
+      }
+      d.innerHTML='<span class="num">'+v+"</span>";
+      if(v===i+1) d.classList.add("right");
+      d.addEventListener("click",function(){ tapPos(i); });
+    } else {
+      d.setAttribute("aria-label","Empty gap");
+    }
+    boardEl.appendChild(d);
+  });
+}
+function updateStatus(){
+  el("stMoves").textContent=moves;
+  el("stTime").textContent=fmtTime(seconds);
+  el("stPar").textContent=par?String(par):"–";
+  el("stSize").textContent=size+" × "+size;
+}
+function updateBanner(){
+  var b=el("variantBanner"), parts=[];
+  if(size!==4) parts.push(size+" × "+size+" board");
+  if(tstyle==="picture") parts.push("picture tiles");
+  if(parts.length){
+    b.textContent="Variant in play: "+parts.join(" + ")+". Results are recorded as "+parts.join(" + ")+" — never dressed up as the standard 4 × 4 numbers game.";
+    b.classList.add("show");
+  } else {
+    b.textContent=""; b.classList.remove("show");
+  }
+}
+function tapPos(pos){
+  if(solved || !board.length) return;
+  var n=size, blank=idxOf(board,0);
+  if(neighbours(blank,n).indexOf(pos)<0) return;
+  doMove(pos);
+}
+function doMove(pos){
+  var blank=idxOf(board,0), v=board[pos];
+  board[blank]=v; board[pos]=0; moves++; history.push(v);
+  if(!started){ started=true; startTimer(); }
+  render(); updateStatus();
+  if(isSolved(board)){ onWin(); } else { renderCoach(); }
+}
+function undo(){
+  if(solved || !history.length) return;
+  var v=history.pop(), blank=idxOf(board,0), pos=idxOf(board,v);
+  board[blank]=v; board[pos]=0; moves++;
+  render(); updateStatus(); renderCoach();
+  msgEl.className="msg"; msgEl.textContent="Took back the last slide. (The undo slide counts as a move — the record stays honest.)";
+}
+function onWin(){
+  solved=true; stopTimer();
+  msgEl.className="msg win";
+  msgEl.textContent="Solved! "+moves+" moves in "+fmtTime(seconds)+" — par was "+par+", so you finished "+(moves<=par?"at or under":"over")+" par. Written into your record below.";
+  writeRecord();
+  renderCoach(true);
+}
+
+/* ---------- solver for 3x3 (A*, Manhattan) ---------- */
+function manhattan(a,n){
+  var s=0;
+  for(var i=0;i<a.length;i++){ var v=a[i]; if(!v) continue;
+    var t=v-1; s+=Math.abs(Math.floor(i/n)-Math.floor(t/n))+Math.abs((i%n)-(t%n)); }
+  return s;
+}
+function solve3(a){
+  var n=3, start=key(a), goal=key(solvedArr(3));
+  if(start===goal) return [];
+  var open=[{k:start,a:a.slice(),g:0,f:manhattan(a,n),parent:null,move:null}];
+  var seen={}; seen[start]=0;
+  var guard=0;
+  while(open.length && guard++<200000){
+    var bi=0; for(var i=1;i<open.length;i++) if(open[i].f<open[bi].f) bi=i;
+    var cur=open.splice(bi,1)[0];
+    if(cur.k===goal){
+      var path=[]; while(cur.parent){ path.unshift(cur.move); cur=cur.parent; } return path;
+    }
+    var blank=idxOf(cur.a,0);
+    neighbours(blank,n).forEach(function(p){
+      var na=cur.a.slice(); na[blank]=na[p]; na[p]=0;
+      var nk=key(na), g=cur.g+1;
+      if(seen[nk]!==undefined && seen[nk]<=g) return;
+      seen[nk]=g;
+      open.push({k:nk,a:na,g:g,f:g+manhattan(na,n),parent:cur,move:na[blank]});
+    });
+  }
+  return null;
+}
+function nextExactMove(){
+  if(size===3){ var p=solve3(board); return (p&&p.length)?p[0]:null; }
+  var k=key(board), idx=scramblePath.indexOf(k);
+  if(idx>0){ // one step back along the scramble path undoes a scramble slide
+    var prev=scramblePath[idx-1].split(",").map(Number);
+    var bNow=idxOf(board,0);
+    return prev[bNow]; // tile that sits where the gap must go back to
+  }
+  return null;
+}
+
+/* ---------- coaching ---------- */
+function goalInfo(){
+  var n=size, a=board;
+  // rows above the last two
+  for(var r=0;r<n-2;r++){
+    for(var c=0;c<n;c++){
+      var v=r*n+c+1;
+      if(a[r*n+c]!==v){
+        var isLast=(c===n-1);
+        return {kind:"row", tile:v, row:r+1, lastInRow:isLast,
+          text:"Goal: tile "+v+" into row "+(r+1)+(isLast?", the last tile of that row.":"")};
+      }
+    }
+  }
+  // last two rows, column by column
+  for(var c2=0;c2<n;c2++){
+    var top=(n-2)*n+c2+1, bot=(n-1)*n+c2+1;
+    if(a[(n-2)*n+c2]!==top) return {kind:"endcol", tile:top, col:c2+1, pair:bot,
+      text:"Goal: tile "+top+" — the top tile of column "+(c2+1)+" in the last two rows."};
+    if(a[(n-1)*n+c2]!==bot) return {kind:"endcol", tile:bot, col:c2+1, pair:top,
+      text:"Goal: tile "+bot+" — the bottom tile of column "+(c2+1)+" in the last two rows."};
+  }
+  return null;
+}
+function coachHTML(won){
+  if(won) return "<p><strong>Solved — nicely done.</strong> Notice what the method did: rows first, then the last two rows fell column by column. That shape works on every solvable board, at every size on this page.</p>";
+  var g=goalInfo(); if(!g) return "<p>This board is solved.</p>";
+  var h="<p>"+g.text+"</p>";
+  if(g.kind==="row" && !g.lastInRow){
+    h+="<p>Slide the gap next to tile "+g.tile+", then walk the tile toward its home square. If the gap is trapped behind finished tiles, loop it around through unfinished squares only — never break a finished row.</p>";
+  }
+  if(g.kind==="row" && g.lastInRow){
+    h+="<p><strong>Endgame pair technique (row edition):</strong> the last tile of a row rarely goes in alone. Park tile "+g.tile+" one square <em>below</em> its home, with the gap beside it, then swing it up and across. If you place the row's second-to-last tile first and leave this one stranded, the pair usually ends up swapped — bring them in together instead.</p>";
+  }
+  if(g.kind==="endcol"){
+    h+="<p><strong>Why columns now:</strong> only two rows are left, so there is no spare row to hide tiles in. Finishing across would force the last tile of the upper row to break everything above it. Working down each column keeps the finished rows untouched.</p>";
+    h+="<p><strong>Endgame pair technique:</strong> treat tiles "+g.tile+" and "+g.pair+" as one pair. Park the top tile one square to the <em>right</em> of its home with its partner directly under it, then swing the pair left together into the column. One at a time, they almost always land swapped.</p>";
+  }
+  var mv=nextExactMove();
+  if(mv!==null && mv!==undefined){
+    h+='<p class="coachmove">Coach\u2019s next move: tap tile '+mv+".</p>";
+    if(size===3) h+="<p>That move comes from a full search of your actual board — on 3 × 3 it is a shortest-path move, not a guess.</p>";
+    else h+="<p>That move retraces the scramble one step — always safe, though not always the shortest route from here.</p>";
+  } else {
+    h+="<p>No single forced move from here — work the gap toward tile "+g.tile+" using unfinished squares, and the next step will sharpen.</p>";
+  }
+  return h;
+}
+function renderCoach(won){
+  var body=el("coachBody");
+  if(teach==="coach"){
+    if(!board.length){ body.innerHTML="<p>Deal a board and coaching starts here.</p>"; return; }
+    body.innerHTML=coachHTML(!!won);
+  } else if(teach==="light"){
+    body.innerHTML="<p>Light teaching is on: play freely, and tap <strong>“Nudge — tap for one hint”</strong> under the board when you want a single pointer.</p>";
+  } else {
+    body.innerHTML="<p>Teaching is off. No hints will be offered. The method is written out in full under <a href=\"#strategies\">Strategies</a> whenever you want it.</p>";
+  }
+  el("btnNudge").style.display = teach==="light" ? "" : "none";
+}
+function nudge(){
+  if(!board.length || solved) return;
+  var g=goalInfo(); if(!g){ return; }
+  var mv=nextExactMove();
+  msgEl.className="msg";
+  msgEl.textContent="Nudge: "+g.text+(mv!==null&&mv!==undefined ? " Try tapping tile "+mv+" when it sits next to the gap." : " Get the gap next to it using unfinished squares.");
+}
+
+/* ---------- record ---------- */
+function getRecord(){ var r=lsGet(LS_REC); return (r&&Array.isArray(r.games))?r:{version:1,games:[]}; }
+function writeRecord(){
+  var rec=getRecord();
+  rec.games.push({
+    endedAt:new Date().toISOString(),
+    size:size, style:tstyle, seconds:seconds, moves:moves, par:par,
+    teaching:teach, alias:alias||""
+  });
+  lsSet(LS_REC,rec); renderRecord();
+}
+function vsPar(g){ var d=g.moves-g.par; return d===0?"level":(d<0?("−"+Math.abs(d)):"+"+d); }
+function renderRecord(){
+  var rec=getRecord(), body=el("recBody"); body.innerHTML="";
+  var sum=el("recSummary");
+  if(!rec.games.length){ sum.textContent="No finished games yet. Solve a board and it will be written here."; return; }
+  var best={};
+  rec.games.forEach(function(g){ if(!best[g.size]||g.seconds<best[g.size]) best[g.size]=g.seconds; });
+  var parts=Object.keys(best).sort().map(function(s){ return s+" × "+s+" best "+fmtTime(best[s]); });
+  sum.textContent=rec.games.length+" finished game"+(rec.games.length===1?"":"s")+" on this device. "+parts.join(" · ")+".";
+  rec.games.slice().reverse().forEach(function(g){
+    var tr=document.createElement("tr");
+    var d=new Date(g.endedAt);
+    var cells=[d.toLocaleDateString()+" "+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}),
+      g.size+" × "+g.size, g.style, fmtTime(g.seconds), g.moves, g.par, vsPar(g), g.teaching, g.alias||"—"];
+    var labels=["Date","Board","Face","Time","Moves","Par","Vs par","Teaching","Name"];
+    cells.forEach(function(c,i){ var td=document.createElement("td"); td.dataset.l=labels[i]; td.textContent=c; tr.appendChild(td); });
+    body.appendChild(tr);
+  });
+}
+function download(name, text, type){
+  var b=new Blob([text],{type:type}), u=URL.createObjectURL(b), a=document.createElement("a");
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); },400);
+}
+
+/* ---------- wiring ---------- */
+function syncControls(){
+  document.querySelectorAll('input[name="size"]').forEach(function(r){ r.checked=Number(r.value)===size; });
+  document.querySelectorAll('input[name="tstyle"]').forEach(function(r){ r.checked=r.value===tstyle; });
+  document.querySelectorAll('input[name="teach"]').forEach(function(r){ r.checked=r.value===teach; });
+  el("alias").value=alias;
+}
+el("sizeSeg").addEventListener("change",function(e){ size=Number(e.target.value); saveSettings(); newGame(false); });
+el("styleSeg").addEventListener("change",function(e){ tstyle=e.target.value; saveSettings(); render(); updateBanner(); });
+el("teachSeg").addEventListener("change",function(e){ teach=e.target.value; saveSettings(); renderCoach(); });
+el("alias").addEventListener("change",function(e){ alias=e.target.value.trim(); saveSettings(); });
+el("btnNew").addEventListener("click",function(){ newGame(false); });
+el("btnPractice").addEventListener("click",function(){ newGame(true); });
+el("btnUndo").addEventListener("click",undo);
+el("btnNudge").addEventListener("click",nudge);
+var peekOn=function(e){ e.preventDefault(); boardEl.classList.add("peeked"); };
+var peekOff=function(){ boardEl.classList.remove("peeked"); };
+el("btnPeek").addEventListener("pointerdown",peekOn);
+el("btnPeek").addEventListener("pointerup",peekOff);
+el("btnPeek").addEventListener("pointerleave",peekOff);
+el("dlPage").addEventListener("click",function(){
+  download("tile-slide.html","<!doctype html>\n"+document.documentElement.outerHTML,"text/html");
+});
+el("btnJson").addEventListener("click",function(){ download("tile-slide-record.json",JSON.stringify(getRecord(),null,2),"application/json"); });
+el("btnCsv").addEventListener("click",function(){
+  var rows=[["endedAt","size","style","seconds","moves","par","teaching","alias"]];
+  getRecord().games.forEach(function(g){ rows.push([g.endedAt,g.size,g.style,g.seconds,g.moves,g.par,g.teaching,'"'+String(g.alias||"").replace(/"/g,'""')+'"']); });
+  download("tile-slide-record.csv",rows.map(function(r){return r.join(",");}).join("\n"),"text/csv");
+});
+el("btnForget").addEventListener("click",function(){
+  lsDel(LS_REC); renderRecord();
+  el("forgetMsg").textContent="Record erased from this device. Settings (board size, teaching) were kept — forget those by changing them above.";
+});
+
+/* swipe: slide a tile toward the gap */
+var swipeStart=null;
+boardEl.addEventListener("pointerdown",function(e){
+  var t=e.target.closest(".tile"); if(!t||!t.dataset.pos) return;
+  swipeStart={pos:Number(t.dataset.pos),x:e.clientX,y:e.clientY};
+});
+boardEl.addEventListener("pointerup",function(e){
+  if(!swipeStart) return;
+  var dx=e.clientX-swipeStart.x, dy=e.clientY-swipeStart.y, pos=swipeStart.pos; swipeStart=null;
+  if(Math.abs(dx)<14 && Math.abs(dy)<14) return; // a tap; click handler covers it
+  var n=size, blank=idxOf(board,0);
+  if(neighbours(blank,n).indexOf(pos)<0) return;
+  var dir = Math.abs(dx)>Math.abs(dy) ? (dx>0?1:-1) : (dy>0?n:-n);
+  if(pos+dir===blank) tapPos(pos);
+});
+document.addEventListener("keydown",function(e){
+  if(!board.length||solved) return;
+  var n=size, blank=idxOf(board,0), target=null;
+  // Arrow points the way the TILE slides into the gap
+  if(e.key==="ArrowUp") target=blank+n; else if(e.key==="ArrowDown") target=blank-n;
+  else if(e.key==="ArrowLeft") target=blank+1; else if(e.key==="ArrowRight") target=blank-1;
+  if(target!==null && target>=0 && target<n*n && neighbours(blank,n).indexOf(target)>=0){ e.preventDefault(); tapPos(target); }
+});
+
+/* ---------- test hooks (used by the page's own verification) ---------- */
+window.TileSlide={
+  state:function(){ return {board:board.slice(),size:size,moves:moves,seconds:seconds,par:par,solved:solved,teach:teach,style:tstyle}; },
+  newGame:newGame, tapPos:tapPos, setSize:function(s){ size=s; saveSettings(); syncControls(); },
+  setTeach:function(t){ teach=t; saveSettings(); syncControls(); renderCoach(); },
+  nextMove:nextExactMove, record:getRecord, goal:goalInfo
+};
+
+/* ---------- go ---------- */
+drawArt();
+syncControls();
+renderRecord();
+newGame(false);
+})();
+</script>
+</body>
+</html>
