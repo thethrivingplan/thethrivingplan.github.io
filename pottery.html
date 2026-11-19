@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Wheel — a pottery game</title>
+<style>
+  button, [role="button"], select, summary, input:not([type="checkbox"],[type="radio"]) { min-height: 2.25rem; }
+  * { box-sizing: border-box; }
+  :root{
+    --bg:#f6f1ea; --panel:#fffdf9; --panel2:#efe6da; --ink:#2c2019; --ink-soft:#5d4c40;
+    --line:#d8c9b8; --accent:#a2492a; --accent-ink:#ffffff; --accent-soft:#f3ddd2;
+    --good:#3e7d3a; --warn:#b07d1e; --bad:#b3362a; --water:#3d6e91;
+    --shadow:0 1px 3px rgba(60,35,20,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1c1512; --panel:#28201b; --panel2:#332922; --ink:#f0e6dc; --ink-soft:#c9b8a8;
+      --line:#4c3d33; --accent:#d97a52; --accent-ink:#241611; --accent-soft:#4a2e22;
+      --good:#8fce8a; --warn:#e3b45c; --bad:#ef8a7d; --water:#8ab6d9;
+      --shadow:0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif; line-height:1.5; }
+  h1,h2,h3{ font-family:Georgia,"Iowan Old Style","Times New Roman",serif; line-height:1.2; margin:.2em 0 .45em; }
+  h1{ font-size:2rem; } h2{ font-size:1.35rem; } h3{ font-size:1.08rem; }
+  p{ margin:.45em 0; } .soft{ color:var(--ink-soft); } .small{ font-size:.88rem; }
+  a{ color:var(--accent); }
+  .wrap{ max-width:1060px; margin:0 auto; padding:0 16px 48px; }
+  .freeline{ background:var(--accent); color:var(--accent-ink); padding:10px 16px; font-weight:600;
+    display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; justify-content:space-between; }
+  .freeline button{ background:var(--accent-ink); color:var(--accent); border:0; border-radius:8px;
+    padding:6px 14px; font-weight:700; cursor:pointer; }
+  .compass{ display:flex; flex-wrap:wrap; gap:4px 6px; padding:10px 0 2px; }
+  .compass a{ display:inline-flex; align-items:center; min-height:2.25rem; padding:4px 12px; border:1px solid var(--line);
+    border-radius:999px; text-decoration:none; color:var(--ink); background:var(--panel); font-size:.92rem; }
+  .hero{ padding:14px 0 4px; }
+  .limits{ border:1px solid var(--warn); border-radius:10px; padding:10px 14px; background:var(--panel); margin:12px 0; }
+  .limits strong{ color:var(--warn); }
+  .variant-banner{ display:none; border:1px dashed var(--accent); background:var(--accent-soft); color:var(--ink);
+    border-radius:10px; padding:8px 14px; margin:10px 0; font-size:.95rem; }
+  .variant-banner.show{ display:block; }
+  .grid{ display:grid; grid-template-columns:1fr; gap:16px; }
+  @media (min-width:880px){ .grid{ grid-template-columns: 1.25fr .95fr; } }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); margin:14px 0; }
+  .stage-head{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px; }
+  .steps{ display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 4px; }
+  .steps span{ font-size:.78rem; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); }
+  .steps span.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .steps span.done{ background:var(--panel2); color:var(--ink); }
+  .wheelbox{ background:var(--panel2); border-radius:12px; padding:10px; text-align:center; }
+  svg.pot{ width:100%; max-width:380px; height:auto; }
+  .meters{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; margin-top:10px; text-align:left; }
+  .meter{ font-size:.85rem; }
+  .meter .bar{ height:10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; overflow:hidden; margin-top:2px; }
+  .meter .fill{ height:100%; background:var(--accent); width:0%; transition:width .15s linear; }
+  .meter .fill.water{ background:var(--water); } .meter .fill.good{ background:var(--good); }
+  .meter .fill.warn{ background:var(--warn); } .meter .fill.bad{ background:var(--bad); }
+  .controls{ margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; }
+  button.btn{ border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:10px;
+    padding:9px 14px; font-size:1rem; cursor:pointer; }
+  button.btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700; }
+  button.btn:disabled{ opacity:.45; cursor:not-allowed; }
+  button.btn:active{ transform:translateY(1px); }
+  button.btn.holding{ outline:3px solid var(--accent-soft); }
+  .nudge-pad{ display:grid; grid-template-columns:repeat(3,64px); gap:6px; justify-content:center; margin-top:6px; }
+  .nudge-pad button{ min-height:2.75rem; font-size:1.05rem; }
+  .coach{ border-left:4px solid var(--accent); background:var(--panel2); border-radius:0 10px 10px 0; padding:10px 14px; margin-top:12px; }
+  .coach h3{ margin-top:0; }
+  .coach .note{ margin:.35em 0; }
+  .strat{ border:1px solid var(--line); border-radius:10px; padding:8px 12px; margin:8px 0; background:var(--panel); }
+  .strat button{ margin-top:4px; }
+  .strat.chosen{ border-color:var(--accent); background:var(--accent-soft); }
+  .dial{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .dial button{ border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:999px; padding:6px 14px; cursor:pointer; }
+  .dial button.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .orders{ display:grid; grid-template-columns:1fr; gap:10px; }
+  @media (min-width:640px){ .orders{ grid-template-columns:1fr 1fr; } }
+  .order{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--panel); }
+  .order.locked{ opacity:.62; }
+  .order h3{ margin-top:0; display:flex; justify-content:space-between; align-items:baseline; }
+  .tag{ font-size:.75rem; border:1px solid var(--line); border-radius:999px; padding:2px 8px; color:var(--ink-soft); white-space:nowrap; }
+  .tag.hot{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  label.field{ display:block; margin:10px 0; font-weight:600; }
+  label.field input, label.field select{ display:block; width:100%; margin-top:4px; padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; background:var(--panel); color:var(--ink); font-size:1rem; font-weight:400; }
+  .seg{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .seg button{ border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; font-weight:400; }
+  .seg button.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .videos{ display:grid; grid-template-columns:1fr; gap:10px; }
+  @media (min-width:640px){ .videos{ grid-template-columns:1fr 1fr; } }
+  .video{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--panel); }
+  .video h3{ margin:0 0 2px; font-size:1rem; font-family:inherit; font-weight:700; }
+  table.rec{ width:100%; border-collapse:collapse; font-size:.92rem; }
+  table.rec th, table.rec td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  @media (max-width:640px){
+    table.rec, table.rec tbody, table.rec tr, table.rec td{ display:block; width:100%; }
+    table.rec tr.head{ display:none; }
+    table.rec tr{ border-bottom:2px solid var(--line); padding:6px 0; }
+    table.rec td{ border-bottom:0; padding:3px 8px; }
+    table.rec td::before{ content:attr(data-label) ": "; font-weight:700; color:var(--ink-soft); }
+    table.rec td:empty{ display:none; }
+  }
+  .grade-big{ font-size:2.4rem; font-family:Georgia,serif; font-weight:700; }
+  .swatches{ display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
+  .swatches button{ width:52px; height:52px; border-radius:10px; border:2px solid var(--line); cursor:pointer; }
+  .swatches button.on{ border-color:var(--ink); outline:3px solid var(--accent-soft); }
+  .sweepwrap{ margin-top:10px; }
+  .sweep{ position:relative; height:26px; background:var(--bg); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .sweep .zone{ position:absolute; top:0; bottom:0; background:var(--good); opacity:.35; }
+  .sweep .marker{ position:absolute; top:0; bottom:0; width:5px; background:var(--accent); left:0%; }
+  footer{ border-top:1px solid var(--line); margin-top:26px; padding-top:14px; }
+  .kbd-hint{ font-size:.82rem; color:var(--ink-soft); }
+  #toast{ position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:var(--bg);
+    padding:10px 18px; border-radius:999px; font-size:.95rem; opacity:0; pointer-events:none; transition:opacity .25s; max-width:92vw; text-align:center; z-index:50; }
+  #toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+<div class="freeline">
+  <span>Free — always free. No ads, no account, nothing to buy.</span>
+  <span><button id="dlPage" type="button">Download this page — tap to save it for offline play</button></span>
+</div>
+<div class="wrap">
+  <nav class="compass" aria-label="Compass">
+    <a href="#wheel">The Wheel</a>
+    <a href="#orders">Orders</a>
+    <a href="#craft">The Craft</a>
+    <a href="#watch">Watch it done</a>
+    <a href="#record">Your record</a>
+    <a href="#settings">Settings</a>
+  </nav>
+
+  <header class="hero">
+    <h1>The Wheel</h1>
+    <p>A pottery game about the real sequence of throwing a pot: wedge the clay, centre it, open it,
+    pull the walls up in passes, shape it to the order, wire it off, glaze it, fire it. Your grade comes
+    from the same things a real pot is judged by — how well it was centred, how even the walls are, and
+    how close the shape lands to the one that was asked for.</p>
+    <p class="soft">Built on the documented craft of wheel-thrown pottery, in our own words: the sequence
+    above is the sequence potters have used for centuries, and every lesson the Coach gives is a lesson
+    from that craft, applied to the piece actually on your wheel.</p>
+  </header>
+
+  <div class="limits" role="note">
+    <strong>Honest limits, printed plainly:</strong> a game can teach the <em>shape</em> of this craft — the
+    order of the steps, the reasons behind them, what goes wrong and why. It cannot teach the <em>feel</em> of
+    clay in your hands: the pressure that is “enough,” the wobble you sense before you see it. That only
+    comes from real clay on a real wheel. Treat this as a map, not the territory — then go find a wheel.
+  </div>
+
+  <div class="variant-banner" id="variantBanner" role="status"></div>
+
+  <div class="grid">
+    <section class="card" id="wheel" aria-label="The wheel">
+      <div class="stage-head">
+        <h2 id="stageTitle">The wheel is empty</h2>
+        <span class="tag" id="pieceTag">No clay on the wheel</span>
+      </div>
+      <div class="steps" id="stepsBar" aria-hidden="true"></div>
+      <div class="wheelbox">
+        <svg class="pot" id="potSvg" viewBox="0 0 300 260" role="img" aria-label="Your piece on the wheel"></svg>
+        <div class="meters" id="meters"></div>
+        <div class="sweepwrap" id="sweepWrap" style="display:none">
+          <div class="sweep" aria-hidden="true"><div class="zone" id="sweepZone"></div><div class="marker" id="sweepMarker"></div></div>
+          <p class="small soft" id="sweepLabel"></p>
+        </div>
+      </div>
+      <div class="controls" id="stageControls"></div>
+      <div id="stageExtra"></div>
+      <div class="coach" id="coachBox">
+        <h3 id="coachTitle">Note</h3>
+        <div id="coachBody"></div>
+      </div>
+    </section>
+
+    <div>
+      <section class="card" aria-label="Teaching dial and order">
+        <h2>Teaching</h2>
+        <p class="small soft">How much teaching reaches you is your dial. It is saved on this device only.</p>
+        <div class="dial" role="group" aria-label="Teaching dial">
+          <button type="button" data-dial="off">Off — tap to choose</button>
+          <button type="button" data-dial="light">Light — tap to choose</button>
+          <button type="button" data-dial="coach">Coach — tap to choose</button>
+        </div>
+        <p class="small" id="dialExplain"></p>
+        <label class="field">Throwing as <span class="soft">(optional — any name you like, or none at all; a name is never required)</span>
+          <input id="aliasInput" type="text" maxlength="30" placeholder="Leave blank to throw as a guest potter" autocomplete="off" />
+        </label>
+        <div id="currentOrderBox">
+          <h3>Current order</h3>
+          <p id="currentOrderText" class="soft">No order taken yet. Pick one from the order board below — tap an order to take it.</p>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Pro tools" id="proTools" style="display:none">
+        <h2>Pro tools</h2>
+        <p class="small soft">The measuring tools a working potter reaches for, reading your actual piece.</p>
+        <div id="proBody"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card" id="orders">
+    <h2>Order board</h2>
+    <p>Orders are the ladder: cups and bowls first, then the taller, less forgiving work. Fill orders to
+    unlock the next rung. A filled order means the fired piece graded C or better against what was asked for.</p>
+    <div class="orders" id="orderBoard"></div>
+    <p class="small soft">Rather just practise? <button class="btn" id="practiceBtn" type="button">Throw a practice cup — tap to start, no order, no pressure</button></p>
+  </section>
+
+  <section class="card" id="craft">
+    <h2>The craft, in plain words</h2>
+    <h3>Why centring is everything</h3>
+    <p>Every later step inherits the centre. If the lump spins even slightly off-centre, the walls come up
+    uneven no matter how skilled the pulls are — one side thick, one side thin, and the thin side is where
+    the pot will fail. Potters say you do not decorate a pot into being good; you centre it into being possible.</p>
+    <h3>Water discipline</h3>
+    <p>Water is lubrication, not an ingredient. A wet surface lets hands glide; a soaked wall turns to soup,
+    loses its strength, and slumps or tears. The rule at a real wheel: wet the surface, never flood the clay.
+    In this game your water gauge is the whole lesson — pulls drag and score badly when the clay is dry, and
+    the collapse risk climbs steeply when it is soaked.</p>
+    <h3>Pull speed against wall height</h3>
+    <p>A pull moves a small wave of clay upward. Move your hands faster than one wheel revolution per stretch
+    of wall and the wave spirals, leaving ridges and thin spots. Slow, steady pulls that take a full turn of
+    the wheel to travel are how walls come up even. Height is bought with patience, pass by pass — three
+    honest pulls beat one heroic one.</p>
+    <h3>What a collapse teaches</h3>
+    <p>A collapsed wall is not a failed potter; it is information. It tells you exactly where the wall was
+    thinnest, how wet the clay had become, and which pull asked for more than the clay had. Every collapse
+    in this game is written into your record with its cause named, because at a real wheel that is what a
+    collapse is for.</p>
+  </section>
+
+  <section class="card" id="watch">
+    <h2>Watch it done</h2>
+    <p>Real hands on a real wheel teach what words cannot. Every video below was opened and checked before
+    it was listed — the title and the channel beside each link are the video’s own.</p>
+    <div class="videos" id="videoShelf"></div>
+  </section>
+
+  <section class="card" id="record">
+    <h2>Your record</h2>
+    <p class="small soft">Saved on this device only. Nothing is sent anywhere, and there is no account.
+    Every finished piece and every collapse is written here in the same shape, so the record can be
+    exported and read anywhere.</p>
+    <div id="recordSummary"></div>
+    <div style="overflow-x:auto"><table class="rec" id="recordTable" aria-label="Pieces you have thrown"></table></div>
+    <div class="controls">
+      <button class="btn" id="exportBtn" type="button">Export record — tap to download it as a file</button>
+      <button class="btn" id="copyBtn" type="button">Copy record — tap to copy it as text</button>
+      <button class="btn" id="forgetBtn" type="button">Forget everything — tap to erase the record on this device</button>
+    </div>
+    <p class="small" id="forgetMsg" role="status"></p>
+  </section>
+
+  <section class="card" id="settings">
+    <h2>Settings — the rules are settings</h2>
+    <p>Change a setting and you are playing a labelled variant of the game, never a lesser one. Anything
+    non-standard is named in the banner at the top of the page and written into your record.</p>
+    <label class="field">Clay amount
+      <span class="seg" id="claySeg" role="group" aria-label="Clay amount">
+        <button type="button" data-clay="small">Small lump · 400 g — tap to choose</button>
+        <button type="button" data-clay="standard">Standard · 750 g — tap to choose</button>
+        <button type="button" data-clay="large">Large lump · 1.2 kg — tap to choose</button>
+      </span>
+    </label>
+    <label class="field">Wheel speed
+      <span class="seg" id="speedSeg" role="group" aria-label="Wheel speed">
+        <button type="button" data-speed="slow">Slow — tap to choose</button>
+        <button type="button" data-speed="standard">Standard — tap to choose</button>
+        <button type="button" data-speed="fast">Fast — tap to choose</button>
+      </span>
+    </label>
+    <label class="field">Steadiness assist <span class="soft">(a variant: the wheel forgives some drift while you learn)</span>
+      <span class="seg" id="assistSeg" role="group" aria-label="Steadiness assist">
+        <button type="button" data-assist="off">Assist off — tap to choose</button>
+        <button type="button" data-assist="on">Assist on — tap to choose</button>
+      </span>
+    </label>
+    <p class="small soft">Settings are saved on this device only, with your teaching dial.</p>
+  </section>
+
+  <footer>
+    <p class="small">The Wheel — an original game; its name, words, art, and design are our own.
+    Copyleft: this page is free to copy, share, and adapt under CC BY-SA 4.0 — keep it free and credit the source.
+    No ads, ever. The craft it teaches belongs to every potter who ever sat at a wheel.</p>
+  </footer>
+</div>
+<div id="toast" role="status"></div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+function $(s){ return document.querySelector(s); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function round1(v){ return Math.round(v*10)/10; }
+function toast(msg){ var t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._h); toast._h=setTimeout(function(){ t.classList.remove("show"); },2600); }
+function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+/* ---------- verified videos (each opened and checked before listing) ---------- */
+var VIDEOS=[
+ {stage:"Wedge", title:"How to Spiral Wedge Clay", channel:"Florian Gadsby",
+  url:"https://www.youtube.com/watch?v=hYdLGLztT-Q",
+  why:"Wedging from several angles, repeated slowly — watch the hands, not the clay."},
+ {stage:"Cone (part of centring)", title:"How to Cone Clay on the Potter's Wheel — A Beginner's Guide", channel:"Florian Gadsby",
+  url:"https://www.youtube.com/watch?v=69dMLpXosSk",
+  why:"Coning up and pressing down is how a stubborn lump is persuaded to centre."},
+ {stage:"Centre", title:"How to Center Clay — A Beginner's Guide", channel:"Florian Gadsby",
+  url:"https://www.youtube.com/watch?v=-YCGK33c0xs",
+  why:"The full centring lesson: anchoring the arm, sealing the base, and knowing when it is truly centred."},
+ {stage:"Open", title:"How to Open Up Centred Clay and Form the Base of a Pot — A Beginner's Guide", channel:"Florian Gadsby",
+  url:"https://www.youtube.com/watch?v=HF5IAJ0x2g0",
+  why:"Fifteen unhurried minutes on a four-second move — including checking the floor with a needle tool."},
+ {stage:"Pull the walls", title:"How to Pull Up The Walls of a Pot — A Beginner's Guide", channel:"Florian Gadsby",
+  url:"https://www.youtube.com/watch?v=VM8SJZ4lNRY",
+  why:"Pulls cut in cross-section, so you can see what even — and uneven — walls actually look like inside."},
+ {stage:"The whole throw", title:"How to Make a Pottery Mug in 10 Steps", channel:"Florian Gadsby",
+  url:"https://www.youtube.com/watch?v=G43vl3RKN5s",
+  why:"One complete piece, start to wire-off, in the same ten steps this game walks you through."}
+];
+
+/* ---------- orders ---------- */
+var ORDERS=[
+ {id:"cup", name:"Cup", need:0, clay:["small","standard"], target:{h:64, base:34, top:40, belly:42},
+  brief:"A straight-sided drinking cup. Forgiving height, no belly to speak of — the beginner's honest test of even walls."},
+ {id:"bowl", name:"Bowl", need:0, clay:["small","standard","large"], target:{h:38, base:30, top:58, belly:56},
+  brief:"Wide and low. The walls lean outward as they rise, so centring matters twice: a wobble becomes a lopsided rim."},
+ {id:"vase", name:"Vase", need:2, clay:["standard","large"], target:{h:92, base:30, top:24, belly:44},
+  brief:"Tall, narrow-necked, unforgiving. Unlocks after 2 orders filled. Every fault you have been getting away with shows up here."},
+ {id:"jar", name:"Storage jar", need:4, clay:["standard","large"], target:{h:58, base:36, top:30, belly:50},
+  brief:"A bellied jar that narrows at the mouth. Unlocks after 4 orders filled. The belly and the narrow neck both have to be shaped on purpose."}
+];
+
+/* ---------- persistent state (this device only) ---------- */
+var SKEY="the-wheel-settings-v1", RKEY="the-wheel-record-v1";
+var settings={ teaching:"light", clay:"standard", speed:"standard", assist:"off", alias:"" };
+try{ var s=JSON.parse(localStorage.getItem(SKEY)||"null"); if(s){ for(var k in settings){ if(s[k]!==undefined) settings[k]=s[k]; } } }catch(e){}
+function saveSettings(){ try{ localStorage.setItem(SKEY, JSON.stringify(settings)); }catch(e){} }
+
+function emptyRecord(){ return { game:"The Wheel", version:1, totals:{ pieces:0, ordersFilled:0, collapses:0, grades:{} }, pieces:[] }; }
+var record=emptyRecord();
+try{ var r=JSON.parse(localStorage.getItem(RKEY)||"null"); if(r && r.pieces && r.totals) record=r; }catch(e){}
+function saveRecord(){ try{ localStorage.setItem(RKEY, JSON.stringify(record)); }catch(e){} }
+function variantLabel(){
+  var v=[];
+  if(settings.clay!=="standard") v.push("clay: "+(settings.clay==="small"?"small lump 400 g":"large lump 1.2 kg"));
+  if(settings.speed!=="standard") v.push("wheel speed: "+settings.speed);
+  if(settings.assist==="on") v.push("steadiness assist on");
+  return v;
+}
+
+/* ---------- piece state ---------- */
+var STAGES=["wedge","centre","open","pull","shape","wire","glaze","fire"];
+var STAGE_NAMES={wedge:"1 · Wedge", centre:"2 · Centre", open:"3 · Open", pull:"4 · Pull the walls",
+  shape:"5 · Shape", wire:"6 · Wire off", glaze:"7 · Glaze", fire:"8 · Fire"};
+var piece=null;
+function newPiece(order, practice){
+  var clayMass={small:400, standard:750, large:1200}[settings.clay];
+  piece={ order:order, practice:!!practice, stage:"wedge",
+    wedged:0, airTraps:0, lastTap:0,
+    centreScore:null, drift:{x:14,y:8}, centreTime:0, centreSamples:0, centreDistSum:0, bracing:false,
+    floorScore:null, depth:0,
+    height:16, thickness:13, water:45, pulls:0, uneven:0, risk:0, pullLog:[],
+    belly: order? order.target.base+4 : 38, topW: order? order.target.base+2 : 36,
+    wireScore:null, glaze:"celadon", collapsed:false, collapseCause:"",
+    strategy:{ pull:"small", centre:"cone" },
+    startedAt: todayStr() };
+  render();
+}
+function target(){ return piece.order ? piece.order.target : {h:64, base:34, top:40, belly:42}; }
+
+/* ---------- SVG drawing ---------- */
+function potPath(cx, baseY, base, top, belly, h, lean){
+  var b=base, t=top, m=belly, H=h;
+  var x0=cx-b, x1=cx+b, xt0=cx-t+lean, xt1=cx+t+lean, xm0=cx-m+lean*0.5, xm1=cx+m+lean*0.5;
+  var yB=baseY, yT=baseY-H, yM=baseY-H*0.55;
+  return "M "+x0+" "+yB+" C "+x0+" "+(yB-H*0.3)+", "+xm0+" "+(yM+H*0.2)+", "+xm0+" "+yM
+       +" C "+xm0+" "+(yM-H*0.25)+", "+xt0+" "+(yT+H*0.18)+", "+xt0+" "+yT
+       +" L "+xt1+" "+yT
+       +" C "+xt1+" "+(yT+H*0.18)+", "+xm1+" "+(yM-H*0.25)+", "+xm1+" "+yM
+       +" C "+xm1+" "+(yM+H*0.2)+", "+x1+" "+(yB-H*0.3)+", "+x1+" "+yB+" Z";
+}
+function draw(){
+  var svg=$("#potSvg"); if(!svg) return;
+  var NS="http://www.w3.org/2000/svg";
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  function el(tag, attrs){ var e=document.createElementNS(NS,tag); for(var a in attrs) e.setAttribute(a, attrs[a]); svg.appendChild(e); return e; }
+  /* wheel */
+  el("ellipse",{cx:150, cy:228, rx:118, ry:16, fill:"var(--line)"});
+  el("ellipse",{cx:150, cy:222, rx:104, ry:13, fill:"var(--ink-soft)", opacity:.55});
+  if(!piece){
+    var t1=el("text",{x:150, y:122, "text-anchor":"middle", fill:"var(--ink-soft)", "font-size":"14"});
+    t1.textContent="Take an order below";
+    var t2=el("text",{x:150, y:142, "text-anchor":"middle", fill:"var(--ink-soft)", "font-size":"14"});
+    t2.textContent="to put clay on the wheel.";
+    return;
+  }
+  var glazeFill={celadon:"#8fae94", tenmoku:"#5a4034", ash:"#cbb99a", cobalt:"#47648c", white:"#e8e2d6"}[piece.glaze]||"#b98a68";
+  var clayFill = (piece.stage==="fire" || piece.stage==="glaze") ? glazeFill : "#b98a68";
+  if(piece.collapsed){
+    el("path",{d:"M 84 222 C 100 200, 118 214, 138 206 C 158 198, 176 216, 196 206 C 208 200, 218 210, 222 222 Z", fill:"#a87a58"});
+    el("text",{x:150, y:170, "text-anchor":"middle", fill:"var(--bad)", "font-size":"16","font-weight":"700"}).textContent="Collapsed";
+    return;
+  }
+  if(piece.stage==="wedge"){
+    var w=piece.wedged/100;
+    el("path",{d:"M "+(150-46+w*6)+" 222 C "+(150-52)+" "+(196-w*22)+", "+(150-30)+" "+(178-w*30)+", 150 "+(176-w*32)
+      +" C "+(150+30)+" "+(178-w*30)+", "+(150+52)+" "+(196-w*22)+", "+(150+46-w*6)+" 222 Z", fill:"#b98a68"});
+    if(piece.airTraps>0) el("text",{x:150, y:150, "text-anchor":"middle", fill:"var(--warn)", "font-size":"13"}).textContent="Air trapped: "+piece.airTraps+" — slow down between presses";
+    return;
+  }
+  if(piece.stage==="centre"){
+    el("circle",{cx:150, cy:118, r:86, fill:"none", stroke:"var(--line)", "stroke-width":"2"});
+    el("circle",{cx:150, cy:118, r:3.5, fill:"var(--accent)"});
+    el("circle",{cx:150+piece.drift.x*2.4, cy:118+piece.drift.y*2.4, r:34, fill:"#b98a68", opacity:.92});
+    el("circle",{cx:150+piece.drift.x*2.4, cy:118+piece.drift.y*2.4, r:34, fill:"none", stroke:"#8a5a38", "stroke-width":"2"});
+    el("text",{x:150, y:236, "text-anchor":"middle", fill:"var(--ink-soft)", "font-size":"12"}).textContent="Top view — the dot is true centre. Bring the clay onto it.";
+    return;
+  }
+  /* side profile stages */
+  var tg=target();
+  var scale = piece.order && piece.order.id==="vase" ? 1.55 : 1.9;
+  var lean = piece.centreScore===null ? 0 : (100-piece.centreScore)*0.14;
+  /* target ghost */
+  el("path",{d:potPath(150, 222, tg.base, tg.top, tg.belly, tg.h*scale, 0), fill:"none", stroke:"var(--accent)", "stroke-width":"2", "stroke-dasharray":"6 5", opacity:.65});
+  var hNow = piece.stage==="open" ? 26 : piece.height*scale;
+  var bellyNow = piece.stage==="open" ? tg.base+6 : piece.belly;
+  var topNow = piece.stage==="open" ? tg.base+4 : piece.topW;
+  var baseNow = tg.base;
+  var d=potPath(150, 222, baseNow, topNow, bellyNow, hNow, lean);
+  el("path",{d:d, fill:clayFill, opacity:.92, stroke:"#8a5a38", "stroke-width":"1.5"});
+  if(piece.stage==="open"){
+    var depthPx = piece.depth*0.9;
+    el("rect",{x:150-tg.base+8, y:222-depthPx-6, width:(tg.base-8)*2, height:6, fill:"var(--water)", opacity:.7});
+    el("text",{x:150, y:60, "text-anchor":"middle", fill:"var(--ink-soft)", "font-size":"12"}).textContent="Dashed line: the order's profile. Solid: your clay.";
+  }
+  if(piece.stage==="fire"){
+    el("text",{x:150, y:36, "text-anchor":"middle", fill:"var(--ink)", "font-size":"15","font-weight":"700"}).textContent="Out of the kiln";
+  }
+}
+
+/* ---------- meters ---------- */
+function meter(label, pct, cls, text){
+  return '<div class="meter"><span>'+label+(text?' — <strong>'+text+'</strong>':'')+'</span><div class="bar"><div class="fill '+(cls||'')+'" style="width:'+clamp(pct,0,100)+'%"></div></div></div>';
+}
+function renderMeters(){
+  var box=$("#meters"); if(!piece){ box.innerHTML=""; return; }
+  var h="";
+  if(piece.stage==="wedge") h+=meter("Wedged", piece.wedged, "", piece.wedged+"%");
+  if(piece.stage==="centre"){
+    var d=Math.sqrt(piece.drift.x*piece.drift.x+piece.drift.y*piece.drift.y);
+    h+=meter("Distance from centre", d*3.2, d<5?"good":(d<11?"warn":"bad"), round1(d)+" off");
+    h+=meter("Centring time", piece.centreTime/10*100, "", Math.floor(piece.centreTime/10)+" of 10 counts");
+  }
+  if(piece.stage==="open") h+=meter("Opening depth", piece.depth, (piece.depth>=50&&piece.depth<=78)?"good":"", Math.round(piece.depth)+"%");
+  if(["pull","shape","wire","glaze","fire"].indexOf(piece.stage)>=0){
+    var tg=target();
+    h+=meter("Wall height", piece.height/tg.h*100, "", Math.round(piece.height)+" of "+tg.h);
+    h+=meter("Water in the clay", piece.water, piece.water>82?"bad":(piece.water<22?"warn":"water"), Math.round(piece.water)+"%");
+    h+=meter("Wall evenness", 100-piece.uneven*4, piece.uneven>14?"bad":(piece.uneven>7?"warn":"good"), piece.uneven<=4?"even":(piece.uneven<=9?"a few ridges":(piece.uneven<=14?"wavy":"very uneven")));
+    if(settings.teaching==="coach") h+=meter("Collapse risk", piece.risk, piece.risk>70?"bad":(piece.risk>40?"warn":""), Math.round(piece.risk)+"%");
+  }
+  box.innerHTML=h;
+}
+
+/* ---------- coach ---------- */
+var LIGHT_NOTES={
+  wedge:"Wedge until the lump feels like one thing — no hard or soft patches. Air left inside becomes a wobble at the wheel, or a crack in the kiln.",
+  centre:"Centre is everything: every fault here is inherited by every wall you pull. Brace your arms against your body and let the wheel do the moving.",
+  open:"Leave a floor about as thick as your walls will be — roughly a quarter inch. Too thin cracks; too thick is a heavy, clumsy base.",
+  pull:"Slow hands, full turns of the wheel. Wet the surface, never flood the clay — soaked walls lose their strength and slump.",
+  shape:"Shape a little at a time and step back (in your mind) between touches. Clay remembers every push.",
+  wire:"Pull the wire through flat and steady, in one motion. A sawing wire leaves a torn base.",
+  glaze:"Glaze covers the surface; it cannot rescue uneven walls. Choose a colour and fire honestly.",
+  fire:"The kiln tells the truth. Read your grade the way a potter reads a fired piece: what held, what moved, and why."
+};
+var COACH_EXTRA={
+  wedge:[
+    {n:"Ram's head wedging", t:"Push down and away, roll back, repeat — the lump ends up shaped like a ram's head. Trade-off: easy to learn and thorough, but slower on big lumps.", key:"rams"},
+    {n:"Spiral wedging", t:"One hand presses while the other turns the lump a few degrees each stroke. Trade-off: fast and kind to the body once learned — and genuinely hard for the first weeks.", key:"spiral"}],
+  centre:[
+    {n:"Cone up, press down", t:"Squeeze the lump into a cone, then press it back down, two or three times. Trade-off: centres stubborn clay fast and mixes it further — but each cone is a chance to introduce a wobble if your hands drift.", key:"cone"},
+    {n:"Steady pressure, patience", t:"Anchor both arms, apply even pressure, and hold still while the wheel evens the lump. Trade-off: gentler and very reliable on soft clay — slower, and it will not bully a firm, lopsided lump into line.", key:"steady"}],
+  open:[
+    {n:"Thumbs together", t:"Both thumbs press down side by side. Trade-off: strong and symmetrical — easy to go too deep before you feel it.", key:"thumbs"},
+    {n:"Finger hook", t:"One curled finger draws the floor open from the centre. Trade-off: finer feel for the floor's thickness — less support, so the opening can wander off-centre.", key:"hook"}],
+  pull:[
+    {n:"More, smaller pulls", t:"Many gentle passes, a little height each. Trade-off: the most even walls and the least collapse risk — slower, and every extra pass is more water worked into the clay.", key:"small"},
+    {n:"Fewer, bigger pulls", t:"Three confident passes taking real clay each time. Trade-off: fast, drier clay, taller sooner — one uneven squeeze becomes a thin spot the whole pot must live with.", key:"big"},
+    {n:"Knuckle pull", t:"Outside hand uses a knuckle instead of fingertips. Trade-off: a broader, smoother pressure that forgives wobbles — less fine control at the rim.", key:"knuckle"}],
+  shape:[
+    {n:"Shape as you pull", t:"Build the curve into the last pulls. Trade-off: clay moves willingly while it is still being lifted — harder to correct if you overshoot.", key:"aspull"},
+    {n:"Cylinder first, then shape", t:"Pull a straight cylinder, then belly it out with a rib or fingers. Trade-off: the classic, controllable route — the extra handling works more water in.", key:"cylfirst"}],
+  wire:[ {n:"One steady pull", t:"Wire flat against the wheel head, drawn through once. Trade-off: the cleanest base — hesitate halfway and the wire climbs into the floor.", key:"steadywire"} ],
+  glaze:[ {n:"Dip glaze", t:"One even coat over the whole piece. Trade-off: honest and even — it shows every ridge you left in the wall.", key:"dip"} ],
+  fire:[ {n:"Read the piece", t:"The firing is the report card, not the exam. What cracked, warped, or held is the lesson for the next lump.", key:"read"} ]
+};
+function coachHTML(){
+  if(settings.teaching==="off") return '<p class="note soft">Teaching is off. The wheel is yours — the record still keeps your pieces.</p>';
+  if(!piece) return '<p class="note">Take an order and put clay on the wheel. The Coach teaches on <em>your</em> piece, in the moment — not in the abstract.</p>';
+  var h="";
+  if(settings.teaching==="light"){
+    h+='<p class="note">'+LIGHT_NOTES[piece.stage]+'</p>';
+    h+=liveNote();
+    return h;
+  }
+  /* coach */
+  h+='<p class="note"><strong>On your piece, right now:</strong></p>'+liveNote(true);
+  var strats=COACH_EXTRA[piece.stage]||[];
+  if(strats.length>1){
+    h+='<p class="note"><strong>Ways to do this step — pick your approach:</strong></p>';
+    strats.forEach(function(s){
+      var chosen = piece.strategy[piece.stage]===s.key || (piece.stage==="pull"&&piece.strategy.pull===s.key) || (piece.stage==="centre"&&piece.strategy.centre===s.key);
+      h+='<div class="strat'+(chosen?" chosen":"")+'"><strong>'+s.n+'</strong><br><span class="small">'+s.t+'</span>'
+        +(chosen?'<br><span class="tag hot">Your approach</span>':'<br><button class="btn" type="button" data-strat="'+piece.stage+':'+s.key+'">Use this approach — tap to choose</button>')+'</div>';
+    });
+  } else if(strats.length===1){
+    h+='<div class="strat"><strong>'+strats[0].n+'</strong><br><span class="small">'+strats[0].t+'</span></div>';
+  }
+  return h;
+}
+function liveNote(full){
+  if(!piece) return "";
+  var notes=[];
+  var st=piece.stage;
+  if(st==="wedge"){
+    if(piece.airTraps>=2) notes.push("You are pressing faster than the clay can fold — two air pockets are already trapped. Slow down: air you wedge in is a crack you fire later.");
+    else if(piece.wedged>=60) notes.push("The lump is coming together — it should feel like one material now, no marbled hard and soft patches.");
+    else notes.push("Keep the rhythm steady: press away, roll back, turn a little. The turning is what works the whole lump, not just the top.");
+  }
+  if(st==="centre"){
+    var d=Math.sqrt(piece.drift.x*piece.drift.x+piece.drift.y*piece.drift.y);
+    if(d<4) notes.push("Nearly there — that calm, even spin is what centred feels like. Hold your nerve and let it settle.");
+    else if(d>13) notes.push("The lump is fighting you. Brace your elbows into your body — floating arms chase the clay; anchored arms correct it.");
+    else notes.push("Correct in small nudges, against the wobble as it passes your hands — not after it. Chasing it late makes the wobble bigger.");
+    if(settings.assist==="on") notes.push("Assist is on: the wheel is forgiving some drift. On an unassisted wheel this same lump would wander further — worth knowing what the variant is doing for you.");
+  }
+  if(st==="open"){
+    if(piece.depth>86) notes.push("Careful — you are close to the wheel head. A floor thinner than your walls cracks in drying or firing. Ease off.");
+    else if(piece.depth>=50) notes.push("That is the neighbourhood of a quarter-inch floor. Stop there and the base will match the walls.");
+    else notes.push("Push down steadily in the exact centre. An opening that starts off-centre un-centres everything you just won.");
+  }
+  if(st==="pull"){
+    if(piece.water<22) notes.push("The clay is dragging — dry walls grab your fingers and ridge. A little water on the surface, not a flood.");
+    if(piece.water>82) notes.push("This clay is close to soup. Its walls have almost no strength left; the next ambitious pull may fold them. Let a pass be gentle, or stop pulling.");
+    if(piece.uneven>10) notes.push("Your walls are waving — the last pulls moved faster than a wheel revolution per stretch. Slow the hands; let the wheel come around.");
+    if(piece.pulls===0) notes.push("First pull: pinch gently at the base and lift a small wave of clay. Compress the rim when you reach the top — an uncompressed rim splits.");
+    if(piece.thickness<6.5) notes.push("The wall is thin now — under seven millimetres in feel. Height from here is bought with risk; shaping what you have may be the wiser throw.");
+  }
+  if(st==="shape"){
+    var tg=target();
+    var bd=Math.abs(piece.belly-tg.belly), td=Math.abs(piece.topW-tg.top);
+    if(bd<=3&&td<=3) notes.push("That silhouette is on the order. Stop touching it — more potters ruin a shape by improving it than by leaving it.");
+    else if(bd>td) notes.push("The belly is the furthest thing from the order ("+Math.round(bd)+" off). Work from inside, supporting the wall outside, a little at a time.");
+    else notes.push("The mouth is the furthest thing from the order ("+Math.round(td)+" off). Collar in gently or let it stand wider — small moves, checked often.");
+  }
+  if(st==="wire") notes.push("Wire flat, thumbs low, one motion. The piece is at its most fragile right now — all its strength is in walls you have not dried yet.");
+  if(st==="glaze") notes.push("Glaze choice is the one free decision on this page: colour changes nothing structural. The kiln will grade the throwing, not the glaze.");
+  if(notes.length===0) notes.push("Steady work. The record is watching the same numbers the kiln will judge.");
+  return notes.map(function(n){ return '<p class="note">'+n+'</p>'; }).join("");
+}
+</script>
+<script>
+"use strict";
+/* ---------- stage controls ---------- */
+var rafId=null, sweepTimer=null;
+function stopLoops(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } if(sweepTimer){ clearInterval(sweepTimer); sweepTimer=null; } }
+
+function btn(label, id, primary, disabled){
+  return '<button class="btn'+(primary?" primary":"")+'" type="button" id="'+id+'"'+(disabled?" disabled":"")+'>'+label+'</button>';
+}
+function renderControls(){
+  var c=$("#stageControls"), x=$("#stageExtra");
+  c.innerHTML=""; x.innerHTML="";
+  $("#sweepWrap").style.display="none";
+  if(!piece){
+    c.innerHTML='<p class="soft">The wheel is empty. Take an order from the board below, or throw a practice cup.</p>';
+    return;
+  }
+  var st=piece.stage;
+  if(piece.collapsed){
+    c.innerHTML=btn("Wedge a fresh lump and try this order again — tap to restart","restartBtn",true);
+    x.innerHTML='<div class="coach"><h3>What the collapse teaches</h3><p>'+piece.collapseCause+'</p>'
+      +'<p class="small soft">This collapse is written into your record with its cause named — that is what a collapse is for. The clay, unfired, would go straight back into the wedging pile at a real wheel. Nothing here is wasted but the lesson, if you skip it.</p></div>';
+    wireUp();
+    return;
+  }
+  if(st==="wedge"){
+    c.innerHTML=btn("Press and turn the clay — tap to wedge ("+piece.wedged+"%)","wedgeBtn",true)
+      +(piece.wedged>=100?btn("Clay is wedged — tap to put it on the wheel","toCentreBtn",true):"");
+    x.innerHTML='<p class="kbd-hint">Steady taps, not fast ones: slamming presses fold air back in. Ten unhurried presses wedges a lump.</p>';
+  }
+  if(st==="centre"){
+    c.innerHTML=btn("Hold to brace — hold the button to anchor your arms","braceBtn",false)
+      +btn("Finish centring now — tap to stop (a shorter centre is a wobblier pot)","centreDoneBtn",true);
+    x.innerHTML='<div class="nudge-pad" role="group" aria-label="Nudge the clay">'
+      +'<span></span><button class="btn" type="button" data-nudge="0,-1">↑<br><span class="small">Tap to nudge up</span></button><span></span>'
+      +'<button class="btn" type="button" data-nudge="-1,0">←<br><span class="small">Tap to nudge left</span></button>'
+      +'<button class="btn" type="button" data-nudge="0,1">↓<br><span class="small">Tap to nudge down</span></button>'
+      +'<button class="btn" type="button" data-nudge="1,0">→<br><span class="small">Tap to nudge right</span></button></div>'
+      +'<p class="kbd-hint">The clay drifts as the wheel turns. Nudge against the drift and brace to slow it. Ten counts of the wheel, then your centring is scored on where the clay actually sat — not on effort.</p>';
+    startCentre();
+  }
+  if(st==="open"){
+    c.innerHTML=btn("Push down into the centre — hold to open, let go at a quarter-inch floor · or tap to start, tap again to stop","openBtn",true);
+    x.innerHTML='<p class="kbd-hint">Hold to push deeper — or tap once to start and again to stop, if holding is awkward. The green neighbourhood is 50–78% — a floor about as thick as the walls will be. Past 90% the floor is dangerously thin; under 30% the base stays a heavy lump.</p>';
+  }
+  if(st==="pull"){
+    c.innerHTML=btn("Pull the wall up — hold to pull, let go to finish the pass · or tap to start, tap again to finish","pullBtn",true)
+      +btn("Wet the surface — tap to add a little water","waterBtn",false)
+      +btn("Walls are high enough — tap to shape","toShapeBtn",false, piece.height < target().h*0.55);
+    x.innerHTML='<p class="kbd-hint">Each hold — or tap-to-start, tap-to-finish — is one pass. The sweep below shows the pass: finish in the green for a clean, even lift. Running past the green drags a thin spot into the wall. Quick taps make small, safe pulls. Passes so far: <strong>'+piece.pulls+'</strong> · wall feels about <strong>'+round1(piece.thickness)+' mm</strong> thick.</p>';
+    showSweep(58, 86, "The pull: let go in the green band");
+  }
+  if(st==="shape"){
+    c.innerHTML=btn("Push the belly out — tap","+belly",false)+btn("Collar the belly in — tap","-belly",false)
+      +btn("Widen the mouth — tap","+top",false)+btn("Narrow the mouth — tap","-top",false)
+      +btn("The shape is right — tap to wire it off","toWireBtn",true);
+    var tg=target();
+    x.innerHTML='<p class="kbd-hint">Belly now '+Math.round(piece.belly)+' (order asks '+tg.belly+') · mouth now '+Math.round(piece.topW)+' (order asks '+tg.top+'). Small moves, checked against the dashed profile.</p>';
+  }
+  if(st==="wire"){
+    c.innerHTML=btn("Pull the wire through — tap when the marker crosses the green","wireBtn",true)
+      +btn("Cut anyway — tap to wire it off rough","wireAnyBtn",false);
+    showSweep(42, 62, "The wire cut: tap inside the green for a clean base");
+    startWireSweep();
+  }
+  if(st==="glaze"){
+    var glazes=[["celadon","Celadon — pale green-grey"],["tenmoku","Tenmoku — dark iron brown"],["ash","Wood ash — warm buff"],["cobalt","Cobalt — deep blue"],["white","Tin white — clean white"]];
+    x.innerHTML='<h3>Choose a glaze — tap a colour</h3><div class="swatches" role="group" aria-label="Glaze colour">'
+      +glazes.map(function(g){ return '<button type="button" data-glaze="'+g[0]+'" class="'+(piece.glaze===g[0]?"on":"")+'" style="background:'+({celadon:"#8fae94",tenmoku:"#5a4034",ash:"#cbb99a",cobalt:"#47648c",white:"#e8e2d6"})[g[0]]+'" title="'+g[1]+'" aria-label="'+g[1]+' — tap to choose"></button>'; }).join("")
+      +'</div><p class="small soft">'+(glazes.filter(function(g){return g[0]===piece.glaze;})[0]||[])[1]+'</p>';
+    c.innerHTML=btn("Into the kiln — tap to fire","fireBtn",true);
+  }
+  if(st==="fire"){
+    c.innerHTML=btn("Take the next order — tap to clear the wheel","nextBtn",true);
+  }
+  wireUp();
+}
+
+function showSweep(z0, z1, label){
+  var w=$("#sweepWrap"); w.style.display="block";
+  var z=$("#sweepZone"); z.style.left=z0+"%"; z.style.width=(z1-z0)+"%";
+  $("#sweepMarker").style.left="0%"; $("#sweepLabel").textContent=label;
+  w._z0=z0; w._z1=z1;
+}
+function setSweep(pct){ $("#sweepMarker").style.left=clamp(pct,0,100)+"%"; }
+
+/* ---------- mechanics ---------- */
+function doWedge(){
+  var now=performance.now();
+  if(piece.lastTap && now-piece.lastTap<230 && piece.wedged<95){ piece.airTraps++; }
+  piece.lastTap=now;
+  piece.wedged=clamp(piece.wedged+10,0,100);
+  if(piece.wedged>=100) toast("Wedged. The lump is one material now.");
+  render(false);
+}
+function startCentre(){
+  stopLoops();
+  var speedF={slow:0.7, standard:1, fast:1.45}[settings.speed];
+  var assistF=settings.assist==="on"?0.45:1;
+  var stratF=piece.strategy.centre==="steady"?0.8:1.12; /* cone: stronger correction, more wander early */
+  var last=performance.now();
+  function frame(now){
+    if(!piece || piece.stage!=="centre"){ rafId=null; return; }
+    var dt=Math.min(50, now-last); last=now;
+    piece.centreTime += dt/100 * speedF;
+    /* drift: random walk + outward pull, eased by bracing */
+    var wob = (piece.centreTime<3 && piece.strategy.centre==="cone") ? 1.5 : 1;
+    piece.drift.x += (Math.random()-0.5)*0.55*speedF*assistF*wob*(piece.bracing?0.35:1);
+    piece.drift.y += (Math.random()-0.5)*0.55*speedF*assistF*wob*(piece.bracing?0.35:1);
+    var d=Math.sqrt(piece.drift.x*piece.drift.x+piece.drift.y*piece.drift.y);
+    if(d>0.5){ var pull=0.012*speedF*assistF*(piece.bracing?0.3:1)*stratF; piece.drift.x+=piece.drift.x/d*pull*8; piece.drift.y+=piece.drift.y/d*pull*8; }
+    piece.drift.x=clamp(piece.drift.x,-16,16); piece.drift.y=clamp(piece.drift.y,-16,16);
+    piece.centreSamples++; piece.centreDistSum+=Math.sqrt(piece.drift.x*piece.drift.x+piece.drift.y*piece.drift.y);
+    draw(); renderMeters();
+    if(piece.centreTime>=100){ finishCentre(); return; }
+    rafId=requestAnimationFrame(frame);
+  }
+  rafId=requestAnimationFrame(frame);
+}
+function finishCentre(){
+  stopLoops();
+  if(!piece || piece.stage!=="centre") return;
+  var avg=piece.centreSamples? piece.centreDistSum/piece.centreSamples : 16;
+  var score=clamp(Math.round(100-avg*6.2), 4, 99);
+  if(settings.assist==="on") score=clamp(score,4,88); /* assist caps the honest grade: the wheel did some of it */
+  if(piece.airTraps>=2) score=clamp(score-6,4,99);
+  piece.centreScore=score;
+  piece.stage="open";
+  toast("Centring scored "+score+" of 100 — the walls will inherit it.");
+  render();
+}
+var holdState=null, finishTapFlag=false;
+function holdTick(){
+  if(!holdState) return;
+  var el=(performance.now()-holdState.t0);
+  if(holdState.kind==="open"){ piece.depth=clamp(el/14,0,100); draw(); renderMeters(); if(piece.depth>=100){ resolveHold(); return; } }
+  if(holdState.kind==="pull"){ setSweep(clamp(el/16,0,112)); if(el/16>=112){ resolveHold(); return; } }
+  holdState.raf=requestAnimationFrame(holdTick);
+}
+function holdStart(kind){
+  if(finishTapFlag) return;
+  if(holdState && holdState.tapMode && holdState.kind===kind){ finishTapFlag=true; resolveHold(); return; }
+  if(holdState) return;
+  holdState={kind:kind, t0:performance.now(), tapMode:false};
+  var btnId = kind==="open" ? "openBtn" : "pullBtn";
+  var b=document.getElementById(btnId); if(b) b.classList.add("holding");
+  holdState.raf=requestAnimationFrame(holdTick);
+}
+function holdEnd(){
+  if(finishTapFlag){ finishTapFlag=false; return; }
+  if(!holdState || holdState.tapMode) return;
+  var el=performance.now()-holdState.t0;
+  if(el<260){ holdState.tapMode=true; toast(holdState.kind==="open" ? "Pushing down — tap the button again to stop." : "Pull running — tap the button again to finish the pass."); return; }
+  resolveHold();
+}
+function resolveHold(){
+  if(!holdState) return;
+  var hs=holdState; holdState=null; cancelAnimationFrame(hs.raf);
+  var b=document.getElementById(hs.kind==="open"?"openBtn":"pullBtn"); if(b) b.classList.remove("holding");
+  if(!piece) return;
+  if(hs.kind==="open"){
+    var d=piece.depth;
+    piece.floorScore = d>=50&&d<=78 ? 96 : d>=38&&d<50 ? 78 : d>78&&d<=90 ? 62 : d>90 ? 30 : 52;
+    piece.stage="pull";
+    toast(d>90 ? "That floor is very thin — the kiln will have its say." : d<30 ? "A heavy base. It will fire, but it will feel clumsy in the hand." : "Floor set. Now the walls.");
+    render();
+  }
+  if(hs.kind==="pull"){ resolvePull(clamp((performance.now()-hs.t0)/16,0,112)); }
+}
+function resolvePull(sweep){
+  var strat=piece.strategy.pull;
+  var inGreen = sweep>=58 && sweep<=86;
+  var gain, thinCut, unevenAdd;
+  if(strat==="big"){ gain = inGreen? 21 : sweep<58? sweep*0.22 : 24; thinCut = inGreen? 1.9 : 2.6; }
+  else if(strat==="knuckle"){ gain = inGreen? 14.5 : sweep<58? sweep*0.16 : 15; thinCut = inGreen? 1.15 : 1.5; }
+  else { gain = inGreen? 15 : sweep<58? sweep*0.17 : 16.5; thinCut = inGreen? 1.25 : 1.7; }
+  unevenAdd = inGreen? (piece.water<22?1.6:0.5) : sweep<58? 1.1 : 3.4;
+  if(piece.centreScore<55) unevenAdd+=0.9; /* off-centre clay pulls uneven, always */
+  if(sweep>100) unevenAdd+=1.8;
+  piece.height+=gain; piece.thickness-=thinCut; piece.uneven+=unevenAdd;
+  piece.water=clamp(piece.water-(strat==="big"?5:7),0,100);
+  piece.pulls++;
+  piece.pullLog.push({pass:piece.pulls, sweep:Math.round(sweep), clean:inGreen});
+  /* collapse risk */
+  var risk=0;
+  if(piece.thickness<6) risk+=(6-piece.thickness)*16;
+  if(piece.water>82) risk+=(piece.water-82)*2.4;
+  if(sweep>100) risk+=16;
+  if(piece.uneven>16) risk+=(piece.uneven-16)*2;
+  piece.risk=clamp(risk,0,100);
+  if(piece.risk>=62 && piece.pulls>=2 && Math.random()< (piece.risk-52)/60){ collapse(); return; }
+  if(piece.thickness<=3.2){ collapse("The wall tore through — at "+round1(Math.max(piece.thickness,0.5))+" mm it had nothing left to give. Thin walls are not a style choice past the clay's limit; the last pull asked for height the wall had already spent."); return; }
+  toast(inGreen? "Clean pass. The wall rose evenly." : sweep<58? "A short pass — safe, but the wall barely rose." : "You held too long — a thin spot went into that wall.");
+  render(false);
+}
+function collapse(cause){
+  piece.collapsed=true;
+  if(!cause){
+    cause = piece.water>82
+      ? "The wall folded because the clay was soaked — at "+Math.round(piece.water)+"% water it was closer to soup than clay, and soup cannot stand up. Water is lubrication, not an ingredient: wet the surface, never flood the wall."
+      : "The wall folded at its thinnest point — unevenness "+round1(piece.uneven)+" means one stretch of wall was carrying far less clay than the rest, and a wall always fails at its weakest stretch, mid-pull, without warning.";
+  }
+  piece.collapseCause=cause;
+  writeRecord(true);
+  stopLoops();
+  render();
+  toast("The wall collapsed. Its lesson is written below — and in your record.");
+}
+function startWireSweep(){
+  stopLoops();
+  var pos=0, dir=1;
+  sweepTimer=setInterval(function(){
+    pos+=dir*2.4; if(pos>=100){pos=100;dir=-1;} if(pos<=0){pos=0;dir=1;}
+    setSweep(pos); sweepTimer._pos=pos;
+  },30);
+}
+function doWire(forced){
+  var pos=sweepTimer? (sweepTimer._pos||0) : 0;
+  stopLoops();
+  piece.wireScore = forced? 55 : (pos>=42&&pos<=62)? 96 : (pos>=30&&pos<=74)? 74 : 50;
+  piece.stage="glaze";
+  toast(piece.wireScore>=90? "Clean cut — the base came away flat." : "The wire wandered a little. The base will show it.");
+  render();
+}
+
+/* ---------- grading ---------- */
+function gradePiece(){
+  var tg=target();
+  var centre=piece.centreScore;
+  var even=clamp(100-piece.uneven*5.2, 2, 100);
+  var shapeParts=[ 1-Math.abs(piece.height-tg.h)/tg.h, 1-Math.abs(piece.belly-tg.belly)/40, 1-Math.abs(piece.topW-tg.top)/40 ];
+  var shape=clamp(Math.round((shapeParts[0]*0.5+shapeParts[1]*0.25+shapeParts[2]*0.25)*100),2,100);
+  var floor=piece.floorScore;
+  var wire=piece.wireScore||70;
+  var total=Math.round(centre*0.30 + even*0.30 + shape*0.25 + floor*0.10 + wire*0.05);
+  var letter = total>=88?"A": total>=74?"B": total>=58?"C": total>=42?"D":"F";
+  var crackNote="";
+  if(piece.floorScore<=30 && Math.random()<0.6) crackNote=" The kiln found the thin floor: a crack runs across the base. Floors crack exactly where they were made too thin — the firing only reports it.";
+  else if(piece.floorScore>=60&&piece.floorScore<=96) crackNote=" The floor came through the firing sound — a quarter inch was the right call.";
+  else if(piece.floorScore>30) crackNote=" The floor held through the firing, though it was off the quarter-inch mark — thick enough to survive, not quite right.";
+  if(even<45) crackNote+=" The walls warped slightly in the firing, following the unevenness you pulled into them.";
+  var why=[];
+  why.push("Centring "+centre+"/100 carried 30% of the grade — "+(centre>=80?"the lump spun true, and every wall inherited it.":centre>=55?"a visible wobble stayed in the lump, and the walls could not fully escape it.":"the lump never truly centred, so the walls were uneven before the first pull — no pull can fix what centring left undone."));
+  why.push("Wall evenness "+Math.round(even)+"/100 carried 30% — "+(even>=80?"the passes were patient and the wall rose as one thickness.":even>=55?"some passes ran fast or dry and left ridges and a thin stretch.":"the wall's thickness varied so much that its weakest stretch decided the grade."));
+  why.push("Shape against the order "+shape+"/100 carried 25% — the fired piece stands "+Math.round(piece.height)+" tall against "+tg.h+" asked, belly "+Math.round(piece.belly)+" against "+tg.belly+", mouth "+Math.round(piece.topW)+" against "+tg.top+".");
+  why.push("Floor "+floor+"/100 and the wire cut "+wire+"/100 made up the rest."+crackNote);
+  return { total:total, letter:letter, centre:centre, even:Math.round(even), shape:shape, floor:floor, why:why,
+           filled: !piece.practice && ["A","B","C"].indexOf(letter)>=0 };
+}
+function writeRecord(wasCollapse){
+  var entry;
+  if(wasCollapse){
+    entry={ date:piece.startedAt, piece:piece.order?piece.order.name:"Practice cup", result:"Collapsed",
+      grade:"—", centring:piece.centreScore, evenness:null, shape:null, floor:piece.floorScore,
+      cause:piece.collapseCause, variants:variantLabel(), alias:settings.alias||"Guest potter" };
+    record.totals.collapses++;
+  } else {
+    var g=gradePiece(); piece._grade=g;
+    entry={ date:piece.startedAt, piece:piece.order?piece.order.name:"Practice cup", result:g.filled?"Order filled":"Fired",
+      grade:g.letter+" ("+g.total+")", centring:g.centre, evenness:g.even, shape:g.shape, floor:g.floor,
+      cause:"", variants:variantLabel(), alias:settings.alias||"Guest potter" };
+    record.totals.pieces++;
+    record.totals.grades[g.letter]=(record.totals.grades[g.letter]||0)+1;
+    if(g.filled) record.totals.ordersFilled++;
+  }
+  record.pieces.unshift(entry);
+  saveRecord();
+}
+function fire(){
+  writeRecord(false);
+  piece.stage="fire";
+  render();
+}
+
+/* ---------- render ---------- */
+function render(keepLoops){
+  if(!keepLoops) stopLoops();
+  /* steps bar */
+  var bar=$("#stepsBar");
+  if(piece && !piece.collapsed){
+    var idx=STAGES.indexOf(piece.stage);
+    bar.innerHTML=STAGES.map(function(s,i){ return '<span class="'+(i<idx?"done":i===idx?"on":"")+'">'+STAGE_NAMES[s]+'</span>'; }).join("");
+  } else bar.innerHTML="";
+  $("#stageTitle").textContent = !piece ? "The wheel is empty"
+    : piece.collapsed ? "The wall collapsed"
+    : piece.stage==="fire" ? "Out of the kiln — your grade"
+    : STAGE_NAMES[piece.stage].replace(/^[0-9] · /,"")+" — "+(piece.order?piece.order.name:"practice cup");
+  $("#pieceTag").textContent = !piece ? "No clay on the wheel"
+    : (piece.practice?"Practice piece":("Order: "+piece.order.name))+" · "+({small:"400 g",standard:"750 g",large:"1.2 kg"})[settings.clay]+" lump";
+  var vb=$("#variantBanner"), vl=variantLabel();
+  vb.className="variant-banner"+(vl.length?" show":"");
+  vb.textContent=vl.length? ("Variant in play: "+vl.join(" · ")+". Named here, and written into your record with every piece.") : "";
+  draw(); renderMeters(); renderControls(); renderOrderBox(); renderRecord(); renderPro();
+  $("#coachBody").innerHTML=coachHTML();
+  $("#coachTitle").textContent = settings.teaching==="coach" ? "Coach" : settings.teaching==="light" ? "Note" : "Teaching is off";
+  $("#coachBox").style.display = settings.teaching==="off" && !piece ? "none" : "block";
+  if(piece && piece.stage==="fire" && piece._grade){
+    var g=piece._grade;
+    $("#stageExtra").innerHTML='<div style="text-align:left"><p><span class="grade-big">'+g.letter+'</span> &nbsp;<strong>'+g.total+' of 100</strong>'
+      +(piece.practice?' — a practice piece, graded on the craft alone.':(g.filled?' — the order is <strong>filled</strong>. The customer gets the pot they asked for.':' — below a C, so this order is <strong>not filled</strong>. The piece fired, but it is not the piece that was ordered; throw it again to fill the order.'))
+      +'</p>'+g.why.map(function(w){return '<p>'+w+'</p>';}).join("")+'</div>';
+  }
+  document.querySelectorAll("[data-dial]").forEach(function(b){ b.classList.toggle("on", b.dataset.dial===settings.teaching); });
+  $("#dialExplain").textContent={off:"Off: no notes, no strategies. The wheel and the record only.",
+    light:"Light: one true note per step, plus a word when your own piece needs it.",
+    coach:"Coach: the full bench — live notes on your piece, every approach with its trade-offs, and the pro tools."}[settings.teaching];
+  $("#proTools").style.display = settings.teaching==="coach" ? "block":"none";
+}
+function renderPro(){
+  var b=$("#proBody"); if(!piece){ b.innerHTML='<p class="soft">No piece on the wheel.</p>'; return; }
+  var tg=target();
+  var rows=[];
+  rows.push(["Calipers — wall thickness","about "+round1(Math.max(piece.thickness,0.5))+" mm (a working wall is 5–8 mm; under 4 mm is borrowed time)"]);
+  rows.push(["Needle tool — floor", piece.floorScore===null?"not opened yet":(piece.floorScore>=90?"a true quarter inch":piece.floorScore>=60?"close to a quarter inch":piece.floorScore<=30?"dangerously thin — expect the kiln to report it":"off the mark")]);
+  rows.push(["Profile gauge — shape gap","height "+Math.round(piece.height)+"/"+tg.h+" · belly "+Math.round(piece.belly)+"/"+tg.belly+" · mouth "+Math.round(piece.topW)+"/"+tg.top]);
+  rows.push(["Rim check", piece.uneven<=5?"rim runs level":piece.uneven<=12?"rim ripples slightly — compress it on the next pass":"rim is waving; slow down and compress"]);
+  rows.push(["Pull log", piece.pullLog.length? piece.pullLog.map(function(p){return "pass "+p.pass+": "+(p.clean?"clean":"off-pace");}).join(" · ") : "no pulls yet"]);
+  b.innerHTML=rows.map(function(r){return '<p><strong>'+r[0]+':</strong> '+r[1]+'</p>';}).join("");
+}
+function renderOrderBox(){
+  var t=$("#currentOrderText");
+  if(!piece){ t.textContent="No order taken yet. Pick one from the order board below — tap an order to take it."; return; }
+  if(piece.practice){ t.innerHTML="<strong>Practice cup</strong> — no customer, no deadline. The grade still tells the truth."; return; }
+  var o=piece.order;
+  t.innerHTML="<strong>"+o.name+"</strong> — "+o.brief+"<br><span class='small'>Target: height "+o.target.h+", belly "+o.target.belly+", mouth "+o.target.top+". Grade C or better fills it.</span>";
+}
+function renderOrders(){
+  var filled=record.totals.ordersFilled;
+  $("#orderBoard").innerHTML=ORDERS.map(function(o){
+    var locked=filled<o.need;
+    return '<div class="order'+(locked?" locked":"")+'"><h3>'+o.name+' <span class="tag'+(locked?"":" hot")+'">'+(locked?("Locked — fill "+o.need+" orders to unlock"):("Open"))+'</span></h3>'
+      +'<p class="small">'+o.brief+'</p><p class="small soft">Target: height '+o.target.h+' · belly '+o.target.belly+' · mouth '+o.target.top+' · clay: '+o.clay.join(", ")+'</p>'
+      +(locked?"":'<button class="btn primary" type="button" data-order="'+o.id+'">Take this order — tap to start throwing</button>')+'</div>';
+  }).join("");
+  document.querySelectorAll("[data-order]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var o=ORDERS.filter(function(x){return x.id===b.dataset.order;})[0];
+      if(o.clay.indexOf(settings.clay)<0){ toast("This order wants a different lump — it takes: "+o.clay.join(", ")+". Change the clay in Settings, or pick another order."); return; }
+      stopLoops(); newPiece(o,false);
+      document.getElementById("wheel").scrollIntoView({behavior:"smooth"});
+    });
+  });
+}
+function renderRecord(){
+  var t=record.totals;
+  $("#recordSummary").innerHTML='<p><strong>'+t.pieces+'</strong> pieces fired · <strong>'+t.ordersFilled+'</strong> orders filled · <strong>'+t.collapses+'</strong> collapses (each one a lesson kept)'
+    +(Object.keys(t.grades).length? ' · grades: '+Object.keys(t.grades).sort().map(function(g){return g+" × "+t.grades[g];}).join(", "):"")+'</p>';
+  var tb=$("#recordTable");
+  if(!record.pieces.length){ tb.innerHTML='<tr><td class="soft">Nothing thrown yet. Your first piece — fired or folded — will be written here.</td></tr>'; renderOrders(); return; }
+  tb.innerHTML='<tr class="head"><th>Date</th><th>Piece</th><th>Result</th><th>Grade</th><th>Centring</th><th>Evenness</th><th>Shape</th><th>Notes</th></tr>'
+    +record.pieces.slice(0,30).map(function(p){
+      return '<tr><td data-label="Date">'+p.date+'</td><td data-label="Piece">'+p.piece+'</td><td data-label="Result">'+p.result+'</td><td data-label="Grade">'+p.grade+'</td><td data-label="Centring">'+(p.centring===null?"—":p.centring)+'</td><td data-label="Evenness">'+(p.evenness===null?"—":p.evenness)+'</td><td data-label="Shape">'+(p.shape===null?"—":p.shape)+'</td><td data-label="Notes" class="small">'+(p.cause? p.cause : (p.variants&&p.variants.length? "Variant: "+p.variants.join(", ") : ""))+'</td></tr>';
+    }).join("");
+  renderOrders();
+}
+
+/* ---------- control wiring (delegated where dynamic) ---------- */
+function wireUp(){
+  function on(id, fn){ var e=document.getElementById(id); if(e) e.addEventListener("click", fn); }
+  on("wedgeBtn", doWedge);
+  on("toCentreBtn", function(){ piece.stage="centre"; render(); });
+  on("centreDoneBtn", finishCentre);
+  on("restartBtn", function(){ var o=piece.order, pr=piece.practice; newPiece(o,pr); });
+  on("toShapeBtn", function(){ piece.stage="shape"; render(); });
+  on("toWireBtn", function(){ piece.stage="wire"; render(); });
+  on("wireBtn", function(){ doWire(false); });
+  on("wireAnyBtn", function(){ doWire(true); });
+  on("fireBtn", fire);
+  on("nextBtn", function(){ piece=null; stopLoops(); render(); document.getElementById("orders").scrollIntoView({behavior:"smooth"}); });
+  on("waterBtn", function(){ piece.water=clamp(piece.water+14,0,100); if(piece.water>88) toast("That is a lot of water. The wall feels it."); render(false); if(piece) { /* keep pull sweep visible */ showSweep(58,86,"The pull: let go in the green band"); } });
+  on("+belly", function(){ piece.belly=clamp(piece.belly+3,20,72); render(false); });
+  on("-belly", function(){ piece.belly=clamp(piece.belly-3,20,72); render(false); });
+  on("+top", function(){ piece.topW=clamp(piece.topW+3,16,72); render(false); });
+  on("-top", function(){ piece.topW=clamp(piece.topW-3,16,72); render(false); });
+  var bb=document.getElementById("braceBtn");
+  if(bb){
+    bb.addEventListener("pointerdown", function(e){ e.preventDefault(); piece.bracing=true; bb.classList.add("holding"); });
+    ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ bb.addEventListener(ev, function(){ if(piece) piece.bracing=false; bb.classList.remove("holding"); }); });
+  }
+  ["openBtn","pullBtn"].forEach(function(id){
+    var e=document.getElementById(id); if(!e) return;
+    var kind=id==="openBtn"?"open":"pull";
+    e.addEventListener("pointerdown", function(ev){ ev.preventDefault(); holdStart(kind); });
+    ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ e.addEventListener(ev, holdEnd); });
+  });
+  document.querySelectorAll("[data-nudge]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var p=b.dataset.nudge.split(","); piece.drift.x+=parseInt(p[0],10)*1.6; piece.drift.y+=parseInt(p[1],10)*1.6;
+      piece.drift.x=clamp(piece.drift.x,-16,16); piece.drift.y=clamp(piece.drift.y,-16,16);
+      draw(); renderMeters();
+    });
+  });
+  document.querySelectorAll("[data-strat]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var parts=b.dataset.strat.split(":"); piece.strategy[parts[0]]=parts[1];
+      toast("Approach set: the wheel will play by it from here."); render(false);
+      if(piece.stage==="centre") startCentre();
+    });
+  });
+  document.querySelectorAll("[data-glaze]").forEach(function(b){
+    b.addEventListener("click", function(){ piece.glaze=b.dataset.glaze; render(false); });
+  });
+}
+
+/* ---------- static wiring ---------- */
+document.querySelectorAll("[data-dial]").forEach(function(b){
+  b.addEventListener("click", function(){ settings.teaching=b.dataset.dial; saveSettings(); render(false); if(piece&&piece.stage==="pull") showSweep(58,86,"The pull: let go in the green band"); });
+});
+document.querySelectorAll("[data-clay]").forEach(function(b){
+  b.addEventListener("click", function(){ settings.clay=b.dataset.clay; saveSettings(); syncSegs(); render(false); });
+});
+document.querySelectorAll("[data-speed]").forEach(function(b){
+  b.addEventListener("click", function(){ settings.speed=b.dataset.speed; saveSettings(); syncSegs(); render(false); });
+});
+document.querySelectorAll("[data-assist]").forEach(function(b){
+  b.addEventListener("click", function(){ settings.assist=b.dataset.assist; saveSettings(); syncSegs(); render(false); });
+});
+function syncSegs(){
+  document.querySelectorAll("[data-clay]").forEach(function(b){ b.classList.toggle("on", b.dataset.clay===settings.clay); });
+  document.querySelectorAll("[data-speed]").forEach(function(b){ b.classList.toggle("on", b.dataset.speed===settings.speed); });
+  document.querySelectorAll("[data-assist]").forEach(function(b){ b.classList.toggle("on", b.dataset.assist===settings.assist); });
+}
+var aliasEl=$("#aliasInput");
+aliasEl.value=settings.alias||"";
+aliasEl.addEventListener("change", function(){ settings.alias=aliasEl.value.trim(); saveSettings(); toast(settings.alias? "Throwing as "+settings.alias+"." : "Throwing as a guest potter."); });
+$("#practiceBtn").addEventListener("click", function(){ stopLoops(); newPiece(null,true); document.getElementById("wheel").scrollIntoView({behavior:"smooth"}); });
+$("#dlPage").addEventListener("click", function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="the-wheel.html"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+  toast("Saved. The downloaded page plays offline, on your device.");
+});
+$("#exportBtn").addEventListener("click", function(){
+  var blob=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="the-wheel-record.json"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+  toast("Record exported as a file.");
+});
+$("#copyBtn").addEventListener("click", function(){
+  var txt=JSON.stringify(record,null,2);
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ toast("Record copied."); }, function(){ toast("Copy was blocked by the browser — use Export instead."); }); }
+  else toast("Copy is not available here — use Export instead.");
+});
+var forgetArmed=false;
+$("#forgetBtn").addEventListener("click", function(){
+  if(!forgetArmed){ forgetArmed=true; this.textContent="Tap again to confirm — this erases every piece in the record on this device"; $("#forgetMsg").textContent="Armed. One more tap erases the record. There is no undo and no copy anywhere else."; return; }
+  record=emptyRecord(); saveRecord(); forgetArmed=false;
+  this.textContent="Forget everything — tap to erase the record on this device";
+  $("#forgetMsg").textContent="Forgotten. The record on this device is empty, as if the wheel had just been cleaned.";
+  render(false);
+});
+
+/* ---------- videos ---------- */
+$("#videoShelf").innerHTML=VIDEOS.map(function(v){
+  return '<div class="video"><h3>'+v.title+'</h3><p class="small soft">'+v.stage+' · '+v.channel+' · on YouTube</p><p class="small">'+v.why+'</p><p><a href="'+v.url+'" target="_blank" rel="noopener">Watch — tap to open the video</a></p></div>';
+}).join("");
+
+syncSegs();
+render();
+</script>
+</body>
+</html>
