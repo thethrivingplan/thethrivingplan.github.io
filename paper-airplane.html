@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Paper Wings — Paper Airplane Lab</title>
+<style>
+:root{
+  --bg:#f4f7f9; --panel:#ffffff; --ink:#16232e; --muted:#4d6472; --line:#c9d6de;
+  --accent:#0b6e4f; --accent2:#b3540e; --sky:#dceef7; --good:#0b6e4f; --warn:#9a5b00; --bad:#a61c1c;
+  --chip:#e8f0f4; --btn:#0b5563; --btnink:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f171d; --panel:#18242d; --ink:#e8f1f5; --muted:#a7bcc7; --line:#33454f;
+    --accent:#4cc38a; --accent2:#f0a35e; --sky:#1d303d; --chip:#22333f; --btn:#2a7f8f; --good:#4cc38a; --warn:#f0c36d; --bad:#ff8a80; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,'Times New Roman',serif;line-height:1.5}
+button,[role="button"],select,summary,input:not([type="checkbox"]){min-height:2.25rem}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px 48px}
+.freebar{background:var(--btn);color:#fff;padding:10px 16px;text-align:center;font-size:1.02rem}
+.freebar a{color:#ffe9a8;font-weight:bold;text-decoration:underline;cursor:pointer}
+h1{font-size:2rem;line-height:1.15;margin:18px 0 4px}
+h2{font-size:1.35rem;margin:28px 0 8px;border-bottom:2px solid var(--line);padding-bottom:4px}
+h3{margin:14px 0 6px;font-size:1.08rem}
+p{margin:6px 0}
+.small{font-size:.9rem;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+nav.compass a{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:9px 14px;color:var(--ink);text-decoration:none;font-size:.95rem;min-height:2.25rem;display:inline-flex;align-items:center}
+.btn{background:var(--btn);color:var(--btnink);border:0;border-radius:8px;padding:10px 16px;font-size:1rem;cursor:pointer;font-family:inherit}
+.btn.alt{background:var(--chip);color:var(--ink);border:1px solid var(--line)}
+.btn.warn{background:var(--bad);color:#fff}
+.btn:disabled{opacity:.5}
+.preset-row{display:flex;flex-wrap:wrap;gap:10px}
+.preset-row .btn{flex:1 1 180px;text-align:left}
+.preset-row .btn strong{display:block;font-size:1.05rem}
+label.ctl{display:block;margin:14px 0 2px;font-weight:bold}
+input[type=range]{width:100%;min-height:2.25rem}
+select{width:100%;padding:8px;border-radius:6px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:1rem;font-family:inherit}
+input[type=text],input[type=number]{padding:8px;border-radius:6px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:1rem;font-family:inherit;width:100%}
+.why{background:var(--sky);border-radius:8px;padding:8px 12px;margin:6px 0 4px;font-size:.95rem}
+.readouts{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.readout{background:var(--chip);border-radius:8px;padding:8px 14px;min-width:130px}
+.readout b{display:block;font-size:1.25rem}
+canvas#sky{width:100%;height:auto;background:var(--sky);border:1px solid var(--line);border-radius:10px;display:block}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:10px 0;padding:4px 14px}
+summary{cursor:pointer;font-weight:bold;padding:8px 0;min-height:2.25rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:10px 0}
+.step{border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.step svg{width:100%;height:90px}
+.step p{font-size:.88rem;text-align:left}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+@media(max-width:560px){ table{font-size:.8rem} th,td{padding:4px 4px} }
+.tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.8rem;font-weight:bold}
+.tag.sim{background:#cfe8ff;color:#0b3d66}
+.tag.real{background:#ffe3b3;color:#6b3d00}
+@media (prefers-color-scheme: dark){.tag.sim{background:#173d5c;color:#bfe0ff}.tag.real{background:#5c4210;color:#ffe3b3}}
+.chal{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0;background:var(--panel)}
+.chal .lvl{font-weight:bold;color:var(--accent2)}
+.done{color:var(--good);font-weight:bold}
+.teach-coach{display:none}
+body[data-teach="coach"] .teach-coach{display:block}
+body[data-teach="off"] .teach-light{display:none}
+.note{border:2px dashed var(--accent2);border-radius:10px;padding:10px 14px;background:var(--panel)}
+footer{margin-top:34px;border-top:1px solid var(--line);padding-top:12px;font-size:.9rem;color:var(--muted)}
+.radio-row{display:flex;gap:8px;flex-wrap:wrap}
+.radio-row label{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;min-height:2.25rem;display:inline-flex;align-items:center;gap:6px}
+#flightVerdict{font-size:1.05rem}
+.kbd-result{font-size:1.15rem;font-weight:bold}
+</style>
+</head>
+<body data-teach="light">
+
+<div class="freebar">Free, always free — no ads, no accounts. Paper Wings is also
+<a id="offlineDoor" href="#" role="button" aria-label="Tap to download this page for offline use">available offline</a>
+— tap those words to download the whole lab to your device.</div>
+
+<div class="wrap">
+
+<h1>Paper Wings — the Paper Airplane Lab</h1>
+<p>Build a paper airplane, change one thing at a time, throw it, and see how far it goes — then fold the real one and find out how the real sky answers.</p>
+
+<nav class="compass" aria-label="Compass navigation">
+  <a href="#lab">🧭 North · The Lab — tap to go</a>
+  <a href="#fold">East · Fold-along designs — tap to go</a>
+  <a href="#why">South · The Full Why — tap to go</a>
+  <a href="#challenges">West · Challenges — tap to go</a>
+  <a href="#record">Centre · Your record — tap to go</a>
+</nav>
+
+<div class="card">
+  <label class="ctl" for="aliasInput">Your display name (optional — “Guest” always works, and no name is ever claimed or checked)</label>
+  <input type="text" id="aliasInput" placeholder="Guest" autocomplete="off">
+  <p class="small">Type to set your name. It is saved on this device only and only labels your record below.</p>
+
+  <span class="ctl" id="teachLabel">Teaching dial — tap a setting to choose</span>
+  <div class="radio-row" role="radiogroup" aria-labelledby="teachLabel">
+    <label><input type="radio" name="teach" value="off"> Off — just fly</label>
+    <label><input type="radio" name="teach" value="light" checked> Light — the why, in short</label>
+    <label><input type="radio" name="teach" value="coach"> Coach — full coaching after every flight</label>
+  </div>
+  <p class="small">Your teaching setting is saved on this device only.</p>
+</div>
+
+<div class="note" role="note">
+  <strong>Honest note, printed on the face of the lab:</strong> this is a <em>teaching model</em>, not a measuring instrument.
+  It uses simplified lift, drag, weight, and throw force so you can see cause and effect. Real paper planes vary with every fold,
+  every crease, and every throw — no two are alike. Sim numbers here are never measurements of a real plane.
+  The real test is folding one and throwing it — that is what the Real Throws log below is for.
+</div>
+
+<!-- ============ THE LAB ============ -->
+<h2 id="lab">The Lab</h2>
+
+<h3>1 · Start from a documented design — tap a preset to load it</h3>
+<div class="preset-row">
+  <button class="btn" id="presetDart" type="button"><strong>The Classic Dart</strong>Tap to load — a traditional, documented design: narrow, fast, straight.</button>
+  <button class="btn" id="presetGlider" type="button"><strong>The Glider</strong>Tap to load — a traditional, documented design: wide wings, slow and floaty.</button>
+  <button class="btn" id="presetStunt" type="button"><strong>The Stunt Plane</strong>Tap to load — a traditional, documented design: built for loops and tricks, not distance.</button>
+</div>
+<p class="small">All three are long-documented, traditional paper-airplane designs. Every diagram and word on this page is our own work.</p>
+<p id="presetName" class="kbd-result">Current design: The Classic Dart</p>
+
+<h3>2 · Shape your plane — slide or tap to change each control</h3>
+
+<label class="ctl" for="wingSize">Wing size — slide to change: <span id="wingSizeVal">Small</span></label>
+<input type="range" id="wingSize" min="1" max="3" step="1" value="1">
+<div class="why teach-light" id="whyWingSize"></div>
+
+<label class="ctl" for="wingShape">Wing shape — tap to choose a shape</label>
+<select id="wingShape">
+  <option value="swept">Swept back (dart-like)</option>
+  <option value="straight">Straight across</option>
+  <option value="tapered">Tapered (wide at body, narrow at tips)</option>
+</select>
+<div class="why teach-light" id="whyWingShape"></div>
+
+<label class="ctl" for="noseWeight">Nose weight (paperclips on the nose) — slide to change: <span id="noseWeightVal">1 clip</span></label>
+<input type="range" id="noseWeight" min="0" max="3" step="1" value="1">
+<div class="why teach-light" id="whyNoseWeight"></div>
+
+<label class="ctl" for="dihedral">Dihedral — wings angled up, flat, or down — slide to change: <span id="dihedralVal">Slightly up</span></label>
+<input type="range" id="dihedral" min="-1" max="2" step="1" value="1">
+<div class="why teach-light" id="whyDihedral"></div>
+
+<label class="ctl" for="winglets">Winglet folds at the wingtips — tap to choose</label>
+<select id="winglets">
+  <option value="off" selected>Off — plain wingtips</option>
+  <option value="up">Folded up</option>
+  <option value="down">Folded down</option>
+</select>
+<div class="why teach-light" id="whyWinglets"></div>
+
+<div class="readouts" aria-live="polite">
+  <div class="readout">Glide ratio<b id="roGlide">—</b><span class="small">metres forward per metre down, in still air</span></div>
+  <div class="readout">Stability<b id="roStab">—</b><span class="small">how well it holds its line</span></div>
+  <div class="readout">Best glide speed<b id="roSpeed">—</b><span class="small">throw near this — much harder wastes it</span></div>
+  <div class="readout">Stall speed<b id="roStall">—</b><span class="small">slower than this, the wings stop lifting</span></div>
+</div>
+
+<h3>3 · Launch — slide to set, then tap Throw</h3>
+<label class="ctl" for="throwAngle">Throw angle — slide to change: <span id="throwAngleVal">10°</span></label>
+<input type="range" id="throwAngle" min="-5" max="40" step="1" value="10">
+<label class="ctl" for="throwPower">Throw power — slide to change: <span id="throwPowerVal">6 / 10</span></label>
+<input type="range" id="throwPower" min="1" max="10" step="1" value="6">
+<div class="why teach-light">Thrust is just the throw. Your arm gives the plane all its push in the first instant; after that the push is gone and the plane lives on its speed, trading height and speed against drag until it lands. A paper plane has no engine — that fading push is the whole story of its “thrust.”</div>
+
+<button class="btn" id="throwBtn" type="button" style="font-size:1.15rem;padding:14px 26px">✈ Tap to throw this plane</button>
+<button class="btn alt" id="resetViewBtn" type="button">Tap to clear the sky</button>
+
+<p id="flightVerdict" aria-live="polite"></p>
+<div class="why teach-coach" id="coachBox"></div>
+<canvas id="sky" width="1000" height="420" aria-label="Side view drawing of the flight path"></canvas>
+<p class="small">Side view. The dashed line is the ground; marks along it are metres. If a hoop challenge is picked below, the hoop is drawn and your path must pass through it.</p>
+
+<!-- ============ FOLD-ALONG ============ -->
+<h2 id="fold">Fold-along designs — fold the real plane</h2>
+<p>Each design below folds from one ordinary sheet of paper. Open a design, follow the steps, then throw the real thing and log it under Real Throws in your record.</p>
+
+<details id="foldDart">
+  <summary>Classic Dart — tap to open / tap to close</summary>
+  <p class="small">A traditional, documented design. Diagrams are our own drawings.</p>
+  <div class="steps">
+    <div class="step"><svg viewBox="0 0 100 90"><rect x="25" y="5" width="50" height="80" fill="none" stroke="currentColor" stroke-width="2"/><line x1="50" y1="5" x2="50" y2="85" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>1.</b> Fold the sheet in half lengthwise, crease hard, then unfold. This centre line guides every fold after it.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><rect x="25" y="5" width="50" height="80" fill="none" stroke="currentColor" stroke-width="2"/><path d="M25 5 L50 30 L25 30 Z M75 5 L50 30 L75 30 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg><p><b>2.</b> Fold both top corners in to the centre line. You now have a pointed nose — the dart’s whole secret.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M50 2 L72 45 L72 85 L28 85 L28 45 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="50" y1="2" x2="50" y2="85" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>3.</b> Fold the new slanted edges in to the centre line again, sharpening the point further.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M50 2 L68 85 L32 85 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="32" y1="60" x2="68" y2="60" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>4.</b> Fold the plane in half along the centre line, folds on the outside.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M10 70 L90 45 L55 70 L90 78 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg><p><b>5.</b> Fold each side down to make two narrow wings, angled very slightly up. Throw it level and firm.</p></div>
+  </div>
+</details>
+
+<details id="foldGlider">
+  <summary>Glider — tap to open / tap to close</summary>
+  <p class="small">A traditional, documented design. Diagrams are our own drawings.</p>
+  <div class="steps">
+    <div class="step"><svg viewBox="0 0 100 90"><rect x="25" y="5" width="50" height="80" fill="none" stroke="currentColor" stroke-width="2"/><line x1="50" y1="5" x2="50" y2="85" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>1.</b> Fold in half lengthwise, crease, unfold — same centre guide line as the dart.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><rect x="25" y="5" width="50" height="80" fill="none" stroke="currentColor" stroke-width="2"/><path d="M25 5 L50 28 L25 28 Z M75 5 L50 28 L75 28 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg><p><b>2.</b> Fold the top corners to the centre, then fold the whole nose point down so it lies flat against the body.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M28 20 L72 20 L72 85 L28 85 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="50" y1="20" x2="50" y2="85" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>3.</b> Fold in half along the centre line, then fold the top corners in once more to meet at the centre.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M8 62 L92 62 L60 78 L40 78 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg><p><b>4.</b> Fold each side out into one wide, flat wing. Wide wings are the point — they carry the plane slowly.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M5 55 L95 55 L70 72 L30 72 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 55 L12 42 M95 55 L88 42" stroke="currentColor" stroke-width="2"/></svg><p><b>5.</b> Bend the wingtips up a finger’s width for winglets, and give the wings a gentle upward angle. Throw it soft and level — a glider hates a hard throw.</p></div>
+  </div>
+</details>
+
+<details id="foldStunt">
+  <summary>Stunt Plane — tap to open / tap to close</summary>
+  <p class="small">A traditional, documented design. Diagrams are our own drawings.</p>
+  <div class="steps">
+    <div class="step"><svg viewBox="0 0 100 90"><rect x="25" y="5" width="50" height="80" fill="none" stroke="currentColor" stroke-width="2"/><line x1="50" y1="5" x2="50" y2="85" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>1.</b> Centre fold first, as always: in half lengthwise, crease, unfold.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><rect x="25" y="5" width="50" height="80" fill="none" stroke="currentColor" stroke-width="2"/><path d="M25 5 L50 26 L25 26 Z M75 5 L50 26 L75 26 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg><p><b>2.</b> Corners to the centre for a point — then fold the point down, but only partway, leaving a shorter, blunter nose.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M30 15 L70 15 L70 85 L30 85 Z" fill="none" stroke="currentColor" stroke-width="2"/><line x1="50" y1="15" x2="50" y2="85" stroke="currentColor" stroke-dasharray="4 3"/></svg><p><b>3.</b> Fold in half along the centre. Fold each side out into medium wings.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M10 60 L90 60 L62 76 L38 76 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M72 60 L72 44 M84 60 L84 48" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg><p><b>4.</b> Bend the back edge of each wing <em>up</em> a little. Those up-bent tails are elevators — they keep pushing the nose up, which is what makes the loop.</p></div>
+    <div class="step"><svg viewBox="0 0 100 90"><path d="M15 70 Q50 5 85 70" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="50" cy="38" r="17" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg><p><b>5.</b> Throw it upward at a steep angle with medium power. If it dives instead of looping, bend the elevators up a touch more.</p></div>
+  </div>
+</details>
+
+<!-- ============ WHY ============ -->
+<h2 id="why">The Full Why — how paper flight works</h2>
+<div class="grid">
+  <div class="card"><h3>Four forces, plainly</h3>
+    <p><b>Lift</b> is the wings pushing air down and the air pushing back up. <b>Drag</b> is air resisting — every fold and rough edge adds a little. <b>Weight</b> is gravity pulling the plane down the whole flight. <b>Thrust</b> is only your throw: one push at the start, gone the instant the plane leaves your hand.</p>
+    <p class="teach-light">A gliding plane is always slowly falling through the air around it — good design just makes the fall shallow and slow.</p>
+  </div>
+  <div class="card"><h3>Why a dart goes fast and straight but glides poorly</h3>
+    <p>Small wings mean little drag at speed and a heavy, pointy nose that holds its line like a thrown spear. But small wings make little lift at low speed, so once the throw fades the dart sinks fast. Speed is its whole trick — and speed runs out.</p>
+  </div>
+  <div class="card"><h3>Why big wings glide — and stall</h3>
+    <p>Big wings make plenty of lift while moving slowly, so a glider can float. The cost: it cannot be thrown hard — extra speed just makes drag and can fold the wings’ careful shape. And below its <b>stall speed</b>, air stops flowing smoothly over the wing, lift collapses, and the nose drops. A stall is not the plane “giving up”; it is the wing asking for speed it no longer has.</p>
+  </div>
+  <div class="card"><h3>Nose weight: stability with a price</h3>
+    <p>Weight at the nose moves the balance point forward, so the plane points where it is going and resists tumbling. Too much, and the plane must fly faster just to hold its nose up — it lands sooner and shorter. The right amount is the least that still flies straight.</p>
+  </div>
+  <div class="card"><h3>Dihedral: wings that level themselves</h3>
+    <p>When wings angle upward in a shallow V, a tip that drops meets the air more squarely and gets lifted back up. The plane corrects itself, over and over, with no pilot. Flat wings are a touch faster; downward-angled wings are twitchy and love to spiral in.</p>
+  </div>
+  <div class="card"><h3>Three strategies, three trade-offs</h3>
+    <p><b>Distance setup:</b> dart or tapered wings, one clip, slight dihedral, firm level throw. Trades hang time for speed and a shallow fast glide.</p>
+    <p><b>Hang-time setup:</b> glider, big straight wings, winglets up, no extra clip, gentle throw near best-glide speed. Trades distance for the slowest possible sink.</p>
+    <p><b>Trick setup:</b> stunt plane, elevators (here: winglets down reads as up-bent tail in this model’s simplification) and a steep throw. Trades everything for the loop — distance is not the point.</p>
+  </div>
+</div>
+
+<!-- ============ CHALLENGES ============ -->
+<h2 id="challenges">Challenges — the ramp</h2>
+<p>Pick a challenge, then throw from the Lab. Your result is checked the moment the plane lands. Personal bests are kept in your record.</p>
+<label class="ctl" for="challengeSel">Challenge — tap to choose a challenge</label>
+<select id="challengeSel">
+  <option value="">Free flight — no challenge</option>
+  <option value="d1">Level 1 · Distance: reach 10 m</option>
+  <option value="d2">Level 2 · Distance: reach 16 m</option>
+  <option value="d3">Level 3 · Distance: reach 22 m</option>
+  <option value="d4">Level 4 · Distance: reach 28 m</option>
+  <option value="h1">Level 1 · Hang time: stay up 3 seconds</option>
+  <option value="h2">Level 2 · Hang time: stay up 5 seconds</option>
+  <option value="h3">Level 3 · Hang time: stay up 7 seconds</option>
+  <option value="hoop">Level 3 · Accuracy: fly through the hoop (12 m out, centre 3 m up)</option>
+</select>
+<p id="challengeStatus" aria-live="polite"></p>
+<div id="bestBox" class="card"><h3>Your personal bests</h3><p id="bestText">No flights yet. Your best sim distance and hang time will live here.</p></div>
+
+<!-- ============ RECORD ============ -->
+<h2 id="record">Your record — saved on this device only</h2>
+<p class="small">Everything below is stored only in this browser on this device (localStorage). Nothing is sent anywhere, there is no account, and nobody else can see it. Sim flights and real throws are always labelled separately and never mixed.</p>
+
+<div class="card">
+  <h3>Log a real throw</h3>
+  <p>Fold the real plane from the fold-along steps above, throw it for real, measure it, then log it here.</p>
+  <label class="ctl" for="realDesign">Design you threw — tap to choose</label>
+  <select id="realDesign">
+    <option>Classic Dart</option><option>Glider</option><option>Stunt Plane</option><option>My own variation</option>
+  </select>
+  <label class="ctl" for="realDist">Real distance in metres — type the number</label>
+  <input type="number" id="realDist" min="0" step="0.1" placeholder="e.g. 8.5">
+  <label class="ctl" for="realNote">Note (optional) — type a note</label>
+  <input type="text" id="realNote" placeholder="e.g. slight left turn, threw it in the hall">
+  <p><button class="btn" id="logRealBtn" type="button">Tap to log this real throw</button></p>
+  <p id="realMsg" aria-live="polite"></p>
+</div>
+
+<div class="card">
+  <h3>Record entries</h3>
+  <div>
+  <table id="recordTable"><thead><tr><th>Kind</th><th>When</th><th>Who</th><th>Design</th><th>Distance</th><th>Hang time</th><th>Note / why</th></tr></thead><tbody id="recordBody"></tbody></table>
+  </div>
+  <p id="emptyRecord">No entries yet — throw a plane in the Lab or log a real throw above.</p>
+  <p>
+    <button class="btn alt" id="exportBtn" type="button">Tap to export your record (downloads a file)</button>
+    <button class="btn warn" id="forgetBtn" type="button">Tap to forget everything — wipes this record, your name, and your teaching setting from this device</button>
+  </p>
+  <p id="recordMsg" aria-live="polite"></p>
+</div>
+
+<footer>
+  <p>Paper Wings · The Paper Airplane Lab — part of the Thriving Plan pages. Free, always free. No ads, ever. No accounts.</p>
+  <p>Copyleft: this page, its diagrams, and its text are shared under <b>CC BY-SA 4.0</b> — copy it, change it, share it, keep it free. The base designs are traditional, documented paper-airplane designs; all diagrams and wording here are original.</p>
+  <p class="small">Stakes on this page are personal bests, challenge levels, and beating your own last flight. There is no money anywhere on this page.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+var LS_KEY="paperWingsRecord.v1", LS_SET="paperWingsSettings.v1";
+
+/* ---------- settings & record storage ---------- */
+function loadJSON(k, d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function saveJSON(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+var settings = loadJSON(LS_SET, {teach:"light", alias:""});
+var record = loadJSON(LS_KEY, []); // entries: {kind:'sim'|'real', t, who, design, dist, hang, note}
+
+var aliasInput=document.getElementById('aliasInput');
+aliasInput.value=settings.alias||"";
+document.body.setAttribute('data-teach', settings.teach||"light");
+var radios=document.querySelectorAll('input[name="teach"]');
+for(var i=0;i<radios.length;i++){ if(radios[i].value===settings.teach) radios[i].checked=true;
+  radios[i].addEventListener('change',function(){ settings.teach=this.value; document.body.setAttribute('data-teach',this.value); saveJSON(LS_SET,settings); });
+}
+aliasInput.addEventListener('input',function(){ settings.alias=this.value; saveJSON(LS_SET,settings); });
+function who(){ var a=(settings.alias||"").trim(); return a?a:"Guest"; }
+
+/* ---------- offline door: the words themselves download the page ---------- */
+document.getElementById('offlineDoor').addEventListener('click',function(ev){
+  ev.preventDefault();
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:"text/html"});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="paper-wings.html";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+
+/* ---------- design model ---------- */
+var PRESETS={
+  dart:  {name:"The Classic Dart", wingSize:1, wingShape:"swept",   nose:1, dihedral:1, winglets:"off"},
+  glider:{name:"The Glider",       wingSize:3, wingShape:"straight",nose:0, dihedral:2, winglets:"up"},
+  stunt: {name:"The Stunt Plane",  wingSize:2, wingShape:"tapered", nose:0, dihedral:0, winglets:"down"}
+};
+var currentPreset="dart";
+var els={};
+["wingSize","wingShape","noseWeight","dihedral","winglets","throwAngle","throwPower"].forEach(function(id){ els[id]=document.getElementById(id); });
+
+function getDesign(){
+  return { wingSize:+els.wingSize.value, wingShape:els.wingShape.value,
+           nose:+els.noseWeight.value, dihedral:+els.dihedral.value, winglets:els.winglets.value };
+}
+function designName(d){
+  for(var k in PRESETS){ var p=PRESETS[k];
+    if(p.wingSize===d.wingSize&&p.wingShape===d.wingShape&&p.nose===d.nose&&p.dihedral===d.dihedral&&p.winglets===d.winglets) return p.name.replace("The ","");
+  }
+  return "Custom build";
+}
+
+/* Physics parameters derived from the design (simplified teaching model). */
+function derive(d){
+  var S=[0,0.011,0.017,0.025][d.wingSize];                 // wing area m^2
+  var mass=0.0045 + d.nose*0.0012 + d.wingSize*0.0004;      // kg
+  var CL=0.55 + (d.wingShape==="straight"?0.12:0) + (d.wingShape==="tapered"?0.05:0);
+  var CD0=0.035 + (d.wingShape==="swept"?-0.004:0) + (d.wingShape==="straight"?0.006:0);
+  if(d.winglets==="up") CD0-=0.004;
+  if(d.winglets==="down") CD0+=0.002;
+  CD0+=Math.abs(d.dihedral)*0.0015;
+  var k=[0,0.16,0.10,0.06][d.wingSize];                     // induced drag: small wings pay more per unit of lift
+  var CD=CD0 + k*CL*CL;
+  var glide=CL/CD;
+  var rho=1.225;
+  var bestSpeed=Math.sqrt(2*mass*9.81/(rho*S*Math.sqrt(CL*CL+CD*CD)));
+  var stallSpeed=Math.sqrt(2*mass*9.81/(rho*S*1.1));
+  var stab=50;
+  stab += (d.nose===1?22 : d.nose===2?12 : d.nose===0?-14 : -22);   // 1 clip is the sweet spot
+  stab += (d.dihedral===1?14 : d.dihedral===2?20 : d.dihedral===0?0 : -22);
+  stab += (d.winglets==="up"?8 : d.winglets==="down"?4 : 0);
+  stab += (d.wingShape==="swept"?6:0);
+  stab=Math.max(5,Math.min(98,stab));
+  return {S:S,mass:mass,CL:CL,CD:CD,CD0:CD0,k:k,glide:glide,bestSpeed:bestSpeed,stallSpeed:stallSpeed,stab:stab};
+}
+
+/* ---------- live explanations ---------- */
+var sizeNames={1:"Small",2:"Medium",3:"Large"};
+function refresh(){
+  var d=getDesign(), p=derive(d);
+  document.getElementById('wingSizeVal').textContent=sizeNames[d.wingSize];
+  document.getElementById('noseWeightVal').textContent=d.nose===0?"No clips":d.nose+(d.nose===1?" clip":" clips");
+  document.getElementById('dihedralVal').textContent={ "-1":"Angled down","0":"Flat","1":"Slightly up","2":"Well up" }[String(d.dihedral)];
+  document.getElementById('throwAngleVal').textContent=els.throwAngle.value+"°";
+  document.getElementById('throwPowerVal').textContent=els.throwPower.value+" / 10";
+  document.getElementById('presetName').textContent="Current design: "+designName(d)+(designName(d)==="Custom build"?"":" (preset)");
+
+  document.getElementById('whyWingSize').textContent =
+    d.wingSize===1 ? "Small wings: little lift at low speed, little drag at high speed. Fast and straight off the throw, but it sinks quickly once it slows — the dart’s bargain." :
+    d.wingSize===2 ? "Medium wings: a middle road — decent lift, decent speed. Forgiving while you learn what the other controls do." :
+                     "Large wings: lots of lift while moving slowly, so it floats — but big wings drag at speed and a hard throw is wasted on them. Throw a big-wing plane gently.";
+  document.getElementById('whyWingShape').textContent =
+    d.wingShape==="swept" ? "Swept-back wings slice the air with the least drag and hold a straight line at speed — built for distance throws, weak at slow floating." :
+    d.wingShape==="straight" ? "Straight wings make the most lift for their size at slow speeds — the glider’s choice — but they drag more when thrown hard." :
+                     "Tapered wings split the difference: strong lift near the body, clean narrow tips. A good all-rounder.";
+  document.getElementById('whyNoseWeight').textContent =
+    d.nose===0 ? "No nose weight: the balance sits too far back, so the plane pitches up, stalls, and porpoises. Watch the stability readout fall." :
+    d.nose===1 ? "One clip: the classic sweet spot. The nose leads, the plane holds its line, and the weight cost is small." :
+    d.nose===2 ? "Two clips: very steady, but the plane must fly faster to hold its nose up — some distance is spent carrying the clips." :
+                 "Three clips: a flying paperclip. Rock steady and short — the weight wins and the glide loses. Overdone nose weight always costs distance.";
+  document.getElementById('whyDihedral').textContent =
+    d.dihedral===-1 ? "Wings angled down: unstable. A dropped tip gets less lift, drops further, and the plane spirals in. The model shows it in the stability readout." :
+    d.dihedral===0 ? "Flat wings: no self-levelling help, but the cleanest, lowest-drag shape. Fine in calm air with a straight throw." :
+    d.dihedral===1 ? "Slight upward angle: when one wing drops, it meets the air more squarely and lifts back. Gentle self-levelling, almost no drag cost." :
+                     "Wings well up: strong self-levelling — the plane keeps righting itself. Costs a little drag and a little speed.";
+  document.getElementById('whyWinglets').textContent =
+    d.winglets==="up" ? "Winglets up: air spilling off the wingtips makes little whirlpools (vortices) that waste energy. Up-folded tips block some of that spill — a small, free glide improvement." :
+    d.winglets==="down" ? "Winglets down: in this simplified model they stand in for the stunt plane’s up-bent tail — they keep nudging the nose up, which is what sets up loops and tricks instead of distance." :
+                        "Plain wingtips: simple and honest. The tip vortices spill freely, costing a little glide.";
+  document.getElementById('roGlide').textContent=p.glide.toFixed(1)+" : 1";
+  document.getElementById('roStab').textContent=Math.round(p.stab)+" / 100";
+  document.getElementById('roSpeed').textContent=p.bestSpeed.toFixed(1)+" m/s";
+  document.getElementById('roStall').textContent=p.stallSpeed.toFixed(1)+" m/s";
+  return p;
+}
+["wingSize","wingShape","noseWeight","dihedral","winglets","throwAngle","throwPower"].forEach(function(id){
+  els[id].addEventListener('input',refresh); els[id].addEventListener('change',refresh);
+});
+function loadPreset(key){
+  currentPreset=key; var p=PRESETS[key];
+  els.wingSize.value=p.wingSize; els.wingShape.value=p.wingShape; els.noseWeight.value=p.nose;
+  els.dihedral.value=p.dihedral; els.winglets.value=p.winglets; refresh();
+}
+document.getElementById('presetDart').addEventListener('click',function(){loadPreset('dart');});
+document.getElementById('presetGlider').addEventListener('click',function(){loadPreset('glider');});
+document.getElementById('presetStunt').addEventListener('click',function(){loadPreset('stunt');});
+
+/* ---------- flight simulation (simplified point-mass model) ---------- */
+var canvas=document.getElementById('sky'), ctx=canvas.getContext('2d');
+var CHALLENGES={
+  d1:{type:"dist",target:10,label:"Level 1 · Distance 10 m"},
+  d2:{type:"dist",target:16,label:"Level 2 · Distance 16 m"},
+  d3:{type:"dist",target:22,label:"Level 3 · Distance 22 m"},
+  d4:{type:"dist",target:28,label:"Level 4 · Distance 28 m"},
+  h1:{type:"hang",target:3,label:"Level 1 · Hang time 3 s"},
+  h2:{type:"hang",target:5,label:"Level 2 · Hang time 5 s"},
+  h3:{type:"hang",target:7,label:"Level 3 · Hang time 7 s"},
+  hoop:{type:"hoop",x:12,y:3,r:0.9,label:"Level 3 · Through the hoop"}
+};
+function simulate(d,p){
+  var angle=+els.throwAngle.value*Math.PI/180;
+  var v0=3.5 + (+els.throwPower.value)*1.15;             // throw power -> speed m/s
+  var x=0,y=1.6,vx=v0*Math.cos(angle),vy=v0*Math.sin(angle);
+  var theta=angle+0.10;                                  // pitch attitude starts trimmed to the throw direction
+  var dt=0.01,t=0,path=[[x,y]],stallTime=0,hoopHit=false;
+  var rho=1.225,g=9.81;
+  var A_TRIM=0.10, A_STALL=0.30, CDS=1.5;                // trim angle, stall angle (rad), paper-roughness drag factor
+  var tau=0.85 - (p.stab/100)*0.45;                      // steadier designs swing their nose back to trim faster
+  var stuntLoop=(d.winglets==="down");                   // up-bent tail behaviour
+  for(var i=0;i<8000;i++){
+    var v=Math.sqrt(vx*vx+vy*vy); if(v<0.3) break;
+    var gamma=Math.atan2(vy,vx);                         // direction of travel
+    var alpha=theta-gamma;                               // angle of attack: nose direction vs travel direction
+    while(alpha>Math.PI)alpha-=2*Math.PI; while(alpha<-Math.PI)alpha+=2*Math.PI;
+    var CLr=p.CL*(alpha/A_TRIM);                         // lift grows with angle of attack...
+    var stallF=1;
+    if(alpha>A_STALL){ stallF=Math.max(0.3, 1-(alpha-A_STALL)*2.2); stallTime+=dt; }  // ...until the stall, where it falls away
+    if(alpha<-0.05) stallF=0.6;
+    var CLu=CLr*stallF;
+    var CDu=(p.CD0 + p.k*Math.max(0,CLu)*Math.max(0,CLu))*CDS + (stallF<1?0.30*(1-stallF):0) + Math.abs(alpha)*0.10;
+    var q=0.5*rho*v*v*p.S;
+    var L=q*CLu, D=q*CDu;
+    var ux=vx/v, uy=vy/v;
+    var ax=(-D*ux - L*uy)/p.mass;
+    var ay=(-D*uy + L*ux)/p.mass - g;
+    if(stuntLoop && t>0.25 && t<1.15){ ay+=7.5; }        // elevators keep pushing the nose up -> loop arc
+    vx+=ax*dt; vy+=ay*dt; x+=vx*dt; y+=vy*dt; t+=dt;
+    if(i%6===0) path.push([x,y]);
+    var ch=CHALLENGES[document.getElementById('challengeSel').value];
+    if(ch&&ch.type==="hoop"){ var dx=x-ch.x,dy=y-ch.y; if(dx*dx+dy*dy<ch.r*ch.r) hoopHit=true; }
+    /* pitch stability: the nose rotates back toward its trimmed angle to the airflow */
+    var dth=(Math.atan2(vy,vx)+A_TRIM)-theta;
+    while(dth>Math.PI)dth-=2*Math.PI; while(dth<-Math.PI)dth+=2*Math.PI;
+    var tauEff=tau*Math.max(0.45,Math.min(1.4,p.bestSpeed/Math.max(v,0.5)));
+    theta+=dth*Math.min(1,dt/tauEff);
+    if(y<=0){ path.push([x,0]); break; }
+  }
+  return {dist:Math.max(0,x), hang:t, path:path, stalled:stallTime>0.5, hoopHit:hoopHit, v0:v0};
+}
+function drawSky(path, hoop){
+  var W=canvas.width,H=canvas.height; ctx.clearRect(0,0,W,H);
+  var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  ctx.fillStyle=dark?"#1d303d":"#dceef7"; ctx.fillRect(0,0,W,H);
+  var maxX=30; if(path&&path.length){ maxX=Math.max(30, path[path.length-1][0]*1.08); }
+  var maxY=10; if(path){ for(var i=0;i<path.length;i++) maxY=Math.max(maxY,path[i][1]*1.15); }
+  var groundY=H-34, sx=W/maxX, sy=(H-60)/maxY;
+  ctx.strokeStyle=dark?"#5b7684":"#7d99a8"; ctx.setLineDash([6,5]);
+  ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(W,groundY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle=dark?"#a7bcc7":"#4d6472"; ctx.font="12px Georgia";
+  for(var m=0;m<=maxX;m+=5){ ctx.fillText(m+" m", m*sx+2, H-14); ctx.fillRect(m*sx,groundY,1,6); }
+  if(hoop){ ctx.strokeStyle="#b3540e"; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.arc(hoop.x*sx, groundY-hoop.y*sy, hoop.r*sy, 0, Math.PI*2); ctx.stroke(); ctx.lineWidth=1;
+    ctx.fillStyle="#b3540e"; ctx.fillText("hoop", hoop.x*sx-14, groundY-hoop.y*sy-hoop.r*sy-6); }
+  if(path&&path.length>1){
+    ctx.strokeStyle=dark?"#4cc38a":"#0b6e4f"; ctx.lineWidth=2.5; ctx.beginPath();
+    ctx.moveTo(path[0][0]*sx, groundY-path[0][1]*sy);
+    for(var j=1;j<path.length;j++) ctx.lineTo(path[j][0]*sx, groundY-path[j][1]*sy);
+    ctx.stroke(); ctx.lineWidth=1;
+    var last=path[path.length-1];
+    ctx.fillStyle=dark?"#f0a35e":"#b3540e";
+    ctx.beginPath(); ctx.arc(last[0]*sx, groundY, 5, 0, Math.PI*2); ctx.fill();
+  }
+}
+document.getElementById('resetViewBtn').addEventListener('click',function(){
+  drawSky(null,null); document.getElementById('flightVerdict').textContent="";
+  document.getElementById('coachBox').textContent="";
+});
+document.getElementById('challengeSel').addEventListener('change',function(){ drawSky(lastPath, hoopFor()); });
+var lastPath=null;
+function hoopFor(){ var c=CHALLENGES[document.getElementById('challengeSel').value]; return (c&&c.type==="hoop")?c:null; }
+
+/* ---------- record rendering ---------- */
+function fmt(n){ return (Math.round(n*10)/10).toFixed(1); }
+function renderRecord(){
+  var body=document.getElementById('recordBody'); body.innerHTML="";
+  document.getElementById('emptyRecord').style.display=record.length?"none":"block";
+  record.slice().reverse().forEach(function(e){
+    var tr=document.createElement('tr');
+    var kind=e.kind==="real"?'<span class="tag real">REAL THROW</span>':'<span class="tag sim">SIM FLIGHT</span>';
+    tr.innerHTML="<td>"+kind+"</td><td>"+e.t+"</td><td>"+escapeHtml(e.who)+"</td><td>"+escapeHtml(e.design)+"</td><td>"+
+      fmt(e.dist)+" m</td><td>"+(e.kind==="real"?"—":fmt(e.hang)+" s")+"</td><td>"+escapeHtml(e.note||"")+"</td>";
+    body.appendChild(tr);
+  });
+  var sims=record.filter(function(e){return e.kind==="sim";});
+  if(sims.length){
+    var bd=Math.max.apply(null,sims.map(function(e){return e.dist;}));
+    var bh=Math.max.apply(null,sims.map(function(e){return e.hang;}));
+    document.getElementById('bestText').innerHTML="Best sim distance: <b>"+fmt(bd)+" m</b> · Best sim hang time: <b>"+fmt(bh)+" s</b> — set by "+escapeHtml(who())+". Beat your own last flight: that is the only stake here.";
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+/* ---------- throw ---------- */
+document.getElementById('throwBtn').addEventListener('click',function(){
+  var d=getDesign(), p=refresh();
+  var r=simulate(d,p); lastPath=r.path;
+  drawSky(r.path, hoopFor());
+  var whyBits=[];
+  whyBits.push("Glide ratio "+p.glide.toFixed(1)+":1 and stability "+Math.round(p.stab)+"/100.");
+  if(r.stalled) whyBits.push("It stalled: the climb bled its speed away until the wing sat at too steep an angle for the airflow (below about "+p.stallSpeed.toFixed(1)+" m/s this wing cannot hold that angle), lift collapsed, and the nose dropped — that steep dive is the stall. A gentler throw often flies further.");
+  if(r.v0>p.bestSpeed*1.45) whyBits.push("That throw ("+r.v0.toFixed(1)+" m/s) was far above this design's best glide speed ("+p.bestSpeed.toFixed(1)+" m/s) — the extra speed mostly burned off as drag.");
+  if(r.v0<p.stallSpeed) whyBits.push("That throw was slower than the stall speed — the wing never really got flying.");
+  if(d.nose>=3) whyBits.push("Three clips kept it straight but the weight tax shows: a steadier, shorter flight.");
+  if(d.nose===0) whyBits.push("No nose weight left the balance too far back — watch for the pitch-up and porpoising in the path.");
+  if(d.wingSize===3&&!r.stalled) whyBits.push("The big wings did their job: a slow sink and a long float.");
+  if(d.wingSize===1) whyBits.push("Small dart wings: fast off the hand, quick to sink once the throw faded.");
+  var verdict="Flight over: "+fmt(r.dist)+" metres, "+fmt(r.hang)+" seconds in the air (simulated — a teaching model, not a measurement).";
+  document.getElementById('flightVerdict').textContent=verdict;
+  document.getElementById('coachBox').textContent="Coach: "+whyBits.join(" ")+" Change exactly one control and throw again — that is how you learn which change did what.";
+
+  var chKey=document.getElementById('challengeSel').value, ch=CHALLENGES[chKey], chNote="";
+  if(ch){
+    var pass=(ch.type==="dist"&&r.dist>=ch.target)||(ch.type==="hang"&&r.hang>=ch.target)||(ch.type==="hoop"&&r.hoopHit);
+    chNote=(pass?"Challenge PASSED — ":"Challenge not yet — ")+ch.label+".";
+    document.getElementById('challengeStatus').innerHTML=pass?'<span class="done">✔ '+chNote+'</span>':chNote;
+  }
+  record.push({kind:"sim", t:new Date().toLocaleString(), who:who(), design:designName(d),
+    dist:Math.round(r.dist*10)/10, hang:Math.round(r.hang*10)/10,
+    note:(chNote?chNote+" ":"")+whyBits[0]});
+  saveJSON(LS_KEY,record); renderRecord();
+});
+
+/* ---------- real throws ---------- */
+document.getElementById('logRealBtn').addEventListener('click',function(){
+  var dist=parseFloat(document.getElementById('realDist').value);
+  var msg=document.getElementById('realMsg');
+  if(isNaN(dist)||dist<0){ msg.textContent="Type the real distance you measured first — in metres."; return; }
+  record.push({kind:"real", t:new Date().toLocaleString(), who:who(),
+    design:document.getElementById('realDesign').value, dist:dist, hang:0,
+    note:document.getElementById('realNote').value||"Real throw, measured by hand."});
+  saveJSON(LS_KEY,record); renderRecord();
+  msg.textContent="Logged as a REAL THROW: "+fmt(dist)+" m with the "+document.getElementById('realDesign').value+". It sits in the record beside your sim flights, labelled separately — compare away.";
+  document.getElementById('realDist').value=""; document.getElementById('realNote').value="";
+});
+
+/* ---------- export & forget ---------- */
+document.getElementById('exportBtn').addEventListener('click',function(){
+  var lines=["Paper Wings record — exported "+new Date().toLocaleString(),"Kinds are kept separate: SIM FLIGHTS are teaching-model results; REAL THROWS are measured by hand.",""];
+  record.forEach(function(e){ lines.push((e.kind==="real"?"REAL THROW":"SIM FLIGHT")+" | "+e.t+" | "+e.who+" | "+e.design+" | "+fmt(e.dist)+" m"+(e.kind==="sim"?" | "+fmt(e.hang)+" s":"")+" | "+(e.note||"")); });
+  var blob=new Blob([lines.join("\n")],{type:"text/plain"});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="paper-wings-record.txt";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  document.getElementById('recordMsg').textContent="Record downloaded as a text file.";
+});
+document.getElementById('forgetBtn').addEventListener('click',function(){
+  record=[]; settings={teach:"light",alias:""};
+  try{ localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_SET); }catch(e){}
+  aliasInput.value=""; document.body.setAttribute('data-teach',"light");
+  for(var i=0;i<radios.length;i++) radios[i].checked=(radios[i].value==="light");
+  renderRecord();
+  document.getElementById('recordMsg').textContent="Forgotten. The record, your name, and your teaching setting are wiped from this device.";
+});
+
+refresh(); renderRecord(); drawSky(null,null);
+})();
+</script>
+</body>
+</html>
