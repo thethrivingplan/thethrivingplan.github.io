@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Joining Bench — Welding &amp; Soldering Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f1ec; --surface:#fffdf9; --surface2:#ece7dd; --ink:#1d1a16; --muted:#5c554b;
+  --line:#d8d0c2; --accent:#c2410c; --accent-ink:#fff7ed; --good:#166534; --good-bg:#dcfce7;
+  --warn:#92400e; --warn-bg:#fef3c7; --bad:#991b1b; --bad-bg:#fee2e2; --steel:#3f4a56;
+  --safety-bg:#7f1d1d; --safety-ink:#fff7ed; --focus:#b45309;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171512; --surface:#211e1a; --surface2:#2b2721; --ink:#f2ede4; --muted:#b8ae9e;
+  --line:#3d372d; --accent:#f97316; --accent-ink:#1c1005; --good:#4ade80; --good-bg:#14532d;
+  --warn:#fbbf24; --warn-bg:#451a03; --bad:#fca5a5; --bad-bg:#450a0a; --steel:#9fb2c3;
+  --safety-bg:#991b1b; --safety-ink:#fff7ed; --focus:#fbbf24; }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,sans-serif;font-size:17px;line-height:1.55}
+h1,h2,h3{font-family:"Barlow Condensed","Barlow",sans-serif;letter-spacing:.02em;line-height:1.05;margin:0 0 .4rem}
+h1{font-size:clamp(2.2rem,7vw,3.6rem);text-transform:uppercase}
+h2{font-size:clamp(1.7rem,5vw,2.4rem);text-transform:uppercase}
+h3{font-size:1.3rem}
+p{margin:.4rem 0 .8rem}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+button,select,input[type=text]{min-height:44px;font:inherit}
+button{cursor:pointer;border-radius:10px;border:2px solid var(--ink);background:var(--surface);color:var(--ink);padding:10px 16px;font-weight:600}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.small{min-height:40px;padding:6px 12px;font-size:.95rem}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.gesture{display:block;font-size:.78rem;font-weight:500;opacity:.75;margin-top:2px}
+.freebar{background:var(--ink);color:var(--bg);padding:12px 16px;text-align:center;font-weight:600}
+.freebar button{margin-left:10px;min-height:40px;background:var(--accent);color:#fff;border-color:var(--accent)}
+nav.compass{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0}
+nav.compass a{display:inline-flex;align-items:center;min-height:40px;padding:6px 14px;border:2px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;font-weight:600;background:var(--surface)}
+.hero{padding:18px 0 6px}
+.hero .lead{font-size:1.15rem;max-width:46rem}
+.safety{border:4px solid var(--safety-bg);background:var(--surface);border-radius:14px;padding:20px;margin:22px 0}
+.safety h2{color:var(--safety-bg)}
+@media (prefers-color-scheme: dark){.safety h2{color:#fca5a5}}
+.safety ul{margin:.4rem 0;padding-left:1.2rem}
+.safety li{margin:.45rem 0}
+.safety .big{font-size:1.2rem;font-weight:700}
+section{margin:34px 0}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+.grid{display:grid;gap:14px}
+@media(min-width:760px){.grid.cols3{grid-template-columns:repeat(3,1fr)}.grid.cols2{grid-template-columns:1fr 1fr}}
+canvas{width:100%;height:auto;display:block;background:#2b2f36;border-radius:10px;border:2px solid var(--steel)}
+.controls{display:grid;gap:14px;margin:14px 0}
+@media(min-width:760px){.controls{grid-template-columns:repeat(3,1fr)}}
+.ctl label{font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.ctl input[type=range]{width:100%;min-height:44px;accent-color:var(--accent)}
+.ctl .hint{font-size:.88rem;color:var(--muted);margin:0}
+select,input[type=text]{width:100%;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:8px 10px}
+.result{border-radius:12px;padding:16px;margin-top:14px;border:2px solid var(--line);background:var(--surface2)}
+.result.good{border-color:var(--good);background:var(--good-bg)}
+.result.warn{border-color:var(--warn);background:var(--warn-bg)}
+.result.bad{border-color:var(--bad);background:var(--bad-bg)}
+.grade{font-family:"Barlow Condensed",sans-serif;font-size:2.4rem;font-weight:700;line-height:1}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.queue li{margin:.35rem 0}
+.queue .done{color:var(--good);font-weight:700}
+.queue .current{font-weight:700}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;border:2px solid var(--line);font-size:.85rem;font-weight:600}
+#explainBar{position:sticky;bottom:10px;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 16px;margin-top:16px;display:none;z-index:5}
+#explainBar.show{display:block}
+body[data-teach="1"] .why{display:none}
+body[data-teach="1"] .deep3, body[data-teach="2"] .deep3{display:none}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+@media(max-width:680px){
+  .tablewrap table,.tablewrap thead,.tablewrap tbody,.tablewrap tr,.tablewrap td{display:block;width:100%}
+  .tablewrap thead{display:none}
+  .tablewrap tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:6px 4px}
+  .tablewrap td{border:none;padding:4px 10px}
+  .tablewrap td:first-child{font-size:1.1rem}
+}
+footer{border-top:2px solid var(--line);padding-top:16px;color:var(--muted);font-size:.95rem}
+.jointbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-teach="2">
+<div class="freebar">FREE — always free. No ads, no account, nothing to buy.
+<button id="offlineBtn" type="button">Download this page for offline use<span class="gesture">Tap to download</span></button></div>
+
+<div class="wrap">
+<header class="hero">
+<h1>The Joining Bench</h1>
+<p class="lead">A welding &amp; soldering simulator. Run real beads on drawn joints, solder a practice board, and learn the judgment behind both — heat, speed, angle, and why a joint holds or fails. Pieces that hold are the whole stake: usefulness and trust. No money changes hands here, ever.</p>
+<div class="row">
+  <label style="flex:1;min-width:200px">What should the bench call you? (alias freedom — any name you like)
+    <input type="text" id="aliasInput" placeholder="e.g. Sparks, Jo, Welder-7" autocomplete="off">
+  </label>
+  <label style="flex:1;min-width:200px">Teaching dial
+    <select id="teachDial">
+      <option value="1">1 — Just the moves</option>
+      <option value="2" selected>2 — Moves + the why</option>
+      <option value="3">3 — Full depth</option>
+    </select>
+  </label>
+</div>
+<p id="helloLine" aria-live="polite"></p>
+</header>
+
+<nav class="compass" aria-label="Compass">
+  <a href="#safety">⚠ Safety first</a><a href="#weld">Welding bench</a><a href="#solder">Soldering bench</a>
+  <a href="#why">The Full Why</a><a href="#processes">Processes &amp; joints</a><a href="#queue">Job queue</a><a href="#record">My record</a>
+</nav>
+
+<section id="safety" class="safety" aria-labelledby="safetyH">
+<h2 id="safetyH">Safety — read this at full size</h2>
+<p class="big">Real welding can burn you, blind you, and poison your lungs. Real soldering burns skin and involves lead. This page cannot protect you — it teaches knowledge and judgment only. Hands come from supervised, real practice.</p>
+<ul>
+<li><strong>Eyes:</strong> A welding arc is brighter than the sun. Looking at it unprotected — even a flash from across the room — causes arc eye, a painful burn to the cornea. Real welding means a proper helmet with the right shade, every time, and screens so bystanders are protected too.</li>
+<li><strong>Skin &amp; burns:</strong> Arc UV burns exposed skin like severe sunburn in minutes. Sparks and spatter set clothing on fire. Welded metal stays hot enough to cause deep burns long after it stops glowing — treat every piece as hot.</li>
+<li><strong>Fumes:</strong> Welding fumes damage lungs. Galvanized metal gives off zinc fumes that cause metal fume fever; some coatings and metals are far worse. Real work needs ventilation, a respirator where required, and never welding on unknown coatings, tanks, or sealed containers — those can explode.</li>
+<li><strong>Electricity &amp; fire:</strong> Stick and MIG welders can shock, especially in wet conditions. Clear flammables, keep an extinguisher in reach, and watch the area after you finish — smouldering fires start quietly.</li>
+<li><strong>Soldering:</strong> A soldering iron sits at 300–400&nbsp;°C and looks exactly the same hot as cold. Solder often contains lead: never eat or touch your face while soldering, wash hands with soap every time you finish, keep lead solder away from children, and use ventilation — flux fumes irritate lungs.</li>
+<li><strong>Certifications are real:</strong> Structural, pressure-vessel, pipeline, and aerospace welding require tested certification (for example AWS qualifications in the US) because failed joints kill people. Passing this simulator is practice for your judgment — it is not a qualification to weld anything that carries load, pressure, or people.</li>
+</ul>
+</section>
+
+<section id="weld" aria-labelledby="weldH">
+<h2>The Welding Bench</h2>
+<p>Pick a joint and a process, set your heat, travel speed, and work angle, then run the bead. The puddle model grades what actually happens inside the metal — not how the bead looks on top.</p>
+
+<div class="card">
+<div class="row" role="group" aria-label="Choose joint">
+  <button type="button" class="jointbtn" data-joint="butt" aria-pressed="true">Butt joint — Level 1<span class="gesture">Tap to choose</span></button>
+  <button type="button" class="jointbtn" data-joint="lap" aria-pressed="false">Lap joint — Level 2<span class="gesture">Tap to choose</span></button>
+  <button type="button" class="jointbtn" data-joint="fillet" aria-pressed="false">Fillet (corner) — Level 3<span class="gesture">Tap to choose</span></button>
+</div>
+<p id="jointDesc"></p>
+<label>Process
+<select id="processSel">
+  <option value="mig" selected>MIG (wire feed) — forgiving, fast to learn</option>
+  <option value="stick">Stick (SMAW) — rugged, works outdoors &amp; on dirty steel</option>
+  <option value="tig">TIG — slowest, cleanest, most control</option>
+</select></label>
+<canvas id="weldCanvas" width="900" height="300" aria-label="Drawing of the selected joint with your bead"></canvas>
+<div class="controls">
+  <div class="ctl"><label>Heat (amperage) <span id="ampVal">70 A</span></label>
+    <input type="range" id="amp" min="60" max="190" value="70" step="1">
+    <p class="hint">Heat melts the base metal. Too little = the bead sits on top. Too much = you blow a hole through it.</p></div>
+  <div class="ctl"><label>Travel speed <span id="spdVal">80</span></label>
+    <input type="range" id="spd" min="10" max="90" value="80" step="1">
+    <p class="hint">How fast the torch moves. Too fast = the puddle can't form. Too slow = heat piles up and the bead sags wide.</p></div>
+  <div class="ctl"><label>Work angle <span id="angVal">25°</span></label>
+    <input type="range" id="ang" min="0" max="60" value="25" step="1">
+    <p class="hint">Torch tilt from vertical. Wrong angle pushes the puddle to one side and digs a groove (undercut) along the edge.</p></div>
+</div>
+<div class="row">
+<button type="button" class="primary" id="runBead" data-why="Running a bead: the torch travels the joint once. Your three settings decide whether the two pieces actually fuse into one piece of metal, or just look joined.">Run the bead<span class="gesture">Tap to weld · Hold for why</span></button>
+<button type="button" id="weldHint" data-why="The hint names the target window for this joint and process. Real welders read the puddle, not a gauge — the hint is training wheels, and the window narrows as the levels rise.">Show target window<span class="gesture">Tap for hint · Hold for why</span></button>
+<button type="button" id="weldPreset">Load a known-good bead<span class="gesture">Tap to set heat, speed &amp; angle in range</span></button>
+</div>
+<p id="hintLine" aria-live="polite"></p>
+<div class="result" id="weldResult" aria-live="polite"><p>Your grade will appear here. Try a first bead with the settings as they stand — a cold bead teaches as much as a good one.</p></div>
+</div>
+
+<div class="why card">
+<h3>Why the puddle decides everything</h3>
+<p>Welding is not gluing. A weld holds because both pieces of base metal <em>melt and mix</em> with the filler in one liquid puddle, then freeze as a single piece of metal. If the base metal never melts — a <strong>cold bead</strong> — the bead is a metal rope lying on the surface. It can look tidy and still peel off, because underneath, nothing ever joined. If there is too much heat, the puddle burns through the piece, leaving a hole and a weak, oxidised mess. In range, the puddle wets into both sides, and the frozen bead is as strong as the metal around it.</p>
+<p class="deep3"><strong>Full depth:</strong> Heat input is roughly amperage × voltage ÷ travel speed — which is why heat and speed trade against each other. A hotter setting can survive faster travel; a slow pass at high amps cooks the grain structure of the steel around the weld (the heat-affected zone), making it brittle even when the bead itself looks fine. That invisible zone is why procedure and certification exist for real work.</p>
+</div>
+</section>
+
+<section id="solder" aria-labelledby="solderH">
+<h2>The Soldering Bench</h2>
+<p>A drawn practice board with six joints. Pick a joint, set the iron, heat, and solder feed — then make the joint. You are graded on the <em>shape</em> the solder freezes into, because the shape tells the truth about what happened.</p>
+<div class="card">
+<canvas id="pcbCanvas" width="900" height="340" aria-label="Drawing of a practice circuit board with six solder joints"></canvas>
+<div class="row" role="group" aria-label="Choose board joint" id="jointBtns" style="margin-top:12px"></div>
+<div class="controls">
+  <div class="ctl"><label>Iron temperature <span id="tmpVal">280 °C</span></label>
+    <input type="range" id="tmp" min="200" max="450" value="280" step="5">
+    <p class="hint">Solder melts near 183–220&nbsp;°C, but the joint itself must get hot enough to melt solder on contact — that takes a hotter iron.</p></div>
+  <div class="ctl"><label>Heat time <span id="heatVal">1.5 s</span></label>
+    <input type="range" id="heat" min="0.5" max="6" value="1.5" step="0.5">
+    <p class="hint">How long the iron touches the pad and lead together. Too short = only the solder melted, not the joint. Too long = the pad lifts off the board.</p></div>
+  <div class="ctl"><label>Solder feed <span id="feedVal">50</span></label>
+    <input type="range" id="feed" min="10" max="90" value="50" step="1">
+    <p class="hint">How much solder you feed in. Enough to form a small volcano — no more. Extra solder hides bad joints and bridges to the next pad.</p></div>
+</div>
+<div class="row" style="margin-bottom:12px"><button type="button" id="solderPreset">Load known-good settings<span class="gesture">Tap to set 340 °C · 3 s · feed 50</span></button></div>
+<button type="button" class="primary" id="solderBtn" data-why="Soldering a joint: the iron heats the pad and the component lead together, flux cleans the metal, and molten solder flows onto hot metal by surface tension. If the metal isn't hot, the solder balls up and refuses — that's a cold joint.">Heat &amp; solder this joint<span class="gesture">Tap to solder · Hold for why</span></button>
+<div class="result" id="solderResult" aria-live="polite"><p>Your joint grade will appear here. Joints done: <strong id="solderCount">0 / 6</strong>. A shiny volcano is the goal.</p></div>
+</div>
+<div class="why card">
+<h3>Why shape tells the truth: wetting, flux, surface tension</h3>
+<p>Molten solder behaves like water. On a hot, clean surface it <strong>wets</strong> — it spreads out and climbs, freezing into a smooth, shiny cone like a little volcano around the lead. On a cold or dirty surface, surface tension wins and the solder pulls itself into a <strong>dull ball</strong> that sits on the joint without bonding — a cold joint that will crackle, overheat, and fail. <strong>Flux</strong> is the helper inside the solder wire: it strips the invisible oxide skin off the metal as it heats, so the solder can actually touch clean metal and wet it. Rule of the bench: heat the <em>joint</em>, not the solder — solder should melt because the pad and lead are hot, never just because the iron touched the wire.</p>
+<p class="deep3"><strong>Full depth:</strong> A good joint is an intermetallic bond — tin in the solder alloys microscopically with the copper pad. A cold joint never forms that layer; it's solder resting on oxide. That's why it can pass a glance and fail in the field, and why rework means re-heating with fresh flux, not just adding more solder on top.</p>
+</div>
+</section>
+
+<section id="why" aria-labelledby="whyH">
+<h2>The Full Why of Joining Metals</h2>
+<div class="grid cols2">
+<div class="card"><h3>Welding: fusion</h3><p>Two pieces become one piece. An electric arc (or flame) melts the edges and a filler rod or wire; the shared puddle freezes as continuous metal. Strength comes from the melt mixing — which is why surface rust, paint, and oil matter: contamination in the puddle becomes holes (porosity) and cracks in the frozen weld.</p></div>
+<div class="card"><h3>Soldering: wetting, not melting together</h3><p>The parts never melt. Solder — a lower-melting alloy — melts, wets both surfaces, and freezes as a metallic bridge that conducts electricity. It's a joint for signals and small loads, not structure: solder is soft and creeps under sustained stress.</p></div>
+<div class="card"><h3>Heat is a budget</h3><p>Every joint needs enough heat to join and not a degree more than the part can take. Too little: no fusion, no wetting. Too much: burn-through, lifted pads, brittle grain, warped parts. Almost every defect on both benches is a heat-budget error — wrong amount, wrong place, or wrong time.</p></div>
+<div class="card"><h3>Why practice on a simulator</h3><p>Judgment is pattern recognition: what a right puddle looks like, how a good joint flows. Building that eye here — where a mistake costs nothing and burns no one — is exactly what supervised real practice then turns into hands.</p></div>
+</div>
+</section>
+
+<section id="processes" aria-labelledby="procH">
+<h2>Processes &amp; Joints — Picking the Right Tool</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Process</th><th>How it works</th><th>Strengths</th><th>Trade-offs</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td><strong>MIG</strong></td><td>Wire feeds continuously through the gun; gas shields the puddle</td><td>Fast, forgiving, easiest to learn</td><td>Wind blows the shielding gas away outdoors; needs cleaner metal</td><td>General fabrication, car panels, learning</td></tr>
+<tr><td><strong>Stick (SMAW)</strong></td><td>A flux-coated rod melts; the flux makes its own shielding</td><td>Rugged, works outdoors and on rusty, dirty steel</td><td>Slower, more spatter, slag to chip off</td><td>Repair work, farm &amp; site welding, thick steel</td></tr>
+<tr><td><strong>TIG</strong></td><td>A tungsten electrode makes the arc; you feed rod by hand</td><td>Cleanest, most precise, beautiful beads, thin metal</td><td>Slowest, hardest to learn, needs very clean metal</td><td>Stainless, aluminium, visible or precision work</td></tr>
+</tbody></table></div>
+<div class="grid cols3" style="margin-top:14px">
+<div class="card"><h3>Butt joint — Level 1</h3><p>Two edges meet face to face. The simplest test of fusion: the puddle must melt through both edges evenly. Used for plates, pipes, and frames.</p></div>
+<div class="card"><h3>Lap joint — Level 2</h3><p>One piece overlaps the other. Easier to fit up, but the puddle must wet the top edge without melting it away — angle control starts to matter.</p></div>
+<div class="card"><h3>Fillet joint — Level 3</h3><p>A corner: one piece at 90° to another. The torch works at about 45° so the puddle feeds both faces equally. The joint behind most brackets and frames — and the easiest to undercut.</p></div>
+</div>
+</section>
+
+<section id="queue" aria-labelledby="queueH">
+<h2>Job Queue — The Difficulty Ramp</h2>
+<p>Work the queue in order. Each job narrows the window a little, like real bench time: plate first, brackets next, corners last. Pass a job (grade C or better) and the next one opens.</p>
+<div class="card"><ol class="queue" id="jobList"></ol>
+<p id="queueLine" aria-live="polite"></p></div>
+</section>
+
+<section id="record" aria-labelledby="recordH">
+<h2>My Record — On This Device Only</h2>
+<p>Your attempts live in this page, on this device, in this session — nothing is sent anywhere. Export them to keep them; Forget wipes them.</p>
+<div class="card">
+<div class="row">
+<button type="button" id="exportBtn">Export my record<span class="gesture">Tap to download a file</span></button>
+<button type="button" id="forgetBtn">Forget everything<span class="gesture">Tap twice to confirm</span></button>
+</div>
+<ul id="recordList"><li>No attempts yet — run a bead or solder a joint.</li></ul>
+</div>
+</section>
+
+<div id="explainBar" role="status"></div>
+
+<footer>
+<p><strong>Copyleft:</strong> this page is free to copy, share, and adapt — words and design CC BY-SA 4.0, code GPL. Derivatives carry the same freedom. No ads, ever. The name of the project is not part of the grant.</p>
+<p>Built as a knowledge simulator. It does not certify you to weld or solder anything real — see the safety section, and learn hands-on with a qualified supervisor.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var record=[];
+var alias="";
+$("aliasInput").addEventListener("input",function(){alias=this.value.trim();$("helloLine").textContent=alias?("Bench is set, "+alias+". Gloves on — metaphorically. Pick a bench below."):"";});
+$("teachDial").addEventListener("change",function(){document.body.setAttribute("data-teach",this.value);});
+$("offlineBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="the-joining-bench.html";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+
+/* Hold-to-explain */
+var holdTimer=null,held=false;
+var bar=$("explainBar");
+document.querySelectorAll("[data-why]").forEach(function(el){
+  el.addEventListener("pointerdown",function(){held=false;holdTimer=setTimeout(function(){held=true;bar.textContent=el.getAttribute("data-why");bar.classList.add("show");},550);});
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){el.addEventListener(ev,function(){clearTimeout(holdTimer);});});
+  el.addEventListener("click",function(e){if(held){e.preventDefault();e.stopImmediatePropagation();held=false;}},true);
+});
+bar.addEventListener("click",function(){bar.classList.remove("show");});
+
+/* ---------- WELDING ---------- */
+var JOINTS={
+  butt:{name:"Butt joint",level:1,ang:10,ampMod:0,desc:"Level 1 · Butt joint: two plates edge to edge. Target: melt through both edges evenly. Work angle near 10° from vertical."},
+  lap:{name:"Lap joint",level:2,ang:20,ampMod:10,desc:"Level 2 · Lap joint: one plate overlaps the other. Target: wet the top edge without melting it away. Work angle near 20°, aimed at the corner of the overlap."},
+  fillet:{name:"Fillet joint",level:3,ang:45,ampMod:15,desc:"Level 3 · Fillet joint: a 90° corner. Target: feed both faces equally at about a 45° work angle. Watch the top edge — undercut lives there."}
+};
+var PROC={mig:{name:"MIG",base:110},stick:{name:"Stick",base:125},tig:{name:"TIG",base:90}};
+var joint="butt";
+function windowFor(){var lv=JOINTS[joint].level;return lv===1?{amp:28,spd:18,ang:13}:lv===2?{amp:20,spd:14,ang:11}:{amp:14,spd:10,ang:9};}
+function targets(){var w=windowFor();return{amp:PROC[$("processSel").value].base+JOINTS[joint].ampMod,spd:50,ang:JOINTS[joint].ang,win:w};}
+function setJoint(j){joint=j;document.querySelectorAll(".jointbtn").forEach(function(b){b.setAttribute("aria-pressed",b.getAttribute("data-joint")===j?"true":"false");});$("jointDesc").textContent=JOINTS[j].desc;$("hintLine").textContent="";drawWeld(null,0);}
+document.querySelectorAll(".jointbtn").forEach(function(b){b.addEventListener("click",function(){setJoint(b.getAttribute("data-joint"));});});
+$("processSel").addEventListener("change",function(){drawWeld(null,0);});
+["amp","spd","ang"].forEach(function(id){$(id).addEventListener("input",function(){
+  $("ampVal").textContent=$("amp").value+" A";$("spdVal").textContent=$("spd").value;$("angVal").textContent=$("ang").value+"°";});});
+$("weldPreset").addEventListener("click",function(){var t=targets();$("amp").value=t.amp;$("spd").value=t.spd;$("ang").value=t.ang;$("ampVal").textContent=t.amp+" A";$("spdVal").textContent=t.spd;$("angVal").textContent=t.ang+"°";$("hintLine").textContent="Known-good settings loaded for "+JOINTS[joint].name+" with "+PROC[$("processSel").value].name+": "+t.amp+" A · speed "+t.spd+" · angle "+t.ang+"°. Now run the bead.";});
+$("weldHint").addEventListener("click",function(){var t=targets();$("hintLine").textContent="Target window for "+JOINTS[joint].name+" with "+PROC[$("processSel").value].name+": heat "+(t.amp-t.win.amp)+"–"+(t.amp+t.win.amp)+" A · speed "+(t.spd-t.win.spd)+"–"+(t.spd+t.win.spd)+" · angle "+(t.ang-t.win.ang)+"°–"+(t.ang+t.win.ang)+"°.";});
+
+var wc=$("weldCanvas"),wx=wc.getContext("2d");
+function drawWeld(bead,progress){
+  var W=wc.width,H=wc.height;wx.clearRect(0,0,W,H);
+  wx.fillStyle="#39424e";wx.fillRect(0,0,W,H);
+  wx.strokeStyle="#20262d";for(var g=0;g<W;g+=30){wx.beginPath();wx.moveTo(g,0);wx.lineTo(g,H);wx.stroke();}
+  var midY=H/2;
+  if(joint==="butt"){wx.fillStyle="#8d99a6";wx.fillRect(40,midY-55,W-80,50);wx.fillRect(40,midY+5,W-80,50);wx.fillStyle="#20262d";wx.fillRect(40,midY-5,W-80,10);}
+  if(joint==="lap"){wx.fillStyle="#8d99a6";wx.fillRect(40,midY-10,W-80,60);wx.fillStyle="#a7b3bf";wx.fillRect(40,midY-70,W-260,60);wx.fillStyle="#20262d";wx.fillRect(40,midY-12,W-80,3);}
+  if(joint==="fillet"){wx.fillStyle="#8d99a6";wx.fillRect(40,midY+10,W-80,55);wx.fillRect(40,midY-110,55,175);wx.fillStyle="#20262d";wx.fillRect(40,midY+8,W-80,3);wx.fillRect(93,midY-110,3,175);}
+  wx.fillStyle="#e8edf2";wx.font="600 17px Barlow, sans-serif";wx.fillText(JOINTS[joint].name+" — seam runs left to right",48,34);
+  if(bead){
+    var x1=60,x2=W-60,y=(joint==="fillet"?midY+8:midY),len=(x2-x1)*progress;
+    wx.lineCap="round";
+    for(var i=0;i<len;i+=7){var t=i/(x2-x1);var wob=Math.sin(i*0.35)*2;
+      wx.strokeStyle=bead.color;wx.lineWidth=bead.width*(0.9+0.15*Math.sin(i*0.6));
+      wx.beginPath();wx.moveTo(x1+i,y+wob);wx.lineTo(x1+i+7,y+Math.sin((i+7)*0.35)*2);wx.stroke();}
+    if(bead.holes){wx.fillStyle="#14181d";for(var h=0;h<bead.holes;h++){var hx=x1+30+((x2-x1-60)/bead.holes)*h;wx.beginPath();wx.ellipse(hx,y,13,8,0,0,7);wx.fill();}}
+    var tx=x1+len;wx.fillStyle="#ffb347";wx.beginPath();wx.arc(tx,y,10+4*Math.random(),0,7);wx.fill();
+    wx.fillStyle="#fff3d6";wx.beginPath();wx.arc(tx,y,4,0,7);wx.fill();
+  }
+}
+function gradeLetter(s){return s>=90?"A":s>=78?"B":s>=62?"C":s>=45?"D":"F";}
+var welding=false;
+$("runBead").addEventListener("click",function(){
+  if(welding)return;welding=true;
+  var t=targets(),amp=+$("amp").value,spd=+$("spd").value,ang=+$("ang").value;
+  var dAmp=amp-t.amp,dSpd=spd-t.spd,dAng=ang-t.ang;
+  var score=100-Math.max(0,Math.abs(dAmp)-t.win.amp)*1.6-Math.max(0,Math.abs(dSpd)-t.win.spd)*1.8-Math.max(0,Math.abs(dAng)-t.win.ang)*2.0;
+  if(dAmp<-t.win.amp)score-=12; if(dAmp>t.win.amp)score-=12;
+  score=Math.max(2,Math.round(score));
+  var verdict,why,cls;
+  if(dAmp<-t.win.amp-8){verdict="No fusion — a cold bead";cls="bad";why="Too cold at "+amp+" A (target ≈"+t.amp+" A). The arc melted the filler wire but never truly melted the base metal, so the bead is a rope lying on the surface. It can look neat and still peel off — underneath, the two pieces never became one. Raise the heat, or slow down so the heat you have can soak in.";}
+  else if(dAmp>t.win.amp+8){verdict="Burn-through";cls="bad";why="Too hot at "+amp+" A (target ≈"+t.amp+" A). The puddle ate through the plate and left holes — the joint is now weaker than no weld at all, and the metal around it is cooked and brittle. Drop the amperage, or travel faster to spread the heat out.";}
+  else if(dSpd>t.win.spd+6){verdict="Skipped, ropey bead — too fast";cls="warn";why="Heat was in range, but at speed "+spd+" the puddle never had time to form and wet both sides. The bead is narrow, ropey, and fused only in patches. Slow the travel down and watch the puddle, not the arc.";}
+  else if(dSpd<-t.win.spd-6){verdict="Overheated, sagging bead — too slow";cls="warn";why="At speed "+spd+" the heat piled up in one place: the bead spread wide and sagged, and the heat-affected zone around it grew brittle. Travel faster, or drop the amperage to match your pace.";}
+  else if(Math.abs(dAng)>t.win.ang+4){verdict="Undercut — angle off";cls="warn";why="Your work angle was "+ang+"° against a target of about "+t.ang+"° for a "+JOINTS[joint].name.toLowerCase()+". The arc dug a groove along one edge and the puddle never filled it — that groove is a crack waiting for a load. Split the angle so the puddle feeds both faces.";}
+  else if(score>=78){verdict="Sound weld — it fused";cls="good";why="Heat "+amp+" A, speed "+spd+", angle "+ang+"° — all inside the window for "+PROC[$("processSel").value].name+" on a "+JOINTS[joint].name.toLowerCase()+". The puddle melted both pieces and the filler into one continuous metal. This joint would hold.";}
+  else{verdict="Marginal — partial fusion";cls="warn";why="Close, but at least one setting sat outside the window (heat "+amp+" A vs ≈"+t.amp+", speed "+spd+" vs ≈50, angle "+ang+"° vs ≈"+t.ang+"°). Parts of the bead fused and parts didn't — the unfused parts decide when it fails. Nudge the furthest setting first.";}
+  var bead={color:cls==="bad"&&dAmp<-t.win.amp?"#9aa3ad":cls==="good"?"#d7dde3":"#b9a06a",width:dAmp>t.win.amp?16:dAmp<-t.win.amp?7:11,holes:(dAmp>t.win.amp+8)?5:0};
+  var start=null,dur=1400+(90-spd)*18;
+  function step(ts){if(!start)start=ts;var p=Math.min(1,(ts-start)/dur);drawWeld(bead,p);if(p<1)requestAnimationFrame(step);else finish();}
+  function finish(){welding=false;var L=gradeLetter(score);
+    $("weldResult").className="result "+cls;
+    $("weldResult").innerHTML="<div class='grade'>Grade "+L+" — "+score+"/100</div><p><strong>"+verdict+".</strong></p><p>"+why+"</p>";
+    addRecord("Weld · "+JOINTS[joint].name+" · "+PROC[$("processSel").value].name+" · "+amp+"A / speed "+spd+" / "+ang+"°",L+" ("+score+") — "+verdict);
+    completeJob(joint,score);
+  }
+  requestAnimationFrame(step);
+});
+
+/* ---------- JOB QUEUE ---------- */
+var JOBS=[{joint:"butt",label:"Job 1 · Butt-weld two plates (Level 1)"},{joint:"lap",label:"Job 2 · Lap-weld a bracket (Level 2)"},{joint:"fillet",label:"Job 3 · Fillet-weld a corner frame (Level 3)"}];
+var jobDone=[false,false,false];
+function renderQueue(){$("jobList").innerHTML=JOBS.map(function(j,i){return "<li class='"+(jobDone[i]?"done":(i===jobDone.indexOf(false)?"current":""))+"'>"+(jobDone[i]?"✓ Done — ":"")+j.label+(i===jobDone.indexOf(false)?" ← you are here":"")+"</li>";}).join("");
+  $("queueLine").textContent=jobDone.every(Boolean)?"Queue clear. You worked the full ramp — plate, bracket, corner. That progression is the real curriculum.":("Pass a bead on the current job's joint (grade C or better) to advance.");}
+function completeJob(j,s){var i=JOBS.findIndex(function(x){return x.joint===j;});if(i===jobDone.indexOf(false)&&s>=62){jobDone[i]=true;renderQueue();}}
+renderQueue();
+
+/* ---------- SOLDERING ---------- */
+var pc=$("pcbCanvas"),px=pc.getContext("2d");
+var PADS=[{x:130,y:90},{x:330,y:90},{x:530,y:90},{x:130,y:240},{x:330,y:240},{x:530,y:240}];
+var jointsDone={},selJoint=0;
+var btnWrap=$("jointBtns");
+PADS.forEach(function(p,i){var b=document.createElement("button");b.type="button";b.className="small";b.textContent="Joint "+(i+1);b.setAttribute("aria-pressed",i===0?"true":"false");
+  b.innerHTML="Joint "+(i+1)+"<span class='gesture'>Tap to select</span>";
+  b.addEventListener("click",function(){selJoint=i;btnWrap.querySelectorAll("button").forEach(function(x,j){x.setAttribute("aria-pressed",j===i?"true":"false");});drawPCB();});btnWrap.appendChild(b);});
+function drawPCB(){
+  var W=pc.width,H=pc.height;px.clearRect(0,0,W,H);
+  px.fillStyle="#14532d";px.fillRect(0,0,W,H);
+  px.strokeStyle="#1d6a3c";for(var i=0;i<14;i++){px.beginPath();px.moveTo(60+i*60,20);px.lineTo(60+i*60,H-20);px.stroke();}
+  px.strokeStyle="#d9c26a";px.lineWidth=3;px.beginPath();px.moveTo(PADS[0].x,PADS[0].y);px.lineTo(PADS[2].x,PADS[2].y);px.lineTo(PADS[5].x,PADS[5].y);px.stroke();px.lineWidth=1;
+  px.fillStyle="#e8edf2";px.font="600 16px Barlow, sans-serif";px.fillText("PRACTICE BOARD — six joints, one good volcano each",24,28);
+  PADS.forEach(function(p,i){
+    px.fillStyle="#c0c6cd";px.beginPath();px.arc(p.x,p.y,26,0,7);px.fill();
+    px.fillStyle="#7d8791";px.beginPath();px.arc(p.x,p.y,9,0,7);px.fill();
+    px.strokeStyle=i===selJoint?"#ffb347":"#39424e";px.lineWidth=i===selJoint?4:1;px.beginPath();px.arc(p.x,p.y,32,0,7);px.stroke();px.lineWidth=1;
+    var st=jointsDone[i];
+    if(st==="good"){var gr=px.createRadialGradient(p.x-5,p.y-14,2,p.x,p.y,20);gr.addColorStop(0,"#ffffff");gr.addColorStop(.5,"#cfd6dd");gr.addColorStop(1,"#8d99a6");px.fillStyle=gr;px.beginPath();px.moveTo(p.x-17,p.y+13);px.quadraticCurveTo(p.x,p.y-24,p.x+17,p.y+13);px.closePath();px.fill();}
+    if(st==="cold"){px.fillStyle="#6e767e";px.beginPath();px.arc(p.x,p.y-4,15,0,7);px.fill();px.fillStyle="#565d64";px.beginPath();px.arc(p.x-4,p.y-9,5,0,7);px.fill();}
+    if(st==="blob"){px.fillStyle="#aab3bc";px.beginPath();px.arc(p.x,p.y,24,0,7);px.fill();}
+    if(st==="burnt"){px.fillStyle="#26221e";px.beginPath();px.arc(p.x,p.y,20,0,7);px.fill();}
+    if(st==="starved"){px.fillStyle="#98a1a9";px.beginPath();px.arc(p.x,p.y+6,10,0,7);px.fill();}
+    px.fillStyle="#e8edf2";px.font="600 14px Barlow, sans-serif";px.fillText("J"+(i+1),p.x-9,p.y+52);
+  });
+}
+["tmp","heat","feed"].forEach(function(id){$(id).addEventListener("input",function(){
+  $("tmpVal").textContent=$("tmp").value+" °C";$("heatVal").textContent=(+$("heat").value).toFixed(1)+" s";$("feedVal").textContent=$("feed").value;});});
+$("solderPreset").addEventListener("click",function(){$("tmp").value=340;$("heat").value=3;$("feed").value=50;$("tmpVal").textContent="340 °C";$("heatVal").textContent="3.0 s";$("feedVal").textContent="50";});
+$("solderBtn").addEventListener("click",function(){
+  var tmp=+$("tmp").value,heat=+$("heat").value,feed=+$("feed").value;
+  var type,verdict,why,cls,score;
+  if(tmp<295||heat<2){type="cold";score=tmp<260||heat<1.2?25:42;cls="bad";verdict="Cold joint — dull ball";
+    why="The solder melted, but the joint didn't. At "+tmp+" °C with "+heat.toFixed(1)+" s of heat, the pad and lead never got hot enough for the solder to wet them, so surface tension pulled it into a dull ball sitting on oxide. It may conduct today and crackle tomorrow. Fix: hotter iron or longer heat — heat the pad and lead together until solder flows onto them, not just off the iron.";}
+  else if(tmp>405||heat>5){type="burnt";score=30;cls="bad";verdict="Cooked — pad damage";
+    why="Too much heat for too long ("+tmp+" °C, "+heat.toFixed(1)+" s). The flux burned off before it could clean, the solder oxidised dull, and heat like this lifts the copper pad clean off the board. Fix: less time on the joint — a good joint takes about 2–4 seconds, then hands off.";}
+  else if(feed<30){type="starved";score=55;cls="warn";verdict="Starved joint";
+    why="Heat and time were right, but a feed of "+feed+" wasn't enough solder to form the volcano. The fillet is thin and will crack under vibration. Fix: feed a little more — enough to see the cone form, then stop.";}
+  else if(feed>72){type="blob";score=48;cls="warn";verdict="Blob — too much solder";
+    why="A feed of "+feed+" buried the joint in a blob. Excess solder hides whether the joint underneath ever wetted, and it's one nudge from bridging to the next pad and shorting the board. Fix: less solder — the volcano shape, not a marble.";}
+  else{type="good";score=94;cls="good";verdict="Shiny volcano — good wetting";
+    why="Iron "+tmp+" °C, "+heat.toFixed(1)+" s of heat, feed "+feed+": the pad and lead got hot together, the flux stripped the oxide, and surface tension pulled the solder into a smooth, shiny cone that climbs the lead. That shape means the solder bonded to clean metal. This joint will carry its signal for years.";}
+  jointsDone[selJoint]=type;drawPCB();
+  var n=Object.keys(jointsDone).filter(function(k){return jointsDone[k]==="good";}).length;
+  $("solderCount").textContent=n+" / 6";
+  $("solderResult").className="result "+cls;
+  $("solderResult").innerHTML="<div class='grade'>Grade "+gradeLetter(score)+" — "+score+"/100</div><p><strong>Joint "+(selJoint+1)+": "+verdict+".</strong></p><p>"+why+"</p><p>Joints with a good volcano: <strong>"+n+" / 6</strong>"+(n===6?" — board complete. Every joint shiny, wetted, and honest.":"")+"</p>";
+  addRecord("Solder · Joint "+(selJoint+1)+" · "+tmp+"°C / "+heat.toFixed(1)+"s / feed "+feed,gradeLetter(score)+" ("+score+") — "+verdict);
+});
+
+/* ---------- RECORD ---------- */
+function addRecord(what,grade){record.unshift({what:what,grade:grade,when:new Date().toLocaleTimeString()});renderRecord();}
+function renderRecord(){$("recordList").innerHTML=record.length?record.map(function(r){return "<li><strong>"+r.grade+"</strong> — "+r.what+" <span style='opacity:.7'>("+r.when+")</span></li>";}).join(""):"<li>No attempts yet — run a bead or solder a joint.</li>";}
+$("exportBtn").addEventListener("click",function(){
+  var txt="THE JOINING BENCH — MY RECORD"+(alias?" for "+alias:"")+"\nExported "+new Date().toLocaleString()+"\n\n"+(record.length?record.map(function(r){return r.when+" · "+r.grade+" · "+r.what;}).join("\n"):"No attempts recorded.");
+  var blob=new Blob([txt],{type:"text/plain"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="joining-bench-record.txt";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click",function(){
+  if(!forgetArmed){forgetArmed=true;this.firstChild.textContent="Tap again to confirm forget ";setTimeout(function(){forgetArmed=false;$("forgetBtn").firstChild.textContent="Forget everything";},3000);return;}
+  record=[];forgetArmed=false;this.firstChild.textContent="Forget everything";renderRecord();});
+
+setJoint("butt");drawPCB();
+})();
+</script>
+</body>
+</html>
