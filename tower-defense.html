@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Lantern Road — Tower Defense</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      summary { min-height: 2.25rem; display: flex; align-items: center; }
+    </style>
+    <style>
+      :root {
+        --bg: #f3f5ef;
+        --panel: #ffffff;
+        --panel-2: #e9eee1;
+        --ink: #1e2b1f;
+        --ink-soft: #43543f;
+        --line: #c9d4bd;
+        --accent: #2e6b34;
+        --accent-ink: #ffffff;
+        --rust: #b0512a;
+        --gold: #8a6410;
+        --danger: #a3271e;
+        --field: #7fae5f;
+        --field-alt: #74a356;
+        --road: #d9c08d;
+        --road-edge: #b99e66;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #12170f;
+          --panel: #1b2417;
+          --panel-2: #232f1e;
+          --ink: #e6eedd;
+          --ink-soft: #b3c2a6;
+          --line: #3a4a33;
+          --accent: #69b96f;
+          --accent-ink: #0f1a0e;
+          --rust: #e08a5f;
+          --gold: #e3b959;
+          --danger: #ef8a80;
+          --field: #3d6030;
+          --field-alt: #37582b;
+          --road: #8a744a;
+          --road-edge: #6e5a38;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: ui-sans-system, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.5;
+      }
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 0 1rem 3rem; }
+      h1, h2, h3 { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; line-height: 1.15; }
+      h1 { font-size: 2rem; margin: 0.4rem 0 0.3rem; }
+      h2 { font-size: 1.35rem; margin: 0 0 0.5rem; }
+      h3 { font-size: 1.05rem; margin: 0 0 0.3rem; }
+      p { margin: 0.35rem 0; }
+      .soft { color: var(--ink-soft); }
+      .small { font-size: 0.88rem; }
+
+      .free-line {
+        display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; justify-content: space-between;
+        background: var(--accent); color: var(--accent-ink);
+        padding: 0.55rem 1rem; margin: 0 -1rem;
+        font-weight: 600;
+      }
+      .free-line button {
+        background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 0.45rem;
+        font-weight: 700; padding: 0.35rem 0.8rem; cursor: pointer;
+      }
+      nav.compass {
+        display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem;
+        border-bottom: 2px solid var(--line); padding: 0.55rem 0; margin-bottom: 0.8rem;
+      }
+      nav.compass a { color: var(--accent); font-weight: 600; text-decoration: none; padding: 0.35rem 0.1rem; }
+      nav.compass a:hover { text-decoration: underline; }
+
+      .panel {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 0.7rem;
+        padding: 0.9rem 1rem; margin: 0.9rem 0;
+      }
+      .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; }
+      .setup-grid label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      select, input[type="text"] {
+        width: 100%; padding: 0.45rem 0.5rem; border: 1px solid var(--line); border-radius: 0.45rem;
+        background: var(--panel); color: var(--ink); font: inherit;
+      }
+      .seg { display: flex; border: 1px solid var(--line); border-radius: 0.5rem; overflow: hidden; }
+      .seg button {
+        flex: 1; border: 0; background: var(--panel); color: var(--ink); cursor: pointer;
+        padding: 0.45rem 0.2rem; font: inherit; font-size: 0.92rem;
+      }
+      .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .toggle-btn {
+        width: 100%; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+        border-radius: 0.5rem; cursor: pointer; padding: 0.45rem 0.5rem; font: inherit; text-align: left;
+      }
+      .toggle-btn[aria-pressed="true"] { background: var(--rust); color: #fff; font-weight: 700; border-color: var(--rust); }
+
+      .variant-banner {
+        border: 2px solid var(--rust); color: var(--rust); border-radius: 0.6rem;
+        padding: 0.55rem 0.9rem; font-weight: 700; margin: 0.8rem 0; display: none;
+      }
+      .variant-banner.show { display: block; }
+
+      .game-layout { display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start; }
+      @media (max-width: 860px) { .game-layout { grid-template-columns: 1fr; } }
+      .board-frame { background: var(--panel); border: 1px solid var(--line); border-radius: 0.7rem; padding: 0.6rem; }
+      canvas#board {
+        display: block; width: 100%; height: auto; border-radius: 0.45rem;
+        touch-action: manipulation; cursor: pointer; background: var(--field);
+      }
+      .hud { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-weight: 700; padding: 0.5rem 0.1rem 0.1rem; }
+      .hud span b { color: var(--accent); }
+      .hud .lives b { color: var(--danger); }
+      .msg-line { min-height: 1.5em; font-weight: 600; color: var(--rust); padding: 0.15rem 0.1rem 0; }
+
+      .shop { display: grid; gap: 0.45rem; }
+      .shop button {
+        display: block; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 0.55rem;
+        background: var(--panel); color: var(--ink); padding: 0.5rem 0.6rem; cursor: pointer; font: inherit;
+      }
+      .shop button[aria-pressed="true"] { border-color: var(--accent); background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--accent); }
+      .shop button:disabled { opacity: 0.45; cursor: default; }
+      .shop .t-name { font-weight: 700; }
+      .shop .t-cost { float: right; font-weight: 700; color: var(--gold); }
+      .shop .t-blurb { display: block; font-size: 0.83rem; color: var(--ink-soft); clear: both; }
+      .controls { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.6rem; }
+      .controls button, .row-btns button {
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); border-radius: 0.5rem;
+        padding: 0.5rem 0.8rem; cursor: pointer; font: inherit; font-weight: 600;
+      }
+      .controls button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+      .controls button:disabled { opacity: 0.45; cursor: default; }
+      .row-btns { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.5rem; }
+      .danger-btn { color: var(--danger) !important; }
+      .confirming { background: var(--danger) !important; color: #fff !important; border-color: var(--danger) !important; }
+
+      .coach {
+        border-left: 4px solid var(--gold); background: var(--panel-2); border-radius: 0 0.55rem 0.55rem 0;
+        padding: 0.6rem 0.8rem; margin-top: 0.7rem; font-size: 0.94rem;
+      }
+      .coach .coach-title { font-weight: 700; }
+      .coach ul { margin: 0.3rem 0 0.1rem; padding-left: 1.15rem; }
+      .explain-box {
+        display: none; margin-top: 0.6rem; border: 1px dashed var(--gold); border-radius: 0.5rem;
+        padding: 0.5rem 0.7rem; font-size: 0.92rem; background: var(--panel);
+      }
+      .explain-box.show { display: block; }
+
+      .strat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.8rem; }
+      .strat { border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.7rem 0.85rem; background: var(--panel); }
+      .strat .trade { color: var(--rust); font-weight: 600; }
+
+      table.numbers { border-collapse: collapse; width: 100%; font-size: 0.94rem; }
+      table.numbers th, table.numbers td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+      table.numbers th { font-weight: 700; }
+      .table-scroll { overflow-x: auto; }
+
+      .record-row { border: 1px solid var(--line); border-radius: 0.55rem; padding: 0.55rem 0.75rem; margin: 0.45rem 0; background: var(--panel); }
+      .record-row .r-head { font-weight: 700; }
+      details.fold { border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.4rem 0.9rem 0.7rem; margin: 0.9rem 0; background: var(--panel); }
+      details.fold summary { cursor: pointer; font-weight: 700; font-family: Georgia, serif; font-size: 1.05rem; }
+      footer { border-top: 2px solid var(--line); margin-top: 2rem; padding-top: 0.8rem; }
+      .end-banner { display: none; border-radius: 0.6rem; padding: 0.7rem 0.9rem; font-weight: 700; margin-top: 0.6rem; }
+      .end-banner.show { display: block; }
+      .end-banner.won { background: var(--accent); color: var(--accent-ink); }
+      .end-banner.lost { background: var(--danger); color: #fff; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="free-line">
+        <span>Free — always free. No ads, no account, no paywall.</span>
+        <button id="downloadBtn" type="button" data-hold="Downloads a copy of this whole game as one file, so you can open it and play with no connection at all.">Tap to download for offline play</button>
+      </div>
+
+      <nav class="compass" aria-label="Compass">
+        <a href="#play">Play</a>
+        <a href="#how">How it works</a>
+        <a href="#strategies">Strategies</a>
+        <a href="#numbers">Honest numbers</a>
+        <a href="#record">Your record</a>
+        <a href="#lineage">Lineage &amp; licence</a>
+      </nav>
+
+      <h1>Lantern Road — Tower Defense</h1>
+      <p>Walkers are coming down the lantern road to your gate. You build towers on the grass beside the road; the towers fire on their own; every walker stopped pays gold, and every walker that reaches the gate costs lives. Spend the gold on more towers and upgrades, and hold the road for 20 waves.</p>
+      <p class="soft small">An original game in a documented form: tower defense traces to <i>Rampart</i> (1990) and grew up through the custom-map years and the desktop wave of the 2000s. The full lineage is at the bottom of this page. Everything here — name, towers, walkers, words — is our own.</p>
+
+      <section class="panel" aria-label="Game setup">
+        <h2>Set up your game</h2>
+        <div class="setup-grid">
+          <div>
+            <label for="aliasInput">Play as — any name you like, or none</label>
+            <input type="text" id="aliasInput" maxlength="24" placeholder="Player 1" autocomplete="off" />
+            <p class="small soft">No claimed name is ever needed. This label is session-only and is gone when you leave. <button type="button" id="randomAliasBtn" style="border:0;background:none;color:var(--accent);font-weight:700;cursor:pointer;padding:0.2rem 0;">Tap for a random name</button></p>
+          </div>
+          <div>
+            <label for="mapSelect">Map — tap to choose</label>
+            <select id="mapSelect">
+              <option value="riverbend">Riverbend</option>
+              <option value="switchback">Switchback</option>
+            </select>
+            <p class="small soft">Riverbend winds through six bends. Switchback is the longer road — walkers spend more time under fire.</p>
+          </div>
+          <div>
+            <label for="diffSelect">Difficulty — tap to choose</label>
+            <select id="diffSelect">
+              <option value="relaxed">Relaxed</option>
+              <option value="standard" selected>Standard</option>
+              <option value="hard">Hard</option>
+            </select>
+            <p class="small soft">Relaxed: 260 gold, 25 lives, walker health ×0.8. Standard: 200 gold, 20 lives. Hard: 170 gold, 15 lives, walker health ×1.22.</p>
+          </div>
+          <div>
+            <label for="goldSelect">Starting gold — tap to choose</label>
+            <select id="goldSelect">
+              <option value="standard" selected>As the difficulty sets it</option>
+              <option value="generous">Generous (+80 gold)</option>
+              <option value="lean">Lean (−50 gold)</option>
+            </select>
+          </div>
+          <div>
+            <label>Endless mode — a variant</label>
+            <button type="button" class="toggle-btn" id="endlessBtn" aria-pressed="false" data-hold="Standard games end after wave 20. Endless mode keeps the waves coming, tougher and tougher, until the gate falls. Games played this way are labelled as the Endless variant in your record.">Tap to turn Endless on — waves keep coming past 20</button>
+          </div>
+          <div>
+            <label>Teaching — how much coaching you get</label>
+            <div class="seg" role="group" aria-label="Teaching dial">
+              <button type="button" id="teachOff" aria-pressed="false">Off — tap</button>
+              <button type="button" id="teachLight" aria-pressed="true">Light — tap</button>
+              <button type="button" id="teachCoach" aria-pressed="false">Coach — tap</button>
+            </div>
+            <p class="small soft">Your dial choice is saved on this device only. Light gives one timely line; Coach reads your board and shows its working.</p>
+          </div>
+        </div>
+        <p class="small soft" style="margin-top:0.6rem;">Changing the map, difficulty, starting gold, or Endless starts a fresh game. Standard play is: either map, Standard difficulty, gold as set, Endless off. Anything else is a variant and is labelled as one, here and in your record.</p>
+      </section>
+
+      <div class="variant-banner" id="variantBanner" role="status"></div>
+
+      <section id="play" aria-label="The game">
+        <div class="game-layout">
+          <div class="board-frame">
+            <canvas id="board" width="780" height="600" tabindex="0" aria-label="Game board. Tap a tower in the shop, then tap a grass cell to build it. Tap a built tower to see its upgrade and sell buttons."></canvas>
+            <div class="hud">
+              <span>Gold <b id="hudGold">200</b></span>
+              <span class="lives">Lives <b id="hudLives">20</b></span>
+              <span>Wave <b id="hudWave">– / 20</b></span>
+              <span>Walkers stopped <b id="hudKills">0</b></span>
+              <span>On the road <b id="hudFoes">0</b></span>
+            </div>
+            <div class="msg-line" id="msgLine" role="status">Pick a tower from the shop, then tap a grass cell to build it.</div>
+            <div class="end-banner" id="endBanner"></div>
+            <div class="controls">
+              <button type="button" class="primary" id="startWaveBtn" data-hold="Sends the next wave of walkers down the road. Your towers fire on their own. You can keep building while a wave runs.">Tap to start the wave</button>
+              <button type="button" id="pauseBtn" data-hold="Freezes the game where it stands. Tap again to carry on.">Tap to pause</button>
+              <button type="button" id="speedBtn" data-hold="Cycles the game speed: normal, double, then quadruple. Handy for watching a strong defence work — and for hurrying a hopeless one.">Tap for speed: ×1</button>
+              <button type="button" id="restartBtn" data-hold="Throws this game away and starts a fresh one with the same settings. A thrown-away game is not written to your record.">Tap to restart</button>
+              <button type="button" id="giveUpBtn" class="danger-btn" data-hold="Ends this game now and writes it to your record as a game you gave up, with the wave you reached.">Tap to give up &amp; record it</button>
+            </div>
+            <div class="explain-box" id="explainBox"></div>
+            <div class="coach" id="coachPanel">
+              <span class="coach-title" id="coachTitle">Coach</span>
+              <div id="coachBody">Build your first tower near a bend in the road — walkers slow down there in every sense that matters: the road turns, and your tower watches two stretches at once.</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel" style="margin-top:0;">
+              <h2>Tower shop</h2>
+              <p class="small soft">Tap a tower to choose it, then tap a grass cell on the board. Towers cannot stand on the road.</p>
+              <div class="shop" id="shop"></div>
+            </div>
+            <div class="panel" id="selectedPanel">
+              <h2>Selected tower</h2>
+              <div id="selectedBody"><p class="soft">Nothing selected. Tap one of your built towers on the board to upgrade or sell it.</p></div>
+            </div>
+            <div class="panel">
+              <h3>The walkers</h3>
+              <p class="small"><b>Mite</b> — the common walker. 30 health, steady pace, costs 1 life.<br />
+              <b>Runner</b> — 18 health but nearly twice as fast. Costs 1 life.<br />
+              <b>Brute</b> — 120 health, slow, costs 2 lives.<br />
+              <b>Shellback</b> — 430 health, very slow, costs 3 lives.<br />
+              Every wave, every walker's health grows by 30% of its base over the wave before. That growth — not any single wave — is what ends most games.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <details class="fold" id="how">
+        <summary>Tap to open — how it works, in plain words</summary>
+        <p><b>The road.</b> Walkers enter at the lantern post and follow the dirt road to your gate. They never leave it, never fight back, and never speed up — except Runners, who are simply born quick.</p>
+        <p><b>Towers.</b> Each tower watches a circle around itself (its range) and fires at the walker in that circle that has travelled furthest. Damage is per hit; rate is hits per second. Splash towers hurt every walker near the one they hit. A Frost Shard slows whatever it touches by 45% for a moment. A Coin Grove never fires — it pays gold while waves run, and it is how an economy-first game is played.</p>
+        <p><b>Upgrades.</b> Every tower has three levels. Level 2 costs 80% of the build price and multiplies damage by 1.7; level 3 costs 130% and multiplies damage by 2.7. Range grows a little each level. Selling a tower returns 70% of everything you spent on it.</p>
+        <p><b>The economy.</b> Stopped walkers pay bounties (Mite 4, Runner 5, Brute 9, Shellback 18). Finishing a wave pays a bonus of 12 gold plus the wave number. Gold unspent earns nothing — the only bank on this road is a Coin Grove.</p>
+        <p><b>Losing and winning.</b> Each walker through the gate costs lives. At zero lives the game ends. Survive wave 20 and you win — unless Endless is on, in which case the road simply keeps coming.</p>
+        <p><b>Gestures.</b> Tap does the thing. Hold any main control (or hover over it with a pointer) and it explains itself before it acts. On the board: tap to build and select; with a keyboard, use the arrow keys to move the marker and Enter to build or select.</p>
+      </details>
+
+      <section id="strategies" class="panel">
+        <h2>Three honest ways to hold the road</h2>
+        <p class="soft">There is no single right defence. These are the three plans experienced players argue about; each one wins games the others lose, and the Coach will name which one your board is drifting toward as you play.</p>
+        <div class="strat-grid">
+          <div class="strat">
+            <h3>1. Choke-point — pile onto the bends</h3>
+            <p>Put your strongest towers where the road turns. A bend gives one tower two stretches of road to watch, so each shot is bought once and spent twice. Frost at a bend is worth two Frosts on a straight.</p>
+            <p class="trade">The trade: the straights between bends are thinly watched. Fast Runners can slip a gap your bends never see, and one crowded corner is one bad wave from being overrun.</p>
+          </div>
+          <div class="strat">
+            <h3>2. Spread coverage — a tower for every stretch</h3>
+            <p>Space towers so their ranges tile the whole road with no gaps. Nothing travels unwatched; Runners get no free road anywhere.</p>
+            <p class="trade">The trade: no spot is strong. Brutes and Shellbacks walk through a thin spread the way rain walks through a fence — everywhere at once, stopped nowhere. Spread defences usually need upgrading everywhere, which the gold rarely allows.</p>
+          </div>
+          <div class="strat">
+            <h3>3. Economy-first — plant Coin Groves early</h3>
+            <p>Buy one or two Coin Groves in the first waves, defend thin, and let the groves pay for a late wall of upgraded Mortars and Lanterns. A grove pays for itself in roughly eight waves and profits after.</p>
+            <p class="trade">The trade: the early waves are defended with pocket change. One leak-heavy wave at wave 4 can cost lives you never get back, and a grove built after wave 12 rarely earns its price before the game ends.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="numbers" class="panel">
+        <h2>Honest numbers — measured, not asserted</h2>
+        <p>Difficulty claims are easy to print and hard to mean, so these were measured. We ran a headless simulation of this game's exact shipped numbers — same tower costs, damage, ranges, walker health, wave lists, and gold — playing two fixed reference defences, and recorded where each game ended. The simulation is deterministic: the same defence on the same settings ends on the same wave every run.</p>
+        <p><b>The full reference defence</b> builds sixteen towers in a fixed bend-first order and upgrades whenever spare gold allows, up to level 3. <b>The light reference defence</b> builds eight towers and upgrades only to level 2 — closer to a first-time player's board. Both build only between waves; you may also build mid-wave, so treat these as a floor for careful play, not a ceiling. One difference to know: in the simulation, shots land the instant they are fired; on this page, shots take a fraction of a second to arrive. Read the numbers as close readings, not prophecies.</p>
+        <div class="table-scroll">
+          <table class="numbers">
+            <thead><tr><th>Map</th><th>Difficulty</th><th>Full defence</th><th>Light defence</th></tr></thead>
+            <tbody>
+              <tr><td>Riverbend</td><td>Relaxed</td><td>Clears all 20 waves</td><td>Falls on wave 16</td></tr>
+              <tr><td>Riverbend</td><td>Standard</td><td>Clears all 20 waves</td><td>Falls on wave 13</td></tr>
+              <tr><td>Riverbend</td><td>Hard</td><td>Falls on wave 11</td><td>Falls on wave 10</td></tr>
+              <tr><td>Switchback</td><td>Relaxed</td><td>Clears all 20 waves</td><td>Falls on wave 18</td></tr>
+              <tr><td>Switchback</td><td>Standard</td><td>Clears all 20 waves</td><td>Falls on wave 14</td></tr>
+              <tr><td>Switchback</td><td>Hard</td><td>Clears all 20 waves</td><td>Falls on wave 10</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small soft">What that says in plain words: a strong, bend-first defence can clear Standard on either map — Standard is a fair game, not a wall. Hard on Riverbend beats even the full reference defence at wave 11; beating it takes better than the reference — mid-wave building, sharper upgrade timing, or a grove economy the reference doesn't run. Switchback's longer road is genuinely easier, and the table says by how much. If a future balance change moves these numbers, this table is re-measured, not re-worded.</p>
+      </section>
+
+      <section id="record" class="panel">
+        <h2>Your record — saved on this device only</h2>
+        <p class="soft">Every finished game is written here, in one consistent shape: date, name played as, map, difficulty, variant flags, waves survived, towers built and upgraded, gold earned and spent, walkers stopped and leaked, result. Nothing is sent anywhere. Export it to keep it; forget it to erase it.</p>
+        <div id="recordSummary"></div>
+        <div id="recordList"></div>
+        <div class="row-btns">
+          <button type="button" id="exportJsonBtn">Tap to download record as JSON</button>
+          <button type="button" id="exportCsvBtn">Tap to download record as CSV</button>
+          <button type="button" id="forgetBtn" class="danger-btn">Tap to forget everything</button>
+        </div>
+      </section>
+
+      <details class="fold" id="lineage">
+        <summary>Tap to open — lineage, and what is original here</summary>
+        <p><b>The documented form.</b> Tower defense — building stationary defences along a fixed route that waves of attackers must run — is a documented game form with a traceable line. <i>Rampart</i> (Atari, 1990) put build-and-defend phases around waves of attackers a generation before the name settled. The form grew up in the custom-map years: player-made maps for <i>StarCraft</i> and <i>Warcraft III</i> in the late 1990s and early 2000s turned "tower defense" into a named genre with its own conventions — a path, waves, buildable towers, an economy of kills. The desktop and browser wave of the 2000s, titles like <i>Desktop Tower Defense</i> (2007), carried it to everyone. This game is built on that documented form, the way a new chess variant is built on chess.</p>
+        <p><b>What is original.</b> The name Lantern Road, both maps, all five towers (Dart Turret, Ember Lantern, Frost Shard, Hill Mortar, Coin Grove), all four walkers (Mite, Runner, Brute, Shellback), the artwork drawn on the board, and every word of text are original to this page. No other game's name, art, map, tower, enemy, or text is used. Where a mechanic is the genre's common property — a path, waves, ranges, bounties — it is used as the form itself, which belongs to everyone who plays it.</p>
+        <p><b>Why? → How? → Act.</b> Why: the road works because a walker under fire longer is a walker stopped sooner — so bends, range, and time are the whole game. How: the three strategies above are three ways of buying that time. Act: build, watch what leaks, and let your own record — not anyone's say-so — grade the plan.</p>
+      </details>
+
+      <footer>
+        <p><b>Copyleft.</b> This page and its text and design are shared under CC BY-SA 4.0; its code under the GPL. Copy it, change it, pass it on — keep the same freedom attached. The name Lantern Road is not part of the grant.</p>
+        <p class="small soft">Free, always free, no ads — ever. Your teaching dial and your record live on this device only, and the Forget button above erases them.</p>
+      </footer>
+    </div>
+
+    <script>
+    'use strict';
+    /* ============ Shipped balance — the exact numbers the simulation measured ============ */
+    var COLS = 13, ROWS = 10, LAST_WAVE = 20;
+    var TOWERS = {
+      dart:   { name: 'Dart Turret',   cost: 50,  range: 2.4, dmg: 6,  rate: 3.0,  splash: 0,   slow: 0,    income: 0,  blurb: 'Cheap and quick. Small hits, fired often — the backbone of an early road.' },
+      ember:  { name: 'Ember Lantern', cost: 100, range: 3.1, dmg: 15, rate: 1.4,  splash: 0.9, slow: 0,    income: 0,  blurb: 'Lobs embers that burst, hurting every walker near the one it hits. Loves a crowd.' },
+      frost:  { name: 'Frost Shard',   cost: 90,  range: 2.8, dmg: 3,  rate: 2.0,  splash: 0,   slow: 0.45, income: 0,  blurb: 'Barely scratches, but slows everything it touches by 45%. Buys time for others.' },
+      mortar: { name: 'Hill Mortar',   cost: 160, range: 3.6, dmg: 42, rate: 0.55, splash: 1.2, slow: 0,    income: 0,  blurb: 'Slow, heavy shells with the biggest burst and the longest reach. The bend-keeper.' },
+      grove:  { name: 'Coin Grove',    cost: 110, range: 0,   dmg: 0,  rate: 0,    splash: 0,   slow: 0,    income: 14, blurb: 'A little money tree. Pays 14 gold every 15 seconds while a wave runs. Never fires.' }
+    };
+    var FOES = {
+      mite:   { name: 'Mite',      hp: 30,  speed: 0.95, bounty: 4,  leak: 1 },
+      runner: { name: 'Runner',    hp: 18,  speed: 1.75, bounty: 5,  leak: 1 },
+      brute:  { name: 'Brute',     hp: 120, speed: 0.62, bounty: 9,  leak: 2 },
+      shell:  { name: 'Shellback', hp: 430, speed: 0.45, bounty: 18, leak: 3 }
+    };
+    var MAPS = {
+      riverbend:  { label: 'Riverbend',  waypoints: [[-1,2],[3,2],[3,6],[8,6],[8,2],[11,2],[11,7],[14,7]] },
+      switchback: { label: 'Switchback', waypoints: [[6,-1],[6,3],[2,3],[2,6],[10,6],[10,3],[12,3],[12,10]] }
+    };
+    var DIFFS = {
+      relaxed:  { label: 'Relaxed',  gold: 260, lives: 25, hp: 0.8 },
+      standard: { label: 'Standard', gold: 200, lives: 20, hp: 1.0 },
+      hard:     { label: 'Hard',     gold: 170, lives: 15, hp: 1.22 }
+    };
+    var GOLD_MODS = { standard: 0, generous: 80, lean: -50 };
+    var LVL_DMG = [1, 1.7, 2.7], LVL_RANGE = [1, 1.08, 1.16];
+    function upCost(type, lvl) { return Math.round(TOWERS[type].cost * (lvl === 0 ? 0.8 : 1.3)); } // lvl = current level (0-based)
+    function towerStats(t) {
+      var b = TOWERS[t.type];
+      return { dmg: b.dmg * LVL_DMG[t.lvl], range: b.range * LVL_RANGE[t.lvl], rate: b.rate, splash: b.splash, slow: b.slow, income: b.income * LVL_DMG[t.lvl] };
+    }
+    function waveComp(n) {
+      var list = [], i;
+      var mites = 6 + Math.floor(n * 1.6);
+      var runners = n >= 2 ? 2 + Math.floor((n - 1) * 1.1) : 0;
+      var brutes = n >= 3 ? Math.floor((n - 1) * 0.9) : 0;
+      var shells = n >= 5 ? Math.floor((n - 3) / 2) : 0;
+      for (i = 0; i < mites; i++) list.push('mite');
+      for (i = 0; i < runners; i++) list.splice(Math.min(list.length, 3 + i * 3), 0, 'runner');
+      for (i = 0; i < brutes; i++) list.splice(Math.min(list.length, 6 + i * 5), 0, 'brute');
+      for (i = 0; i < shells; i++) list.splice(Math.max(0, list.length - i * 4), 0, 'shell');
+      return list;
+    }
+    function hpScale(wave) { return (1 + (wave - 1) * 0.30) * DIFFS[S.diff].hp; }
+
+    /* ============ Path helpers ============ */
+    function buildPath(mapKey) {
+      var pts = MAPS[mapKey].waypoints.map(function (w) { return { x: w[0] + 0.5, y: w[1] + 0.5 }; });
+      var segs = [], total = 0, i;
+      for (i = 0; i < pts.length - 1; i++) {
+        var len = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+        segs.push({ a: pts[i], b: pts[i + 1], len: len, start: total }); total += len;
+      }
+      var cells = {};
+      for (i = 0; i < segs.length; i++) {
+        var s = segs[i], steps = Math.ceil(s.len * 4), j;
+        for (j = 0; j <= steps; j++) {
+          var t = steps ? j / steps : 0;
+          var cx = Math.round(s.a.x + (s.b.x - s.a.x) * t - 0.5), cy = Math.round(s.a.y + (s.b.y - s.a.y) * t - 0.5);
+          if (cx >= 0 && cx < COLS && cy >= 0 && cy < ROWS) cells[cx + ',' + cy] = true;
+        }
+      }
+      var bends = pts.slice(1, -1);
+      return { pts: pts, segs: segs, total: total, cells: cells, bends: bends };
+    }
+    function posAt(path, d) {
+      if (d >= path.total) return { x: path.pts[path.pts.length - 1].x, y: path.pts[path.pts.length - 1].y, done: true };
+      for (var i = 0; i < path.segs.length; i++) {
+        var s = path.segs[i];
+        if (d <= s.start + s.len) {
+          var t = s.len ? (d - s.start) / s.len : 0;
+          return { x: s.a.x + (s.b.x - s.a.x) * t, y: s.a.y + (s.b.y - s.a.y) * t, done: false };
+        }
+      }
+      return { x: path.pts[path.pts.length - 1].x, y: path.pts[path.pts.length - 1].y, done: true };
+    }
+    function coverage() { // share of road length inside some tower's range
+      if (!S.towers.length) return 0;
+      var covered = 0, steps = 200, i, j;
+      for (i = 0; i < steps; i++) {
+        var p = posAt(S.path, (i + 0.5) / steps * S.path.total), hit = false;
+        for (j = 0; j < S.towers.length; j++) {
+          var t = S.towers[j]; if (t.type === 'grove') continue;
+          if (Math.hypot(p.x - t.x, p.y - t.y) <= towerStats(t).range) { hit = true; break; }
+        }
+        if (hit) covered++;
+      }
+      return covered / steps;
+    }
+    function nearBendCount() {
+      var n = 0, i, j;
+      for (i = 0; i < S.towers.length; i++) {
+        var t = S.towers[i]; if (t.type === 'grove') continue;
+        for (j = 0; j < S.path.bends.length; j++) {
+          if (Math.hypot(t.x - S.path.bends[j].x, t.y - S.path.bends[j].y) <= 1.9) { n++; break; }
+        }
+      }
+      return n;
+    }
+
+    /* ============ State ============ */
+    var LS_RECORD = 'lantern-road-record-v1', LS_TEACH = 'lantern-road-teaching-v1';
+    var S = null;
+    var ui = { shopType: null, selected: null, hover: null, cursor: { x: 0, y: 0 }, speed: 1, paused: false, endless: false, teaching: 'light' };
+    try { var savedTeach = localStorage.getItem(LS_TEACH); if (savedTeach === 'off' || savedTeach === 'light' || savedTeach === 'coach') ui.teaching = savedTeach; } catch (e) {}
+
+    function settings() {
+      return {
+        map: document.getElementById('mapSelect').value,
+        diff: document.getElementById('diffSelect').value,
+        goldMod: document.getElementById('goldSelect').value,
+        endless: ui.endless
+      };
+    }
+    function newGame() {
+      var st = settings();
+      S = {
+        map: st.map, diff: st.diff, goldMod: st.goldMod, endless: st.endless,
+        path: buildPath(st.map),
+        gold: Math.max(60, DIFFS[st.diff].gold + GOLD_MODS[st.goldMod]),
+        lives: DIFFS[st.diff].lives,
+        wave: 0, phase: 'build', // build | wave | won | lost
+        towers: [], foes: [], shots: [],
+        spawnQueue: [], spawnT: 0, incomeT: 0, time: 0,
+        kills: 0, leaks: 0, earned: 0, spent: 0, built: 0, upgraded: 0,
+        recorded: false, leaksThisWave: 0, startedAt: new Date().toISOString()
+      };
+      ui.selected = null; ui.shopType = null; ui.paused = false;
+      document.getElementById('endBanner').className = 'end-banner';
+      document.getElementById('pauseBtn').textContent = 'Tap to pause';
+      var swb = document.getElementById('startWaveBtn');
+      swb.disabled = false; swb.textContent = 'Tap to start the wave';
+      renderShop(); renderSelected(); updateVariantBanner(); updateHUD(); coach(true);
+      setMsg('Pick a tower from the shop, then tap a grass cell to build it.');
+    }
+    function isVariant() { return S.diff !== 'standard' || S.goldMod !== 'standard' || S.endless; }
+    function updateVariantBanner() {
+      var b = document.getElementById('variantBanner'), parts = [];
+      if (S.diff !== 'standard') parts.push(DIFFS[S.diff].label + ' difficulty');
+      if (S.goldMod === 'generous') parts.push('generous starting gold');
+      if (S.goldMod === 'lean') parts.push('lean starting gold');
+      if (S.endless) parts.push('Endless mode');
+      if (parts.length) { b.textContent = 'Variant in play: ' + parts.join(' · ') + '. This game is not standard play, and your record will say so.'; b.classList.add('show'); }
+      else { b.textContent = ''; b.classList.remove('show'); }
+    }
+
+    /* ============ Economy / building ============ */
+    function cellKey(x, y) { return x + ',' + y; }
+    function towerAt(cx, cy) { for (var i = 0; i < S.towers.length; i++) if (S.towers[i].cx === cx && S.towers[i].cy === cy) return S.towers[i]; return null; }
+    function canBuild(cx, cy) {
+      if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) return 'That is off the field.';
+      if (S.path.cells[cellKey(cx, cy)]) return 'Towers cannot stand on the road.';
+      if (towerAt(cx, cy)) return 'A tower already stands there — tap it to upgrade or sell.';
+      return null;
+    }
+    function placeTower(cx, cy, type) {
+      var err = canBuild(cx, cy); if (err) { setMsg(err); return false; }
+      var cost = TOWERS[type].cost;
+      if (S.gold < cost) { setMsg('Not enough gold for a ' + TOWERS[type].name + ' — it costs ' + cost + ' and you have ' + Math.floor(S.gold) + '.'); return false; }
+      S.gold -= cost; S.spent += cost; S.built++;
+      var t = { cx: cx, cy: cy, x: cx + 0.5, y: cy + 0.5, type: type, lvl: 0, cool: 0, invested: cost };
+      S.towers.push(t); ui.selected = t; ui.shopType = null;
+      renderShop(); renderSelected(); updateHUD(); coach();
+      setMsg(TOWERS[type].name + ' built. ' + (S.phase === 'build' ? 'Build more, or tap “Start the wave”.' : 'It joins the fight at once.'));
+      return true;
+    }
+    function upgradeSelected() {
+      var t = ui.selected; if (!t || t.lvl >= 2) return;
+      var c = upCost(t.type, t.lvl);
+      if (S.gold < c) { setMsg('Upgrading costs ' + c + ' gold — you have ' + Math.floor(S.gold) + '.'); return; }
+      S.gold -= c; S.spent += c; t.invested += c; t.lvl++; S.upgraded++;
+      renderSelected(); updateHUD(); coach();
+      setMsg(TOWERS[t.type].name + ' is now level ' + (t.lvl + 1) + '.');
+    }
+    function sellSelected() {
+      var t = ui.selected; if (!t) return;
+      var back = Math.round(t.invested * 0.7);
+      S.gold += back; S.towers.splice(S.towers.indexOf(t), 1); ui.selected = null;
+      renderSelected(); updateHUD(); coach();
+      setMsg('Sold for ' + back + ' gold (70% of what you spent on it).');
+    }
+
+    /* ============ Waves & combat ============ */
+    function startWave() {
+      if (!S || S.phase !== 'build') return;
+      S.wave++; S.phase = 'wave'; S.leaksThisWave = 0;
+      S.spawnQueue = waveComp(S.wave); S.spawnT = 0;
+      document.getElementById('startWaveBtn').disabled = true;
+      updateHUD(); coach(true);
+      setMsg('Wave ' + S.wave + ' is on the road — ' + S.spawnQueue.length + ' walkers.');
+    }
+    function endWave() {
+      var bonus = 12 + S.wave;
+      S.gold += bonus; S.earned += bonus;
+      if (!S.endless && S.wave >= LAST_WAVE) { finishGame('won'); return; }
+      S.phase = 'build';
+      document.getElementById('startWaveBtn').disabled = false;
+      document.getElementById('startWaveBtn').textContent = 'Tap to start wave ' + (S.wave + 1);
+      updateHUD(); coach(true);
+      setMsg('Wave ' + S.wave + ' held. Bonus ' + bonus + ' gold.' + (S.leaksThisWave ? ' But ' + S.leaksThisWave + ' got through.' : ' Not one walker through.'));
+    }
+    function spawnNext() {
+      var kind = S.spawnQueue.shift(), b = FOES[kind], sc = hpScale(S.wave);
+      S.foes.push({ kind: kind, hp: b.hp * sc, maxHp: b.hp * sc, dist: 0, slowT: 0, slowF: 0, x: S.path.pts[0].x, y: S.path.pts[0].y, done: false });
+    }
+    function step(dt) {
+      if (S.phase !== 'wave') return;
+      S.time += dt;
+      var gap = Math.max(0.35, 0.9 - S.wave * 0.02);
+      if (S.spawnQueue.length) { S.spawnT -= dt; if (S.spawnT <= 0) { spawnNext(); S.spawnT = gap; } }
+      S.incomeT += dt;
+      if (S.incomeT >= 5) {
+        S.incomeT = 0;
+        for (var gi = 0; gi < S.towers.length; gi++) if (S.towers[gi].type === 'grove') { var inc = towerStats(S.towers[gi]).income / 3; S.gold += inc; S.earned += inc; }
+      }
+      var i, f, b;
+      for (i = 0; i < S.foes.length; i++) {
+        f = S.foes[i]; b = FOES[f.kind];
+        f.dist += b.speed * (f.slowT > 0 ? (1 - f.slowF) : 1) * dt;
+        if (f.slowT > 0) f.slowT -= dt;
+        var p = posAt(S.path, f.dist); f.x = p.x; f.y = p.y; f.done = p.done;
+      }
+      for (i = S.foes.length - 1; i >= 0; i--) {
+        if (S.foes[i].done) {
+          S.lives -= FOES[S.foes[i].kind].leak; S.leaks++; S.leaksThisWave++;
+          S.foes.splice(i, 1);
+          if (S.lives <= 0) { S.lives = 0; updateHUD(); finishGame('lost'); return; }
+        }
+      }
+      for (i = 0; i < S.towers.length; i++) {
+        var t = S.towers[i]; if (t.type === 'grove') continue;
+        var st = towerStats(t); t.cool -= dt;
+        var target = null, best = -1, j;
+        for (j = 0; j < S.foes.length; j++) {
+          var d = Math.hypot(S.foes[j].x - t.x, S.foes[j].y - t.y);
+          if (d <= st.range && S.foes[j].dist > best) { best = S.foes[j].dist; target = S.foes[j]; }
+        }
+        if (target && t.cool <= 0) {
+          t.cool = 1 / st.rate;
+          S.shots.push({ x: t.x, y: t.y, target: target, speed: 13, dmg: st.dmg, splash: st.splash, slow: st.slow, kind: t.type });
+        }
+      }
+      for (i = S.shots.length - 1; i >= 0; i--) {
+        var sh = S.shots[i];
+        if (S.foes.indexOf(sh.target) === -1) { S.shots.splice(i, 1); continue; }
+        var dx = sh.target.x - sh.x, dy = sh.target.y - sh.y, dist = Math.hypot(dx, dy), move = sh.speed * dt;
+        if (dist <= move + 0.05) {
+          var victims = sh.splash > 0 ? S.foes.filter(function (v) { return Math.hypot(v.x - sh.target.x, v.y - sh.target.y) <= sh.splash; }) : [sh.target];
+          for (var vi = 0; vi < victims.length; vi++) {
+            victims[vi].hp -= sh.dmg;
+            if (sh.slow) { victims[vi].slowF = Math.max(victims[vi].slowF, sh.slow); victims[vi].slowT = 1.4; }
+          }
+          S.shots.splice(i, 1);
+        } else { sh.x += dx / dist * move; sh.y += dy / dist * move; }
+      }
+      for (i = S.foes.length - 1; i >= 0; i--) {
+        if (S.foes[i].hp <= 0) { S.gold += FOES[S.foes[i].kind].bounty; S.earned += FOES[S.foes[i].kind].bounty; S.kills++; S.foes.splice(i, 1); }
+      }
+      if (!S.spawnQueue.length && !S.foes.length && S.phase === 'wave') endWave();
+      updateHUD();
+    }
+    function finishGame(result) {
+      S.phaseAtEnd = S.phase;
+      S.phase = result; S.recordedResult = result;
+      document.getElementById('startWaveBtn').disabled = true;
+      var bn = document.getElementById('endBanner');
+      if (result === 'won') { bn.className = 'end-banner show won'; bn.textContent = 'The road is held — all 20 waves. The gate stands. This game is in your record below.'; }
+      else if (result === 'lost') { bn.className = 'end-banner show lost'; bn.textContent = 'The gate has fallen on wave ' + S.wave + '. This game is in your record below — your record is how the next defence gets better.'; }
+      else { bn.className = 'end-banner show lost'; bn.textContent = 'Game ended by your hand on wave ' + Math.max(1, S.wave) + ' and written to your record as given up.'; }
+      writeRecord(result);
+      updateHUD(); coach(true);
+    }
+
+    /* ============ Record (on this device only) ============ */
+    function loadRecord() { try { var r = JSON.parse(localStorage.getItem(LS_RECORD) || '[]'); return Array.isArray(r) ? r : []; } catch (e) { return []; } }
+    function writeRecord(result) {
+      if (S.recorded) return; S.recorded = true;
+      var alias = (document.getElementById('aliasInput').value || '').trim() || 'Player 1';
+      var rec = {
+        game: 'lantern-road-tower-defense', version: 1,
+        date: new Date().toISOString(), alias: alias,
+        map: MAPS[S.map].label, difficulty: DIFFS[S.diff].label,
+        endless: S.endless, startingGold: S.goldMod,
+        variant: isVariant(), result: result,
+        wavesSurvived: result === 'won' ? LAST_WAVE : (result === 'lost' ? Math.max(0, S.wave - 1) : (S.phaseAtEnd === 'build' ? S.wave : Math.max(0, S.wave - 1))),
+        waveReached: S.wave,
+        towersBuilt: S.built, towersUpgraded: S.upgraded,
+        goldEarned: Math.round(S.earned), goldSpent: Math.round(S.spent),
+        foesDefeated: S.kills, foesLeaked: S.leaks, livesLeft: S.lives,
+        teaching: ui.teaching
+      };
+      var all = loadRecord(); all.push(rec);
+      try { localStorage.setItem(LS_RECORD, JSON.stringify(all)); } catch (e) {}
+      renderRecord();
+    }
+    function renderRecord() {
+      var all = loadRecord();
+      var sum = document.getElementById('recordSummary'), list = document.getElementById('recordList');
+      if (!all.length) { sum.innerHTML = '<p class="soft">No finished games yet. Your first held road — or fallen gate — will be written here.</p>'; list.innerHTML = ''; return; }
+      var wins = all.filter(function (r) { return r.result === 'won'; }).length;
+      var best = Math.max.apply(null, all.map(function (r) { return r.wavesSurvived; }));
+      var kills = all.reduce(function (a, r) { return a + r.foesDefeated; }, 0);
+      sum.innerHTML = '<p><b>' + all.length + '</b> games recorded · <b>' + wins + '</b> won · best: <b>' + best + '</b> waves survived · <b>' + kills + '</b> walkers stopped in all.</p>';
+      var rows = all.slice(-8).reverse().map(function (r) {
+        var when = new Date(r.date).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        var res = r.result === 'won' ? 'Won — road held' : (r.result === 'lost' ? 'Gate fell on wave ' + r.waveReached : 'Gave up on wave ' + r.waveReached);
+        var variant = r.variant ? ' · <b>variant</b>' : '';
+        return '<div class="record-row"><span class="r-head">' + res + '</span> — ' + r.map + ', ' + r.difficulty + variant + '<br /><span class="small soft">' + when + ' · played as ' + escapeHtml(r.alias) + ' · ' + r.wavesSurvived + ' waves survived · ' + r.towersBuilt + ' towers built, ' + r.towersUpgraded + ' upgrades · ' + r.foesDefeated + ' stopped, ' + r.foesLeaked + ' leaked · gold ' + r.goldEarned + ' earned / ' + r.goldSpent + ' spent</span></div>';
+      }).join('');
+      list.innerHTML = rows;
+    }
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function download(name, text, type) {
+      var blob = new Blob([text], { type: type });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    }
+
+    /* ============ Rendering ============ */
+    var canvas = document.getElementById('board'), ctx = canvas.getContext('2d');
+    var CELL = canvas.width / COLS;
+    var darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+    function draw() {
+      var field = cssVar('--field'), fieldAlt = cssVar('--field-alt'), road = cssVar('--road'), roadEdge = cssVar('--road-edge');
+      var x, y, i;
+      for (y = 0; y < ROWS; y++) for (x = 0; x < COLS; x++) {
+        ctx.fillStyle = S.path.cells[cellKey(x, y)] ? road : ((x + y) % 2 ? field : fieldAlt);
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+      // road edge dots along path
+      ctx.strokeStyle = roadEdge; ctx.lineWidth = 2; ctx.beginPath();
+      for (i = 0; i < S.path.pts.length; i++) { var p = S.path.pts[i]; if (i === 0) ctx.moveTo(p.x * CELL, p.y * CELL); else ctx.lineTo(p.x * CELL, p.y * CELL); }
+      ctx.stroke();
+      // gate + entrance markers
+      var entry = S.path.pts[0], gate = S.path.pts[S.path.pts.length - 1];
+      drawPost(entry, '#e3b959'); drawPost(gate, '#a3271e');
+      // hover / cursor
+      var hov = ui.hover || ui.cursor;
+      if (hov && S.phase !== 'won' && S.phase !== 'lost') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2;
+        ctx.strokeRect(hov.x * CELL + 2, hov.y * CELL + 2, CELL - 4, CELL - 4);
+        if (ui.shopType && TOWERS[ui.shopType].range > 0 && !canBuild(hov.x, hov.y)) {
+          ctx.beginPath(); ctx.arc((hov.x + 0.5) * CELL, (hov.y + 0.5) * CELL, TOWERS[ui.shopType].range * CELL, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.13)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.stroke();
+        }
+      }
+      if (ui.selected) {
+        var st = towerStats(ui.selected);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        ctx.strokeRect(ui.selected.cx * CELL + 2, ui.selected.cy * CELL + 2, CELL - 4, CELL - 4);
+        if (st.range > 0) { ctx.beginPath(); ctx.arc(ui.selected.x * CELL, ui.selected.y * CELL, st.range * CELL, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill(); }
+      }
+      for (i = 0; i < S.towers.length; i++) drawTower(S.towers[i]);
+      for (i = 0; i < S.foes.length; i++) drawFoe(S.foes[i]);
+      for (i = 0; i < S.shots.length; i++) {
+        var sh = S.shots[i];
+        ctx.fillStyle = sh.kind === 'frost' ? '#bfe6ff' : (sh.kind === 'mortar' ? '#3a3230' : (sh.kind === 'ember' ? '#ff9c3f' : '#f2ead8'));
+        ctx.beginPath(); ctx.arc(sh.x * CELL, sh.y * CELL, sh.kind === 'mortar' ? 6 : 4, 0, Math.PI * 2); ctx.fill();
+      }
+      if (ui.paused && S.phase === 'wave') {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 34px Georgia, serif'; ctx.textAlign = 'center';
+        ctx.fillText('Paused', canvas.width / 2, canvas.height / 2);
+      }
+    }
+    function drawPost(p, color) {
+      var x = Math.max(6, Math.min(canvas.width - 6, p.x * CELL)), y = Math.max(6, Math.min(canvas.height - 6, p.y * CELL));
+      ctx.fillStyle = '#5a4632'; ctx.fillRect(x - 3, y - 10, 6, 20);
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y - 14, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.stroke();
+    }
+    function drawTower(t) {
+      var cx = t.x * CELL, cy = t.y * CELL, r = CELL * 0.36;
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.75, r * 0.95, r * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+      if (t.type === 'dart') {
+        ctx.fillStyle = '#8d8578'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5d574c'; ctx.beginPath(); ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e8e2d2'; ctx.fillRect(cx - 2, cy - r * 0.8, 4, r * 0.9);
+      } else if (t.type === 'ember') {
+        ctx.fillStyle = '#4c3a26'; ctx.fillRect(cx - 3, cy - r * 0.2, 6, r * 1.05);
+        var glow = 0.75 + 0.25 * Math.sin(S.time * 3 + cx);
+        ctx.fillStyle = '#ffb84d'; ctx.beginPath(); ctx.arc(cx, cy - r * 0.45, r * 0.52 * glow + 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff0c2'; ctx.beginPath(); ctx.arc(cx, cy - r * 0.45, r * 0.24, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#2e2113'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy - r * 0.45, r * 0.62, 0, Math.PI * 2); ctx.stroke();
+      } else if (t.type === 'frost') {
+        ctx.fillStyle = '#a9d8ef'; ctx.beginPath();
+        ctx.moveTo(cx, cy - r * 1.05); ctx.lineTo(cx + r * 0.62, cy + r * 0.7); ctx.lineTo(cx - r * 0.62, cy + r * 0.7); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#dff3fd'; ctx.beginPath();
+        ctx.moveTo(cx, cy - r * 1.05); ctx.lineTo(cx + r * 0.2, cy + r * 0.1); ctx.lineTo(cx - r * 0.2, cy + r * 0.1); ctx.closePath(); ctx.fill();
+      } else if (t.type === 'mortar') {
+        ctx.fillStyle = '#4a4a44'; ctx.beginPath(); ctx.arc(cx, cy + r * 0.25, r * 0.85, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(-0.6);
+        ctx.fillStyle = '#2c2c28'; ctx.fillRect(-4, -r * 1.15, 8, r * 1.1); ctx.restore();
+        ctx.fillStyle = '#77776c'; ctx.beginPath(); ctx.arc(cx, cy + r * 0.25, r * 0.34, 0, Math.PI * 2); ctx.fill();
+      } else if (t.type === 'grove') {
+        ctx.fillStyle = '#6b4a2a'; ctx.fillRect(cx - 3, cy, 6, r * 0.8);
+        ctx.fillStyle = '#2e6b34'; ctx.beginPath(); ctx.arc(cx, cy - r * 0.35, r * 0.78, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e3b959';
+        [[-0.3, -0.55], [0.28, -0.3], [0, -0.05]].forEach(function (o) { ctx.beginPath(); ctx.arc(cx + o[0] * CELL * 0.5, cy + o[1] * CELL * 0.5, 3.4, 0, Math.PI * 2); ctx.fill(); });
+      }
+      if (t.lvl > 0) {
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+        for (var i = 0; i <= t.lvl; i++) { ctx.beginPath(); ctx.arc(cx - (t.lvl * 5) + i * 10, cy + r + 7, 2.6, 0, Math.PI * 2); ctx.fill(); }
+      }
+    }
+    function drawFoe(f) {
+      var cx = f.x * CELL, cy = f.y * CELL;
+      var slowed = f.slowT > 0;
+      if (f.kind === 'mite') {
+        ctx.fillStyle = slowed ? '#7fb6c9' : '#c98a2d'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.arc(cx - 3, cy - 2, 1.8, 0, Math.PI * 2); ctx.arc(cx + 3, cy - 2, 1.8, 0, Math.PI * 2); ctx.fill();
+      } else if (f.kind === 'runner') {
+        ctx.fillStyle = slowed ? '#7fb6c9' : '#c2502a'; ctx.beginPath();
+        ctx.moveTo(cx + 13, cy); ctx.lineTo(cx - 9, cy - 8); ctx.lineTo(cx - 9, cy + 8); ctx.closePath(); ctx.fill();
+      } else if (f.kind === 'brute') {
+        ctx.fillStyle = slowed ? '#6f96a8' : '#5c6650'; roundRect(cx - 14, cy - 14, 28, 28, 6); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.beginPath(); ctx.arc(cx - 5, cy - 3, 2.4, 0, Math.PI * 2); ctx.arc(cx + 5, cy - 3, 2.4, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillStyle = slowed ? '#7d9aa8' : '#6d7263';
+        ctx.beginPath(); for (var k = 0; k < 6; k++) { var a = k / 6 * Math.PI * 2 + 0.3, px = cx + Math.cos(a) * 17, py = cy + Math.sin(a) * 17; if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); } ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 9, 0, Math.PI * 2); ctx.stroke();
+      }
+      if (f.hp < f.maxHp) {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(cx - 12, cy - 22, 24, 4);
+        ctx.fillStyle = '#7fc46a'; ctx.fillRect(cx - 12, cy - 22, 24 * Math.max(0, f.hp / f.maxHp), 4);
+      }
+    }
+    function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+    /* ============ HUD, shop, selection ============ */
+    function setMsg(m) { document.getElementById('msgLine').textContent = m; }
+    function updateHUD() {
+      document.getElementById('hudGold').textContent = Math.floor(S.gold);
+      document.getElementById('hudLives').textContent = S.lives;
+      document.getElementById('hudWave').textContent = (S.wave === 0 ? '–' : S.wave) + (S.endless ? ' / ∞' : ' / ' + LAST_WAVE);
+      document.getElementById('hudKills').textContent = S.kills;
+      document.getElementById('hudFoes').textContent = S.foes.length + (S.spawnQueue.length ? ' (+' + S.spawnQueue.length + ' coming)' : '');
+      renderShopAfford();
+    }
+    function renderShop() {
+      var shop = document.getElementById('shop');
+      shop.innerHTML = Object.keys(TOWERS).map(function (k) {
+        var t = TOWERS[k];
+        var stats = k === 'grove' ? 'Pays gold · no attack' : ('Damage ' + t.dmg + ' · ' + t.rate + '/s · range ' + t.range + (t.splash ? ' · splash' : '') + (t.slow ? ' · slows 45%' : ''));
+        return '<button type="button" data-tower="' + k + '" aria-pressed="' + (ui.shopType === k) + '">' +
+          '<span class="t-name">' + t.name + '</span><span class="t-cost">' + t.cost + ' gold</span>' +
+          '<span class="t-blurb">' + t.blurb + '<br />' + stats + '<br />Tap to choose, then tap a grass cell.</span></button>';
+      }).join('');
+      Array.prototype.forEach.call(shop.querySelectorAll('button'), function (btn) {
+        btn.addEventListener('click', function () {
+          var k = btn.getAttribute('data-tower');
+          ui.shopType = ui.shopType === k ? null : k; ui.selected = null;
+          renderShop(); renderSelected();
+          setMsg(ui.shopType ? TOWERS[k].name + ' chosen — tap a grass cell to build it.' : 'No tower chosen.');
+        });
+      });
+      renderShopAfford();
+    }
+    function renderShopAfford() {
+      Array.prototype.forEach.call(document.querySelectorAll('#shop button'), function (btn) {
+        btn.disabled = S.gold < TOWERS[btn.getAttribute('data-tower')].cost;
+        btn.setAttribute('aria-pressed', ui.shopType === btn.getAttribute('data-tower'));
+      });
+    }
+    function renderSelected() {
+      var body = document.getElementById('selectedBody'), t = ui.selected;
+      if (!t) { body.innerHTML = '<p class="soft">Nothing selected. Tap one of your built towers on the board to upgrade or sell it.</p>'; return; }
+      var st = towerStats(t), b = TOWERS[t.type];
+      var lines = t.type === 'grove'
+        ? 'Pays ' + Math.round(st.income) + ' gold every 15 seconds while a wave runs.'
+        : 'Damage ' + Math.round(st.dmg) + ' per hit · ' + b.rate + ' hits/s · range ' + st.range.toFixed(1) + (b.splash ? ' · splash ' + b.splash : '') + (b.slow ? ' · slows 45%' : '');
+      var up = t.lvl < 2
+        ? '<button type="button" id="upgradeBtn">Tap to upgrade to level ' + (t.lvl + 2) + ' — ' + upCost(t.type, t.lvl) + ' gold</button>'
+        : '<p class="small soft">Fully upgraded.</p>';
+      body.innerHTML = '<p><b>' + b.name + '</b> — level ' + (t.lvl + 1) + '<br /><span class="small">' + lines + '</span><br /><span class="small soft">Spent on it so far: ' + t.invested + ' gold.</span></p>' +
+        '<div class="row-btns">' + up + '<button type="button" id="sellBtn">Tap to sell — ' + Math.round(t.invested * 0.7) + ' gold back</button></div>';
+      var ub = document.getElementById('upgradeBtn'); if (ub) ub.addEventListener('click', upgradeSelected);
+      document.getElementById('sellBtn').addEventListener('click', sellSelected);
+    }
+
+    /* ============ Coach ============ */
+    function coach(force) {
+      if (!S) return;
+      var panel = document.getElementById('coachPanel'), body = document.getElementById('coachBody'), title = document.getElementById('coachTitle');
+      if (ui.teaching === 'off') { panel.style.display = 'none'; return; }
+      panel.style.display = '';
+      var firing = S.towers.filter(function (t) { return t.type !== 'grove'; });
+      var groves = S.towers.length - firing.length;
+      var cov = Math.round(coverage() * 100);
+      var bends = nearBendCount();
+      if (ui.teaching === 'light') {
+        title.textContent = 'Light teaching — one line, in the moment';
+        var line;
+        if (S.phase === 'won') line = 'Held. Your record below shows the shape of the defence that did it — worth a look before the next map.';
+        else if (S.phase === 'lost') line = 'The gate fell on wave ' + S.wave + '. The usual cause is health growth outrunning damage — earlier upgrades beat later towers.';
+        else if (!S.towers.length) line = 'First build: near a bend, where one tower watches two stretches of road.';
+        else if (S.phase === 'wave' && S.leaksThisWave > 0) line = 'Leaks this wave: ' + S.leaksThisWave + '. Note where they slipped past — that stretch is your next tower\u2019s home.';
+        else if (S.wave >= 3 && !S.towers.some(function (t) { return t.type === 'frost'; })) line = 'No Frost Shard yet. One at a bend slows everything for every other tower — time is damage.';
+        else if (S.gold >= 160 && S.phase === 'build') line = 'You are holding ' + Math.floor(S.gold) + ' gold. Unspent gold stops nothing — a Mortar, an upgrade, or a grove all beat a hoard.';
+        else if (groves && S.wave < 4) line = 'Economy-first is on. The grove pays for itself in about eight waves — defend just enough until then.';
+        else line = 'Road coverage so far: about ' + cov + '%. Gaps are where Runners earn their name.';
+        body.textContent = line;
+        return;
+      }
+      title.textContent = 'Coach — reading your board';
+      var plan, planNote;
+      if (groves >= 1 && S.wave <= 6) { plan = 'Economy-first'; planNote = 'Your grove is an investment, not a defence: it pays off around wave ' + (S.wave + 8) + '. Until then you are defending thin on purpose — one leak-heavy wave is the price this plan can\u2019t afford.'; }
+      else if (firing.length && bends >= Math.ceil(firing.length * 0.6)) { plan = 'Choke-point'; planNote = 'Most of your firepower watches a bend. Strong against Brutes and Shellbacks; watch the straights for Runners slipping the gaps.'; }
+      else if (firing.length) { plan = 'Spread coverage'; planNote = 'Your towers are spread along the road — nothing travels unwatched, but no single stretch is strong. Brutes are this plan\u2019s test; upgrades spread thin are its cost.'; }
+      else { plan = 'Not yet a plan'; planNote = 'No towers yet. Any of the three plans above starts with the same first move: build near a bend.'; }
+      var tips = [];
+      if (S.phase === 'wave' && S.leaksThisWave >= 2) tips.push(S.leaksThisWave + ' walkers leaked this wave. The leak point matters more than the count — build where they passed, not where they died.');
+      if (cov < 55 && firing.length >= 3) tips.push('Only about ' + cov + '% of the road is inside any tower\u2019s range. A spread gap that wide is a door, especially for Runners.');
+      if (S.gold >= 200 && S.phase === 'build') tips.push(Math.floor(S.gold) + ' gold is sitting idle. The three honest spends: upgrade what already watches a bend, fill the biggest range gap, or plant a grove if the wave count still justifies it (groves planted after wave 12 rarely pay back).');
+      if (S.wave >= 4 && !S.towers.some(function (t) { return t.type === 'frost'; })) tips.push('Still no slow on the board. A Frost Shard at a bend stretches every other tower\u2019s time on target by nearly half — it is the cheapest damage you can buy.');
+      if (S.wave >= 8 && firing.length && firing.every(function (t) { return t.lvl === 0; })) tips.push('Wave ' + S.wave + ' and nothing upgraded. Walker health has grown about ' + Math.round((hpScale(S.wave) / DIFFS[S.diff].hp - 1) * 100) + '% since wave 1; level-1 damage has not grown at all. Upgrades are how a defence keeps pace.');
+      if (!tips.length) tips.push('Nothing urgent. The board\u2019s shape is sound — the next decision is which plan to deepen, and the three plans above each cost the others something. That is the game.');
+      body.innerHTML = '<p><b>Your board reads as: ' + plan + '.</b> ' + planNote + '</p>' +
+        '<p class="small">Coverage: about ' + cov + '% of the road in range · ' + bends + ' of ' + firing.length + ' firing towers near a bend · ' + groves + ' grove' + (groves === 1 ? '' : 's') + ' · ' + S.kills + ' stopped, ' + S.leaks + ' leaked so far.</p>' +
+        '<ul>' + tips.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
+    }
+
+    /* ============ Input ============ */
+    function boardCell(ev) {
+      var r = canvas.getBoundingClientRect();
+      var cx = Math.floor((ev.clientX - r.left) / r.width * COLS), cy = Math.floor((ev.clientY - r.top) / r.height * ROWS);
+      return { x: Math.max(0, Math.min(COLS - 1, cx)), y: Math.max(0, Math.min(ROWS - 1, cy)) };
+    }
+    canvas.addEventListener('pointermove', function (ev) { ui.hover = boardCell(ev); });
+    canvas.addEventListener('pointerleave', function () { ui.hover = null; });
+    canvas.addEventListener('click', function (ev) {
+      if (holdFired) { holdFired = false; return; }
+      var c = boardCell(ev); ui.cursor = c;
+      if (S.phase === 'won' || S.phase === 'lost') return;
+      var existing = towerAt(c.x, c.y);
+      if (ui.shopType && !existing) { placeTower(c.x, c.y, ui.shopType); return; }
+      if (existing) { ui.selected = existing; ui.shopType = null; renderShop(); renderSelected(); setMsg(TOWERS[existing.type].name + ' selected — upgrade or sell it in the panel, or tap elsewhere.'); return; }
+      ui.selected = null; renderSelected();
+      if (ui.shopType) placeTower(c.x, c.y, ui.shopType);
+    });
+    canvas.addEventListener('keydown', function (ev) {
+      var c = { x: ui.cursor.x, y: ui.cursor.y }, used = true;
+      if (ev.key === 'ArrowLeft') c.x = Math.max(0, c.x - 1);
+      else if (ev.key === 'ArrowRight') c.x = Math.min(COLS - 1, c.x + 1);
+      else if (ev.key === 'ArrowUp') c.y = Math.max(0, c.y - 1);
+      else if (ev.key === 'ArrowDown') c.y = Math.min(ROWS - 1, c.y + 1);
+      else if (ev.key === 'Enter' || ev.key === ' ') {
+        var existing = towerAt(c.x, c.y);
+        if (existing) { ui.selected = existing; renderSelected(); }
+        else if (ui.shopType) placeTower(c.x, c.y, ui.shopType);
+      } else used = false;
+      if (used) { ui.cursor = c; ev.preventDefault(); }
+    });
+
+    /* Hold-to-explain (and hover-to-explain with a pointer) */
+    var holdFired = false, holdTimer = null;
+    function showExplain(text) { var b = document.getElementById('explainBox'); b.textContent = text; b.classList.add('show'); }
+    function hideExplain() { document.getElementById('explainBox').classList.remove('show'); }
+    Array.prototype.forEach.call(document.querySelectorAll('[data-hold]'), function (el) {
+      var text = el.getAttribute('data-hold');
+      el.addEventListener('pointerdown', function (ev) {
+        holdTimer = setTimeout(function () { holdFired = true; showExplain(text); }, 550);
+      });
+      el.addEventListener('pointerup', function () { clearTimeout(holdTimer); setTimeout(hideExplain, 2600); });
+      el.addEventListener('pointerleave', function () { clearTimeout(holdTimer); hideExplain(); });
+      el.addEventListener('mouseenter', function () { holdTimer = setTimeout(function () { showExplain(text); }, 700); });
+      el.addEventListener('mouseleave', function () { clearTimeout(holdTimer); hideExplain(); });
+    });
+    canvas.addEventListener('pointerdown', function () {
+      holdTimer = setTimeout(function () {
+        holdFired = true;
+        showExplain('The board: tap a grass cell to build the tower you chose in the shop; tap one of your towers to select it for upgrades. The pale ring shows the selected tower\u2019s range. Walkers follow the dirt road from the gold lantern to the red gate lantern.');
+      }, 550);
+    });
+    canvas.addEventListener('pointerup', function () { clearTimeout(holdTimer); setTimeout(hideExplain, 2600); });
+
+    /* ============ Controls & setup wiring ============ */
+    document.getElementById('startWaveBtn').addEventListener('click', function () { if (!holdFired) startWave(); holdFired = false; });
+    document.getElementById('pauseBtn').addEventListener('click', function () {
+      if (holdFired) { holdFired = false; return; }
+      ui.paused = !ui.paused;
+      document.getElementById('pauseBtn').textContent = ui.paused ? 'Tap to resume' : 'Tap to pause';
+    });
+    document.getElementById('speedBtn').addEventListener('click', function () {
+      if (holdFired) { holdFired = false; return; }
+      ui.speed = ui.speed === 1 ? 2 : (ui.speed === 2 ? 4 : 1);
+      document.getElementById('speedBtn').textContent = 'Tap for speed: ×' + ui.speed;
+    });
+    document.getElementById('restartBtn').addEventListener('click', function () { if (holdFired) { holdFired = false; return; } newGame(); });
+    document.getElementById('giveUpBtn').addEventListener('click', function () {
+      if (holdFired) { holdFired = false; return; }
+      if (S.phase === 'won' || S.phase === 'lost') return;
+      finishGame('gave-up');
+    });
+    ['mapSelect', 'diffSelect', 'goldSelect'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', newGame);
+    });
+    document.getElementById('endlessBtn').addEventListener('click', function () {
+      ui.endless = !ui.endless;
+      this.setAttribute('aria-pressed', ui.endless);
+      this.textContent = ui.endless ? 'Endless is ON — tap to turn it off' : 'Tap to turn Endless on — waves keep coming past 20';
+      newGame();
+    });
+    var ALIAS_BITS = [['Amber', 'Bex', 'Cato', 'Dara', 'Ember', 'Fenn', 'Gale', 'Hollis', 'Ivo', 'Juno'], ['Lantern', 'Road', 'Bend', 'Gate', 'Grove', 'Shard', 'Mortar', 'Watch', 'Field', 'Ford']];
+    document.getElementById('randomAliasBtn').addEventListener('click', function () {
+      var a = ALIAS_BITS[0][Math.floor(Math.random() * 10)], b = ALIAS_BITS[1][Math.floor(Math.random() * 10)];
+      document.getElementById('aliasInput').value = a + ' ' + b;
+    });
+    function setTeaching(v) {
+      ui.teaching = v;
+      try { localStorage.setItem(LS_TEACH, v); } catch (e) {}
+      document.getElementById('teachOff').setAttribute('aria-pressed', v === 'off');
+      document.getElementById('teachLight').setAttribute('aria-pressed', v === 'light');
+      document.getElementById('teachCoach').setAttribute('aria-pressed', v === 'coach');
+      coach(true);
+    }
+    document.getElementById('teachOff').addEventListener('click', function () { setTeaching('off'); });
+    document.getElementById('teachLight').addEventListener('click', function () { setTeaching('light'); });
+    document.getElementById('teachCoach').addEventListener('click', function () { setTeaching('coach'); });
+    document.getElementById('downloadBtn').addEventListener('click', function () {
+      download('lantern-road-tower-defense.html', '<!doctype html>\n' + document.documentElement.outerHTML, 'text/html');
+    });
+    document.getElementById('exportJsonBtn').addEventListener('click', function () {
+      download('lantern-road-record.json', JSON.stringify(loadRecord(), null, 2), 'application/json');
+    });
+    document.getElementById('exportCsvBtn').addEventListener('click', function () {
+      var all = loadRecord();
+      var keys = ['date', 'alias', 'map', 'difficulty', 'endless', 'startingGold', 'variant', 'result', 'wavesSurvived', 'waveReached', 'towersBuilt', 'towersUpgraded', 'goldEarned', 'goldSpent', 'foesDefeated', 'foesLeaked', 'livesLeft', 'teaching'];
+      var lines = [keys.join(',')].concat(all.map(function (r) {
+        return keys.map(function (k) { var v = String(r[k]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
+      }));
+      download('lantern-road-record.csv', lines.join('\n'), 'text/csv');
+    });
+    var forgetArmed = false, forgetTimer = null;
+    document.getElementById('forgetBtn').addEventListener('click', function () {
+      var btn = this;
+      if (!forgetArmed) {
+        forgetArmed = true; btn.classList.add('confirming'); btn.textContent = 'Tap again to forget everything — record and teaching dial';
+        forgetTimer = setTimeout(function () { forgetArmed = false; btn.classList.remove('confirming'); btn.textContent = 'Tap to forget everything'; }, 4000);
+        return;
+      }
+      clearTimeout(forgetTimer); forgetArmed = false;
+      try { localStorage.removeItem(LS_RECORD); localStorage.removeItem(LS_TEACH); } catch (e) {}
+      btn.classList.remove('confirming'); btn.textContent = 'Tap to forget everything';
+      setTeaching('light'); renderRecord();
+      setMsg('Forgotten. The record is empty and the teaching dial is back to Light.');
+    });
+
+    /* ============ Main loop ============ */
+    var lastTs = 0, hudTick = 0;
+    function loop(ts) {
+      var dt = Math.min(0.05, (ts - lastTs) / 1000 || 0); lastTs = ts;
+      if (S && !ui.paused) {
+        var steps = ui.speed, i;
+        for (i = 0; i < steps; i++) step(dt);
+        S.time += dt * ui.speed;
+      }
+      if (S) draw();
+      hudTick += dt;
+      if (hudTick > 1.2) { hudTick = 0; if (S && (S.phase === 'wave' || S.phase === 'build')) coach(); }
+      requestAnimationFrame(loop);
+    }
+    newGame();
+    setTeaching(ui.teaching);
+    renderRecord();
+    requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
