@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>The Open Road — Driving Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f1ea; --panel:#fffdf8; --panel2:#ece7db; --ink:#1c1e1c; --muted:#55584f;
+  --line:#cfc8b8; --accent:#b3540a; --accent-ink:#fff; --good:#1d6b3c; --bad:#a4261f;
+  --amber:#e8a100; --road:#33363a; --teal:#0f5f5c; --focus:#0f5f5c;
+  --shadow:0 2px 10px rgba(30,25,10,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#16181a; --panel:#202226; --panel2:#2a2c30; --ink:#ece9e0; --muted:#b3b0a4;
+  --line:#3d4046; --accent:#e07b2a; --good:#5fc98a; --bad:#ff8a80; --teal:#4fc4bd; --focus:#4fc4bd; --shadow:0 2px 10px rgba(0,0,0,.4);}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3{font-family:"Libre Franklin",-apple-system,sans-serif;line-height:1.15;margin:0 0 .4em}
+h1{font-size:clamp(30px,6vw,46px);font-weight:900;letter-spacing:-.01em}
+h2{font-size:clamp(22px,4vw,29px);font-weight:900}
+h3{font-size:18px;font-weight:700}
+p{margin:.4em 0 .8em}
+a{color:var(--teal)}
+.mono{font-family:"IBM Plex Mono",monospace}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px 48px}
+button,select,input[type=text]{min-height:44px;font:inherit}
+button{cursor:pointer;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);border-radius:10px;padding:10px 16px;font-weight:600}
+button:active{transform:translateY(1px)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.good{background:var(--good);border-color:var(--good);color:#fff}
+button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+button.small{min-height:40px;padding:6px 12px;font-size:15px}
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.freeline{background:var(--ink);color:var(--bg);padding:10px 16px;font-weight:700;text-align:center;font-size:15px}
+.freeline button{margin-left:10px;min-height:38px;padding:4px 12px;background:transparent;color:inherit;border-color:currentColor;font-size:14px}
+nav.compass{display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 4px}
+nav.compass a{display:inline-flex;align-items:center;min-height:40px;padding:6px 14px;border:1.5px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);font-weight:600;background:var(--panel)}
+header.hero{padding:18px 0 6px}
+.hero-sub{font-size:18px;max-width:44em}
+.limits{border:2.5px solid var(--bad);background:var(--panel);border-radius:12px;padding:16px 18px;margin:16px 0}
+.limits h2{color:var(--bad);font-size:21px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+@media(min-width:760px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:1fr 1fr 1fr}}
+label.f{display:block;font-weight:700;margin:8px 0 4px}
+select,input[type=text]{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+details{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:10px 0;box-shadow:var(--shadow)}
+details>div{padding:4px 18px 16px}
+summary{cursor:pointer;padding:14px 18px;font-family:"Libre Franklin",sans-serif;font-weight:700;font-size:18px;min-height:48px}
+summary .hint{font-family:inherit;font-weight:500;font-size:13px;color:var(--muted);display:block}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:15px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+thead th{background:var(--panel2)}
+.tblwrap{overflow-x:auto}
+canvas#sim{width:100%;height:auto;display:block;background:#3d7a3a;border-radius:10px;border:2px solid var(--ink);touch-action:none}
+.hud{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.hud .stat{background:var(--panel2);border-radius:8px;padding:6px 12px;font-family:"IBM Plex Mono",monospace;font-weight:600}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.pad button{min-height:64px;font-size:17px;user-select:none;-webkit-user-select:none;touch-action:none}
+.pad button.held{background:var(--accent);color:#fff;border-color:var(--accent)}
+#hazardBtn{min-height:64px;width:100%;margin-top:10px;font-size:19px;background:var(--amber);border-color:#7a5b00;color:#241a00}
+#coachBox{border-left:6px solid var(--teal);background:var(--panel2);border-radius:0 10px 10px 0;padding:12px 14px;margin:12px 0;min-height:64px}
+#lessonBox{border:2px solid var(--bad);border-radius:10px;padding:12px 14px;margin:12px 0;display:none;background:var(--panel)}
+#lessonBox.show{display:block}
+#lessonBox h3{color:var(--bad)}
+.scen{display:flex;flex-direction:column;gap:6px}
+.scen .tag{align-self:flex-start;font-size:13px;font-weight:700;background:var(--panel2);border-radius:999px;padding:2px 10px}
+.scen .done{color:var(--good);font-weight:700}
+.banner{border:2px dashed var(--amber);background:var(--panel);border-radius:10px;padding:10px 14px;font-weight:600;margin:10px 0}
+.video{border-top:1px solid var(--line);padding:10px 0}
+.video:first-of-type{border-top:none}
+.kbd{font-family:"IBM Plex Mono",monospace;background:var(--panel2);border:1px solid var(--line);border-bottom-width:3px;border-radius:5px;padding:0 6px}
+.quiz-q{border-top:1px solid var(--line);padding:12px 0}
+.quiz-q fieldset{border:none;margin:0;padding:0}
+.quiz-q legend{font-weight:700;padding:0;margin-bottom:6px}
+.quiz-q label{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;min-height:44px;cursor:pointer}
+.quiz-q input{width:22px;height:22px;flex:none;margin-top:2px}
+.qfb{font-weight:600}
+footer{border-top:2px solid var(--line);margin-top:28px;padding-top:14px;color:var(--muted);font-size:14px}
+.small{font-size:14px;color:var(--muted)}
+#recordList{list-style:none;margin:8px 0;padding:0}
+#recordList li{border-top:1px solid var(--line);padding:8px 0}
+input[type=range]{width:100%;min-height:44px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="freeline">Free — always free. No ads, no account, no paywall, ever.
+<button id="downloadBtn" type="button">Tap to download this page for offline use</button></div>
+
+<div class="wrap">
+<nav class="compass" aria-label="Page compass">
+  <a href="#drive">🚗 Drive</a><a href="#learn">📚 Learn the why</a><a href="#strategies">🧭 Strategies</a>
+  <a href="#watch">🎬 Watch it done</a><a href="#quiz">✏️ Knowledge check</a><a href="#record">🗂️ Your record</a>
+</nav>
+
+<header class="hero">
+  <h1>The Open Road</h1>
+  <p class="hero-sub">A driving simulator that teaches the <strong>whole craft</strong> — not just which pedal to press, but <em>why</em> every rule is what it is: the stopping-distance maths with real numbers, why you scan a junction the way you do, why a two-second gap is physics and not politeness. Drive the scenarios, and every mistake comes back as a lesson with the real-world rule and the numbers behind it.</p>
+</header>
+
+<section class="limits" aria-labelledby="limits-h">
+  <h2 id="limits-h">Honest limits — read this first</h2>
+  <p><strong>This page teaches knowledge and judgement. It does not teach car control.</strong> No screen can put the feel of a clutch, a wet brake pedal, or a real blind spot into your hands. The real door to driving is <strong>real lessons with a qualified instructor in a real car</strong>, on real roads, with real practice between them. Treat this page as the theory half of learning to drive — the half you can master here, so the hours in the car are spent on skill, not on rules.</p>
+  <p><strong>Laws vary by place.</strong> Speed limits, right-of-way details, signs, and test standards differ between countries, states, and cities. This page teaches widely shared principles of safe driving. <strong>Your own local rules — your highway code, driver handbook, and instructor — are the authority.</strong> Where this page and your local rules disagree, your local rules win.</p>
+  <p>The traffic in the simulator follows simple stated rules (printed with each scenario). Real drivers are less predictable. That gap is itself a lesson: drive for the driver who <em>might</em> do the wrong thing.</p>
+</section>
+
+<section class="panel" aria-labelledby="stake-h">
+  <h2 id="stake-h">The stake: everybody gets home</h2>
+  <p>There are no points to buy anything with here, and no money anywhere in this game — there never was, so there is no money switch to turn off. <strong>The stake of every scenario is people arriving safely.</strong> Some runs are driven <em>for</em> somebody: a neighbour who needs the pharmacy before it closes, a cousin who cannot be late and cannot be terrified either, your dad and his train. Their <strong>trust</strong> is the standing you earn or lose — smooth, lawful, unhurried driving earns it; harsh braking, near misses, and collisions cost it, and the debrief grades it in plain words.</p>
+  <p>What passing unlocks is not currency — it is <strong>capability and trust</strong>: harder roads, worse weather, and being the driver the people in this game's world ask for by name. Your <strong>safety standing</strong> (in Your Record, below) rises and falls only on the record's actual evidence — scenarios passed clean, hazards spotted early, collisions and their causes. It cannot be bought, and it is never dressed up as a score in disguise: it is a reputation, and it is earned the slow way, like the real one.</p>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="panel" aria-labelledby="set-h">
+  <h2 id="set-h">Before you drive</h2>
+  <div class="grid two">
+    <div>
+      <label class="f" for="aliasInput">Your name on this page (optional)</label>
+      <input type="text" id="aliasInput" placeholder="Call yourself anything — or leave blank" autocomplete="off">
+      <p class="small">Alias freedom: no real name is ever required. Leave it blank and you are simply “Driver.” It is stored on this device only.</p>
+      <label class="f" id="dialLabel">Teaching dial</label>
+      <div class="seg" role="group" aria-labelledby="dialLabel">
+        <button type="button" data-dial="off" aria-pressed="false">Off — tap to choose</button>
+        <button type="button" data-dial="light" aria-pressed="true">Light — tap to choose</button>
+        <button type="button" data-dial="coach" aria-pressed="false">Coach — tap to choose</button>
+      </div>
+      <p class="small"><strong>Off:</strong> no coaching, just drive. <strong>Light</strong> (the starting setting): a short note after anything important. <strong>Coach:</strong> a briefing before each scenario, live notes while you drive, and the full <em>why</em> after every event. Your choice is saved on this device only.</p>
+    </div>
+    <div>
+      <label class="f" for="weatherSel">Weather — a rules-are-settings choice</label>
+      <select id="weatherSel">
+        <option value="dry">Dry road (standard rules)</option>
+        <option value="wet">Wet road (variant — banner-labelled below)</option>
+      </select>
+      <p class="small">Weather changes the physics, honestly: on a wet road your brakes grip less, stopping distances grow, and speed through standing water risks hydroplaning. The variant is labelled wherever it changes a rule.</p>
+      <label class="f" for="fatigueSel">Long drive — driver fatigue (a variant)</label>
+      <select id="fatigueSel">
+        <option value="off">Fatigue off (standard rules)</option>
+        <option value="on">Fatigue on — long drive variant (Highway scenario)</option>
+      </select>
+      <p class="small">On the Highway run only: your energy drains as the drive lengthens, tired reactions are graded as the risk they are, microsleeps can steal your controls for a heartbeat, and the rest area becomes a real decision. Its record is kept separate and labelled, like every variant here.</p>
+      <label class="f" for="scenarioSel">Scenario ladder</label>
+      <select id="scenarioSel">
+        <option value="quiet">1 · Quiet Streets — controls, stopping, the stop sign</option>
+        <option value="junction">2 · Junctions &amp; Right-of-Way — lights and cross traffic</option>
+        <option value="highway">3 · Highway — merging speed and following distance</option>
+        <option value="hazard">4 · Hazard Round — spot it early, score better</option>
+        <option value="parking">5 · Parking — slow, precise, checked</option>
+      </select>
+      <p class="small">Work up the ladder in order if you are new: each rung adds one new demand. You may jump to any rung — the ladder is advice, not a lock.</p>
+    </div>
+  </div>
+  <div id="variantBanner" class="banner" hidden>⚠ VARIANT IN FORCE — WET ROAD: braking grip is reduced, stopping distances are longer, and above about 50 mph in standing water a tyre can ride up on the water film (hydroplaning) and stop steering altogether. Slow down <em>before</em> you need to stop.</div>
+  <div id="fatigueBanner" class="banner" hidden>⚠ VARIANT IN FORCE — LONG DRIVE, FATIGUE ON: you join this drive two hours in, at 65% energy, and it drains from there as the drive lengthens. Below about 40% the microsleeps start — brief, real lapses where the controls go dead, because that is what a microsleep is. The blue REST AREA on the right of the highway is the cure the road actually offers: pull in, stop fully, and take the break. This run's record is kept separate and labelled “long drive.”</div>
+</section>
+
+<!-- ============ SIMULATOR ============ -->
+<section class="panel" id="drive" aria-labelledby="drive-h">
+  <h2 id="drive-h">Drive</h2>
+  <p id="scenarioBrief"><strong>Quiet Streets.</strong> Drive up the street, stop fully at the stop sign, then reach the green finish zone. Other cars here are parked. The one moving rule: a full stop means your wheels stop turning — a slow roll through is not a stop, here or on the road.</p>
+  <div class="hud" aria-live="polite">
+    <span class="stat">Speed: <span id="hudSpeed">0</span> mph</span>
+    <span class="stat">Gap ahead: <span id="hudGap">—</span></span>
+    <span class="stat">Time: <span id="hudTime">0.0</span>s</span>
+    <span class="stat">Status: <span id="hudStatus">Ready</span></span>
+    <span class="stat">Passenger: <span id="hudPassenger">—</span></span>
+    <span class="stat">Their trust: <span id="hudTrust">—</span></span>
+    <span class="stat" id="hudEnergyWrap" hidden>Driver energy: <span id="hudEnergy">100</span>%</span>
+  </div>
+  <canvas id="sim" width="800" height="520" aria-label="Top-down driving view. Use the on-screen pedals or arrow keys to drive."></canvas>
+  <div class="pad" role="group" aria-label="Driving controls">
+    <button type="button" id="btnLeft">◀ Steer left<br><span class="small">Hold to steer</span></button>
+    <button type="button" id="btnGas" class="primary">▲ Gas<br><span class="small">Hold to accelerate</span></button>
+    <button type="button" id="btnBrake" class="danger">▼ Brake<br><span class="small">Hold to brake</span></button>
+    <button type="button" id="btnRight">Steer right ▶<br><span class="small">Hold to steer</span></button>
+  </div>
+  <div style="margin-top:10px">
+    <button type="button" id="toggleModeBtn" aria-pressed="false">Control style: Hold to drive (standard) — tap to switch to tap-to-toggle</button>
+    <p class="small">Tap-to-toggle is an accessibility option: tap Gas once to start accelerating and tap it again to stop; the same for Brake and steering. Holding a button down should never be the only way to drive — hands differ, and so do devices.</p>
+  </div>
+  <button type="button" id="hazardBtn">⚠ I SEE A HAZARD — tap the moment you spot danger</button>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+    <button type="button" id="startBtn" class="good">Tap to start / restart the scenario</button>
+    <button type="button" id="parkCheckBtn" hidden>Tap to check my parking</button>
+  </div>
+  <p class="small">Keyboard works too: <span class="kbd">↑</span> gas, <span class="kbd">↓</span> brake, <span class="kbd">←</span> <span class="kbd">→</span> steer, <span class="kbd">H</span> hazard button, <span class="kbd">R</span> restart. Steering only bites while the car is moving — exactly like a real car, where a turned wheel on a stopped car goes nowhere.</p>
+  <div id="coachBox" aria-live="polite"><strong>Coach:</strong> <span id="coachText">Pick a scenario and tap Start. Light teaching is on: you will get a short note after anything important.</span></div>
+  <div id="lessonBox" role="alert"></div>
+</section>
+
+<!-- ============ LADDER OVERVIEW ============ -->
+<section aria-labelledby="ladder-h">
+  <h2 id="ladder-h">The scenario ladder</h2>
+  <p>The ladder is a <strong>difficulty ramp</strong>, deliberately: each rung adds exactly one new demand on top of skills the rung before made automatic, because that is how real learning stacks — graduated exposure, not a cliff. The ramp keeps rising <em>inside</em> the longer drives too: on the Highway the traffic's pace builds as the run goes on, and in the Hazard Round the second hazard gives you less room than the first. If a rung defeats you twice, the honest move is the rung below it, once more — that is the ramp working as designed, not a failure of yours.</p>
+  <div class="grid three">
+    <div class="panel scen"><span class="tag">Rung 1</span><h3>Quiet Streets</h3><p>Pedals, steering, and the full stop. <em>Why it comes first:</em> every later skill assumes your feet already know which pedal is which — under pressure, you do what is automatic, not what you meant.</p><p class="prog" data-prog="quiet">Not passed yet</p></div>
+    <div class="panel scen"><span class="tag">Rung 2</span><h3>Junctions &amp; Right-of-Way</h3><p>Lights, cross traffic, and who goes first. <em>Why:</em> most serious crashes happen where paths cross, because that is where two drivers' plans collide — literally. Scanning is the skill; the light is only a clue.</p><p class="prog" data-prog="junction">Not passed yet</p></div>
+    <div class="panel scen"><span class="tag">Rung 3</span><h3>Highway</h3><p>Speed, merging, and the following gap. <em>Why:</em> at highway speed your stopping distance is longer than a football field is wide — the gap in front of you is your only real brake.</p><p class="prog" data-prog="highway">Not passed yet</p></div>
+    <div class="panel scen"><span class="tag">Rung 4</span><h3>Hazard Round</h3><p>The documented hazard-perception form: things that are <em>about</em> to happen. Tap the hazard button the moment you see one developing — spotted early scores better than spotted late, because early is when you still have choices.</p><p class="prog" data-prog="hazard">Not attempted yet</p></div>
+    <div class="panel scen"><span class="tag">Rung 5</span><h3>Parking</h3><p>Slow-speed precision into a marked bay. <em>Why last:</em> parking is pure car placement at walking pace — it exposes steering judgement with none of speed's noise, and it is where new drivers dent things most often.</p><p class="prog" data-prog="parking">Not passed yet</p></div>
+    <div class="panel scen"><span class="tag">Always</span><h3>Every failure is a lesson</h3><p>Hit something, run a light, roll a stop sign — the page names what happened, the real-world rule behind it, and the physics at <em>your actual speed</em>: your stopping distance, your gap, your blind spot. Then you drive it again.</p></div>
+  </div>
+</section>
+
+<!-- ============ KNOWLEDGE SHELVES ============ -->
+<section id="learn" aria-labelledby="learn-h">
+  <h2 id="learn-h">Learn the why — the complete knowledge base</h2>
+  <p>Everything below is the theory of the craft, in plain words. The simulator teaches judgement; this shelf is <em>why</em> the judgement is right. Open any shelf — tap to open, tap again to close.</p>
+
+  <details>
+    <summary>The stopping-distance table — and the maths underneath it <span class="hint">Tap to open · the single most important numbers in driving</span></summary>
+    <div>
+      <p>Your total stopping distance is two distances added together:</p>
+      <p><strong>Thinking distance</strong> — how far the car travels while you see the hazard, decide, and move your foot to the brake. At a typical 1-second reaction, that is simply your speed converted: 1 mph ≈ 0.447 metres per second, so thinking distance in metres ≈ <span class="mono">speed (mph) × 0.45</span>. Tired, distracted, or on the phone, reaction time stretches — and this distance stretches with it, at full speed.</p>
+      <p><strong>Braking distance</strong> — how far the car travels while the brakes scrub off speed. Here is the part that surprises everyone: braking distance grows with the <em>square</em> of speed. Double your speed and you need <strong>four times</strong> the road to stop; triple it and you need nine times. The physics: kinetic energy is ½mv², and brakes can only remove energy at a limited rate, so distance ≈ <span class="mono">v² ÷ (2 × deceleration)</span>. With firm dry braking (about 6.5 m/s²), braking distance in metres ≈ <span class="mono">(0.447 × mph)² ÷ 13</span>.</p>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Speed</th><th>Thinking (1 s)</th><th>Braking (dry)</th><th>Total stopping</th><th>In car lengths (≈4 m)</th><th>Braking in the wet (×2)</th></tr></thead>
+        <tbody>
+          <tr><td>20 mph</td><td>9 m</td><td>6 m</td><td><strong>15 m</strong></td><td>≈ 4</td><td>12 m</td></tr>
+          <tr><td>30 mph</td><td>13 m</td><td>14 m</td><td><strong>27 m</strong></td><td>≈ 7</td><td>28 m</td></tr>
+          <tr><td>40 mph</td><td>18 m</td><td>25 m</td><td><strong>43 m</strong></td><td>≈ 11</td><td>49 m</td></tr>
+          <tr><td>50 mph</td><td>22 m</td><td>38 m</td><td><strong>61 m</strong></td><td>≈ 15</td><td>77 m</td></tr>
+          <tr><td>60 mph</td><td>27 m</td><td>55 m</td><td><strong>82 m</strong></td><td>≈ 20</td><td>110 m</td></tr>
+          <tr><td>70 mph</td><td>31 m</td><td>75 m</td><td><strong>106 m</strong></td><td>≈ 26</td><td>150 m</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">Rounded teaching figures using the formula above; official highway-code tables differ slightly because they assume specific reaction times and braking rates. The shape — thinking grows in a straight line, braking grows as a square — is exact, and it is the shape that matters.</p>
+      <h3>Try the maths yourself</h3>
+      <label class="f" for="calcSpeed">Speed: <span id="calcSpeedVal" class="mono">30 mph</span> — slide to change</label>
+      <input type="range" id="calcSpeed" min="10" max="80" step="5" value="30">
+      <p id="calcOut" class="mono" aria-live="polite"></p>
+      <p><strong>Why the following-distance rule is what it is:</strong> the “two-second rule” is this table turned into something you can measure without a tape. Pick a fixed point, and when the car ahead passes it, count “one-thousand-one, one-thousand-two.” If you pass the same point before you finish, you are closer than two seconds. Two seconds at any speed gives you roughly your thinking distance <em>plus</em> a braking margin — and because it is measured in time, it scales automatically with speed, which a fixed number of metres never could. In the wet, double it to four seconds: the table shows why — your braking distance just doubled.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Right-of-way in plain words <span class="hint">Tap to open · who goes first, and why the rule exists</span></summary>
+    <div>
+      <p>Right-of-way is not a prize and it is never “taken” — it is <strong>given</strong>. The rules exist to make every driver's next move predictable, because crashes happen when two people predict differently. The widely shared principles:</p>
+      <ul>
+        <li><strong>Traffic lights:</strong> red means stop behind the line; amber means stop unless you are so close that stopping would be unsafe; green means go <em>if the way is clear</em> — green is permission to proceed, not a promise that nobody is coming.</li>
+        <li><strong>Stop signs:</strong> a full stop, every time, even at 3 a.m. on an empty road. <em>Why not slow-and-look?</em> Because the stop buys the one thing a roll cannot: a stationary look in both directions, with time to judge speed — judging an approaching car's speed from a moving car is one of the hardest perceptual tasks in driving.</li>
+        <li><strong>Uncontrolled junctions (no signs or lights):</strong> yield to traffic already in the junction, and generally to traffic approaching from your right in right-hand-traffic countries (the mirror image where traffic keeps left — check your local rule). When in doubt, the driver who can stop most safely does.</li>
+        <li><strong>Pedestrians:</strong> people on foot at crossings have priority in most places, and a pedestrian already crossing your path has it everywhere that matters. A person is unprotected; the rule prices that in.</li>
+        <li><strong>Emergency vehicles</strong> with lights and sirens: move aside and let them through, without breaking other rules to do it.</li>
+        <li><strong>The golden override:</strong> if taking your right-of-way would cause a crash, give it away. Being right is no comfort in a wreck. Defensive driving means treating every green light and every priority as a <em>claim to check</em>, not a shield.</li>
+      </ul>
+      <p><strong>Why you scan a junction the way you do — left, right, left again (mirror it where traffic keeps left):</strong> the last look goes to the side danger reaches you from first. Between your first look and your move, a fast car can cover a lot of road; the final check is timed to the moment of commitment, not the moment of arrival. In the simulator's junction scenario, cross traffic runs the same simple rule you do — in life, scan as if it might not.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Before you move: mirrors, signal, blind spot <span class="hint">Tap to open · the discipline that prevents the “I never saw them” crash</span></summary>
+    <div>
+      <p>Your mirrors do not show everything. Each side mirror leaves a <strong>blind spot</strong> roughly beside your rear doors — big enough to hide a whole car, and easily a cyclist or motorbike. That is why the check sequence exists, in this order:</p>
+      <ol>
+        <li><strong>Mirror</strong> — interior, then the side you're moving toward. What's behind, and how fast is it closing?</li>
+        <li><strong>Signal</strong> — early enough to be information, not decoration. A signal is a promise about your next few seconds; other drivers plan around it.</li>
+        <li><strong>Shoulder check</strong> — a quick glance over your shoulder into the blind spot, every lane change and every pull-away where something could be alongside. Quick is the point: your eyes are off the road ahead for about a second, which at 30 mph is 13 metres — another reason the mirror work comes first.</li>
+        <li><strong>Move</strong> — smoothly, one lane at a time, and re-check mirrors once you're there.</li>
+      </ol>
+      <p><strong>Before pulling away from parked:</strong> all-round check — mirrors, blind spot, and a look for the things mirrors never catch: a child behind the car, a cyclist filtering up the inside, a door about to open on the car in front. <strong>Before opening your own door</strong> after parking, check the mirror and over your shoulder for passing cyclists — reach across with the far hand and your body turns, making the look almost automatic (often called the Dutch reach).</p>
+      <p><em>The pairing principle:</em> mirror + shoulder check go together the way lettuce goes with tomato — each covers exactly the other's weakness. The mirror gives you history and speed; the shoulder check gives you the present tense in the one place the mirror is blind. Either alone is half a check.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Bad-weather theory <span class="hint">Tap to open · rain, standing water, fog, ice — and what changes</span></summary>
+    <div>
+      <p><strong>Rain:</strong> grip falls most in the first minutes of rain, when water lifts oil and dust off the surface into a slick film. Braking distances at least double (see the table). The correct response is not “brake harder” — it is <em>slow down earlier and leave a bigger gap</em>, because the gap is the distance you have already bought. In the simulator, switch Weather to Wet and feel the same brake pedal do less.</p>
+      <p><strong>Hydroplaning (aquaplaning):</strong> at speed on standing water, the tyre must shove water out of the way through its tread. Past a speed the tread can no longer clear — roughly when water pressure lifts the tyre onto a film of water — steering and braking simply stop working until speed bleeds off. Worn tyres lower that speed sharply. The defence is all before the puddle: slow down, avoid deep water at speed, keep tyres legal and inflated. If it happens: ease off the gas, hold the wheel straight, do not brake or steer sharply, and let the tyres find the road again as speed falls.</p>
+      <p><strong>Fog:</strong> your limit is not the speed limit — it is <em>stopping within what you can see</em>. If you can see 30 metres, your total stopping distance must fit in 30 metres, which the table says means about 30 mph or less. Use dipped headlights (high beam reflects back and blinds you), fog lights where your local rules allow, and follow road markings rather than the taillights ahead, which may be leading you off the road.</p>
+      <p><strong>Ice and snow:</strong> stopping distances can reach <em>ten times</em> the dry figure. Everything becomes gentle: accelerate, brake, and steer as if there is a full cup of coffee on the dashboard. If the wheels lock or slide, steering input does nothing until grip returns — which is why prevention (speed, gap, gentleness) is the whole game.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Tired driving: the fatigue science <span class="hint">Tap to open · the knowledge behind the Long Drive variant</span></summary>
+    <div>
+      <p><strong>Fatigue is impairment, not weakness.</strong> Researchers comparing tiredness with alcohol find that being awake for roughly 17–19 hours slows reactions about as much as a blood-alcohol level near common legal limits — and the tired driver, unlike the drinker, usually believes they are fine. That false confidence is part of the impairment.</p>
+      <p><strong>Microsleeps:</strong> past a certain tiredness the brain sleeps in slices of a few seconds at a time, eyes open, hands on the wheel, nobody home. At 60 mph a four-second microsleep is about <strong>107 metres driven completely blind</strong> — longer than the total stopping distance at that speed. You cannot feel one coming reliably, which is why “I'll push through” is not a strategy.</p>
+      <p><strong>What does not work:</strong> opening the window, turning the radio up, singing, slapping your face. These raise alertness for minutes at most and change nothing underneath. Caffeine helps briefly and is a bridge to a stop, not a substitute for one. <strong>The only cure for sleepiness is sleep</strong> — even a 20-minute nap in a safe parking place measurably restores you.</p>
+      <p><strong>The two-hour rule:</strong> plan a real break at least every two hours of driving — out of the seat, walking, fresh air, 15–20 minutes. It exists because alertness decays on roughly that curve whether you notice it or not; the rule is timed to the biology, not to the fuel gauge. In the Long Drive variant above, the rest area works exactly this way: pulling in is a driving decision, and the game rewards it because the road does.</p>
+      <p><strong>Capacity, honestly:</strong> your energy is a real budget, and it caps how much help you can give. On a long-drive day there are only so many trips in you before the safe answer becomes “not this one, not by me, not now.” This game models that limit through the one long drive rather than a queue of errands — the budget and the choosing are the lesson; a driver who knows their limit is part of how everybody gets home.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Seeing early: hazard perception and the 12-second eye <span class="hint">Tap to open · why spotting it early is the whole skill</span></summary>
+    <div>
+      <p>Official hazard-perception tests (the form this page's Hazard Round copies) score you on <em>when</em> you respond to a developing hazard: click as it starts to develop and you score full marks; click only when it is upon you and you score little or nothing. The scoring is not pedantry — it is the stopping-distance table in disguise. Spotting a hazard two seconds earlier at 30 mph gives you 27 extra metres to work with: often the whole stopping distance.</p>
+      <p><strong>The technique:</strong> rest your eyes 12–15 seconds ahead of the car — at 30 mph that is about 180 metres — and let your gaze sweep: far, near, sides, mirrors, repeat. Hazards announce themselves in clues, not appearances: brake lights two cars ahead, a ball rolling into the road (a child owns that ball), a parked car's wheels turned outward, a pedestrian looking over their shoulder at traffic, a bus at a stop (someone is about to step out from behind it), exhaust vapour from a parked car on a cold morning (its driver is about to pull out).</p>
+      <p><strong>Cover the brake:</strong> when a clue appears but the hazard has not yet developed, move your foot to rest over the brake pedal without pressing. It costs nothing and cuts your reaction time roughly in half — because the slowest part of reacting is not deciding, it is moving your foot.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Parking, step by step <span class="hint">Tap to open · bay parking here; parallel parking in the videos below</span></summary>
+    <div>
+      <p><strong>Bay parking (the simulator's rung):</strong> slow to walking pace <em>before</em> the turn — nearly all parking damage happens because entry speed left no time to judge. Signal, check mirrors and blind spot (car parks are full of pedestrians walking behind reversing cars), pick your reference point, turn smoothly, and straighten the wheel the moment the car is parallel with the bay lines. Stopped, centred, handbrake on, then check before opening the door.</p>
+      <p><strong>Why slow is precise:</strong> steering geometry needs distance to change the car's angle. At walking pace you get many small corrections per metre; at speed you get one big, wrong one. Parking is the one driving task where slower is literally more accurate, not just safer.</p>
+      <p><strong>Parallel parking</strong> is taught in the verified video below, in three steps — watch it, then hold the shape of it: alongside, back on lock to the angle, straighten and settle. On the road, add: signal, a mirror-and-shoulder check before swinging out, and never rush because someone is waiting — a hurried park costs more than a waited one.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============ STRATEGIES ============ -->
+<section id="strategies" aria-labelledby="strat-h">
+  <h2 id="strat-h">Strategies — more than one good way, with the trade-offs printed</h2>
+  <div class="grid two">
+    <div class="panel"><h3>Keeping your distance</h3>
+      <p><strong>Two-second rule:</strong> simple, works at any speed, needs no instruments. <em>Trade-off:</em> it is a minimum for dry roads and an alert driver — it assumes your reactions and brakes are good.</p>
+      <p><strong>Three-to-four seconds:</strong> the wet-weather and tired-driver setting; costs you nothing but a few car lengths of road and buys back the doubled braking distance. <em>Trade-off:</em> in dense traffic, others will fill the gap — let them, and re-open it. The gap is yours to remake, not to defend.</p>
+      <p><strong>Fixed distance (“a car length per 10 mph”):</strong> easy to picture. <em>Trade-off:</em> it scales linearly while braking distance scales as a square — at high speed it quietly under-buys. The time-based rules win because physics is time-shaped.</p></div>
+    <div class="panel"><h3>Approaching a junction</h3>
+      <p><strong>Cover the brake + scan cycle:</strong> foot hovering, eyes left-right-left. Costs a little speed early; buys reaction time and a final check at the moment of commitment.</p>
+      <p><strong>Commit early and briskly:</strong> when a gap is clearly there, taking it promptly keeps traffic predictable. <em>Trade-off:</em> “clearly” is doing all the work — a gap you must hurry for is not a gap. If you cannot cross at a calm pace, wait for the next one.</p>
+      <p><strong>Creep for a view:</strong> where parked cars block sightlines, edge forward slowly until you can see. <em>Trade-off:</em> your nose enters the road before your eyes do — creep at walking pace, ready to stop instantly, and never let impatience turn a creep into a lunge.</p></div>
+    <div class="panel"><h3>Merging onto a highway</h3>
+      <p><strong>Match speed on the ramp:</strong> use the slip road to reach traffic speed, then slot into a gap. This is the standard strategy and the simulator's: merging slowly forces highway traffic to brake, and a speed difference is itself a hazard — closing speeds are what make collisions violent.</p>
+      <p><strong>Yield and wait:</strong> if no gap exists, the ramp's end is a yield, not a launch. <em>Trade-off:</em> stopping on a ramp feels wrong and invites a rear-end risk from behind — which is why matching speed early, while you still have ramp left, is the main skill.</p></div>
+    <div class="panel"><h3>When a hazard develops</h3>
+      <p><strong>Brake in a straight line:</strong> maximum braking happens with the wheels pointing straight; braking hard <em>and</em> swerving splits the tyres' grip between two jobs and does both worse (grip is a budget — steering and braking spend from the same account).</p>
+      <p><strong>Swerve instead:</strong> at low speed, or when stopping distance plainly exceeds the distance available and a clear escape exists, steering around can be the right call. <em>Trade-off:</em> you are betting on the escape route staying clear — check it is real (mirror history, shoulder knowledge) before you take it.</p>
+      <p><strong>The horn is a tool, not a verdict:</strong> a short alert can freeze a pedestrian in place or wake a drifting driver. Use it to inform, early — not to complain, late.</p></div>
+  </div>
+</section>
+
+<!-- ============ WATCH ============ -->
+<section class="panel" id="watch" aria-labelledby="watch-h">
+  <h2 id="watch-h">Watch it done</h2>
+  <p>Four videos, each opened and checked before it earned a place here. Watching a real instructor's feet and eyes is the closest a screen gets to the passenger seat.</p>
+  <div class="video"><h3>Learn How to Drive – Beginner's First Practice Session</h3><p class="small">Driving TV · YouTube</p><p>A complete first session in a real car: cockpit drill, moving off, stopping, and the calm commentary of someone teaching it properly.</p><p><a href="https://www.youtube.com/watch?v=kbY0LjD47z0" target="_blank" rel="noopener">Tap to watch on YouTube</a></p></div>
+  <div class="video"><h3>How to Use the Gas and Brake Pedals for Beginners (First Driving Lesson)</h3><p class="small">Driving TV · YouTube</p><p>Pedal feel, in detail: how pressure — not position — is what your foot is really controlling, and how to make stops smooth instead of sudden.</p><p><a href="https://www.youtube.com/watch?v=LtfxROONuXM" target="_blank" rel="noopener">Tap to watch on YouTube</a></p></div>
+  <div class="video"><h3>How to Parallel Park (Perfect Parallel Parking in 3 Easy Steps)</h3><p class="small">Zutobi Drivers Ed · YouTube</p><p>The three-step parallel park with reference points you can actually use, matching the method summarised in the parking shelf above.</p><p><a href="https://www.youtube.com/watch?v=2W-5VvXcwT0" target="_blank" rel="noopener">Tap to watch on YouTube</a></p></div>
+  <div class="video"><h3>Hazard perception test 2026: official DVSA guide</h3><p class="small">DVSA (Driver and Vehicle Standards Agency) · YouTube</p><p>The official guide to the hazard-perception test — the same “spot it as it develops” form as this page's Hazard Round, explained by the agency that runs it.</p><p><a href="https://www.youtube.com/watch?v=SdQRkmdhwJs" target="_blank" rel="noopener">Tap to watch on YouTube</a></p></div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section class="panel" id="quiz" aria-labelledby="quiz-h">
+  <h2 id="quiz-h">Knowledge check</h2>
+  <p>Five questions on the <em>why</em>, not just the what. Answer all five, then tap Check — every answer comes back with its reason, right or wrong.</p>
+  <form id="quizForm">
+    <div class="quiz-q"><fieldset><legend>1. You double your speed from 30 mph to 60 mph. What happens to your braking distance?</legend>
+      <label><input type="radio" name="q1" value="a"> It doubles</label>
+      <label><input type="radio" name="q1" value="b"> It roughly triples</label>
+      <label><input type="radio" name="q1" value="c"> It roughly quadruples</label>
+      <p class="qfb" data-fb="q1" aria-live="polite"></p></fieldset></div>
+    <div class="quiz-q"><fieldset><legend>2. Why is the following gap measured in seconds rather than metres?</legend>
+      <label><input type="radio" name="q2" value="a"> Seconds are easier to say</label>
+      <label><input type="radio" name="q2" value="b"> A time gap grows automatically with speed, matching how stopping distance grows</label>
+      <label><input type="radio" name="q2" value="c"> Metres are not allowed on highways</label>
+      <p class="qfb" data-fb="q2" aria-live="polite"></p></fieldset></div>
+    <div class="quiz-q"><fieldset><legend>3. Before changing lanes, why is a shoulder check needed when you have mirrors?</legend>
+      <label><input type="radio" name="q3" value="a"> It is only a formality for the test</label>
+      <label><input type="radio" name="q3" value="b"> Mirrors leave a blind spot beside the car big enough to hide a vehicle or cyclist</label>
+      <label><input type="radio" name="q3" value="c"> To check the weather behind you</label>
+      <p class="qfb" data-fb="q3" aria-live="polite"></p></fieldset></div>
+    <div class="quiz-q"><fieldset><legend>4. In fog, what should set your maximum speed?</legend>
+      <label><input type="radio" name="q4" value="a"> The posted speed limit</label>
+      <label><input type="radio" name="q4" value="b"> The speed of the car in front</label>
+      <label><input type="radio" name="q4" value="c"> Being able to stop within the distance you can see clearly</label>
+      <p class="qfb" data-fb="q4" aria-live="polite"></p></fieldset></div>
+    <div class="quiz-q"><fieldset><legend>5. A ball rolls into the road from between parked cars. What is the best reading of that clue?</legend>
+      <label><input type="radio" name="q5" value="a"> Nothing — a ball cannot damage the car</label>
+      <label><input type="radio" name="q5" value="b"> A child may be about to follow it — cover the brake and slow down</label>
+      <label><input type="radio" name="q5" value="c"> Speed up to pass before anything else happens</label>
+      <p class="qfb" data-fb="q5" aria-live="polite"></p></fieldset></div>
+    <button type="submit" class="primary">Tap to check my answers</button>
+    <p id="quizScore" aria-live="polite" style="font-weight:700"></p>
+  </form>
+</section>
+
+<!-- ============ RECORD ============ -->
+<section class="panel" id="record" aria-labelledby="record-h">
+  <h2 id="record-h">Your record</h2>
+  <p>Kept on this device only — nothing is sent anywhere. It holds scenarios passed, hazards spotted early or late, collisions with their causes, near misses, passenger trust outcomes, standing changes, and quiz results: what happened, honestly, including the failures.</p>
+  <p><strong>Your safety standing:</strong> <span id="standingNow">Unknown — nobody has ridden with you yet.</span></p>
+  <p class="small">How standing is worked out, in the open: each different scenario passed counts +2, each hazard spotted early +1, each collision −2. At 2 you are <em>Careful</em>; at 5, <em>Trusted</em>; at 8 or more with at most one collision on the record, you are <em>The one they call</em>. More collisions than passes and the standing is <em>Shaky</em> until the record improves. Nothing else moves it — not time spent, not taps, and never money: this game has none.</p>
+  <p id="recordSummary" class="mono" aria-live="polite">No drives recorded yet.</p>
+  <ul id="recordList"></ul>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button type="button" id="exportBtn">Tap to export your record (download)</button>
+    <button type="button" id="forgetBtn" class="danger">Tap to forget everything</button>
+  </div>
+  <p id="forgetMsg" class="small" aria-live="polite"></p>
+</section>
+
+<footer>
+  <p><strong>The Open Road</strong> — an original simulator and text, made for learning. Copyleft: this page's writing and design are shared under CC BY-SA 4.0 and its code under GPL — copy it, teach with it, pass it on under the same freedom. No ads, ever. No tracking. Your record never leaves your device.</p>
+  <p>Drive for real with a qualified instructor. Your local highway code is the authority on the rules of your road.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+/* ---------- storage (this device only) ---------- */
+var SKEY="openroad-settings-v1", RKEY="openroad-record-v1";
+function loadJSON(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+var settings=loadJSON(SKEY,{dial:"light",alias:"",weather:"dry",scenario:"quiet"});
+if(!settings.dial)settings.dial="light";
+if(!settings.fatigue)settings.fatigue="off";
+function fatigueActive(){return settings.fatigue==="on"&&settings.scenario==="highway";}
+function recKey(){return fatigueActive()?"highway-longdrive":settings.scenario;}
+var record=loadJSON(RKEY,[]);
+
+/* ---------- record ---------- */
+function driverName(){return settings.alias&&settings.alias.trim()?settings.alias.trim():"Driver";}
+function standingFor(rec){
+  var passed={},early=0,coll=0,drives=0,STD=["quiet","junction","highway","hazard","parking"];
+  rec.forEach(function(r){
+    if(r.type==="pass"&&STD.indexOf(r.scenario)>=0)passed[r.scenario]=true;
+    if(r.type==="hazard-early")early++;
+    if(r.type==="collision")coll++;
+    if(r.type==="pass"||r.type==="collision")drives++;
+  });
+  var np=Object.keys(passed).length, pts=np*2+early-coll*2;
+  if(drives===0)return{name:"Unknown",note:"Unknown — nobody has ridden with you yet.",pts:pts};
+  if(coll>np&&coll>=2)return{name:"Shaky",note:"Shaky — more collisions than clean passes on the record. It recovers the same way it fell: clean, calm runs.",pts:pts};
+  if(pts>=8&&coll<=1)return{name:"The one they call",note:"The one they call — when somebody in this world needs a driver they trust, your name is the one that comes up.",pts:pts};
+  if(pts>=5)return{name:"Trusted",note:"Trusted — people ride with you without thinking twice about it.",pts:pts};
+  if(pts>=2)return{name:"Careful",note:"Careful — a clean record is forming; people have noticed.",pts:pts};
+  return{name:"Unknown",note:"Unknown — the record is too thin to call yet. Clean runs will write it.",pts:pts};
+}
+function addRecord(type,scenario,detail){
+  var before=standingFor(record).name;
+  record.push({when:new Date().toISOString(),driver:driverName(),type:type,scenario:scenario,detail:detail});
+  var after=standingFor(record);
+  if(after.name!==before&&(type==="pass"||type==="collision"||type==="hazard-early")){
+    record.push({when:new Date().toISOString(),driver:driverName(),type:"standing",scenario:"standing",detail:"Standing changed: "+before+" → "+after.name+" ("+after.pts+" pts on the record's evidence)"});
+  }
+  saveJSON(RKEY,record); renderRecord();
+}
+function renderRecord(){
+  var list=$("recordList"); list.innerHTML="";
+  var passed={},hazE=0,hazL=0,hazM=0,coll=0,quizzes=0;
+  record.forEach(function(r){
+    if(r.type==="pass"&&["quiet","junction","highway","hazard","parking"].indexOf(r.scenario)>=0)passed[r.scenario]=true;
+    if(r.type==="hazard-early")hazE++; if(r.type==="hazard-late")hazL++; if(r.type==="hazard-missed")hazM++;
+    if(r.type==="collision")coll++; if(r.type==="quiz")quizzes++;
+  });
+  var np=Object.keys(passed).length;
+  $("standingNow").textContent=standingFor(record).note;
+  $("recordSummary").textContent = record.length===0 ? "No drives recorded yet." :
+    "Scenarios passed: "+np+" of 5 · Hazards early: "+hazE+" · late: "+hazL+" · missed: "+hazM+" · Collisions: "+coll+" · Quizzes taken: "+quizzes+" · Total entries: "+record.length;
+  record.slice(-30).reverse().forEach(function(r){
+    var li=document.createElement("li");
+    var d=new Date(r.when);
+    li.textContent=d.toLocaleString()+" — "+r.type+" · "+r.scenario+" · "+r.detail;
+    list.appendChild(li);
+  });
+  ["quiet","junction","highway","hazard","parking"].forEach(function(s){
+    var el=document.querySelector('[data-prog="'+s+'"]'); if(!el)return;
+    if(s==="hazard"){ el.innerHTML=(hazE+hazL+hazM)>0?('<span class="done">Attempted</span> — early '+hazE+", late "+hazL+", missed "+hazM):"Not attempted yet"; }
+    else el.innerHTML=passed[s]?'<span class="done">✓ Passed</span>':"Not passed yet";
+  });
+}
+$("exportBtn").addEventListener("click",function(){
+  var text="The Open Road — driving record for "+driverName()+"\nExported "+new Date().toLocaleString()+"\n\n"+
+    (record.length?record.map(function(r){return r.when+" | "+r.type+" | "+r.scenario+" | "+r.detail;}).join("\n"):"No entries.");
+  var b=new Blob([text],{type:"text/plain"});var a=document.createElement("a");
+  a.href=URL.createObjectURL(b);a.download="open-road-record.txt";document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+});
+$("forgetBtn").addEventListener("click",function(){
+  record=[];saveJSON(RKEY,record);renderRecord();
+  $("forgetMsg").textContent="Forgotten. Your record on this device is empty.";
+});
+
+/* ---------- settings UI ---------- */
+var aliasIn=$("aliasInput"); aliasIn.value=settings.alias||"";
+aliasIn.addEventListener("change",function(){settings.alias=aliasIn.value;saveJSON(SKEY,settings);});
+function applyDial(){
+  document.querySelectorAll("[data-dial]").forEach(function(b){
+    b.setAttribute("aria-pressed",b.getAttribute("data-dial")===settings.dial?"true":"false");});
+}
+document.querySelectorAll("[data-dial]").forEach(function(b){
+  b.addEventListener("click",function(){settings.dial=b.getAttribute("data-dial");saveJSON(SKEY,settings);applyDial();
+    coach("Teaching set to "+settings.dial+".","Off silences the coach (lessons after a crash still show — safety is not a setting). Light notes what mattered. Coach adds the briefing, live notes, and the full why.");});
+});
+applyDial();
+var weatherSel=$("weatherSel"); weatherSel.value=settings.weather||"dry";
+function applyWeather(){
+  settings.weather=weatherSel.value; saveJSON(SKEY,settings);
+  $("variantBanner").hidden=settings.weather!=="wet";
+}
+var fatigueSel=$("fatigueSel"); fatigueSel.value=settings.fatigue||"off";
+function applyFatigue(){
+  settings.fatigue=fatigueSel.value; saveJSON(SKEY,settings);
+  $("fatigueBanner").hidden=!fatigueActive();
+  $("hudEnergyWrap").hidden=!fatigueActive();
+}
+fatigueSel.addEventListener("change",function(){applyFatigue();resetScenario();
+  coach(fatigueActive()?"Long drive variant on: watch your energy, and use the rest area before you need it.":"Fatigue off: standard highway rules.","Tired driving is impairment with good PR — the science is in the fatigue shelf below, and this variant lets you feel the shape of it safely.");});
+weatherSel.addEventListener("change",function(){applyWeather();resetScenario();
+  coach(settings.weather==="wet"?"Wet road variant on: braking grip is down, stopping distances are up.":"Dry road: standard grip.","In the wet, braking distance roughly doubles — the gap in front of you is where that extra distance has to come from.");});
+applyWeather();
+$("downloadBtn").addEventListener("click",function(){
+  var html="<!doctype html>\n"+document.documentElement.outerHTML;
+  var b=new Blob([html],{type:"text/html"});var a=document.createElement("a");
+  a.href=URL.createObjectURL(b);a.download="the-open-road.html";document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+});
+
+/* ---------- stopping-distance maths ---------- */
+function stopMath(mph,wet){
+  var v=mph*0.44704, think=v*1.0, decel=wet?3.25:6.5, brake=(v*v)/(2*decel);
+  return {think:think,brake:brake,total:think+brake};
+}
+function fmt(n){return Math.round(n);}
+function calcUpdate(){
+  var mph=+$("calcSpeed").value; $("calcSpeedVal").textContent=mph+" mph";
+  var d=stopMath(mph,false), w=stopMath(mph,true);
+  $("calcOut").textContent="At "+mph+" mph — thinking "+fmt(d.think)+" m + braking "+fmt(d.brake)+" m = "+fmt(d.total)+" m total dry ("+Math.round(d.total/4)+" car lengths). In the wet: "+fmt(w.total)+" m. Two-second gap at this speed: "+fmt(mph*0.44704*2)+" m.";
+}
+$("calcSpeed").addEventListener("input",calcUpdate); calcUpdate();
+
+/* ---------- coach & lessons ---------- */
+function coach(msg,why){
+  if(settings.dial==="off")return;
+  var t=msg;
+  if(settings.dial==="coach"&&why)t+=" Why: "+why;
+  $("coachText").textContent=t;
+}
+function showLesson(title,body){
+  var box=$("lessonBox");
+  box.innerHTML="";var h=document.createElement("h3");h.textContent=title;box.appendChild(h);
+  var p=document.createElement("p");p.textContent=body;box.appendChild(p);
+  box.classList.add("show");
+}
+function hideLesson(){$("lessonBox").classList.remove("show");}
+
+/* ---------- simulator ---------- */
+var cv=$("sim"),ctx=cv.getContext("2d"),W=800,H=520;
+var keys={left:false,right:false,gas:false,brake:false};
+var running=false,lastT=0,elapsed=0,finished=false;
+var player,others,state;
+var SCEN={
+ quiet:{brief:"<strong>Quiet Streets.</strong> June, your neighbour, is in the passenger seat — she needs the pharmacy before it closes, and her bad hip hates a jerky stop. Drive up the street, stop fully at the stop sign, then reach the green finish zone. Other cars here are parked. The one moving rule: a full stop means your wheels stop turning — a slow roll through is not a stop, here or on the road. Her trust rides on smoothness as much as safety.",
+   coachWhy:"Start with pedals and the full stop only — under pressure you do what is automatic, so make the basics automatic first."},
+ junction:{brief:"<strong>Junctions &amp; Right-of-Way.</strong> Sam, your younger cousin, is riding with you to a music lesson — on time matters, but arriving calm matters more; a frightened passenger is a failed errand even at the right minute. Your light is on the right. Cross traffic (moving sideways) gets its green while yours is red — their rule: they drive on their green and stop on their red, just like you. Wait for your green, look both ways anyway, then cross to the finish. A green light is permission, not a promise.",
+   coachWhy:"Most serious crashes happen where paths cross. The light manages the crossing, but your scan — left, right, left again — is what catches the driver who gets it wrong."},
+ highway:{brief:"<strong>Highway.</strong> Your dad is in the passenger seat and his train will not wait — but he has ridden with tailgaters before and hated every mile. You are already rolling on the ramp — match speed and follow the car ahead to the finish zone. Your gap is shown above in seconds. Keep it at 2 seconds or more (4 in the wet). Tailgating is timed: rack up 3 seconds of too-close driving and the run fails — on the road, that margin is your stopping distance.",
+   coachWhy:"At speed, the gap ahead is the only brake you fully own. Two seconds scales with speed exactly the way stopping distance demands."},
+ hazard:{brief:"<strong>Hazard Round.</strong> This one is solo — the test form: no passenger, just an examiner's clipboard riding along in spirit, because this is the round where your eyes are what is being graded. Drive up the street at a sensible pace. Two hazards will develop — a ball, then a pedestrian stepping out from behind a parked van. Tap the big HAZARD button (or press H) the instant you see each one developing. Early (within 1.2 s) scores best; late (within 3 s) still counts; and whatever you score, do not hit anything.",
+   coachWhy:"Hazard tests score when you respond because early spotting is worth real metres: at 30 mph, two seconds earlier is 27 metres more road to stop in."},
+ parking:{brief:"<strong>Parking.</strong> June again — home from the pharmacy, and she will judge this parking like it is a sport. The marked bay is on the right, outlined in white. Drive past it, turn in slowly, stop fully inside the lines, roughly straight — then tap “Check my parking.” Walking pace only: at speed you get one big wrong correction; slowly, you get many small right ones.",
+   coachWhy:"Parking exposes steering judgement with none of speed's noise. Slow is not just safer here — it is literally more accurate."}
+};
+function wet(){return settings.weather==="wet";}
+function grip(){return wet()?0.55:1;}
+function newPlayer(x,y,ang,speed){return {x:x,y:y,ang:ang,speed:speed||0,r:15};}
+function resetScenario(){
+  var s=settings.scenario; finished=false; elapsed=0; running=false;
+  hideLesson();
+  state={stoppedAtSign:false,signZonePassed:false,tailgate:0,lightT:0,hazards:[],hazIdx:0,parked:false,lightWarned:false,
+    trust:100,harsh:0,harshClock:0,nearMiss:0,nearCooldown:0,crossed:false,
+    energy:fatigueActive()?65:100,fatigueWarned:{},microsleepT:0,sleepClock:5,breakTimer:0,breakArmed:true,breaksTaken:0,
+    passenger:({quiet:"June, your neighbour — to the pharmacy",junction:"Sam, your cousin — to a music lesson",highway:"Your dad — to the station",parking:"June, your neighbour — home again"})[s]||null};
+  others=[];
+  if(s==="quiet"){
+    player=newPlayer(400,470,-Math.PI/2);
+    others=[{x:330,y:330,ang:-Math.PI/2,speed:0,r:15,parked:true,color:"#7a4a21"},
+            {x:470,y:180,ang:Math.PI/2,speed:0,r:15,parked:true,color:"#4a5a7a"}];
+  }else if(s==="junction"){
+    player=newPlayer(400,470,-Math.PI/2);
+    others=[{x:80,y:238,ang:0,speed:0,r:15,color:"#7a2a2a",cross:true},
+            {x:720,y:282,ang:Math.PI,speed:0,r:15,color:"#2a5a7a",cross:true}];
+  }else if(s==="highway"){
+    player=newPlayer(400,470,-Math.PI/2,2.2);
+    others=[{x:400,y:230,ang:-Math.PI/2,speed:2.6,r:15,color:"#2a5a7a",lead:true}];
+  }else if(s==="hazard"){
+    player=newPlayer(400,470,-Math.PI/2);
+    others=[{x:468,y:300,ang:Math.PI/2,speed:0,r:17,parked:true,color:"#666",van:true},
+            {x:330,y:120,ang:-Math.PI/2,speed:0,r:15,parked:true,color:"#7a4a21"}];
+    state.hazards=[
+      {type:"ball",atY:400,x:330,y:330,vx:2.2,vy:0.5,active:false,done:false,t0:0,r:8},
+      {type:"ped",atY:330,x:452,y:292,vx:-1.7,vy:0.35,active:false,done:false,t0:0,r:10}];
+  }else{ /* parking */
+    player=newPlayer(330,460,-Math.PI/2);
+    others=[{x:598,y:120,ang:0,speed:0,r:15,parked:true,color:"#7a4a21"},
+            {x:598,y:262,ang:0,speed:0,r:15,parked:true,color:"#4a5a7a"}];
+  }
+  $("scenarioBrief").innerHTML=SCEN[s].brief;
+  $("parkCheckBtn").hidden=s!=="parking";
+  updateHUD(0); draw();
+  if(settings.dial==="coach")coach("Briefing: "+$("scenarioBrief").textContent,SCEN[s].coachWhy);
+}
+var scenarioSel=$("scenarioSel");
+scenarioSel.value=settings.scenario||"quiet";
+scenarioSel.addEventListener("change",function(){settings.scenario=scenarioSel.value;saveJSON(SKEY,settings);applyFatigue();resetScenario();});
+settings.scenario=scenarioSel.value;
+
+/* traffic light: 6s green, 2s amber, 6s red (player direction) */
+function lightPhase(){
+  var t=state.lightT%14;
+  if(t<6)return "green"; if(t<8)return "amber"; return "red";
+}
+function mph(){return Math.abs(player.speed)*8;}
+function gapSeconds(){
+  if(settings.scenario!=="highway"||!others.length)return null;
+  var o=others[0],d=Math.hypot(o.x-player.x,o.y-player.y)-30;
+  var rel=Math.max(0.4,player.speed-o.speed+2.6);
+  return (d/10)/(rel*0.8);
+}
+function updateHUD(gap){
+  $("hudSpeed").textContent=fmt(mph());
+  $("hudGap").textContent=(gap===null||gap===undefined)?"—":gap.toFixed(1)+" s";
+  $("hudTime").textContent=elapsed.toFixed(1);
+  $("hudStatus").textContent=finished?"Finished":(running?"Driving":"Ready — tap Start");
+  if(fatigueActive()&&state)$("hudEnergy").textContent=Math.round(state.energy);
+  if(state&&state.passenger){$("hudPassenger").textContent=state.passenger;$("hudTrust").textContent=Math.max(0,Math.round(state.trust))+" / 100";}
+  else{$("hudPassenger").textContent="Solo — test form";$("hudTrust").textContent="—";}
+}
+function trustVerdict(){
+  if(!state.passenger)return "";
+  var t=Math.round(state.trust);
+  if(t>=90)return " Passenger trust: "+t+"/100 — calm throughout; they would ride with you again without a thought.";
+  if(t>=70)return " Passenger trust: "+t+"/100 — arrived fine, with a moment or two of alarm along the way.";
+  if(t>=45)return " Passenger trust: "+t+"/100 — arrived, but shaken; smoothness is the skill to work on next.";
+  return " Passenger trust: "+t+"/100 — that ride will be talked about, and not fondly. Calm is a skill: brake earlier, gentler, and leave more room.";
+}
+
+/* ---------- drawing ---------- */
+function drawCar(c,color){
+  ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.ang+Math.PI/2);
+  ctx.fillStyle=color;ctx.strokeStyle="#111";ctx.lineWidth=2;
+  var w=c.van?34:26,h=c.van?52:44;
+  ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#bcd8e8";ctx.fillRect(-w/2+4,-h/2+9,w-8,9);
+  ctx.fillStyle="#222";ctx.fillRect(-w/2-3,-h/2+6,5,11);ctx.fillRect(w/2-2,-h/2+6,5,11);
+  ctx.fillRect(-w/2-3,h/2-17,5,11);ctx.fillRect(w/2-2,h/2-17,5,11);
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=wet()?"#4a5a48":"#5d8a52";ctx.fillRect(0,0,W,H);
+  var s=settings.scenario;
+  ctx.fillStyle="#33363a";
+  if(s==="parking"){ctx.fillRect(240,0,320,H);ctx.fillRect(520,40,240,300);}
+  else if(s==="junction"){ctx.fillRect(320,0,160,H);ctx.fillRect(0,200,W,120);}
+  else ctx.fillRect(320,0,160,H);
+  ctx.strokeStyle="#e8e4d8";ctx.lineWidth=3;ctx.setLineDash([16,14]);
+  ctx.beginPath();
+  if(s!=="parking"){ctx.moveTo(400,0);ctx.lineTo(400,H);}
+  ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#3f9e4d";
+  if(s==="quiet"||s==="hazard")ctx.fillRect(325,8,150,44);
+  if(s==="junction")ctx.fillRect(325,120,150,44);
+  if(s==="highway")ctx.fillRect(325,8,150,44);
+  ctx.fillStyle="#fff";ctx.font="bold 15px sans-serif";ctx.textAlign="center";
+  if(s!=="parking")ctx.fillText("FINISH",400,s==="junction"?147:35);
+  if(s==="parking"){
+    ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.strokeRect(545,150,110,86);
+    ctx.fillText("BAY",600,198);
+    ctx.fillStyle="#e8a100";ctx.beginPath();ctx.arc(300,120,12,0,7);ctx.fill();
+    ctx.beginPath();ctx.arc(300,300,12,0,7);ctx.fill();
+  }
+  if(s==="quiet"){
+    ctx.fillStyle="#fff";ctx.fillRect(322,300,156,6);
+    ctx.fillStyle="#c0271d";ctx.beginPath();ctx.arc(492,282,17,0,7);ctx.fill();
+    ctx.fillStyle="#fff";ctx.font="bold 10px sans-serif";ctx.fillText("STOP",492,286);
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.strokeRect(478,264,28,36);
+  }
+  if(s==="junction"){
+    var ph=lightPhase();
+    ctx.fillStyle="#111";ctx.fillRect(492,180,20,64);
+    ctx.fillStyle=ph==="red"?"#ff3b30":"#571512";ctx.beginPath();ctx.arc(502,192,7,0,7);ctx.fill();
+    ctx.fillStyle=ph==="amber"?"#ffb340":"#57430f";ctx.beginPath();ctx.arc(502,212,7,0,7);ctx.fill();
+    ctx.fillStyle=ph==="green"?"#35d461":"#14521f";ctx.beginPath();ctx.arc(502,232,7,0,7);ctx.fill();
+    ctx.fillStyle="#fff";ctx.fillRect(322,196,156,5);
+  }
+  if(s==="hazard"){
+    state.hazards.forEach(function(hz){
+      if(!hz.active)return;
+      if(hz.type==="ball"){ctx.fillStyle="#e33";ctx.beginPath();ctx.arc(hz.x,hz.y,hz.r,0,7);ctx.fill();}
+      else{ctx.fillStyle="#f2c14e";ctx.beginPath();ctx.arc(hz.x,hz.y,hz.r,0,7);ctx.fill();
+        ctx.fillStyle="#222";ctx.fillRect(hz.x-3,hz.y+8,6,14);}
+    });
+  }
+  if(s==="highway"&&fatigueActive()){
+    ctx.fillStyle="#2b4a6b";ctx.fillRect(476,205,86,95);
+    ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText("REST",519,240);ctx.fillText("AREA",519,258);
+    ctx.font="11px sans-serif";ctx.fillText("stop 3 s",519,278);
+  }
+  others.forEach(function(o){drawCar(o,o.color||"#888");});
+  drawCar(player,"#0f5f5c");
+  if(wet()){ctx.fillStyle="rgba(120,160,220,0.13)";ctx.fillRect(0,0,W,H);}
+  if(state&&state.microsleepT>0){ctx.fillStyle="rgba(0,0,0,0.45)";ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#fff";ctx.font="bold 22px sans-serif";ctx.fillText("— MICROSLEEP —",400,260);}
+}
+
+/* ---------- game logic ---------- */
+function fail(title,body,recordDetail){
+  running=false;finished=true;
+  if(state.passenger){state.trust=Math.max(0,state.trust-25);body+=" Your passenger felt all of that."+trustVerdict();}
+  showLesson(title,body);
+  addRecord("collision",recKey(),recordDetail+" (at "+fmt(mph())+" mph, "+(wet()?"wet":"dry")+" road"+(fatigueActive()?", long drive — fatigue on":"")+")"+trustVerdict());
+  coach("Run over. Read the lesson, then tap Start and drive it again.","Every failure here is information: the lesson names the rule and the physics, so the next attempt is a different driver, not just a retry.");
+  updateHUD(gapSeconds()); draw();
+}
+function pass(detail){
+  running=false;finished=true;
+  detail+=trustVerdict();
+  var box=$("lessonBox");
+  box.innerHTML="";var h=document.createElement("h3");h.style.color="var(--good)";h.textContent="✓ Scenario passed";
+  var p=document.createElement("p");p.textContent=detail;box.appendChild(h);box.appendChild(p);box.classList.add("show");
+  if(fatigueActive())detail+=" [Long drive — fatigue on; this record is kept separate from the standard Highway record.] Finished with driver energy at "+Math.round(state.energy)+"%.";
+  addRecord("pass",recKey(),detail);
+  updateHUD(gapSeconds()); draw();
+}
+function stopLesson(speedNow){
+  var d=stopMath(speedNow,wet());
+  return "At "+fmt(speedNow)+" mph your stopping distance was about "+fmt(d.total)+" metres ("+fmt(d.think)+" m thinking + "+fmt(d.brake)+" m braking"+(wet()?", wet road":"")+"). That distance — not your intention — is what decides a collision.";
+}
+function step(dt){
+  elapsed+=dt;
+  var s=settings.scenario;
+  /* microsleep: while it lasts, the driver is simply not there */
+  var K=keys;
+  if(state.microsleepT>0){state.microsleepT-=dt;K={left:false,right:false,gas:false,brake:false};}
+  /* player physics */
+  var accel=K.gas?2.6:0, brk=K.brake?5.2*grip():0;
+  player.speed+=accel*dt; player.speed-=brk*dt;
+  player.speed-=player.speed*0.55*dt;
+  if(player.speed<0)player.speed=0;
+  var maxS=wet()?6.2:7.2; if(player.speed>maxS)player.speed=maxS;
+  /* passenger trust: harsh braking and near misses cost it */
+  if(state.nearCooldown>0)state.nearCooldown-=dt;
+  if(state.passenger){
+    if(K.brake&&mph()>26){
+      state.harshClock+=dt;
+      if(state.harshClock>0.4){state.harshClock=0;state.harsh++;state.trust=Math.max(0,state.trust-6);
+        if(state.harsh===1)coach("That stop threw your passenger forward. Braking that hard, that late, means the hazard was read late.","Smoothness is anticipation: brake earlier and gentler and the same stop costs nobody anything. Passengers — and the car behind — grade you on this.");}
+    }else state.harshClock=Math.max(0,state.harshClock-dt);
+  }
+  if(K.left)player.ang-=1.7*dt*Math.min(1,player.speed/2);
+  if(K.right)player.ang+=1.7*dt*Math.min(1,player.speed/2);
+  player.x+=Math.cos(player.ang)*player.speed*60*dt*0.55;
+  player.y+=Math.sin(player.ang)*player.speed*60*dt*0.55;
+  /* cross traffic */
+  if(s==="junction"){
+    state.lightT+=dt; var ph=lightPhase();
+    others.forEach(function(o){
+      var go=ph==="red";
+      var nearLine=(o.ang===0&&o.x>250&&o.x<322)||(o.ang!==0&&o.x<550&&o.x>478);
+      o.speed=go?2.4:(nearLine?0:1.2);
+      o.x+=Math.cos(o.ang)*o.speed*60*dt*0.55;
+      if(o.x<-40)o.x=W+40; if(o.x>W+40)o.x=-40;
+    });
+    if(player.y<205&&player.y>150&&!state.crossed){
+      state.crossed=true;
+      if(ph!=="green"){
+        fail("You crossed on "+ph+".","Running a "+ph+" light puts you in the path of traffic that has been told — correctly — that the crossing is theirs. "+stopLesson(mph()),"Crossed the junction on "+ph);
+        return;
+      }
+    }
+    if(ph==="green"&&!state.lightWarned&&player.y<430&&player.y>380){state.lightWarned=true;
+      coach("Your light is green. Cross — but look both ways first.","Green is permission, not a promise: the final scan catches the one driver who got it wrong.");}
+  }
+  if(s==="highway"){
+    var lead=others[0];
+    lead.speed=2.6+Math.min(0.7,elapsed*0.012); /* the ramp inside the drive: pace builds as it goes on */
+    lead.y-=lead.speed*60*dt*0.55;
+    if(lead.y<70)lead.y=70;
+    var g=gapSeconds();
+    if(g!==null&&g<2&&player.speed>1){
+      state.tailgate+=dt;
+      if(state.tailgate>1&&state.tailgate<1.1)coach("Too close — that gap is under two seconds. Ease off and re-open it.","Under two seconds, if the car ahead brakes hard, your thinking distance alone can spend the whole gap before your brakes even bite.");
+      if(state.tailgate>=3){fail("Too close, for too long.","You held an unsafe gap for 3 seconds. "+stopLesson(mph())+" The two-second rule exists because thinking distance plus braking distance must fit inside the gap — at "+fmt(mph())+" mph that is about "+fmt(stopMath(mph(),wet()).total)+" metres.","Tailgated: held under a 2-second gap for 3 s");return;}
+    }
+    updateHUD(g);
+  } else updateHUD(gapSeconds());
+  /* fatigue — the long-drive variant */
+  if(fatigueActive()){
+    var inRest=player.x>486&&player.x<560&&player.y>205&&player.y<300;
+    if(inRest&&player.speed<0.15){
+      state.breakTimer+=dt;
+      if(state.breakTimer>=3&&state.breakArmed){
+        state.breakArmed=false;state.energy=100;state.breaksTaken++;
+        addRecord("rest-break","highway-longdrive","Took a proper break at the rest area (break #"+state.breaksTaken+") — energy restored. Pulling in was the driving decision.");
+        coach("Break taken — energy restored. That stop is not lost time; it is the two-hour rule doing its job.","Alertness decays on a curve whether you feel it or not. The break is timed to the biology, and a 20-minute real-world stop — out of the seat, walking — is the version of this that works on the road.");
+      }
+    }else{state.breakTimer=0;if(!inRest)state.breakArmed=true;}
+    if(!inRest&&elapsed>5)state.energy=Math.max(0,state.energy-dt*1.6);
+    [75,55,35].forEach(function(th){
+      if(state.energy<th&&!state.fatigueWarned[th]){state.fatigueWarned[th]=true;
+        if(th===75)coach("Energy slipping — three quarters left. Nothing feels wrong yet; that is exactly how fatigue works.","The tired driver usually believes they are fine. The belief is part of the impairment, not evidence against it.");
+        if(th===55)coach("Past halfway down. On a real road this is where the two-hour rule says: plan the stop now, not when you feel desperate.","Caffeine is a bridge to a stop, not a substitute for one. Windows and loud music buy minutes and change nothing underneath.");
+        if(th===35)coach("Danger zone: microsleeps are coming. The rest area is behind you or ahead of you — use it.","A four-second microsleep at 60 mph is about 107 metres driven blind — longer than your whole stopping distance at that speed.");}
+    });
+    if(state.energy<40&&state.microsleepT<=0){
+      state.sleepClock-=dt;
+      if(state.sleepClock<=0){state.sleepClock=5+Math.random()*4;state.microsleepT=0.7;
+        addRecord("microsleep","highway-longdrive","Microsleep at "+Math.round(state.energy)+"% energy — controls dead for a heartbeat at "+fmt(mph())+" mph");}
+    }
+    if(state.energy<=0){
+      running=false;finished=true;
+      showLesson("You drove yourself empty","Your energy reached zero — in the game's plain grading, you were no longer fit to be driving, and continuing would have been the risk itself, whatever the car did. Fatigue is impairment: researchers compare a very long day awake with being near common alcohol limits, and the microsleeps you felt here are the mechanism. The fix was never willpower — it was the rest area, used earlier. Your dad still has a train; the honest sentence is “we stop for twenty minutes,” and it beats every alternative.");
+      addRecord("fatigue-end","highway-longdrive","Energy reached zero — run ended and graded as unfit to continue. Breaks taken: "+state.breaksTaken);
+      updateHUD(gapSeconds());draw();return;
+    }
+    $("hudEnergy").textContent=Math.round(state.energy);
+  }
+  /* stop sign */
+  if(s==="quiet"){
+    if(!state.stoppedAtSign&&player.y<312&&player.y>270&&player.speed<0.15)state.stoppedAtSign=true;
+    if(player.y<268&&!state.signZonePassed){
+      state.signZonePassed=true;
+      if(!state.stoppedAtSign){fail("You rolled through the stop sign.","A stop sign demands a full stop — wheels stopped — because the pause is what buys a stationary, judged look in both directions. A roll keeps you moving while your attention is split. "+stopLesson(mph()),"Rolled through the stop sign without stopping");return;}
+      coach("Clean stop at the sign. Look both ways, then go.","The stop bought you a stationary look — the only kind where judging another car's speed is reliable.");
+    }
+  }
+  /* hazards */
+  if(s==="hazard"){
+    state.hazards.forEach(function(hz){
+      if(!hz.active&&!hz.done&&player.y<hz.atY){hz.active=true;hz.t0=elapsed;
+        coach(hz.type==="ball"?"Something is moving at the roadside…":"Movement behind the van…","Clues come first: a rolling ball means a child may follow it; movement behind a parked van means someone is about to step out. Cover the brake.");}
+      if(hz.active){hz.x+=hz.vx;hz.y+=hz.vy;
+        if(elapsed-hz.t0>3.2&&!hz.done){hz.done=true;
+          addRecord("hazard-missed",s,"Did not tap the hazard button for the "+(hz.type==="ball"?"rolling ball":"pedestrian")+" within 3 seconds");
+          coach("That hazard window closed unspotted. In the official test that scores zero — not because you crashed, but because late leaves no choices.","Spotting early is worth metres: two seconds earlier at 30 mph is about 27 metres more road to stop in.");}
+        var d=Math.hypot(hz.x-player.x,hz.y-player.y);
+        if(d<player.r+hz.r){fail(hz.type==="ball"?"You reached the ball's owner.":"You hit the pedestrian.","A "+(hz.type==="ball"?"ball in the road is a child about to follow it":"pedestrian stepped from behind the van — hidden until the last moment, which is exactly why the clue (the van, the movement) had to slow you down before anything appeared")+". "+stopLesson(mph()),"Hit the "+(hz.type==="ball"?"ball hazard zone":"pedestrian")+" in the hazard round");return;}
+      }
+    });
+  }
+  /* collisions with cars */
+  for(var i=0;i<others.length;i++){
+    var o=others[i],dd=Math.hypot(o.x-player.x,o.y-player.y);
+    if(state.passenger&&dd>=player.r+o.r-4&&dd<player.r+o.r+15&&player.speed>1.5&&state.nearCooldown<=0){
+      state.nearCooldown=2.5;state.nearMiss++;state.trust=Math.max(0,state.trust-8);
+      addRecord("near-miss",s,"Near miss with "+(o.parked?"a parked vehicle":"another vehicle")+" — passed within a whisker at "+fmt(mph())+" mph. Passenger trust fell to "+Math.round(state.trust)+"/100");
+      coach("That was a near miss — close enough to frighten your passenger, and fright is information.","A near miss is a collision that luck edited. The margin you meant to leave is the margin that matters; widen it before the road tests it.");
+    }
+    if(dd<player.r+o.r-4){
+      fail("Collision.","You hit "+(o.parked?"a parked vehicle":"another vehicle")+". "+(o.parked?"Parked cars are the easiest hazard on the road — they cannot move, so this was a judgement of space, not luck. Leave a door's width: a parked car's door can open into your path. ":"") + stopLesson(mph()),"Hit "+(o.parked?"a parked vehicle":"another vehicle"));
+      return;
+    }
+  }
+  /* off-road */
+  var onRoad;
+  if(s==="junction")onRoad=(player.x>322&&player.x<478)||(player.y>202&&player.y<318);
+  else if(s==="parking")onRoad=(player.x>242&&player.x<558&&player.y>-10&&player.y<H+10)||(player.x>522&&player.x<758&&player.y>42&&player.y<338);
+  else onRoad=(player.x>322&&player.x<478)||(fatigueActive()&&player.x>474&&player.x<562&&player.y>203&&player.y<302);
+  if(!onRoad){fail("Off the road.","You left the carriageway. "+stopLesson(mph())+" On a real road this is the verge, a ditch, a wall, or someone's garden — position on the road is the first skill every other skill stands on.","Left the road");return;}
+  if(player.y<-30||player.y>H+30||player.x<-30||player.x>W+30){fail("Out of bounds.","You drove out of the scenario area. Restart and stay on the road.","Drove out of bounds");return;}
+  /* finish */
+  if(s==="quiet"&&player.y<58)pass("Quiet Streets completed in "+elapsed.toFixed(1)+" s with a full stop at the sign. Pedals, steering, and the discipline of the complete stop — the foundation every other rung stands on.");
+  if(s==="junction"&&player.y<168)pass("Junction crossed on green in "+elapsed.toFixed(1)+" s. Right-of-way is given, not taken — and you still looked, which is the part that saves lives when someone else gets it wrong.");
+  if(s==="highway"&&player.y<58)pass("Highway run completed in "+elapsed.toFixed(1)+" s, tailgating time "+state.tailgate.toFixed(1)+" s of the 3 s allowed. The gap did the work: at speed, distance is braking you have already done.");
+  if(s==="hazard"&&player.y<58){
+    var spotted=0;
+    state.hazards.forEach(function(h){
+      if(h.spotted)spotted++;
+      else if(h.active&&!h.done){h.done=true;addRecord("hazard-missed","hazard","Run finished without spotting the "+(h.type==="ball"?"rolling ball (a child may follow it)":"pedestrian stepping out from behind the van")+" — the finish closed its window");}
+    });
+    pass(spotted===2?"Hazard round driven clean to the finish, both hazards spotted. Check your record for how early each spot was — early is the whole game.":"Hazard round finished. "+spotted+" of 2 hazards spotted inside their windows; the rest are in your record as missed, honestly. Drive it again and watch the roadside clues, not the road.");
+  }
+  draw();
+}
+
+function loop(ts){
+  if(!running)return;
+  var dt=Math.min(0.05,(ts-lastT)/1000||0.016); lastT=ts;
+  step(dt);
+  if(running)requestAnimationFrame(loop);
+}
+$("startBtn").addEventListener("click",function(){
+  resetScenario(); running=true; finished=false; lastT=performance.now();
+  $("hudStatus").textContent="Driving";
+  requestAnimationFrame(loop);
+});
+var toggleMode=false;
+$("toggleModeBtn").addEventListener("click",function(){
+  toggleMode=!toggleMode;
+  if(!toggleMode){keys.left=keys.right=keys.gas=keys.brake=false;
+    document.querySelectorAll(".pad button").forEach(function(b){b.classList.remove("held");});}
+  this.setAttribute("aria-pressed",toggleMode?"true":"false");
+  this.textContent=toggleMode?"Control style: Tap-to-toggle (accessibility) — tap to switch back to hold-to-drive":"Control style: Hold to drive (standard) — tap to switch to tap-to-toggle";
+  coach(toggleMode?"Tap-to-toggle on: tap a pedal once to engage it, again to release it.":"Hold-to-drive restored: hold a pedal for as long as you want it applied.","Control styles exist because hands and devices differ; the driving — and the physics — are identical either way.");
+});
+function bindHold(id,key){
+  var el=$(id);
+  function on(e){if(toggleMode)return;e.preventDefault();keys[key]=true;el.classList.add("held");}
+  function off(e){if(toggleMode)return;if(e)e.preventDefault();keys[key]=false;el.classList.remove("held");}
+  el.addEventListener("click",function(){if(!toggleMode)return;keys[key]=!keys[key];el.classList.toggle("held",keys[key]);});
+  el.addEventListener("pointerdown",on);
+  el.addEventListener("pointerup",off);el.addEventListener("pointerleave",off);el.addEventListener("pointercancel",off);
+  el.addEventListener("keydown",function(e){if(e.key===" "||e.key==="Enter")on(e);});
+  el.addEventListener("keyup",off);
+}
+bindHold("btnLeft","left");bindHold("btnRight","right");bindHold("btnGas","gas");bindHold("btnBrake","brake");
+document.addEventListener("keydown",function(e){
+  if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")return;
+  if(e.key==="ArrowUp"){keys.gas=true;$("btnGas").classList.add("held");e.preventDefault();}
+  if(e.key==="ArrowDown"){keys.brake=true;$("btnBrake").classList.add("held");e.preventDefault();}
+  if(e.key==="ArrowLeft"){keys.left=true;$("btnLeft").classList.add("held");e.preventDefault();}
+  if(e.key==="ArrowRight"){keys.right=true;$("btnRight").classList.add("held");e.preventDefault();}
+  if(e.key==="h"||e.key==="H")spotHazard();
+  if(e.key==="r"||e.key==="R")$("startBtn").click();
+});
+document.addEventListener("keyup",function(e){
+  if(e.key==="ArrowUp"){keys.gas=false;$("btnGas").classList.remove("held");}
+  if(e.key==="ArrowDown"){keys.brake=false;$("btnBrake").classList.remove("held");}
+  if(e.key==="ArrowLeft"){keys.left=false;$("btnLeft").classList.remove("held");}
+  if(e.key==="ArrowRight"){keys.right=false;$("btnRight").classList.remove("held");}
+});
+function spotHazard(){
+  if(settings.scenario!=="hazard"||!running){coach("The hazard button matters in the Hazard Round — that is where spotting early is scored.","In every scenario, though, the habit is the same: the moment you see a clue, cover the brake.");return;}
+  var found=false;
+  state.hazards.forEach(function(hz){
+    if(hz.active&&!hz.done){
+      found=true;hz.done=true;hz.spotted=true;var dt=elapsed-hz.t0;
+      var name=hz.type==="ball"?"rolling ball (a child may follow it)":"pedestrian stepping out from behind the van";
+      if(dt<=1.2){addRecord("hazard-early","hazard","Spotted the "+name+" in "+dt.toFixed(1)+" s — early");
+        coach("Spotted early — "+dt.toFixed(1)+" s. Full marks in the official form.","Early is worth metres: at 30 mph, each second earlier is about 13 metres more room to stop.");}
+      else if(dt<=3){addRecord("hazard-late","hazard","Spotted the "+name+" in "+dt.toFixed(1)+" s — late");
+        coach("Spotted — "+dt.toFixed(1)+" s, inside the window but late. Partial credit in the official form.","Late still counts, but your options had already narrowed. Next time, read the clue — the parked van, the roadside movement — before the hazard itself appears.");}
+      else{addRecord("hazard-missed","hazard","Tapped for the "+name+" at "+dt.toFixed(1)+" s — outside the window");
+        coach("That tap came after the window closed.","The window is the lesson: hazards are scored on when, because when decides whether you stop in time.");}
+    }
+  });
+  if(!found)coach("No hazard is developing right now — save the tap for the moment one is.","Tapping at nothing teaches your eye nothing; the skill is matching the response to the developing hazard.");
+}
+$("hazardBtn").addEventListener("click",spotHazard);
+$("parkCheckBtn").addEventListener("click",function(){
+  if(settings.scenario!=="parking")return;
+  var inBay=player.x>552&&player.x<648&&player.y>157&&player.y<229;
+  var angDiff=Math.abs(((player.ang%(Math.PI*2))+Math.PI*2)%(Math.PI*2));
+  var straight=(Math.abs(angDiff-0)<0.35)||(Math.abs(angDiff-Math.PI)<0.35);
+  var stopped=player.speed<0.15;
+  if(inBay&&straight&&stopped){
+    running=false;
+    pass("Parked inside the bay, straight and fully stopped. Slow bought you corrections; corrections bought you accuracy — that trade is the whole of parking.");
+  }else{
+    var why=[];
+    if(!inBay)why.push("the car is not fully inside the bay lines");
+    if(!straight)why.push("the car is not straight in the bay");
+    if(!stopped)why.push("the car is still moving — stop fully before checking");
+    showLesson("Not parked yet",("Why: "+why.join("; ")+". ").replace(/^./,function(c){return c.toUpperCase();})+"Creep at walking pace, make small corrections, stop, and check again. Nearly all parking damage happens at hurry, not at parking.");
+    coach("Not yet — read what's off, fix that one thing, and check again.","One correction at a time: position first, then angle, then the full stop.");
+  }
+});
+
+/* ---------- quiz ---------- */
+var ANSWERS={q1:{a:"c",why:"Correct answer: it roughly quadruples. Braking distance grows with the square of speed (energy is ½mv²), so 2× the speed means 2² = 4× the distance."},
+q2:{a:"b",why:"Correct answer: a time gap scales with speed automatically. Two seconds at 30 mph is about 27 m; at 60 mph about 54 m — growing just as stopping distance demands."},
+q3:{a:"b",why:"Correct answer: the blind spot. Mirrors show history and speed; only the shoulder check shows the vehicle or cyclist sitting beside your rear door right now."},
+q4:{a:"c",why:"Correct answer: stop within what you can see. If you can see 30 m, your total stopping distance must fit in 30 m — the table says that means roughly 30 mph or less, whatever the sign says."},
+q5:{a:"b",why:"Correct answer: a child may follow the ball. Hazards announce themselves in clues — the ball is the clue, the child is the hazard. Cover the brake and slow down."}};
+$("quizForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  var score=0,answered=0;
+  Object.keys(ANSWERS).forEach(function(q){
+    var sel=document.querySelector('input[name="'+q+'"]:checked');
+    var fb=document.querySelector('[data-fb="'+q+'"]');
+    if(!sel){fb.textContent="Not answered. "+ANSWERS[q].why;fb.style.color="var(--bad)";return;}
+    answered++;
+    if(sel.value===ANSWERS[q].a){score++;fb.textContent="✓ Right. "+ANSWERS[q].why;fb.style.color="var(--good)";}
+    else{fb.textContent="✗ Not quite. "+ANSWERS[q].why;fb.style.color="var(--bad)";}
+  });
+  $("quizScore").textContent=answered<5?"You answered "+answered+" of 5 — the unanswered ones are explained above.":("Score: "+score+" of 5.");
+  if(answered===5)addRecord("quiz","knowledge-check","Scored "+score+" of 5 on the knowledge check");
+});
+
+/* ---------- init ---------- */
+applyFatigue();
+renderRecord();
+resetScenario();
+})();
+</script>
+</body>
+</html>
