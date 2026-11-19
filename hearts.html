@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Hearts — the full game, with the why</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,600;0,800;1,600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef0ea; --panel:#ffffff; --panel2:#f7f8f4; --ink:#1a211c; --muted:#4b5a4f; --line:#c9d2c6;
+  --felt:#175734; --felt2:#0f3d24; --feltline:#2a7a4b; --gold:#c9a227; --red:#b4232a; --black:#1f2937;
+  --btn:#175734; --btnink:#ffffff; --chip:#e6efe7; --coach:#fff8dc; --coachline:#c9a227;
+  --card:#ffffff; --cardink:#1a211c; --shadow:0 2px 10px rgba(20,40,25,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#101511; --panel:#1a211c; --panel2:#212b23; --ink:#eef2ec; --muted:#a9b8ab; --line:#37473a;
+  --felt:#14532d; --felt2:#0b3520; --chip:#26382a; --coach:#2b2a1a; --card:#f7f7f2; --shadow:0 2px 10px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55;font-size:16px}
+h1,h2,h3{font-family:"Bitter",Georgia,serif;line-height:1.15;margin:0 0 .5rem}
+h1{font-size:2.4rem;font-weight:800} h2{font-size:1.55rem;font-weight:800} h3{font-size:1.12rem;font-weight:700}
+p{margin:.4rem 0 .8rem} a{color:var(--felt)} @media(prefers-color-scheme:dark){a{color:#7fd19b}}
+button,select,input{min-height:44px;font:inherit}
+button{cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:.55rem 1rem;font-weight:600}
+button.primary{background:var(--btn);color:var(--btnink);border-color:var(--btn)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px 48px}
+.freeline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;padding:10px 16px;font-size:.95rem}
+.freeline strong{letter-spacing:.02em}
+.freeline button{background:#fff;color:#111;border:none;min-height:40px}
+.compass{display:flex;flex-wrap:wrap;gap:6px;padding:12px 0 4px}
+.compass a{display:inline-flex;align-items:center;min-height:40px;padding:.4rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);text-decoration:none;color:var(--ink);font-weight:600;font-size:.92rem}
+.hero{padding:14px 0 6px}
+.hero .sub{font-size:1.08rem;max-width:44em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.settings label{font-weight:600;font-size:.9rem;display:block}
+.settings select,.settings input{width:100%;margin-top:4px;padding:.45rem .6rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.hint{font-size:.88rem;color:var(--muted)}
+/* table */
+.table{background:radial-gradient(ellipse at center,var(--felt) 0%,var(--felt2) 100%);border:6px solid #5b3a1e;border-radius:18px;color:#fff;padding:14px;margin:14px 0}
+.seatnames{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.9rem}
+.seatnames .seat{background:rgba(0,0,0,.28);border-radius:8px;padding:4px 10px}
+.seatnames .seat.turn{outline:2px solid var(--gold)}
+.trick{display:flex;gap:10px;justify-content:center;align-items:center;min-height:118px;padding:14px 6px;flex-wrap:wrap}
+.trickslot{text-align:center;font-size:.78rem;color:#d7e8da}
+.pcard{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:58px;height:82px;background:var(--card);color:var(--cardink);border-radius:8px;border:1px solid #bbb;font-weight:700;font-size:1.05rem;line-height:1.1;box-shadow:0 2px 6px rgba(0,0,0,.3);user-select:none}
+.pcard.red{color:var(--red)} .pcard.small{width:44px;height:62px;font-size:.9rem}
+.pcard.back{background:repeating-linear-gradient(45deg,#7a1f24,#7a1f24 6px,#5c161a 6px,#5c161a 12px);color:transparent;border-color:#3d0f12}
+.hand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0 2px}
+button.cardbtn{padding:2px;border:none;background:transparent;min-height:0}
+button.cardbtn .pcard{transition:transform .12s}
+button.cardbtn:hover .pcard,button.cardbtn:focus-visible .pcard{transform:translateY(-6px)}
+button.cardbtn.sel .pcard{transform:translateY(-12px);outline:3px solid var(--gold)}
+button.cardbtn.suggest .pcard{outline:3px solid #7fd19b}
+button.cardbtn:disabled .pcard{opacity:.55}
+.statusbar{text-align:center;font-weight:600;min-height:1.6em}
+.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px 0 2px}
+.actions button{min-height:48px}
+.coach{background:var(--coach);border:1px solid var(--coachline);border-radius:12px;padding:14px 16px;margin:12px 0}
+.coach h3{margin-bottom:.2rem}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.scorebox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center}
+.scorebox .big{font-size:1.7rem;font-weight:800;font-family:"Bitter",serif}
+table.scores{width:100%;border-collapse:collapse;font-size:.92rem}
+table.scores th,table.scores td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+table.scores th:first-child,table.scores td:first-child{text-align:left}
+.bots{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.botcard{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel2)}
+.whygrid{display:grid;grid-template-columns:1fr;gap:0}
+.whygrid article{border-top:1px solid var(--line);padding:14px 0 4px}
+.whygrid article:first-child{border-top:none}
+.kicker{font-weight:700;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0;background:var(--panel2)}
+summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center}
+ul{margin:.3rem 0 .8rem;padding-left:1.3rem} li{margin:.25rem 0}
+.footer{font-size:.9rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;margin-top:20px}
+.log{font-size:.9rem;max-height:180px;overflow:auto;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+@media(max-width:560px){h1{font-size:1.9rem}.pcard{width:50px;height:72px}.trick{min-height:100px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="freeline">
+  <span><strong>Free — always free.</strong> No ads. No account. No payment, ever.</span>
+  <button id="dlBtn" type="button">Tap to download this page for offline play</button>
+</div>
+<div class="wrap">
+<nav class="compass" aria-label="Page compass">
+  <a href="#play">♠ Play — tap to go</a>
+  <a href="#bots">♥ Your opponents — tap to go</a>
+  <a href="#why">♦ The Full Why — tap to go</a>
+  <a href="#rules">♣ Rules — tap to go</a>
+  <a href="#record">★ Your record — tap to go</a>
+</nav>
+
+<header class="hero">
+  <h1>Hearts</h1>
+  <p class="sub">The classic four-player card game, in full. You are not trying to win tricks — you are trying to <em>lose</em> the expensive ones. Every heart costs 1 point, the queen of spades costs 13, and the player with the <strong>lowest</strong> score when someone reaches the target wins. Play a complete game below against three bots, learn why each move works, and take the strategy with you to any real table.</p>
+  <p class="hint">Why → How → Play: the why is taught first in the Coach and in <a href="#why">The Full Why</a>, the how is the game itself, and playing is the act. Nothing here is paywalled or cut short.</p>
+</header>
+
+<section class="panel" aria-label="Game settings">
+  <h2>Set up your game</h2>
+  <p class="hint">Rules are settings: change them before a game starts and the table plays by your house rules. Every control says its gesture — tap does the thing.</p>
+  <div class="settings">
+    <div><label for="alias">Your name at the table (alias — use any name you like)
+      <input id="alias" type="text" maxlength="20" value="You" autocomplete="off"></label></div>
+    <div><label for="targetSel">Target score — game ends when someone reaches it
+      <select id="targetSel"><option value="50">50 — a short game</option><option value="100" selected>100 — the classic game</option><option value="150">150 — a long game</option></select></label></div>
+    <div><label for="passSel">Passing direction
+      <select id="passSel"><option value="cycle" selected>Cycle: left, right, across, hold (standard)</option><option value="left">Always left</option><option value="right">Always right</option><option value="across">Always across</option><option value="none">No passing</option></select></label></div>
+    <div><label for="teachSel">Teaching dial — how much help the Coach gives
+      <select id="teachSel"><option value="coach" selected>Coach — full explanations as you play</option><option value="hints">Hints — suggested cards only, no lecture</option><option value="off">Off — no help, just play</option></select></label></div>
+  </div>
+  <div class="actions" style="justify-content:flex-start;padding-top:12px">
+    <button class="primary" id="newGameBtn" type="button">Tap to start a new game</button>
+    <button id="newHandBtn" type="button">Tap to deal the next hand</button>
+  </div>
+</section>
+
+<section id="play" aria-label="The table">
+  <div class="table">
+    <div class="seatnames">
+      <span class="seat" id="seatW">West · Pip</span>
+      <span class="seat" id="seatN">North · June</span>
+      <span class="seat" id="seatE">East · Vera</span>
+      <span class="seat" id="seatS">South · You</span>
+    </div>
+    <p class="statusbar" id="status">Tap “Start a new game” above to deal the first hand.</p>
+    <div class="trick" id="trick" aria-live="polite"></div>
+    <div class="actions">
+      <button class="primary" id="passBtn" type="button" disabled>Tap to pass 3 cards</button>
+      <button id="hintBtn" type="button">Tap for a hint</button>
+    </div>
+    <div class="hand" id="hand" role="group" aria-label="Your cards — tap a card to select or play it"></div>
+    <p class="hint" style="color:#d7e8da;text-align:center" id="handHint">Your cards appear here. In the pass, tap 3 cards to choose them, then tap Pass. In play, tap a card to play it. Cards work by tap alone — no hidden hold or swipe gestures to discover; every explanation lives in the Coach below.</p>
+  </div>
+
+  <div class="coach" id="coachBox">
+    <h3>🂡 Coach — tap a card, read why</h3>
+    <p id="coachText">Start a game and the Coach will explain the pass and each play, in the moment, at the level your Teaching dial is set to. Set the dial to Coach for the full reasoning, Hints for a nudge only, or Off to play unaided.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Scoreboard</h2>
+    <div class="scoregrid" id="scoreGrid"></div>
+    <div id="handScores" style="margin-top:12px"></div>
+    <h3 style="margin-top:14px">What just happened</h3>
+    <div class="log" id="log" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="panel" id="bots">
+  <h2>Your opponents — honestly different</h2>
+  <p>These three bots do <strong>not</strong> play the same way, and this page does not pretend otherwise. Their skill levels are stated plainly so you know what you beat — or what beat you.</p>
+  <div class="bots">
+    <div class="botcard"><h3>West · Pip — Learning</h3><p><strong>Skill: beginner.</strong> Pip passes almost at random and usually plays the lowest card that follows suit. Pip rarely ducks under a trick on purpose and often takes the queen by accident. Beat Pip by playing normally — Pip is here so a first game feels winnable while you learn.</p></div>
+    <div class="botcard"><h3>North · June — Casual</h3><p><strong>Skill: solid club player.</strong> June passes high spades and stray hearts, creates a void when she can, and ducks under tricks she does not want. June will dump the queen of spades on someone else given the chance, but does not plan three tricks ahead.</p></div>
+    <div class="botcard"><h3>East · Vera — Sharp</h3><p><strong>Skill: strong.</strong> Vera counts spades, protects herself with low spades when she holds the queen, voids a suit deliberately, saves a low heart to avoid leading hearts late, and will try to shoot the moon when her hand is genuinely strong enough. Vera is the test: if you finish ahead of Vera over a full game, you are playing Hearts well.</p></div>
+  </div>
+</section>
+
+<section class="panel" id="why">
+  <h2>The Full Why — how Hearts is actually won</h2>
+  <p>Hearts looks like a trick-taking game and is really a <em>point-avoidance</em> game. One hand holds exactly 26 points (13 hearts × 1, plus 13 for Q♠). Every decision below is about where those 26 points land.</p>
+  <div class="whygrid">
+    <article>
+      <p class="kicker">1 · Passing strategy</p>
+      <h3>What to pass, and why those three cards</h3>
+      <p><strong>Why:</strong> the pass is the only moment you choose your hand. You are doing three jobs at once: getting rid of danger, shortening a suit so you can void it, and — quietly — not handing the player next to you a weapon.</p>
+      <p><strong>The order of danger:</strong> (1) A♠ and K♠ when you hold few spades — if Q♠ falls while you play one of them, you take her. Pass them unless you hold four or more spades to hide behind. (2) Q♠ herself — pass her only if you hold three or fewer spades total; with four-plus spades, keep her, because A♠/K♠ are unlikely both to flush her out and you control when she falls. (3) High hearts (A♥, K♥, Q♥) — a high heart wins a heart trick and collects every heart in it. (4) Your shortest suit's highest cards — passing all your cards in a suit of two or three creates a void (see §2).</p>
+      <p><strong>What never to pass:</strong> low hearts (2♥–5♥). A low heart is an exit card — it lets you duck under a heart lead later. Passing your low hearts away leaves you holding only heart winners. Also be careful passing left early in the game versus passing to the player who is winning: standard practice is to pass your worst danger away from the leader, and some players deliberately pass low cards to the leader to spoil a moon attempt (see §5).</p>
+      <p><strong>Direction matters:</strong> passing left, you feed the player who plays after you; passing right, the player who plays before you — they see your cards' effect sooner. On the hold hand, the hand you were dealt is the hand you defend with, which is why hold hands produce the biggest scores.</p>
+    </article>
+    <article>
+      <p class="kicker">2 · Voiding suits</p>
+      <h3>An empty suit is a dumping ground</h3>
+      <p><strong>Why:</strong> when you cannot follow suit, you may play <em>any</em> card. That freedom is the most valuable thing in Hearts: it is how Q♠, A♥ and K♥ leave your hand without winning the trick they land in — someone else collects them.</p>
+      <p><strong>How:</strong> if you are dealt two clubs, pass both away (or pass one and play the other early) and you are void in clubs. From then on, every club lead is a chance to shed your worst card. Diamonds are the classic void target because they carry no points themselves. This is also why the opening 2♣ lead matters: watch who plays what on the first tricks — a player who sloughs (discards off-suit) early has just announced a void, and announced what they are dumping.</p>
+      <p><strong>The cost, honestly:</strong> voiding takes two or three of your pass cards, which may mean keeping A♠. A void in a suit you cannot also control can backfire late, when you are forced to <em>lead</em> and have only hearts and high cards left. Void one suit, keep an exit card in another.</p>
+    </article>
+    <article>
+      <p class="kicker">3 · Ducking</p>
+      <h3>Play under, not over</h3>
+      <p><strong>Why:</strong> only the highest card of the suit led takes the trick — and takes every point in it. If hearts or spades are led and you can play a card <em>below</em> the current high card, do: the points go to whoever ends highest, and that should not be you.</p>
+      <p><strong>How:</strong> following suit, play your highest card that still loses (“ducking under”), not your lowest. Playing your lowest keeps your high cards for later, when there may be no one left to hide behind and you will be forced over the top. The exception is the first trick: no points may be played on the 2♣ trick at all, so it is the one safe place to shed a high club.</p>
+      <p><strong>Spades are the special case:</strong> below Q♠, duck freely. If A♠ or K♠ has not yet been played and Q♠ is still out, playing a spade higher than Q♠ is safe only if Q♠ is already on the table — otherwise the player holding her will drop her on your A♠ or K♠ and the 13 points are yours.</p>
+    </article>
+    <article>
+      <p class="kicker">4 · The queen of spades</p>
+      <h3>Q♠ — the card the whole game orbits</h3>
+      <p>Thirteen points in one card — half of all the points in the hand. Hearts is, in large part, four people negotiating who gets stuck with her.</p>
+      <p><strong>If you hold her:</strong> count your spades in total, Q♠ included — the same count §1 uses. With three or fewer spades in total (Q♠ plus two or fewer others) you are exposed — try to pass her, or hope A♠/K♠ are led before spades are played three times. With four or more spades in total you are protected; keep her and drop her on someone else's A♠ or K♠ trick, or on an off-suit lead where she costs you nothing extra.</p>
+      <p><strong>If you do not hold her:</strong> count spades. Every spade played without her appearing raises the danger that she is coming on the next spade trick. If you hold A♠ or K♠ and few spades, you are the likely victim — strong players will lead low spades (“smoking out the queen”) precisely to force A♠/K♠ out while she is still held. Holding the A♠/K♠ with plenty of low spades underneath is safety; holding them bare is a target painted on you.</p>
+      <p><strong>Why she changes everything:</strong> without Q♠, Hearts would be a gentle game of small numbers. She creates the bluffing, the counting, and the schadenfreude — she is, as players have said for a century, the heart of Hearts.</p>
+    </article>
+    <article>
+      <p class="kicker">5 · Shooting the moon</p>
+      <h3>Taking all 26 points on purpose — risk priced honestly</h3>
+      <p><strong>What it is:</strong> take every heart <em>and</em> Q♠ in one hand and the hand inverts: either you subtract 26 from your own score, or you add 26 to everyone else's (this table uses <strong>add 26 to everyone else</strong>, the more common modern rule — it is stated here so there are no surprises). Some tables also count taking every trick; this table scores the classic points version: all 13 hearts plus Q♠.</p>
+      <p><strong>The honest price:</strong> a failed moon is the worst ordinary outcome in the game. If you collect 25 of the 26 points and one opponent takes a single 1-point heart, you score 25 — nearly a quarter of a 100-point game in one hand. Attempts fail most often on exactly that: one low heart escaping to a player who is watching for it. Any opponent who suspects a moon needs to take only <em>one</em> point card to stop you, and good players keep a low heart back for exactly that job.</p>
+      <p><strong>When the attempt is right:</strong> your hand can plausibly win almost every trick — long, high suits (for example six-plus hearts headed by A♥ K♥, or a long suit no one can beat once it is established), high cards in at least three suits, and ideally Q♠ already in your hand or spades controlled by A♠. Position helps: a moon is easier when the scores mean 26 added to the leader actually changes the game. <strong>When it is wrong:</strong> as a comeback gamble from a merely “pretty good” hand, or when a sharp opponent (Vera, at this table) is known to hold an unplayed low heart. The rule strong players use: decide by trick three. If you have taken points in every trick so far and still control the leads, press on; if a point has escaped, abandon the moon immediately and play to dump your remaining points on others.</p>
+    </article>
+  </div>
+</section>
+
+<section class="panel" id="rules">
+  <h2>Rules — the documented game, in full</h2>
+  <p>Hearts is a public-domain folk game; the rules below are the standard documented form played here, with this table's choices named where variants exist.</p>
+  <details><summary>Tap to open — Setup and the pass</summary>
+    <p>Four players, one standard 52-card deck, no jokers. Each player is dealt 13 cards. Before play, each player selects three cards and passes them face-down, simultaneously: first hand to the left, second to the right, third across, fourth no pass (“hold”), then the cycle repeats. This table's Passing setting can fix a direction or remove passing. No one may look at received cards until they have passed their own away.</p></details>
+  <details><summary>Tap to open — Trick play</summary>
+    <p>The holder of 2♣ leads it to the first trick. Play proceeds clockwise; each player must follow suit if able. The highest card of the suit led wins the trick and leads the next. There is no trump suit. No point cards (hearts or Q♠) may be played on the first trick. Hearts may not be led until a heart has been discarded on another trick (“hearts are broken”) — or, in the common variant this table follows, until the leader has only hearts left. Q♠ may be played whenever spades are led or the player is void in the suit led.</p></details>
+  <details><summary>Tap to open — Scoring and winning</summary>
+    <p>After 13 tricks: each heart taken scores 1 point, Q♠ scores 13. Points are bad. <strong>Shooting the moon:</strong> a player who takes all 13 hearts and Q♠ adds 26 points to every other player's score (this table's rule). Scores accumulate hand to hand; when any player reaches the target score (100 by default, changeable in Settings) the game ends and the <strong>lowest</strong> score wins. Tied lowest scores share the win.</p></details>
+  <details><summary>Tap to open — Variants this table does not use</summary>
+    <p>Named so nothing is hidden: the jack of diamonds −10 (“Omnibus”) bonus, the “no points on the first trick” rule being dropped, passing two cards in two-player forms, and the three-player (17 cards, 2♦ removed) and five-player (10 cards, 2♦ and 2♣ removed) adaptations. The game above is the standard four-player form.</p></details>
+</section>
+
+<section class="panel" id="record">
+  <h2>Your record — on this device, in this page</h2>
+  <p id="recordText">No games recorded yet in this visit. Your record is kept only in this page while it is open — nothing is sent anywhere, there is no account, and closing the page clears it. Use Export to keep a copy as a file, and Forget to wipe the record from this page immediately.</p>
+  <div class="scoregrid" id="recordGrid"></div>
+  <div class="actions" style="justify-content:flex-start;padding-top:10px">
+    <button id="exportBtn" type="button">Tap to export your record as a file</button>
+    <button id="forgetBtn" type="button">Tap to forget — wipe the record now</button>
+  </div>
+</section>
+
+<footer class="footer">
+  <p><strong>Copyleft.</strong> This page and its explanations are shared under CC BY-SA 4.0 — copy it, teach from it, build on it, keep it free. The game of Hearts itself is a public-domain folk game, older than any living copyright. No ads were placed on this page, and none ever will be.</p>
+  <p>Sources for the rules and strategy above: the standard documented rules of Hearts as recorded in Hoyle's rules of card games and the Pagat card-game archive's Hearts page (passing cycle, 2♣ lead, hearts-broken rule, moon scoring variants) — variants are named in the Rules section where this table had to choose.</p>
+</footer>
+</div>
+
+<script>
+"use strict";
+var SUITS=[{s:"S",sym:"♠",name:"spades",red:false},{s:"H",sym:"♥",name:"hearts",red:true},{s:"D",sym:"♦",name:"diamonds",red:true},{s:"C",sym:"♣",name:"clubs",red:false}];
+var RANKS=["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+function rv(r){return RANKS.indexOf(r)+2;}
+function mkDeck(){var d=[];SUITS.forEach(function(su){RANKS.forEach(function(r){d.push({suit:su.s,sym:su.sym,red:su.red,rank:r,val:rv(r),id:su.s+r});});});return d;}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function pts(c){if(c.suit==="H")return 1;if(c.id==="SQ")return 13;return 0;}
+function cardName(c){var names={S:"spades",H:"hearts",D:"diamonds",C:"clubs"};return c.rank+" of "+names[c.suit];}
+var PLAYERS=[{name:"You",bot:null},{name:"Pip",bot:"pip"},{name:"June",bot:"june"},{name:"Vera",bot:"vera"}];
+// seats: 0=You(S),1=Pip(W),2=June(N),3=Vera(E) clockwise order 0->1->2->3
+var G=null;
+var record={games:0,wins:0,hands:0,moons:0,queensTaken:0,bestHand:null};
+function el(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];});}
+function alias(){var v=el("alias").value.trim();return v||"You";}
+function passDirFor(handNum){
+  var mode=el("passSel").value;
+  if(mode==="none")return "none"; if(mode==="left")return "left"; if(mode==="right")return "right"; if(mode==="across")return "across";
+  var cyc=["left","right","across","none"]; return cyc[(handNum-1)%4];
+}
+function passTarget(from,dir){ if(dir==="left")return (from+1)%4; if(dir==="right")return (from+3)%4; if(dir==="across")return (from+2)%4; return from; }
+function logMsg(m){var l=el("log");var d=document.createElement("div");d.textContent=m;l.prepend(d);}
+function coach(m,force){
+  var mode=el("teachSel").value;
+  if(mode==="off"&&!force)return;
+  if(mode==="hints"&&!force){ el("coachText").textContent=m.length>140?m.slice(0,140)+"…":m; return; }
+  el("coachText").textContent=m;
+}
+function sortHand(h){var order={C:0,D:1,S:2,H:3};h.sort(function(a,b){if(order[a.suit]!==order[b.suit])return order[a.suit]-order[b.suit];return a.val-b.val;});return h;}
+
+function newGame(){
+  G={scores:[0,0,0,0],handNum:0,over:false,target:parseInt(el("targetSel").value,10),history:[]};
+  PLAYERS[0].name=alias();
+  logMsg("New game started. Target "+G.target+". Lowest score wins.");
+  dealHand();
+}
+function dealHand(){
+  if(!G){newGame();return;}
+  if(G.over){newGame();return;}
+  G.handNum++;
+  var deck=shuffle(mkDeck());
+  G.hands=[[],[],[],[]];
+  for(var i=0;i<52;i++)G.hands[i%4].push(deck[i]);
+  G.hands.forEach(sortHand);
+  G.taken=[[],[],[],[]];
+  G.heartsBroken=false; G.trick=[]; G.trickNum=1; G.selected=[];
+  G.dir=passDirFor(G.handNum);
+  G.phase=(G.dir==="none")?"play":"pass";
+  // leader: holder of 2C (after pass, recompute)
+  if(G.phase==="play"){startPlay();}
+  render();
+  if(G.phase==="pass"){
+    el("status").textContent="Hand "+G.handNum+" — Pass 3 cards "+(G.dir==="across"?"across":G.dir)+". Tap 3 of your cards, then tap Pass.";
+    coach(passAdvice());
+  } else {
+    el("status").textContent="Hand "+G.handNum+" — No passing this hand (hold). Play begins.";
+  }
+}
+function startPlay(){
+  for(var p=0;p<4;p++){if(G.hands[p].some(function(c){return c.id==="C2";}))G.leader=p;}
+  G.current=G.leader; G.trick=[];
+  advance();
+}
+function legalCards(p){
+  var hand=G.hands[p];
+  if(G.trick.length===0){
+    if(G.trickNum===1)return hand.filter(function(c){return c.id==="C2";});
+    var nonH=hand.filter(function(c){return c.suit!=="H";});
+    if(!G.heartsBroken&&nonH.length>0)return nonH;
+    return hand.slice();
+  }
+  var led=G.trick[0].card.suit;
+  var follow=hand.filter(function(c){return c.suit===led;});
+  var pool=follow.length>0?follow:hand.slice();
+  if(G.trickNum===1){var np=pool.filter(function(c){return pts(c)===0;}); if(np.length>0)return np;}
+  return pool;
+}
+/* ---------- Bot passing ---------- */
+function botPass(p){
+  var hand=G.hands[p].slice(); var kind=PLAYERS[p].bot; var picks=[];
+  function take(pred,n){for(var i=0;i<hand.length&&picks.length<n;i++){var c=hand[i];if(picks.indexOf(c)<0&&pred(c))picks.push(c);}}
+  if(kind==="pip"){ shuffle(hand); return hand.slice(0,3); }
+  var spades=hand.filter(function(c){return c.suit==="S";});
+  // danger spades
+  if(spades.length<=3){ take(function(c){return c.id==="SQ";},3); take(function(c){return c.id==="SA"||c.id==="SK";},3); }
+  else { take(function(c){return c.id==="SA"||c.id==="SK";},3); }
+  take(function(c){return c.suit==="H"&&c.val>=12;},3);
+  // void shortest suit
+  ["C","D","H","S"].forEach(function(s){
+    var inSuit=hand.filter(function(c){return c.suit===s;}).sort(function(a,b){return b.val-a.val;});
+    if(inSuit.length>0&&inSuit.length<=2){inSuit.forEach(function(c){if(picks.length<3&&picks.indexOf(c)<0)picks.push(c);});}
+  });
+  // then highest cards overall, avoiding low hearts
+  hand.slice().sort(function(a,b){return b.val-a.val;}).forEach(function(c){if(picks.length<3&&picks.indexOf(c)<0&&!(c.suit==="H"&&c.val<=5))picks.push(c);});
+  hand.forEach(function(c){if(picks.length<3&&picks.indexOf(c)<0)picks.push(c);});
+  return picks.slice(0,3);
+}
+function passAdvice(){
+  var hand=G.hands[0]; var spades=hand.filter(function(c){return c.suit==="S";});
+  var hasQ=hand.some(function(c){return c.id==="SQ";});
+  var bits=[];
+  if(hasQ&&spades.length<=3)bits.push("You hold Q♠ with only "+spades.length+" spade(s) — she is exposed. Passing her is the standard play here (see Why §4).");
+  if(hand.some(function(c){return c.id==="SA"||c.id==="SK";})&&spades.length<=3)bits.push("A♠/K♠ with few spades is a trap: if Q♠ falls on your trick you pay 13. Passing them is usually right with under four spades.");
+  var counts={};hand.forEach(function(c){counts[c.suit]=(counts[c.suit]||0)+1;});
+  ["C","D"].forEach(function(s){if(counts[s]&&counts[s]<=2)bits.push("You have only "+counts[s]+" card(s) in "+(s==="C"?"clubs":"diamonds")+" — passing them away creates a void, your dumping ground for Q♠ and high hearts (Why §2).");});
+  if(hand.some(function(c){return c.suit==="H"&&c.val>=12;}))bits.push("High hearts win heart tricks and collect every heart in them — a classic pass if nothing above applies.");
+  bits.push("Keep low hearts (2♥–5♥): they are exit cards that let you duck later. Tap 3 cards, then tap Pass.");
+  return "COACH — the pass: "+bits.join(" ");
+}
+function doPass(){
+  if(!G||G.phase!=="pass")return;
+  if(G.selected.length!==3){el("status").textContent="Choose exactly 3 cards to pass — you have "+G.selected.length+".";return;}
+  var outgoing=[[],[],[],[]];
+  outgoing[0]=G.selected.slice();
+  for(var p=1;p<4;p++)outgoing[p]=botPass(p);
+  var incoming=[[],[],[],[]];
+  for(var q=0;q<4;q++){var t=passTarget(q,G.dir); outgoing[q].forEach(function(c){incoming[t].push(c);});}
+  for(var r=0;r<4;r++){
+    G.hands[r]=G.hands[r].filter(function(c){return outgoing[r].indexOf(c)<0;}).concat(incoming[r]);
+    sortHand(G.hands[r]);
+  }
+  var names=["you","Pip","June","Vera"];
+  logMsg("Hand "+G.handNum+": cards passed "+G.dir+". You gave: "+outgoing[0].map(cardName).join(", ")+".");
+  coach("Pass done. Notice what arrived: a short suit getting shorter is good news, a bare A♠ or K♠ arriving is a warning. The 2♣ holder leads first; no points can fall on trick 1, so it is the safe place to shed a high club.",true);
+  G.phase="play"; G.selected=[];
+  startPlay(); render();
+}
+/* ---------- Bot play ---------- */
+function botPlay(p){
+  var legal=legalCards(p); var kind=PLAYERS[p].bot;
+  var led=G.trick.length>0?G.trick[0].card.suit:null;
+  var curHigh=G.trick.length>0?Math.max.apply(null,G.trick.filter(function(t){return t.card.suit===led;}).map(function(t){return t.card.val;})):-1;
+  var trickHasQ=G.trick.some(function(t){return t.card.id==="SQ";});
+  var sorted=legal.slice().sort(function(a,b){return a.val-b.val;});
+  if(kind==="pip"){
+    if(G.trick.length===0)return sorted[0];
+    return sorted[0];
+  }
+  // june + vera shared core, vera adds counting
+  if(G.trick.length===0){
+    // lead lowest non-heart; vera leads low spade to smoke queen if she lacks it
+    var nonH=sorted.filter(function(c){return c.suit!=="H";});
+    var pool=nonH.length?nonH:sorted;
+    if(kind==="vera"){
+      var sp=pool.filter(function(c){return c.suit==="S"&&c.val<12;});
+      var hasQ=G.hands[p].some(function(c){return c.id==="SQ";});
+      if(sp.length&&!hasQ)return sp[0];
+    }
+    return pool[0];
+  }
+  var follow=legal.filter(function(c){return c.suit===led;});
+  if(follow.length>0){
+    if(led==="S"&&!trickHasQ){
+      var qOut = !allPlayedOrHeld(p,"SQ");
+      var underQ=follow.filter(function(c){return c.val<12;}).sort(function(a,b){return b.val-a.val;});
+      var overQ=follow.filter(function(c){return c.val>12;});
+      if(overQ.length&&qOut&&kind==="vera")return underQ.length?underQ[0]:follow.sort(function(a,b){return a.val-b.val;})[0];
+    }
+    var under=follow.filter(function(c){return c.val<curHigh;}).sort(function(a,b){return b.val-a.val;});
+    if(under.length)return under[0]; // duck with highest loser
+    // forced over: play lowest winner, unless Q in trick and we can dump high spade
+    return follow.sort(function(a,b){return a.val-b.val;})[0];
+  }
+  // void: dump Q, then A/K spades, then high hearts
+  var pref=["SQ","SA","SK","HA","HK","HQ"];
+  for(var i=0;i<pref.length;i++){var f=legal.filter(function(c){return c.id===pref[i];});if(f.length)return f[0];}
+  return legal.slice().sort(function(a,b){return (pts(b)-pts(a))||(b.val-a.val);})[0];
+}
+function allPlayedOrHeld(p,id){
+  // true if card is in p's hand or already taken/played (i.e. location known)
+  if(G.hands[p].some(function(c){return c.id===id;}))return true;
+  for(var q=0;q<4;q++){if(G.taken[q].some(function(c){return c.id===id;}))return true;}
+  if(G.trick.some(function(t){return t.card.id===id;}))return true;
+  return false;
+}
+function playCard(p,card){
+  G.hands[p]=G.hands[p].filter(function(c){return c.id!==card.id;});
+  G.trick.push({player:p,card:card});
+  if(card.suit==="H")G.heartsBroken=true;
+  render();
+  if(G.trick.length===4){ setTimeout(finishTrick,900); return; }
+  G.current=(p+1)%4;
+  advance();
+}
+function finishTrick(){
+  var led=G.trick[0].card.suit; var win=G.trick[0];
+  G.trick.forEach(function(t){if(t.card.suit===led&&t.card.val>win.card.val)win=t;});
+  var gained=G.trick.reduce(function(s,t){return s+pts(t.card);},0);
+  G.trick.forEach(function(t){G.taken[win.player].push(t.card);});
+  var wname=win.player===0?alias():PLAYERS[win.player].name;
+  logMsg("Trick "+G.trickNum+": "+wname+" takes it"+(gained>0?" — +"+gained+" point"+(gained>1?"s":""):" (no points)")+"."+(G.trick.some(function(t){return t.card.id==="SQ";})?" That trick carried Q♠ (13).":""));
+  if(win.player===0&&gained>0)coach("You took "+gained+" point(s) that trick. Coach note: when following suit, play your highest card that still loses — saving high cards for later is how players get forced over the top at the end (Why §3, ducking).");
+  G.trick=[]; G.trickNum++; G.leader=win.player; G.current=win.player;
+  if(G.trickNum>13){endHand();return;}
+  render(); advance();
+}
+function advance(){
+  render();
+  if(!G||G.phase!=="play"||G.trick.length>=4)return;
+  if(G.current===0){
+    el("status").textContent=(G.trick.length===0?"Your lead — ":"Your turn — ")+"tap a highlighted card to play it. Hand "+G.handNum+", trick "+G.trickNum+".";
+    coach(playAdvice(),false);
+  } else {
+    el("status").textContent=PLAYERS[G.current].name+" is thinking…";
+    var p=G.current; setTimeout(function(){ if(G&&G.phase==="play"&&G.current===p){ playCard(p,botPlay(p)); } },650);
+  }
+}
+function playAdvice(){
+  var legal=legalCards(0); if(!legal.length)return "";
+  var led=G.trick.length>0?G.trick[0].card.suit:null;
+  if(!led)return "COACH — your lead: lead low from a long, safe suit. Do not lead hearts until they are broken, and leading a low spade is how players smoke out Q♠ — only do it if your own spades are safe.";
+  var follow=legal.filter(function(c){return c.suit===led;});
+  if(follow.length){
+    var curHigh=Math.max.apply(null,G.trick.filter(function(t){return t.card.suit===led;}).map(function(t){return t.card.val;}));
+    var under=follow.filter(function(c){return c.val<curHigh;});
+    if(under.length)return "COACH: you can duck this trick. Play your highest card below "+curHigh+" — it loses on purpose, and the points in this trick go to someone else (Why §3).";
+    return "COACH: you cannot duck — every card you hold in the led suit wins. Play your lowest winner and save the rest; if this trick already holds points, they are coming with you.";
+  }
+  if(legal.some(function(c){return c.id==="SQ";}))return "COACH: you are void in the led suit — this is your moment. Dumping Q♠ here costs you nothing extra; she lands in someone else's trick (Why §2 and §4).";
+  return "COACH: you are void in the led suit. Shed your most dangerous card — A♠/K♠ while Q♠ is still out, or your highest heart.";
+}
+function endHand(){
+  var handPts=[0,1,2,3].map(function(p){return G.taken[p].reduce(function(s,c){return s+pts(c);},0);});
+  var moon=-1; for(var p=0;p<4;p++)if(handPts[p]===26)moon=p;
+  var shown=handPts.slice();
+  if(moon>=0){
+    for(var q=0;q<4;q++)shown[q]=(q===moon?0:26);
+    var mname=moon===0?alias():PLAYERS[moon].name;
+    logMsg("★ "+mname+" SHOT THE MOON — all 26 points. Everyone else +26.");
+    record.moons+= (moon===0?1:0);
+  }
+  for(var r=0;r<4;r++)G.scores[r]+=shown[r];
+  G.history.push(shown);
+  record.hands++;
+  if(G.taken[0].some(function(c){return c.id==="SQ";}))record.queensTaken++;
+  var best=shown[0]; if(record.bestHand===null||best<record.bestHand)record.bestHand=best;
+  G.phase="handOver";
+  el("status").textContent="Hand "+G.handNum+" complete. "+(moon>=0?"Moon shot! ":"")+"This hand — You: "+shown[0]+", Pip: "+shown[1]+", June: "+shown[2]+", Vera: "+shown[3]+".";
+  coach(moon===0?"You shot the moon — every point card in the hand. That only works with total control; see Why §5 for how close the failure case is.":(shown[0]>=13?"A heavy hand. Review the pass you made and the trick where the points landed — most big scores are decided in the pass and the first spade trick.":"Hand over. Tap “Deal the next hand” to continue — the passing direction cycles each hand."),true);
+  var over=G.scores.some(function(s){return s>=G.target;});
+  if(over){
+    var min=Math.min.apply(null,G.scores); var winners=[];
+    G.scores.forEach(function(s,i){if(s===min)winners.push(i===0?alias():PLAYERS[i].name);});
+    G.over=true; record.games++; if(winners.indexOf(alias())>=0||G.scores[0]===min)record.wins++;
+    el("status").textContent="Game over — "+winners.join(" and ")+" win"+(winners.length>1?"":"s")+" with "+min+" points (target "+G.target+" reached). Tap “Start a new game” to play again.";
+    logMsg("Game over. Final: You "+G.scores[0]+", Pip "+G.scores[1]+", June "+G.scores[2]+", Vera "+G.scores[3]+". Winner: "+winners.join(", ")+".");
+  }
+  render(); renderRecord();
+}
+function cardHTML(c,small){
+  return '<span class="pcard'+(c.red?" red":"")+(small?" small":"")+'"><span>'+c.rank+'</span><span>'+c.sym+'</span></span>';
+}
+function render(){
+  if(!G){renderScores();return;}
+  PLAYERS[0].name=alias();
+  var names=["You","Pip","June","Vera"];
+  var seatIds=["seatS","seatW","seatN","seatE"]; var seatP=[0,1,2,3];
+  // seat order in DOM: W,N,E,S -> players 1,2,3,0
+  var dom=[["seatW",1],["seatN",2],["seatE",3],["seatS",0]];
+  dom.forEach(function(pair){
+    var e=el(pair[0]); var p=pair[1];
+    e.textContent=(p===0?"South · "+alias():(p===1?"West · Pip":p===2?"North · June":"East · Vera"))+" · "+G.hands[p].length+" cards · "+G.scores[p]+" pts";
+    e.classList.toggle("turn",G.phase==="play"&&G.current===p);
+  });
+  // trick
+  var t=el("trick"); t.innerHTML="";
+  if(G.trick.length===0){t.innerHTML='<span style="color:#cfe3d2">The trick appears here — highest card of the suit led takes it.</span>';}
+  G.trick.forEach(function(tr){
+    var d=document.createElement("div"); d.className="trickslot";
+    d.innerHTML=cardHTML(tr.card)+( "<div>"+esc(tr.player===0?alias():PLAYERS[tr.player].name)+"</div>");
+    t.appendChild(d);
+  });
+  // hand
+  var h=el("hand"); h.innerHTML="";
+  var legal0=(G.phase==="play"&&G.current===0)?legalCards(0):[];
+  var suggestion=null;
+  if(el("teachSel").value!=="off"&&G.phase==="play"&&G.current===0&&legal0.length){ suggestion=botPlayHint(); }
+  if(el("teachSel").value!=="off"&&G.phase==="pass"){ }
+  G.hands[0].forEach(function(c){
+    var b=document.createElement("button"); b.type="button"; b.className="cardbtn";
+    b.setAttribute("aria-label",cardName(c)+(pts(c)===1?", worth 1 point":pts(c)>0?", worth "+pts(c)+" points":""));
+    b.innerHTML=cardHTML(c);
+    if(G.phase==="pass"&&G.selected.indexOf(c)>=0)b.classList.add("sel");
+    if(suggestion&&suggestion.id===c.id)b.classList.add("suggest");
+    if(G.phase==="play"&&G.current===0&&legal0.indexOf(c)<0)b.disabled=true;
+    b.addEventListener("click",function(){onCardTap(c);});
+    h.appendChild(b);
+  });
+  el("passBtn").disabled=!(G.phase==="pass");
+  el("passBtn").textContent=G.phase==="pass"?("Tap to pass 3 cards ("+G.selected.length+"/3 chosen)"):"Tap to pass 3 cards";
+  renderScores();
+}
+function botPlayHint(){
+  // use june-level logic as the hint engine
+  var save=PLAYERS[0].bot; PLAYERS[0].bot="june";
+  var c=botPlay(0); PLAYERS[0].bot=save; return c;
+}
+function onCardTap(c){
+  if(!G)return;
+  if(G.phase==="pass"){
+    var i=G.selected.indexOf(c);
+    if(i>=0)G.selected.splice(i,1);
+    else{ if(G.selected.length>=3){el("status").textContent="You already have 3 chosen — tap a chosen card to unchoose it.";return;} G.selected.push(c); }
+    render(); return;
+  }
+  if(G.phase==="play"&&G.current===0){
+    var legal=legalCards(0);
+    if(legal.indexOf(c)<0){el("status").textContent="You must follow suit if you can — that card is not playable right now.";return;}
+    playCard(0,c);
+  }
+}
+function renderScores(){
+  var g=el("scoreGrid"); var names=[alias(),"Pip","June","Vera"];
+  var scores=G?G.scores:[0,0,0,0];
+  g.innerHTML=names.map(function(n,i){return '<div class="scorebox"><div>'+esc(n)+'</div><div class="big">'+scores[i]+'</div><div class="hint">points (lower is better)</div></div>';}).join("");
+  var hs=el("handScores");
+  if(G&&G.history.length){
+    var rows=G.history.map(function(h,i){return "<tr><td>Hand "+(i+1)+"</td><td>"+h[0]+"</td><td>"+h[1]+"</td><td>"+h[2]+"</td><td>"+h[3]+"</td></tr>";}).join("");
+    hs.innerHTML='<table class="scores"><tr><th>Hand</th><th>'+esc(alias())+'</th><th>Pip</th><th>June</th><th>Vera</th></tr>'+rows+"</table>";
+  } else hs.innerHTML='<p class="hint">Hand-by-hand scores appear here after the first hand.</p>';
+}
+function renderRecord(){
+  var g=el("recordGrid");
+  g.innerHTML=[["Games finished",record.games],["Games won (lowest score)",record.wins],["Hands played",record.hands],["Moons you shot",record.moons],["Times you took Q♠",record.queensTaken],["Your best (lowest) hand",record.bestHand===null?"—":record.bestHand]]
+    .map(function(x){return '<div class="scorebox"><div>'+x[0]+'</div><div class="big">'+x[1]+'</div></div>';}).join("");
+  if(record.hands>0)el("recordText").textContent="Your record for this visit is below. It lives only in this page while it is open — nothing is sent anywhere and there is no account. Export keeps a copy as a file; Forget wipes it from this page immediately.";
+}
+el("newGameBtn").addEventListener("click",newGame);
+el("newHandBtn").addEventListener("click",function(){ if(!G){newGame();return;} if(G.phase==="handOver"||G.over){ if(G.over){newGame();} else dealHand(); } else { el("status").textContent="Finish the current hand first — or tap “Start a new game” to abandon it and restart."; } });
+el("passBtn").addEventListener("click",doPass);
+el("hintBtn").addEventListener("click",function(){
+  if(!G){coach("Start a game first — then the hint button will name a card and say why.",true);return;}
+  if(G.phase==="pass"){coach(passAdvice(),true);return;}
+  if(G.phase==="play"&&G.current===0){var s=botPlayHint();coach("HINT: try the "+cardName(s)+". "+playAdvice(),true);return;}
+  coach("Hints land on your turn — wait for the bots to play, then tap Hint again.",true);
+});
+el("alias").addEventListener("change",function(){PLAYERS[0].name=alias();render();renderRecord();});
+el("dlBtn").addEventListener("click",function(){
+  var blob=new Blob(["<!doctype html>\n"+document.documentElement.outerHTML],{type:"text/html"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="hearts.html"; a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+el("exportBtn").addEventListener("click",function(){
+  var txt="HEARTS — MY RECORD\nGames finished: "+record.games+"\nGames won: "+record.wins+"\nHands played: "+record.hands+"\nMoons shot: "+record.moons+"\nTimes took Q♠: "+record.queensTaken+"\nBest hand: "+(record.bestHand===null?"—":record.bestHand)+"\n";
+  var blob=new Blob([txt],{type:"text/plain"}); var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="hearts-record.txt"; a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+});
+el("forgetBtn").addEventListener("click",function(){
+  record={games:0,wins:0,hands:0,moons:0,queensTaken:0,bestHand:null};
+  el("recordText").textContent="Record wiped. Nothing is kept — play a hand and a fresh record starts, in this page only.";
+  renderRecord();
+});
+render(); renderRecord();
+</script>
+</body>
+</html>
