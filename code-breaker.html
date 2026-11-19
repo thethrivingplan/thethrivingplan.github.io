@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Code Breaker</title>
+<style>
+  :root{
+    --bg:#e9ebe6; --panel:#ffffff; --panel2:#f4f5f1; --ink:#1b2220; --ink2:#4a5550;
+    --line:#c9cdc2; --accent:#a63d14; --accent-ink:#ffffff; --good:#1e6b3a; --bad:#b3261e;
+    --board:#232a28; --board-ink:#eef1ec; --hole:#39423e; --shadow:0 2px 10px rgba(20,30,25,.12);
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161a; --panel:#1d2327; --panel2:#252c30; --ink:#edf0ec; --ink2:#a9b4ae;
+      --line:#3a4348; --accent:#e8934a; --accent-ink:#1d130a; --good:#7bc98f; --bad:#ff9d94;
+      --board:#0d1113; --board-ink:#eef1ec; --hole:#2b3338; --shadow:0 2px 10px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+  h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.15;margin:0}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    border-radius:var(--radius);padding:.5rem .9rem;font-weight:600}
+  button:hover{border-color:var(--ink2)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button.ghost{background:transparent}
+  button.small{padding:.35rem .7rem;font-size:.9rem}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 64px}
+  .freeline{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+    background:var(--ink);color:var(--bg);padding:10px 16px;font-size:.95rem}
+  .freeline strong{letter-spacing:.02em}
+  .freeline button{background:transparent;color:inherit;border-color:currentColor}
+  header.hero{padding:28px 0 8px}
+  header.hero h1{font-size:clamp(2.2rem,6vw,3.4rem);font-weight:700}
+  header.hero p.lede{font-size:1.12rem;max-width:44em;color:var(--ink2);margin:.6em 0 0}
+  header.hero p.homage{font-size:.92rem;max-width:44em;color:var(--ink2);margin:.5em 0 0;font-style:italic}
+  nav.compass{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 4px}
+  nav.compass a{display:inline-flex;align-items:center;min-height:2.25rem;padding:.4rem .9rem;
+    border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;
+    background:var(--panel);font-weight:600;font-size:.95rem}
+  nav.compass a .dir{color:var(--accent);margin-right:.45em;font-family:Georgia,serif}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+  @media (min-width:920px){ .grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr)} }
+  section.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px;box-shadow:var(--shadow)}
+  section.card h2{font-size:1.35rem;margin-bottom:.35em}
+  section.card h3{font-size:1.05rem;margin:.9em 0 .3em}
+  .sub{color:var(--ink2);font-size:.93rem;margin:.2em 0 .8em}
+  .gesture{display:block;font-size:.72rem;font-weight:500;color:var(--ink2);letter-spacing:.02em;margin-top:2px}
+  .primary .gesture{color:inherit;opacity:.85}
+  /* mode tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  /* settings rows */
+  .setrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 0;border-top:1px dashed var(--line)}
+  .setrow:first-of-type{border-top:none}
+  .setrow .lab{flex:1 1 150px;font-weight:700}
+  .setrow .lab small{display:block;font-weight:400;color:var(--ink2)}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepper button{width:44px;height:44px;font-size:1.2rem;padding:0}
+  .stepper .val{min-width:5.5em;text-align:center;font-weight:700}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .presets{display:flex;flex-wrap:wrap;gap:8px}
+  input[type="text"]{font:inherit;padding:.5rem .7rem;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--panel);color:var(--ink);width:100%;max-width:260px}
+  /* board */
+  .board{background:var(--board);color:var(--board-ink);border-radius:12px;padding:14px;margin-top:10px}
+  .board .empty-note{color:#b9c2bb;font-size:.95rem;padding:8px 2px}
+  .grow-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08);flex-wrap:wrap}
+  .grow-row:last-child{border-bottom:none}
+  .gnum{font-family:Georgia,serif;width:1.6em;text-align:right;color:#9fb0a4;font-size:.95rem}
+  .pegs{display:flex;gap:6px;flex-wrap:wrap}
+  .peg{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:.95rem;border:2px solid rgba(0,0,0,.35);color:#fff;flex:none;
+    box-shadow:inset 0 -3px 6px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.35)}
+  .peg.hole{background:var(--hole);border-color:rgba(255,255,255,.14);color:#8b978e;box-shadow:inset 0 2px 5px rgba(0,0,0,.5);font-weight:400}
+  .peg.dark-text{color:#221a04}
+  .fb{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .fbpegs{display:grid;grid-template-columns:repeat(3,14px);gap:4px}
+  .fbp{width:14px;height:14px;border-radius:50%;background:#4a554f}
+  .fbp.exact{background:#111;border:2px solid #d8dcd2}
+  .fbp.near{background:#f2f2ec;border:2px solid #111}
+  .fbtext{font-size:.85rem;color:#cfd6cd;min-width:8.5em}
+  /* builder */
+  .builder{margin-top:14px}
+  .slots{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .slot{width:52px;height:52px;border-radius:50%;padding:0;border:2px dashed var(--line);background:var(--panel2);
+    display:inline-flex;align-items:center;justify-content:center}
+  .slot .peg{width:44px;height:44px}
+  .slot.filled{border-style:solid;border-color:transparent;background:transparent}
+  .palette{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .pal{width:52px;height:52px;border-radius:50%;padding:0;border:2px solid rgba(0,0,0,.3);
+    display:inline-flex;align-items:center;justify-content:center;background:transparent}
+  .pal .peg{width:44px;height:44px;pointer-events:none}
+  .palname{font-size:.8rem;color:var(--ink2)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .banner{border-radius:var(--radius);padding:12px 14px;margin-top:12px;font-weight:600;display:none}
+  .banner.show{display:block}
+  .banner.win{background:var(--good);color:#fff}
+  .banner.lose{background:var(--bad);color:#fff}
+  .banner.aid{background:transparent;border:2px dashed var(--accent);color:var(--ink);font-weight:600}
+  @media (prefers-color-scheme: dark){ .banner.win{color:#0d1f13} .banner.lose{color:#2b0d0a} }
+  /* helper + teaching */
+  .meter{height:12px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .meter > div{height:100%;background:var(--accent);width:100%;transition:width .5s ease}
+  .bigstat{font-family:Georgia,serif;font-size:2rem;line-height:1.1}
+  .samples{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:300px;overflow:auto}
+  .sample{display:flex;gap:5px;align-items:center}
+  .sample .peg{width:24px;height:24px;font-size:.7rem;border-width:1px}
+  .teach{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-top:10px}
+  .teach p{margin:.35em 0}
+  .teach .why{font-weight:700}
+  details{border-top:1px solid var(--line);padding:10px 0}
+  details summary{cursor:pointer;font-weight:700;min-height:2.25rem;display:flex;align-items:center}
+  details p, details li{color:var(--ink2)}
+  /* record */
+  .recitem{border-top:1px dashed var(--line);padding:8px 0;font-size:.95rem}
+  .recitem:first-of-type{border-top:none}
+  .tag{display:inline-block;border:1px solid var(--accent);color:var(--accent);border-radius:999px;
+    padding:0 .55em;font-size:.78rem;font-weight:700;margin-left:.4em;vertical-align:middle}
+  footer{margin-top:28px;color:var(--ink2);font-size:.9rem;border-top:1px solid var(--line);padding-top:14px}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:10px;max-width:min(92vw,480px);
+    font-size:.95rem;pointer-events:none;transition:opacity .25s, transform .25s;z-index:50;box-shadow:var(--shadow)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .botlog p{margin:.4em 0}
+  .hidden{display:none !important}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;scroll-behavior:auto !important} }
+</style>
+</head>
+<body>
+
+<div class="freeline">
+  <span><strong>Free — always free.</strong> No ads, no account, no paywall. Your record stays on this device, in this tab.</span>
+  <button id="btnDownload" type="button" data-explain="Downloads a copy of this whole page as one file. Save it and it plays offline, with no connection at all.">Download for offline play<span class="gesture">Tap to download</span></button>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <h1>Code Breaker</h1>
+    <p class="lede">A hidden code of coloured pegs. You guess; the board answers with two plain facts — how many pegs are exactly right, and how many are the right colour in the wrong place. From those two numbers, logic alone can corner the code. This page teaches that logic while you play.</p>
+    <p class="homage">An homage to the classic code-deduction games — the peg-and-feedback shape documented and loved for decades, including the game known as Mastermind. The name, artwork, and peg designs here are our own; we borrow the idea because it works, and we say so.</p>
+  </header>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#play"><span class="dir">N</span>Play</a>
+    <a href="#settings"><span class="dir">E</span>Settings</a>
+    <a href="#learn"><span class="dir">S</span>Learn the logic</a>
+    <a href="#record"><span class="dir">W</span>Your record</a>
+  </nav>
+
+  <div class="grid">
+    <div>
+      <section class="card" id="play">
+        <h2>Play</h2>
+        <div class="tabs" role="tablist" aria-label="Game mode">
+          <button type="button" id="tabBreaker" role="tab" aria-selected="true" data-explain="Breaker mode: the page hides a code and you crack it, guess by guess.">You break the code<span class="gesture">Tap to choose</span></button>
+          <button type="button" id="tabSetter" role="tab" aria-selected="false" data-explain="Setter mode: you hide a code and the bot cracks it, explaining every step of its reasoning out loud.">You set it — the bot breaks it<span class="gesture">Tap to choose</span></button>
+        </div>
+
+        <!-- BREAKER MODE -->
+        <div id="breakerArea">
+          <p class="sub" id="breakerStatus">A code is hidden. Build a guess below.</p>
+          <div class="board" id="board" aria-live="polite"><p class="empty-note">No guesses yet. Your guesses and their feedback will line up here.</p></div>
+          <div class="banner" id="breakerBanner" role="status"></div>
+
+          <div class="builder">
+            <h3>Build your guess</h3>
+            <p class="sub">Tap a colour to fill the next empty slot. Tap a filled slot to empty it.</p>
+            <div class="slots" id="guessSlots"></div>
+            <div class="palette" id="palette"></div>
+            <div class="actions">
+              <button type="button" id="btnSubmit" class="primary" data-explain="Hands your guess to the board. You get back two numbers: exact hits and right-colour-wrong-place hits.">Submit guess<span class="gesture">Tap to submit</span></button>
+              <button type="button" id="btnClearGuess" data-explain="Empties the guess you are building. Guesses already submitted stay on the board.">Clear<span class="gesture">Tap to clear</span></button>
+              <button type="button" id="btnNewBreaker" data-explain="Starts a fresh game with a new hidden code, using the current settings.">New code<span class="gesture">Tap for a new game</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTER MODE -->
+        <div id="setterArea" class="hidden">
+          <p class="sub">Set a secret code, then watch the bot crack it using exactly the logic this page teaches — it will explain each move before it makes it. The bot only ever uses the same two feedback numbers you get.</p>
+          <h3>Your secret code</h3>
+          <div class="slots" id="setterSlots"></div>
+          <div class="palette" id="setterPalette"></div>
+          <div class="actions">
+            <button type="button" id="btnBotStart" class="primary" data-explain="Locks in your secret code and lets the bot take its first guess.">Lock it in — bot starts<span class="gesture">Tap to start the bot</span></button>
+            <button type="button" id="btnBotStep" disabled data-explain="The bot makes exactly one guess, with its reasoning written out.">Bot: one guess<span class="gesture">Tap for one guess</span></button>
+            <button type="button" id="btnBotAuto" disabled data-explain="The bot keeps guessing, one every couple of seconds, until it cracks your code or runs out of possibilities.">Bot: play it out<span class="gesture">Tap to auto-play</span></button>
+            <button type="button" id="btnSetterReset" data-explain="Clears the secret and the bot's board so you can set a new code.">Reset<span class="gesture">Tap to reset</span></button>
+          </div>
+          <div class="board" id="botBoard"><p class="empty-note">The bot's guesses will appear here.</p></div>
+          <div class="banner" id="setterBanner" role="status"></div>
+          <div class="botlog" id="botLog" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="card" id="learn">
+        <h2>Learn the logic</h2>
+        <p class="sub">Three ideas do all the work. Everything the helper and the bot do is built from these — nothing else.</p>
+        <details open>
+          <summary>1 · What a guess can prove — tap to open or close</summary>
+          <p>A guess is not really a try at winning. It is a question. The feedback is the answer, and the answer is a fact that stays true for the rest of the game. If a guess scores <strong>0 exact and 0 near</strong>, every colour in it is proven absent — the code contains none of them, anywhere. If it scores high, some of those colours are proven present. Each guess either shrinks the truth or sharpens it; a "wrong" guess is never wasted.</p>
+        </details>
+        <details>
+          <summary>2 · The consistent set — tap to open or close</summary>
+          <p>Picture every code that could possibly be the hidden one. At the start that is a big crowd — with 4 pegs and 6 colours allowing repeats, 6 × 6 × 6 × 6 = 1,296 codes. After each guess, cross out every code that <em>would not have given the feedback you actually got</em>. What remains is the <strong>consistent set</strong>: the codes still possible. The hidden code is always inside it. When one code remains, you have not guessed the answer — you have <em>proven</em> it. Good play is choosing guesses that cross out the most, whichever way the feedback falls.</p>
+        </details>
+        <details>
+          <summary>3 · Information per guess — tap to open or close</summary>
+          <p>When the consistent set shrinks from, say, 256 codes to 32, that guess earned you 3 "bits" of information — it cut the possibilities to an eighth (256 → 128 → 64 → 32 is three halvings). This page counts the bits for every guess when the Teaching dial is up. A guess that can only shrink the set a little is a weak question, even if it happens to score well. Strong players ask strong questions.</p>
+        </details>
+        <details>
+          <summary>How feedback is scored — tap to open or close</summary>
+          <p><strong>Exact</strong> (black peg): right colour, right place. <strong>Near</strong> (white peg): right colour, wrong place. Each peg in the secret can be matched only once, and exact matches are counted first — so duplicates are handled fairly: if the code holds one Ruby and your guess holds two, at most one of them can score. Feedback pegs are shown in no particular order, so they never tell you <em>which</em> pegs scored. That silence is the puzzle.</p>
+        </details>
+      </section>
+    </div>
+
+    <div>
+      <section class="card" id="settings">
+        <h2>Settings — the rules are yours</h2>
+        <p class="sub">Changing a rule starts a fresh game. There is no "real" way to play; there is the way you set.</p>
+
+        <div class="setrow">
+          <span class="lab">Your name <small>Any name you like — an alias is fine. It only labels your record, on this device.</small></span>
+          <input type="text" id="alias" maxlength="24" placeholder="e.g. Captain Logic" autocomplete="off" />
+        </div>
+
+        <div class="setrow">
+          <span class="lab">Code length <small>How many pegs in the hidden code.</small></span>
+          <div class="stepper">
+            <button type="button" id="lenMinus" aria-label="Shorter code">−</button>
+            <span class="val" id="lenVal">4 pegs</span>
+            <button type="button" id="lenPlus" aria-label="Longer code">+</button>
+          </div>
+        </div>
+
+        <div class="setrow">
+          <span class="lab">Colours <small>How many colours the code is drawn from.</small></span>
+          <div class="stepper">
+            <button type="button" id="colMinus" aria-label="Fewer colours">−</button>
+            <span class="val" id="colVal">6 colours</span>
+            <button type="button" id="colPlus" aria-label="More colours">+</button>
+          </div>
+        </div>
+
+        <div class="setrow">
+          <span class="lab">Repeated colours <small>Can one colour appear more than once in the code?</small></span>
+          <div class="seg" role="group" aria-label="Repeated colours">
+            <button type="button" id="dupYes" aria-pressed="true">Allowed<span class="gesture">Tap to allow</span></button>
+            <button type="button" id="dupNo" aria-pressed="false">Not allowed<span class="gesture">Tap to forbid</span></button>
+          </div>
+        </div>
+
+        <div class="setrow">
+          <span class="lab">Difficulty ramp <small>Presets that grow the puzzle. Climb when a level feels easy.</small></span>
+          <div class="presets">
+            <button type="button" class="small" data-preset="starter">Starter · 3 pegs, 4 colours<span class="gesture">Tap to load</span></button>
+            <button type="button" class="small" data-preset="standard">Standard · 4 pegs, 6 colours<span class="gesture">Tap to load</span></button>
+            <button type="button" class="small" data-preset="challenge">Challenge · 5 pegs, 7 colours<span class="gesture">Tap to load</span></button>
+            <button type="button" class="small" data-preset="master">Master · 6 pegs, 8 colours<span class="gesture">Tap to load</span></button>
+          </div>
+        </div>
+
+        <div class="setrow">
+          <span class="lab">Teaching dial <small>How much logic the page explains as you play.</small></span>
+          <div class="seg" role="group" aria-label="Teaching dial">
+            <button type="button" data-teach="0" aria-pressed="false">Off<span class="gesture">Tap to choose</span></button>
+            <button type="button" data-teach="1" aria-pressed="true">Hints<span class="gesture">Tap to choose</span></button>
+            <button type="button" data-teach="2" aria-pressed="false">Full lesson<span class="gesture">Tap to choose</span></button>
+          </div>
+        </div>
+
+        <div class="setrow">
+          <span class="lab">Deduction helper <small>A learning aid. It shows the consistent set — every code still possible. Games played with it on are labelled as learning-aid games in your record.</small></span>
+          <div class="seg" role="group" aria-label="Deduction helper">
+            <button type="button" id="helpOff" aria-pressed="true">Helper off<span class="gesture">Tap to turn off</span></button>
+            <button type="button" id="helpOn" aria-pressed="false">Helper on<span class="gesture">Tap to turn on</span></button>
+          </div>
+        </div>
+        <p class="sub">Hold any control (or hover with a mouse) and it will explain itself. Every button also says its tap in small print.</p>
+      </section>
+
+      <section class="card" id="helperCard">
+        <h2>Deduction helper</h2>
+        <p class="sub">A learning aid — not part of the contest. It counts and shows the consistent set: every code that could still be the hidden one, given all feedback so far.</p>
+        <div id="helperBody">
+          <p class="sub" id="helperOffNote">The helper is off. Turn it on in Settings whenever you want to see the logic laid out — there is no penalty, only the label in your record.</p>
+          <div id="helperLive" class="hidden">
+            <div class="bigstat"><span id="remainCount">–</span> <span style="font-size:1rem">codes still possible</span></div>
+            <p class="sub" id="remainOf"></p>
+            <div class="meter" aria-hidden="true"><div id="remainMeter"></div></div>
+            <div id="suggestBox"></div>
+            <div class="samples" id="samples"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="teachCard">
+        <h2>What that guess proved</h2>
+        <p class="sub">The logic of your most recent guess, in plain words.</p>
+        <div class="teach" id="teachBox"><p>No guess yet. Make one, and its lesson lands here.</p></div>
+      </section>
+
+      <section class="card" id="record">
+        <h2>Your record</h2>
+        <p class="sub">Kept on this device, in this tab only — nothing is sent anywhere. Export it to keep a copy; Forget wipes it clean.</p>
+        <p id="recordStats" class="sub">No games finished yet.</p>
+        <div id="recordList"></div>
+        <div class="actions">
+          <button type="button" id="btnExport" data-explain="Downloads your record as a small file you can keep or share.">Export record<span class="gesture">Tap to download</span></button>
+          <button type="button" id="btnForget" data-explain="Erases your record and your name from this page. There is no undo, so it asks you to tap twice.">Forget everything<span class="gesture">Tap, then tap again to confirm</span></button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>Copyleft.</strong> This page is free to copy, share, and build on — writings and design under CC BY-SA 4.0, code under GPL. Derivatives carry the same freedom. No ads, ever. The game shape is an homage to the classic code-deduction games; the name, art, and peg designs on this page are original.</p>
+    <p>Why? → How? → Act. Why does a guess help? Because its feedback is a permanent fact. How do you use it? Cross out every code that fact rules out. Then act: ask the next strongest question.</p>
+  </footer>
+</div>
+
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ============ Data ============ */
+var COLORS = [
+  {name:"Ruby",      hex:"#b91c1c", letter:"R", dark:false},
+  {name:"Tangerine", hex:"#ea580c", letter:"T", dark:false},
+  {name:"Lemon",     hex:"#eab308", letter:"L", dark:true},
+  {name:"Emerald",   hex:"#15803d", letter:"E", dark:false},
+  {name:"Ocean",     hex:"#1d4ed8", letter:"O", dark:false},
+  {name:"Grape",     hex:"#7c3aed", letter:"G", dark:false},
+  {name:"Rose",      hex:"#db2777", letter:"S", dark:false},
+  {name:"Charcoal",  hex:"#3f4750", letter:"C", dark:false}
+];
+var PRESETS = {
+  starter:  {len:3, cols:4, dup:true},
+  standard: {len:4, cols:6, dup:true},
+  challenge:{len:5, cols:7, dup:true},
+  master:   {len:6, cols:8, dup:true}
+};
+var MAX_GUESSES = 12;
+
+var settings = { len:4, cols:6, dup:true, teach:1, helper:false };
+var alias = "";
+
+/* ============ Helpers ============ */
+function $(id){ return document.getElementById(id); }
+function pegHTML(ci, size){
+  var c = COLORS[ci];
+  return '<span class="peg'+(c.dark?' dark-text':'')+'" style="background:'+c.hex+(size?';width:'+size+'px;height:'+size+'px':'')+'" title="'+c.name+'">'+c.letter+'</span>';
+}
+function codeNames(code){ return code.map(function(ci){ return COLORS[ci].name; }).join(", "); }
+function score(secret, guess){
+  var exact = 0, i;
+  var sCount = {}, gCount = {};
+  for(i=0;i<secret.length;i++){
+    if(secret[i]===guess[i]){ exact++; }
+    else { sCount[secret[i]] = (sCount[secret[i]]||0)+1; gCount[guess[i]] = (gCount[guess[i]]||0)+1; }
+  }
+  var near = 0;
+  for(var k in gCount){ near += Math.min(gCount[k], sCount[k]||0); }
+  return {exact:exact, near:near};
+}
+function allCodes(len, cols, dup){
+  var out = [];
+  (function build(prefix){
+    if(prefix.length===len){ out.push(prefix.slice()); return; }
+    for(var c=0;c<cols;c++){
+      if(!dup && prefix.indexOf(c)!==-1) continue;
+      prefix.push(c); build(prefix); prefix.pop();
+    }
+  })([]);
+  return out;
+}
+function consistentWith(code, guessHistory){
+  for(var i=0;i<guessHistory.length;i++){
+    var s = score(code, guessHistory[i].guess);
+    if(s.exact!==guessHistory[i].fb.exact || s.near!==guessHistory[i].fb.near) return false;
+  }
+  return true;
+}
+function bits(before, after){
+  if(before<=0 || after<=0) return "0";
+  return (Math.log(before/after)/Math.log(2)).toFixed(1);
+}
+function download(name, text, type){
+  var blob = new Blob([text], {type:type||"text/plain"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+}
+var toastTimer = null;
+function toast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 3400);
+}
+
+/* ============ Record (this tab, in memory) ============ */
+var records = [];
+function addRecord(mode, won, guessesUsed, helperUsed){
+  records.push({
+    when: new Date().toLocaleString(),
+    name: alias || "Anonymous breaker",
+    mode: mode, won: won, guesses: guessesUsed,
+    len: settings.len, cols: settings.cols, dup: settings.dup,
+    helper: helperUsed
+  });
+  renderRecord();
+}
+function renderRecord(){
+  var list = $("recordList"), stats = $("recordStats");
+  if(!records.length){ stats.textContent = "No games finished yet."; list.innerHTML = ""; return; }
+  var wins = records.filter(function(r){return r.won;}).length;
+  stats.textContent = records.length + " game(s) finished · " + wins + " cracked · " + (records.length-wins) + " not cracked.";
+  list.innerHTML = records.slice().reverse().map(function(r){
+    return '<div class="recitem"><strong>'+escapeHTML(r.name)+'</strong> — '+(r.mode==="setter"?"set a code for the bot":"broke the code")+
+      ': <strong>'+(r.won?"cracked":"not cracked")+'</strong> in '+r.guesses+' guess(es) · '+r.len+' pegs, '+r.cols+' colours, repeats '+(r.dup?"allowed":"off")+
+      (r.helper?'<span class="tag">Learning aid used</span>':'')+
+      '<br><span style="color:var(--ink2)">'+escapeHTML(r.when)+'</span></div>';
+  }).join("");
+}
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g, function(ch){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]; }); }
+
+/* ============ BREAKER MODE ============ */
+var secret = [], guessHistory = [], currentGuess = [], consistent = [], totalSpace = 0;
+var gameOver = false, helperUsedThisGame = false;
+
+function newBreakerGame(){
+  secret = [];
+  if(settings.dup){
+    for(var i=0;i<settings.len;i++) secret.push(Math.floor(Math.random()*settings.cols));
+  } else {
+    var pool = []; for(var j=0;j<settings.cols;j++) pool.push(j);
+    for(var k=0;k<settings.len;k++){ secret.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); }
+  }
+  guessHistory = []; gameOver = false; helperUsedThisGame = settings.helper;
+  consistent = allCodes(settings.len, settings.cols, settings.dup);
+  totalSpace = consistent.length;
+  currentGuess = new Array(settings.len).fill(null);
+  $("breakerBanner").className = "banner"; $("breakerBanner").textContent = "";
+  $("teachBox").innerHTML = "<p>No guess yet. Make one, and its lesson lands here.</p>";
+  renderBoard(); renderBuilder(); renderHelper();
+  $("breakerStatus").textContent = "A code of " + settings.len + " pegs is hidden, drawn from " + settings.cols + " colours" + (settings.dup ? " (repeats allowed)" : " (no repeats)") + ". You have " + MAX_GUESSES + " guesses.";
+}
+
+function renderBoard(){
+  var board = $("board");
+  if(!guessHistory.length){ board.innerHTML = '<p class="empty-note">No guesses yet. Your guesses and their feedback will line up here.</p>'; return; }
+  board.innerHTML = guessHistory.map(function(h, idx){
+    var pegs = h.guess.map(function(ci){ return pegHTML(ci, 38); }).join("");
+    var fbpegs = "";
+    for(var i=0;i<settings.len;i++){
+      if(i < h.fb.exact) fbpegs += '<span class="fbp exact"></span>';
+      else if(i < h.fb.exact + h.fb.near) fbpegs += '<span class="fbp near"></span>';
+      else fbpegs += '<span class="fbp"></span>';
+    }
+    return '<div class="grow-row"><span class="gnum">'+(idx+1)+'</span><span class="pegs">'+pegs+'</span>'+
+      '<span class="fb"><span class="fbpegs">'+fbpegs+'</span><span class="fbtext">'+h.fb.exact+' exact · '+h.fb.near+' near</span></span></div>';
+  }).join("");
+}
+
+function renderBuilder(){
+  var slots = $("guessSlots");
+  slots.innerHTML = "";
+  currentGuess.forEach(function(ci, idx){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "slot" + (ci!==null ? " filled" : "");
+    b.setAttribute("aria-label", ci!==null ? ("Slot "+(idx+1)+": "+COLORS[ci].name+". Tap to empty it.") : ("Empty slot "+(idx+1)));
+    b.innerHTML = ci!==null ? pegHTML(ci, 44) : '<span style="color:var(--ink2)">'+(idx+1)+'</span>';
+    b.addEventListener("click", function(){
+      if(gameOver) return;
+      currentGuess[idx] = null; renderBuilder();
+    });
+    slots.appendChild(b);
+  });
+  var pal = $("palette");
+  pal.innerHTML = "";
+  for(var c=0;c<settings.cols;c++){
+    (function(ci){
+      var wrap = document.createElement("span");
+      wrap.style.textAlign = "center";
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "pal";
+      b.setAttribute("aria-label", "Add " + COLORS[ci].name);
+      b.innerHTML = pegHTML(ci, 44);
+      b.addEventListener("click", function(){
+        if(gameOver) return;
+        var empty = currentGuess.indexOf(null);
+        if(empty===-1){ toast("That guess is full. Tap a filled slot to empty it, or submit."); return; }
+        if(!settings.dup && currentGuess.indexOf(ci)!==-1){ toast("Repeats are off in the settings — " + COLORS[ci].name + " is already in this guess."); return; }
+        currentGuess[empty] = ci; renderBuilder();
+      });
+      var nm = document.createElement("span"); nm.className = "palname"; nm.textContent = COLORS[ci].name;
+      wrap.appendChild(b); wrap.appendChild(document.createElement("br")); wrap.appendChild(nm);
+      pal.appendChild(wrap);
+    })(c);
+  }
+}
+
+function teachFor(guess, fb, before, after){
+  var lines = [];
+  var total = fb.exact + fb.near;
+  if(settings.teach===0) return null;
+  if(total===0){
+    lines.push('<p class="why">This guess proved a clean sweep of "no":</p>');
+    lines.push("<p>0 exact and 0 near means <strong>none of these colours is in the code at all</strong> — " + codeNames(guess) + " are all eliminated, everywhere, for the rest of the game. Every code containing any of them is crossed out.</p>");
+  } else {
+    lines.push('<p class="why">This guess proved that exactly ' + total + ' of its pegs are colours in the code:</p>');
+    lines.push("<p>" + fb.exact + " of them are also in the right place, and " + fb.near + " are right colours sitting in wrong places. The other " + (settings.len - total) + " pegs in the guess are colours the code does not use <em>in those counts</em> — careful: with repeats, feedback counts pegs, not colour names.</p>");
+    if(fb.exact===settings.len) lines.push("<p>Every peg exact — that is the code itself. Proven, not lucky.</p>");
+    else if(fb.exact>0) lines.push("<p>The board does not say <em>which</em> pegs are the exact ones. Hold all " + fb.exact + "-position possibilities open until another guess separates them.</p>");
+  }
+  if(settings.teach===2){
+    lines.push("<p><strong>The consistent set:</strong> before this guess, " + before.toLocaleString() + " codes were still possible. This feedback crossed out all but " + after.toLocaleString() + " — the hidden code is one of those " + after.toLocaleString() + ", guaranteed.</p>");
+    lines.push("<p><strong>Information earned:</strong> about " + bits(before, after) + " bits. " + (after<=1 ? "One code left means the answer is now proven — name it." : "A strong next guess is one that splits the remaining " + after.toLocaleString() + " codes as evenly as possible, whatever the feedback turns out to be.") + "</p>");
+  } else {
+    lines.push("<p>" + after.toLocaleString() + " codes are still possible. " + (after<=5 && after>1 ? "You are close — list them mentally and pick a guess that separates them." : "") + "</p>");
+  }
+  return lines.join("");
+}
+
+function submitGuess(){
+  if(gameOver) return;
+  if(currentGuess.indexOf(null)!==-1){ toast("Fill every slot before submitting."); return; }
+  if(settings.helper) helperUsedThisGame = true;
+  var before = consistent.length;
+  var fb = score(secret, currentGuess);
+  guessHistory.push({guess: currentGuess.slice(), fb: fb});
+  consistent = consistent.filter(function(code){ return consistentWith(code, guessHistory); });
+  var after = consistent.length;
+  currentGuess = new Array(settings.len).fill(null);
+  renderBoard(); renderBuilder(); renderHelper();
+  var lesson = teachFor(guessHistory[guessHistory.length-1].guess, fb, before, after);
+  if(lesson) $("teachBox").innerHTML = lesson;
+  else $("teachBox").innerHTML = "<p>Teaching is off. Feedback: " + fb.exact + " exact, " + fb.near + " near. Turn the Teaching dial up in Settings for the reasoning.</p>";
+
+  if(fb.exact===settings.len){
+    gameOver = true;
+    showBanner("breakerBanner", "win", "Cracked it in " + guessHistory.length + " guess" + (guessHistory.length===1?"":"es") + "! The code was " + codeNames(secret) + "." + (helperUsedThisGame ? " Played with the deduction helper — a learning-aid game." : " No helper — clean logic."));
+    addRecord("breaker", true, guessHistory.length, helperUsedThisGame);
+    $("breakerStatus").textContent = "Solved. Tap “New code” to play again — or climb the difficulty ramp in Settings.";
+  } else if(guessHistory.length >= MAX_GUESSES){
+    gameOver = true;
+    showBanner("breakerBanner", "lose", "Out of guesses. The code was " + codeNames(secret) + ". Read the last lesson, then try a new code.");
+    addRecord("breaker", false, guessHistory.length, helperUsedThisGame);
+  } else {
+    $("breakerStatus").textContent = "Guess " + (guessHistory.length+1) + " of " + MAX_GUESSES + ". " + after.toLocaleString() + " codes still fit everything you know.";
+    if(helperUsedThisGame && settings.helper) showAidBanner();
+  }
+}
+function showAidBanner(){
+  var b = $("breakerBanner");
+  b.className = "banner show aid";
+  b.textContent = "Learning-aid game: the deduction helper is on, and this game will be labelled that way in your record.";
+}
+function showBanner(id, kind, text){
+  var b = $(id); b.className = "banner show " + kind; b.textContent = text;
+}
+
+function renderHelper(){
+  var live = $("helperLive"), off = $("helperOffNote");
+  if(!settings.helper){ live.classList.add("hidden"); off.classList.remove("hidden"); return; }
+  off.classList.add("hidden"); live.classList.remove("hidden");
+  $("remainCount").textContent = consistent.length.toLocaleString();
+  $("remainOf").textContent = "Out of " + totalSpace.toLocaleString() + " codes possible at the start of this game.";
+  $("remainMeter").style.width = totalSpace ? Math.max(1.5, 100*consistent.length/totalSpace) + "%" : "0%";
+  var sug = $("suggestBox");
+  if(!gameOver && consistent.length){
+    var s = consistent[Math.floor(consistent.length/2)];
+    sug.innerHTML = '<h3>A consistent next guess</h3><p class="sub">One code drawn from the middle of what remains — guaranteed to fit all feedback so far:</p><div class="sample">' + s.map(function(ci){ return pegHTML(ci, 30); }).join("") + '</div>';
+  } else sug.innerHTML = "";
+  var box = $("samples");
+  if(consistent.length<=40){
+    box.innerHTML = consistent.map(function(code){
+      return '<div class="sample">' + code.map(function(ci){ return pegHTML(ci, 24); }).join("") + '</div>';
+    }).join("");
+  } else {
+    box.innerHTML = '<p class="sub">Too many to list — showing the first 24 of ' + consistent.length.toLocaleString() + ':</p>' +
+      consistent.slice(0,24).map(function(code){
+        return '<div class="sample">' + code.map(function(ci){ return pegHTML(ci, 24); }).join("") + '</div>';
+      }).join("");
+  }
+}
+
+/* ============ SETTER MODE (the bot) ============ */
+var setterCode = [], botHistory = [], botConsistent = [], botStarted = false, botDone = false, botTimer = null;
+
+function resetSetter(){
+  setterCode = new Array(settings.len).fill(null);
+  botHistory = []; botConsistent = []; botStarted = false; botDone = false;
+  clearInterval(botTimer); botTimer = null;
+  $("botBoard").innerHTML = '<p class="empty-note">The bot\'s guesses will appear here.</p>';
+  $("botLog").innerHTML = "";
+  $("setterBanner").className = "banner"; $("setterBanner").textContent = "";
+  $("btnBotStep").disabled = true; $("btnBotAuto").disabled = true; $("btnBotStart").disabled = false;
+  renderSetterBuilder();
+}
+function renderSetterBuilder(){
+  var slots = $("setterSlots"); slots.innerHTML = "";
+  setterCode.forEach(function(ci, idx){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "slot" + (ci!==null ? " filled" : "");
+    b.setAttribute("aria-label", ci!==null ? ("Secret slot "+(idx+1)+": "+COLORS[ci].name+". Tap to empty it.") : ("Empty secret slot "+(idx+1)));
+    b.innerHTML = ci!==null ? pegHTML(ci, 44) : '<span style="color:var(--ink2)">'+(idx+1)+'</span>';
+    b.addEventListener("click", function(){ if(botStarted) return; setterCode[idx] = null; renderSetterBuilder(); });
+    slots.appendChild(b);
+  });
+  var pal = $("setterPalette"); pal.innerHTML = "";
+  for(var c=0;c<settings.cols;c++){
+    (function(ci){
+      var wrap = document.createElement("span"); wrap.style.textAlign = "center";
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "pal"; b.setAttribute("aria-label", "Put " + COLORS[ci].name + " in the secret");
+      b.innerHTML = pegHTML(ci, 44);
+      b.addEventListener("click", function(){
+        if(botStarted) return;
+        var empty = setterCode.indexOf(null);
+        if(empty===-1){ toast("Your secret is full. Tap a filled slot to empty it."); return; }
+        if(!settings.dup && setterCode.indexOf(ci)!==-1){ toast("Repeats are off — " + COLORS[ci].name + " is already in your secret."); return; }
+        setterCode[empty] = ci; renderSetterBuilder();
+      });
+      var nm = document.createElement("span"); nm.className = "palname"; nm.textContent = COLORS[ci].name;
+      wrap.appendChild(b); wrap.appendChild(document.createElement("br")); wrap.appendChild(nm);
+      pal.appendChild(wrap);
+    })(c);
+  }
+}
+function botOpeningGuess(){
+  var g = [];
+  if(settings.dup){
+    for(var i=0;i<settings.len;i++) g.push(i < Math.ceil(settings.len/2) ? 0 : 1);
+  } else {
+    for(var j=0;j<settings.len;j++) g.push(j);
+  }
+  return g;
+}
+function botStep(){
+  if(!botStarted || botDone) return;
+  var before = botConsistent.length;
+  var guess, why;
+  if(botHistory.length===0){
+    guess = botOpeningGuess();
+    why = "Opening move: I ask about two colours at once (" + codeNames(guess) + "). Whatever the feedback, it splits the " + before.toLocaleString() + " possible codes hard — a strong first question.";
+  } else {
+    guess = botConsistent[Math.floor(botConsistent.length/2)].slice();
+    why = "From the " + before.toLocaleString() + " codes still consistent with everything so far, I pick one from the middle of the set. It is guaranteed to fit all past feedback, and its answer will cross out the most codes on average.";
+  }
+  var fb = score(setterCode, guess);
+  botHistory.push({guess: guess, fb: fb});
+  botConsistent = botConsistent.filter(function(code){ return consistentWith(code, botHistory); });
+  var after = botConsistent.length;
+  renderBotBoard();
+  var explain = "<p><strong>Guess " + botHistory.length + ":</strong> " + why + "</p>" +
+    "<p>Feedback: <strong>" + fb.exact + " exact, " + fb.near + " near</strong>. " +
+    (fb.exact + fb.near === 0 ? "That proves none of those colours is in your code at all." :
+     "That proves " + (fb.exact+fb.near) + " of those pegs are colours in your code, " + fb.exact + " of them already in place.") +
+    " The consistent set shrinks from " + before.toLocaleString() + " to <strong>" + after.toLocaleString() + "</strong> — about " + bits(before, after) + " bits of information." +
+    (after===1 && fb.exact!==settings.len ? " Only one code remains: the answer is proven before I even name it." : "") + "</p>";
+  $("botLog").innerHTML += explain;
+  if(fb.exact===settings.len){
+    botDone = true; clearInterval(botTimer); botTimer = null;
+    showBanner("setterBanner", "win", "The bot cracked your code in " + botHistory.length + " guess" + (botHistory.length===1?"":"es") + ": " + codeNames(setterCode) + ". Every step used only the two feedback numbers — the same logic you play with.");
+    $("btnBotStep").disabled = true; $("btnBotAuto").disabled = true;
+    addRecord("setter", true, botHistory.length, false);
+  } else if(after===0){
+    botDone = true; clearInterval(botTimer); botTimer = null;
+    showBanner("setterBanner", "lose", "No code fits that feedback — that cannot happen with honest scoring, so something went wrong. Reset and set the code again.");
+    $("btnBotStep").disabled = true; $("btnBotAuto").disabled = true;
+  }
+}
+function renderBotBoard(){
+  $("botBoard").innerHTML = botHistory.map(function(h, idx){
+    var pegs = h.guess.map(function(ci){ return pegHTML(ci, 38); }).join("");
+    var fbpegs = "";
+    for(var i=0;i<settings.len;i++){
+      if(i < h.fb.exact) fbpegs += '<span class="fbp exact"></span>';
+      else if(i < h.fb.exact + h.fb.near) fbpegs += '<span class="fbp near"></span>';
+      else fbpegs += '<span class="fbp"></span>';
+    }
+    return '<div class="grow-row"><span class="gnum">'+(idx+1)+'</span><span class="pegs">'+pegs+'</span>'+
+      '<span class="fb"><span class="fbpegs">'+fbpegs+'</span><span class="fbtext">'+h.fb.exact+' exact · '+h.fb.near+' near</span></span></div>';
+  }).join("");
+}
+
+/* ============ Wiring ============ */
+function applySettingsUI(){
+  $("lenVal").textContent = settings.len + " pegs";
+  $("colVal").textContent = settings.cols + " colours";
+  $("dupYes").setAttribute("aria-pressed", settings.dup ? "true" : "false");
+  $("dupNo").setAttribute("aria-pressed", settings.dup ? "false" : "true");
+  $("helpOn").setAttribute("aria-pressed", settings.helper ? "true" : "false");
+  $("helpOff").setAttribute("aria-pressed", settings.helper ? "false" : "true");
+  document.querySelectorAll("[data-teach]").forEach(function(b){
+    b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-teach"),10)===settings.teach ? "true" : "false");
+  });
+}
+function restartAll(){ applySettingsUI(); newBreakerGame(); resetSetter(); }
+
+$("lenMinus").addEventListener("click", function(){ if(settings.len>3){ settings.len--; if(!settings.dup && settings.cols<settings.len) settings.cols=settings.len; restartAll(); } });
+$("lenPlus").addEventListener("click", function(){ if(settings.len<6){ settings.len++; if(settings.cols<settings.len && !settings.dup) settings.cols=settings.len; restartAll(); } });
+$("colMinus").addEventListener("click", function(){ if(settings.cols>4){ settings.cols--; if(!settings.dup && settings.cols<settings.len) settings.len=settings.cols; restartAll(); } });
+$("colPlus").addEventListener("click", function(){ if(settings.cols<8){ settings.cols++; restartAll(); } });
+$("dupYes").addEventListener("click", function(){ settings.dup = true; restartAll(); });
+$("dupNo").addEventListener("click", function(){ settings.dup = false; if(settings.cols<settings.len) settings.cols = settings.len; restartAll(); });
+document.querySelectorAll("[data-preset]").forEach(function(b){
+  b.addEventListener("click", function(){
+    var p = PRESETS[b.getAttribute("data-preset")];
+    settings.len = p.len; settings.cols = p.cols; settings.dup = p.dup;
+    restartAll(); toast("Loaded: " + p.len + " pegs, " + p.cols + " colours. Fresh code hidden.");
+  });
+});
+document.querySelectorAll("[data-teach]").forEach(function(b){
+  b.addEventListener("click", function(){
+    settings.teach = parseInt(b.getAttribute("data-teach"),10); applySettingsUI();
+    toast(settings.teach===0 ? "Teaching off — just you and the numbers." : settings.teach===1 ? "Teaching: hints after each guess." : "Teaching: the full lesson after each guess.");
+  });
+});
+$("helpOn").addEventListener("click", function(){
+  settings.helper = true; helperUsedThisGame = true; applySettingsUI(); renderHelper();
+  if(!gameOver && guessHistory.length>=0) showAidBanner();
+  toast("Helper on. Games from here are labelled learning-aid games in your record.");
+});
+$("helpOff").addEventListener("click", function(){
+  settings.helper = false; applySettingsUI(); renderHelper();
+  if($("breakerBanner").classList.contains("aid")){ $("breakerBanner").className = "banner"; }
+  toast("Helper off — you are flying on logic alone.");
+});
+$("alias").addEventListener("input", function(){ alias = this.value.trim(); });
+
+$("btnSubmit").addEventListener("click", submitGuess);
+$("btnClearGuess").addEventListener("click", function(){ currentGuess = new Array(settings.len).fill(null); renderBuilder(); });
+$("btnNewBreaker").addEventListener("click", function(){ newBreakerGame(); toast("New code hidden. Good hunting."); });
+
+$("tabBreaker").addEventListener("click", function(){
+  $("tabBreaker").setAttribute("aria-selected","true"); $("tabSetter").setAttribute("aria-selected","false");
+  $("breakerArea").classList.remove("hidden"); $("setterArea").classList.add("hidden");
+});
+$("tabSetter").addEventListener("click", function(){
+  $("tabSetter").setAttribute("aria-selected","true"); $("tabBreaker").setAttribute("aria-selected","false");
+  $("setterArea").classList.remove("hidden"); $("breakerArea").classList.add("hidden");
+});
+
+$("btnBotStart").addEventListener("click", function(){
+  if(setterCode.indexOf(null)!==-1){ toast("Fill every slot of your secret code first."); return; }
+  botStarted = true; botConsistent = allCodes(settings.len, settings.cols, settings.dup);
+  $("btnBotStart").disabled = true; $("btnBotStep").disabled = false; $("btnBotAuto").disabled = false;
+  $("botLog").innerHTML = "<p>Your code is locked in. It is one of <strong>" + botConsistent.length.toLocaleString() + "</strong> possible codes. Watch the set shrink.</p>";
+  renderSetterBuilder();
+});
+$("btnBotStep").addEventListener("click", botStep);
+$("btnBotAuto").addEventListener("click", function(){
+  if(botTimer){ clearInterval(botTimer); botTimer = null; this.firstChild.textContent = "Bot: play it out"; return; }
+  botStep();
+  var self = this;
+  botTimer = setInterval(function(){ if(botDone){ clearInterval(botTimer); botTimer = null; } else botStep(); }, 1600);
+});
+$("btnSetterReset").addEventListener("click", resetSetter);
+
+$("btnExport").addEventListener("click", function(){
+  if(!records.length){ toast("Nothing to export yet — finish a game first."); return; }
+  download("code-breaker-record.json", JSON.stringify(records, null, 2), "application/json");
+});
+var forgetArmed = false, forgetTimer = null;
+$("btnForget").addEventListener("click", function(){
+  if(!forgetArmed){
+    forgetArmed = true; this.firstChild.textContent = "Tap again to erase it all";
+    forgetTimer = setTimeout(function(){ forgetArmed = false; $("btnForget").firstChild.textContent = "Forget everything"; }, 4000);
+    return;
+  }
+  clearTimeout(forgetTimer); forgetArmed = false; this.firstChild.textContent = "Forget everything";
+  records = []; alias = ""; $("alias").value = ""; renderRecord();
+  toast("Forgotten. Record and name are gone from this page.");
+});
+$("btnDownload").addEventListener("click", function(){
+  var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+  download("code-breaker.html", html, "text/html");
+  toast("Saved. Open that file any time — it plays fully offline.");
+});
+
+/* Hold (or hover) a control to hear what it does */
+document.querySelectorAll("[data-explain]").forEach(function(el){
+  var timer = null;
+  el.addEventListener("pointerdown", function(){ timer = setTimeout(function(){ toast(el.getAttribute("data-explain")); }, 550); });
+  ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ el.addEventListener(ev, function(){ clearTimeout(timer); }); });
+  el.setAttribute("title", el.getAttribute("data-explain"));
+});
+
+/* Go */
+applySettingsUI();
+newBreakerGame();
+resetSetter();
+renderRecord();
+</script>
+</body>
+</html>
