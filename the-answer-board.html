@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Answer Board</title>
+<style>
+  button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+  :root{
+    --bg:#f4f1e8; --panel:#fffdf6; --ink:#1c2430; --muted:#5a6472;
+    --board:#16294f; --board2:#1e3a6e; --cell:#24478c; --cell-hover:#2d55a5;
+    --gold:#f0b429; --gold-ink:#3a2a00; --line:#d8d2c0;
+    --good:#1e7d46; --bad:#b3362b; --accent:#16294f; --chip:#e9e2cd;
+    --shadow:0 2px 10px rgba(20,30,60,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10141c; --panel:#1a2130; --ink:#eef1f6; --muted:#a7b0bf;
+      --board:#0d1830; --board2:#14264c; --cell:#1d3a73; --cell-hover:#26509c;
+      --gold:#f0b429; --gold-ink:#2a1e00; --line:#333d52;
+      --good:#4cc983; --bad:#ff7a6e; --accent:#8fb0ff; --chip:#26314a;
+      --shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+    line-height:1.5;font-size:16px}
+  main{max-width:1060px;margin:0 auto;padding:0 14px 48px}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.15;margin:.4em 0 .3em}
+  h1{font-size:clamp(1.7rem,5vw,2.6rem)}
+  h2{font-size:1.35rem;border-bottom:2px solid var(--gold);padding-bottom:.2em}
+  h3{font-size:1.08rem}
+  p{margin:.45em 0}
+  .muted{color:var(--muted)}
+  .small{font-size:.88rem}
+  .freebar{background:var(--board);color:#fff;padding:10px 14px;border-radius:0 0 10px 10px;
+    display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+  .freebar strong{color:var(--gold);letter-spacing:.02em}
+  .freebar button{background:var(--gold);color:var(--gold-ink);border:0;border-radius:6px;
+    font-weight:700;padding:8px 14px;cursor:pointer;font-size:.95rem}
+  nav.compass{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+  nav.compass a{color:var(--ink);background:var(--chip);text-decoration:none;
+    padding:8px 13px;border-radius:999px;font-size:.92rem;font-weight:600;min-height:2.25rem;
+    display:inline-flex;align-items:center}
+  nav.compass a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin:14px 0;box-shadow:var(--shadow)}
+  .scores{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .scorecard{flex:1 1 140px;border:2px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--panel)}
+  .scorecard.turn{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+  .scorecard .nm{font-weight:700}
+  .scorecard .sc{font-size:1.45rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .scorecard.neg .sc{color:var(--bad)}
+  .boardwrap{background:var(--board);border-radius:12px;padding:10px;box-shadow:var(--shadow)}
+  .board{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .cathead{background:var(--board2);color:#fff;text-align:center;font-weight:700;
+    padding:10px 4px;border-radius:6px;font-size:clamp(.58rem,2.4vw,.92rem);
+    text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;min-height:52px}
+  .cell{background:var(--cell);color:var(--gold);border:0;border-radius:6px;cursor:pointer;
+    font-size:clamp(.95rem,4.2vw,1.6rem);font-weight:800;padding:12px 2px;font-variant-numeric:tabular-nums;width:100%}
+  .cell:hover:not(:disabled){background:var(--cell-hover)}
+  .cell:disabled{background:transparent;color:transparent;cursor:default}
+  .cell.wagersq:disabled{color:var(--gold);font-size:.6rem;background:var(--board2)}
+  .cluebox{background:var(--board);color:#fff;border-radius:12px;padding:20px 18px;margin:14px 0;text-align:center}
+  .cluebox .cat{color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.85rem}
+  .cluebox .clue{font-size:clamp(1.15rem,3.6vw,1.6rem);font-family:Georgia,serif;margin:.5em auto;max-width:640px}
+  .cluebox .val{color:var(--gold);font-weight:800;font-size:1.1rem}
+  .answerrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+  .answerrow input{flex:1 1 260px;max-width:440px;padding:10px 12px;font-size:1.05rem;border-radius:8px;
+    border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+  .btn{background:var(--board);color:#fff;border:0;border-radius:8px;padding:10px 18px;
+    font-weight:700;cursor:pointer;font-size:1rem}
+  .btn.gold{background:var(--gold);color:var(--gold-ink)}
+  .btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+  .btn.danger{background:var(--bad);color:#fff}
+  .btn:disabled{opacity:.45;cursor:default}
+  .verdict{font-size:1.2rem;font-weight:800;text-align:center;margin:.4em 0}
+  .verdict.good{color:var(--good)} .verdict.bad{color:var(--bad)}
+  .why{background:var(--chip);border-radius:8px;padding:10px 14px;margin:10px auto;max-width:680px;text-align:left}
+  .coachbox{border:2px solid var(--gold);border-radius:10px;padding:12px 16px;margin:12px 0;background:var(--panel)}
+  .coachbox h3{margin-top:0;color:var(--ink)}
+  .banner{border-radius:8px;padding:10px 14px;font-weight:700;margin:10px 0}
+  .banner.variant{background:#f7d774;color:#3a2a00}
+  .banner.standard{background:var(--chip);color:var(--ink);font-weight:600}
+  @media (prefers-color-scheme: dark){ .banner.variant{background:#6b5510;color:#ffe9a8} }
+  label.fld{display:block;font-weight:600;margin:10px 0 4px}
+  select,input[type="text"],input[type="number"]{padding:9px 10px;border-radius:8px;border:2px solid var(--line);
+    background:var(--panel);color:var(--ink);font-size:1rem;max-width:100%}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} }
+  details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:0 16px}
+  summary{cursor:pointer;font-weight:700;padding:12px 0;font-size:1.02rem;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  details .dbody{padding-bottom:14px}
+  table{border-collapse:collapse;width:100%;margin:8px 0;font-size:.95rem}
+  th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{font-weight:700}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .stack{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .turnline{font-weight:700;font-size:1.05rem;margin:8px 0}
+  .wagerline{background:#f7d774;color:#3a2a00;border-radius:8px;padding:10px 14px;font-weight:700;text-align:center}
+  @media (prefers-color-scheme: dark){ .wagerline{background:#6b5510;color:#ffe9a8} }
+  .hidden{display:none !important}
+  footer{border-top:1px solid var(--line);margin-top:26px;padding-top:12px}
+</style>
+</head>
+<body>
+<main>
+  <div class="freebar">
+    <span><strong>Free — always free.</strong> No ads. No account. Nothing to buy.</span>
+    <button type="button" id="dlBtn">Download this page for offline play</button>
+  </div>
+
+  <nav class="compass" aria-label="Compass">
+    <a href="#play">Play</a>
+    <a href="#coachSec">Coach</a>
+    <a href="#rulesSec">Rules &amp; settings — tap to open below</a>
+    <a href="#recordSec">Your record</a>
+    <a href="#bankSec">The clue bank</a>
+  </nav>
+
+  <h1>The Answer Board</h1>
+  <p>The board gives you the answer. You supply the fact that fits it. Pick a square,
+  read the statement, and type the person, place, or thing it describes — the way the
+  documented quiz-board game has worked for decades: six categories, five clues each at
+  rising values, hidden wager squares, a doubled second round, and one final clue
+  everyone wagers on. This is our own version of that form — our name, our categories,
+  every clue written here from scratch.</p>
+  <p><strong>The stakes, plainly:</strong> a right answer <em>adds</em> the square's value to your
+  score. A wrong answer <em>subtracts</em> it. Scores can go below zero. That is the game —
+  knowing when a guess is worth the risk is half of it.</p>
+
+  <div id="variantBanner" class="banner standard" role="status">Standard game: two rounds, wrong answers subtract, two wager squares per board.</div>
+
+  <!-- ============ SETUP ============ -->
+  <section class="panel" id="setupSec" aria-label="Game setup">
+    <h2>Set up your game</h2>
+    <div class="grid2">
+      <div>
+        <label class="fld" for="aliasIn">Your name for this game (never required — Guest always works)</label>
+        <input type="text" id="aliasIn" placeholder="Guest" maxlength="24" autocomplete="off" />
+        <label class="fld" for="modeSel">Who are you playing?</label>
+        <select id="modeSel">
+          <option value="solo">Solo — just you against the board</option>
+          <option value="bots">Versus two bot contestants</option>
+        </select>
+        <label class="fld" for="botSel">Bot level (versus mode)</label>
+        <select id="botSel">
+          <option value="learning">Learning</option>
+          <option value="steady" selected>Steady</option>
+          <option value="sharp">Sharp</option>
+          <option value="pro">Pro</option>
+        </select>
+      </div>
+      <div>
+        <label class="fld" for="teachSel">Teaching dial — saved on this device only</label>
+        <select id="teachSel">
+          <option value="off">Off — just play</option>
+          <option value="light" selected>Light — the fact behind every clue</option>
+          <option value="coach">Coach — facts plus live strategy on your scores</option>
+        </select>
+        <label class="fld" for="roundsSel">Rounds</label>
+        <select id="roundsSel">
+          <option value="both">Both rounds — standard (round two doubles the values)</option>
+          <option value="one">Round one only — variant</option>
+        </select>
+        <label class="fld" for="penSel">Wrong answers</label>
+        <select id="penSel">
+          <option value="sub">Subtract the value — standard</option>
+          <option value="none">No subtraction — variant (a miss costs nothing)</option>
+        </select>
+        <label class="fld" for="wagSel">Hidden wager squares per board</label>
+        <select id="wagSel">
+          <option value="2">Two — standard</option>
+          <option value="0">None — variant</option>
+          <option value="4">Four — variant</option>
+        </select>
+      </div>
+    </div>
+    <div class="stack">
+      <button type="button" class="btn gold" id="startBtn">Start the game — tap</button>
+    </div>
+    <p class="small muted">Any setting changed from standard makes the game a <strong>variant</strong>:
+    the banner at the top says so while you play, and your record labels the game the same way.</p>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section id="play" aria-label="The board">
+    <div class="scores" id="scoresRow"></div>
+    <p class="turnline" id="turnLine">Set up above, then tap Start.</p>
+    <div class="boardwrap"><div class="board" id="boardGrid"></div></div>
+
+    <div class="cluebox hidden" id="clueBox">
+      <div class="cat" id="clueCat"></div>
+      <div class="val" id="clueVal"></div>
+      <p class="clue" id="clueText"></p>
+      <div id="wagerArea"></div>
+      <div id="answerArea">
+        <div class="answerrow">
+          <input type="text" id="answerIn" placeholder="Type the fact that fits…" autocomplete="off" aria-label="Your answer" />
+          <button type="button" class="btn gold" id="answerBtn">Answer — tap</button>
+          <button type="button" class="btn ghost" id="passBtn">Pass — tap</button>
+        </div>
+        <p class="small" style="color:#cdd8ee">Spelling is forgiving: capitals, punctuation, “a” and “the”, and small slips are all forgiven.</p>
+      </div>
+      <div id="resultArea"></div>
+      <div class="answerrow hidden" id="nextRow">
+        <button type="button" class="btn gold" id="nextBtn">Back to the board — tap</button>
+      </div>
+    </div>
+
+    <!-- Final round -->
+    <div class="cluebox hidden" id="finalBox">
+      <div class="cat">The Final Clue</div>
+      <p class="clue" id="finalCatLine"></p>
+      <div id="finalWagerArea">
+        <p>Everyone wagers in secret, then answers the same clue. Bots wager by the printed rule below.</p>
+        <div class="answerrow">
+          <input type="number" id="finalWagerIn" min="0" step="100" placeholder="Your wager" aria-label="Your final wager" />
+          <button type="button" class="btn gold" id="finalWagerBtn">Lock my wager — tap</button>
+        </div>
+        <p class="small" style="color:#cdd8ee" id="finalWagerHint"></p>
+      </div>
+      <div id="finalAnswerArea" class="hidden">
+        <p class="clue" id="finalClueText"></p>
+        <div class="answerrow">
+          <input type="text" id="finalAnswerIn" placeholder="Type the fact that fits…" autocomplete="off" aria-label="Your final answer" />
+          <button type="button" class="btn gold" id="finalAnswerBtn">Answer — tap</button>
+        </div>
+      </div>
+      <div id="finalResult"></div>
+    </div>
+
+    <div class="stack">
+      <button type="button" class="btn ghost" id="endRoundBtn" disabled>End this round early — tap</button>
+      <button type="button" class="btn ghost" id="newGameBtn">New game — tap</button>
+    </div>
+  </section>
+
+  <!-- ============ COACH ============ -->
+  <section id="coachSec" aria-label="Coach">
+    <div class="coachbox hidden" id="coachBox">
+      <h3>Coach — reading your game</h3>
+      <div id="coachBody"></div>
+    </div>
+    <details id="strategyDetails">
+      <summary>Tap to open — Strategy guide: the ways to play, and what each one costs</summary>
+      <div class="dbody">
+        <h3>Choosing squares</h3>
+        <p><strong>Hunt your strong shelves.</strong> Play the categories you know first, top to bottom:
+        the points bank early, and the board's control stays with whoever answered last — so a
+        strong category is also a way to keep picking. <em>Trade-off:</em> everyone can see your
+        strong shelf emptying; in versus play a rival may jump into it to deny you the big squares.</p>
+        <p><strong>Start low, climb.</strong> Open a new category at 100 to test its flavour before the
+        500 is at stake. <em>Trade-off:</em> slower scoring, and a rival may take the top squares
+        while you test.</p>
+        <p><strong>Hunt the wager squares.</strong> They hide most often where nobody has looked; sweeping
+        fresh categories raises your chance of finding one while your score is high enough to bet big.
+        <em>Trade-off:</em> a wager square found at a low score is worth little — the most you can bet
+        is your score or the board's top value, whichever is bigger.</p>
+        <h3>Wager squares</h3>
+        <p><strong>Bet to cover.</strong> If a rival is within reach, bet enough that a right answer puts
+        you beyond twice their score — then they cannot catch you in one square. <em>Trade-off:</em>
+        a miss costs the same amount; cover bets are big bets.</p>
+        <p><strong>Bet small when ahead late.</strong> Late in a round with a lead, a small bet keeps the
+        lead safe either way. <em>Trade-off:</em> you give up the chance to bury the game early.</p>
+        <p><strong>Bet big when behind.</strong> A trailing score that plays safe stays trailing; the wager
+        square is the one place a big swing is offered to you. <em>Trade-off:</em> a miss can put you
+        out of reach of the final.</p>
+        <h3>The final wager — from each seat</h3>
+        <p><strong>Leader:</strong> cover second place. Bet (second's score × 2) − your score + 100.
+        If you answer right, second cannot pass you even with a maximum bet. <em>Trade-off:</em> if you
+        miss and second bet small, the cover bet can hand them the game — some leaders bet one step
+        less and dare second to bet it all.</p>
+        <p><strong>Second place:</strong> bet on the leader missing. A wager that wins the game when the
+        leader misses — often everything, or everything minus a small keep — beats a wager that only
+        wins if you both answer right. <em>Trade-off:</em> if the leader answers right, no wager you
+        make matters, so this costs nothing extra.</p>
+        <p><strong>Third place (or far behind):</strong> bet it all. Only a double-up plus misses above you
+        can win; a careful bet wins nothing. <em>Trade-off:</em> none that matters — a safe loss and a
+        bold loss are both losses.</p>
+        <p><strong>Solo:</strong> the final is you against your own best. Bet what a right answer is worth
+        to your final total — the Coach panel works the numbers on your actual score.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ RULES ============ -->
+  <details id="rulesSec">
+    <summary>Tap to open — Rules, bot honesty, and how matching works</summary>
+    <div class="dbody">
+      <h3>Rules</h3>
+      <p>Pick a square. The statement on it describes a fact; type that fact. Right adds the value,
+      wrong subtracts it (unless you set the no-subtraction variant). Whoever answers right picks
+      next. When someone misses, the other contestants get one chance at the same clue, in turn.
+      Two squares per board (standard) hide a wager: find one and, before seeing the clue, you bet
+      any amount from 5 up to your score — or up to the board's top value if your score is lower.
+      Round two doubles every value. After the last round, one final clue: everyone wagers in
+      secret, then answers.</p>
+      <h3>The bots, honestly</h3>
+      <p>Bots do not “know” anything. Each bot answer is a dice roll against the printed chance for
+      that level and clue value, and when a bot's roll succeeds it is shown the right answer, same
+      as you. On a wager square a bot bets half of the most it is allowed (rounded to 100). In the
+      final, bots wager by seat: the leader bets to cover second place, second bets everything,
+      third bets everything.</p>
+      <table>
+        <tr><th>Bot level</th><th class="num">100</th><th class="num">200</th><th class="num">300</th><th class="num">400</th><th class="num">500</th></tr>
+        <tr><td>Learning</td><td class="num">70%</td><td class="num">60%</td><td class="num">50%</td><td class="num">40%</td><td class="num">30%</td></tr>
+        <tr><td>Steady</td><td class="num">85%</td><td class="num">75%</td><td class="num">65%</td><td class="num">55%</td><td class="num">45%</td></tr>
+        <tr><td>Sharp</td><td class="num">92%</td><td class="num">85%</td><td class="num">78%</td><td class="num">70%</td><td class="num">62%</td></tr>
+        <tr><td>Pro</td><td class="num">97%</td><td class="num">93%</td><td class="num">88%</td><td class="num">83%</td><td class="num">78%</td></tr>
+      </table>
+      <p class="small">Round-two chances use the round-one row for the same square (a 400 square in
+      round two rolls at the 200 row's chance, and so on). The final clue rolls at each bot's
+      300-row chance.</p>
+      <h3>How your typed answer is matched</h3>
+      <p>Your answer is compared kindly: capitals and punctuation are ignored, “a”, “an” and “the”
+      are ignored, common alternate forms are accepted, and a small spelling slip (one letter off,
+      two in a long answer) still counts. If the board says no and you believe you were right,
+      that is a matching limit, not a knowledge verdict — the correct fact is always shown.</p>
+    </div>
+  </details>
+
+  <!-- ============ RECORD ============ -->
+  <section class="panel" id="recordSec" aria-label="Your record">
+    <h2>Your record — on this device only</h2>
+    <p class="small muted">Saved on this device only, in this browser. Nothing is sent anywhere,
+    there is no account, and Forget wipes it. Every game is stored in one clean shape:
+    date, alias, mode, bot level, rounds, variant label, final scores, result, and per-clue
+    category results.</p>
+    <div id="recordBody"><p>No games recorded yet. Play a clue and this shelf fills in.</p></div>
+    <div class="stack">
+      <button type="button" class="btn ghost" id="expJsonBtn">Export record as JSON — tap</button>
+      <button type="button" class="btn ghost" id="expCsvBtn">Export record as CSV — tap</button>
+      <button type="button" class="btn danger" id="forgetBtn">Forget my record — tap</button>
+    </div>
+    <p class="small muted" id="forgetHint">Forget takes two taps: tap once to arm it, tap again to wipe.</p>
+  </section>
+
+  <!-- ============ BANK ============ -->
+  <details id="bankSec">
+    <summary>Tap to open — The clue bank and fact discipline</summary>
+    <div class="dbody">
+      <p id="bankLine"></p>
+      <p>Fact discipline: every clue in the bank states a fact we are certain of — capitals,
+      counts, and well-settled records. Facts that are genuinely disputed (the longest river,
+      the first inventor of contested machines) are not used, even where they would make a
+      tempting square. A smaller honest bank beats a bigger shaky one. Each game draws six
+      fresh categories per round from the bank, so boards differ game to game.</p>
+      <p>The board, values, wager squares, and final wager are the generic documented mechanics
+      of the quiz-board form. The name, categories, clues, explanations, and all text here are
+      our own.</p>
+    </div>
+  </details>
+
+  <footer>
+    <p class="small muted">Copyleft — this page, its clues, and its text are shared under
+    CC BY-SA 4.0; its code under the GPL. Copy it, adapt it, share it — keep the same freedom
+    attached. No ads, ever. Built for the house games shelf.</p>
+  </footer>
+</main>
+<script>
+"use strict";
+/* ================= CLUE BANK — every clue written for this page =================
+   Shape: {name, clues:[{c: statement, a: answer, also:[accepted forms], why}]} */
+var BANK = [
+{name:"Science Basics", clues:[
+ {c:"This is the chemical formula for water.", a:"H2O", also:["h 2 o","water formula"], why:"Each water molecule holds two hydrogen atoms and one oxygen atom — H₂O."},
+ {c:"This planet is called the Red Planet because iron-rich dust gives it a rusty colour.", a:"Mars", also:[], why:"Mars's surface is rich in iron oxide — rust — which tints the whole planet red."},
+ {c:"This gas, which humans breathe out, is the one green plants take in to make food.", a:"Carbon dioxide", also:["co2"], why:"Plants absorb carbon dioxide and, using sunlight, build sugars from it in photosynthesis."},
+ {c:"This force pulls objects toward the Earth and keeps your feet on the ground.", a:"Gravity", also:[], why:"Gravity is the attraction between masses; Earth's mass pulls everything near it toward its centre."},
+ {c:"At sea level, water boils at this temperature on the Celsius scale.", a:"100 degrees Celsius", also:["100","100 c","100 degrees","212 fahrenheit","212 degrees fahrenheit"], why:"At standard sea-level air pressure, water boils at exactly 100 °C (212 °F)."}
+]},
+{name:"World Geography", clues:[
+ {c:"This city, home to the Eiffel Tower, is the capital of France.", a:"Paris", also:[], why:"Paris has been France's capital for centuries and holds the Eiffel Tower, finished in 1889."},
+ {c:"This is the largest hot desert on Earth, covering much of North Africa.", a:"Sahara", also:["sahara desert","the sahara"], why:"The Sahara covers about 9.2 million square kilometres — nearly the size of the United States."},
+ {c:"This river flows through Egypt and empties into the Mediterranean Sea.", a:"Nile", also:["nile river","the nile"], why:"The Nile runs about 6,650 km northward through Egypt to the Mediterranean."},
+ {c:"This city is the capital of Japan.", a:"Tokyo", also:[], why:"Tokyo became Japan's capital in 1868 and is its largest city."},
+ {c:"This country is also a continent, the smallest continent on Earth.", a:"Australia", also:[], why:"Australia is the only country that covers a whole continent — the smallest of the seven."}
+]},
+{name:"Animals", clues:[
+ {c:"This is the largest land animal alive today, native to Africa and Asia.", a:"Elephant", also:["african elephant","elephants"], why:"African elephants can weigh six tonnes — no land animal is bigger."},
+ {c:"This is the only mammal that can truly fly.", a:"Bat", also:["bats"], why:"Bats are mammals whose forelimbs are wings; over 1,400 species exist."},
+ {c:"An octopus has this many hearts.", a:"Three", also:["3"], why:"Two hearts pump blood to an octopus's gills and one pumps it to the rest of the body."},
+ {c:"This spotted big cat is the fastest land animal over short distances.", a:"Cheetah", also:["cheetahs"], why:"A cheetah can reach about 60 km/h in a few seconds chasing prey."},
+ {c:"A young frog, with a tail and no legs, is called this.", a:"Tadpole", also:["tadpoles","polliwog"], why:"Tadpoles hatch from eggs, live in water, and grow legs as they change into frogs."}
+]},
+{name:"Food & Drink", clues:[
+ {c:"This green fruit is the main ingredient in guacamole.", a:"Avocado", also:["avocados"], why:"Guacamole is mashed avocado with lime, salt, and often onion, chilli, and coriander."},
+ {c:"Sushi — seasoned rice with fish or vegetables — comes from this country.", a:"Japan", also:[], why:"Sushi developed in Japan; its seasoned rice was originally a way to preserve fish."},
+ {c:"This Italian dish is a flat bread topped with tomato and cheese, baked in a hot oven.", a:"Pizza", also:[], why:"Pizza in its modern form comes from Naples, Italy, where it was a working-class street food."},
+ {c:"This spice, ground from a bark, flavours apple pie and many curries.", a:"Cinnamon", also:[], why:"Cinnamon is the inner bark of the cinnamon tree, dried into curls called quills."},
+ {c:"Bees make this sweet food and store it in a comb.", a:"Honey", also:[], why:"Bees turn flower nectar into honey and seal it in wax cells as stored food."}
+]},
+{name:"Space", clues:[
+ {c:"This is the star closest to Earth.", a:"The Sun", also:["sun","sol"], why:"The Sun is our star; its light takes about eight minutes to reach Earth."},
+ {c:"This astronaut was the first person to walk on the Moon, in 1969.", a:"Neil Armstrong", also:["armstrong"], why:"Neil Armstrong stepped onto the Moon on 20 July 1969, during Apollo 11."},
+ {c:"This ringed planet is the second largest in our solar system.", a:"Saturn", also:[], why:"Saturn's rings are made mostly of ice particles; only Jupiter is a larger planet."},
+ {c:"This is the galaxy that contains our solar system.", a:"Milky Way", also:["the milky way","milky way galaxy"], why:"The Milky Way is a spiral galaxy holding at least 100 billion stars, including the Sun."},
+ {c:"Earth has exactly this many natural moons.", a:"One", also:["1"], why:"Earth has one natural satellite — the Moon. Some planets have dozens; Mercury and Venus have none."}
+]},
+{name:"History", clues:[
+ {c:"He was the first President of the United States.", a:"George Washington", also:["washington"], why:"George Washington served as the first U.S. president from 1789 to 1797."},
+ {c:"The Second World War ended in this year.", a:"1945", also:[], why:"The war in Europe ended in May 1945 and in the Pacific that September."},
+ {c:"This wall dividing a German city fell in 1989.", a:"Berlin Wall", also:["the berlin wall"], why:"The Berlin Wall fell on 9 November 1989, opening the way to German reunification."},
+ {c:"The ancient Olympic Games were held in this country.", a:"Greece", also:["ancient greece"], why:"The games began at Olympia in Greece in 776 BC and honoured the god Zeus."},
+ {c:"He is credited with developing the movable-type printing press in Europe around 1440.", a:"Johannes Gutenberg", also:["gutenberg","johann gutenberg"], why:"Gutenberg's press in Mainz, Germany, made books cheap enough to spread widely for the first time in Europe."}
+]},
+{name:"Music & Arts", clues:[
+ {c:"A standard piano has this many keys.", a:"88", also:["eighty eight","eighty-eight"], why:"A full piano has 52 white keys and 36 black keys — 88 in all."},
+ {c:"This Italian artist painted the Mona Lisa.", a:"Leonardo da Vinci", also:["da vinci","leonardo"], why:"Leonardo da Vinci painted the Mona Lisa in the early 1500s; it now hangs in the Louvre."},
+ {c:"A string quartet has this many players.", a:"Four", also:["4"], why:"A string quartet is two violins, a viola, and a cello — four players."},
+ {c:"This German composer wrote nine symphonies and lost his hearing late in life.", a:"Ludwig van Beethoven", also:["beethoven"], why:"Beethoven composed much of his greatest work, including the Ninth Symphony, while profoundly deaf."},
+ {c:"This Russian composer wrote the ballets Swan Lake and The Nutcracker.", a:"Pyotr Ilyich Tchaikovsky", also:["tchaikovsky","peter tchaikovsky"], why:"Tchaikovsky's ballets — Swan Lake, The Nutcracker, Sleeping Beauty — are the most performed in the world."}
+]},
+{name:"Sports", clues:[
+ {c:"A football (soccer) team fields this many players at once, including the goalkeeper.", a:"Eleven", also:["11"], why:"Soccer is eleven-a-side: ten outfield players plus a goalkeeper."},
+ {c:"The Olympic symbol is made of this many interlocked rings.", a:"Five", also:["5"], why:"The five Olympic rings stand for the inhabited continents joined by sport."},
+ {c:"A marathon race is just over this many miles long.", a:"26 miles", also:["26","26.2 miles","26.2","42 kilometres","42 kilometers","42.2","42"], why:"A marathon is 42.195 km — 26 miles and 385 yards."},
+ {c:"In tennis scoring, a score of zero is called this word.", a:"Love", also:[], why:"Tennis calls zero 'love' — the word likely comes from the French l'oeuf, 'the egg', for the shape of a zero."},
+ {c:"A basketball hoop stands this many feet above the floor.", a:"Ten feet", also:["10 feet","10","ten"], why:"The rim is 10 feet (3.05 m) high, a standard set in the game's earliest rules and never changed."}
+]},
+{name:"Technology", clues:[
+ {c:"The @ symbol in an email address is read aloud as this word.", a:"At", also:["at sign","the at sign"], why:"The @ is called the 'at sign'; it separates your name from your mail domain in an address."},
+ {c:"A single binary digit — a 0 or a 1 — is called this.", a:"Bit", also:["a bit"], why:"'Bit' shortens 'binary digit'; eight bits make a byte."},
+ {c:"This part of a computer, abbreviated CPU, does the main calculating work.", a:"Central processing unit", also:["cpu","processor"], why:"The CPU — central processing unit — carries out the instructions of every program you run."},
+ {c:"The common keyboard layout starting Q-W-E-R-T-Y is known by this name.", a:"QWERTY", also:["qwerty keyboard"], why:"QWERTY is named for its first six letter keys and dates to typewriters of the 1870s."},
+ {c:"This British scientist invented the World Wide Web in 1989.", a:"Tim Berners-Lee", also:["berners lee","berners-lee"], why:"Tim Berners-Lee built the first web browser and server at CERN and gave the web away free."}
+]},
+{name:"The Human Body", clues:[
+ {c:"This is the largest organ of the human body.", a:"Skin", also:["the skin"], why:"Your skin is an organ — the largest — covering about two square metres on an adult."},
+ {c:"An adult human skeleton has this many bones.", a:"206", also:["two hundred six","two hundred and six"], why:"Babies are born with about 300 bones; many fuse together, leaving 206 in an adult."},
+ {c:"The human heart has this many chambers.", a:"Four", also:["4"], why:"Two upper atria and two lower ventricles — four chambers pump blood around the body."},
+ {c:"A full set of adult teeth, including wisdom teeth, has this many teeth.", a:"32", also:["thirty two","thirty-two"], why:"Adults have 32 permanent teeth; children have 20 baby teeth."},
+ {c:"This blood group can be given to patients of any group in an emergency and is called the universal donor type.", a:"O negative", also:["o-","o neg"], why:"O negative blood carries neither A, B, nor Rh(D) markers, so any patient can receive it."}
+]},
+{name:"Books & Words", clues:[
+ {c:"This English playwright wrote Hamlet and Romeo and Juliet.", a:"William Shakespeare", also:["shakespeare"], why:"Shakespeare wrote at least 37 plays and 154 sonnets in the late 1500s and early 1600s."},
+ {c:"A word meaning the opposite of another word — like hot for cold — is called this.", a:"Antonym", also:["antonyms"], why:"Antonym pairs words of opposite meaning; synonym pairs words of similar meaning."},
+ {c:"This author wrote Alice's Adventures in Wonderland under the pen name Lewis Carroll.", a:"Charles Dodgson", also:["dodgson","lewis carroll"], why:"Charles Lutwidge Dodgson, a mathematics lecturer, published the Alice books as Lewis Carroll."},
+ {c:"A haiku traditionally has this many syllables in its middle line.", a:"Seven", also:["7"], why:"A haiku runs 5–7–5 syllables: five, then seven, then five."},
+ {c:"This is the first name of the boy wizard in J.K. Rowling's seven-book series.", a:"Harry", also:["harry potter"], why:"Harry Potter's story runs through seven books, from The Philosopher's Stone to The Deathly Hallows."}
+]},
+{name:"Everyday World", clues:[
+ {c:"A rainbow is traditionally said to show this many colours.", a:"Seven", also:["7"], why:"The traditional seven are red, orange, yellow, green, blue, indigo, and violet."},
+ {c:"A leap year has this many days.", a:"366", also:["three hundred sixty six","three hundred sixty-six"], why:"Leap years add 29 February, making 366 days, to keep the calendar in step with Earth's orbit."},
+ {c:"A hexagon has this many sides.", a:"Six", also:["6"], why:"Hex- means six: a hexagon has six sides and six angles."},
+ {c:"This is the currency of Japan.", a:"Yen", also:["the yen","japanese yen"], why:"The yen has been Japan's currency since 1871 and is one of the world's most traded."},
+ {c:"Water turning to ice is described by this word — the opposite of melting.", a:"Freezing", also:["freeze","frozen"], why:"Freezing is liquid water becoming solid ice at 0 °C under normal pressure."}
+]}
+];
+var FINALS = [
+ {cat:"Final: Science", c:"This element, symbol Fe, is the most common metal in Earth's crust by use and gives rust its colour.", a:"Iron", also:["fe"], why:"Iron (Fe, from Latin ferrum) rusts into iron oxide — the red-brown colour on old metal."},
+ {cat:"Final: Geography", c:"This is the capital city of Canada.", a:"Ottawa", also:[], why:"Ottawa, in Ontario, is Canada's capital — chosen by Queen Victoria in 1857."},
+ {cat:"Final: Animals", c:"This flightless bird, the largest bird alive, is native to Africa.", a:"Ostrich", also:["ostriches"], why:"The common ostrich stands up to 2.7 m tall and is the world's largest living bird."},
+ {cat:"Final: History", c:"The first human-made object to orbit Earth, Sputnik 1, was launched in this year.", a:"1957", also:[], why:"The Soviet Union launched Sputnik 1 on 4 October 1957, starting the space age."},
+ {cat:"Final: The Body", c:"This organ produces insulin to control blood sugar.", a:"Pancreas", also:["the pancreas"], why:"Clusters of cells in the pancreas, the islets of Langerhans, release insulin into the blood."},
+ {cat:"Final: Words", c:"This word for a word that reads the same backwards and forwards describes 'level' and 'racecar'.", a:"Palindrome", also:["palindromes"], why:"Palindromes read identically both ways — 'level', 'racecar', and 'A man, a plan, a canal: Panama'."}
+];
+var BOTPROB = {
+ learning:[.70,.60,.50,.40,.30],
+ steady:[.85,.75,.65,.55,.45],
+ sharp:[.92,.85,.78,.70,.62],
+ pro:[.97,.93,.88,.83,.78]
+};
+var BOTNAMES = {learning:["Learner Lou","Learner Bea"], steady:["Steady Sam","Steady Sue"], sharp:["Sharp Ana","Sharp Eli"], pro:["Pro Max","Pro Ivy"]};
+
+/* ================= STATE & STORAGE ================= */
+var $ = function(id){ return document.getElementById(id); };
+var LS_REC = "answer-board-record-v1", LS_SET = "answer-board-settings-v1";
+var settings = {teach:"light"};
+try{ var s = JSON.parse(localStorage.getItem(LS_SET)||"null"); if(s && s.teach) settings.teach = s.teach; }catch(e){}
+function blankRecord(){ return {games:[], catStats:{}, wagerFound:0, wagerWon:0, finalsEntered:0, finalsWon:0, gamesPlayed:0, gamesWon:0}; }
+var record = blankRecord();
+try{ var r = JSON.parse(localStorage.getItem(LS_REC)||"null"); if(r && r.games) record = r; }catch(e){}
+function saveRecord(){ try{ localStorage.setItem(LS_REC, JSON.stringify(record)); }catch(e){} renderRecord(); }
+function saveSettings(){ try{ localStorage.setItem(LS_SET, JSON.stringify(settings)); }catch(e){} }
+
+var G = null; // live game
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+
+function variantLabel(){
+  var v=[];
+  if($("roundsSel").value==="one") v.push("round one only");
+  if($("penSel").value==="none") v.push("no subtraction");
+  if($("wagSel").value!=="2") v.push($("wagSel").value+" wager squares");
+  return v.length? "Variant: "+v.join(", ") : "Standard";
+}
+function updateBanner(){
+  var b=$("variantBanner"), lab=variantLabel();
+  if(lab==="Standard"){ b.className="banner standard"; b.textContent="Standard game: two rounds, wrong answers subtract, two wager squares per board."; }
+  else { b.className="banner variant"; b.textContent="⚠ "+lab+" — this game is not the standard form, and your record will label it so."; }
+}
+["roundsSel","penSel","wagSel"].forEach(function(id){ $(id).addEventListener("change", updateBanner); });
+
+/* ================= MATCHING ================= */
+function norm(s){
+  return (s||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/)
+    .filter(function(w){ return w && w!=="a" && w!=="an" && w!=="the"; }).join(" ").trim();
+}
+function lev(a,b){
+  var m=a.length,n=b.length,i,j,d=[];
+  for(i=0;i<=m;i++){ d[i]=[i]; }
+  for(j=0;j<=n;j++){ d[0][j]=j; }
+  for(i=1;i<=m;i++) for(j=1;j<=n;j++)
+    d[i][j]=Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[m][n];
+}
+function matches(typed, clue){
+  var t=norm(typed); if(!t) return false;
+  var cands=[clue.a].concat(clue.also||[]);
+  for(var i=0;i<cands.length;i++){
+    var c=norm(cands[i]);
+    if(t===c) return true;
+    var d=lev(t,c), tol = c.length>=9?2:(c.length>=5?1:0);
+    if(d<=tol) return true;
+  }
+  return false;
+}
+
+/* ================= GAME FLOW ================= */
+function buildBoard(round){
+  var cats = shuffle(BANK).slice(0,6);
+  var wagerCount = parseInt($("wagSel").value,10);
+  var spots = shuffle(cats.map(function(_,ci){ return [0,1,2,3,4].map(function(ri){ return ci*10+ri; }); }).reduce(function(x,y){return x.concat(y);},[])).slice(0,wagerCount);
+  return { cats:cats, cells: cats.map(function(cat,ci){
+    return cat.clues.map(function(cl,ri){ return {clue:cl, taken:false, wager: spots.indexOf(ci*10+ri)>=0, wagerDone:false}; });
+  })};
+}
+function startGame(){
+  var alias = ($("aliasIn").value||"").trim() || "Guest";
+  var mode = $("modeSel").value, level = $("botSel").value;
+  var players = [{name:alias, score:0, bot:false}];
+  if(mode==="bots"){ BOTNAMES[level].forEach(function(n){ players.push({name:n, score:0, bot:true, level:level}); }); }
+  G = { players:players, round:1, turn:0, board:buildBoard(1), cur:null, rebound:[], started:new Date().toISOString(),
+        variant:variantLabel(), mode:mode, level:level, alias:alias, clueLog:[], finalDone:false, over:false };
+  $("setupSec").classList.add("hidden");
+  $("finalBox").classList.add("hidden");
+  $("clueBox").classList.add("hidden");
+  $("endRoundBtn").disabled = false;
+  renderScores(); renderBoard(); updateTurnLine(); renderCoach();
+  if(G.players[0].bot===false && mode==="bots"){ /* player starts */ }
+  maybeBotPick();
+}
+function values(){ return G.round===1 ? [100,200,300,400,500] : [200,400,600,800,1000]; }
+function renderScores(){
+  $("scoresRow").innerHTML = G.players.map(function(p,i){
+    return '<div class="scorecard'+(i===G.turn?" turn":"")+(p.score<0?" neg":"")+'"><div class="nm">'+
+      escapeHtml(p.name)+(p.bot?" (bot)":"")+'</div><div class="sc">'+p.score+'</div>'+
+      '<div class="small muted">'+(i===G.turn?"Picking / answering":"Waiting")+'</div></div>';
+  }).join("");
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function renderBoard(){
+  var vals=values(), h="";
+  G.board.cats.forEach(function(cat){ h+='<div class="cathead">'+escapeHtml(cat.name)+'</div>'; });
+  for(var ri=0; ri<5; ri++){
+    for(var ci=0; ci<6; ci++){
+      var cell=G.board.cells[ci][ri];
+      if(cell.taken) h+='<button type="button" class="cell'+(cell.wager?" wagersq":"")+'" disabled>'+(cell.wager?"WAGER":"")+'</button>';
+      else h+='<button type="button" class="cell" data-ci="'+ci+'" data-ri="'+ri+'">'+vals[ri]+'</button>';
+    }
+  }
+  $("boardGrid").innerHTML=h;
+  var btns=$("boardGrid").querySelectorAll("button.cell:not(:disabled)");
+  for(var i=0;i<btns.length;i++) btns[i].addEventListener("click", function(){
+    openClue(parseInt(this.getAttribute("data-ci"),10), parseInt(this.getAttribute("data-ri"),10));
+  });
+}
+function updateTurnLine(extra){
+  if(!G){ return; }
+  var p=G.players[G.turn];
+  $("turnLine").textContent = "Round "+G.round+" of "+( $("roundsSel").value==="both" ? "2":"1")+
+    " — "+(p.bot? p.name+" (bot) is picking…" : p.name+", pick a square.")+(extra?" "+extra:"");
+}
+function remaining(){ var n=0; G.board.cells.forEach(function(col){ col.forEach(function(c){ if(!c.taken) n++; }); }); return n; }
+
+function maybeBotPick(){
+  if(!G || G.over) return;
+  var p=G.players[G.turn];
+  if(!p.bot) { updateTurnLine(); return; }
+  updateTurnLine();
+  setTimeout(function(){
+    if(!G || G.over || !G.players[G.turn].bot) return;
+    var open=[];
+    G.board.cells.forEach(function(col,ci){ col.forEach(function(c,ri){ if(!c.taken) open.push([ci,ri]); }); });
+    if(!open.length){ endRound(); return; }
+    /* bots favour low rows early (stated simple rule: pick a random open square in the two cheapest open rows) */
+    var minRow=Math.min.apply(null, open.map(function(o){return o[1];}));
+    var pref=open.filter(function(o){ return o[1]<=minRow+1; });
+    var pick=pref[Math.floor(Math.random()*pref.length)];
+    openClue(pick[0], pick[1]);
+  }, 900);
+}
+function openClue(ci, ri){
+  var cell=G.board.cells[ci][ri]; if(cell.taken) return;
+  cell.taken=true;
+  var val=values()[ri];
+  G.cur={ci:ci, ri:ri, cell:cell, value:val, wagerAmt:0, picker:G.turn, attempts:[]};
+  G.rebound=[];
+  renderBoard();
+  $("clueBox").classList.remove("hidden");
+  $("nextRow").classList.add("hidden");
+  $("resultArea").innerHTML="";
+  $("clueCat").textContent = G.board.cats[ci].name+" — Round "+G.round;
+  $("clueVal").textContent = "$"+val;
+  var picker=G.players[G.turn];
+  if(cell.wager && !cell.wagerDone){
+    cell.wagerDone=true;
+    if(!picker.bot){ record.wagerFound++; saveRecord(); }
+    showWagerSetup(picker, val);
+    $("clueText").textContent="A hidden wager square! The clue stays hidden until the bet is placed.";
+    $("answerArea").classList.add("hidden");
+  } else {
+    $("wagerArea").innerHTML="";
+    $("clueText").textContent=cell.clue.c;
+    beginAttempt();
+  }
+  $("clueBox").scrollIntoView({behavior:"smooth", block:"center"});
+  renderCoach();
+}
+function maxWager(p, topVal){ return Math.max(p.score, topVal); }
+function showWagerSetup(picker, val){
+  var top=values()[4], mx=maxWager(picker, top);
+  if(picker.bot){
+    var bet=Math.max(5, Math.round((mx/2)/100)*100);
+    G.cur.wagerAmt=Math.min(bet, mx);
+    $("wagerArea").innerHTML='<p class="wagerline">'+escapeHtml(picker.name)+' found a wager square and bets '+G.cur.wagerAmt+' (bot rule: half the maximum, rounded to 100).</p>';
+    $("clueText").textContent=G.cur.cell.clue.c;
+    beginAttempt();
+  } else {
+    $("wagerArea").innerHTML='<p class="wagerline">You found a wager square! Bet from 5 up to '+mx+
+      ' (your score, or the board top value '+top+' if higher).</p>'+
+      '<div class="answerrow"><input type="number" id="wagerIn" min="5" max="'+mx+'" step="5" value="'+Math.min(100,mx)+'" aria-label="Your wager" />'+
+      '<button type="button" class="btn gold" id="wagerBtn">Place my bet — tap</button></div>';
+    $("wagerBtn").addEventListener("click", function(){
+      var v=parseInt($("wagerIn").value,10);
+      if(isNaN(v)||v<5||v>mx){ $("wagerArea").querySelector(".wagerline").textContent="That bet is outside 5 to "+mx+". Try again."; return; }
+      G.cur.wagerAmt=v;
+      $("wagerArea").innerHTML='<p class="wagerline">Your bet: '+v+'. The clue is worth '+v+' — right adds it, wrong takes it away.</p>';
+      $("clueText").textContent=G.cur.cell.clue.c;
+      beginAttempt();
+    });
+  }
+}
+function stakes(){ return G.cur.wagerAmt>0 ? G.cur.wagerAmt : G.cur.value; }
+function beginAttempt(){
+  var p=G.players[G.turn];
+  $("answerArea").classList.remove("hidden");
+  if(p.bot){
+    $("answerArea").classList.add("hidden");
+    setTimeout(function(){ botAttempt(); }, 800);
+  } else {
+    $("answerIn").value=""; $("answerIn").focus();
+  }
+}
+function botProb(bot, ri){
+  var arr=BOTPROB[bot.level]; return arr[Math.min(ri,4)];
+}
+function botAttempt(){
+  if(!G || !G.cur) return;
+  var p=G.players[G.turn];
+  var ok=Math.random() < botProb(p, G.cur.ri);
+  resolveAttempt(p, ok, ok? G.cur.cell.clue.a : "(no matching fact)");
+}
+function submitPlayerAnswer(passed){
+  if(!G || !G.cur) return;
+  var p=G.players[G.turn]; if(p.bot) return;
+  var typed=passed? "" : $("answerIn").value;
+  var ok=!passed && matches(typed, G.cur.cell.clue);
+  resolveAttempt(p, ok, typed);
+}
+function resolveAttempt(p, ok, typed){
+  var st=stakes(), pen=$("penSel").value;
+  G.cur.attempts.push({player:p.name, ok:ok});
+  if(G.turn===0 || !p.bot){ /* log player's own attempts for category record */ }
+  if(ok){
+    p.score+=st;
+    if(G.cur.wagerAmt>0 && G.turn===G.cur.picker && !p.bot){ record.wagerWon++; }
+    logClue(p, true);
+    finishClue(true, p);
+  } else {
+    if(pen==="sub") p.score-=st;
+    logClue(p, false);
+    /* build rebound queue: everyone else, in turn order */
+    var others=[];
+    for(var i=1;i<G.players.length;i++){ others.push((G.cur.picker+i)%G.players.length); }
+    others=others.filter(function(ix){ return G.cur.attempts.length<=G.players.length && !G.cur.attempts.some(function(a){return a.player===G.players[ix].name;}); });
+    if(others.length && G.players.length>1){
+      G.turn=others[0];
+      renderScores();
+      showResult(false, p, true);
+      setTimeout(function(){
+        if(!G || !G.cur) return;
+        var np=G.players[G.turn];
+        if(np.bot){ botAttempt(); } else {
+          $("answerArea").classList.remove("hidden");
+          $("answerIn").value=""; $("answerIn").focus();
+          $("resultArea").innerHTML='<p class="verdict bad">Rebound — '+escapeHtml(np.name)+', your chance at the same clue for '+stakes()+'.</p>'+ $("resultArea").innerHTML;
+        }
+      }, 700);
+    } else {
+      finishClue(false, null);
+    }
+  }
+  renderScores(); saveRecord();
+}
+function logClue(p, ok){
+  if(p.bot) return; /* category record tracks the human player */
+  var cat=G.board.cats[G.cur.ci].name;
+  if(!record.catStats[cat]) record.catStats[cat]={seen:0, right:0};
+  record.catStats[cat].seen++; if(ok) record.catStats[cat].right++;
+  G.clueLog.push({cat:cat, value:G.cur.value, ok:ok, wager:G.cur.wagerAmt||0});
+}
+function showResult(ok, p, rebounding){
+  var clue=G.cur.cell.clue, teach=settings.teach;
+  var h='<p class="verdict '+(ok?"good":"bad")+'">'+(ok? "Right! +"+stakes()+" for "+escapeHtml(p.name)+"." : "Not it — "+escapeHtml(p.name)+( $("penSel").value==="sub" ? " loses "+stakes()+"." : " loses nothing (variant)."))+'</p>';
+  if(!rebounding || ok){
+    h+='<p style="text-align:center">The fact was: <strong>'+escapeHtml(clue.a)+'</strong></p>';
+    if(teach!=="off") h+='<div class="why"><strong>Why:</strong> '+escapeHtml(clue.why)+'</div>';
+  }
+  $("resultArea").innerHTML=h;
+}
+function finishClue(ok, winner){
+  showResult(ok, winner||G.players[G.cur.picker], false);
+  $("answerArea").classList.add("hidden");
+  $("nextRow").classList.remove("hidden");
+  if(winner) G.turn=G.players.indexOf(winner);
+  else G.turn=(G.cur.picker+1)%G.players.length;
+  G.cur=null;
+  renderScores(); renderBoard(); renderCoach();
+}
+$("answerBtn").addEventListener("click", function(){ submitPlayerAnswer(false); });
+$("passBtn").addEventListener("click", function(){ submitPlayerAnswer(true); });
+$("answerIn").addEventListener("keydown", function(e){ if(e.key==="Enter") submitPlayerAnswer(false); });
+$("nextBtn").addEventListener("click", function(){
+  $("clueBox").classList.add("hidden");
+  if(remaining()===0){ endRound(); return; }
+  updateTurnLine(); maybeBotPick();
+});
+function endRound(){
+  $("clueBox").classList.add("hidden");
+  if(G.round===1 && $("roundsSel").value==="both"){
+    G.round=2; G.board=buildBoard(2); G.turn=lowestScorer();
+    renderScores(); renderBoard(); updateTurnLine("Round two — values doubled."); renderCoach(); maybeBotPick();
+  } else {
+    startFinal();
+  }
+}
+function lowestScorer(){ var ix=0; G.players.forEach(function(p,i){ if(p.score<G.players[ix].score) ix=i; }); return ix; }
+$("endRoundBtn").addEventListener("click", function(){ if(G && !G.over) endRound(); });
+$("newGameBtn").addEventListener("click", function(){
+  G=null; $("setupSec").classList.remove("hidden"); $("clueBox").classList.add("hidden");
+  $("finalBox").classList.add("hidden"); $("boardGrid").innerHTML=""; $("scoresRow").innerHTML="";
+  $("turnLine").textContent="Set up above, then tap Start."; $("endRoundBtn").disabled=true;
+});
+
+/* ================= FINAL ================= */
+var finalClue=null, finalWagers=[];
+function startFinal(){
+  finalClue=FINALS[Math.floor(Math.random()*FINALS.length)];
+  finalWagers=G.players.map(function(){ return 0; });
+  record.finalsEntered++; saveRecord();
+  $("finalBox").classList.remove("hidden");
+  $("finalWagerArea").classList.remove("hidden");
+  $("finalAnswerArea").classList.add("hidden");
+  $("finalResult").innerHTML="";
+  $("finalCatLine").textContent="Category: "+finalClue.cat.replace("Final: ","");
+  var me=G.players[0];
+  $("finalWagerHint").textContent="Your score is "+me.score+". You may wager from 0 up to "+Math.max(me.score,0)+". A right answer adds your wager; a miss subtracts it.";
+  renderCoach(true);
+  $("finalBox").scrollIntoView({behavior:"smooth"});
+}
+function botFinalWager(ix){
+  var sorted=G.players.map(function(p,i){return i;}).sort(function(a,b){ return G.players[b].score-G.players[a].score; });
+  var p=G.players[ix], mx=Math.max(p.score,0);
+  if(sorted[0]===ix){ /* leader: cover second */
+    var second=G.players[sorted[1]].score;
+    return Math.max(0, Math.min(mx, second*2 - p.score + 100));
+  }
+  return mx; /* second and third: everything */
+}
+$("finalWagerBtn").addEventListener("click", function(){
+  var me=G.players[0], mx=Math.max(me.score,0);
+  var v=parseInt($("finalWagerIn").value,10);
+  if(isNaN(v)||v<0||v>mx){ $("finalWagerHint").textContent="That wager is outside 0 to "+mx+". Try again."; return; }
+  finalWagers[0]=v;
+  G.players.forEach(function(p,i){ if(p.bot) finalWagers[i]=botFinalWager(i); });
+  $("finalWagerArea").classList.add("hidden");
+  $("finalAnswerArea").classList.remove("hidden");
+  $("finalClueText").textContent=finalClue.c;
+  $("finalAnswerIn").value=""; $("finalAnswerIn").focus();
+});
+$("finalAnswerBtn").addEventListener("click", function(){
+  var typed=$("finalAnswerIn").value;
+  var results=G.players.map(function(p,i){
+    var ok = p.bot ? (Math.random() < BOTPROB[p.level][2]) : matches(typed, finalClue);
+    return {p:p, ok:ok, wager:finalWagers[i]};
+  });
+  results.forEach(function(r){ r.p.score += r.ok? r.wager : -r.wager; });
+  var winner=G.players.slice().sort(function(a,b){ return b.score-a.score; })[0];
+  var humanWon = winner===G.players[0];
+  if(humanWon) record.finalsWon++;
+  var h='<p class="verdict '+(humanWon?"good":"")+'">The fact was: <strong>'+escapeHtml(finalClue.a)+'</strong></p>';
+  if(settings.teach!=="off") h+='<div class="why"><strong>Why:</strong> '+escapeHtml(finalClue.why)+'</div>';
+  h+='<table><tr><th>Contestant</th><th class="num">Wager</th><th>Answer</th><th class="num">Final score</th></tr>'+
+     results.map(function(r){ return '<tr><td>'+escapeHtml(r.p.name)+'</td><td class="num">'+r.wager+'</td><td>'+(r.ok?"Right":"Missed")+'</td><td class="num">'+r.p.score+'</td></tr>'; }).join("")+'</table>';
+  h+='<p class="verdict good">Winner: '+escapeHtml(winner.name)+' with '+winner.score+'.</p>';
+  $("finalResult").innerHTML=h;
+  $("finalAnswerArea").classList.add("hidden");
+  finishGame(winner);
+});
+function finishGame(winner){
+  G.over=true; G.finalDone=true;
+  record.gamesPlayed++;
+  if(winner===G.players[0]) record.gamesWon++;
+  record.games.unshift({
+    date:G.started, alias:G.alias, mode:G.mode, botLevel:G.mode==="bots"?G.level:"—",
+    rounds:$("roundsSel").value, variant:G.variant,
+    scores:G.players.map(function(p){ return {name:p.name, score:p.score}; }),
+    result: winner===G.players[0] ? "won" : (G.players.length===1 ? "finished" : "lost"),
+    clues:G.clueLog
+  });
+  if(record.games.length>60) record.games=record.games.slice(0,60);
+  saveRecord(); renderScores(); renderCoach();
+  $("turnLine").textContent="Game over — "+winner.name+" wins with "+winner.score+". Your record below has the game, labelled "+G.variant+".";
+  $("endRoundBtn").disabled=true;
+}
+
+/* ================= COACH ================= */
+function renderCoach(isFinal){
+  var box=$("coachBox");
+  if(settings.teach!=="coach" || !G){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  var me=G.players[0], h="";
+  /* category strategy from the record + this board */
+  var best=null, worst=null;
+  Object.keys(record.catStats).forEach(function(k){
+    var s=record.catStats[k]; if(s.seen>=2){ var r=s.right/s.seen;
+      if(!best||r>best.r) best={k:k,r:r}; if(!worst||r<worst.r) worst={k:k,r:r}; }
+  });
+  if(best) h+="<p><strong>Your shelves:</strong> strongest recorded category is <strong>"+escapeHtml(best.k)+"</strong> ("+Math.round(best.r*100)+"% over "+record.catStats[best.k].seen+" clues)"+(worst&&worst!==best? "; weakest is <strong>"+escapeHtml(worst.k)+"</strong> ("+Math.round(worst.r*100)+"%). Hunt the strong shelf while you hold the board; test a weak shelf at 100 before its big squares are at stake.":"")+"</p>";
+  else h+="<p><strong>Your shelves:</strong> not enough recorded clues yet to name a strong shelf — after two clues in a category, the Coach reads your accuracy and points you at it.</p>";
+  /* live standing + wager math */
+  var sorted=G.players.slice().sort(function(a,b){ return b.score-a.score; });
+  if(G.players.length>1){
+    var lead=sorted[0], second=sorted[1];
+    h+="<p><strong>The standing:</strong> "+escapeHtml(lead.name)+" leads with "+lead.score+"; next is "+escapeHtml(second.name)+" at "+second.score+". "+
+      (lead===me? "You lead. On a wager square, betting small protects this; a cover bet of "+Math.max(5, second.score*2-me.score+100)+" would put you beyond reach if it lands — and cost exactly that if it misses."
+                : "You trail by "+(lead.score-me.score)+". Safe play keeps you trailing; a wager square is your swing — the most you may bet is your score or "+values()[4]+", whichever is bigger.")+"</p>";
+  } else {
+    h+="<p><strong>Solo standing:</strong> you are at "+me.score+" with "+remaining()+" squares left on this board (worth up to "+(remaining()*values()[4])+" more). On a wager square you may bet up to "+Math.max(me.score, values()[4])+".</p>";
+  }
+  if(isFinal || (G.over)){
+    var s2=G.players.slice().sort(function(a,b){ return b.score-a.score; });
+    if(G.players.length>1){
+      var cover=Math.max(0, s2[1].score*2 - s2[0].score + 100);
+      h+="<p><strong>Final-wager math on these scores:</strong> the leader ("+escapeHtml(s2[0].name)+", "+s2[0].score+") covers second ("+s2[1].score+") by betting <strong>"+cover+"</strong> — right answer, and second's maximum cannot pass. Second's best counter is to bet on the leader missing: wager enough that a leader miss drops them below you. "+
+        (s2[0]===me? "That leader is you: "+cover+" is your cover number." : s2[1]===me? "You are second: your all-in is "+Math.max(me.score,0)+"; it wins whenever the leader misses and you are right." : "You are further back: bet it all — only a double-up plus misses above you can win.")+"</p>";
+    } else {
+      h+="<p><strong>Final-wager math, solo:</strong> your score is "+me.score+". Betting B makes your finish "+(me.score)+" + B if right, "+(me.score)+" − B if wrong. Bet the amount whose loss you would still call a good game.</p>";
+    }
+  }
+  $("coachBody").innerHTML=h;
+}
+
+/* ================= RECORD UI ================= */
+function renderRecord(){
+  var el=$("recordBody");
+  var cats=Object.keys(record.catStats);
+  var totalSeen=0,totalRight=0; cats.forEach(function(k){ totalSeen+=record.catStats[k].seen; totalRight+=record.catStats[k].right; });
+  if(!record.gamesPlayed && !totalSeen){ el.innerHTML="<p>No games recorded yet. Play a clue and this shelf fills in.</p>"; return; }
+  var h="<p><strong>Games played:</strong> "+record.gamesPlayed+" · <strong>won:</strong> "+record.gamesWon+
+    " · <strong>Clues answered:</strong> "+totalRight+" of "+totalSeen+(totalSeen? " ("+Math.round(totalRight/totalSeen*100)+"%)":"")+
+    " · <strong>Wager squares:</strong> "+record.wagerFound+" found, "+record.wagerWon+" won"+
+    " · <strong>Finals:</strong> "+record.finalsEntered+" played, "+record.finalsWon+" won</p>";
+  if(cats.length){
+    h+='<table><tr><th>Category</th><th class="num">Answered</th><th class="num">Right</th><th class="num">Accuracy</th></tr>'+
+      cats.sort().map(function(k){ var s=record.catStats[k]; return '<tr><td>'+escapeHtml(k)+'</td><td class="num">'+s.seen+'</td><td class="num">'+s.right+'</td><td class="num">'+Math.round(s.right/s.seen*100)+'%</td></tr>'; }).join("")+"</table>";
+  }
+  if(record.games.length){
+    h+="<h3>Recent games</h3>"+record.games.slice(0,5).map(function(g){
+      return "<p class='small'>"+escapeHtml((g.date||"").slice(0,10))+" · "+escapeHtml(g.alias)+" · "+(g.mode==="bots"? "vs bots ("+escapeHtml(g.botLevel)+")" : "solo")+" · "+escapeHtml(g.variant)+" · "+
+        g.scores.map(function(s){ return escapeHtml(s.name)+" "+s.score; }).join(", ")+" · <strong>"+escapeHtml(g.result)+"</strong></p>";
+    }).join("");
+  }
+  el.innerHTML=h;
+}
+function download(name, text, type){
+  var blob=new Blob([text],{type:type}); var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 400);
+}
+$("expJsonBtn").addEventListener("click", function(){ download("answer-board-record.json", JSON.stringify(record,null,2), "application/json"); });
+$("expCsvBtn").addEventListener("click", function(){
+  var rows=[["date","alias","mode","botLevel","rounds","variant","result","scores"].join(",")];
+  record.games.forEach(function(g){
+    rows.push([g.date,g.alias,g.mode,g.botLevel,g.rounds,'"'+(g.variant||"").replace(/"/g,'""')+'"',g.result,'"'+g.scores.map(function(s){return s.name+" "+s.score;}).join("; ")+'"'].join(","));
+  });
+  download("answer-board-record.csv", rows.join("\n"), "text/csv");
+});
+var forgetArmed=false;
+$("forgetBtn").addEventListener("click", function(){
+  if(!forgetArmed){ forgetArmed=true; this.textContent="Tap again to wipe the whole record — this cannot be undone";
+    $("forgetHint").textContent="Armed. One more tap wipes games, category stats, wager and final counts.";
+    setTimeout(function(){ forgetArmed=false; $("forgetBtn").textContent="Forget my record — tap"; }, 6000); return; }
+  record=blankRecord(); forgetArmed=false; saveRecord();
+  this.textContent="Forget my record — tap"; $("forgetHint").textContent="Wiped. The record shelf is empty.";
+});
+
+/* ================= SETTINGS / MISC ================= */
+$("teachSel").value=settings.teach;
+$("teachSel").addEventListener("change", function(){ settings.teach=this.value; saveSettings(); renderCoach(); });
+$("startBtn").addEventListener("click", startGame);
+$("dlBtn").addEventListener("click", function(){
+  download("the-answer-board.html", "<!doctype html>\n"+document.documentElement.outerHTML, "text/html");
+});
+(function(){
+  var total=BANK.reduce(function(n,c){ return n+c.clues.length; },0);
+  $("bankLine").textContent="The bank holds "+total+" board clues in "+BANK.length+" categories ("+
+    BANK.map(function(c){ return c.name+" "+c.clues.length; }).join(" · ")+") plus "+FINALS.length+" final clues.";
+  updateBanner(); renderRecord();
+})();
+</script>
+</body>
+</html>
