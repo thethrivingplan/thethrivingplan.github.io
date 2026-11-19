@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Life, the Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#edf2e9;
+    --surface:#ffffff;
+    --surface-2:#f4f8f1;
+    --ink:#1b2a1d;
+    --muted:#4d5f50;
+    --line:#cfdcc9;
+    --accent:#256d3c;
+    --accent-strong:#1a5230;
+    --accent-ink:#ffffff;
+    --gold:#9a6206;
+    --gold-bg:#fdf3d7;
+    --gold-line:#e3c56a;
+    --danger:#a52a21;
+    --shadow:0 2px 10px rgba(27,42,29,.08);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f150e;
+      --surface:#1a2418;
+      --surface-2:#212d1f;
+      --ink:#e9f1e5;
+      --muted:#aebfa9;
+      --line:#37492f;
+      --accent:#63bd7f;
+      --accent-strong:#8fd3a4;
+      --accent-ink:#0f1f13;
+      --gold:#e5b84e;
+      --gold-bg:#2c2410;
+      --gold-line:#6d5a1e;
+      --danger:#f0938a;
+      --shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{transition:none !important; animation:none !important}
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:17px;
+    line-height:1.55;
+  }
+  h1,h2,h3{font-family:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.15;margin:0}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]),a.btn{
+    min-height:44px;
+  }
+  button{font:inherit;cursor:pointer}
+  input,select,textarea{font:inherit}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 56px}
+
+  /* ---------- Free banner ---------- */
+  .freebar{
+    background:var(--accent-strong);
+    color:#fff;
+    padding:10px 16px;
+  }
+  @media (prefers-color-scheme: dark){ .freebar{color:#0f1f13} }
+  .freebar-in{max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between}
+  .freebar strong{font-size:1.05rem;letter-spacing:.01em}
+  .freebar .small{font-size:.92rem;opacity:.92}
+  .btn-offline{
+    background:transparent;color:inherit;border:2px solid currentColor;border-radius:999px;
+    padding:6px 16px;font-weight:700;font-size:.95rem;
+  }
+
+  /* ---------- Hero / scoreboard ---------- */
+  .hero{padding:28px 0 8px}
+  .hero h1{font-size:clamp(2.2rem,6vw,3.4rem);font-weight:800}
+  .hero .lede{font-size:1.15rem;max-width:44rem;margin:10px 0 0;color:var(--ink)}
+  .scoreboard{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:20px;
+  }
+  .score{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;box-shadow:var(--shadow);
+  }
+  .score .label{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .score .value{font-family:"Bricolage Grotesque",sans-serif;font-size:2rem;font-weight:800;line-height:1.1}
+  .score.points{background:var(--gold-bg);border-color:var(--gold-line)}
+  .score.points .value{color:var(--gold)}
+  .score .sub{font-size:.9rem;color:var(--muted)}
+  #feedback{
+    margin-top:14px;border-radius:var(--radius);padding:12px 16px;font-weight:700;
+    background:var(--surface-2);border:1px dashed var(--accent);display:none;
+  }
+  #feedback.show{display:block}
+
+  /* ---------- Compass ---------- */
+  .compass{
+    position:sticky;top:0;z-index:20;background:var(--bg);
+    padding:10px 0 8px;margin-top:14px;border-bottom:2px solid var(--line);
+  }
+  .compass .hint{font-size:.85rem;color:var(--muted);margin:0 0 6px}
+  .compass nav{display:flex;flex-wrap:wrap;gap:8px}
+  .compass a{
+    display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;
+    background:var(--surface);border:1px solid var(--line);border-radius:999px;
+    color:var(--ink);text-decoration:none;font-weight:700;font-size:.95rem;
+  }
+  .compass a:hover,.compass a:focus-visible{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:1px}
+
+  /* ---------- Sections ---------- */
+  section{margin-top:36px}
+  section > h2{font-size:1.7rem;font-weight:800}
+  section > .intro{color:var(--muted);max-width:46rem;margin:6px 0 0}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+
+  .point-face{border:2px solid var(--accent);background:var(--surface)}
+  .point-face h2{font-size:1.55rem}
+  .point-face p.big{font-size:1.12rem}
+  .honor{border:2px solid var(--gold-line);background:var(--gold-bg)}
+  .honor h2{font-size:1.55rem}
+
+  /* Teaching dial visibility */
+  body[data-teach="quiet"] .why, body[data-teach="quiet"] .deep{display:none}
+  body[data-teach="standard"] .deep{display:none}
+  .why{color:var(--muted);font-size:.95rem;margin:6px 0 0}
+  .deep{
+    font-size:.95rem;margin:10px 0 0;padding:10px 12px;border-radius:10px;
+    background:var(--surface-2);border:1px solid var(--line);
+  }
+  .deep strong{color:var(--accent-strong)}
+  @media (prefers-color-scheme: dark){ .deep strong{color:var(--accent-strong)} }
+
+  /* Controls */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);
+    padding:10px 18px;font-weight:700;text-decoration:none;
+  }
+  .btn:hover,.btn:focus-visible{background:var(--accent-strong);border-color:var(--accent-strong);outline:none}
+  @media (prefers-color-scheme: dark){ .btn:hover,.btn:focus-visible{color:#0f1f13} }
+  .btn.ghost{background:transparent;color:var(--accent-strong);border-color:var(--line)}
+  .btn.ghost:hover,.btn.ghost:focus-visible{border-color:var(--accent);background:var(--surface-2)}
+  .btn.small{padding:6px 14px;font-size:.93rem;min-height:40px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.danger{background:transparent;color:var(--danger);border-color:var(--danger)}
+  .btn.danger:hover{background:var(--danger);color:#fff}
+  .seg{display:inline-flex;flex-wrap:wrap;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px}
+  .seg button{border:0;background:transparent;border-radius:999px;padding:8px 16px;font-weight:700;color:var(--muted);min-height:40px}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+  label.f{display:block;font-weight:700;margin:0 0 4px;font-size:.95rem}
+  .field{margin-bottom:14px}
+  .field input,.field select,.field textarea{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);
+  }
+  .field .help{font-size:.88rem;color:var(--muted);margin-top:4px}
+  .form-grid{display:grid;grid-template-columns:1fr 130px;gap:12px}
+  @media (max-width:560px){ .form-grid{grid-template-columns:1fr} }
+
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  .stat h3{font-size:1.15rem;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .stat .lvl{font-size:.85rem;color:var(--gold);font-weight:800;white-space:nowrap}
+  .bar{height:14px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;margin:10px 0 6px}
+  .bar > div{height:100%;background:var(--accent);width:0%;transition:width .45s ease}
+  .stat .xp{font-size:.9rem;color:var(--muted)}
+  .stat .feeds{font-size:.88rem;color:var(--muted);margin-top:6px}
+
+  /* Quests & rewards lists */
+  .items{display:grid;gap:12px;margin-top:14px}
+  .item{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);
+    display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between;
+  }
+  .item .main{flex:1 1 260px;min-width:0}
+  .item h3{font-size:1.12rem}
+  .tag{
+    display:inline-block;font-size:.78rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);margin-left:8px;vertical-align:middle;
+  }
+  .pts{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;color:var(--gold);white-space:nowrap}
+  .item .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .empty{
+    border:1px dashed var(--line);border-radius:var(--radius);padding:18px;color:var(--muted);
+    background:var(--surface-2);margin-top:14px;
+  }
+  .shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}
+  .shelf .item{display:block}
+  .shelf .item .actions{margin-top:12px}
+
+  details.fold{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:4px 18px;box-shadow:var(--shadow);margin-top:14px;
+  }
+  details.fold summary{
+    cursor:pointer;font-weight:700;padding:10px 0;display:flex;align-items:center;list-style:none;
+  }
+  details.fold summary::-webkit-details-marker{display:none}
+  details.fold .fold-body{padding:0 0 16px}
+
+  /* Mirror log */
+  .log{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+  .log li{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+    display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;font-size:.97rem;
+  }
+  .log .when{color:var(--muted);font-size:.88rem}
+  .log .delta{font-weight:800}
+  .log .delta.plus{color:var(--accent-strong)}
+  .log .delta.minus{color:var(--gold)}
+
+  .data-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+  .note{font-size:.92rem;color:var(--muted)}
+  #forgetConfirm{display:none;margin-top:12px;border:1px solid var(--danger);border-radius:var(--radius);padding:14px 16px}
+  #forgetConfirm.show{display:block}
+
+  footer{
+    margin-top:48px;border-top:2px solid var(--line);padding-top:18px;
+    color:var(--muted);font-size:.93rem;display:grid;gap:6px;
+  }
+  footer strong{color:var(--ink)}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body data-teach="standard">
+
+<div class="freebar">
+  <div class="freebar-in">
+    <div><strong>Free — always free.</strong> <span class="small">No ads. No account. No in-app purchases, ever — points here can't be bought.</span></div>
+    <button type="button" class="btn-offline" id="downloadPage">Tap to download this page for offline use</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Life, the Game</h1>
+    <p class="lede">Your real life is the game board. Do a real thing — a workout, five push-ups, a kindness — and earn points for it. Spend the points on rewards you stock yourself: a snack, a candy bar, an hour of guilt-free games, a day off. Nobody profits but you.</p>
+
+    <div class="scoreboard" aria-label="Your scoreboard">
+      <div class="score points">
+        <div class="label">Your points</div>
+        <div class="value" id="pointsValue">0</div>
+        <div class="sub">Spendable right now in your reward shop</div>
+      </div>
+      <div class="score">
+        <div class="label">Playing as</div>
+        <div class="value" id="aliasValue" style="font-size:1.5rem">Player One</div>
+        <div class="sub">Level <span id="levelValue">1</span> · <span id="totalEarnedValue">0</span> points earned all-time</div>
+      </div>
+      <div class="score">
+        <div class="label">Quests done</div>
+        <div class="value" id="questsDoneValue">0</div>
+        <div class="sub">Rewards claimed: <span id="rewardsClaimedValue">0</span></div>
+      </div>
+    </div>
+
+    <div id="feedback" role="status" aria-live="polite"></div>
+  </header>
+
+  <div class="compass">
+    <p class="hint">Compass — tap a word to go straight there:</p>
+    <nav aria-label="Compass">
+      <a href="#point">The Point</a>
+      <a href="#character">Your Character</a>
+      <a href="#stats">Stats</a>
+      <a href="#quests">Quests</a>
+      <a href="#shop">Reward Shop</a>
+      <a href="#mirror">Your Mirror</a>
+      <a href="#yourdata">Your Data</a>
+    </nav>
+  </div>
+
+  <!-- THE POINT -->
+  <section id="point">
+    <div class="grid2">
+      <div class="card point-face">
+        <h2>The point, printed plain</h2>
+        <p class="big"><strong>Money is out of the equation entirely.</strong> Points in this game can never be bought, sold, traded, or transferred. There is nothing to buy and nobody selling. A point only ever means one thing: <strong>“I did the thing.”</strong></p>
+        <p>This game exists so people spend time working on themselves and growing — not to make anybody better at making somebody else money. Your effort pays <em>you</em>, in rewards you chose, at prices you set.</p>
+        <p class="why"><strong>Why it works:</strong> when the reward can't be purchased, the only way to earn it is to actually live the quest. The shortcut doesn't exist, so the growth is the game.</p>
+        <p class="deep"><strong>Go deeper:</strong> most games sell you the feeling of progress. Here the feeling and the fact are the same thing — the points on this screen rose because something real happened in your actual day. That's the whole design, and it's why prices and point values are yours to set: you know what a day off is worth to you.</p>
+      </div>
+      <div class="card honor">
+        <h2>The honor system — the honest core</h2>
+        <p class="big">This game <strong>cannot check</strong> whether you really did the push-ups. Nothing here watches you, counts your reps, or verifies a thing. It runs on the honor system, completely.</p>
+        <p>Your record is your own mirror. Tapping “complete” on a quest you didn't do doesn't fool a server somewhere — it just fogs the mirror you're looking into. Cheating here only cheats the person in it.</p>
+        <p><strong>And gently:</strong> there are no streaks to lose, no punishments, no points taken away for a hard week. A missed day is just a day. The game will be here when you are.</p>
+        <p class="why"><strong>Why no checking?</strong> because the person this game serves is you. A mirror doesn't need a guard — it needs you to look at it honestly.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARACTER -->
+  <section id="character">
+    <h2>Your character</h2>
+    <p class="intro">That's you. Call yourself anything you like — your real name, a nickname, a hero name. Alias freedom: it's your game, and nobody else sees it.</p>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <form id="aliasForm">
+          <div class="field">
+            <label class="f" for="aliasInput">Your name in the game</label>
+            <input id="aliasInput" type="text" maxlength="40" value="Player One" autocomplete="off" />
+          </div>
+          <button type="submit" class="btn">Tap to save your name</button>
+        </form>
+      </div>
+      <div class="card">
+        <p style="margin:0 0 8px"><strong>Teaching dial</strong> — how much explaining do you want?</p>
+        <div class="seg" role="group" aria-label="Teaching dial">
+          <button type="button" data-teach-btn="quiet" aria-pressed="false">Quiet — just play</button>
+          <button type="button" data-teach-btn="standard" aria-pressed="true">Standard — the why</button>
+          <button type="button" data-teach-btn="deep" aria-pressed="false">Deep — teach me</button>
+        </div>
+        <p class="why">Every quest and stat carries a short “why.” Quiet hides them, Standard shows them, Deep adds a longer teaching note. Tap a setting to change it — it applies to this visit.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section id="stats">
+    <h2>Your stats</h2>
+    <p class="intro">Four areas of a life. Every quest is tagged with one, and finishing the quest feeds that stat. Stats level up every 25 points fed into them — slowly, the way real change happens.</p>
+    <div class="stats" id="statsGrid">
+      <div class="stat" data-stat="Strength">
+        <h3>Strength <span class="lvl">Level <span class="stat-level">1</span></span></h3>
+        <div class="bar" role="img" aria-label="Strength progress to next level"><div class="stat-fill"></div></div>
+        <div class="xp"><span class="stat-xp">0</span> points fed in · <span class="stat-next">25</span> to next level</div>
+        <p class="feeds">Fed by your body: workouts, push-ups, walks.</p>
+      </div>
+      <div class="stat" data-stat="Mind">
+        <h3>Mind <span class="lvl">Level <span class="stat-level">1</span></span></h3>
+        <div class="bar" role="img" aria-label="Mind progress to next level"><div class="stat-fill"></div></div>
+        <div class="xp"><span class="stat-xp">0</span> points fed in · <span class="stat-next">25</span> to next level</div>
+        <p class="feeds">Fed by learning: reading, studying, thinking hard.</p>
+      </div>
+      <div class="stat" data-stat="Craft">
+        <h3>Craft <span class="lvl">Level <span class="stat-level">1</span></span></h3>
+        <div class="bar" role="img" aria-label="Craft progress to next level"><div class="stat-fill"></div></div>
+        <div class="xp"><span class="stat-xp">0</span> points fed in · <span class="stat-next">25</span> to next level</div>
+        <p class="feeds">Fed by practice: your instrument, your trade, your making.</p>
+      </div>
+      <div class="stat" data-stat="Heart">
+        <h3>Heart <span class="lvl">Level <span class="stat-level">1</span></span></h3>
+        <div class="bar" role="img" aria-label="Heart progress to next level"><div class="stat-fill"></div></div>
+        <div class="xp"><span class="stat-xp">0</span> points fed in · <span class="stat-next">25</span> to next level</div>
+        <p class="feeds">Fed by people: kindness, showing up, being there.</p>
+      </div>
+    </div>
+    <p class="deep"><strong>Go deeper:</strong> the four stats are a balance check, not a contest. If Strength climbs while Heart sits at zero for a month, the mirror is telling you something about where your days are going — no judgment attached, just information you can act on.</p>
+  </section>
+
+  <!-- QUESTS -->
+  <section id="quests">
+    <h2>Quests</h2>
+    <p class="intro">A quest is a real thing you do in your real life. Finish it out there, then come back and tap complete. Your active quests are below — build your own, or take one from the starter shelf.</p>
+
+    <h3 style="margin-top:22px;font-size:1.2rem">Your active quests</h3>
+    <div class="items" id="questList"></div>
+    <div class="empty" id="questEmpty" style="display:none">No active quests right now. That's fine — add one below, or take one from the starter shelf. A quiet board is not a failed board.</div>
+
+    <div class="grid2" style="margin-top:22px">
+      <div class="card">
+        <h3 style="font-size:1.2rem">Make your own quest</h3>
+        <form id="questForm" style="margin-top:12px">
+          <div class="field">
+            <label class="f" for="questName">Quest — what will you actually do?</label>
+            <input id="questName" type="text" maxlength="80" placeholder="e.g. Mow the yard, Call Mom, Finish the chapter" required />
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="f" for="questTag">Which stat does it feed?</label>
+              <select id="questTag">
+                <option value="Strength">Strength — body</option>
+                <option value="Mind">Mind — learning</option>
+                <option value="Craft">Craft — practice &amp; making</option>
+                <option value="Heart">Heart — people</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="f" for="questPoints">Points</label>
+              <input id="questPoints" type="number" min="1" max="500" step="1" value="5" required />
+              <div class="help">Small thing, 5. Real effort, 10–25. A mountain, more.</div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="f" for="questWhy">The why (optional — your own reason)</label>
+            <input id="questWhy" type="text" maxlength="140" placeholder="Why does this one matter to you?" />
+          </div>
+          <button type="submit" class="btn">Tap to add this quest</button>
+        </form>
+      </div>
+
+      <div>
+        <h3 style="font-size:1.2rem">The starter shelf</h3>
+        <p class="note" style="margin:4px 0 0">Proven quests with suggested points. Tap to put one on your board — you can always make your own version at your own price in effort.</p>
+        <div class="shelf" id="starterShelf" style="grid-template-columns:1fr"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REWARD SHOP -->
+  <section id="shop">
+    <h2>Your reward shop</h2>
+    <p class="intro">You stock this shop, you set the prices, and you're the only customer. Points leave your balance when you claim a reward — then go enjoy it. That's not cheating the game; that <em>is</em> the game.</p>
+
+    <h3 style="margin-top:22px;font-size:1.2rem">On the shelves</h3>
+    <div class="items" id="rewardList"></div>
+    <div class="empty" id="rewardEmpty" style="display:none">Your shelves are empty. Stock something below — a reward you actually want is the engine of the whole game.</div>
+
+    <div class="card" style="margin-top:22px;max-width:640px">
+      <h3 style="font-size:1.2rem">Stock a new reward</h3>
+      <form id="rewardForm" style="margin-top:12px">
+        <div class="field">
+          <label class="f" for="rewardName">Reward — what do you get?</label>
+          <input id="rewardName" type="text" maxlength="80" placeholder="e.g. A long bath, New guitar strings, Sleep in Saturday" required />
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="f" for="rewardCost">Price in points</label>
+            <input id="rewardCost" type="number" min="1" max="5000" step="1" value="20" required />
+            <div class="help">Price it so it feels earned, not free and not impossible.</div>
+          </div>
+          <div class="field">
+            <label class="f" for="rewardNote">Note (optional)</label>
+            <input id="rewardNote" type="text" maxlength="100" placeholder="The good kind. The big one." />
+          </div>
+        </div>
+        <button type="submit" class="btn">Tap to stock this reward</button>
+      </form>
+      <p class="why"><strong>Why you set the prices:</strong> a candy bar and a day off are not worth the same in your life, and only you know the exchange rate between your effort and your treats.</p>
+      <p class="deep"><strong>Go deeper:</strong> if a reward sits unclaimed for weeks, its price may be too high or the reward may not actually tempt you. Adjust either one. A shop tuned to what you truly want pulls you through quests on the days motivation is thin — that's not weakness, that's design.</p>
+    </div>
+  </section>
+
+  <!-- MIRROR -->
+  <section id="mirror">
+    <h2>Your mirror</h2>
+    <p class="intro">Everything you've done in this visit, written down plain. This is the record only you can make true.</p>
+    <ul class="log" id="logList"></ul>
+    <div class="empty" id="logEmpty">Nothing yet. Complete a quest and it will appear here — the first line of the mirror is the hardest and the best.</div>
+
+    <details class="fold" id="howFold">
+      <summary><span class="fold-label">Tap to open — how a day in the game goes</span></summary>
+      <div class="fold-body">
+        <p><strong>Morning:</strong> look at your board and pick one quest. Just one is a fine day.</p>
+        <p><strong>Out there:</strong> do the thing, in real life, for real. The game waits; it doesn't watch.</p>
+        <p><strong>Back here:</strong> tap complete. Points land, the stat it feeds grows, and the mirror gains a line.</p>
+        <p><strong>When the balance is right:</strong> claim a reward from your own shop and enjoy it completely — guilt-free is the point of earning it.</p>
+        <p><strong>A day you do none of this:</strong> nothing happens. No streak breaks, no points vanish. A missed day is just a day.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- YOUR DATA -->
+  <section id="yourdata">
+    <h2>Your data — yours, on your device</h2>
+    <div class="card">
+      <p style="margin-top:0">This game keeps everything <strong>on this device, in this page</strong> — nothing is sent anywhere, there's no account and no server holding your record. Your game lives in this tab: <strong>export it to a file to keep it</strong>, and import that file any time to pick up where you left off.</p>
+      <div class="data-row">
+        <button type="button" class="btn" id="exportBtn">Tap to export your game (download a file)</button>
+        <label class="btn ghost" for="importFile" style="margin:0">Tap to import a saved game</label>
+        <input id="importFile" type="file" accept="application/json,.json" class="sr-only" />
+        <button type="button" class="btn danger" id="forgetBtn">Tap to forget everything</button>
+      </div>
+      <p class="note">Export saves your points, stats, quests, rewards, and mirror as one small file on your device. Forget erases it all from here, for good — export first if any of it matters to you.</p>
+      <div id="forgetConfirm" role="alert">
+        <p style="margin:0 0 10px"><strong>Forget everything?</strong> Your points, stats, quests, rewards, and mirror will be erased and the game restarts fresh. This cannot be undone.</p>
+        <div class="data-row" style="margin-top:0">
+          <button type="button" class="btn danger" id="forgetYes">Tap to erase it all and start fresh</button>
+          <button type="button" class="btn ghost" id="forgetNo">Tap to keep my game</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div><strong>Life, the Game</strong> — free forever, no ads, no accounts, no purchases. Points can never be bought, sold, or transferred.</div>
+    <div>Copyleft: this page's writing and design are shared under <strong>CC BY-SA 4.0</strong> and its code under <strong>GPL</strong> — copy it, change it, share it, keep it free. The name stays with its maker.</div>
+    <div>Built on the honor system, because the mirror only works if you do.</div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STARTERS = [
+    { name:"Do a workout", points:10, tag:"Strength",
+      why:"Why: moving your whole body is the biggest single deposit you can make in Strength — and in sleep, mood, and energy that night.",
+      deep:"Go deeper: a workout counts at whatever scale is real for you today. Twenty hard minutes beats the perfect hour you never start." },
+    { name:"Do 5 push-ups", points:5, tag:"Strength",
+      why:"Why: five is small enough to never skip and real enough to count. This is the original quest — the one the whole game was dreamed up around.",
+      deep:"Go deeper: when five gets easy, don't raise the points — raise the quest. Sets of five, then ten. The points stay honest because the effort grew." },
+    { name:"Push-ups in sets — 3 sets, rest between", points:10, tag:"Strength",
+      why:"Why: sets teach your body (and your brain) that hard things come in rounds, with rest built in — not one endless push.",
+      deep:"Go deeper: resting between sets is part of the quest, not a pause in it. Recovery is where the strength actually gets built." },
+    { name:"Take a walk", points:5, tag:"Strength",
+      why:"Why: the most underrated quest on the shelf. A walk feeds your body, clears your head, and asks almost nothing of you to start.",
+      deep:"Go deeper: walks are where thinking happens — problems that won't budge at a desk often move at walking pace. Mind thanks Strength for this one." },
+    { name:"Read for 20 minutes", points:5, tag:"Mind",
+      why:"Why: twenty minutes of real reading is a full workout for Mind — attention is a muscle and pages are its weights.",
+      deep:"Go deeper: what you read matters less than that you stayed with it. A novel, a manual, a history — Mind grows on all of it." },
+    { name:"Practice your craft for 20 minutes", points:10, tag:"Craft",
+      why:"Why: craft only grows one way — reps. Twenty focused minutes, repeated, is how every skill you've ever admired was actually built.",
+      deep:"Go deeper: practice means working the edge of what you can't quite do yet, not replaying what's already easy. Easy reps are a walk; edge reps are Craft." },
+    { name:"Do a kindness for somebody", points:5, tag:"Heart",
+      why:"Why: Heart is fed by other people. One deliberate kindness — a call, a hand, a door held with attention — counts in full.",
+      deep:"Go deeper: the kindness has to cost a little something — time, attention, effort — to feed Heart. That's not cynicism; it's how you know it was real." }
+  ];
+
+  var state = {
+    alias: "Player One",
+    points: 0,
+    totalEarned: 0,
+    questsDone: 0,
+    rewardsClaimed: 0,
+    stats: { Strength:0, Mind:0, Craft:0, Heart:0 },
+    quests: [
+      { id:1, name:"Do 5 push-ups", points:5, tag:"Strength", why:"The original quest. Five real push-ups, then tap complete." },
+      { id:2, name:"Take a walk", points:5, tag:"Strength", why:"Around the block counts. Fresh air counts double in spirit." },
+      { id:3, name:"Do a kindness for somebody", points:5, tag:"Heart", why:"One deliberate kindness, done for real." }
+    ],
+    rewards: [
+      { id:1, name:"A candy bar", cost:15, note:"The good kind." },
+      { id:2, name:"A snack, no guilt attached", cost:20, note:"You earned it. That's the whole sentence." },
+      { id:3, name:"An hour of guilt-free games", cost:40, note:"Timer on, conscience off." },
+      { id:4, name:"A day off", cost:150, note:"A real one. Plan it, take it, enjoy it." }
+    ],
+    log: []
+  };
+  var nextQuestId = 100, nextRewardId = 100;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var feedbackTimer = null;
+  function say(msg){
+    var f = $("feedback");
+    f.textContent = msg;
+    f.classList.add("show");
+    if (feedbackTimer) clearTimeout(feedbackTimer);
+    feedbackTimer = setTimeout(function(){ f.classList.remove("show"); }, 6000);
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function nowLabel(){
+    try { return new Date().toLocaleString(undefined, { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" }); }
+    catch(e){ return "Today"; }
+  }
+  function statLevel(xp){ return Math.floor(xp / 25) + 1; }
+  function overallLevel(){ return Math.floor(state.totalEarned / 50) + 1; }
+
+  function render(){
+    $("pointsValue").textContent = state.points;
+    $("aliasValue").textContent = state.alias;
+    $("levelValue").textContent = overallLevel();
+    $("totalEarnedValue").textContent = state.totalEarned;
+    $("questsDoneValue").textContent = state.questsDone;
+    $("rewardsClaimedValue").textContent = state.rewardsClaimed;
+
+    // Stats
+    var cards = document.querySelectorAll(".stat[data-stat]");
+    for (var i=0;i<cards.length;i++){
+      var tag = cards[i].getAttribute("data-stat");
+      var xp = state.stats[tag] || 0;
+      cards[i].querySelector(".stat-level").textContent = statLevel(xp);
+      cards[i].querySelector(".stat-xp").textContent = xp;
+      cards[i].querySelector(".stat-next").textContent = (25 - (xp % 25));
+      cards[i].querySelector(".stat-fill").style.width = ((xp % 25) / 25 * 100) + "%";
+    }
+
+    // Quests
+    var ql = $("questList");
+    ql.innerHTML = "";
+    state.quests.forEach(function(q){
+      var div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML =
+        '<div class="main"><h3>' + esc(q.name) + '<span class="tag">' + esc(q.tag) + '</span></h3>' +
+        (q.why ? '<p class="why">' + esc(q.why) + '</p>' : '') +
+        '</div>' +
+        '<div class="actions"><span class="pts">+' + q.points + ' pts</span>' +
+        '<button type="button" class="btn" data-complete="' + q.id + '">Tap to complete — I did it</button>' +
+        '<button type="button" class="btn ghost small" data-drop-quest="' + q.id + '">Tap to remove</button></div>';
+      ql.appendChild(div);
+    });
+    $("questEmpty").style.display = state.quests.length ? "none" : "block";
+
+    // Rewards
+    var rl = $("rewardList");
+    rl.innerHTML = "";
+    state.rewards.forEach(function(r){
+      var afford = state.points >= r.cost;
+      var div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML =
+        '<div class="main"><h3>' + esc(r.name) + '</h3>' +
+        (r.note ? '<p class="why">' + esc(r.note) + '</p>' : '') +
+        '</div>' +
+        '<div class="actions"><span class="pts">' + r.cost + ' pts</span>' +
+        '<button type="button" class="btn" data-buy="' + r.id + '"' + (afford ? '' : ' disabled') + '>' +
+          (afford ? 'Tap to claim this reward' : 'Needs ' + (r.cost - state.points) + ' more pts') + '</button>' +
+        '<button type="button" class="btn ghost small" data-drop-reward="' + r.id + '">Tap to remove</button></div>';
+      rl.appendChild(div);
+    });
+    $("rewardEmpty").style.display = state.rewards.length ? "none" : "block";
+
+    // Log
+    var lg = $("logList");
+    lg.innerHTML = "";
+    state.log.forEach(function(entry){
+      var li = document.createElement("li");
+      li.innerHTML = '<span>' + esc(entry.text) + '</span>' +
+        '<span><span class="delta ' + (entry.delta >= 0 ? 'plus' : 'minus') + '">' +
+        (entry.delta >= 0 ? '+' : '') + entry.delta + ' pts</span> ' +
+        '<span class="when">' + esc(entry.when) + '</span></span>';
+      lg.appendChild(li);
+    });
+    $("logEmpty").style.display = state.log.length ? "none" : "block";
+  }
+
+  function renderShelf(){
+    var shelf = $("starterShelf");
+    shelf.innerHTML = "";
+    STARTERS.forEach(function(s, idx){
+      var div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML =
+        '<div class="main"><h3>' + esc(s.name) + '<span class="tag">' + esc(s.tag) + '</span></h3>' +
+        '<p class="why">' + esc(s.why) + '</p>' +
+        '<p class="deep">' + esc(s.deep) + '</p></div>' +
+        '<div class="actions"><span class="pts">' + s.points + ' pts</span>' +
+        '<button type="button" class="btn small" data-starter="' + idx + '">Tap to add this quest</button></div>';
+      shelf.appendChild(div);
+    });
+  }
+
+  // Delegated clicks for dynamic buttons
+  document.addEventListener("click", function(ev){
+    var t = ev.target;
+    if (!t || !t.getAttribute) return;
+
+    var completeId = t.getAttribute("data-complete");
+    if (completeId){
+      var qi = state.quests.findIndex(function(q){ return q.id === Number(completeId); });
+      if (qi >= 0){
+        var q = state.quests[qi];
+        state.quests.splice(qi, 1);
+        var before = statLevel(state.stats[q.tag] || 0);
+        state.points += q.points;
+        state.totalEarned += q.points;
+        state.questsDone += 1;
+        state.stats[q.tag] = (state.stats[q.tag] || 0) + q.points;
+        var after = statLevel(state.stats[q.tag]);
+        state.log.unshift({ text:"Quest done: " + q.name, delta:q.points, when:nowLabel() });
+        var msg = "+" + q.points + " points — " + q.name + " done. " + q.tag + " is now at " + state.stats[q.tag] + " points.";
+        if (after > before) msg += " " + q.tag + " leveled up to Level " + after + "!";
+        say(msg);
+        render();
+      }
+      return;
+    }
+
+    var dropQ = t.getAttribute("data-drop-quest");
+    if (dropQ){
+      state.quests = state.quests.filter(function(q){ return q.id !== Number(dropQ); });
+      say("Quest removed from your board. No penalty — it just wasn't today's quest.");
+      render();
+      return;
+    }
+
+    var buyId = t.getAttribute("data-buy");
+    if (buyId){
+      var r = state.rewards.find(function(x){ return x.id === Number(buyId); });
+      if (r && state.points >= r.cost){
+        state.points -= r.cost;
+        state.rewardsClaimed += 1;
+        state.log.unshift({ text:"Reward claimed: " + r.name, delta:-r.cost, when:nowLabel() });
+        say("Claimed: " + r.name + " for " + r.cost + " points. Now go enjoy it — fully, guilt-free. You earned it.");
+        render();
+      }
+      return;
+    }
+
+    var dropR = t.getAttribute("data-drop-reward");
+    if (dropR){
+      state.rewards = state.rewards.filter(function(x){ return x.id !== Number(dropR); });
+      say("Reward removed from your shop. Stock one you'd rather work toward.");
+      render();
+      return;
+    }
+
+    var starterIdx = t.getAttribute("data-starter");
+    if (starterIdx !== null && starterIdx !== undefined && starterIdx !== ""){
+      var s = STARTERS[Number(starterIdx)];
+      if (s){
+        state.quests.push({ id: nextQuestId++, name:s.name, points:s.points, tag:s.tag, why:s.why.replace(/^Why:\s*/, "") });
+        say("Added to your board: " + s.name + " (" + s.points + " pts, feeds " + s.tag + "). Do it out there, then tap complete.");
+        render();
+        document.getElementById("quests").scrollIntoView({ behavior:"smooth", block:"start" });
+      }
+      return;
+    }
+  });
+
+  // Create quest
+  $("questForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var name = $("questName").value.trim();
+    var pts = parseInt($("questPoints").value, 10);
+    var tag = $("questTag").value;
+    var why = $("questWhy").value.trim();
+    if (!name){ say("Give your quest a name first — what will you actually do?"); return; }
+    if (isNaN(pts) || pts < 1) pts = 5;
+    if (pts > 500) pts = 500;
+    state.quests.push({ id: nextQuestId++, name:name, points:pts, tag:tag, why:why });
+    $("questName").value = ""; $("questWhy").value = ""; $("questPoints").value = 5;
+    say("Quest added: " + name + " — " + pts + " pts, feeds " + tag + ". Now go do it in real life.");
+    render();
+  });
+
+  // Stock reward
+  $("rewardForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var name = $("rewardName").value.trim();
+    var cost = parseInt($("rewardCost").value, 10);
+    var note = $("rewardNote").value.trim();
+    if (!name){ say("Name your reward first — what do you get?"); return; }
+    if (isNaN(cost) || cost < 1) cost = 20;
+    if (cost > 5000) cost = 5000;
+    state.rewards.push({ id: nextRewardId++, name:name, cost:cost, note:note });
+    $("rewardName").value = ""; $("rewardNote").value = ""; $("rewardCost").value = 20;
+    say("Stocked in your shop: " + name + " at " + cost + " points. Something worth working toward.");
+    render();
+  });
+
+  // Alias
+  $("aliasForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var v = $("aliasInput").value.trim();
+    state.alias = v ? v : "Player One";
+    say("You are playing as " + state.alias + ". Good name.");
+    render();
+  });
+
+  // Teaching dial
+  var teachBtns = document.querySelectorAll("[data-teach-btn]");
+  for (var b=0;b<teachBtns.length;b++){
+    teachBtns[b].addEventListener("click", function(){
+      var mode = this.getAttribute("data-teach-btn");
+      document.body.setAttribute("data-teach", mode);
+      for (var j=0;j<teachBtns.length;j++){
+        teachBtns[j].setAttribute("aria-pressed", teachBtns[j].getAttribute("data-teach-btn") === mode ? "true" : "false");
+      }
+      say(mode === "quiet" ? "Teaching set to Quiet — just the game, no explaining." :
+          mode === "deep" ? "Teaching set to Deep — every why, plus the longer notes." :
+          "Teaching set to Standard — the short why on everything.");
+    });
+  }
+
+  // Fold label swap (gesture law: folds say their gesture)
+  var fold = $("howFold");
+  fold.addEventListener("toggle", function(){
+    var label = fold.querySelector(".fold-label");
+    label.textContent = fold.open ? "Tap to close — how a day in the game goes" : "Tap to open — how a day in the game goes";
+  });
+
+  // Offline download door: save this page itself
+  $("downloadPage").addEventListener("click", function(){
+    var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    var blob = new Blob([html], { type:"text/html" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "life-the-game.html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    say("Page downloaded. Open that file any time — the game works offline. Export your game file too if you want your progress in it.");
+  });
+
+  // Export
+  $("exportBtn").addEventListener("click", function(){
+    var data = JSON.stringify({
+      game:"life-the-game", version:1, exported: new Date().toISOString(),
+      alias: state.alias, points: state.points, totalEarned: state.totalEarned,
+      questsDone: state.questsDone, rewardsClaimed: state.rewardsClaimed,
+      stats: state.stats, quests: state.quests, rewards: state.rewards, log: state.log
+    }, null, 2);
+    var blob = new Blob([data], { type:"application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "my-life-game.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    say("Your game is saved as a file on your device. Keep it somewhere you'll find it.");
+  });
+
+  // Import
+  $("importFile").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try {
+        var d = JSON.parse(reader.result);
+        if (!d || typeof d !== "object" || !d.stats) throw new Error("bad file");
+        state.alias = String(d.alias || "Player One").slice(0,40);
+        state.points = Math.max(0, Number(d.points) || 0);
+        state.totalEarned = Math.max(0, Number(d.totalEarned) || 0);
+        state.questsDone = Math.max(0, Number(d.questsDone) || 0);
+        state.rewardsClaimed = Math.max(0, Number(d.rewardsClaimed) || 0);
+        state.stats = { Strength:0, Mind:0, Craft:0, Heart:0 };
+        ["Strength","Mind","Craft","Heart"].forEach(function(k){ state.stats[k] = Math.max(0, Number(d.stats[k]) || 0); });
+        state.quests = Array.isArray(d.quests) ? d.quests : [];
+        state.rewards = Array.isArray(d.rewards) ? d.rewards : [];
+        state.log = Array.isArray(d.log) ? d.log : [];
+        state.quests.forEach(function(q){ if (q.id >= nextQuestId) nextQuestId = q.id + 1; });
+        state.rewards.forEach(function(r){ if (r.id >= nextRewardId) nextRewardId = r.id + 1; });
+        $("aliasInput").value = state.alias;
+        say("Welcome back, " + state.alias + ". Your saved game is loaded — " + state.points + " points on the board.");
+        render();
+      } catch(e){
+        say("That file didn't read as a saved Life, the Game file. Nothing was changed.");
+      }
+      $("importFile").value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  // Forget (two-step, in-page)
+  $("forgetBtn").addEventListener("click", function(){ $("forgetConfirm").classList.add("show"); });
+  $("forgetNo").addEventListener("click", function(){ $("forgetConfirm").classList.remove("show"); });
+  $("forgetYes").addEventListener("click", function(){
+    state.alias = "Player One";
+    state.points = 0; state.totalEarned = 0; state.questsDone = 0; state.rewardsClaimed = 0;
+    state.stats = { Strength:0, Mind:0, Craft:0, Heart:0 };
+    state.quests = []; state.rewards = []; state.log = [];
+    $("aliasInput").value = "Player One";
+    $("forgetConfirm").classList.remove("show");
+    say("Forgotten. A fresh game, a clean mirror. Add a quest whenever you're ready.");
+    render();
+  });
+
+  renderShelf();
+  render();
+})();
+</script>
+</body>
+</html>
