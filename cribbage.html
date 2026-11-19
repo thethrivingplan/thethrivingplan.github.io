@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Cribbage</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#f6f7f1; --panel:#ffffff; --panel2:#eef3ea; --ink:#1c2420; --ink2:#43514a;
+        --line:#c9d4c6; --felt:#1d5c38; --felt2:#17492c; --wood:#7a4a21; --wood2:#5d3717;
+        --brass:#a97b1f; --gold:#d9a92c; --red:#b3232a; --accent:#1d5c38;
+        --cardbg:#fffdf6; --cardink:#1c2420; --shadow:0 2px 10px rgba(20,40,25,.12);
+        --pegyou:#d9a92c; --pegbot:#3b4a5a;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0e130f; --panel:#17211a; --panel2:#1d2a20; --ink:#e8eee6; --ink2:#a9bbae;
+          --line:#33473a; --felt:#14512e; --felt2:#0f4023; --wood:#8a5a28; --wood2:#6e4519;
+          --brass:#d9a92c; --gold:#e9bc3f; --red:#e0656b; --accent:#7fc793;
+          --cardbg:#f7f3e6; --cardink:#1c2420; --shadow:0 2px 10px rgba(0,0,0,.5);
+          --pegyou:#e9bc3f; --pegbot:#9db4c8;
+        }
+      }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family: ui-sans-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height:1.45; }
+      .wrap{ max-width:1060px; margin:0 auto; padding:0 14px 48px; }
+      h1,h2,h3{ font-family: Iowan Old Style, Palatino, "Palatino Linotype", Georgia, serif; line-height:1.15; margin:.4em 0 .3em; }
+      h1{ font-size:2rem; }
+      h2{ font-size:1.3rem; }
+      h3{ font-size:1.08rem; }
+      p{ margin:.45em 0; }
+      a{ color:var(--accent); }
+      .freeline{ background:var(--felt); color:#fff; padding:10px 14px; border-radius:0 0 10px 10px;
+        display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; justify-content:space-between; }
+      .freeline strong{ font-size:1.05rem; letter-spacing:.01em; }
+      .freeline button{ background:#fff; color:var(--felt2); border:0; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; min-height:36px; }
+      nav.compass{ display:flex; flex-wrap:wrap; gap:6px 16px; padding:10px 2px; border-bottom:1px solid var(--line); font-size:.95rem; }
+      nav.compass a{ text-decoration:none; font-weight:600; padding:6px 2px; display:inline-block; }
+      nav.compass .sep{ color:var(--ink2); }
+      .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin:14px 0; box-shadow:var(--shadow); }
+      .felt{ background:linear-gradient(160deg, var(--felt), var(--felt2)); color:#f2f7f0; border-color:#0d3520; }
+      .felt a{ color:#ffe9a8; }
+      .muted{ color:var(--ink2); }
+      .small{ font-size:.88rem; }
+      .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+      .grow{ flex:1 1 auto; }
+      button.btn{ background:var(--felt); color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; min-height:44px; font-size:1rem; }
+      button.btn:disabled{ opacity:.45; cursor:default; }
+      button.btn.secondary{ background:var(--panel2); color:var(--ink); border:1px solid var(--line); }
+      button.btn.gold{ background:var(--brass); color:#fff; }
+      .seg{ display:flex; flex-wrap:wrap; gap:6px; }
+      .seg button{ background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:8px 14px; cursor:pointer; min-height:40px; font-weight:600; }
+      .seg button[aria-pressed="true"]{ background:var(--felt); color:#fff; border-color:var(--felt); }
+      label.field{ display:block; font-weight:600; margin:10px 0 4px; }
+      input[type="text"], input[type="number"], select{ background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font-size:1rem; min-height:44px; }
+      .checkline{ display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); cursor:pointer; }
+      .checkline input{ width:22px; height:22px; margin-top:2px; flex:0 0 auto; }
+      .variant-banner{ background:#fdf3d7; color:#5c4300; border:1px solid #d9a92c; border-radius:10px; padding:10px 12px; font-weight:600; }
+      @media (prefers-color-scheme: dark){ .variant-banner{ background:#3a2f10; color:#ffe9a8; } }
+      /* playing cards */
+      .hand{ display:flex; flex-wrap:wrap; gap:8px; min-height:96px; align-items:flex-start; }
+      .pcard{ width:64px; height:92px; border-radius:9px; background:var(--cardbg); color:var(--cardink);
+        border:1.5px solid #b9b2a0; box-shadow:0 2px 5px rgba(0,0,0,.25); position:relative;
+        font-family: Iowan Old Style, Palatino, Georgia, serif; cursor:pointer; padding:5px 6px;
+        display:flex; flex-direction:column; justify-content:space-between; text-align:left; }
+      .pcard .rk{ font-size:1.25rem; font-weight:700; line-height:1; }
+      .pcard .st{ font-size:1.3rem; line-height:1; }
+      .pcard .pip{ font-size:1.7rem; text-align:center; line-height:1; }
+      .pcard.red{ color:var(--red); }
+      .pcard:disabled{ cursor:default; opacity:.92; }
+      .pcard.selected{ outline:3.5px solid var(--gold); transform:translateY(-10px); }
+      .pcard.playable:hover{ transform:translateY(-6px); }
+      .pcard.dim{ opacity:.38; }
+      .pcard.back{ background:repeating-linear-gradient(45deg, #8e2323 0 7px, #701a1a 7px 14px); border-color:#571212; cursor:default; }
+      .pcard.mini{ width:46px; height:66px; }
+      .pcard.mini .rk{ font-size:.95rem; } .pcard.mini .st{ font-size:.95rem; } .pcard.mini .pip{ display:none; }
+      @media (max-width:560px){ .pcard{ width:52px; height:76px; } .pcard .rk{ font-size:1.05rem; } .pcard .pip{ font-size:1.3rem; } }
+      .pilebox{ display:flex; gap:18px; flex-wrap:wrap; }
+      .pile{ min-width:120px; }
+      .pile .cards{ display:flex; }
+      .pile .pcard{ margin-right:-34px; }
+      .countbubble{ display:inline-block; background:#fff; color:var(--felt2); font-weight:800; border-radius:999px; padding:4px 14px; font-size:1.05rem; }
+      @media (prefers-color-scheme: dark){ .countbubble{ background:#e8eee6; } }
+      .teach{ background:#fdf8e3; border:1px solid #d9c26a; color:#4a3a00; border-radius:10px; padding:10px 12px; margin-top:10px; }
+      @media (prefers-color-scheme: dark){ .teach{ background:#2e2a12; color:#ffeeb0; border-color:#6b5d1e; } }
+      .coachopt{ border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0; background:var(--panel2); }
+      .coachopt strong{ display:block; }
+      .log{ max-height:220px; overflow:auto; font-size:.92rem; }
+      .log div{ padding:3px 0; border-bottom:1px dashed var(--line); }
+      details.fold{ border:1px solid var(--line); border-radius:12px; padding:6px 14px; margin:12px 0; background:var(--panel); }
+      details.fold summary{ cursor:pointer; font-weight:700; padding:10px 0; min-height:36px; }
+      table.stats{ border-collapse:collapse; width:100%; font-size:.95rem; }
+      table.stats th, table.stats td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+      table.stats td.num, table.stats th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+      .scorechips{ display:flex; flex-wrap:wrap; gap:8px; }
+      .chip{ background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-weight:700; }
+      .chip .who{ color:var(--ink2); font-weight:600; }
+      .boardwrap{ background:linear-gradient(160deg, var(--wood), var(--wood2)); border-radius:16px; padding:12px; box-shadow:var(--shadow); }
+      .boardwrap svg{ width:100%; height:auto; display:block; }
+      .overlay{ position:fixed; inset:0; background:rgba(10,18,12,.88); display:none; align-items:center; justify-content:center; z-index:40; padding:20px; }
+      .overlay.show{ display:flex; }
+      .overlay .box{ background:var(--panel); color:var(--ink); border-radius:16px; padding:28px 22px; max-width:420px; text-align:center; box-shadow:var(--shadow); }
+      .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      @media (max-width:760px){ .grid2{ grid-template-columns:1fr; } }
+      .kbd-hint{ font-size:.85rem; color:var(--ink2); }
+      .claimrow{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+      .claimrow input{ width:90px; }
+      .flash{ animation:flash 1s ease; }
+      @keyframes flash{ 0%{ background:#ffe9a8; } 100%{ background:transparent; } }
+      @media (prefers-reduced-motion: reduce){ .flash{ animation:none; } .pcard{ transition:none !important; } }
+      .pcard{ transition:transform .15s ease; }
+      svg .peg{ transition:transform .45s ease; }
+      @media (prefers-reduced-motion: reduce){ svg .peg{ transition:none; } }
+      footer{ border-top:1px solid var(--line); margin-top:26px; padding-top:14px; font-size:.9rem; color:var(--ink2); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="freeline">
+        <span><strong>Free — always free.</strong> No ads, no account, no connection needed to play.</span>
+        <button id="offlineBtn" type="button">Save this page for offline play — tap to download</button>
+      </div>
+      <nav class="compass" aria-label="Compass">
+        <a href="https://thethrivingplan.github.io/">Start Page</a><span class="sep">·</span>
+        <a href="https://thethrivingplan.github.io/">The Thriving Plan</a><span class="sep">·</span>
+        <span class="muted">Other pages:</span>
+        <a href="https://thethrivingplan.github.io/checkers.html">Checkers</a>
+        <a href="https://thethrivingplan.github.io/solitaire.html">Solitaire</a>
+        <a href="https://thethrivingplan.github.io/tournament-builder.html">Tournament Builder</a>
+      </nav>
+
+      <h1>Cribbage</h1>
+      <p>The classic card game, played in full: six cards dealt, two to the crib, the cut, pegging during the play, and the show. First to <strong>121</strong> — skunks honoured. This is the proven, documented game: cribbage as recorded since the 1600s (the invention is credited to the poet Sir John Suckling) and kept today in the standard rules of the American Cribbage Congress. Nothing here is an invented variant dressed as the classic — where a rule can change, it sits in the settings, labelled.</p>
+      <p>It is really <strong>two games in one</strong>: the <em>play</em>, where cards peg points as they land, and the <em>show</em>, where hands are counted. New players drown in the counting — so the teaching layer counts out loud, with its reasons, as much or as little as you want.</p>
+
+      <!-- ============ SETUP ============ -->
+      <section class="card" id="setupCard" aria-label="Game setup">
+        <h2>Set up your game</h2>
+        <label class="field" for="aliasInput">Your name at the table — optional, no name is ever required</label>
+        <div class="row">
+          <input type="text" id="aliasInput" class="grow" maxlength="24" placeholder="Player 1 — or roll the dice" autocomplete="off" />
+          <button class="btn secondary" id="diceBtn" type="button" aria-label="Roll for a random name">🎲 Tap for a random name</button>
+        </div>
+        <div id="alias2Row" style="display:none">
+          <label class="field" for="alias2Input">Second player's name — optional</label>
+          <div class="row">
+            <input type="text" id="alias2Input" class="grow" maxlength="24" placeholder="Player 2" autocomplete="off" />
+            <button class="btn secondary" id="dice2Btn" type="button">🎲 Tap for a random name</button>
+          </div>
+        </div>
+
+        <span class="field" id="modeLabel">Who is playing?</span>
+        <div class="seg" role="group" aria-labelledby="modeLabel" id="modeSeg">
+          <button type="button" data-mode="bot" aria-pressed="true">Against the bot</button>
+          <button type="button" data-mode="2p" aria-pressed="false">Two players, this device (pass and play)</button>
+        </div>
+
+        <div id="botLevelBlock">
+          <span class="field" id="lvlLabel">Bot skill — the levels honestly differ; the checked numbers are printed lower on this page</span>
+          <div class="seg" role="group" aria-labelledby="lvlLabel" id="levelSeg">
+            <button type="button" data-level="0" aria-pressed="false">Learning</button>
+            <button type="button" data-level="1" aria-pressed="true">Steady</button>
+            <button type="button" data-level="2" aria-pressed="false">Sharp</button>
+            <button type="button" data-level="3" aria-pressed="false">Pro</button>
+          </div>
+          <p class="small muted" id="levelBlurb"></p>
+        </div>
+
+        <span class="field" id="teachLabel">Teaching — how much the game explains as you play</span>
+        <div class="seg" role="group" aria-labelledby="teachLabel" id="teachSeg">
+          <button type="button" data-teach="off" aria-pressed="false">Off</button>
+          <button type="button" data-teach="light" aria-pressed="true">Light</button>
+          <button type="button" data-teach="coach" aria-pressed="false">Coach</button>
+        </div>
+        <p class="small muted">Light explains every score as it happens. Coach also weighs your choices with you — always showing more than one way where more than one way exists. Saved on this device only.</p>
+
+        <span class="field">Rule settings — standard rules are the default; anything changed is labelled a variant while it is in play</span>
+        <div class="grid2">
+          <div>
+            <label class="field" for="lengthSel">Game length</label>
+            <select id="lengthSel">
+              <option value="121" selected>121 — the standard game</option>
+              <option value="61">61 — the short game (variant)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field" for="mugginsChk">Muggins</label>
+            <label class="checkline" for="mugginsChk">
+              <input type="checkbox" id="mugginsChk" />
+              <span><strong>Muggins — off (the friendly default).</strong> When on, you count your own hand in the show: points you fail to claim go to your opponent. Classic, and merciless.</span>
+            </label>
+          </div>
+        </div>
+        <div id="variantBanner" class="variant-banner" style="display:none;margin-top:12px"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn gold" id="startBtn" type="button" style="font-size:1.1rem">Deal the cards — tap to start</button>
+          <span class="small muted">Settings and your teaching dial are saved on this device only. Nothing is sent anywhere.</span>
+        </div>
+      </section>
+
+      <!-- ============ TABLE ============ -->
+      <section class="card felt" id="tableCard" style="display:none" aria-label="Cribbage table">
+        <div class="row">
+          <div class="scorechips" id="scoreChips"></div>
+          <span class="grow"></span>
+          <span class="countbubble" id="countBubble" style="display:none">Count: 0</span>
+        </div>
+        <div class="boardwrap" style="margin-top:12px">
+          <svg id="board" viewBox="0 0 740 268" role="img" aria-label="Cribbage peg board"></svg>
+        </div>
+        <p class="small" id="boardNote" style="margin:6px 2px 0"></p>
+
+        <h3 id="oppTitle">Opponent</h3>
+        <div class="hand" id="oppHand" aria-label="Opponent cards"></div>
+
+        <div class="pilebox" style="margin-top:8px">
+          <div class="pile">
+            <div class="small" style="font-weight:700">The play so far</div>
+            <div class="cards" id="playPile"></div>
+          </div>
+          <div class="pile">
+            <div class="small" style="font-weight:700">The cut (starter)</div>
+            <div class="cards" id="cutPile"></div>
+          </div>
+          <div class="pile" id="cribPileBox" style="display:none">
+            <div class="small" style="font-weight:700">The crib</div>
+            <div class="cards" id="cribPile"></div>
+          </div>
+        </div>
+
+        <div id="teachBox" class="teach" style="display:none"></div>
+        <div id="coachBox" style="display:none"></div>
+
+        <h3 id="yourTitle">Your hand</h3>
+        <p class="small" id="handHint"></p>
+        <div class="hand" id="yourHand" aria-label="Your cards"></div>
+        <div class="row" id="actionRow" style="margin-top:12px"></div>
+        <div id="claimBox" style="display:none;margin-top:12px"></div>
+      </section>
+
+      <section class="card" id="logCard" style="display:none">
+        <h2>What happened</h2>
+        <div class="log" id="gameLog" aria-live="polite"></div>
+      </section>
+
+      <!-- ============ HAND COUNTER ============ -->
+      <details class="fold" id="counterFold">
+        <summary>Hand counter — tap to open. Walk any hand's points, step by step</summary>
+        <p>Pick any four cards and a cut, and the counter walks the count the way a player at the table would call it — every fifteen, pair, run, flush and nobs, one step at a time, with the cards named. This is the practice tool for the part of cribbage that drowns new players.</p>
+        <div id="counterPickers" class="grid2"></div>
+        <label class="checkline" for="counterCrib" style="margin-top:10px">
+          <input type="checkbox" id="counterCrib" />
+          <span>Count it as a crib (a four-card flush scores nothing in the crib — only all five matching counts)</span>
+        </label>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="counterStart" type="button">Count this hand — tap to begin</button>
+          <button class="btn secondary" id="counterNext" type="button" style="display:none">Next point — tap</button>
+        </div>
+        <div id="counterOut" style="margin-top:10px"></div>
+      </details>
+
+      <!-- ============ STRATEGY RECORD ============ -->
+      <details class="fold" id="recordFold">
+        <summary>Your strategy record — tap to open. Every game you play teaches the coach</summary>
+        <p>Kept on this device only, and forgettable in one tap. The record holds your games against the bot in a clean, consistent form — results, pegging and show averages, and the patterns your own play shows (points left behind in discards, scoring cards not taken in the play, muggins points lost). When the Coach teaches, it draws from <em>your</em> record first, not generic tips alone.</p>
+        <div id="recordOut"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn secondary" id="forgetBtn" type="button">Forget my record — tap to erase it from this device</button>
+        </div>
+      </details>
+
+      <!-- ============ DOCUMENTED STRATEGIES ============ -->
+      <details class="fold">
+        <summary>Documented strategies — tap to open. The proven plays, with where they come from</summary>
+        <p>Cribbage strategy is a documented field — tournament players of the American Cribbage Congress have published and tested these plays for decades (a standard text is <em>Play Winning Cribbage</em> by DeLynn Colvert, a champion of the game). The coach uses them, and names its trade-offs:</p>
+        <h3>Keep your 5s — and don't hand them over</h3>
+        <p>Every 10-value card (10, J, Q, K — sixteen of them) pairs with a 5 to make fifteen. A kept 5 is the most likely card in the deck to gain points from the cut; a 5 thrown to <em>their</em> crib is the most generous gift in the game. Trade-off: sometimes breaking a pair of 5s is still right when the other keep is a sure big hand — the coach shows both numbers when it happens.</p>
+        <h3>Lead from a pair</h3>
+        <p>When you lead a card in the play and hold its mate, if your opponent pairs your lead you pair right back on top — pair royal, six points. Trade-off: leading from a pair spends the pair's show value if the hand were re-counted — it isn't; the play is its own game, which is why the lead is usually worth it.</p>
+        <h3>Never lead a lone 5</h3>
+        <p>Lead a 5 and any 10-value card makes fifteen against you. It is the most punished lead in the documented game. The one honest exception: when the 5 is paired or the count race is nearly over and the points race matters more — the coach says so when it applies.</p>
+        <h3>Play for the go, guard the 21</h3>
+        <p>Counts of 21 are dangerous: your opponent holding mid cards can run to 31. Strong players track what the count lets the other side do, not just what it gives them — the Pro bot does exactly this, and the coach shows its arithmetic on your turns.</p>
+        <h3>The 29 hand</h3>
+        <p>Three 5s and a jack in hand, the fourth 5 cut, jack matching the cut's suit: 29 — the highest hand in cribbage, documented odds of about 1 in 216,580. It is in this game's engine and test set, like every other score on this page.</p>
+      </details>
+
+      <!-- ============ BOT HONESTY ============ -->
+      <details class="fold">
+        <summary>How the bot levels were checked — tap to open</summary>
+        <p>The four levels are four different brains, not one brain with a handicap: <strong>Learning</strong> throws and plays at random, like a first-week player. <strong>Steady</strong> keeps obvious points, keeps its 5s, and takes any points the play offers. <strong>Sharp</strong> values every discard over all 46 possible cuts and prices the crib. <strong>Pro</strong> does all of that with a deeper crib model and plays the pegging two moves deep — its points now, minus your best expected reply, plus the value of its own follow-up, sampled over the cards it cannot see.</p>
+        <p>Before this page was published, the levels were played against each other in full simulated games on this game's own engine. The numbers below are the measured results, not promises:</p>
+        <div id="simTable"></div>
+        <p class="small muted" id="simNote"></p>
+      </details>
+
+      <!-- ============ RULES ============ -->
+      <details class="fold">
+        <summary>How the counting works — tap to open</summary>
+        <h3>The deal and the crib</h3>
+        <p>Each player is dealt six cards and throws two into the <strong>crib</strong> — a second hand that belongs to the dealer. The non-dealer (the <em>pone</em>) cuts, and the top card of the remaining deck is turned up as the <strong>cut</strong> (starter). If the cut is a jack, the dealer pegs 2 at once — <em>his heels</em>. The deal alternates every hand.</p>
+        <h3>The play (pegging)</h3>
+        <p>Players alternate laying cards, keeping a running count that may not pass 31. Points peg as they happen: making the count exactly <strong>15 scores 2</strong>; a <strong>pair 2</strong>, three of a kind 6, four of a kind 12; a <strong>run of three or more scores its length</strong> (cards need not land in order, but a run already scored doesn't score again shorter); making exactly <strong>31 scores 2</strong>. If you cannot play without passing 31 you say <em>go</em>; when neither side can play, the last to play scores 1 for the go — and the last card of the whole play scores 1. The count then resets and the other player leads what remains.</p>
+        <h3>The show</h3>
+        <p>Hands are counted in order — pone's hand first, then the dealer's hand, then the crib (order matters: a game can be won in the show before the crib is ever counted). Each hand counts with the cut as a fifth card: every combination making <strong>15 scores 2</strong>; <strong>pairs</strong> 2 / 6 / 12; <strong>runs</strong> score their length (a doubled card in a run counts the run once per combination, plus the pair); a <strong>flush</strong> scores 4 in hand, 5 if the cut matches — in the crib, only all five matching scores, for 5; a jack of the cut's suit in hand scores 1 — <em>his nobs</em>.</p>
+        <h3>Winning and skunks</h3>
+        <p>First to the target — 121 standard, 61 in the short game — wins the moment the peg lands, even mid-play. In a 121 game, a loser still short of 91 is <strong>skunked</strong>; short of 61, <strong>double-skunked</strong>. In a 61 game the skunk line is 31. The peg board shows both lines.</p>
+        <h3>Muggins</h3>
+        <p>The classic claim-it-or-lose-it rule, off by default here. With muggins on, you announce your own show count; anything in your hand you failed to claim is pegged by your opponent instead. It applies to the show counts on this page, and the page says so where you turn it on.</p>
+      </details>
+
+      <footer>
+        <p>Cribbage — a house games shelf page. Copyleft: this page and its code are free to copy and share — writings and design CC BY-SA 4.0, code GPL. No ads, ever. Your settings and strategy record live on this device only and are never sent anywhere.</p>
+      </footer>
+    </div>
+
+    <div class="overlay" id="passOverlay" role="dialog" aria-modal="true">
+      <div class="box">
+        <h2 id="passTitle">Pass the device</h2>
+        <p id="passText"></p>
+        <button class="btn gold" id="passBtn" type="button">Show my cards — tap when ready</button>
+      </div>
+    </div>
+
+<script>
+'use strict';
+/* ================= ENGINE (the same code the simulation ran on) ================= */
+const SUIT_CH = ['♠','♥','♦','♣'];
+const RANK_CH = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+function cval(c){ return Math.min(c.r, 10); }
+function cname(c){ return RANK_CH[c.r-1] + SUIT_CH[c.s]; }
+function makeDeck(){ const d=[]; for(let s=0;s<4;s++) for(let r=1;r<=13;r++) d.push({r,s}); return d; }
+function shuffle(d, rng){ const a=d.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function cardKey(c){ return c.r*4+c.s; }
+function scoreHand(cards, cut, isCrib){
+  const all = cards.concat([cut]);
+  const parts = [];
+  const n = all.length;
+  for(let mask=0; mask<(1<<n); mask++){
+    let bits=0, sum=0; const picked=[];
+    for(let i=0;i<n;i++) if(mask&(1<<i)){ bits++; sum+=cval(all[i]); picked.push(all[i]); }
+    if(bits>=2 && sum===15) parts.push({label:'15 for 2 — ' + picked.map(cname).join(' + '), pts:2});
+  }
+  const byRank = {};
+  all.forEach(c=>{ (byRank[c.r] = byRank[c.r]||[]).push(c); });
+  Object.keys(byRank).forEach(rk=>{
+    const g = byRank[rk];
+    if(g.length>=2){
+      const combos = g.length*(g.length-1)/2;
+      const kind = g.length===2 ? 'Pair' : (g.length===3 ? 'Pair royal (three of a kind)' : 'Double pair royal (four of a kind)');
+      parts.push({label: kind + ' — ' + g.map(cname).join(', ') + ' = ' + (combos*2), pts: combos*2});
+    }
+  });
+  const counts = {}; all.forEach(c=>{ counts[c.r]=(counts[c.r]||0)+1; });
+  let bestLen=0, bestScore=0, bestRanks=null;
+  for(let start=1; start<=13; start++){
+    if(!counts[start]) continue;
+    if(counts[start-1]) continue;
+    let len=0, prod=1; const ranks=[];
+    for(let r=start; r<=13 && counts[r]; r++){ len++; prod*=counts[r]; ranks.push(r); }
+    if(len>=3 && len>bestLen){ bestLen=len; bestScore=len*prod; bestRanks=ranks; }
+  }
+  if(bestLen>=3){
+    const mult = bestScore/bestLen;
+    const label = 'Run of ' + bestLen + ' — ' + bestRanks.map(r=>RANK_CH[r-1]).join(', ') + (mult>1 ? ' (×' + mult + ' for the doubled cards)' : '');
+    parts.push({label, pts: bestScore});
+  }
+  const handSuit = cards[0].s;
+  if(cards.every(c=>c.s===handSuit)){
+    if(cut.s===handSuit) parts.push({label:'Flush — all five cards ' + SUIT_CH[handSuit], pts:5});
+    else if(!isCrib) parts.push({label:'Flush — four cards ' + SUIT_CH[handSuit] + ' in hand', pts:4});
+  }
+  cards.forEach(c=>{ if(c.r===11 && c.s===cut.s) parts.push({label:'His nobs — ' + cname(c) + ' matches the cut suit', pts:1}); });
+  const total = parts.reduce((a,p)=>a+p.pts,0);
+  return {total, parts};
+}
+function staticFour(cards){
+  let pts=0; const n=cards.length;
+  for(let mask=0; mask<(1<<n); mask++){
+    let bits=0,sum=0; for(let i=0;i<n;i++) if(mask&(1<<i)){bits++; sum+=cval(cards[i]);}
+    if(bits>=2 && sum===15) pts+=2;
+  }
+  const counts={}; cards.forEach(c=>{counts[c.r]=(counts[c.r]||0)+1;});
+  Object.values(counts).forEach(k=>{ if(k>=2) pts += k*(k-1); });
+  let bestLen=0,bestScore=0;
+  for(let start=1; start<=13; start++){
+    if(!counts[start] || counts[start-1]) continue;
+    let len=0,prod=1; for(let r=start;r<=13&&counts[r];r++){len++;prod*=counts[r];}
+    if(len>=3&&len>bestLen){bestLen=len;bestScore=len*prod;}
+  }
+  pts += bestScore;
+  return pts;
+}
+function scorePegPlay(seg, lastRun){
+  const parts=[];
+  const count = seg.reduce((a,c)=>a+cval(c),0);
+  if(count===15) parts.push({label:'15 for 2', pts:2});
+  if(count===31) parts.push({label:'31 for 2', pts:2});
+  const last = seg[seg.length-1]; let k=1;
+  while(k<seg.length && seg[seg.length-1-k].r===last.r) k++;
+  if(k>=2){
+    const names={2:'Pair',3:'Pair royal',4:'Double pair royal'};
+    parts.push({label:(names[k]||'Pair') + ' for ' + (k*(k-1)), pts:k*(k-1)});
+  }
+  let runNow=0;
+  for(let L=seg.length; L>=3; L--){
+    const tail = seg.slice(seg.length-L);
+    const ranks = tail.map(c=>c.r);
+    if(new Set(ranks).size!==L) continue;
+    if(Math.max.apply(null,ranks)-Math.min.apply(null,ranks)===L-1){ runNow=L; break; }
+  }
+  if(runNow>=3 && runNow>lastRun) parts.push({label:'Run of ' + runNow + ' for ' + runNow, pts:runNow});
+  else runNow = (runNow>=3 && runNow>lastRun) ? runNow : 0;
+  const pts = parts.reduce((a,p)=>a+p.pts,0);
+  return {pts, parts, runNow};
+}
+function expectedHandValue(keep, unseen){
+  let sum=0;
+  for(const cut of unseen) sum += scoreHand(keep, cut, false).total;
+  return sum/unseen.length;
+}
+function expectedCribValue(thrown, unseen, samples, rng){
+  if(unseen.length<3) return 0;
+  let sum=0;
+  for(let i=0;i<samples;i++){
+    const pool = shuffle(unseen, rng);
+    const cut = pool[0];
+    const crib = [thrown[0], thrown[1], pool[1], pool[2]];
+    sum += scoreHand(crib, cut, true).total;
+  }
+  return sum/samples;
+}
+function combos2(arr){ const out=[]; for(let i=0;i<arr.length;i++) for(let j=i+1;j<arr.length;j++) out.push([arr[i],arr[j]]); return out; }
+function chooseDiscard(hand, ownCrib, level, rng){
+  const options = combos2(hand).map(th=>{
+    const keep = hand.filter(c=>th.indexOf(c)<0);
+    return {throw: th, keep};
+  });
+  if(level===0){
+    const o = options[Math.floor(rng()*options.length)];
+    return {throw:o.throw, keep:o.keep, ev:0};
+  }
+  const unseen = makeDeck().filter(c=>!hand.some(h=>cardKey(h)===cardKey(c)));
+  if(level===1){
+    let best=null;
+    for(const o of options){
+      let v = staticFour(o.keep);
+      v += o.keep.filter(c=>c.r===5).length * 1.2;
+      v += o.keep.reduce((a,c)=>a + (c.r<=4?0.25:0), 0);
+      const t = o.throw;
+      if(!ownCrib){
+        if(t[0].r===t[1].r) v -= 2;
+        if(cval(t[0])+cval(t[1])===15) v -= 2;
+        if(t.some(c=>c.r===5)) v -= 1.5;
+      } else {
+        if(t[0].r===t[1].r) v += 1;
+        if(cval(t[0])+cval(t[1])===15) v += 1;
+      }
+      v += rng()*0.3;
+      if(!best || v>best.ev) best = {throw:o.throw, keep:o.keep, ev:v};
+    }
+    return best;
+  }
+  const samples = level===3 ? 240 : 150;
+  let best=null;
+  for(const o of options){
+    const handEv = expectedHandValue(o.keep, unseen);
+    const cribEv = expectedCribValue(o.throw, unseen, samples, rng);
+    let ev = handEv + (ownCrib ? cribEv : -cribEv);
+    if(level===3){
+      const counts={}; o.keep.forEach(c=>{counts[c.r]=(counts[c.r]||0)+1;});
+      Object.values(counts).forEach(k=>{ if(k>=2) ev += 0.25; });
+      ev += o.keep.filter(c=>c.r<=3).length * 0.08;
+    }
+    if(!best || ev>best.ev) best = {throw:o.throw, keep:o.keep, ev, handEv, cribEv};
+  }
+  return best;
+}
+function rankDiscards(hand, ownCrib, rng){
+  const unseen = makeDeck().filter(c=>!hand.some(h=>cardKey(h)===cardKey(c)));
+  return combos2(hand).map(th=>{
+    const keep = hand.filter(c=>th.indexOf(c)<0);
+    const handEv = expectedHandValue(keep, unseen);
+    const cribEv = expectedCribValue(th, unseen, 60, rng);
+    return {throw: th, keep, handEv, cribEv, ev: handEv + (ownCrib? cribEv : -cribEv)};
+  }).sort((a,b)=>b.ev-a.ev);
+}
+function legalCards(hand, count){ return hand.filter(c=>cval(c)+count<=31); }
+function choosePegCard(hand, seg, lastRun, seen, oppCardsLeft, level, rng){
+  const count = seg.reduce((a,c)=>a+cval(c),0);
+  const legal = legalCards(hand, count);
+  if(!legal.length) return null;
+  if(level===0) return legal[Math.floor(rng()*legal.length)];
+  if(level===1){
+    let best=null, bestPts=-1;
+    for(const c of legal){
+      const s = scorePegPlay(seg.concat([c]), lastRun);
+      if(s.pts>bestPts){ bestPts=s.pts; best=c; }
+    }
+    if(bestPts>0) return best;
+    return legal.slice().sort((a,b)=>cval(a)-cval(b))[0];
+  }
+  // Sharp (2) / Pro (3): my points now minus opponent's expected best reply, sampled.
+  // Pro looks one move deeper: after the opponent's best reply, it also values its own best follow-up.
+  const samples = level===3 ? 200 : 30;
+  const unseenAll = makeDeck().filter(c=>!seen.some(h=>cardKey(h)===cardKey(c)) && !hand.some(h=>cardKey(h)===cardKey(c)));
+  let best=null, bestVal=-1e9;
+  for(const c of legal){
+    const seg2 = seg.concat([c]);
+    const mine = scorePegPlay(seg2, lastRun);
+    const cnt2 = seg2.reduce((a,x)=>a+cval(x),0);
+    let valSum=0, valN=0;
+    if(oppCardsLeft>0 && cnt2<31){
+      for(let i=0;i<samples;i++){
+        const pool = shuffle(unseenAll, rng);
+        const oppHand = pool.slice(0, oppCardsLeft);
+        const oppLegal = legalCards(oppHand, cnt2);
+        if(!oppLegal.length){
+          if(level===3){
+            // opponent cannot reply: I play again — value my best follow-up
+            const myRest = hand.filter(h=>h!==c);
+            let fb=0;
+            for(const mc of legalCards(myRest, cnt2)){ const s3=scorePegPlay(seg2.concat([mc]), mine.runNow); if(s3.pts>fb) fb=s3.pts; }
+            valSum += mine.pts + 0.6*fb; valN++;
+          }
+          continue;
+        }
+        let ob=-1, obCard=null, obRun=0;
+        for(const oc2 of oppLegal){ const s2=scorePegPlay(seg2.concat([oc2]), mine.runNow); if(s2.pts>ob){ ob=s2.pts; obCard=oc2; obRun=s2.runNow; } }
+        if(level===3){
+          const seg3 = seg2.concat([obCard]);
+          const cnt3 = cnt2 + cval(obCard);
+          const myRest = hand.filter(h=>h!==c);
+          let fb=0;
+          if(cnt3<31) for(const mc of legalCards(myRest, cnt3)){ const s3=scorePegPlay(seg3.concat([mc]), obRun); if(s3.pts>fb) fb=s3.pts; }
+          valSum += mine.pts - ob + 0.6*fb;
+        } else {
+          valSum += mine.pts - ob;
+        }
+        valN++;
+      }
+    }
+    let v = valN? valSum/valN : mine.pts;
+    if(level===3){
+      if(seg.length===0){
+        if(c.r===5 && !hand.some(h=>h!==c && h.r===5)) v -= 0.9;
+        if(hand.some(h=>h!==c && h.r===c.r)) v += 0.35;
+        if(cval(c)<=4) v += 0.15;
+      }
+    }
+    v += rng()*0.02;
+    if(v>bestVal){ bestVal=v; best=c; }
+  }
+  return best;
+}
+// For the coach: value each legal pegging card (points now - expected reply), Sharp-style with fewer samples.
+function evalPegOptions(hand, seg, lastRun, seen, oppCardsLeft, rng){
+  const count = seg.reduce((a,c)=>a+cval(c),0);
+  const legal = legalCards(hand, count);
+  const unseenAll = makeDeck().filter(c=>!seen.some(h=>cardKey(h)===cardKey(c)) && !hand.some(h=>cardKey(h)===cardKey(c)));
+  return legal.map(c=>{
+    const seg2 = seg.concat([c]);
+    const mine = scorePegPlay(seg2, lastRun);
+    let replySum=0, replyN=0;
+    if(oppCardsLeft>0 && seg2.reduce((a,x)=>a+cval(x),0)<31){
+      for(let i=0;i<36;i++){
+        const pool = shuffle(unseenAll, rng);
+        const oppHand = pool.slice(0, oppCardsLeft);
+        const oc = seg2.reduce((a,x)=>a+cval(x),0);
+        const oppLegal = legalCards(oppHand, oc);
+        if(!oppLegal.length) continue;
+        let ob=0;
+        for(const oc2 of oppLegal){ const s2=scorePegPlay(seg2.concat([oc2]), mine.runNow); if(s2.pts>ob) ob=s2.pts; }
+        replySum+=ob; replyN++;
+      }
+    }
+    const expReply = replyN? replySum/replyN : 0;
+    return {card:c, now:mine.pts, parts:mine.parts, expReply, net: mine.pts - expReply, newCount: count + cval(c)};
+  }).sort((a,b)=>b.net-a.net);
+}
+/* ================= UI / GAME FLOW ================= */
+const $ = id => document.getElementById(id);
+const LEVEL_NAMES = ['Learning','Steady','Sharp','Pro'];
+const ALIAS_A = ['Dusty','Lucky','Steady','Patient','Crafty','Mellow','Bold','Quiet','Silver','Amber'];
+const ALIAS_B = ['Coyote','Fox','Heron','Badger','Otter','Falcon','Willow','Comet','Juniper','Marlin'];
+const SIM = {
+  order: ['Learning','Steady','Sharp','Pro'],
+  levels: {
+    'Learning': {winPct: 0,  peg: 1.68, show: 6.67},
+    'Steady':   {winPct: 55, peg: 2.55, show: 9.73},
+    'Sharp':    {winPct: 65, peg: 2.88, show: 9.84},
+    'Pro':      {winPct: 77, peg: 2.96, show: 10.22}
+  },
+  note: 'Measured on this page\u2019s own engine before publishing: each level played 100 full games to 121 against the Steady bot, first deal alternating, and the mirror check (Steady against itself) came out 55% \u2014 near the honest 50. All three measures rise with the level: wins, pegging, and show. \u201CShow\u201D counts hand + crib points per hand dealt. Head-to-head at the extremes, Pro won all 100 games against Learning, pegging 2.70 and showing 10.35 a hand to Learning\u2019s 1.38 and 6.32. A hundred games is a fair sample, not a census: the ordering is solid, the exact size of the gaps is approximate.'
+};
+
+function loadJSON(key, fallback){ try{ const v = localStorage.getItem(key); return v? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function saveJSON(key, v){ try{ localStorage.setItem(key, JSON.stringify(v)); }catch(e){} }
+let settings = Object.assign({mode:'bot', level:1, teach:'light', target:121, muggins:false, alias:'', alias2:''}, loadJSON('cribbage.settings.v1', {}));
+let record = Object.assign({games:0, wins:0, losses:0, byLevel:{}, peg:0, show:0, hands:0, discardLeaks:0, discardLeakPts:0, missedPeg:0, mugginsLost:0, history:[]}, loadJSON('cribbage.record.v1', {}));
+function saveSettings(){ saveJSON('cribbage.settings.v1', settings); }
+function saveRecord(){ saveJSON('cribbage.record.v1', record); }
+
+function cleanName(s){ return String(s||'').replace(/[<>&"']/g,'').slice(0,24); }
+function escName(s){ return cleanName(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Every display name passes through here: markup characters are stripped and the
+// result is HTML-escaped, so a typed alias can never become markup in the log,
+// the score chips, or anywhere else a name is interpolated.
+function playerNames(){
+  if(settings.mode==='2p') return [escName(settings.alias) || 'Player 1', escName(settings.alias2) || 'Player 2'];
+  return [escName(settings.alias) || 'You', 'Bot · ' + LEVEL_NAMES[settings.level]];
+}
+function isBot(p){ return settings.mode==='bot' && p===1; }
+
+/* ---------- setup controls ---------- */
+function segWire(id, attr, cb){
+  $(id).addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true'); cb(b.dataset[attr]);
+  });
+}
+function segSet(id, attr, val){ $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x.dataset[attr]===String(val)?'true':'false')); }
+segWire('modeSeg','mode', v=>{ settings.mode=v; $('alias2Row').style.display = v==='2p'?'block':'none'; $('botLevelBlock').style.display = v==='2p'?'none':'block'; saveSettings(); });
+segWire('levelSeg','level', v=>{ settings.level=+v; saveSettings(); levelBlurb(); });
+segWire('teachSeg','teach', v=>{ settings.teach=v; saveSettings(); });
+$('lengthSel').addEventListener('change', ()=>{ settings.target=+$('lengthSel').value; saveSettings(); variantBanner(); buildBoard(); });
+$('mugginsChk').addEventListener('change', ()=>{ settings.muggins=$('mugginsChk').checked; saveSettings(); variantBanner(); });
+$('aliasInput').addEventListener('change', ()=>{ settings.alias=$('aliasInput').value.trim(); saveSettings(); });
+$('alias2Input').addEventListener('change', ()=>{ settings.alias2=$('alias2Input').value.trim(); saveSettings(); });
+function rollAlias(){ return ALIAS_A[Math.floor(Math.random()*ALIAS_A.length)] + ' ' + ALIAS_B[Math.floor(Math.random()*ALIAS_B.length)]; }
+$('diceBtn').addEventListener('click', ()=>{ $('aliasInput').value = rollAlias(); settings.alias=$('aliasInput').value; saveSettings(); });
+$('dice2Btn').addEventListener('click', ()=>{ $('alias2Input').value = rollAlias(); settings.alias2=$('alias2Input').value; saveSettings(); });
+function variantBanner(){
+  const parts=[];
+  if(settings.target===61) parts.push('Short game to 61 (variant — standard is 121). Skunk line: 31.');
+  if(settings.muggins) parts.push('Muggins ON (variant — friendly default is off): count your own show hands, or your opponent takes what you miss.');
+  const b=$('variantBanner');
+  if(parts.length){ b.style.display='block'; b.textContent = 'Variant in play: ' + parts.join(' '); }
+  else b.style.display='none';
+}
+function levelBlurb(){
+  const el=$('levelBlurb'); if(!SIM){ el.textContent=''; return; }
+  const s = SIM.levels[LEVEL_NAMES[settings.level]];
+  el.textContent = LEVEL_NAMES[settings.level] + ' bot, measured in simulation: wins ' + s.winPct + '% of games against the Steady bot, pegs ' + s.peg + ' points a hand in the play and counts ' + s.show + ' a hand in the show (hand + crib). Full table lower down.';
+}
+function initSetup(){
+  $('aliasInput').value = settings.alias||''; $('alias2Input').value = settings.alias2||'';
+  segSet('modeSeg','mode',settings.mode); segSet('levelSeg','level',settings.level); segSet('teachSeg','teach',settings.teach);
+  $('alias2Row').style.display = settings.mode==='2p'?'block':'none';
+  $('botLevelBlock').style.display = settings.mode==='2p'?'none':'block';
+  $('lengthSel').value = String(settings.target); $('mugginsChk').checked = !!settings.muggins;
+  variantBanner(); levelBlurb();
+}
+$('offlineBtn').addEventListener('click', ()=>{
+  const blob = new Blob(['<!doctype html>\n' + document.documentElement.outerHTML], {type:'text/html'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cribbage.html'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+});
+
+/* ---------- log / teaching ---------- */
+function log(msg){
+  const d=document.createElement('div'); d.innerHTML=msg; $('gameLog').appendChild(d);
+  $('gameLog').scrollTop = $('gameLog').scrollHeight;
+}
+function teach(html){
+  if(settings.teach==='off'){ $('teachBox').style.display='none'; return; }
+  $('teachBox').style.display='block'; $('teachBox').innerHTML = html;
+}
+function coach(html){
+  if(settings.teach!=='coach'){ $('coachBox').style.display='none'; return; }
+  $('coachBox').style.display='block'; $('coachBox').innerHTML = html;
+}
+function clearCoach(){ $('coachBox').style.display='none'; $('coachBox').innerHTML=''; }
+
+/* ---------- cards ---------- */
+function cardEl(c, opts){
+  opts = opts||{};
+  const b=document.createElement('button'); b.type='button'; b.className='pcard' + ((c.s===1||c.s===2)?' red':'') + (opts.mini?' mini':'');
+  b.setAttribute('aria-label', RANK_CH[c.r-1] + ' of ' + ['spades','hearts','diamonds','clubs'][c.s]);
+  b.innerHTML = '<span class="rk">' + RANK_CH[c.r-1] + '</span><span class="pip">' + SUIT_CH[c.s] + '</span><span class="st">' + SUIT_CH[c.s] + '</span>';
+  if(opts.disabled) b.disabled = true;
+  if(opts.cls) b.className += ' ' + opts.cls;
+  if(opts.onClick) b.addEventListener('click', ()=>opts.onClick(c));
+  return b;
+}
+function backEl(mini){
+  const d=document.createElement('div'); d.className='pcard back' + (mini?' mini':''); d.setAttribute('aria-hidden','true');
+  return d;
+}
+
+/* ---------- peg board ---------- */
+let boardPos = [[],[]];
+function buildBoard(){
+  const svg=$('board'); const NS='http://www.w3.org/2000/svg';
+  svg.innerHTML=''; boardPos=[[],[]];
+  const names = playerNames();
+  for(let p=0;p<2;p++){
+    const y0 = p===1? 12 : 146;
+    const firstRowY = y0+22, rowH=27, x0=48, x1=692, step=(x1-x0)/29;
+    const pos=[{x:20,y:firstRowY}];
+    for(let i=0;i<120;i++){
+      const row=Math.floor(i/30); let col=i%30; if(row%2===1) col=29-col;
+      pos.push({x:x0+col*step, y:firstRowY+row*rowH});
+    }
+    pos.push({x:720, y:y0+62});
+    boardPos[p]=pos;
+    const felt=document.createElementNS(NS,'rect');
+    felt.setAttribute('x',4); felt.setAttribute('y',y0); felt.setAttribute('width',732); felt.setAttribute('height',122);
+    felt.setAttribute('rx',12); felt.setAttribute('fill', p===0? '#1d5c38':'#274b63'); felt.setAttribute('opacity','0.55');
+    svg.appendChild(felt);
+    const label=document.createElementNS(NS,'text');
+    label.setAttribute('x',12); label.setAttribute('y',y0+14); label.setAttribute('fill','#fff'); label.setAttribute('font-size','12'); label.setAttribute('font-weight','700');
+    label.textContent = (p===0? names[0] : names[1]) + ' — pegs';
+    svg.appendChild(label);
+    pos.forEach((pt,i)=>{
+      if(i===0) return;
+      const h=document.createElementNS(NS,'circle');
+      h.setAttribute('cx',pt.x); h.setAttribute('cy',pt.y); h.setAttribute('r', i===121?5:2.8);
+      h.setAttribute('fill', i===121? '#d9a92c':'rgba(0,0,0,0.45)');
+      svg.appendChild(h);
+    });
+    // skunk line rings
+    const lines = settings.target===121? [61,91] : [31];
+    lines.forEach(li=>{
+      const pt=pos[li]; if(!pt) return;
+      const ring=document.createElementNS(NS,'circle');
+      ring.setAttribute('cx',pt.x); ring.setAttribute('cy',pt.y); ring.setAttribute('r',6);
+      ring.setAttribute('fill','none'); ring.setAttribute('stroke','#e0656b'); ring.setAttribute('stroke-width','1.8');
+      svg.appendChild(ring);
+    });
+    [['back',5.2,0.55],['front',6.4,1]].forEach(cfg=>{
+      const peg=document.createElementNS(NS,'circle');
+      peg.setAttribute('id','peg-'+p+'-'+cfg[0]); peg.setAttribute('r',cfg[1]);
+      peg.setAttribute('fill', p===0? '#e9bc3f':'#cfe3f5'); peg.setAttribute('stroke','#222'); peg.setAttribute('stroke-width','1.4');
+      peg.setAttribute('opacity',cfg[2]); peg.setAttribute('class','peg');
+      svg.appendChild(peg);
+    });
+  }
+  updatePegs();
+  $('boardNote').textContent = settings.target===121
+    ? 'Two pegs each, leapfrogging like a real board — the back peg marks where you were, the front peg where you are. Red rings mark the skunk lines: reach 61 or be double-skunked, 91 or be skunked.'
+    : 'Short game to 61. The red ring marks the skunk line at 31.';
+}
+function updatePegs(){
+  if(!G) return;
+  for(let p=0;p<2;p++){
+    const f=$('peg-'+p+'-front'), b=$('peg-'+p+'-back');
+    if(!f||!b) return;
+    const fp=boardPos[p][Math.min(G.scores[p],121)], bp=boardPos[p][Math.min(G.prevScores[p],121)];
+    f.setAttribute('transform','translate('+fp.x+','+fp.y+')');
+    b.setAttribute('transform','translate('+bp.x+','+bp.y+')');
+  }
+}
+
+/* ---------- game state ---------- */
+let G=null;
+function segCount(){ return G.seg.reduce((a,c)=>a+cval(c),0); }
+function totalLeft(){ return G.playHands[0].length + G.playHands[1].length; }
+function award(p, pts, kind, why){
+  if(pts<=0) return;
+  G.prevScores[p]=G.scores[p]; G.scores[p]+=pts;
+  if(kind==='peg'){ G.gamePeg[p]+=pts; } else if(kind==='show'){ G.gameShow[p]+=pts; }
+  updatePegs(); renderScores();
+  if(why) log('<strong>' + playerNames()[p] + ' pegs ' + pts + '</strong> — ' + why);
+}
+function checkWin(){
+  for(let p=0;p<2;p++) if(G.scores[p]>=settings.target){ gameEnd(p); return true; }
+  return false;
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function renderScores(){
+  const names=playerNames();
+  $('scoreChips').innerHTML =
+    '<span class="chip"><span class="who">' + esc(names[0]) + '</span> ' + G.scores[0] + '</span>' +
+    '<span class="chip"><span class="who">' + esc(names[1]) + '</span> ' + G.scores[1] + '</span>' +
+    '<span class="chip"><span class="who">Dealer</span> ' + esc(names[G.dealer]) + '</span>' +
+    '<span class="chip"><span class="who">First to</span> ' + settings.target + '</span>';
+  const cb=$('countBubble');
+  if(G.phase==='peg' && G.seg.length){ cb.style.display='inline-block'; cb.textContent='Count: ' + segCount(); }
+  else cb.style.display='none';
+}
+function renderOpp(){
+  const names=playerNames();
+  $('oppTitle').textContent = names[1] + (isBot(1)? ' (bot)' : '');
+  const box=$('oppHand'); box.innerHTML='';
+  const n = G.phase==='discard'? G.hands[1].length : (G.playHands? G.playHands[1].length : G.keeps[1].length);
+  for(let i=0;i<n;i++) box.appendChild(backEl(false));
+}
+function renderPlayArea(){
+  const pile=$('playPile'); pile.innerHTML='';
+  G.seg.forEach(c=>pile.appendChild(cardEl(c,{mini:true,disabled:true})));
+  if(!G.seg.length) pile.innerHTML='<span class="small" style="opacity:.8">No cards played yet in this count.</span>';
+  const cp=$('cutPile'); cp.innerHTML='';
+  if(G.cut) cp.appendChild(cardEl(G.cut,{mini:true,disabled:true}));
+  else cp.innerHTML='<span class="small" style="opacity:.8">Not cut yet.</span>';
+}
+function renderYourHand(){
+  const box=$('yourHand'); box.innerHTML='';
+  const names=playerNames();
+  if(G.phase==='discard'){
+    const p=G.discarder;
+    $('yourTitle').textContent = names[p] + ' — choose two cards for ' + names[G.dealer] + "'s crib";
+    $('handHint').textContent = 'Tap two cards to pick them, then tap the button below. ' + (G.dealer===p? 'The crib is yours — it is a second hand for you.' : 'The crib belongs to ' + names[G.dealer] + ' — feed it carefully.');
+    G.hands[p].forEach(c=>{
+      box.appendChild(cardEl(c,{cls: G.selected.indexOf(c)>=0?'selected':'', onClick: cc=>{
+        const i=G.selected.indexOf(cc);
+        if(i>=0) G.selected.splice(i,1); else if(G.selected.length<2) G.selected.push(cc);
+        renderYourHand(); renderActions();
+      }}));
+    });
+  } else if(G.phase==='peg'){
+    const p=G.viewer;
+    $('yourTitle').textContent = names[p] + "'s cards";
+    const myTurn = !isBot(p) && G.current===p;
+    $('handHint').textContent = myTurn? 'Tap a card to play it. Cards that would pass 31 are greyed out.' : (isBot(G.current)? names[G.current] + ' is thinking…' : 'Waiting for ' + names[G.current] + '.');
+    const count=segCount();
+    G.playHands[p].forEach(c=>{
+      const playable = myTurn && cval(c)+count<=31;
+      box.appendChild(cardEl(c,{disabled: !myTurn, cls: (myTurn && !playable)?'dim':'playable', onClick: cc=>{ if(playable) humanPlay(cc); }}));
+    });
+  } else if(G.phase==='show'){
+    $('handHint').textContent='';
+  } else {
+    $('yourTitle').textContent = names[0] + "'s cards";
+    $('handHint').textContent='';
+    (G.keeps[0]||[]).forEach(c=>box.appendChild(cardEl(c,{disabled:true})));
+  }
+}
+function renderActions(){
+  const row=$('actionRow'); row.innerHTML='';
+  const names=playerNames();
+  if(!G || !G.active) return;
+  if(G.phase==='discard'){
+    const p=G.discarder;
+    if(!isBot(p) && G.viewer===p){
+      const b=document.createElement('button'); b.className='btn gold'; b.type='button';
+      b.textContent='Throw the two picked cards to the crib — tap to confirm';
+      b.disabled = G.selected.length!==2;
+      b.addEventListener('click', confirmDiscard);
+      row.appendChild(b);
+    }
+  } else if(G.phase==='cutwait'){
+    if(!isBot(G.pone) && G.viewer===G.pone){
+      const b=document.createElement('button'); b.className='btn gold'; b.type='button';
+      b.textContent='Cut the deck — tap to turn the starter card';
+      b.addEventListener('click', doCut);
+      row.appendChild(b);
+    }
+  } else if(G.phase==='handEnd'){
+    const b=document.createElement('button'); b.className='btn gold'; b.type='button';
+    b.textContent='Deal the next hand — tap';
+    b.addEventListener('click', ()=>{ clearCoach(); newHand(); });
+    row.appendChild(b);
+  } else if(G.phase==='gameEnd'){
+    const b=document.createElement('button'); b.className='btn gold'; b.type='button';
+    b.textContent='Play again — tap';
+    b.addEventListener('click', startGame);
+    row.appendChild(b);
+    const b2=document.createElement('button'); b2.className='btn secondary'; b2.type='button';
+    b2.textContent='Back to setup';
+    b2.addEventListener('click', ()=>{ $('setupCard').scrollIntoView({behavior:'smooth'}); });
+    row.appendChild(b2);
+  }
+}
+function renderAll(){ renderScores(); renderOpp(); renderPlayArea(); renderYourHand(); renderActions(); }
+
+/* ---------- pass-and-play cover ---------- */
+function passTo(p, text, cb){
+  if(settings.mode!=='2p'){ cb(); return; }
+  $('passTitle').textContent = 'Pass the device to ' + playerNames()[p];
+  $('passText').textContent = text;
+  $('passOverlay').classList.add('show');
+  $('passBtn').onclick = ()=>{ $('passOverlay').classList.remove('show'); G.viewer=p; cb(); };
+}
+
+/* ---------- flow ---------- */
+$('startBtn').addEventListener('click', startGame);
+function startGame(){
+  settings.alias=$('aliasInput').value.trim(); settings.alias2=$('alias2Input').value.trim(); saveSettings();
+  G = { active:true, scores:[0,0], prevScores:[0,0], dealer: Math.random()<0.5?0:1,
+    hands:[[],[]], keeps:[null,null], crib:[], cut:null, playHands:[[],[]], seg:[], lastRun:0,
+    goFlag:[false,false], segLastPlayer:null, current:0, discarder:0, selected:[], phase:'deal',
+    seen:[[],[]], gamePeg:[0,0], gameShow:[0,0], gameHands:0, viewer:0 };
+  $('tableCard').style.display='block'; $('logCard').style.display='block';
+  $('gameLog').innerHTML='';
+  buildBoard();
+  log('New game to ' + settings.target + '. ' + playerNames()[G.dealer] + ' deals first (drawn at random).' + (settings.muggins? ' Muggins is ON — count your own show hands carefully.' : ''));
+  $('tableCard').scrollIntoView({behavior:'smooth'});
+  newHand();
+}
+function newHand(){
+  if(checkWin()) return;
+  const deck = shuffle(makeDeck(), Math.random);
+  G.hands=[deck.slice(0,6), deck.slice(6,12)];
+  G.rest = deck.slice(12);
+  G.keeps=[null,null]; G.crib=[]; G.cut=null; G.seg=[]; G.lastRun=0; G.goFlag=[false,false]; G.segLastPlayer=null;
+  G.playHands=[[],[]]; G.selected=[];
+  G.pone = 1-G.dealer;
+  G.seen=[G.hands[0].slice(), G.hands[1].slice()];
+  G.gameHands++;
+  G.phase='discard'; G.discarder = G.pone;
+  log('<strong>Hand ' + G.gameHands + '.</strong> ' + playerNames()[G.dealer] + ' deals; the crib belongs to ' + playerNames()[G.dealer] + '.');
+  renderAll();
+  discardTurn();
+}
+function discardTurn(){
+  const p=G.discarder;
+  if(isBot(p)){
+    const d = chooseDiscard(G.hands[p], G.dealer===p, settings.level, Math.random);
+    G.keeps[p]=d.keep; G.crib.push(d.throw[0], d.throw[1]);
+    log(playerNames()[p] + ' throws two to the crib.');
+    nextDiscarder();
+    return;
+  }
+  passTo(p, 'Your six cards are private. Pick two for the crib.', ()=>{
+    G.selected=[]; renderAll();
+    if(settings.teach==='coach') coachDiscard(p);
+  });
+}
+function nextDiscarder(){
+  if(G.discarder===G.pone){ G.discarder=G.dealer; discardTurn(); }
+  else {
+    G.phase='cutwait'; renderAll();
+    if(isBot(G.pone)){ setTimeout(doCut, 800); }
+    else if(settings.mode==='2p'){ passTo(G.pone, playerNames()[G.pone] + ' cuts the deck.', ()=>renderAll()); }
+  }
+}
+function confirmDiscard(){
+  const p=G.discarder;
+  const thrown = G.selected.slice();
+  const keep = G.hands[p].filter(c=>thrown.indexOf(c)<0);
+  G.keeps[p]=keep; G.crib.push(thrown[0], thrown[1]);
+  log(playerNames()[p] + ' throws ' + thrown.map(cname).join(' and ') + ' to the crib.');
+  if(settings.mode==='bot' && p===0) recordDiscardCheck(G.hands[p], thrown);
+  if(settings.teach!=='off') teachDiscardLine(p, keep, thrown);
+  clearCoach();
+  nextDiscarder();
+}
+function doCut(){
+  G.cut = G.rest[0];
+  G.seen[0].push(G.cut); G.seen[1].push(G.cut);
+  G.phase='peg'; renderPlayArea(); renderScores();
+  log('The cut is the ' + cname(G.cut) + '.');
+  if(G.cut.r===11){
+    teach('<strong>His heels:</strong> the cut is a jack, so the dealer pegs 2 before the play even starts.');
+    award(G.dealer, 2, 'peg', 'his heels — the cut is a jack.');
+    if(checkWin()) return;
+  }
+  startPegging();
+}
+function startPegging(){
+  G.playHands=[G.keeps[0].slice(), G.keeps[1].slice()];
+  G.current=G.pone; G.viewer = settings.mode==='2p'? G.pone : 0;
+  log(playerNames()[G.pone] + ' leads the play.');
+  renderAll();
+  pegStep();
+}
+function pegStep(){
+  if(!G.active || G.phase!=='peg') return;
+  if(checkWin()) return;
+  if(totalLeft()===0){ finishPegging(); return; }
+  const p=G.current, o=1-p;
+  const count=segCount();
+  const legal=legalCards(G.playHands[p], count);
+  if(legal.length && !G.goFlag[p]){
+    if(isBot(p)){
+      renderAll();
+      setTimeout(()=>{
+        if(!G.active || G.phase!=='peg') return;
+        const card = choosePegCard(G.playHands[p], G.seg, G.lastRun, G.seen[p], G.playHands[o].length, settings.level, Math.random);
+        if(card) doPlay(p, card);
+      }, 750);
+    } else if(settings.mode==='2p' && G.viewer!==p){
+      passTo(p, 'It is your play. The count is ' + count + '.', ()=>{ renderAll(); if(settings.teach==='coach') coachPeg(p); });
+    } else {
+      renderAll();
+      if(settings.teach==='coach') coachPeg(p);
+    }
+  } else {
+    if(!G.goFlag[p]){
+      G.goFlag[p]=true;
+      log(playerNames()[p] + ' says <strong>"go"</strong> — no card fits under 31.');
+      if(settings.teach!=='off') teach(playerNames()[p] + ' has no card that keeps the count at 31 or under, so the turn passes. The last player to lay a card scores the go.');
+    }
+    const oLegal=legalCards(G.playHands[o], count);
+    if(G.goFlag[o] || !oLegal.length){ endSegment(); }
+    else { G.current=o; setTimeout(pegStep, 350); }
+  }
+}
+function humanPlay(card){
+  if(G.phase!=='peg') return;
+  const p=G.current;
+  if(settings.mode==='bot' && p===0){
+    const count=segCount();
+    const mine = scorePegPlay(G.seg.concat([card]), G.lastRun).pts;
+    if(mine===0){
+      const anyBetter = legalCards(G.playHands[p], count).some(c=>scorePegPlay(G.seg.concat([c]), G.lastRun).pts>0);
+      if(anyBetter){ record.missedPeg++; saveRecord(); }
+    }
+  }
+  doPlay(p, card);
+}
+function doPlay(p, card){
+  clearCoach();
+  G.playHands[p].splice(G.playHands[p].indexOf(card),1);
+  G.seg.push(card); G.seen[0].push(card); G.seen[1].push(card);
+  const s = scorePegPlay(G.seg, G.lastRun);
+  G.lastRun = s.runNow;
+  G.segLastPlayer = p;
+  log(playerNames()[p] + ' plays the ' + cname(card) + ' — count ' + segCount() + '.');
+  if(s.pts>0){
+    award(p, s.pts, 'peg', s.parts.map(x=>x.label).join('; ') + '.');
+    if(settings.teach!=='off') teach(explainPeg(G.seg, s));
+  }
+  renderAll();
+  if(checkWin()) return;
+  G.current = 1-p;
+  pegStep();
+}
+function endSegment(){
+  const count=segCount();
+  if(count!==31 && G.segLastPlayer!==null){
+    const lastCard = totalLeft()===0;
+    award(G.segLastPlayer, 1, 'peg', lastCard? 'last card of the play.' : 'one for the go.');
+    if(settings.teach!=='off') teach(lastCard? 'The play is over: the last card laid scores 1.' : 'Neither side can play without passing 31 — the last card laid scores 1 for the go, and the count resets to zero.');
+    if(checkWin()) return;
+  }
+  G.seg=[]; G.lastRun=0; G.goFlag=[false,false];
+  if(totalLeft()===0){ finishPegging(); return; }
+  let nl = 1-G.segLastPlayer;
+  if(!G.playHands[nl].length) nl = G.segLastPlayer;
+  G.segLastPlayer=null; G.current=nl;
+  log('New count. ' + playerNames()[nl] + ' leads.');
+  renderAll();
+  pegStep();
+}
+function explainPeg(seg, s){
+  const last = seg[seg.length-1];
+  const out=[];
+  s.parts.forEach(pt=>{
+    if(pt.label.indexOf('15')===0){
+      // find the subset ending at the last card that sums to 15
+      let found=null;
+      const n=seg.length;
+      for(let mask=0; mask<(1<<n) && !found; mask++){
+        if(!(mask&(1<<(n-1)))) continue;
+        let sum=0; const picked=[];
+        for(let i=0;i<n;i++) if(mask&(1<<i)){ sum+=cval(seg[i]); picked.push(seg[i]); }
+        if(sum===15) found=picked;
+      }
+      out.push('<strong>15 for two</strong> — ' + (found? found.map(cname).join(' + ') + ' add to fifteen.' : 'the count lands exactly on fifteen.'));
+    } else if(pt.label.indexOf('Run')===0){
+      out.push('<strong>' + pt.label + '</strong> — the last cards played form a run, in any order: ' + seg.slice(-(+pt.label.split(' ')[2])).map(cname).join(', ') + '.');
+    } else if(pt.label.indexOf('31')===0){
+      out.push('<strong>31 for two</strong> — the count lands exactly on 31, which also covers the go.');
+    } else {
+      out.push('<strong>' + pt.label + '</strong> — ' + cname(last) + ' matches the card(s) just before it.');
+    }
+  });
+  return out.join('<br>');
+}
+/* ---------- the show ---------- */
+function finishPegging(){
+  G.phase='show'; renderAll();
+  log('<strong>The show.</strong> Hands count in order: ' + playerNames()[G.pone] + "'s hand, then " + playerNames()[G.dealer] + "'s hand, then the crib.");
+  G.showSteps = [
+    {p:G.pone, cards:G.keeps[G.pone], isCrib:false, label: playerNames()[G.pone] + "'s hand"},
+    {p:G.dealer, cards:G.keeps[G.dealer], isCrib:false, label: playerNames()[G.dealer] + "'s hand"},
+    {p:G.dealer, cards:G.crib, isCrib:true, label: 'The crib (' + playerNames()[G.dealer] + "'s)"}
+  ];
+  G.showIdx=0;
+  setTimeout(nextShowStep, 700);
+}
+function nextShowStep(){
+  if(!G.active) return;
+  if(checkWin()) return;
+  if(G.showIdx>=G.showSteps.length){ endHand(); return; }
+  const step = G.showSteps[G.showIdx];
+  const names=playerNames();
+  $('yourTitle').textContent = step.label + ' — with the ' + cname(G.cut) + ' cut';
+  const box=$('yourHand'); box.innerHTML='';
+  step.cards.forEach(c=>box.appendChild(cardEl(c,{disabled:true})));
+  $('cribPileBox').style.display = step.isCrib? 'block':'none';
+  if(step.isCrib){ const cp=$('cribPile'); cp.innerHTML=''; step.cards.forEach(c=>cp.appendChild(cardEl(c,{mini:true,disabled:true}))); }
+  const res = scoreHand(step.cards, G.cut, step.isCrib);
+  const needsClaim = settings.muggins && !isBot(step.p);
+  if(needsClaim){
+    const doClaim = ()=>{
+      $('claimBox').style.display='block';
+      $('claimBox').innerHTML = '<div class="teach" style="display:block"><strong>Muggins is on.</strong> ' + esc(names[step.p]) + ', count this ' + (step.isCrib?'crib':'hand') + ' yourself — the ' + cname(G.cut) + ' counts as a fifth card. Points you do not claim go to ' + esc(names[1-step.p]) + '.' +
+        '<div class="claimrow" style="margin-top:8px"><label for="claimInput">Your count:</label><input type="number" id="claimInput" min="0" max="29" value="0" /><button class="btn gold" id="claimBtn" type="button">Peg my count — tap</button></div></div>';
+      $('claimBtn').addEventListener('click', ()=>{
+        const claim = Math.max(0, Math.min(29, parseInt($('claimInput').value||'0',10)||0));
+        $('claimBox').style.display='none'; $('claimBox').innerHTML='';
+        resolveShowStep(step, res, claim);
+      });
+    };
+    if(settings.mode==='2p') passTo(step.p, 'Count your ' + (step.isCrib?'crib':'hand') + ' — no help from across the table.', doClaim);
+    else doClaim();
+  } else {
+    if(settings.muggins && isBot(step.p)) log('Muggins: the bot counts its own hand in full — the rule on this page binds the human counter.');
+    setTimeout(()=>resolveShowStep(step, res, null), 1000);
+  }
+}
+function resolveShowStep(step, res, claim){
+  const names=playerNames();
+  let ownerPts = res.total, stolen = 0;
+  if(claim!==null){
+    if(claim < res.total){ ownerPts = claim; stolen = res.total - claim; }
+    else if(claim > res.total){ log(names[step.p] + ' claimed ' + claim + ', but the ' + (step.isCrib?'crib':'hand') + ' is worth ' + res.total + ' — you score what the cards are worth.'); }
+  }
+  const breakdown = res.parts.length? res.parts.map(x=>x.label + ' (' + x.pts + ')').join('<br>') : 'No points at all — it happens to everyone.';
+  if(settings.teach==='off') teach('');
+  else teach('<strong>' + step.label + ': ' + res.total + '.</strong><br>' + breakdown);
+  log('<strong>' + step.label + ' counts ' + res.total + '.</strong>' + (res.parts.length? ' ' + res.parts.map(x=>x.label).join('; ') + '.' : ''));
+  if(ownerPts>0) award(step.p, ownerPts, 'show', 'the show — ' + step.label + '.');
+  if(stolen>0){
+    log('<strong>Muggins!</strong> ' + names[step.p] + ' claimed ' + claim + ' of ' + res.total + ' — the missed ' + stolen + ' go to ' + names[1-step.p] + '.');
+    if(settings.mode==='bot' && step.p===0){ record.mugginsLost += stolen; saveRecord(); }
+    award(1-step.p, stolen, 'show', 'muggins — points ' + names[step.p] + ' failed to claim.');
+  }
+  renderAll();
+  // restore the counted cards view after award re-render
+  const box=$('yourHand'); box.innerHTML=''; step.cards.forEach(c=>box.appendChild(cardEl(c,{disabled:true})));
+  $('yourTitle').textContent = step.label + ' — with the ' + cname(G.cut) + ' cut';
+  if(checkWin()) return;
+  G.showIdx++;
+  setTimeout(nextShowStep, 1300);
+}
+function endHand(){
+  $('cribPileBox').style.display='none';
+  const names=playerNames();
+  log('<strong>Scores:</strong> ' + names[0] + ' ' + G.scores[0] + ' — ' + names[1] + ' ' + G.scores[1] + '.');
+  teach('Hand over. ' + names[0] + ' ' + G.scores[0] + ', ' + names[1] + ' ' + G.scores[1] + ' — first to ' + settings.target + '.' + (settings.target===121 && G.scores[0]<91 && G.scores[1]<91? ' Both players are still short of the 91 skunk line.' : ''));
+  G.dealer = G.pone;
+  G.phase='handEnd';
+  renderAll();
+}
+function gameEnd(winner){
+  G.phase='gameEnd'; G.active=false;
+  const names=playerNames();
+  const loser = 1-winner, ls = G.scores[loser];
+  let skunkTxt='';
+  if(settings.target===121){
+    if(ls<61) skunkTxt = ' <strong>Double skunk!</strong> ' + names[loser] + ' finished on ' + ls + ', short of the 61 line.';
+    else if(ls<91) skunkTxt = ' <strong>Skunk!</strong> ' + names[loser] + ' finished on ' + ls + ', short of the 91 line.';
+  } else if(ls<31) skunkTxt = ' <strong>Skunk!</strong> ' + names[loser] + ' finished on ' + ls + ', short of the 31 line.';
+  log('<strong>' + names[winner] + ' wins, ' + G.scores[winner] + ' to ' + G.scores[loser] + '.</strong>' + skunkTxt);
+  teach('<strong>' + names[winner] + ' wins the game, ' + G.scores[winner] + '–' + G.scores[loser] + '.</strong>' + skunkTxt);
+  clearCoach();
+  if(settings.mode==='bot'){
+    record.games++;
+    if(winner===0) record.wins++; else record.losses++;
+    const key = LEVEL_NAMES[settings.level];
+    record.byLevel[key] = record.byLevel[key] || {g:0,w:0};
+    record.byLevel[key].g++; if(winner===0) record.byLevel[key].w++;
+    record.peg += G.gamePeg[0]; record.show += G.gameShow[0]; record.hands += G.gameHands;
+    record.history.push({when:new Date().toISOString().slice(0,10), level:key, target:settings.target, result: winner===0?'W':'L', myScore:G.scores[0], botScore:G.scores[1], hands:G.gameHands, myPeg:G.gamePeg[0], myShow:G.gameShow[0]});
+    if(record.history.length>60) record.history = record.history.slice(-60);
+    saveRecord(); renderRecord();
+  }
+  renderAll();
+}
+/* ---------- teaching: discards ---------- */
+function describeThrow(keep, thrown, ownCrib){
+  const f=[];
+  if(thrown[0].r===thrown[1].r) f.push('a pair');
+  if(cval(thrown[0])+cval(thrown[1])===15) f.push('a fifteen pair');
+  if(thrown.some(c=>c.r===5)) f.push('a 5 — the most generous card you can give a crib');
+  if(staticFour(keep)>=6) f.push('the keep already holds ' + staticFour(keep) + ' points before the cut');
+  return f;
+}
+function teachDiscardLine(p, keep, thrown){
+  const names=playerNames();
+  const ownCrib = G.dealer===p;
+  const f = describeThrow(keep, thrown, ownCrib);
+  let line = '<strong>The crib lesson:</strong> the crib is the dealer\'s second hand, worth about 5 points on average. ';
+  if(ownCrib) line += 'This one is <em>yours</em> — feeding it is feeding yourself. You threw ' + thrown.map(cname).join(' and ') + (f.length? ' (' + f.join('; ') + ')' : '') + '.';
+  else line += 'This one belongs to ' + names[G.dealer] + ' — the pro\'s first lesson is to starve it: no pairs, no fifteens, above all no 5s, unless the keep is too good to break. You threw ' + thrown.map(cname).join(' and ') + (f.length? ' (' + f.join('; ') + ')' : ' — nothing that combines, which is the safe shape') + '.';
+  teach(line);
+}
+function recordDiscardCheck(hand6, thrown){
+  try{
+    const ranked = rankDiscards(hand6, G.dealer===0, Math.random);
+    const mine = ranked.find(o=>thrown.indexOf(o.throw[0])>=0 && thrown.indexOf(o.throw[1])>=0);
+    if(mine && ranked[0].ev - mine.ev > 1.5){ record.discardLeaks++; record.discardLeakPts += (ranked[0].ev - mine.ev); saveRecord(); }
+  }catch(e){}
+}
+function coachDiscard(p){
+  const hand = G.hands[p];
+  let ranked;
+  try{ ranked = rankDiscards(hand, G.dealer===p, Math.random); }catch(e){ return; }
+  const top = ranked.slice(0,3);
+  const names=playerNames();
+  let html = '<div class="card" style="margin:10px 0"><h3 style="margin-top:0">Coach — three ways to throw, with the trade-offs</h3>';
+  html += '<p class="small">Expected values average every possible cut (and a sampled crib) — they are honest averages, not promises about this hand. The crib is ' + (G.dealer===p? '<strong>yours</strong>' : '<strong>' + names[G.dealer] + '\'s</strong>') + '.</p>';
+  top.forEach((o,i)=>{
+    const feats = describeThrow(o.keep, o.throw, G.dealer===p);
+    html += '<div class="coachopt"><strong>Way ' + (i+1) + ': throw ' + o.throw.map(cname).join(' + ') + '</strong>' +
+      'Keep ' + o.keep.map(cname).join(', ') + '. Hand averages ≈ ' + o.handEv.toFixed(1) + '; the crib ' + (G.dealer===p? 'gains' : 'costs') + ' ≈ ' + o.cribEv.toFixed(1) + '; net ≈ ' + o.ev.toFixed(1) + '.' +
+      (feats.length? '<br><span class="small">' + feats.join('; ') + '.</span>' : '') + '</div>';
+  });
+  if(top.length>1){
+    html += '<p class="small">Way 1 is the arithmetic favourite. The honest alternative is Way 2 whenever its keep holds something Way 1 breaks up — a pair or a run in hand is money already counted, while Way 1 often bets on the cut. Behind in the late game? The higher-ceiling keep is the gambler\'s way, and sometimes the right one.</p>';
+  }
+  if(record.discardLeaks>=2){
+    html += '<p class="small"><strong>From your own record:</strong> in ' + record.discardLeaks + ' past discards you left an average of ' + (record.discardLeakPts/Math.max(1,record.discardLeaks)).toFixed(1) + ' points a time on the table versus the best throw. Worth weighing the ways above.</p>';
+  }
+  html += '</div>';
+  coach(html);
+}
+/* ---------- teaching: pegging ---------- */
+function coachPeg(p){
+  let opts;
+  try{ opts = evalPegOptions(G.playHands[p], G.seg, G.lastRun, G.seen[p], G.playHands[1-p].length, Math.random); }catch(e){ return; }
+  if(!opts.length) return;
+  const best = opts[0];
+  let html = '<div class="card" style="margin:10px 0"><h3 style="margin-top:0">Coach — the play</h3>';
+  const bestTxt = '<div class="coachopt"><strong>Play the ' + cname(best.card) + '</strong>' +
+    (best.now>0? 'Scores ' + best.now + ' now (' + best.parts.map(x=>x.label).join('; ') + ').' : 'Scores nothing now.') +
+    ' Their best expected reply is worth ≈ ' + best.expReply.toFixed(1) + ', so the net is ≈ ' + (best.net>=0?'+':'') + best.net.toFixed(1) + '.</div>';
+  html += bestTxt;
+  const alt = opts.find(o=>o.card!==best.card && o.now===0) || opts.find(o=>o.card!==best.card);
+  if(alt && alt.card!==best.card){
+    html += '<div class="coachopt"><strong>The patient way: the ' + cname(alt.card) + '</strong>' +
+      (alt.now>0? 'Also scores (' + alt.now + '), but' : 'Gives up the immediate points, and') +
+      ' their expected reply drops to ≈ ' + alt.expReply.toFixed(1) + ' (net ≈ ' + (alt.net>=0?'+':'') + alt.net.toFixed(1) + '). Choose it when protecting a lead matters more than this turn\'s points.</div>';
+  } else {
+    html += '<p class="small">Only one real choice here — every other card is worse or illegal, so this is the single way, honestly named.</p>';
+  }
+  if(record.missedPeg>=3){
+    html += '<p class="small"><strong>From your own record:</strong> you have passed up a scoring card in the play ' + record.missedPeg + ' times. The coach flags the scoring play first for exactly that reason.</p>';
+  }
+  html += '</div>';
+  coach(html);
+}
+/* ---------- hand counter ---------- */
+(function buildCounter(){
+  const wrap=$('counterPickers'); const labels=['Card 1','Card 2','Card 3','Card 4','The cut'];
+  for(let i=0;i<5;i++){
+    const div=document.createElement('div');
+    div.innerHTML = '<label class="field" for="cr'+i+'">' + labels[i] + '</label>' +
+      '<div class="row"><select id="cr'+i+'">' + RANK_CH.map((r,ix)=>'<option value="'+(ix+1)+'">'+r+'</option>').join('') + '</select>' +
+      '<select id="cs'+i+'" aria-label="Suit for ' + labels[i] + '">' + SUIT_CH.map((s,ix)=>'<option value="'+ix+'">'+s+'</option>').join('') + '</select></div>';
+    wrap.appendChild(div);
+  }
+  // defaults: the 29 hand — 5♠ 5♥ 5♦ J♣ in hand, the 5♣ cut (jack matches the cut's suit)
+  const def=[[5,0],[5,1],[5,2],[11,3]]; def.forEach((d,i)=>{ $('cr'+i).value=d[0]; $('cs'+i).value=d[1]; });
+  $('cr4').value=5; $('cs4').value=3;
+  let parts=[], idx=0, total=0;
+  $('counterStart').addEventListener('click', ()=>{
+    const cards=[]; const seenKeys=new Set();
+    for(let i=0;i<5;i++){ const c={r:+$('cr'+i).value, s:+$('cs'+i).value}; if(seenKeys.has(cardKey(c))){ $('counterOut').innerHTML='<p><strong>That card appears twice.</strong> A real deck holds one of each — fix the duplicate and count again.</p>'; return; } seenKeys.add(cardKey(c)); cards.push(c); }
+    const res = scoreHand(cards.slice(0,4), cards[4], $('counterCrib').checked);
+    parts = res.parts; total = res.total; idx=0;
+    $('counterOut').innerHTML = '<p>Counting <strong>' + cards.slice(0,4).map(cname).join(', ') + '</strong> with the <strong>' + cname(cards[4]) + '</strong> cut' + ($('counterCrib').checked?' (as a crib)':'') + '. Tap “Next point” to walk it.</p><div id="counterSteps"></div>';
+    $('counterNext').style.display='inline-block';
+    counterStep();
+  });
+  function counterStep(){
+    const box=$('counterSteps'); if(!box) return;
+    if(!parts.length){ box.innerHTML='<p><strong>0.</strong> No fifteens, no pairs, no runs, no flush, no nobs — a hand of pure nothing. It happens more often than anyone admits at the table.</p>'; $('counterNext').style.display='none'; return; }
+    if(idx<parts.length){
+      const run = parts.slice(0,idx+1).reduce((a,x)=>a+x.pts,0);
+      const d=document.createElement('p'); d.innerHTML='<strong>' + parts[idx].label + '</strong> — running total: ' + run;
+      box.appendChild(d); idx++;
+      if(idx>=parts.length){ const t=document.createElement('p'); t.innerHTML='<strong>Total: ' + total + (total===29? ' — the perfect hand. About one deal in 216,580.':'') + '</strong> That is the whole count, every point named.'; box.appendChild(t); $('counterNext').style.display='none'; }
+    }
+  }
+  $('counterNext').addEventListener('click', counterStep);
+})();
+/* ---------- strategy record ---------- */
+function renderRecord(){
+  const el=$('recordOut');
+  if(!record.games){
+    el.innerHTML='<p>No finished games against the bot yet. Your record starts with the first one — results, averages, and the patterns your play shows will stand here.</p>';
+    return;
+  }
+  const avgPeg=(record.peg/Math.max(1,record.hands)).toFixed(2), avgShow=(record.show/Math.max(1,record.hands)).toFixed(2);
+  let html='<table class="stats"><tr><th>Games vs bot</th><th class="num">Won</th><th class="num">Your pegging / hand</th><th class="num">Your show / hand</th></tr>' +
+    '<tr><td>' + record.games + '</td><td class="num">' + record.wins + ' of ' + record.games + '</td><td class="num">' + avgPeg + '</td><td class="num">' + avgShow + '</td></tr></table>';
+  const bl = Object.keys(record.byLevel).map(k=>{ const v=record.byLevel[k]; return '<tr><td>' + k + '</td><td class="num">' + v.w + ' of ' + v.g + '</td></tr>'; }).join('');
+  if(bl) html += '<table class="stats" style="margin-top:8px"><tr><th>Bot level</th><th class="num">Your wins</th></tr>' + bl + '</table>';
+  html += '<h3>Patterns in your own play</h3>';
+  html += '<p>Discards that left 1½+ points behind the best throw: <strong>' + record.discardLeaks + '</strong>' + (record.discardLeaks? ' (about ' + (record.discardLeakPts/record.discardLeaks).toFixed(1) + ' points each)' : '') + '.<br>' +
+    'Times a scoring card sat in your hand while a non-scoring one was played: <strong>' + record.missedPeg + '</strong>.<br>' +
+    'Points lost to muggins: <strong>' + record.mugginsLost + '</strong>.</p>';
+  let lesson='';
+  const leakRate = record.discardLeaks/Math.max(1,record.games), missRate = record.missedPeg/Math.max(1,record.games);
+  if(record.mugginsLost>=6) lesson='Your costliest pattern is muggins: ' + record.mugginsLost + ' points handed over. The fix is a habit, not talent — count fifteens first, then pairs, then runs, out loud, before you claim. The hand counter above is the practice tool.';
+  else if(leakRate>=missRate && record.discardLeaks>=2) lesson='Your costliest pattern is the crib throw: ' + record.discardLeaks + ' discards left real points behind. The documented fix: price the crib before the hand — decide what the two thrown cards are worth to their owner, then maximise what stays. The Coach dial shows all three ways with their numbers.';
+  else if(record.missedPeg>=2) lesson='Your costliest pattern is the play: ' + record.missedPeg + ' scoring cards went unplayed. The documented habit: before any card, ask "does anything I hold score right now — fifteen, pair, or run?" The Coach dial asks it with you, every turn.';
+  else lesson='No leak dominates yet — your record is balanced across discards, play, and counting. The coach keeps watching all three.';
+  html += '<p><strong>The lesson your record teaches:</strong> ' + lesson + '</p>';
+  el.innerHTML=html;
+}
+$('forgetBtn').addEventListener('click', ()=>{
+  record = {games:0, wins:0, losses:0, byLevel:{}, peg:0, show:0, hands:0, discardLeaks:0, discardLeakPts:0, missedPeg:0, mugginsLost:0, history:[]};
+  saveRecord(); renderRecord();
+  $('recordOut').innerHTML = '<p>Forgotten. The record on this device is empty, and starts fresh with your next finished game.</p>';
+});
+/* ---------- simulation results ---------- */
+function renderSim(){
+  const box=$('simTable');
+  if(!SIM){ box.innerHTML='<p class="muted">Simulation results are printed here in the published page.</p>'; return; }
+  let html='<table class="stats"><tr><th>Bot level</th><th class="num">Win % vs Steady</th><th class="num">Pegging pts / hand</th><th class="num">Show pts / hand</th></tr>';
+  SIM.order.forEach(name=>{ const s=SIM.levels[name]; html+='<tr><td>' + name + '</td><td class="num">' + s.winPct + '%</td><td class="num">' + s.peg + '</td><td class="num">' + s.show + '</td></tr>'; });
+  html+='</table>';
+  box.innerHTML=html;
+  $('simNote').textContent = SIM.note;
+  levelBlurb();
+}
+initSetup();
+buildBoard();
+renderRecord();
+renderSim();
+</script>
+</body>
+</html>
