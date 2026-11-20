@@ -67,23 +67,34 @@
   button, a.btn, summary{min-height:44px}
   .wrap{max-width:1060px;margin:0 auto;padding:0 20px 64px}
 
-  /* FREE BAR */
-  .freebar{
-    background:var(--ink); color:var(--paper);
-    border-bottom:3px solid var(--ink);
+  /* FINE-PRINT BAR — free link · running clock · offline door, at fine-print scale */
+  .slimhead{border-bottom:1px solid var(--line-soft)}
+  .slimhead-in{
+    max-width:1060px;margin:0 auto;padding:3px 20px;
+    display:flex;flex-wrap:wrap;gap:2px 12px;align-items:center;
+    font-size:.74rem;line-height:1.35;opacity:.85;
   }
-  @media (prefers-color-scheme: dark){ .freebar{background:#e8eef4;color:#0a1524} }
-  .freebar-in{max-width:1060px;margin:0 auto;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-  .freebar strong{font-family:"Archivo",sans-serif;font-weight:900;letter-spacing:.04em;font-size:18px;text-transform:uppercase}
-  .freebar .meta{font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.02em;opacity:.85}
+  .slimhead .free-link{font-family:"Archivo",sans-serif;font-weight:800;color:var(--ink);text-decoration:none;white-space:nowrap}
+  .slimhead .free-link:hover{text-decoration:underline}
+  .slimhead .clock{font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--muted)}
+  .slimhead .clock b{color:var(--ink);font-weight:600}
   .dl-btn{
-    display:inline-flex;align-items:center;gap:8px;
-    background:var(--accent);color:#fff;border:2px solid var(--accent);
-    font-family:"Archivo",sans-serif;font-weight:800;font-size:14px;letter-spacing:.03em;text-transform:uppercase;
-    padding:10px 18px;border-radius:3px;cursor:pointer;text-decoration:none;min-height:48px;
+    display:inline-flex;align-items:center;gap:5px;margin-left:auto;
+    background:none;color:var(--blue);border:1px solid var(--line-soft);
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.72rem;letter-spacing:.02em;
+    padding:2px 9px;border-radius:999px;cursor:pointer;text-decoration:none;min-height:24px;white-space:nowrap;
   }
   .dl-btn:active{transform:translateY(1px)}
-  .dl-note{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-top:6px}
+  .freefold{max-width:1060px;margin:0 auto;padding:0 20px}
+  .freefold summary{
+    cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--muted);padding:1px 0 5px;min-height:24px;opacity:.85;
+  }
+  .freefold summary::-webkit-details-marker{display:none}
+  .freefold summary:hover{color:var(--ink)}
+  .freefold .fold-body{padding:0 0 12px;font-size:.88rem;color:var(--ink2);max-width:720px}
+  .freefold .fold-body p{margin:0 0 6px}
+  .freefold .fold-body p:last-child{margin-bottom:0}
 
   /* COMPASS */
   .compass{
@@ -270,17 +281,19 @@
 </head>
 <body>
 
-<div class="freebar">
-  <div class="freebar-in">
-    <div>
-      <strong>Free — Always Free</strong>
-      <div class="meta">RELEASED NOVEMBER 19, 2026 · BY “WE” · HARDWARE DESIGN: CERN-OHL-S</div>
-    </div>
-    <div>
-      <button class="dl-btn" id="dlBtn" type="button">↓ Download — Tap to save offline copy</button>
-      <div class="dl-note" style="color:inherit;opacity:.75">Works offline once saved. No account. No paywall. Ever.</div>
-    </div>
+<div class="slimhead">
+  <div class="slimhead-in">
+    <a class="free-link" href="index.html">Free. Always free.</a>
+    <span class="clock">Running since October 19, 2026 — <b id="elapsed">…</b> · Right now: <b id="nowtime">…</b></span>
+    <button class="dl-btn" id="dlBtn" type="button">Available offline — download this page</button>
   </div>
+  <details class="freefold">
+    <summary><span>The free message, in full</span><span aria-hidden="true">·</span><span>Tap to open · Tap to close</span></summary>
+    <div class="fold-body">
+      <p><strong>Free — always free.</strong> Released November 19, 2026 · By “we” · Hardware design: CERN-OHL-S — free to study, build, share, and improve; derivatives carry the same freedom.</p>
+      <p>The download button above is the offline door: it saves this blueprint as a file you can open anywhere. Works offline once saved. No account. No paywall. Ever.</p>
+    </div>
+  </details>
 </div>
 
 <nav class="compass" aria-label="Blueprint compass">
@@ -554,6 +567,32 @@
   </footer>
 
 </div>
+
+<script>
+(function(){
+  var elapsedEl = document.getElementById('elapsed');
+  var nowEl = document.getElementById('nowtime');
+  if(!elapsedEl || !nowEl) return;
+  var anchor = new Date('2026-10-19T00:00:00-05:00').getTime();
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function tick(){
+    var now = new Date();
+    var diff = Math.max(0, now.getTime() - anchor);
+    var days = Math.floor(diff / 86400000);
+    var rem = diff - days * 86400000;
+    var h = Math.floor(rem / 3600000);
+    var m = Math.floor((rem - h * 3600000) / 60000);
+    var s = Math.floor((rem - h * 3600000 - m * 60000) / 1000);
+    elapsedEl.textContent = days + (days === 1 ? ' day, ' : ' days, ') + pad(h) + ':' + pad(m) + ':' + pad(s);
+    var hh = now.getHours();
+    var ampm = hh >= 12 ? 'PM' : 'AM';
+    var h12 = hh % 12; if(h12 === 0) h12 = 12;
+    nowEl.textContent = h12 + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()) + ' ' + ampm;
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
 
 <script>
 (function(){
