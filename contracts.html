@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Contracts — Open and Closed</title>
+    <style>
+      :root {
+        --bg: #0d1526;
+        --bg-deep: #0a101d;
+        --panel: #121e36;
+        --panel-edge: #2a3d63;
+        --grid-line: rgba(120, 165, 235, 0.07);
+        --ink: #eef2fb;
+        --ink-soft: #c3cfe6;
+        --muted: #93a5c6;
+        --accent: #7db4ff;
+        --accent-strong: #a9ccff;
+        --free: #8fe3b0;
+        --rule: #2a3d63;
+        --quote-bg: #0f1a30;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f4f6fb;
+          --bg-deep: #e9edf6;
+          --panel: #ffffff;
+          --panel-edge: #c3cfe4;
+          --grid-line: rgba(40, 80, 160, 0.06);
+          --ink: #16213a;
+          --ink-soft: #33436a;
+          --muted: #5a6c92;
+          --accent: #1d55b8;
+          --accent-strong: #14428f;
+          --free: #0c7a3d;
+          --rule: #c3cfe4;
+          --quote-bg: #eef2fa;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background:
+          repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 28px),
+          repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 28px),
+          var(--bg);
+        color: var(--ink);
+        font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+        font-size: 1.0625rem;
+        line-height: 1.6;
+      }
+      a { color: var(--accent); }
+      a:hover, a:focus-visible { color: var(--accent-strong); }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+      /* ——— Slim fine-print header bar ——— */
+      .topbar {
+        background: var(--bg-deep);
+        border-bottom: 1px solid var(--rule);
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .topbar-inner {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 0.3rem 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 1.1rem;
+      }
+      .topbar a {
+        color: var(--ink-soft);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        min-height: 2rem;
+        padding: 0.15rem 0.1rem;
+      }
+      .topbar a:hover, .topbar a:focus-visible { color: var(--accent-strong); text-decoration: underline; }
+      .topbar .free-link { font-weight: 700; color: var(--free); }
+      .topbar .free-link:hover, .topbar .free-link:focus-visible { color: var(--free); }
+      .clock {
+        font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .clock .label { font-family: inherit; }
+      .topbar .dl { margin-left: auto; }
+      @media (max-width: 36rem) {
+        .clock { white-space: normal; flex: 1 1 100%; order: 3; line-height: 1.5; }
+        .topbar .dl { margin-left: 0; }
+      }
+
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.75rem 1rem 3rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+        margin: 0 0 0.35rem;
+        letter-spacing: -0.01em;
+      }
+      .free-face {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--free);
+        margin: 0 0 0.9rem;
+      }
+      .face-line {
+        font-size: 1.13rem;
+        color: var(--ink-soft);
+        margin: 0 0 2rem;
+        max-width: 38rem;
+      }
+
+      section { margin: 0 0 2.4rem; }
+      h2 {
+        font-size: 1.28rem;
+        margin: 0 0 0.25rem;
+        padding-bottom: 0.45rem;
+        border-bottom: 2px solid var(--panel-edge);
+      }
+      h2 .no {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.85rem;
+        color: var(--muted);
+        font-weight: 400;
+        margin-right: 0.5rem;
+      }
+      .section-sub { color: var(--muted); margin: 0.5rem 0 1rem; font-size: 0.98rem; }
+
+      .terms { list-style: none; margin: 0; padding: 0; }
+      .terms li {
+        padding: 0.65rem 0 0.65rem 1.35rem;
+        position: relative;
+        border-bottom: 1px solid var(--rule);
+      }
+      .terms li:last-child { border-bottom: none; }
+      .terms li::before {
+        content: "—";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+      }
+      .terms strong { color: var(--ink); }
+
+      .door {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: 0.5rem 1rem;
+        margin-top: 1rem;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .door:hover, .door:focus-visible { background: var(--panel); text-decoration: underline; }
+
+      details {
+        margin-top: 1rem;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        background: var(--panel);
+      }
+      summary {
+        cursor: pointer;
+        padding: 0.6rem 0.9rem;
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+      details .fold-body { padding: 0 0.9rem 0.9rem; color: var(--ink-soft); }
+      details .fold-body p { margin: 0.4rem 0; }
+      details .fold-body dt { font-weight: 700; color: var(--ink); margin-top: 0.7rem; }
+      details .fold-body dd { margin: 0.15rem 0 0; }
+
+      /* ——— Order record ——— */
+      .order {
+        border: 1px solid var(--panel-edge);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 1.1rem 1.15rem 1.2rem;
+        margin-top: 1rem;
+      }
+      .order h3 {
+        margin: 0 0 0.9rem;
+        font-size: 1.15rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 0.8rem;
+        align-items: baseline;
+      }
+      .order h3 .stamp {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--free);
+        border: 1.5px solid var(--free);
+        border-radius: 4px;
+        padding: 0.12rem 0.45rem;
+      }
+      .record { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.35rem 1rem; margin: 0; }
+      .record dt {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding-top: 0.3rem;
+      }
+      .record dd { margin: 0; color: var(--ink-soft); }
+      .record dd strong { color: var(--ink); }
+      @media (max-width: 30rem) {
+        .record { grid-template-columns: 1fr; gap: 0.1rem; }
+        .record dd { margin-bottom: 0.55rem; }
+      }
+      blockquote {
+        margin: 1rem 0 0;
+        padding: 0.7rem 1rem;
+        background: var(--quote-bg);
+        border-radius: 6px;
+        color: var(--ink);
+        font-style: italic;
+      }
+      blockquote .who { display: block; font-style: normal; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+      .clause { margin-top: 1rem; color: var(--ink-soft); }
+      .clause strong { color: var(--ink); }
+      .thanks { margin-top: 1rem; color: var(--ink-soft); }
+      .signature {
+        margin: 1.2rem 0 0;
+        padding-top: 0.8rem;
+        border-top: 1px solid var(--rule);
+        font-size: 1.1rem;
+        color: var(--ink);
+      }
+
+      .empty-note {
+        border: 1px dashed var(--panel-edge);
+        border-radius: 8px;
+        padding: 1rem 1.15rem;
+        color: var(--ink-soft);
+        margin-top: 1rem;
+      }
+      .empty-note .big { font-size: 1.12rem; color: var(--ink); font-weight: 600; margin: 0 0 0.4rem; }
+      .empty-note p { margin: 0.3rem 0; }
+
+      footer {
+        border-top: 1px solid var(--rule);
+        margin-top: 2.5rem;
+        padding-top: 1.2rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      footer p { margin: 0.4rem 0; }
+      footer nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.4rem; margin-top: 0.6rem; }
+      footer nav a { display: inline-flex; align-items: center; min-height: 2.25rem; }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="free-link" href="index.html">Free. Always free.</a>
+        <span class="clock" aria-label="Running clock">
+          Running since October 19, 2026 · <span id="elapsed">— days, 00:00:00</span> · now <span id="now">--:--:--</span>
+        </span>
+        <a class="dl" href="contracts.html" download>Save this page for offline use ↓</a>
+      </div>
+    </header>
+
+    <main>
+      <h1>Contracts — Open and Closed</h1>
+      <p class="free-face">Free. Always free.</p>
+      <p class="face-line">Every contract we make is public. Open contracts anybody may take up, the orders placed under them, and closed contracts when they finish — all on one page, where anybody can look.</p>
+
+      <section aria-labelledby="s1">
+        <h2 id="s1"><span class="no">§1</span>THE OPEN CONTRACT</h2>
+        <p class="section-sub">The standing offer. It stands open to anyone and everyone, and it stays open.</p>
+        <ul class="terms">
+          <li>The Super Suit blueprint is an open contract. <strong>Anyone and everyone may build it.</strong></li>
+          <li>The only stipulation: <strong>what is built from it is free.</strong> No strings attached.</li>
+          <li><strong>Building it is accepting it.</strong> No signature is needed; the build is the signature.</li>
+          <li>A contract under this offer is <strong>complete upon delivery</strong>: an order's contract completes upon delivery of the thing ordered. Delivery is what closes it.</li>
+          <li>The one exception is <strong>earned access</strong>: access to powerful things is earned by actions, and it can be retracted when actions prove unworthiness. For the suit, the thing itself decides who it works for. It judges by judgment, not by numbers, and it measures the trajectory of its wearer — the direction of his actions over time, not a single moment.</li>
+          <li>The legal form carrying these terms is <strong>copyleft</strong>: hardware under CERN-OHL-S, writings under CC BY-SA 4.0, code under GPL.</li>
+        </ul>
+        <a class="door" href="the-super-suit-blueprint.html">Read the blueprint →</a>
+        <details>
+          <summary>The legal forms, in plain words</summary>
+          <div class="fold-body">
+            <dl>
+              <dt>Copyleft</dt>
+              <dd>A way of publishing work so it stays free: anyone may use, share, and build on it, and what they make from it stays free on the same terms.</dd>
+              <dt>CERN-OHL-S</dt>
+              <dd>The copyleft licence for hardware designs, from CERN. It covers the suit's physical design: build it, share it, improve it — and keep it free.</dd>
+              <dt>CC BY-SA 4.0</dt>
+              <dd>Creative Commons Attribution–ShareAlike. It covers the writings: share them, credit the source, and pass them on under the same licence.</dd>
+              <dt>GPL</dt>
+              <dd>The GNU General Public License. It covers code: use it, change it, share it — and keep it free.</dd>
+            </dl>
+          </div>
+        </details>
+      </section>
+
+      <section aria-labelledby="s2">
+        <h2 id="s2"><span class="no">§2</span>Orders</h2>
+        <p class="section-sub">Orders placed under the open contract. An order is a place in line, recorded here with its date.</p>
+
+        <article class="order" aria-labelledby="order1">
+          <h3 id="order1">Order № 1 — The Super Suit <span class="stamp">First in line</span></h3>
+          <dl class="record">
+            <dt>Placed</dt>
+            <dd><strong>Saturday, November 21, 2026, 10:11 AM CST.</strong> First in line.</dd>
+            <dt>Item</dt>
+            <dd>One (1) Super Suit, built to the sheet as it stands and as it grows.</dd>
+            <dt>Delivery</dt>
+            <dd>Delivery follows the holder's device, as soon as possible.</dd>
+            <dt>Price</dt>
+            <dd><strong>None — free, always free.</strong></dd>
+            <dt>Status</dt>
+            <dd>Printed honestly: the suit is a design on paper, not built. This order is a place in line — the first place — recorded and dated. It is awaiting a builder.</dd>
+          </dl>
+          <blockquote>
+            “It will be much appreciated and used for the right reasons.”
+            <span class="who">— the holder's word, attached to the order</span>
+          </blockquote>
+          <p class="clause"><strong>The holder's own worthiness clause, attached to the order:</strong> if his actions prove him unworthy, he accepts retraction of the suit and his consequences, deemed legally and ethically. Nobody imposed this on the holder — the holder imposed it on himself, on the record, before the suit exists.</p>
+          <p class="thanks">A massive thank-you rides on this order: to whoever builds it, and to everybody whose documented work the sheet stands on.</p>
+          <p class="signature">— Tristan Bugenis</p>
+        </article>
+      </section>
+
+      <section aria-labelledby="s3">
+        <h2 id="s3"><span class="no">§3</span>CLOSED CONTRACTS</h2>
+        <div class="empty-note">
+          <p class="big">No contract has closed yet.</p>
+          <p>A contract lands here when its order has been delivered — delivery is what closes it. A contract that ends another way is recorded here too. Either way it is recorded in the open, with its dates.</p>
+          <p>Nothing leaves this page; closed contracts stay listed.</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="s4">
+        <h2 id="s4"><span class="no">§4</span>How It Works</h2>
+        <ul class="terms">
+          <li><strong>To take up an open contract:</strong> build the thing. Building is the acceptance.</li>
+          <li><strong>To place an order:</strong> an order is a place in line, recorded on this page with its date. The <a href="what-are-we-missing.html">“What are we missing?”</a> page is where a visitor speaks to us.</li>
+          <li><strong>To close a contract:</strong> a contract is complete upon delivery. When the thing ordered is delivered, the contract completes and moves to the closed list above.</li>
+          <li><strong>The fine print law holds on this page:</strong> every term here can justify itself, line by line. There is no other fine print.</li>
+        </ul>
+      </section>
+
+      <footer>
+        <p><a href="copyleft.html">Copyleft</a> — CC BY-SA 4.0. This page is free, and it stays free: share it, build on it, pass it on under the same terms.</p>
+        <nav aria-label="Doors">
+          <a href="what-are-we-missing.html">What are we missing?</a>
+          <a href="index.html">Home — the start page</a>
+        </nav>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        var anchor = new Date("2026-10-19T00:00:00-05:00").getTime();
+        var elapsedEl = document.getElementById("elapsed");
+        var nowEl = document.getElementById("now");
+        function pad(n) { return (n < 10 ? "0" : "") + n; }
+        function tick() {
+          var now = new Date();
+          var diff = Math.max(0, now.getTime() - anchor);
+          var days = Math.floor(diff / 86400000);
+          var rem = diff - days * 86400000;
+          var h = Math.floor(rem / 3600000);
+          var m = Math.floor((rem - h * 3600000) / 60000);
+          var s = Math.floor((rem - h * 3600000 - m * 60000) / 1000);
+          elapsedEl.textContent = days + (days === 1 ? " day, " : " days, ") + pad(h) + ":" + pad(m) + ":" + pad(s);
+          nowEl.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+        }
+        tick();
+        setInterval(tick, 1000);
+      })();
+    </script>
+  </body>
+</html>
