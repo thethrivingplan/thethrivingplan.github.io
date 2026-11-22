@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:," />
+<title>The Ladder Studio</title>
+<style>
+:root{
+  --bg:#0a0a0e; --panel:#12121a; --panel2:#171722; --panel3:#1d1d2b;
+  --line:#262635; --line2:#33334a;
+  --text:#eceaf2; --muted:#a7a3b8; --faint:#6f6c84;
+  --gold:#d4af37; --gold-dim:#8a742a; --gold-soft:rgba(212,175,55,.14);
+  --red:#e5484d; --green:#3fb97f; --blue:#4f8ff7;
+  --cell:#1a1a28; --cell-alt:#15151f;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+button,[role="button"],select,input:not([type="checkbox"],[type="range"]){min-height:36px}
+a{color:var(--gold)}
+.wrap{max-width:1180px;margin:0 auto;padding:10px 12px 0}
+
+/* ---------- header (tight top) ---------- */
+header.top{padding:6px 2px 10px}
+header.top h1{font-size:26px;line-height:1.1;margin:0;font-weight:800;letter-spacing:.2px}
+header.top h1 .gold{color:var(--gold)}
+.core-line{margin:5px 0 0;color:var(--muted);font-size:14.5px;line-height:1.45;max-width:72ch}
+.honest{display:inline-block;margin-top:8px;font-size:12px;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:5px 10px;background:var(--panel)}
+.honest b{color:var(--text);font-weight:650}
+
+/* ---------- transport ---------- */
+.transport{position:sticky;top:0;z-index:40;background:rgba(10,10,14,.96);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.tgroup{display:flex;gap:6px;align-items:center}
+.tbtn{min-width:52px;padding:6px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--panel3);cursor:pointer;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tbtn:active{transform:translateY(1px)}
+.tbtn.play{background:var(--gold);border-color:var(--gold);color:#141200;min-width:64px}
+.tbtn.play.playing{background:#f0cd55}
+.tbtn.rec{color:#ff8a8e}
+.tbtn.rec.armed{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.tbtn.rec.armed{animation:none}}
+.readout{background:#000;border:1px solid var(--line);border-radius:9px;padding:4px 12px;min-width:118px;text-align:center}
+.readout .pos{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:1px;line-height:1.15}
+.readout .lbl{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
+.ctl{display:flex;flex-direction:column;gap:2px;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px 10px}
+.ctl label{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
+.ctl label output{color:var(--gold);font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:0;text-transform:none}
+.ctl input[type="range"]{width:104px;accent-color:var(--gold);min-height:20px}
+#viz{width:92px;height:44px;background:#000;border:1px solid var(--line);border-radius:9px}
+.transport .spacer{flex:1}
+
+/* ---------- panels ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:10px;padding:12px}
+.panel h2{margin:0 0 4px;font-size:15px;font-weight:750}
+.panel .sub{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.45}
+.rowflex{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+.field input[type="number"]{background:#000;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;width:150px;font-family:ui-monospace,Menlo,monospace;font-size:16px;color:var(--gold)}
+.preset{border:1px solid var(--line2);background:var(--panel3);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.preset.active{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.btn{border:1px solid var(--line2);background:var(--panel3);border-radius:9px;padding:7px 14px;cursor:pointer;font-weight:650;font-size:14px;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#141200}
+.btn.danger{color:#ff8a8e}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.switchline{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;max-width:560px;cursor:pointer}
+.switchline input{width:20px;height:20px;margin-top:1px;accent-color:var(--gold);flex:none}
+.switchline span{font-size:13.5px;line-height:1.4}
+.switchline small{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.4}
+.ladder-strip{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.rung-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid var(--line);background:#000;border-radius:999px;padding:5px 9px;color:var(--muted)}
+.rung-chip b{color:var(--text);font-weight:600}
+.rung-chip.heart{border-color:var(--gold);color:var(--gold)}
+.rung-chip.heart b{color:var(--gold)}
+
+/* ---------- instrument rack ---------- */
+.rack{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.inst{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 9px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-height:58px}
+.inst .nm{font-weight:750;font-size:14.5px;display:flex;align-items:center;gap:7px}
+.inst .ds{font-size:11.5px;color:var(--muted);line-height:1.3}
+.inst .dot{width:9px;height:9px;border-radius:50%;background:var(--faint);flex:none}
+.inst.hasnotes .dot{background:var(--gold)}
+.inst.sel{border-color:var(--gold);background:var(--gold-soft)}
+.inst.sel .nm{color:var(--gold)}
+.inst.muted{opacity:.55}
+.inst.muted .nm{text-decoration:line-through}
+.sel-detail{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.sel-detail .who{font-size:14px}
+.sel-detail .who b{color:var(--gold)}
+.sel-detail input[type="range"]{width:150px;accent-color:var(--gold);min-height:24px}
+.mini{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+
+/* ---------- piano roll ---------- */
+.roll-tools{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:10px}
+.roll-tools .sep{flex:1}
+.roll-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#000;-webkit-overflow-scrolling:touch}
+.roll{display:grid;min-width:860px}
+.roll .rh,.roll .cell,.roll .corner,.roll .stepnum{border-right:1px solid #1e1e2c;border-bottom:1px solid #1e1e2c}
+.corner{position:sticky;left:0;z-index:3;background:#0d0d14;font-size:10px;color:var(--faint);display:flex;align-items:center;padding:0 8px;letter-spacing:.08em;text-transform:uppercase}
+.stepnum{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--faint);text-align:center;padding:3px 0;background:#0d0d14}
+.stepnum.bar{color:var(--gold)}
+.stepnum.now{color:#000;background:var(--gold);font-weight:700}
+.rh{position:sticky;left:0;z-index:2;background:#0d0d14;padding:3px 8px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.25;white-space:nowrap}
+.rh .hz{color:var(--text);font-weight:700;font-size:12px}
+.rh .nt{color:var(--gold)}
+.rh .ct{color:var(--faint)}
+.rh.heart{background:#1c1807}
+.rh.heart .hz{color:var(--gold)}
+.cell{height:34px;background:var(--cell);cursor:pointer;padding:0;border-top:0;border-left:0;border-radius:0;min-height:34px;position:relative}
+.cell.alt{background:var(--cell-alt)}
+.cell.beat{background:#20202f}
+.cell.alt.beat{background:#1b1b29}
+.cell.now{box-shadow:inset 0 0 0 2px rgba(212,175,55,.55)}
+.cell.on{background:var(--gold)}
+.cell.on.now{box-shadow:inset 0 0 0 2px #fff3c4}
+.cell.ghost::after{content:"";position:absolute;inset:9px 7px;border-radius:4px;background:rgba(236,234,242,.28)}
+.cell.ghost.on-ghost::after{background:rgba(20,18,0,.35)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+
+/* ---------- pads ---------- */
+.pads{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+@media(min-width:640px){.pads{grid-template-columns:repeat(5,1fr)}}
+.pad{border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel3),var(--panel2));border-radius:11px;padding:10px 8px;cursor:pointer;text-align:center;min-height:64px;user-select:none;-webkit-user-select:none;touch-action:none}
+.pad .phz{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:15px;display:block}
+.pad .pnt{font-size:12px;color:var(--gold);display:block;margin-top:2px}
+.pad .pct{font-size:11px;color:var(--faint);display:block}
+.pad.heart{border-color:var(--gold)}
+.pad.hit{background:var(--gold);color:#141200}
+.pad.hit .pnt,.pad.hit .pct{color:#4a3d05}
+
+/* ---------- mic / bounce ---------- */
+.mic-state{font-size:13.5px;color:var(--muted);line-height:1.5}
+.mic-state b{color:var(--text)}
+.rec-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);vertical-align:-1px;margin-right:6px;animation:pulse 1s infinite}
+audio{width:100%;margin-top:8px}
+.statusline{font-size:13px;color:var(--muted);min-height:20px;margin-top:8px}
+.statusline b{color:var(--gold);font-weight:650}
+
+/* ---------- layers ---------- */
+details.layer{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:10px;padding:0 14px}
+details.layer summary{cursor:pointer;padding:13px 0;font-weight:750;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px}
+details.layer summary::-webkit-details-marker{display:none}
+details.layer summary .plus{color:var(--gold);font-size:20px;font-weight:400}
+details.layer .body{padding:0 0 14px;color:#cfccdd;font-size:14.5px;line-height:1.65;max-width:78ch}
+details.layer .body p{margin:0 0 10px}
+details.layer .body b{color:var(--text)}
+details.layer .body .gold{color:var(--gold)}
+details.layer table{border-collapse:collapse;width:100%;font-size:13.5px;margin:6px 0 10px}
+details.layer th,details.layer td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+details.layer th{color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+details.layer td:first-child{font-weight:700;color:var(--gold);white-space:nowrap}
+
+/* ---------- footer ---------- */
+footer{margin-top:14px;border-top:1px solid var(--line);padding:14px 2px 26px;color:var(--muted);font-size:13px;line-height:1.7}
+footer .frow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+footer .clock{font-family:ui-monospace,Menlo,monospace;color:var(--text)}
+footer .clock b{color:var(--gold);font-weight:600}
+@media(max-width:560px){
+  .rack{grid-template-columns:repeat(2,1fr)}
+  #viz{display:none}
+  .readout{min-width:104px}
+  .ctl input[type="range"]{width:84px}
+  header.top h1{font-size:23px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>The <span class="gold">Ladder</span> Studio</h1>
+  <p class="core-line">One number, halved by octaves until it sings. Start at 144,000, walk down the rungs — 18,000 · 9,000 · 4,500 · 2,250 · 1,125 · <b style="color:var(--gold)">562.5 — the heart</b> · 281.25 · 140.625 Hz — every rung the same note, C♯, 25 cents sharp of the piano. Nine instruments, a 32-step loop, a mic, and a bounce button: play around in that frequency.</p>
+  <span class="honest"><b>Honest label:</b> a little studio, not a professional DAW — no waveform editing, no effects rack, no MIDI. What it does, it does for real, in your browser.</span>
+</header>
+
+<!-- ================= TRANSPORT ================= -->
+<div class="transport" role="region" aria-label="Transport">
+  <div class="tgroup">
+    <button class="tbtn play" id="btnPlay" aria-label="Play or pause">▶ Play</button>
+    <button class="tbtn" id="btnStop" aria-label="Stop">■ Stop</button>
+    <button class="tbtn rec" id="btnRec" aria-label="Arm recording from the pads">● Rec</button>
+  </div>
+  <div class="readout" aria-live="off">
+    <div class="pos" id="posReadout">1 · 01</div>
+    <div class="lbl">Bar · Step</div>
+  </div>
+  <div class="ctl">
+    <label for="bpm">Tempo <output id="bpmOut">90 BPM</output></label>
+    <input type="range" id="bpm" min="40" max="200" step="1" value="90" />
+  </div>
+  <div class="ctl">
+    <label for="masterVol">Master <output id="masterOut">80%</output></label>
+    <input type="range" id="masterVol" min="0" max="100" step="1" value="80" />
+  </div>
+  <canvas id="viz" width="184" height="88" aria-hidden="true"></canvas>
+  <div class="spacer"></div>
+  <div class="tgroup">
+    <button class="btn" id="btnClear">Clear roll</button>
+    <button class="btn gold" id="btnBounce">⬇ Bounce WAV</button>
+  </div>
+</div>
+
+<!-- ================= THE LADDER ================= -->
+<section class="panel" aria-label="Base frequency and the ladder">
+  <h2>The ladder — pick a starting number</h2>
+  <p class="sub">The starting frequency is halved, octave by octave, until it enters hearing. Size sets the pitch; the note itself never changes — it only slides. Change the number and the whole studio re-tunes.</p>
+  <div class="rowflex">
+    <div class="field">
+      <label for="baseFreq">Base frequency (Hz)</label>
+      <input type="number" id="baseFreq" value="144000" min="30" max="2000000" step="any" />
+    </div>
+    <button class="btn gold" id="btnApplyBase">Apply &amp; re-tune</button>
+    <div class="field">
+      <label>Presets</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="preset active" data-base="144000">144,000</button>
+        <button class="preset" data-base="432">432</button>
+        <button class="preset" data-base="528">528</button>
+        <button class="preset" data-base="100000">100,000</button>
+      </div>
+    </div>
+  </div>
+  <label class="switchline" style="margin-top:12px">
+    <input type="checkbox" id="gridToggle" />
+    <span>Measure against the ladder's own grid (<span id="gridA">A = 446.4</span>)
+      <small>Against the piano (A = 440) every rung sits 25 cents sharp of C♯. Crown the ladder's own grid instead and the same rungs read as exact C♯, 0 cents. The sound does not change — only the ruler does.</small>
+    </span>
+  </label>
+  <div class="ladder-strip" id="ladderStrip" aria-label="The rungs"></div>
+</section>
+
+<!-- ================= INSTRUMENT RACK ================= -->
+<section class="panel" aria-label="Instrument rack">
+  <h2>Instrument rack</h2>
+  <p class="sub">Nine synthesized voices — no samples, every note built from harmonics and envelopes the moment you ask for it. One is selected for writing; each keeps its own volume and mute. Layout borrowed the way every DAW borrows: Studio One's transport-and-arrange spine, Logic's instrument focus, Ableton's play-it-live pads.</p>
+  <div class="rack" id="rack"></div>
+  <div class="sel-detail">
+    <span class="who">Writing with: <b id="selName">Pure</b></span>
+    <span class="mini">Volume</span>
+    <input type="range" id="instVol" min="0" max="100" value="80" aria-label="Selected instrument volume" />
+    <button class="btn" id="instMute">Mute</button>
+    <button class="btn" id="instTest">♪ Hear it at the heart</button>
+  </div>
+</section>
+
+<!-- ================= PIANO ROLL ================= -->
+<section class="panel" aria-label="Piano roll">
+  <h2>Piano roll — 32 steps, 2 bars of 16th notes</h2>
+  <p class="sub">Rows are the ladder's rungs, high at the top. Tap a cell to place or remove a note for the selected instrument; press and drag to paint. Pale marks are other instruments' notes — switch instruments to edit them. With <b style="color:#ff8a8e">● Rec</b> armed and the loop playing, pad hits write themselves in at the passing step.</p>
+  <div class="roll-tools">
+    <span class="mini" id="rollInfo">562.5 Hz is the heart</span>
+    <span class="sep"></span>
+    <button class="btn" id="btnDemo">Load the ladder demo</button>
+    <button class="btn" id="btnClearInst">Clear this instrument</button>
+  </div>
+  <div class="roll-scroll"><div class="roll" id="roll"></div></div>
+  <div class="legend">
+    <span><i style="background:var(--gold)"></i>Note — selected instrument</span>
+    <span><i style="background:rgba(236,234,242,.35)"></i>Note — another instrument</span>
+    <span><i style="background:#1c1807;border:1px solid var(--gold)"></i>The heart rung</span>
+  </div>
+</section>
+
+<!-- ================= LIVE PADS ================= -->
+<section class="panel" aria-label="Live pads">
+  <h2>Live pads — play the rungs</h2>
+  <p class="sub">One pad per rung, played by the selected instrument. Hold for a longer tone. Arm ● Rec, press Play, and what you play lands in the roll.</p>
+  <div class="pads" id="pads"></div>
+</section>
+
+<!-- ================= MIC + BOUNCE ================= -->
+<section class="panel" aria-label="Microphone track and bounce">
+  <h2>Mic track &amp; bounce</h2>
+  <p class="sub">Record your voice or a real instrument over the loop. The clip starts at step 1 on every pass and plays inside the loop. Recording never leaves this device — your browser will ask permission first.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+    <button class="btn" id="btnMicRec">🎙 Start mic recording</button>
+    <button class="btn danger" id="btnMicDel" disabled>Delete clip</button>
+    <span class="mic-state" id="micState">No clip yet.</span>
+  </div>
+  <audio id="micAudio" controls style="display:none"></audio>
+  <div class="statusline" id="statusLine" role="status"></div>
+  <p class="sub" style="margin-top:10px">Bounce renders the full loop — every instrument plus the mic clip — with an offline render and downloads it as a WAV file you keep.</p>
+</section>
+<!-- ================= LAYERS ================= -->
+<details class="layer">
+  <summary>What this is — and the honest grading <span class="plus">+</span></summary>
+  <div class="body">
+    <p><b>The octave math is exact.</b> Halving a frequency drops it exactly one octave; the note name survives every halving, only the height changes. Start at 144,000 Hz and halve: 72,000 → 36,000 are still ultrasound. The first rung inside the textbook audible range is <span class="gold">18,000 Hz</span> (three octaves down — most adults won't hear it; a child might). Then 9,000 · 4,500 · 2,250 · 1,125 · <span class="gold">562.5 — the heart, nearest the middle of hearing</span> · 281.25 · 140.625 · 70.31 · 35.16 Hz, near the floor where tone turns into pulse. Against the piano's grid (A = 440), every rung lands on <b>C♯, sharp by exactly 25 cents</b> — octaves preserve the offset, so the whole family sits a quarter-semitone above the C♯ line, all the way down. That is verified arithmetic, and this studio is tuned to it: crown the ladder's own grid (A = 446.4) with the toggle above and those same rungs read as exact C♯.</p>
+    <p><b>Where 144,000 is really from.</b> The number has two real homes. In Revelation, the 144,000 are the sealed — 12,000 from each of twelve tribes: <b>12 × 12 × 1,000</b>, completeness squared and multiplied; in the text they are a people, and nothing calls them a frequency. In the Maya calendar, one <b>baktun is exactly 144,000 days</b> — about 394 years — a genuine unit from a genuine chain of use. Both are real, old, and checkable.</p>
+    <p><b>What is not supported:</b> 144,000 <i>as a frequency</i> is 144 kHz — ultrasound, seven times above the top of human hearing. No ear hears it and no ordinary speaker plays it. Claims that this frequency heals, awakens, or aligns anything are <b>not supported by evidence</b>. What is true is smaller and better: a real number, a real ratio, and — once you octave it down — a real note you can play, record, and build with. That is what this page does with it, and it does not claim more.</p>
+  </div>
+</details>
+
+<details class="layer">
+  <summary>How the nine instruments work <span class="plus">+</span></summary>
+  <div class="body">
+    <p>Every voice is synthesized live with the Web Audio API — oscillators, harmonic stacks, filters, and gain envelopes. No samples, nothing fetched. One line each:</p>
+    <table>
+      <tr><th>Voice</th><th>How it's made</th></tr>
+      <tr><td>Pure</td><td>A single sine wave — the fundamental alone, with a soft attack and release. The ladder with nothing added.</td></tr>
+      <tr><td>Organ</td><td>Sine harmonics stacked like drawbars (1×, 2×, 3×, 4×), held at full sustain until the step ends.</td></tr>
+      <tr><td>Piano</td><td>A bright harmonic stack struck hard, then decaying exponentially — loud overtones first, fundamental last.</td></tr>
+      <tr><td>Strings</td><td>Two detuned sawtooth waves through a lowpass filter, bowing in slowly — chorus from the detune itself.</td></tr>
+      <tr><td>Flute</td><td>A sine with gentle vibrato and a breathy slow attack; a whisper of the octave above, nothing more.</td></tr>
+      <tr><td>Bell</td><td>Inharmonic partials (1×, 2.76×, 5.4×) that decay at different speeds — metal, not a tuned string.</td></tr>
+      <tr><td>Pluck</td><td>A triangle wave through a filter that slams shut — the Karplus snap of a string let go.</td></tr>
+      <tr><td>Pad</td><td>Three detuned saws, heavily lowpassed, swelling in and out slowly — weather, not melody.</td></tr>
+      <tr><td>Glide</td><td>One continuous sine voice that slides — portamento — from the last note to the next, never stepping. The glissando voice.</td></tr>
+    </table>
+    <p>The mic track is the tenth voice and the only real one: your own sound, recorded on this device, looped at step 1.</p>
+  </div>
+</details>
+
+<details class="layer">
+  <summary>The two laws under the studio <span class="plus">+</span></summary>
+  <div class="body">
+    <p><b>1 — Size sets the pitch, shape sets the pattern.</b> Grow or shrink a vibrating thing and its frequency moves in exact inverse ratio to the size — twice as big, half the frequency, one octave down — and the ratio holds at <i>every</i> size of change, with no smallest stair: 1% bigger slides 569 Hz to 563.37; 0.01% bigger slides it to 568.94, still exactly on the line. It doesn't step; it slides, like water, like a glissando. And through the whole slide the pattern never changes — the twelve petals of a vibrating plate stay twelve at every scale. That is why this studio's ladder works at all: change the base number and every rung slides together, the note — the pattern — untouched. The Glide voice is this law with a fader.</p>
+    <p><b>2 — A tuning is a rule written while calm.</b> A grid is a choice, crowned once and then measured against. Concert pitch has wandered for centuries — Baroque orchestras sat near A = 415, a full semitone below today; several modern orchestras play at 443–446 because sharp reads as brilliant. This ladder's grid, A = 446.4, sits inside the range humans already use. Crown it and the ladder's numbers are the exact ones while yesterday's “sacred frequencies” become the almosts — 432 becomes 438.28 on this grid, 528 becomes 535.68. Neither grid is nature. Both are rules. The honest move is to say which ruler you're holding — so this studio prints both, and lets you switch.</p>
+    <p>Your work autosaves to this device only, as you go. Close the page and your loop is here when you come back. Nothing is sent anywhere, there is no account, and there never will be.</p>
+  </div>
+</details>
+
+<footer>
+  <div class="frow">
+    <a href="index.html">Free. Always free.</a>
+    <span class="clock" id="runClock">Running since October 19, 2026</span>
+    <a href="the-ladder-studio.html" download>Download this page — the-ladder-studio.html (the offline door)</a>
+    <a href="what-are-we-missing.html">What are we missing?</a>
+    <span>© The Thriving Plan — CC BY-SA 4.0</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   The Ladder Studio — a 32-step loop studio tuned to a ladder.
+   All state lives on this device (localStorage). No network.
+   ============================================================ */
+var STEPS = 32;
+var NOTE_NAMES = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+
+var INSTRUMENTS = [
+  {id:"pure",   name:"Pure",   desc:"Sine — the fundamental alone"},
+  {id:"organ",  name:"Organ",  desc:"Drawbar harmonics, held"},
+  {id:"piano",  name:"Piano",  desc:"Struck stack, long decay"},
+  {id:"strings",name:"Strings",desc:"Detuned saws, slow bow"},
+  {id:"flute",  name:"Flute",  desc:"Sine + vibrato, breathy"},
+  {id:"bell",   name:"Bell",   desc:"Inharmonic metal partials"},
+  {id:"pluck",  name:"Pluck",  desc:"Snapped string, fast filter"},
+  {id:"pad",    name:"Pad",    desc:"Slow detuned swell"},
+  {id:"glide",  name:"Glide",  desc:"One voice, slides — glissando"}
+];
+
+/* ---------- ladder math ---------- */
+function computeLadder(base){
+  var f = base, guard = 0;
+  while (f > 20000 && guard++ < 60) f /= 2;
+  var rungs = [];
+  guard = 0;
+  while (f >= 30 && guard++ < 40){ rungs.push(f); f /= 2; }
+  if (!rungs.length) rungs = [Math.min(Math.max(base,30),20000)];
+  var heart = 0, best = 1e9;
+  for (var i=0;i<rungs.length;i++){
+    var d = Math.abs(Math.log2(rungs[i]/562.5));
+    if (d < best){ best = d; heart = i; }
+  }
+  return { rungs:rungs, heart:heart };
+}
+function noteFor(freq, refA){
+  var midiFloat = 69 + 12 * Math.log2(freq / refA);
+  var midi = Math.round(midiFloat);
+  var cents = Math.round((midiFloat - midi) * 100);
+  var name = NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi/12) - 1);
+  return { name:name, cents:cents };
+}
+function ladderRefA(){
+  /* The A that makes this ladder's rungs exact notes: shift 440 by the
+     heart rung's cents offset against the piano grid. */
+  var lad = computeLadder(state.baseFreq);
+  var heartFreq = lad.rungs[lad.heart];
+  var n = noteFor(heartFreq, 440);
+  return 440 * Math.pow(2, n.cents / 1200);
+}
+function fmtHz(f){
+  if (f >= 1000) return (Math.round(f*10)/10).toLocaleString("en-US");
+  return (Math.round(f*100)/100).toString();
+}
+
+/* ---------- state ---------- */
+var defaultPattern = function(rows){
+  var p = {};
+  INSTRUMENTS.forEach(function(inst){
+    p[inst.id] = [];
+    for (var r=0;r<rows;r++){ p[inst.id].push(new Array(STEPS).fill(false)); }
+  });
+  return p;
+};
+var state = {
+  baseFreq: 144000,
+  bpm: 90,
+  masterVol: 0.8,
+  selected: "pure",
+  gridLadder: false,
+  instVol: {}, instMute: {},
+  pattern: null
+};
+INSTRUMENTS.forEach(function(inst){ state.instVol[inst.id]=0.8; state.instMute[inst.id]=false; });
+var ladder = computeLadder(state.baseFreq);
+state.pattern = defaultPattern(ladder.rungs.length);
+
+function save(){
+  try{
+    localStorage.setItem("ladder-studio-v1", JSON.stringify({
+      baseFreq:state.baseFreq, bpm:state.bpm, masterVol:state.masterVol,
+      selected:state.selected, gridLadder:state.gridLadder,
+      instVol:state.instVol, instMute:state.instMute, pattern:state.pattern
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    var raw = localStorage.getItem("ladder-studio-v1");
+    if (!raw) return;
+    var s = JSON.parse(raw);
+    if (typeof s.baseFreq === "number" && s.baseFreq >= 30) state.baseFreq = s.baseFreq;
+    ladder = computeLadder(state.baseFreq);
+    if (typeof s.bpm === "number") state.bpm = Math.min(200, Math.max(40, s.bpm));
+    if (typeof s.masterVol === "number") state.masterVol = s.masterVol;
+    if (s.selected) state.selected = s.selected;
+    state.gridLadder = !!s.gridLadder;
+    if (s.instVol) state.instVol = Object.assign(state.instVol, s.instVol);
+    if (s.instMute) state.instMute = Object.assign(state.instMute, s.instMute);
+    if (s.pattern) state.pattern = normalizePattern(s.pattern);
+  }catch(e){}
+}
+function normalizePattern(p){
+  var rows = ladder.rungs.length, out = defaultPattern(rows);
+  INSTRUMENTS.forEach(function(inst){
+    var src = p[inst.id];
+    if (!Array.isArray(src)) return;
+    for (var r=0;r<Math.min(rows, src.length);r++){
+      if (!Array.isArray(src[r])) continue;
+      for (var c=0;c<STEPS;c++) out[inst.id][r][c] = !!src[r][c];
+    }
+  });
+  return out;
+}
+function retune(newBase){
+  var old = ladder;
+  state.baseFreq = newBase;
+  ladder = computeLadder(newBase);
+  if (ladder.rungs.length !== old.rungs.length){
+    /* keep notes by distance from the heart rung */
+    var np = defaultPattern(ladder.rungs.length);
+    INSTRUMENTS.forEach(function(inst){
+      for (var r=0;r<old.rungs.length;r++){
+        var nr = r - old.heart + ladder.heart;
+        if (nr < 0 || nr >= ladder.rungs.length) continue;
+        for (var c=0;c<STEPS;c++) np[inst.id][nr][c] = state.pattern[inst.id][r][c];
+      }
+    });
+    state.pattern = np;
+  }
+  buildAll();
+  save();
+}
+
+/* ============================================================
+   AUDIO — one synth function that works on a live
+   AudioContext and on an OfflineAudioContext alike.
+   ============================================================ */
+var actx = null, masterGain = null, analyser = null;
+var instGains = {}; /* live only: id -> GainNode */
+function ensureAudio(){
+  if (actx) { if (actx.state === "suspended") actx.resume(); return; }
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  actx = new AC();
+  masterGain = actx.createGain();
+  masterGain.gain.value = state.masterVol;
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 256;
+  masterGain.connect(analyser);
+  analyser.connect(actx.destination);
+  INSTRUMENTS.forEach(function(inst){
+    var g = actx.createGain();
+    g.gain.value = state.instMute[inst.id] ? 0 : state.instVol[inst.id];
+    g.connect(masterGain);
+    instGains[inst.id] = g;
+  });
+  drawViz();
+}
+function envGain(ctx, dest, t, a, peak, d, sustainLevel, dur, r){
+  var g = ctx.createGain();
+  g.connect(dest);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(peak,0.0002), t + Math.max(a,0.005));
+  if (sustainLevel > 0){
+    g.gain.exponentialRampToValueAtTime(Math.max(peak*sustainLevel,0.0002), t + Math.max(a,0.005) + d);
+    g.gain.setValueAtTime(Math.max(peak*sustainLevel,0.0002), t + Math.max(dur - r, a + d));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  } else {
+    g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(a,0.005) + d);
+    if (dur > a + d) g.gain.setValueAtTime(0.0001, t + dur);
+  }
+  return g;
+}
+function osc(ctx, type, freq, dest){
+  var o = ctx.createOscillator();
+  o.type = type; o.frequency.value = freq;
+  o.connect(dest); return o;
+}
+var glideState = { osc:null, gain:null, lastFreq:562.5 };
+function stopGlide(){
+  if (!actx || !glideState.osc) return;
+  try{
+    var t = actx.currentTime;
+    glideState.gain.gain.cancelScheduledValues(t);
+    glideState.gain.gain.setTargetAtTime(0.0001, t, 0.06);
+    glideState.osc.stop(t + 0.4);
+  }catch(e){}
+  glideState.osc = null; glideState.gain = null;
+}
+function playGlideLive(freq, dur){
+  ensureAudio(); if (!actx) return;
+  var dest = instGains["glide"]; if (!dest) return;
+  var t = actx.currentTime;
+  if (!glideState.osc){
+    var g = actx.createGain(); g.gain.value = 0.0001; g.connect(dest);
+    var o = actx.createOscillator(); o.type = "sine";
+    o.frequency.value = glideState.lastFreq;
+    o.connect(g); o.start(t);
+    g.gain.exponentialRampToValueAtTime(0.9, t + 0.08);
+    glideState.osc = o; glideState.gain = g;
+  }
+  glideState.osc.frequency.cancelScheduledValues(t);
+  glideState.osc.frequency.setValueAtTime(glideState.osc.frequency.value, t);
+  glideState.osc.frequency.exponentialRampToValueAtTime(freq, t + 0.18);
+  glideState.lastFreq = freq;
+  clearTimeout(playGlideLive._tm);
+  playGlideLive._tm = setTimeout(stopGlide, Math.max(dur*1000, 350));
+}
+
+/* The voice builder. vel 0..1, dur in seconds. */
+function buildVoice(ctx, dest, instId, freq, t, dur, vel){
+  vel = vel == null ? 0.9 : vel;
+  var stopAt = t + dur + 1.6;
+  function start(o, when){ o.start(when || t); o.stop(stopAt); }
+  switch(instId){
+    case "pure": {
+      var g1 = envGain(ctx, dest, t, 0.02, 0.85*vel, 0.08, 0.75, dur, 0.12);
+      start(osc(ctx, "sine", freq, g1)); break;
+    }
+    case "organ": {
+      var parts = [[1,0.5],[2,0.32],[3,0.2],[4,0.12]];
+      var go = envGain(ctx, dest, t, 0.03, 0.8*vel, 0.05, 0.95, dur, 0.06);
+      parts.forEach(function(p){ var og = ctx.createGain(); og.gain.value = p[1]; og.connect(go); start(osc(ctx,"sine",freq*p[0],og)); });
+      break;
+    }
+    case "piano": {
+      var gp = envGain(ctx, dest, t, 0.004, 0.9*vel, Math.max(dur*1.4,0.9), 0, dur, 0);
+      [[1,0.6],[2,0.35],[3,0.22],[4.2,0.1],[5.4,0.06]].forEach(function(p){
+        var og = ctx.createGain(); og.gain.value = p[1]; og.connect(gp);
+        start(osc(ctx,"triangle",freq*p[0],og));
+      });
+      break;
+    }
+    case "strings": {
+      var flt = ctx.createBiquadFilter(); flt.type="lowpass"; flt.frequency.value = Math.min(freq*6, 6000); flt.Q.value = 0.4;
+      var gs = envGain(ctx, dest, t, Math.min(dur*0.4,0.35), 0.5*vel, 0.2, 0.8, dur, 0.25);
+      flt.connect(gs);
+      [-6, 5].forEach(function(cents){
+        var o = osc(ctx, "sawtooth", freq, flt); o.detune.value = cents; start(o);
+      });
+      break;
+    }
+    case "flute": {
+      var gf = envGain(ctx, dest, t, 0.09, 0.75*vel, 0.1, 0.85, dur, 0.18);
+      var of = osc(ctx, "sine", freq, gf); start(of);
+      var lfo = osc(ctx, "sine", 5.2, ctx.createGain());
+      var lg = ctx.createGain(); lg.gain.value = freq * 0.006;
+      lfo.connect(lg); lg.connect(of.frequency); lfo.start(t + 0.15); lfo.stop(stopAt);
+      var og2 = ctx.createGain(); og2.gain.value = 0.12; og2.connect(gf);
+      start(osc(ctx, "sine", freq*2, og2));
+      break;
+    }
+    case "bell": {
+      [[1,0.55,1.6],[2.76,0.3,0.9],[5.4,0.16,0.45],[8.9,0.07,0.25]].forEach(function(p){
+        var gb = envGain(ctx, dest, t, 0.002, 0.8*vel, p[2], 0, dur, 0);
+        var og = ctx.createGain(); og.gain.value = p[1]; og.connect(gb);
+        start(osc(ctx, "sine", freq*p[0], og));
+      });
+      break;
+    }
+    case "pluck": {
+      var fp = ctx.createBiquadFilter(); fp.type="lowpass"; fp.Q.value = 1;
+      fp.frequency.setValueAtTime(Math.min(freq*10, 9000), t);
+      fp.frequency.exponentialRampToValueAtTime(Math.max(freq*1.2, 120), t + 0.28);
+      var gpl = envGain(ctx, dest, t, 0.003, 0.85*vel, 0.32, 0, dur, 0);
+      fp.connect(gpl);
+      start(osc(ctx, "triangle", freq, fp));
+      var og3 = ctx.createGain(); og3.gain.value = 0.3; og3.connect(gpl);
+      start(osc(ctx, "square", freq, og3));
+      break;
+    }
+    case "pad": {
+      var fd = ctx.createBiquadFilter(); fd.type="lowpass"; fd.frequency.value = Math.min(freq*3.5, 3200);
+      var gd = envGain(ctx, dest, t, Math.min(dur*0.5,0.6), 0.42*vel, 0.4, 0.8, dur, 0.6);
+      fd.connect(gd);
+      [-9, 0, 8].forEach(function(cents){
+        var o = osc(ctx, "sawtooth", freq, fd); o.detune.value = cents; start(o);
+      });
+      break;
+    }
+    case "glide": {
+      /* Offline / sequencer form: slide in from the previous rung pitch. */
+      var gg = envGain(ctx, dest, t, 0.05, 0.85*vel, 0.08, 0.85, dur, 0.15);
+      var og4 = ctx.createOscillator(); og4.type = "sine";
+      og4.frequency.setValueAtTime(buildVoice._lastGlide || freq, t);
+      og4.frequency.exponentialRampToValueAtTime(freq, t + 0.16);
+      og4.connect(gg); og4.start(t); og4.stop(stopAt);
+      buildVoice._lastGlide = freq;
+      break;
+    }
+  }
+}
+function playNoteLive(instId, freq, dur){
+  if (instId === "glide"){ playGlideLive(freq, dur || 0.5); return; }
+  ensureAudio(); if (!actx) return;
+  var dest = instGains[instId]; if (!dest) return;
+  buildVoice(actx, dest, instId, freq, actx.currentTime + 0.01, dur || 0.55, 0.9);
+}
+</script>
+<script>
+"use strict";
+/* ================= UI refs ================= */
+function $(id){ return document.getElementById(id); }
+var els = {
+  play:$("btnPlay"), stop:$("btnStop"), rec:$("btnRec"), pos:$("posReadout"),
+  bpm:$("bpm"), bpmOut:$("bpmOut"), master:$("masterVol"), masterOut:$("masterOut"),
+  base:$("baseFreq"), grid:$("gridToggle"), gridA:$("gridA"), strip:$("ladderStrip"),
+  rack:$("rack"), selName:$("selName"), instVol:$("instVol"), instMute:$("instMute"),
+  roll:$("roll"), rollInfo:$("rollInfo"), pads:$("pads"),
+  micBtn:$("btnMicRec"), micDel:$("btnMicDel"), micState:$("micState"), micAudio:$("micAudio"),
+  status:$("statusLine"), viz:$("viz")
+};
+function setStatus(msg){ els.status.innerHTML = msg; }
+function refA(){ return state.gridLadder ? ladderRefA() : 440; }
+
+/* ================= build: ladder strip, rack, roll, pads ================= */
+function buildStrip(){
+  var A = refA();
+  els.strip.innerHTML = "";
+  ladder.rungs.forEach(function(f, i){
+    var n = noteFor(f, A);
+    var chip = document.createElement("span");
+    chip.className = "rung-chip" + (i === ladder.heart ? " heart" : "");
+    chip.innerHTML = "<b>" + fmtHz(f) + " Hz</b> · " + n.name +
+      (n.cents ? " " + (n.cents > 0 ? "+" : "") + n.cents + "¢" : " exact") +
+      (i === ladder.heart ? " · ♥ heart" : "");
+    els.strip.appendChild(chip);
+  });
+  els.gridA.textContent = "A = " + (Math.round(ladderRefA()*10)/10).toLocaleString("en-US");
+  els.rollInfo.textContent = fmtHz(ladder.rungs[ladder.heart]) + " Hz is the heart · grid: " +
+    (state.gridLadder ? "the ladder's own (A = " + (Math.round(ladderRefA()*10)/10) + ")" : "the piano (A = 440)");
+}
+function buildRack(){
+  els.rack.innerHTML = "";
+  INSTRUMENTS.forEach(function(inst){
+    var has = state.pattern[inst.id].some(function(row){ return row.some(Boolean); });
+    var b = document.createElement("button");
+    b.className = "inst" + (state.selected === inst.id ? " sel" : "") +
+      (state.instMute[inst.id] ? " muted" : "") + (has ? " hasnotes" : "");
+    b.setAttribute("aria-pressed", state.selected === inst.id ? "true" : "false");
+    b.innerHTML = '<span class="nm"><span class="dot"></span>' + inst.name +
+      (state.instMute[inst.id] ? ' <span class="mini">muted</span>' : "") + '</span><span class="ds">' + inst.desc + "</span>";
+    b.addEventListener("click", function(){
+      state.selected = inst.id; buildRack(); syncSelDetail(); buildRoll(); save();
+      playNoteLive(inst.id, ladder.rungs[ladder.heart], 0.5);
+    });
+    els.rack.appendChild(b);
+  });
+}
+function syncSelDetail(){
+  var inst = INSTRUMENTS.filter(function(i){ return i.id === state.selected; })[0];
+  els.selName.textContent = inst.name;
+  els.instVol.value = Math.round(state.instVol[state.selected] * 100);
+  els.instMute.textContent = state.instMute[state.selected] ? "Unmute" : "Mute";
+}
+var cellEls = []; /* [row][step] */
+function buildRoll(){
+  var rows = ladder.rungs.length, A = refA();
+  els.roll.style.gridTemplateColumns = "118px repeat(" + STEPS + ", 1fr)";
+  els.roll.innerHTML = ""; cellEls = [];
+  var corner = document.createElement("div"); corner.className = "corner"; corner.textContent = "Rung ↓ · Step →";
+  els.roll.appendChild(corner);
+  for (var s=0;s<STEPS;s++){
+    var sn = document.createElement("div");
+    sn.className = "stepnum" + (s % 16 === 0 ? " bar" : "");
+    sn.textContent = s + 1; sn.dataset.step = s;
+    els.roll.appendChild(sn);
+  }
+  for (var r=0;r<rows;r++){
+    var n = noteFor(ladder.rungs[r], A);
+    var rh = document.createElement("div");
+    rh.className = "rh" + (r === ladder.heart ? " heart" : "");
+    rh.innerHTML = '<span class="hz">' + fmtHz(ladder.rungs[r]) + '</span> <span class="nt">' + n.name + "</span> " +
+      '<span class="ct">' + (n.cents ? (n.cents > 0 ? "+" : "") + n.cents + "¢" : "exact") + (r === ladder.heart ? " ♥" : "") + "</span>";
+    els.roll.appendChild(rh);
+    cellEls.push([]);
+    for (var c=0;c<STEPS;c++){
+      (function(r, c){
+        var cell = document.createElement("button");
+        cell.className = "cell" + ((r % 2) ? " alt" : "") + ((c % 4 === 0) ? " beat" : "");
+        cell.setAttribute("aria-label", "Row " + fmtHz(ladder.rungs[r]) + " Hz, step " + (c+1));
+        cell.addEventListener("pointerdown", function(ev){
+          ev.preventDefault();
+          ensureAudio();
+          var cur = state.pattern[state.selected][r][c];
+          paintValue = !cur;
+          setCell(r, c, paintValue);
+          painting = true;
+          if (paintValue) playNoteLive(state.selected, ladder.rungs[r], 0.45);
+        });
+        cell.addEventListener("pointerenter", function(){
+          if (painting) setCell(r, c, paintValue);
+        });
+        els.roll.appendChild(cell);
+        cellEls[r].push(cell);
+      })(r, c);
+    }
+  }
+  refreshRollCells();
+}
+var painting = false, paintValue = true;
+document.addEventListener("pointerup", function(){ painting = false; });
+function setCell(r, c, v){
+  state.pattern[state.selected][r][c] = v;
+  refreshCell(r, c); buildRackDotsOnly(); save();
+}
+function refreshCell(r, c){
+  var cell = cellEls[r] && cellEls[r][c]; if (!cell) return;
+  var on = state.pattern[state.selected][r][c];
+  var ghost = false;
+  if (!on){
+    for (var i=0;i<INSTRUMENTS.length;i++){
+      var id = INSTRUMENTS[i].id;
+      if (id !== state.selected && state.pattern[id][r][c]){ ghost = true; break; }
+    }
+  }
+  cell.classList.toggle("on", on);
+  cell.classList.toggle("ghost", ghost);
+}
+function refreshRollCells(){
+  for (var r=0;r<cellEls.length;r++) for (var c=0;c<STEPS;c++) refreshCell(r, c);
+}
+function buildRackDotsOnly(){ buildRack(); }
+function buildPads(){
+  var A = refA();
+  els.pads.innerHTML = "";
+  ladder.rungs.forEach(function(f, r){
+    var n = noteFor(f, A);
+    var pad = document.createElement("button");
+    pad.className = "pad" + (r === ladder.heart ? " heart" : "");
+    pad.innerHTML = '<span class="phz">' + fmtHz(f) + ' Hz</span><span class="pnt">' + n.name +
+      (r === ladder.heart ? " · the heart ♥" : "") + '</span><span class="pct">' +
+      (n.cents ? (n.cents > 0 ? "+" : "") + n.cents + " cents vs grid" : "exact on this grid") + "</span>";
+    var stopPad = function(){
+      pad.classList.remove("hit");
+      if (state.selected === "glide") stopGlide();
+    };
+    pad.addEventListener("pointerdown", function(ev){
+      ev.preventDefault();
+      ensureAudio();
+      pad.classList.add("hit");
+      playNoteLive(state.selected, f, 0.7);
+      if (recArmed && playing){
+        setCell(r, currentStep, true);
+        setStatus("Recorded <b>" + INSTRUMENTS.filter(function(i){return i.id===state.selected;})[0].name +
+          "</b> at " + fmtHz(f) + " Hz into step " + (currentStep + 1) + ".");
+      }
+    });
+    pad.addEventListener("pointerup", stopPad);
+    pad.addEventListener("pointerleave", stopPad);
+    pad.addEventListener("pointercancel", stopPad);
+    els.pads.appendChild(pad);
+  });
+}
+function buildAll(){ buildStrip(); buildRack(); syncSelDetail(); buildRoll(); buildPads(); }
+
+/* ================= sequencer ================= */
+var playing = false, recArmed = false, currentStep = 0, nextTime = 0, timerID = null;
+var drawQueue = [];
+function stepDur(){ return 60 / state.bpm / 4; }
+function scheduler(){
+  if (!actx) return;
+  while (nextTime < actx.currentTime + 0.12){
+    scheduleStep(currentStep, nextTime);
+    drawQueue.push({ step: currentStep, time: nextTime });
+    nextTime += stepDur();
+    currentStep = (currentStep + 1) % STEPS;
+  }
+}
+function scheduleStep(step, t){
+  var dur = stepDur() * 2.2;
+  INSTRUMENTS.forEach(function(inst){
+    if (state.instMute[inst.id]) return;
+    var dest = instGains[inst.id]; if (!dest) return;
+    for (var r=0;r<ladder.rungs.length;r++){
+      if (state.pattern[inst.id][r][step]){
+        if (inst.id === "glide" && actx){
+          /* live glide: slide the shared voice */
+          (function(f, when){
+            var delay = Math.max(0, (when - actx.currentTime) * 1000);
+            setTimeout(function(){ if (playing) playGlideLive(f, stepDur()*2); }, delay);
+          })(ladder.rungs[r], t);
+        } else {
+          buildVoice(actx, dest, inst.id, ladder.rungs[r], t, Math.max(dur, 0.3), 0.85);
+        }
+      }
+    }
+  });
+  if (step === 0 && micBuffer && actx){
+    var src = actx.createBufferSource();
+    src.buffer = micBuffer; src.connect(masterGain); src.start(t);
+  }
+}
+function drawLoop(){
+  if (!actx) return;
+  var now = actx.currentTime;
+  while (drawQueue.length && drawQueue[0].time <= now + 0.02){
+    var item = drawQueue.shift();
+    highlightStep(item.step);
+  }
+  if (playing) requestAnimationFrame(drawLoop);
+}
+function highlightStep(step){
+  els.pos.textContent = (Math.floor(step/16) + 1) + " · " + String(step + 1).padStart(2, "0");
+  var nums = els.roll.querySelectorAll(".stepnum");
+  nums.forEach(function(el){
+    el.classList.toggle("now", parseInt(el.dataset.step, 10) === step);
+  });
+  for (var r=0;r<cellEls.length;r++) for (var c=0;c<STEPS;c++){
+    cellEls[r][c].classList.toggle("now", c === step);
+  }
+}
+function clearHighlight(){
+  els.pos.textContent = "1 · 01";
+  els.roll.querySelectorAll(".stepnum.now").forEach(function(el){ el.classList.remove("now"); });
+  cellEls.forEach(function(row){ row.forEach(function(cell){ cell.classList.remove("now"); }); });
+}
+function startPlay(){
+  ensureAudio(); if (!actx){ setStatus("Audio isn't available in this browser."); return; }
+  if (actx.state === "suspended") actx.resume();
+  playing = true;
+  currentStep = 0; drawQueue = [];
+  nextTime = actx.currentTime + 0.06;
+  timerID = setInterval(scheduler, 25);
+  requestAnimationFrame(drawLoop);
+  els.play.textContent = "⏸ Pause"; els.play.classList.add("playing");
+}
+function pausePlay(){
+  playing = false;
+  clearInterval(timerID); stopGlide();
+  els.play.textContent = "▶ Play"; els.play.classList.remove("playing");
+}
+function stopPlay(){
+  pausePlay(); currentStep = 0; clearHighlight();
+}
+els.play.addEventListener("click", function(){ playing ? pausePlay() : startPlay(); });
+els.stop.addEventListener("click", stopPlay);
+els.rec.addEventListener("click", function(){
+  recArmed = !recArmed;
+  els.rec.classList.toggle("armed", recArmed);
+  els.rec.textContent = recArmed ? "● Rec armed" : "● Rec";
+  setStatus(recArmed
+    ? "Recording armed. Press Play and hit the <b>live pads</b> — notes land in the roll at the passing step."
+    : "Recording disarmed.");
+});
+
+/* ================= transport controls ================= */
+els.bpm.addEventListener("input", function(){
+  state.bpm = parseInt(els.bpm.value, 10);
+  els.bpmOut.textContent = state.bpm + " BPM"; save();
+});
+els.master.addEventListener("input", function(){
+  state.masterVol = parseInt(els.master.value, 10) / 100;
+  els.masterOut.textContent = els.master.value + "%";
+  if (masterGain) masterGain.gain.setTargetAtTime(state.masterVol, actx.currentTime, 0.02);
+  save();
+});
+els.instVol.addEventListener("input", function(){
+  state.instVol[state.selected] = parseInt(els.instVol.value, 10) / 100;
+  var g = instGains[state.selected];
+  if (g && !state.instMute[state.selected]) g.gain.setTargetAtTime(state.instVol[state.selected], actx.currentTime, 0.02);
+  save();
+});
+els.instMute.addEventListener("click", function(){
+  var id = state.selected;
+  state.instMute[id] = !state.instMute[id];
+  var g = instGains[id];
+  if (g) g.gain.setTargetAtTime(state.instMute[id] ? 0 : state.instVol[id], actx.currentTime, 0.02);
+  syncSelDetail(); buildRack(); save();
+});
+$("instTest").addEventListener("click", function(){
+  playNoteLive(state.selected, ladder.rungs[ladder.heart], 0.9);
+});
+$("btnClear").addEventListener("click", function(){
+  state.pattern = defaultPattern(ladder.rungs.length);
+  refreshRollCells(); buildRack(); save();
+  setStatus("Roll cleared — every instrument, every rung.");
+});
+$("btnClearInst").addEventListener("click", function(){
+  for (var r=0;r<ladder.rungs.length;r++) state.pattern[state.selected][r] = new Array(STEPS).fill(false);
+  refreshRollCells(); buildRack(); save();
+  setStatus("Cleared the selected instrument's notes.");
+});
+$("btnDemo").addEventListener("click", function(){
+  loadDemo(); refreshRollCells(); buildRack(); save();
+  setStatus("Demo loaded: the ladder itself, walking down and back up — switch instruments to see each voice's part.");
+});
+function loadDemo(){
+  var rows = ladder.rungs.length;
+  var p = defaultPattern(rows);
+  var seq = [];
+  for (var i=0;i<rows;i++) seq.push(i);
+  for (var j=rows-2;j>=0;j--) seq.push(j);
+  for (var s=0;s<STEPS;s++){
+    var rung = seq[s % seq.length];
+    p.glide[rung][s] = true;
+    if (s % 2 === 0) p.pure[rung][s] = true;
+    if (s % 4 === 0) p.bell[ladder.heart][s] = true;
+    if (s % 8 === 4) p.pluck[Math.min(rows-1, ladder.heart+1)][s] = true;
+  }
+  p.pad[ladder.heart][0] = true; p.pad[ladder.heart][16] = true;
+  state.pattern = p;
+}
+
+/* ================= base frequency ================= */
+document.querySelectorAll(".preset").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    var v = parseFloat(btn.dataset.base);
+    els.base.value = v;
+    markPreset(v);
+    retune(v);
+    setStatus("Re-tuned to a base of <b>" + v.toLocaleString("en-US") + " Hz</b> — " +
+      ladder.rungs.length + " audible rungs, heart at " + fmtHz(ladder.rungs[ladder.heart]) + " Hz.");
+    playNoteLive(state.selected, ladder.rungs[ladder.heart], 0.7);
+  });
+});
+function markPreset(v){
+  document.querySelectorAll(".preset").forEach(function(b){
+    b.classList.toggle("active", parseFloat(b.dataset.base) === v);
+  });
+}
+$("btnApplyBase").addEventListener("click", function(){
+  var v = parseFloat(els.base.value);
+  if (!isFinite(v) || v < 30 || v > 2000000){
+    setStatus("Pick a base between 30 and 2,000,000 Hz."); return;
+  }
+  markPreset(v); retune(v);
+  setStatus("Re-tuned to a base of <b>" + v.toLocaleString("en-US") + " Hz</b> — " +
+    ladder.rungs.length + " audible rungs, heart at " + fmtHz(ladder.rungs[ladder.heart]) + " Hz.");
+  playNoteLive(state.selected, ladder.rungs[ladder.heart], 0.7);
+});
+els.grid.addEventListener("change", function(){
+  state.gridLadder = els.grid.checked;
+  buildStrip(); buildRoll(); buildPads(); save();
+  setStatus(state.gridLadder
+    ? "Now measuring against <b>the ladder's own grid</b> — the rungs read as exact notes. Same sound, different ruler."
+    : "Now measuring against <b>the piano (A = 440)</b> — the rungs read 25 cents sharp of C♯ on the default ladder.");
+});
+
+/* ================= mic track ================= */
+var micBuffer = null, micStream = null, mediaRec = null, micChunks = [], micRecording = false, micURL = null;
+els.micBtn.addEventListener("click", function(){
+  if (micRecording){ mediaRec && mediaRec.stop(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined"){
+    els.micState.innerHTML = "<b>Mic recording isn't supported in this browser.</b> The rest of the studio still works.";
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+    micStream = stream; micChunks = [];
+    mediaRec = new MediaRecorder(stream);
+    mediaRec.ondataavailable = function(e){ if (e.data && e.data.size) micChunks.push(e.data); };
+    mediaRec.onstop = function(){
+      micRecording = false;
+      els.micBtn.textContent = "🎙 Start mic recording";
+      if (micStream){ micStream.getTracks().forEach(function(t){ t.stop(); }); micStream = null; }
+      var blob = new Blob(micChunks, { type: mediaRec.mimeType || "audio/webm" });
+      if (micURL) URL.revokeObjectURL(micURL);
+      micURL = URL.createObjectURL(blob);
+      els.micAudio.src = micURL; els.micAudio.style.display = "block";
+      els.micDel.disabled = false;
+      blob.arrayBuffer().then(function(ab){
+        ensureAudio();
+        if (!actx) return;
+        actx.decodeAudioData(ab.slice(0), function(buf){
+          micBuffer = buf;
+          els.micState.innerHTML = "<b>Clip ready</b> — " + buf.duration.toFixed(1) +
+            "s. It starts at step 1 on every loop pass and is included in the bounce.";
+        }, function(){
+          els.micState.innerHTML = "<b>Clip recorded</b> — preview it above. (This browser couldn't decode it for loop playback.)";
+        });
+      });
+    };
+    mediaRec.start();
+    micRecording = true;
+    els.micBtn.textContent = "⏹ Stop mic recording";
+    els.micState.innerHTML = '<span class="rec-dot"></span><b>Recording…</b> sing or play, then stop.';
+  }).catch(function(){
+    els.micState.innerHTML = "<b>Mic permission was declined.</b> The studio works without it — allow the mic in your browser settings if you want the track.";
+  });
+});
+els.micDel.addEventListener("click", function(){
+  micBuffer = null;
+  if (micURL) URL.revokeObjectURL(micURL);
+  micURL = null;
+  els.micAudio.removeAttribute("src"); els.micAudio.style.display = "none";
+  els.micDel.disabled = true;
+  els.micState.textContent = "No clip yet.";
+  setStatus("Mic clip deleted.");
+});
+
+/* ================= bounce (offline WAV render) ================= */
+$("btnBounce").addEventListener("click", function(){
+  var btn = $("btnBounce");
+  btn.disabled = true; btn.textContent = "Rendering…";
+  setStatus("Rendering the loop offline…");
+  setTimeout(function(){
+    try{
+      var durSteps = stepDur();
+      var total = durSteps * STEPS + 1.8;
+      var sr = 44100;
+      var off = new OfflineAudioContext(2, Math.ceil(sr * total), sr);
+      var offMaster = off.createGain(); offMaster.gain.value = state.masterVol;
+      offMaster.connect(off.destination);
+      var offGains = {};
+      INSTRUMENTS.forEach(function(inst){
+        var g = off.createGain();
+        g.gain.value = state.instMute[inst.id] ? 0 : state.instVol[inst.id];
+        g.connect(offMaster); offGains[inst.id] = g;
+      });
+      buildVoice._lastGlide = null;
+      for (var s=0;s<STEPS;s++){
+        var t = 0.05 + s * durSteps;
+        INSTRUMENTS.forEach(function(inst){
+          if (state.instMute[inst.id]) return;
+          for (var r=0;r<ladder.rungs.length;r++){
+            if (state.pattern[inst.id][r][s]){
+              buildVoice(off, offGains[inst.id], inst.id, ladder.rungs[r], t, Math.max(durSteps*2.2, 0.3), 0.85);
+            }
+          }
+        });
+      }
+      if (micBuffer){
+        var src = off.createBufferSource(); src.buffer = micBuffer; src.connect(offMaster); src.start(0.05);
+      }
+      off.startRendering().then(function(buf){
+        var blob = bufferToWav(buf);
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url; a.download = "ladder-studio-" + state.baseFreq + "hz-" + state.bpm + "bpm.wav";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        btn.disabled = false; btn.textContent = "⬇ Bounce WAV";
+        setStatus("<b>Bounced.</b> Your WAV is downloading — the full 32-step loop at " + state.bpm + " BPM, base " + state.baseFreq.toLocaleString("en-US") + " Hz.");
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = "⬇ Bounce WAV";
+        setStatus("The render failed in this browser — the loop itself is still here and autosaved.");
+      });
+    }catch(e){
+      btn.disabled = false; btn.textContent = "⬇ Bounce WAV";
+      setStatus("Bounce isn't available in this browser — the loop itself is still here and autosaved.");
+    }
+  }, 30);
+});
+function bufferToWav(buf){
+  var nCh = Math.min(buf.numberOfChannels, 2), sr = buf.sampleRate, len = buf.length;
+  var bytes = 44 + len * nCh * 2;
+  var ab = new ArrayBuffer(bytes), v = new DataView(ab);
+  function ws(off, str){ for (var i=0;i<str.length;i++) v.setUint8(off+i, str.charCodeAt(i)); }
+  ws(0,"RIFF"); v.setUint32(4, bytes-8, true); ws(8,"WAVE"); ws(12,"fmt ");
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,nCh,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*nCh*2,true); v.setUint16(32,nCh*2,true);
+  v.setUint16(34,16,true); ws(36,"data"); v.setUint32(40, len*nCh*2, true);
+  var chans = [];
+  for (var c=0;c<nCh;c++) chans.push(buf.getChannelData(c));
+  var off = 44;
+  for (var i=0;i<len;i++){
+    for (var c2=0;c2<nCh;c2++){
+      var s = Math.max(-1, Math.min(1, chans[c2][i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2;
+    }
+  }
+  return new Blob([ab], { type:"audio/wav" });
+}
+
+/* ================= visualizer ================= */
+function drawViz(){
+  var cv = els.viz; if (!cv || !analyser) return;
+  var g = cv.getContext("2d");
+  var data = new Uint8Array(analyser.frequencyBinCount);
+  (function frame(){
+    requestAnimationFrame(frame);
+    analyser.getByteFrequencyData(data);
+    g.fillStyle = "#000"; g.fillRect(0, 0, cv.width, cv.height);
+    g.fillStyle = "#d4af37";
+    var bars = 24, bw = cv.width / bars;
+    for (var i=0;i<bars;i++){
+      var val = data[Math.floor(i * data.length / bars / 1.6)] / 255;
+      var h = Math.max(2, val * cv.height);
+      g.fillRect(i * bw + 1, cv.height - h, bw - 2, h);
+    }
+  })();
+}
+
+/* ================= footer clock ================= */
+(function(){
+  var anchor = new Date("2026-10-19T00:00:00-05:00").getTime();
+  var el = $("runClock");
+  function tick(){
+    var now = new Date();
+    var diff = Math.max(0, now.getTime() - anchor);
+    var days = Math.floor(diff / 86400000);
+    var rem = diff - days * 86400000;
+    var hh = String(Math.floor(rem / 3600000)).padStart(2, "0");
+    var mm = String(Math.floor(rem / 60000) % 60).padStart(2, "0");
+    var ss = String(Math.floor(rem / 1000) % 60).padStart(2, "0");
+    el.innerHTML = "Running since October 19, 2026 — <b>" + days + " days, " + hh + ":" + mm + ":" + ss +
+      "</b> · now " + now.toLocaleTimeString("en-US");
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ================= init ================= */
+load();
+ladder = computeLadder(state.baseFreq);
+els.base.value = state.baseFreq;
+markPreset(state.baseFreq);
+els.bpm.value = state.bpm; els.bpmOut.textContent = state.bpm + " BPM";
+els.master.value = Math.round(state.masterVol * 100); els.masterOut.textContent = Math.round(state.masterVol * 100) + "%";
+els.grid.checked = state.gridLadder;
+buildAll();
+if (!localStorage.getItem("ladder-studio-v1")) loadDemo(), buildAll();
+document.addEventListener("pointerdown", function(){ ensureAudio(); }, { once:true });
+</script>
+</body>
+</html>
