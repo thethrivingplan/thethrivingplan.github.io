@@ -79,14 +79,20 @@ details[open ] summary::after{content:"Tap to close"}
 textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);color:var(--ink);font:inherit}
 .small{font-size:.9rem;color:var(--muted)}
 @media(max-width:560px){ .loop-diagram{flex-direction:column} .arrow{transform:rotate(90deg)} }
+
+  /* ——— Footer notes — the free line, the running clock, and the offline door live at the bottom now ——— */
+  .footbar{max-width:46rem;margin:1.6rem auto 0;border-top:1px solid var(--line,rgba(127,127,127,.45));padding:.7rem 1rem 0;font-size:.78rem;color:var(--ink2,var(--muted,inherit));line-height:1.9;text-align:center}
+  .footbar a{color:inherit}
+  .footbar .free-link{font-weight:700;color:var(--good,var(--accent,inherit));text-decoration:none}
+  .footbar .sep{margin:0 .55rem;opacity:.55}
+  .footbar .clock{font-family:ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  @media (max-width:36rem){.footbar .clock{white-space:normal}}
+  .freestmt{max-width:46rem;margin:1.2rem auto 0;font-size:.9rem}
+  .freestmt summary{cursor:pointer;font-weight:700}
+  .freestmt-body{padding:.4rem 0 0}
 </style>
 </head>
 <body>
-<div class="topbar"><div class="topbar-in">
-  <span class="free-badge">FREE — ALWAYS FREE <small>No account · No paywall</small></span>
-  <button class="btn primary" id="dlBtn" type="button">⬇ Download for offline — Tap to save this sheet</button>
-</div></div>
-
 <div class="wrap">
 <header class="hero">
   <p class="kicker">The Tech Tree · Wave 1 · Root Node</p>
@@ -239,6 +245,11 @@ textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:1
 <footer class="footer">
   <p><strong>Honest label:</strong> Documented knowledge gathered free and graded in place — strong consensus labelled as such, the domestication checklist labelled a framework, not a law. Living animals are not a hobby project: this sheet’s first rule is the animal’s welfare, and local law and veterinary care govern real keeping.</p>
   <p>© November 19, 2026, by “we.” <strong>Copyleft:</strong> text CC BY-SA 4.0 · designs CERN-OHL-S. Free to copy, share, and build on — keep it free and credit the source. Free, always free.</p>
+
+<details class="freestmt"><summary>Free — the whole statement</summary>
+<div class="freestmt-body"><span class="free-badge">FREE — ALWAYS FREE <small>No account · No paywall</small></span></div>
+</details>
+<div class="footbar"><a class="free-link" href="index.html">Free. Always free.</a><span class="sep" aria-hidden="true">·</span><span class="clock" aria-label="Running clock">Running since October 19, 2026 · <span id="elapsed">— days, 00:00:00</span> · now <span id="now">--:--:--</span></span><span class="sep" aria-hidden="true">·</span><a class="dl" href="animal-husbandry-blueprint.html" download>Save this page for offline use ↓</a></div>
 </footer>
 </div>
 
@@ -255,11 +266,22 @@ document.querySelectorAll('[data-path]').forEach(function(btn){btn.addEventListe
 show('observe');
 var ta=document.getElementById('missing'),mail=document.getElementById('missingMail');
 ta.addEventListener('input',function(){mail.href='mailto:?subject='+encodeURIComponent('Animal Husbandry Blueprint — What are we missing?')+'&body='+encodeURIComponent(ta.value);});
-document.getElementById('dlBtn').addEventListener('click',function(){
-  var blob=new Blob(['<!doctype html>\n'+document.documentElement.outerHTML],{type:'text/html'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='animal-husbandry-blueprint.html';document.body.appendChild(a);a.click();a.remove();
-  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
-});
+
+</script>
+<script>
+(function(){
+  var anchor=new Date("2026-10-19T00:00:00-05:00").getTime();
+  var elapsedEl=document.getElementById("elapsed"), nowEl=document.getElementById("now");
+  function pad(n){return (n<10?"0":"")+n;}
+  function tick(){
+    var now=new Date(), diff=Math.max(0,now.getTime()-anchor);
+    var days=Math.floor(diff/86400000), rem=diff-days*86400000;
+    var h=Math.floor(rem/3600000), m=Math.floor((rem-h*3600000)/60000), s=Math.floor((rem-h*3600000-m*60000)/1000);
+    elapsedEl.textContent=days+(days===1?" day, ":" days, ")+pad(h)+":"+pad(m)+":"+pad(s);
+    nowEl.textContent=pad(now.getHours())+":"+pad(now.getMinutes())+":"+pad(now.getSeconds());
+  }
+  tick(); setInterval(tick,1000);
+})();
 </script>
 </body>
 </html>
