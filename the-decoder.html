@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>The Decoder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#ffffff;
+        --bg-soft:#f2f5f3;
+        --card:#ffffff;
+        --ink:#17201c;
+        --ink-soft:#44534c;
+        --line:#d7dfda;
+        --line-strong:#9db3a8;
+        --teal:#0b6e5d;
+        --teal-deep:#084c40;
+        --teal-tint:#e3f2ed;
+        --amber:#b45309;
+        --amber-tint:#fdf0dd;
+        --red:#b42318;
+        --red-tint:#fdecea;
+        --green-tint:#e6f4ea;
+        --shadow:0 10px 30px rgba(23,32,28,.08);
+        --radius:14px;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#101613;
+          --bg-soft:#171e1a;
+          --card:#171e1a;
+          --ink:#eef3f0;
+          --ink-soft:#b7c4bd;
+          --line:#2c3a33;
+          --line-strong:#4a6356;
+          --teal:#3ec9ab;
+          --teal-deep:#8fe3cf;
+          --teal-tint:#17352d;
+          --amber:#f2b25c;
+          --amber-tint:#3a2c14;
+          --red:#ff9d94;
+          --red-tint:#3d1d1a;
+          --green-tint:#173527;
+          --shadow:0 10px 30px rgba(0,0,0,.35);
+        }
+      }
+      *{box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none !important} }
+      body{
+        margin:0; background:var(--bg); color:var(--ink);
+        font-family:"Public Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+        font-size:17px; line-height:1.6;
+        -webkit-font-smoothing:antialiased;
+      }
+      h1,h2,h3,.slab{font-family:"Zilla Slab", Georgia, serif; line-height:1.15; margin:0}
+      a{color:var(--teal); text-underline-offset:3px}
+      button, input, summary{font:inherit}
+      button, summary, input:not([type="checkbox"]){min-height:44px}
+      :focus-visible{outline:3px solid var(--teal); outline-offset:2px; border-radius:6px}
+
+      .wrap{max-width:1060px; margin:0 auto; padding:0 20px 64px}
+
+      /* Free strip */
+      .free-strip{
+        display:flex; flex-wrap:wrap; gap:8px 18px; align-items:baseline;
+        background:var(--teal-deep); color:#fff;
+        margin:0 -20px; padding:12px 20px;
+      }
+      @media (prefers-color-scheme: dark){ .free-strip{background:var(--teal-tint); color:var(--ink)} }
+      .free-strip strong{font-family:"Zilla Slab", Georgia, serif; font-size:1.15rem; letter-spacing:.01em}
+      .free-strip span{font-size:.92rem; opacity:.92}
+
+      /* Hero */
+      .hero{padding:38px 0 8px}
+      .hero h1{font-size:clamp(2.6rem, 7vw, 4.2rem); font-weight:700; letter-spacing:-.01em}
+      .hero .lede{font-size:clamp(1.08rem, 2.4vw, 1.28rem); color:var(--ink-soft); max-width:38em; margin:14px 0 0}
+      .hero .lede strong{color:var(--ink)}
+      .hero-note{margin-top:16px; display:flex; gap:10px; flex-wrap:wrap}
+      .pill{border:1.5px solid var(--line-strong); border-radius:999px; padding:6px 14px; font-size:.88rem; font-weight:600; background:var(--card)}
+      .pill.solid{background:var(--teal-tint); border-color:var(--teal); color:var(--teal-deep)}
+
+      /* Compass hub face */
+      .hub{margin-top:34px}
+      .hub-label{font-size:.85rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--teal); margin-bottom:14px}
+      .compass{
+        display:grid; gap:14px;
+        grid-template-columns:1fr;
+        grid-template-areas:"center" "north" "east" "south" "west";
+      }
+      @media (min-width:760px){
+        .compass{
+          grid-template-columns:1fr 1.25fr 1fr;
+          grid-template-areas:
+            ". north ."
+            "west center east"
+            ". south .";
+          align-items:stretch;
+        }
+      }
+      .thought{
+        text-align:left; cursor:pointer; width:100%;
+        background:var(--card); border:2px solid var(--line); border-radius:var(--radius);
+        padding:18px 18px 14px; box-shadow:var(--shadow);
+        display:flex; flex-direction:column; gap:6px;
+        transition:border-color .15s ease, transform .15s ease;
+      }
+      .thought:hover{border-color:var(--teal)}
+      .thought[aria-expanded="true"]{border-color:var(--teal); background:var(--teal-tint)}
+      .thought .num{
+        width:34px; height:34px; border-radius:50%;
+        background:var(--teal); color:#fff; font-family:"Zilla Slab", Georgia, serif;
+        font-weight:700; display:grid; place-items:center; font-size:1.05rem; flex:none;
+      }
+      @media (prefers-color-scheme: dark){ .thought .num{color:#0b1512} }
+      .thought h3{font-size:1.35rem; font-weight:700}
+      .thought p{margin:0; color:var(--ink-soft); font-size:.95rem}
+      .thought .tap{margin-top:auto; font-size:.82rem; font-weight:700; color:var(--teal)}
+      .t-north{grid-area:north} .t-east{grid-area:east} .t-south{grid-area:south} .t-west{grid-area:west}
+
+      .hub-center{
+        grid-area:center;
+        background:var(--bg-soft); border:2px dashed var(--line-strong); border-radius:var(--radius);
+        padding:18px; display:flex; flex-direction:column; justify-content:center; gap:8px;
+      }
+      .hub-center label{font-family:"Zilla Slab", Georgia, serif; font-weight:700; font-size:1.1rem}
+      .hub-center p{margin:0; font-size:.88rem; color:var(--ink-soft)}
+      .search-row{display:flex; gap:8px}
+      .search-row input{
+        flex:1; min-width:0; border:2px solid var(--line-strong); border-radius:10px;
+        padding:10px 12px; background:var(--card); color:var(--ink); font-size:1rem;
+      }
+      .search-status{font-size:.88rem; min-height:1.4em; color:var(--teal-deep); font-weight:600}
+      mark{background:var(--amber-tint); color:inherit; padding:0 2px; border-radius:3px}
+
+      /* Expandable depth panels */
+      .panel{
+        margin-top:14px; border:2px solid var(--line); border-radius:var(--radius);
+        background:var(--card); overflow:hidden;
+      }
+      .panel[hidden]{display:none}
+      .panel-inner{padding:26px 24px 28px}
+      @media (min-width:760px){ .panel-inner{padding:32px 36px 34px} }
+      .panel h2{font-size:1.8rem; font-weight:700; margin-bottom:8px}
+      .panel .intro{color:var(--ink-soft); max-width:42em; margin:0 0 18px}
+      .panel h3{font-size:1.15rem; margin:22px 0 6px}
+      .panel p{max-width:44em}
+      .panel ul, .panel ol{max-width:44em; padding-left:1.3em}
+      .panel li{margin:6px 0}
+      .dim{opacity:.28}
+
+      .door-grid{display:grid; gap:12px; grid-template-columns:1fr; margin:18px 0 4px}
+      @media (min-width:640px){ .door-grid{grid-template-columns:1fr 1fr} }
+      .door{
+        border:1.5px solid var(--line); border-radius:12px; padding:16px;
+        background:var(--bg-soft);
+      }
+      .door h3{margin:0 0 4px; display:flex; align-items:center; gap:10px; font-size:1.12rem}
+      .door p{margin:0; font-size:.95rem; color:var(--ink-soft)}
+      .door svg{flex:none}
+
+      .callout{
+        border-radius:12px; padding:18px 20px; margin:20px 0 4px;
+        background:var(--amber-tint); border:1.5px solid var(--amber);
+      }
+      .callout h3{margin-top:0}
+      .callout p:last-child{margin-bottom:0}
+      .callout.good{background:var(--green-tint); border-color:var(--teal)}
+      .wave{width:100%; height:56px; display:block; margin:10px 0 4px}
+      .wave path{fill:none; stroke:var(--teal); stroke-width:3; stroke-linecap:round}
+      .wave-steps{display:grid; gap:8px; grid-template-columns:1fr; margin-top:10px}
+      @media (min-width:640px){ .wave-steps{grid-template-columns:repeat(4,1fr)} }
+      .wave-steps div{font-size:.92rem; background:var(--card); border:1.5px solid var(--line); border-radius:10px; padding:10px 12px}
+      .wave-steps strong{display:block; font-family:"Zilla Slab", Georgia, serif}
+
+      .box-list{list-style:none; padding:0; margin:16px 0; counter-reset:box}
+      .box-list li{
+        display:flex; gap:14px; padding:14px 0; border-top:1.5px solid var(--line); margin:0;
+      }
+      .box-list li:first-child{border-top:none}
+      .box-num{
+        counter-increment:box; flex:none; width:38px; height:38px; border-radius:10px;
+        border:2px solid var(--teal); color:var(--teal-deep); font-family:"Zilla Slab", Georgia, serif;
+        font-weight:700; display:grid; place-items:center; font-size:1.1rem; background:var(--teal-tint);
+      }
+      .box-list strong{display:block; font-family:"Zilla Slab", Georgia, serif; font-size:1.08rem}
+      .box-list span{color:var(--ink-soft); font-size:.96rem}
+
+      /* Candidate tester */
+      .tester{margin-top:52px}
+      .tester-head h2{font-size:2rem; font-weight:700}
+      .tester-head p{color:var(--ink-soft); max-width:44em}
+      .worksheet-note{
+        display:inline-block; font-weight:700; font-size:.9rem;
+        background:var(--amber-tint); border:1.5px solid var(--amber); color:var(--ink);
+        border-radius:999px; padding:5px 14px; margin-bottom:6px;
+      }
+      .msg-field{margin:18px 0 6px}
+      .msg-field label{font-weight:700; display:block; margin-bottom:6px; font-family:"Zilla Slab", Georgia, serif; font-size:1.1rem}
+      .msg-field input{
+        width:100%; border:2px solid var(--line-strong); border-radius:10px; padding:11px 13px;
+        background:var(--card); color:var(--ink); font-size:1rem;
+      }
+      .cand-grid{display:grid; gap:16px; grid-template-columns:1fr; margin-top:16px}
+      @media (min-width:820px){ .cand-grid{grid-template-columns:1fr 1fr} }
+      .cand{
+        border:2px solid var(--line); border-radius:var(--radius); background:var(--card);
+        padding:18px; box-shadow:var(--shadow);
+      }
+      .cand.full{border-color:var(--teal); background:var(--green-tint)}
+      .cand-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px}
+      .cand-head h3{font-size:1.2rem}
+      .cand-score{font-weight:700; font-size:.88rem; color:var(--teal-deep); white-space:nowrap}
+      .cand input[type="text"]{
+        width:100%; margin:10px 0 12px; border:2px solid var(--line-strong); border-radius:10px;
+        padding:10px 12px; background:var(--card); color:var(--ink); font-size:1rem;
+      }
+      .cand.full input[type="text"]{background:var(--card)}
+      fieldset{border:none; margin:0; padding:0}
+      legend{font-weight:700; font-size:.85rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); padding:0; margin-bottom:4px}
+      .checks{display:flex; flex-direction:column}
+      .checks label{
+        display:flex; gap:12px; align-items:flex-start; cursor:pointer;
+        padding:9px 8px; min-height:44px; border-radius:8px; font-size:.96rem;
+      }
+      .checks label:hover{background:var(--bg-soft)}
+      .cand.full .checks label:hover{background:rgba(255,255,255,.35)}
+      .checks input[type="checkbox"]{width:22px; height:22px; flex:none; margin-top:2px; accent-color:var(--teal)}
+      .checks small{display:block; color:var(--ink-soft); font-size:.85rem}
+      .cand-status{margin:10px 0 0; font-weight:700; font-size:.92rem; min-height:1.4em}
+      .cand-status.full{color:var(--teal-deep)}
+
+      .verdict{
+        margin-top:20px; border-radius:var(--radius); padding:22px 24px;
+        border:2px solid var(--line-strong); background:var(--bg-soft);
+      }
+      .verdict.answer{border-color:var(--teal); background:var(--green-tint)}
+      .verdict.tie{border-color:var(--amber); background:var(--amber-tint)}
+      .verdict h3{font-size:1.5rem; margin-bottom:6px}
+      .verdict p{margin:0; max-width:44em}
+      .tester-actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+      .btn{
+        cursor:pointer; border:2px solid var(--teal); background:var(--teal); color:#fff;
+        border-radius:10px; padding:10px 20px; font-weight:700; min-height:44px;
+      }
+      @media (prefers-color-scheme: dark){ .btn{color:#0b1512} }
+      .btn.ghost{background:transparent; color:var(--teal-deep)}
+      .local-note{font-size:.88rem; color:var(--ink-soft)}
+
+      /* Doors + footer */
+      .doors{margin-top:56px; border-top:2px solid var(--line); padding-top:26px}
+      .doors h2{font-size:1.4rem; margin-bottom:12px}
+      .door-links{display:flex; gap:12px; flex-wrap:wrap}
+      .door-links a{
+        display:inline-flex; align-items:center; min-height:48px; padding:10px 20px;
+        border:2px solid var(--teal); border-radius:10px; font-weight:700; text-decoration:none;
+        background:var(--card);
+      }
+      .door-links a:hover{background:var(--teal-tint)}
+      footer{margin-top:36px; border-top:1.5px solid var(--line); padding-top:20px; color:var(--ink-soft); font-size:.9rem}
+      footer strong{color:var(--ink); font-family:"Zilla Slab", Georgia, serif; font-size:1.05rem}
+      footer p{max-width:46em}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <div class="free-strip" role="note">
+        <strong>Free. Always free.</strong>
+        <span>This page is the download — save it to your device and it works offline, exactly as it is. No account, no sign-up, nothing to install.</span>
+      </div>
+
+      <header class="hero">
+        <h1>The Decoder</h1>
+        <p class="lede">Any message can show up wearing a disguise. This is the house's way of reading one: <strong>find the patterns, check the type, test every candidate against every box</strong> — and let the boxes, not a hunch, say when you've got it.</p>
+        <div class="hero-note">
+          <span class="pill solid">The house's method, printed plain</span>
+          <span class="pill">A way of testing readings — not magic</span>
+        </div>
+      </header>
+
+      <!-- ============ HUB FACE ============ -->
+      <section class="hub" aria-label="The four main thoughts">
+        <p class="hub-label">Four main thoughts — tap one to open it up</p>
+        <div class="compass">
+
+          <button class="thought t-north" type="button" data-panel="panel-doors" aria-expanded="false" aria-controls="panel-doors">
+            <span class="num" aria-hidden="true">1</span>
+            <h3>The Four Doors</h3>
+            <p>Sound, sight, touch, language. Answer all four and you have the code.</p>
+            <span class="tap">Tap to open ↓</span>
+          </button>
+
+          <button class="thought t-east" type="button" data-panel="panel-types" aria-expanded="false" aria-controls="panel-types">
+            <span class="num" aria-hidden="true">2</span>
+            <h3>The Types</h3>
+            <p>The type tells you which pattern-language you're in. Cross-reference before you conclude.</p>
+            <span class="tap">Tap to open ↓</span>
+          </button>
+
+          <button class="thought t-south" type="button" data-panel="panel-boxes" aria-expanded="false" aria-controls="panel-boxes">
+            <span class="num" aria-hidden="true">3</span>
+            <h3>The Boxes</h3>
+            <p>The honesty checks. A pattern that ticks one box is a resemblance, not a decode.</p>
+            <span class="tap">Tap to open ↓</span>
+          </button>
+
+          <button class="thought t-west" type="button" data-panel="panel-discernment" aria-expanded="false" aria-controls="panel-discernment">
+            <span class="num" aria-hidden="true">4</span>
+            <h3>Discernment</h3>
+            <p>When two readings tick every box, the boxes are done. The choice decides.</p>
+            <span class="tap">Tap to open ↓</span>
+          </button>
+
+          <div class="hub-center">
+            <label for="page-search">Search this page</label>
+            <div class="search-row">
+              <input id="page-search" type="search" placeholder="Try “waveform”, “blind”, “layers”, “Panini”…" autocomplete="off" />
+            </div>
+            <p>The otherwise — the four thoughts don't cover everything, so the door to anything else on this page is right here. It searches this page's own sections only.</p>
+            <p class="search-status" id="search-status" aria-live="polite"></p>
+          </div>
+
+        </div>
+
+        <!-- PANEL: FOUR DOORS -->
+        <article class="panel" id="panel-doors" hidden data-search="four doors sound sight touch language code waveform heard seen felt rhythm shape drawing">
+          <div class="panel-inner">
+            <h2>The Four Doors</h2>
+            <p class="intro">Any message can arrive through four doors: <strong>sound, sight, touch, and language</strong>. One door open is a peek. A message is fully decoded when <strong>all four doors are answered</strong> — then you have the code.</p>
+            <div class="door-grid">
+              <div class="door">
+                <h3><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4h3l5 4V6l-5 4H4z" fill="currentColor" stroke="none"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M17.5 6.5a8 8 0 0 1 0 11"/></svg> Sound</h3>
+                <p>What does it sound like? The tones, the rhythm, the pauses — what reaches the ear.</p>
+              </div>
+              <div class="door">
+                <h3><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg> Sight</h3>
+                <p>What does it look like? The shape, the picture, the pattern your eyes can trace.</p>
+              </div>
+              <div class="door">
+                <h3><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12V6a1.5 1.5 0 0 1 3 0v5V4.5a1.5 1.5 0 0 1 3 0V11V5a1.5 1.5 0 0 1 3 0v7c0 4-2.5 7-6 7S6 16.5 5 13l-1.2-3A1.6 1.6 0 0 1 6.5 8L8 10z"/></svg> Touch</h3>
+                <p>What does it feel like? The beat you can tap, the texture, the timing under your fingers.</p>
+              </div>
+              <div class="door">
+                <h3><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9h8M8 12.5h5"/></svg> Language</h3>
+                <p>What does it say? Put it into words — a description someone else could follow.</p>
+              </div>
+            </div>
+
+            <div class="callout good">
+              <h3>The worked miniature: one waveform, four doors</h3>
+              <svg class="wave" viewBox="0 0 600 56" preserveAspectRatio="none" aria-hidden="true"><path d="M0,28 L40,28 L55,8 L70,48 L85,28 L150,28 L165,4 L182,52 L198,28 L280,28 L295,14 L308,42 L322,28 L420,28 L435,6 L452,50 L468,28 L600,28"/></svg>
+              <p>Take a single waveform — the wiggly line a sound makes. It is <em>the same pattern</em> walking through all four doors:</p>
+              <div class="wave-steps">
+                <div><strong>Heard</strong> it's a sound — a tone rising and falling.</div>
+                <div><strong>Seen</strong> it's a shape — peaks and valleys on the line.</div>
+                <div><strong>Felt</strong> it's a rhythm — a pulse you can tap along to.</div>
+                <div><strong>Described</strong> it's language — “a loud blip, a quiet stretch, a blip again.”</div>
+              </div>
+              <p>Nothing had to be forced. The pattern held its shape through every door. That's what a real decode feels like.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PANEL: TYPES -->
+        <article class="panel" id="panel-types" hidden data-search="types pattern cross-reference game types puzzle types variations pattern-language message type cards map jigsaw">
+          <div class="panel-inner">
+            <h2>The Types</h2>
+            <p class="intro">Decoding starts with <strong>finding the patterns</strong>. Then — before you decide what a pattern means — you <strong>cross-reference the types</strong>.</p>
+            <p>That means lining up:</p>
+            <ul>
+              <li><strong>Type of message</strong> against <strong>message type</strong> — what kind of thing arrived, against the kinds of messages there are.</li>
+              <li>Against <strong>game types</strong> — is it built like a game? Which kind, and what's the win?</li>
+              <li>Against <strong>puzzle types</strong> — is it built like a puzzle? A jigsaw solves by laying pieces against each other; a riddle solves by a twist in the words. Different puzzles, different moves.</li>
+              <li>And against <strong>their variations</strong> — the near-cousins, because the variation is often the tell.</li>
+            </ul>
+            <p><strong>The type tells you which pattern-language you're in.</strong> Read a jigsaw like a riddle and you'll force pieces that were never meant to fit. Read a riddle like a jigsaw and you'll wait forever for a corner piece. Name the type first, and the right pattern-language comes with it.</p>
+            <div class="callout">
+              <h3>A deck that deals a map</h3>
+              <p>Think of playing cards printed so that, laid side by side, they form one big map. No single card is the map — the picture only exists <em>between</em> the cards, in the connections. Type first: it's a puzzle-type message. So the pattern to look for isn't inside any one card; it's in how the pieces join. Same rule everywhere: the type tells you where the pattern lives.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PANEL: BOXES -->
+        <article class="panel" id="panel-boxes" hidden data-search="boxes honesty extraction rule fixed before looking simpler improbably fluent grammar blind second person checks against the world name date prediction resemblance face-shaped rocks montage sight multiple messages layers panini gallery painting composition details pairing provenance placement counter levels rivals">
+          <div class="panel-inner">
+            <h2>The Boxes</h2>
+            <p class="intro">Spotting a pattern is the easy part — patterns are everywhere, including in plain noise. These are the honesty boxes, from the house's undeniable-message protocol. A real decode ticks them. All of them.</p>
+            <ol class="box-list">
+              <li>
+                <span class="box-num" aria-hidden="true">1</span>
+                <div><strong>The rule is fixed BEFORE looking — and it's simpler than the message.</strong>
+                <span>Write down how you'll extract the message before you go hunting. If your “rule” is more complicated than the message itself, you didn't find a message — you built one.</span></div>
+              </li>
+              <li>
+                <span class="box-num" aria-hidden="true">2</span>
+                <div><strong>The output is improbably fluent.</strong>
+                <span>Grammar, length, specificity — more of it than chance can explain. Coincidences are short and fuzzy. A decode comes out long, clean, and specific.</span></div>
+              </li>
+              <li>
+                <span class="box-num" aria-hidden="true">3</span>
+                <div><strong>A second person extracts the same message, blind.</strong>
+                <span>Hand someone only the rule — not your answer — and let them run it. If they pull out the same message without seeing yours, it wasn't just in your head.</span></div>
+              </li>
+              <li>
+                <span class="box-num" aria-hidden="true">4</span>
+                <div><strong>The content checks against the world.</strong>
+                <span>A name that's really there. A date that lands. A prediction that comes true. The world gets a vote, and it has to vote yes.</span></div>
+              </li>
+            </ol>
+            <div class="callout">
+              <h3>One box is a resemblance, not a decode</h3>
+              <p>Say it plainly: <strong>a pattern that checks only one box is a resemblance, not a decode.</strong> Example: a montage of face-shaped rocks. Those rocks genuinely look like faces — the sight door is wide open. But no rule was fixed before looking, nobody can re-extract a message from them blind, and no name, date, or prediction checks against the world. One box ticked. Fun to look at — not a message decoded.</p>
+            </div>
+            <p>Every candidate reading gets checked against <strong>every</strong> box — the four doors and these four honesty boxes. The candidate that matches all the boxes is the answer. That's the whole game, and the tester below plays it with you.</p>
+
+            <h3>One picture can hold more than one message</h3>
+            <p>Here is the part people miss: <strong>it is not one-message-per-picture.</strong> One picture — or any single carrier — can hold <strong>several messages at once</strong>, each one playing on a different thing: the <strong>composition</strong>, a <strong>detail</strong>, a <strong>pairing</strong>, where it came from (<strong>provenance</strong>), or where it sits (<strong>placement</strong>).</p>
+            <p>So you don't stop at the first message you find. You test <strong>each message on its own boxes</strong>. And if more than one checks every box, they don't have to fight. Playing on different things, they can <strong>all be true at once — as layers, not rivals</strong>.</p>
+
+            <div class="callout good">
+              <h3>The worked miniature: Panini's gallery, four messages in one canvas</h3>
+              <p>Giovanni Paolo Panini painted an imaginary gallery in Rome — a room full of paintings of Rome. Look at it element by element and it is saying several things at the same time:</p>
+              <div class="wave-steps">
+                <div><strong>The room</strong> says “all of Rome in one place.”</div>
+                <div><strong>The seated patron</strong> says “gathered around one man.”</div>
+                <div><strong>The twin painting</strong> says “and here is its counter.”</div>
+                <div><strong>The frames inside frames</strong> say “levels.”</div>
+              </div>
+              <p>Four messages, one canvas, <strong>each graded separately</strong>. The two that checked every box weren't rivals — they were <strong>layers</strong>. Same picture, different elements, both standing.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- PANEL: DISCERNMENT -->
+        <article class="panel" id="panel-discernment" hidden data-search="discernment tie tied candidates both match choice decides completed set free will judgment layers rivals multiple messages different elements same picture panini">
+          <div class="panel-inner">
+            <h2>Discernment</h2>
+            <p class="intro">Sometimes the test ends in a tie — and that's not a failure. That's the method working exactly as far as a method can.</p>
+            <p>Here's the shape of it. A message could be one thing — or another. Or a third. Or a fourth. So you test them <strong>all</strong>: every candidate, against every box. Usually the boxes sort it out, and one candidate stands alone with every box ticked.</p>
+            <p>But if two candidates match all the boxes — or three, or four — <strong>the boxes have done all they can</strong>. No more ticking will separate them. That's where discernment comes in: the choice stands in the completed set, in the middle of everything the boxes proved, and decides.</p>
+            <h3>First, though: layers or rivals?</h3>
+            <p>Before you call it a tie, look at <strong>what each full match is playing on</strong>. If two readings are rival answers for the <strong>same element</strong> — the same figure, the same corner, and they can't both be true — that <em>is</em> a tie, and discernment chooses between them.</p>
+            <p>But if the full matches play on <strong>different elements of the same picture</strong> — one on the room, one on the man in the middle, one on its twin, one on the frames — they don't cancel each other out. <strong>They can all stand, as layers.</strong> One carrier, several messages, each true on its own element.</p>
+            <p>That is discernment's other job: <strong>telling layers from rivals</strong>. Rivals get a choice. Layers get to stack.</p>
+            <div class="callout good">
+              <h3>The short version</h3>
+              <p>The boxes do the counting. Discernment does the choosing — and the telling-apart. Neither one does the other's job. A tie handed to discernment is an honest result, not a shrug, and layers recognised by discernment are an honest result too.</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============ CANDIDATE TESTER ============ -->
+      <section class="tester" id="tester" aria-label="Candidate tester">
+        <div class="tester-head">
+          <span class="worksheet-note">A worksheet, not an oracle</span>
+          <h2>The Candidate Tester</h2>
+          <p>Got a message and a few ideas about what it might mean? Write in up to <strong>four candidate readings</strong>. For each one, tick only the boxes it <em>honestly</em> passes — all four doors, plus the four honesty boxes. Eight boxes per candidate. The worksheet does the counting; you do the judging.</p>
+          <p><strong>Layers or rivals?</strong> If more than one candidate reaches full boxes, check what each one plays on. Rival readings of the <em>same</em> element — that's the tie below, and discernment chooses. Readings of <em>different</em> elements of the same picture — they can all stand as <strong>layers</strong>: more than one message, not a fight. Discernment tells layers from rivals.</p>
+        </div>
+
+        <div class="msg-field">
+          <label for="the-message">The message you're decoding <span style="font-weight:400; font-size:.9rem; color:var(--ink-soft)">(optional — just to keep it in front of you)</span></label>
+          <input id="the-message" type="text" placeholder="e.g. a strange repeating signal, a marked-up page, a dream that won't quit…" autocomplete="off" />
+        </div>
+
+        <div class="cand-grid" id="cand-grid"><!-- candidates injected by script --></div>
+
+        <div class="verdict" id="verdict" aria-live="polite">
+          <h3 id="verdict-title">Not decoded yet — a resemblance is not a decode.</h3>
+          <p id="verdict-body">No candidate has every box ticked yet. Keep testing — or keep looking for a better candidate.</p>
+        </div>
+
+        <div class="tester-actions">
+          <button class="btn ghost" type="button" id="clear-btn">Clear the worksheet</button>
+          <span class="local-note">Everything you type stays on this device, in this tab. Nothing is sent anywhere, and nothing is saved when you leave.</span>
+        </div>
+      </section>
+
+      <!-- ============ DOORS ============ -->
+      <nav class="doors" aria-label="More doors">
+        <h2>Keep going</h2>
+        <div class="door-links">
+          <a href="index.html">← Back to the hub</a>
+          <a href="pages.html">Browse all the pages</a>
+        </div>
+      </nav>
+
+      <footer>
+        <p><strong>Free. Always free.</strong></p>
+        <p><strong>Notes &amp; fine print — every bit of it, justified:</strong> The Decoder is the house's message-decoding method, printed as a method: a way of testing readings of a message, not a guarantee and not magic. It states what the method does — find patterns, cross-reference types, test every candidate against every box, and hand ties to discernment. It also states that one carrier can hold several messages at once, each tested on its own boxes; full matches on different elements can stand as layers, while rival full matches on the same element go to discernment. The Candidate Tester is a worksheet: it counts the boxes you tick and reports the count honestly; it cannot tell you whether a tick was earned, or whether full matches are layers or rivals — that's your judgment, and it's the point. Nothing typed into this page is sent, stored, or shared; it lives in this tab and is gone when you leave. This page works offline once saved — the page itself is the download.</p>
+        <p>First version — it will grow.</p>
+      </footer>
+
+    </div>
+
+    <script>
+      (function(){
+        "use strict";
+
+        /* ---------- Hub panels ---------- */
+        var buttons = Array.prototype.slice.call(document.querySelectorAll(".thought"));
+        var panels = {};
+        buttons.forEach(function(b){ panels[b.getAttribute("data-panel")] = document.getElementById(b.getAttribute("data-panel")); });
+
+        function openPanel(id, scroll){
+          Object.keys(panels).forEach(function(k){
+            var isTarget = (k === id);
+            panels[k].hidden = !isTarget;
+          });
+          buttons.forEach(function(b){
+            b.setAttribute("aria-expanded", b.getAttribute("data-panel") === id ? "true" : "false");
+          });
+          if (scroll && panels[id]) {
+            panels[id].scrollIntoView({behavior:"smooth", block:"nearest"});
+          }
+        }
+        buttons.forEach(function(b){
+          b.addEventListener("click", function(){
+            var id = b.getAttribute("data-panel");
+            var already = b.getAttribute("aria-expanded") === "true";
+            if (already) {
+              panels[id].hidden = true;
+              b.setAttribute("aria-expanded","false");
+            } else {
+              openPanel(id, true);
+            }
+          });
+        });
+        // Open the first thought by default so the depth is visible, face still simple.
+        openPanel("panel-doors", false);
+
+        /* ---------- Page search (the otherwise) ---------- */
+        var searchInput = document.getElementById("page-search");
+        var searchStatus = document.getElementById("search-status");
+        var searchable = [
+          {id:"panel-doors", label:"The Four Doors"},
+          {id:"panel-types", label:"The Types"},
+          {id:"panel-boxes", label:"The Boxes"},
+          {id:"panel-discernment", label:"Discernment"},
+          {id:"tester", label:"The Candidate Tester"}
+        ];
+        searchInput.addEventListener("input", function(){
+          var q = searchInput.value.trim().toLowerCase();
+          if (!q) {
+            searchStatus.textContent = "";
+            searchable.forEach(function(s){
+              var el = document.getElementById(s.id);
+              if (el && el.classList) el.classList.remove("dim");
+            });
+            return;
+          }
+          var hits = [];
+          searchable.forEach(function(s){
+            var el = document.getElementById(s.id);
+            var hay = ((el.getAttribute("data-search") || "") + " " + el.textContent).toLowerCase();
+            var hit = hay.indexOf(q) !== -1;
+            if (el.classList) el.classList.toggle("dim", !hit && s.id !== "tester");
+            if (hit) hits.push(s);
+          });
+          if (hits.length) {
+            searchStatus.textContent = "Found in: " + hits.map(function(h){ return h.label; }).join(" · ") + " — opening the first match.";
+            var first = hits[0];
+            if (first.id.indexOf("panel-") === 0) openPanel(first.id, false);
+            else document.getElementById(first.id).scrollIntoView({behavior:"smooth", block:"start"});
+          } else {
+            searchStatus.textContent = "Nothing on this page matches “" + searchInput.value.trim() + "” yet.";
+          }
+        });
+
+        /* ---------- Candidate tester ---------- */
+        var BOXES = [
+          {group:"The four doors", items:[
+            {key:"sound", label:"Sound door answered", hint:"It holds up as something heard."},
+            {key:"sight", label:"Sight door answered", hint:"It holds up as something seen — a shape or picture."},
+            {key:"touch", label:"Touch door answered", hint:"It holds up as something felt — rhythm, timing, texture."},
+            {key:"language", label:"Language door answered", hint:"It can be put into words someone else can follow."}
+          ]},
+          {group:"The honesty boxes", items:[
+            {key:"rule", label:"Rule fixed before looking", hint:"The extraction rule was set first, and is simpler than the message."},
+            {key:"fluent", label:"Improbably fluent", hint:"Grammar, length, specificity beyond what chance explains."},
+            {key:"blind", label:"Blind re-extraction", hint:"A second person, given only the rule, got the same message."},
+            {key:"world", label:"Checks against the world", hint:"A name, a date, a prediction — something that lands."}
+          ]}
+        ];
+        var TOTAL = 8;
+        var grid = document.getElementById("cand-grid");
+        var verdict = document.getElementById("verdict");
+        var verdictTitle = document.getElementById("verdict-title");
+        var verdictBody = document.getElementById("verdict-body");
+        var candidates = [];
+
+        function buildCandidate(n){
+          var card = document.createElement("div");
+          card.className = "cand";
+          var html = "";
+          html += '<div class="cand-head"><h3>Candidate ' + n + '</h3><span class="cand-score" data-role="score">0 / ' + TOTAL + ' boxes</span></div>';
+          html += '<input type="text" data-role="name" placeholder="This reading says the message means…" autocomplete="off" aria-label="Candidate ' + n + ' reading" />';
+          BOXES.forEach(function(g){
+            html += '<fieldset><legend>' + g.group + '</legend><div class="checks">';
+            g.items.forEach(function(item){
+              html += '<label><input type="checkbox" data-box="' + item.key + '" /><span>' + item.label + '<small>' + item.hint + '</small></span></label>';
+            });
+            html += '</div></fieldset>';
+          });
+          html += '<p class="cand-status" data-role="status"></p>';
+          card.innerHTML = html;
+          grid.appendChild(card);
+          var state = {
+            n: n,
+            card: card,
+            nameEl: card.querySelector('[data-role="name"]'),
+            scoreEl: card.querySelector('[data-role="score"]'),
+            statusEl: card.querySelector('[data-role="status"]'),
+            boxes: Array.prototype.slice.call(card.querySelectorAll('input[type="checkbox"]'))
+          };
+          state.nameEl.addEventListener("input", update);
+          state.boxes.forEach(function(cb){ cb.addEventListener("change", update); });
+          candidates.push(state);
+          return state;
+        }
+        for (var i = 1; i <= 4; i++) buildCandidate(i);
+
+        function candidateCount(c){
+          return c.boxes.filter(function(cb){ return cb.checked; }).length;
+        }
+        function isFull(c){
+          return c.nameEl.value.trim() !== "" && candidateCount(c) === TOTAL;
+        }
+
+        function update(){
+          candidates.forEach(function(c){
+            var count = candidateCount(c);
+            c.scoreEl.textContent = count + " / " + TOTAL + " boxes";
+            var full = isFull(c);
+            c.card.classList.toggle("full", full);
+            c.statusEl.classList.toggle("full", full);
+            if (full) {
+              c.statusEl.textContent = "Every box ticked. This one is a full match.";
+            } else if (c.nameEl.value.trim() !== "" && count > 0) {
+              c.statusEl.textContent = (TOTAL - count) + (TOTAL - count === 1 ? " box" : " boxes") + " still unticked — not a full match yet.";
+            } else if (count === TOTAL && c.nameEl.value.trim() === "") {
+              c.statusEl.textContent = "All boxes ticked — now write the reading itself above.";
+            } else {
+              c.statusEl.textContent = "";
+            }
+          });
+
+          var fulls = candidates.filter(isFull);
+          verdict.classList.remove("answer","tie");
+          if (fulls.length === 1) {
+            verdict.classList.add("answer");
+            verdictTitle.textContent = "That's your answer.";
+            verdictBody.textContent = "“" + fulls[0].nameEl.value.trim() + "” is the one candidate that ticks every box — all four doors and all four honesty boxes. The boxes have spoken.";
+          } else if (fulls.length >= 2) {
+            verdict.classList.add("tie");
+            verdictTitle.textContent = "The boxes are tied — this is where discernment comes in.";
+            verdictBody.textContent = fulls.length + " candidates tick every box: " + fulls.map(function(c){ return "“" + c.nameEl.value.trim() + "”"; }).join(", ") + ". The boxes have done all they can. The choice stands in the completed set and decides — that's yours to make.";
+          } else {
+            verdictTitle.textContent = "Not decoded yet — a resemblance is not a decode.";
+            var anyStarted = candidates.some(function(c){ return c.nameEl.value.trim() !== "" || candidateCount(c) > 0; });
+            verdictBody.textContent = anyStarted
+              ? "No candidate has every box ticked yet. A partial match is a resemblance — keep testing, or look for a better candidate."
+              : "No candidate has every box ticked yet. Keep testing — or keep looking for a better candidate.";
+          }
+        }
+
+        document.getElementById("clear-btn").addEventListener("click", function(){
+          document.getElementById("the-message").value = "";
+          candidates.forEach(function(c){
+            c.nameEl.value = "";
+            c.boxes.forEach(function(cb){ cb.checked = false; });
+          });
+          update();
+        });
+
+        update();
+      })();
+    </script>
+  </body>
+</html>
