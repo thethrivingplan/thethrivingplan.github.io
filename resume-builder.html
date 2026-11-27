@@ -1,0 +1,1392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>The Resume Builder</title>
+<script>
+/* Page settings — applied before the page paints so a returning
+   visitor's saved dock position is already in place. The choice
+   lives only in this browser, under this page's own key. */
+(function(){
+  var pos = 'bottom';
+  try {
+    var raw = window.localStorage.getItem('resume-builder-page-settings-v1');
+    if (raw) {
+      var saved = JSON.parse(raw);
+      if (saved && ['right','left','top','bottom'].indexOf(saved.dock) >= 0) pos = saved.dock;
+    }
+  } catch (e) {}
+  document.documentElement.setAttribute('data-dock', pos);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#fbfcfc; --surface:#ffffff; --surface2:#edf3f5; --ink:#152126; --muted:#4c5d64;
+  --line:#c9d8dd; --accent:#175d75; --accent-ink:#ffffff; --accent-soft:#dceef3;
+  --amber:#b45309; --amber-soft:#fdf0dc; --red:#b42318; --red-soft:#fdecea;
+  --green:#0b6b57; --green-soft:#dff0e9;
+  --slate:#475569; --slate-deep:#334155; --gold:#e8a33d;
+  --shadow:0 10px 30px rgba(18,32,38,.10);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1417; --surface:#162024; --surface2:#1c2a30; --ink:#edf4f6; --muted:#a7bcc2;
+    --line:#31464e; --accent:#6fc3dd; --accent-ink:#052530; --accent-soft:#14333d;
+    --amber:#f0b35e; --amber-soft:#3a2c14; --red:#ff9a8f; --red-soft:#3d1d1a;
+    --green:#3ec9a7; --green-soft:#173a31;
+    --shadow:0 10px 30px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{transition:none!important} }
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55}
+h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;line-height:1.12;margin:0}
+a{color:var(--accent);text-underline-offset:3px}
+button,[role="button"],summary,select,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px 90px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.small{font-size:.9rem;color:var(--muted)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ---------- Free banner / hero ---------- */
+.freebar{background:var(--accent);color:var(--accent-ink);padding:26px 20px 22px;text-align:center}
+.freebar .big{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(2rem,6.5vw,3.4rem);letter-spacing:.01em;line-height:1.05}
+.freebar p{margin:8px auto 0;max-width:640px;font-size:1.02rem;opacity:.95}
+.offline-door{display:inline-block;margin-top:14px;background:var(--surface);color:var(--accent);border:none;border-radius:999px;
+  padding:12px 22px;min-height:44px;font:600 1rem "IBM Plex Sans",sans-serif;cursor:pointer;box-shadow:var(--shadow)}
+.offline-door:hover{transform:translateY(-1px)}
+.offline-note{margin-top:10px;font-size:.85rem;opacity:.85}
+
+.hero{padding:34px 0 8px}
+.hero h1{font-size:clamp(2.1rem,5.5vw,3.2rem);font-weight:800;max-width:18ch}
+.hero .sub{font-size:1.13rem;color:var(--muted);max-width:64ch;margin-top:12px}
+.hero .sub b{color:var(--ink)}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--accent-soft);color:var(--accent);padding:5px 10px;border-radius:999px}
+.chip.plain{background:var(--surface2);color:var(--muted)}
+.hardline{margin-top:22px;border:2px solid var(--ink);border-radius:14px;background:var(--surface);padding:18px 20px;box-shadow:var(--shadow)}
+.hardline h2{font-size:1.25rem}
+.hardline p{margin:6px 0 0}
+.hardline p + p{margin-top:8px}
+
+/* ---------- Sections ---------- */
+section{margin-top:52px;scroll-margin-top:18px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:3px solid var(--accent);padding-bottom:10px;margin-bottom:20px;flex-wrap:wrap}
+.sec-head .motif{font-size:1.35rem}
+.sec-head h2{font-size:clamp(1.5rem,3.6vw,2rem);font-weight:700}
+.sec-head p{margin:4px 0 0;color:var(--muted);width:100%}
+.explain{background:var(--surface2);border-radius:12px;padding:16px 18px;margin-bottom:20px}
+.explain p{margin:0}
+.explain p + p{margin-top:8px}
+details.layer{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:4px 18px 14px;margin-top:14px}
+details.layer summary{font-size:1.02rem}
+summary{cursor:pointer;font-weight:600;color:var(--accent);padding:6px 0;min-height:36px}
+details p,details li{font-size:.97rem}
+
+/* ---------- Builder form ---------- */
+.builder{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.fgroup{border-top:1px dashed var(--line);padding-top:18px;margin-top:22px}
+.fgroup:first-child{border-top:none;padding-top:0;margin-top:0}
+.fgroup > h3{font-size:1.12rem;margin-bottom:4px}
+.fgroup > .ghint{font-size:.92rem;color:var(--muted);margin:0 0 12px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field label{display:block;font-weight:700;font-size:.93rem;margin-bottom:5px}
+.field .hint{font-size:.86rem;color:var(--muted);margin:4px 0 0}
+.field input[type="text"],.field input[type="email"],.field input[type="tel"],.field textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
+  font:inherit;font-size:1rem;padding:11px 12px;min-height:44px}
+.field textarea{min-height:96px;resize:vertical;line-height:1.45}
+.field textarea.tall{min-height:150px}
+.field input:focus,.field textarea:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--accent)}
+.field.full{grid-column:1/-1}
+.entry{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px;background:var(--bg)}
+.entry-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.entry-head .et{font-weight:700;font-size:.95rem}
+.remove-btn{background:none;border:1px solid var(--red);color:var(--red);border-radius:999px;padding:7px 14px;min-height:38px;font:600 .88rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.add-btn{background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:11px 18px;min-height:44px;font:600 .95rem "IBM Plex Sans",sans-serif;cursor:pointer;margin-top:12px}
+.checkline{display:flex;align-items:center;gap:9px;min-height:44px;cursor:pointer;font-weight:600;font-size:.95rem}
+.checkline input{width:22px;height:22px;min-height:22px;flex:none;accent-color:var(--accent);margin:0}
+.bullet-flag{font-size:.88rem;color:var(--amber);font-weight:600;margin:6px 0 0}
+.bullet-flag[hidden]{display:none}
+.save-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+.save-state{font-size:.92rem;color:var(--muted)}
+.save-state b{color:var(--green)}
+.forget-btn{background:none;border:1px solid var(--red);color:var(--red);border-radius:999px;padding:10px 16px;min-height:44px;font:600 .92rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.forget-btn.armed{background:var(--red);color:#fff}
+@media (max-width:760px){ .fgrid{grid-template-columns:1fr} .builder{padding:16px} }
+
+/* ---------- Preview / the resume paper ---------- */
+.resume-paper{background:#ffffff;color:#111111;border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);
+  padding:34px 38px;font-family:Georgia,"Times New Roman",serif;font-size:15.5px;line-height:1.45;max-width:820px;margin:0 auto}
+.resume-paper.large{font-size:17.5px}
+.resume-paper .rname{font-size:1.9em;font-weight:700;text-align:center;margin:0;line-height:1.15;font-family:inherit}
+.resume-paper .rcontact{text-align:center;margin:6px 0 0;font-size:.92em}
+.resume-paper h3{font-family:inherit;font-size:1.02em;letter-spacing:.08em;text-transform:uppercase;
+  border-bottom:1.5px solid #111;padding-bottom:3px;margin:20px 0 8px}
+.resume-paper p{margin:0 0 6px}
+.resume-paper .rjob{margin-top:12px}
+.resume-paper .rjob:first-of-type{margin-top:0}
+.resume-paper .rtitle{font-weight:700}
+.resume-paper .rdates{float:right;font-size:.92em}
+.resume-paper ul{margin:4px 0 0;padding-left:20px}
+.resume-paper li{margin:2px 0}
+.resume-paper .rempty{color:#666;font-style:italic;text-align:center;padding:26px 0}
+.preview-tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+.act-btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;padding:13px 22px;min-height:48px;font:700 1rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.ghost-btn{background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:11px 18px;min-height:48px;font:600 .95rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.copy-note{font-size:.9rem;color:var(--muted);text-align:center;margin-top:10px}
+.copy-note b{color:var(--green)}
+
+/* ---------- Match check ---------- */
+.matcher{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.matcher textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
+  font:inherit;font-size:1rem;padding:11px 12px;min-height:170px;resize:vertical;line-height:1.45}
+.matcher textarea:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--accent)}
+.match-err{color:var(--red);font-weight:600;margin:12px 0 0}
+.match-err[hidden]{display:none}
+.match-results{margin-top:22px}
+.match-results[hidden]{display:none}
+.match-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.match-col{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--bg)}
+.match-col h3{font-size:1.05rem;margin-bottom:8px}
+.match-col.have h3{color:var(--green)}
+.phrase-list{list-style:none;margin:0;padding:0}
+.phrase-list li{padding:7px 10px;border-radius:8px;background:var(--surface2);margin:6px 0;font-size:.95rem}
+.miss-item{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:10px;background:var(--bg)}
+.miss-item .phrase{font-weight:700;font-size:1rem}
+.miss-item p{margin:6px 0;font-size:.94rem}
+.miss-item input[type="text"]{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);
+  font:inherit;font-size:1rem;padding:11px 12px;min-height:44px;margin-top:4px}
+.miss-item input:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--accent)}
+.miss-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.mini-btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;padding:9px 16px;min-height:40px;font:600 .9rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.mini-ghost{background:none;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:9px 16px;min-height:40px;font:600 .9rem "IBM Plex Sans",sans-serif;cursor:pointer}
+.miss-note{font-size:.9rem;color:var(--green);font-weight:600;margin:8px 0 0}
+.miss-note[hidden]{display:none}
+@media (max-width:760px){ .match-cols{grid-template-columns:1fr} .matcher{padding:16px} }
+
+/* ---------- Facts layer ---------- */
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:14px}
+.fact h3{font-size:1.08rem;margin-bottom:6px}
+.fact p{margin:6px 0 0}
+.label{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;white-space:nowrap}
+.label.verified{background:var(--green-soft);color:var(--green)}
+.label.notverified{background:var(--red-soft);color:var(--red)}
+.label.estimate{background:var(--amber-soft);color:var(--amber)}
+.fact.big-correction{border:2px solid var(--red)}
+.fact.big-correction p{font-size:1.05rem}
+.three-layers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tlayer{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.tlayer h3{font-size:1.05rem;margin-bottom:6px}
+.tlayer p{margin:0;color:var(--muted);font-size:.96rem}
+.tlayer p b{color:var(--ink)}
+@media (max-width:760px){ .three-layers{grid-template-columns:1fr} }
+
+/* sources */
+.sources{font-size:.9rem;color:var(--muted)}
+.sources li{margin:5px 0}
+.foot{margin-top:56px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:.92rem}
+.foot p{margin:6px 0}
+
+/* ---------- Compass dock — the house kit ----------
+   One bar of icon-over-label stacks: the ?! stack (What are we
+   missing) at the left, the compass disc over its Navigate pill
+   centered, the Settings stack at the right — every disc the same
+   size. Bottom is the house default; Page settings moves the whole
+   dock (Right / Left / Top / Bottom) and the page's gutter follows
+   it, so content never slides under the bar. When the compass panel
+   or the settings sheet is open, a bar-level Close stack (✕ disc
+   over a Close pill) joins the bar and all four stacks space
+   evenly across it. The compass itself is navigation only — every
+   setting lives in the Settings sheet. */
+html[data-dock="top"] body{padding-top:88px}
+html[data-dock="bottom"] body{padding-bottom:96px}
+html[data-dock="right"] main{padding-right:104px}
+html[data-dock="left"] main{padding-left:104px}
+html[data-dock="right"] .freebar{padding-right:104px}
+html[data-dock="left"] .freebar{padding-left:104px}
+html[data-dock="top"] section{scroll-margin-top:100px}
+.compass-scrim{position:fixed;inset:0;z-index:59;background:rgba(10,14,18,.5)}
+.compass-scrim[hidden]{display:none}
+.compass-wrap{position:fixed;z-index:62;display:flex;align-items:center;background:var(--surface)}
+html[data-dock="bottom"] .compass-wrap,html[data-dock="top"] .compass-wrap{left:0;right:0;flex-direction:row;justify-content:space-between;gap:8px;padding:6px 14px}
+html[data-dock="bottom"] .compass-wrap{bottom:0;padding-bottom:calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.14)}
+html[data-dock="top"] .compass-wrap{top:0;border-bottom:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.14)}
+html[data-dock="right"] .compass-wrap,html[data-dock="left"] .compass-wrap{top:0;bottom:0;width:96px;flex-direction:column;justify-content:center;gap:16px;padding:12px 6px}
+html[data-dock="right"] .compass-wrap{right:0;border-left:1px solid var(--line);box-shadow:-4px 0 16px rgba(0,0,0,.14)}
+html[data-dock="left"] .compass-wrap{left:0;border-right:1px solid var(--line);box-shadow:4px 0 16px rgba(0,0,0,.14)}
+/* The compass stack stretches across the bar's content box (top/bottom
+   matching the bar's own padding) and centers its disc and pill inside
+   it — the same box the in-flow stacks are centered in. Centering with
+   top:50% instead would measure the padding box, and the bottom bar's
+   safe-area padding (6px + env(safe-area-inset-bottom)) would push the
+   compass half that inset below its neighbours on a real phone. */
+html[data-dock="bottom"] .compass-stack,html[data-dock="top"] .compass-stack{position:absolute;left:50%;top:6px;bottom:6px;transform:translateX(-50%);justify-content:center}
+html[data-dock="bottom"] .compass-stack{bottom:calc(6px + env(safe-area-inset-bottom))}
+html[data-dock="bottom"] .compass-wrap.bar-even,html[data-dock="top"] .compass-wrap.bar-even{justify-content:space-evenly}
+html[data-dock="bottom"] .compass-wrap.bar-even .compass-stack,html[data-dock="top"] .compass-wrap.bar-even .compass-stack{position:static;transform:none}
+html[data-dock="right"] .compass-wrap.bar-even,html[data-dock="left"] .compass-wrap.bar-even{justify-content:space-evenly}
+.dock-stack{display:flex;flex-direction:column;align-items:center;gap:2px;flex:none;padding:0;margin:0;background:none;border:none;cursor:pointer;text-decoration:none;font:inherit;color:var(--ink)}
+button.dock-disc{cursor:pointer;padding:0;font:inherit}
+.dock-disc{width:46px;height:46px;border-radius:50%;border:2px solid var(--slate-deep);background:var(--slate);color:#fff;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.02rem;line-height:1;flex:none}
+.dock-disc svg{width:24px;height:24px;fill:#fff}
+.dock-pill{margin-top:-9px;position:relative;background:var(--slate-deep);color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap;text-align:center;line-height:1.35}
+.missing-pill{white-space:normal;max-width:5.4rem}
+html[data-dock="top"] .missing-pill,html[data-dock="bottom"] .missing-pill{max-width:8.4rem}
+.dock-stack:hover .dock-disc,.dock-stack:focus-visible .dock-disc,button.dock-disc:hover,button.dock-disc:focus-visible{background:var(--slate-deep)}
+.dock-stack:focus-visible,button.dock-disc:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:10px}
+#barClose{display:none}
+#barClose.show{display:flex}
+
+/* ---------- Compass panel — navigation only ---------- */
+.compass-panel{position:fixed;z-index:61;width:min(430px,calc(100vw - 20px));max-height:82vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px}
+.compass-panel[hidden]{display:none}
+html[data-dock="bottom"] .compass-panel{left:50%;bottom:98px;transform:translateX(-50%)}
+html[data-dock="top"] .compass-panel{left:50%;top:98px;transform:translateX(-50%)}
+html[data-dock="right"] .compass-panel{right:106px;left:auto;top:50%;transform:translateY(-50%);width:min(430px,calc(100vw - 118px))}
+html[data-dock="left"] .compass-panel{left:106px;right:auto;top:50%;transform:translateY(-50%);width:min(430px,calc(100vw - 118px))}
+.compass-head{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:-16px;margin:-16px -16px 4px;padding:10px 10px 10px 16px;background:var(--surface);border-bottom:1px solid var(--line);z-index:1}
+.compass-head h4{margin:0;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.compass-close{flex:0 0 auto;min-height:44px;padding:8px 14px;cursor:pointer;background:var(--surface2);color:var(--slate-deep);border:1px solid var(--slate);border-radius:999px;font:inherit;font-size:.92rem;font-weight:700;white-space:nowrap}
+.compass-close-stay{display:block;width:100%;margin-top:10px;min-height:44px;padding:10px;cursor:pointer;background:none;color:var(--muted);border:1px solid var(--line);border-radius:11px;font:inherit;font-size:.95rem}
+.compass-panel .small{font-size:.88rem;color:var(--muted);margin:0 0 8px;line-height:1.45}
+.compass-panel .small strong{color:var(--ink)}
+.compass-prev{display:block;width:100%;margin:2px 0 8px;min-height:44px;padding:9px 10px;cursor:pointer;background:none;color:var(--slate-deep);text-align:left;border:1px solid var(--line);border-radius:11px;font:inherit;font-size:.95rem;font-weight:600}
+.compass-prev:disabled{color:var(--muted);cursor:default;opacity:.75;font-weight:400}
+.bookend-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px}
+.compass-panel .bookend-row a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px;padding:8px 6px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);font-size:.93rem;line-height:1.25;color:var(--slate-deep);text-decoration:none;font-weight:700}
+.goto-toggle,.other-toggle{display:flex;width:100%;margin-top:10px;min-height:48px;padding:10px 12px;cursor:pointer;background:var(--surface2);color:var(--slate-deep);text-align:left;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;font:inherit;font-size:1rem;font-weight:700}
+.goto-toggle .goto-sub,.other-toggle .goto-sub{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-top:1px}
+.goto-toggle .goto-arrow,.other-toggle .other-arrow{flex:none;color:var(--slate);font-size:1.05rem;line-height:1}
+.goto-group[hidden],.other-pages[hidden]{display:none}
+.goto-group{margin-top:8px}
+.goto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 2px}
+.compass-panel .goto-grid a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px;padding:8px 6px;border:1px solid var(--line);border-radius:11px;background:var(--bg);font-size:.93rem;line-height:1.25;color:var(--ink);text-decoration:none;font-weight:600}
+.compass-panel .goto-grid a:hover,.compass-panel .bookend-row a:hover,.goto-toggle:hover,.other-toggle:hover{border-color:var(--slate)}
+.other-pages{margin-top:8px}
+.compass-panel a.pg-link{display:block;padding:7px 10px;border-radius:9px;color:var(--ink);text-decoration:none;font-size:1rem;min-height:44px}
+.compass-panel a.pg-link:hover{background:var(--surface2)}
+.compass-panel span.pg-link{display:block;padding:7px 10px;border-radius:9px;color:var(--muted);font-size:1rem;min-height:44px}
+.compass-panel span.pg-link .pg-name{font-weight:600}
+.compass-panel .pg-name{display:block;font-weight:700}
+.compass-panel .pg-desc{display:block;font-size:.86rem;color:var(--muted);margin-top:2px;line-height:1.4}
+.pg-cat{font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 10px 4px;border-top:1px dashed var(--line);padding-top:10px}
+.compass-center{display:block;width:100%;margin-top:16px;background:var(--slate-deep);color:#fff;border:1px solid var(--slate-deep);border-radius:11px;padding:10px;cursor:pointer;font:inherit;font-size:.95rem;font-weight:600}
+.compass-center small{display:block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;opacity:.8;font-weight:700}
+
+/* ---------- Page settings sheet — layered faces ---------- */
+.settings-backdrop{position:fixed;inset:0;z-index:65;background:rgba(10,14,18,.5)}
+.settings-backdrop[hidden]{display:none}
+.settings-panel{position:fixed;z-index:70;left:50%;top:50%;transform:translate(-50%,-50%);width:min(580px,calc(100vw - 24px));max-height:88vh;overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+.settings-panel[hidden]{display:none}
+.settings-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.settings-head h2{font-size:1.4rem;margin:0}
+.settings-close{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:8px;width:44px;height:44px;min-height:44px;font-size:1.4rem;line-height:1;cursor:pointer;flex:none}
+.settings-panel .small{font-size:.9rem;color:var(--muted);margin:0 0 8px;line-height:1.45}
+.settings-panel .small b{color:var(--ink)}
+.settings-face{border:1px solid var(--line);border-radius:10px;background:var(--bg);margin:16px 0 0;padding:0}
+.settings-face > summary{list-style:none;cursor:pointer;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;color:var(--slate-deep)}
+.settings-face > summary::-webkit-details-marker{display:none}
+.settings-face > summary::after{content:"\25BE";flex:none;color:var(--slate);font-size:1.15rem;line-height:1;transition:transform .18s ease}
+.settings-face[open] > summary::after{transform:rotate(180deg)}
+@media (prefers-reduced-motion: reduce){ .settings-face > summary::after{transition:none} }
+.settings-face-name{display:block;font-weight:700;font-size:1.05rem;line-height:1.3}
+.settings-face-core{display:block;font-size:.88rem;font-weight:600;color:var(--muted);margin-top:2px;line-height:1.4}
+.settings-face-core b{color:var(--ink)}
+.settings-face-body{border-top:1px solid var(--line);padding:.85rem 1rem 1rem}
+.hpicks{display:grid;gap:8px;margin-top:6px}
+.hpick{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:48px;cursor:pointer;font-weight:600;font-size:.98rem}
+.hpick input{width:22px;height:22px;min-height:22px;flex:none;accent-color:var(--accent);margin:0}
+.settings-note{border:1px solid var(--slate);background:var(--surface2);border-radius:10px;padding:12px 14px;margin-top:20px;font-size:.93rem;color:var(--muted)}
+.settings-note p{margin:0 0 10px}
+.settings-note b{color:var(--ink)}
+.refresh-btn{background:var(--slate-deep);color:#fff;border:1px solid var(--slate-deep);border-radius:8px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;min-height:44px}
+
+/* ---------- What are we missing ---------- */
+.poster-door{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:700;border-radius:999px;padding:13px 22px;min-height:48px;margin-top:14px}
+.missing-layer{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:4px 18px 14px;margin-top:0}
+.missing-layer summary{font-size:1.02rem}
+.invite-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+.invite{background:var(--surface2);border-radius:12px;padding:14px 16px;font-size:.96rem}
+.invite b{display:block;margin-bottom:4px}
+
+@media (max-width:760px){
+  .invite-grid{grid-template-columns:1fr}
+  .wrap{padding-left:14px;padding-right:14px}
+  body{font-size:16px}
+  .dock-disc{width:44px;height:44px}
+  html[data-dock="right"] main{padding-right:94px}
+  html[data-dock="left"] main{padding-left:94px}
+  html[data-dock="right"] .freebar{padding-right:94px}
+  html[data-dock="left"] .freebar{padding-left:94px}
+  .compass-panel{padding:14px}
+  .settings-panel{padding:16px}
+  .resume-paper{padding:24px 18px}
+  .resume-paper .rdates{float:none;display:block}
+}
+@media print{
+  .freebar,.compass-wrap,.compass-panel,.compass-scrim,.settings-panel,.settings-backdrop,.offline-door,.no-print{display:none !important}
+  html[data-dock="right"] main,html[data-dock="left"] main{padding:0}
+  body{padding:0 !important;background:#fff}
+  .wrap{padding:0;max-width:none}
+  section{display:none !important}
+  #previewSec{display:block !important;margin:0}
+  #previewSec .sec-head,#previewSec .preview-tools,#previewSec .copy-note,#previewSec .explain{display:none !important}
+  .resume-paper{box-shadow:none;border:none;max-width:none;padding:0;font-size:12pt}
+}
+</style>
+</head>
+<body id="top">
+
+<div class="freebar">
+  <div class="big">Free. Always free.</div>
+  <p>Every part of this builder costs $0 to use — and this page itself is
+  <button class="offline-door" id="offlineBtn" type="button">available offline for free — tap to download it</button></p>
+  <div class="offline-note">The download saves this whole page as one file you can open anywhere, no connection needed.</div>
+</div>
+
+<main>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>The Resume Builder</h1>
+    <p class="sub">Never beg to work somewhere — and never lie to get in, either. A resume is a <b>record of what you actually did</b>, said in words the reader can find. Most big companies run every application through <b>ATS</b> first — <b>applicant tracking software: the program that reads and ranks resumes before a person ever sees them</b>. This builder writes your real record in the plain format that software can actually read, then checks it against a real job posting — honestly, without stuffing in a single word you didn't write.</p>
+    <div class="chiprow" aria-label="What this page is">
+      <span class="chip">Free</span>
+      <span class="chip">Open beta</span>
+      <span class="chip">Built with AI — Muse</span>
+      <span class="chip plain">Nothing you type leaves this device</span>
+      <span class="chip plain">No account · No upload</span>
+    </div>
+    <div class="hardline">
+      <h2>The honest promise, up front</h2>
+      <p>No builder can guarantee you a hire — anybody who promises that is selling something. What this one <em>can</em> do is make sure your real record gets <strong>read</strong>: by the software first, and by the person after it. No inflated claims, no fake scores, no keywords you can't back up in a room. A lie on a resume is a debt that comes due at the interview.</p>
+    </div>
+  </div>
+
+  <section id="builder" aria-labelledby="builder-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">✎</span><h2 id="builder-h">1 · Build your resume</h2>
+      <p>Fill in what you've actually done. The preview below updates as you type, and your draft saves itself on this device as you go — see the note at the bottom of the form.</p></div>
+
+    <form class="builder" id="builderForm" autocomplete="off">
+      <div class="fgroup">
+        <h3>Your name &amp; how to reach you</h3>
+        <p class="ghint">This goes at the top of the resume itself, in the body of the document — never in a page header or footer, because the screening software often can't read those.</p>
+        <div class="fgrid">
+          <div class="field"><label for="fName">Full name</label><input type="text" id="fName" data-bind="name" placeholder="e.g. Jordan Ellis" /></div>
+          <div class="field"><label for="fCity">City, State</label><input type="text" id="fCity" data-bind="city" placeholder="e.g. Fort Worth, TX" /></div>
+          <div class="field"><label for="fPhone">Phone</label><input type="tel" id="fPhone" data-bind="phone" placeholder="e.g. (817) 555-0142" /></div>
+          <div class="field"><label for="fEmail">Email</label><input type="email" id="fEmail" data-bind="email" placeholder="e.g. jordan.ellis@example.com" /></div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <h3>Summary</h3>
+        <p class="ghint">One to three lines: what you do, how long you've done it, and the strongest true thing about your work. Not a wish — a record.</p>
+        <div class="field full"><label for="fSummary">Your summary</label>
+          <textarea id="fSummary" data-bind="summary" placeholder="e.g. Line cook with 4 years in high-volume kitchens. Prepped and plated 150+ covers a night; trained 6 new hires on the station."></textarea></div>
+      </div>
+
+      <div class="fgroup">
+        <h3>Work experience</h3>
+        <p class="ghint">One job at a time, most recent first. Under each job, write <b>one thing you did per line</b> — start with what you <em>did</em>, and add a number or a result wherever there's a true one: “Ran the register for 200+ customers a shift” beats “responsible for the register” every time. Duty-filler like “responsible for…” gets flagged under the box, gently.</p>
+        <div id="jobsWrap"></div>
+        <button class="add-btn" id="addJob" type="button">+ Add another job</button>
+      </div>
+
+      <div class="fgroup">
+        <h3>Skills</h3>
+        <p class="ghint">The things you can actually do — tools, machines, programs, kinds of work. Separate them with commas or put one on each line. Only list what you could demonstrate or talk through in an interview.</p>
+        <div class="field full"><label for="fSkills">Your skills</label>
+          <textarea id="fSkills" data-bind="skills" placeholder="e.g. Cash register, inventory counts, forklift, Microsoft Excel, food safety, scheduling"></textarea></div>
+      </div>
+
+      <div class="fgroup">
+        <h3>Education</h3>
+        <p class="ghint">School, what you earned there, and the year. Still in school counts — say so plainly.</p>
+        <div id="eduWrap"></div>
+        <button class="add-btn" id="addEdu" type="button">+ Add another school</button>
+      </div>
+
+      <div class="fgroup">
+        <h3>Certifications</h3>
+        <p class="ghint">Licenses and certificates you actually hold — one per line, with the year if you know it. These matter more than most people think: some application systems ask about required licenses as yes/no knockout questions (questions that end an application on the spot), so the real ones belong where they can be found.</p>
+        <div class="field full"><label for="fCerts">Your certifications</label>
+          <textarea id="fCerts" data-bind="certs" placeholder="e.g. Food Handler Card — 2025&#10;Forklift Operator Certification — 2024"></textarea></div>
+      </div>
+
+      <div class="save-row">
+        <span class="save-state" id="saveState"><b>Saved on this device only</b> — nothing is sent anywhere. Your draft restores itself when you come back.</span>
+        <button class="forget-btn" id="forgetBtn" type="button">Forget my resume</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="previewSec" aria-labelledby="preview-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">▤</span><h2 id="preview-h">2 · Your resume, live</h2>
+      <p>This is the document itself — one column, plain headings, no tables, no graphics. Plain on purpose: it's built for the software that reads it first. <a href="#why">Why it looks this plain</a> is one tap down.</p></div>
+    <div class="resume-paper" id="resumePaper" aria-live="polite"></div>
+    <div class="preview-tools no-print">
+      <button class="act-btn" id="copyBtn" type="button">Copy plain text</button>
+      <button class="ghost-btn" id="printBtn" type="button">Print / Save as PDF</button>
+      <button class="ghost-btn" id="downloadBtn" type="button">Download .txt</button>
+    </div>
+    <p class="copy-note" id="copyNote">“Copy plain text” is the safest thing to paste into any application form — it carries no formatting the software can choke on.</p>
+  </section>
+
+  <section id="match" aria-labelledby="match-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">⚖</span><h2 id="match-h">3 · The honest match check</h2>
+      <p>Paste a real job posting. The tool pulls the posting's own key phrases and shows you two lists: what's already in your resume, and what's in the posting but not in your resume. Then it asks the only honest question there is.</p></div>
+    <div class="explain">
+      <p><b>How this works — and what it will never do.</b> Many screening systems match the posting's exact words and don't understand synonyms, so the honest move is to describe what you really did using the posting's own words for it — same work, their vocabulary. This tool will <b>never</b> insert a skill, title, or claim you didn't write. It won't stuff keywords either: stuffing (cramming a posting's words into a resume whether they're true or not) is now flagged by newer systems, and a claim you can't back up is a debt that comes due at the interview.</p>
+    </div>
+    <div class="matcher">
+      <div class="field"><label for="postingInput">The job posting</label>
+        <textarea id="postingInput" placeholder="Paste the whole posting here — the duties, the requirements, all of it. It stays on this device; nothing is sent anywhere."></textarea>
+        <p class="hint">The tool reads the posting's repeated key phrases — titles, skills, tools, duties. It's a word-matcher, not a judge: a phrase can matter even if it appears once, and a repeated phrase can be boilerplate. You decide what counts.</p>
+      </div>
+      <div class="preview-tools" style="justify-content:flex-start;margin-top:14px">
+        <button class="act-btn" id="matchBtn" type="button">Check the match</button>
+      </div>
+      <p class="match-err" id="matchErr" hidden></p>
+      <div class="match-results" id="matchResults" hidden>
+        <div class="match-cols">
+          <div class="match-col have">
+            <h3>✓ Already in your resume</h3>
+            <ul class="phrase-list" id="haveList"></ul>
+          </div>
+          <div class="match-col">
+            <h3>Not in your resume — yet</h3>
+            <p class="small" style="margin:0">For each one, the question is the same: <b>have you actually done this?</b> If yes, say where — in your own words — and your line goes into your most recent job, exactly as you wrote it. If no, leave it out. Leaving it out is a complete answer.</p>
+            <div id="missList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="why" aria-labelledby="why-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">◐</span><h2 id="why-h">4 · Why it looks this plain</h2>
+      <p>The three layers, the way this page explains everything: what it is, what it means, and what it could mean for you.</p></div>
+    <div class="three-layers">
+      <div class="tlayer"><h3>What it is</h3><p>A <b>single-column document</b> with standard headings — Summary, Work Experience, Skills, Education, Certifications — contact details in the body, no tables, no columns, no graphics, no text tucked into headers or footers.</p></div>
+      <div class="tlayer"><h3>What it means</h3><p>Screening software reads a resume the way a form reads fields: top to bottom, one line at a time. Columns make it read across two jobs as if they were one. Tables scramble the order. Graphics and header/footer text often <b>don't get read at all</b>. Plain isn't a style choice — it's the shape the reader can parse.</p></div>
+      <div class="tlayer"><h3>What it could mean for you</h3><p>Every job you ever held is already written down in you. In this format, <b>all of it survives the trip</b> — the software sees the same record the human sees, and nothing true about your work gets lost to a layout.</p></div>
+    </div>
+    <details class="layer">
+      <summary>One tap deeper — the plain-text version, and when to use each output</summary>
+      <p><b>Copy plain text</b> is the safest output of the three: pasted into an application form or an email, it arrives exactly as written, with no hidden formatting. <b>Print / Save as PDF</b> prints only the resume — none of this page around it — for postings that ask for a file or for handing to a person. <b>Download .txt</b> gives you the same plain text as a file you can keep, send, or paste later. If a posting asks for a specific file type, follow the posting — the words matter more than the wrapper.</p>
+    </details>
+  </section>
+
+  <section id="facts" aria-labelledby="facts-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">⚖</span><h2 id="facts-h">5 · The record on screening software</h2>
+      <p>What is actually known about the software your resume meets first — every claim labeled with how solid it is, at the size the claim deserves.</p></div>
+
+    <div class="fact">
+      <h3>About 98% of Fortune 500 companies route applications through screening software before a human reads them<span class="label verified">Verified — as reported</span></h3>
+      <p>That's from Jobscan's Fortune 500 report (2025), which checked the application systems of the largest US companies directly. One honest note: Jobscan sells resume tools for this exact software, so it has an interest in the topic — but the underlying count is a checkable, company-by-company audit, and it's the best public count there is. The takeaway stands either way: at any large company, <b>software is your first reader</b>.</p>
+    </div>
+
+    <div class="fact big-correction">
+      <h3>“75% of resumes are auto-rejected by the software” — that famous claim is NOT VERIFIED<span class="label notverified">Not verified</span></h3>
+      <p>You will see this number everywhere, usually from someone selling a fix for it. It traces back to <b>Preptel</b>, a resume company that <b>shut down in 2013</b> and <b>never published any method</b> behind the figure — no study, no sample, no data anyone can check. It has been repeated for over a decade because it scares people into buying things. Treat it the way you'd treat any claim with no record behind it: it isn't evidence, and it isn't a reason to panic — or to stuff a resume with words that aren't yours.</p>
+    </div>
+
+    <div class="fact">
+      <h3>Most systems rank and sort — they don't auto-reject your content<span class="label estimate">Estimate — small study</span></h3>
+      <p>A 2025 study of US recruiters by Enhancv (n=25 — a small sample, so hold it as a strong hint, not a census) found that most screening systems <b>rank and sort</b> applications for a human rather than throwing them out over wording. The rejections that really are automatic are mostly <b>knockout questions</b>: are you authorized to work here, do you hold the required license, can you work the required schedule. Those are yes/no gates, answered by you — so answer them <b>honestly and exactly</b>, and make sure any license they ask about also appears in your Certifications, spelled the way the posting spells it.</p>
+    </div>
+
+    <div class="fact">
+      <h3>Formatting is the silent killer<span class="label estimate">Estimate — vendor-reported</span></h3>
+      <p>In vendor testing of resume-parsing software, a plain single-column document was read at about <b>93% accuracy</b>, against about <b>86%</b> for a two-column layout — and tables badly scramble what the software reads, mixing lines from different jobs together. These figures come from the companies that sell the software (interested parties, labeled as such), but every independent test points the same direction: <b>the plainer the document, the more of you survives the read</b>. That's why this builder makes exactly one layout.</p>
+    </div>
+
+    <div class="fact">
+      <h3>The software matches words, not meanings<span class="label verified">Verified — as reported</span></h3>
+      <p>Many systems search for the posting's exact words and do not understand that “ran the register” and “cash handling” are the same work. So the honest move is not invention — it's translation: describe what you <em>really did</em> using the posting's own words for it, where those words are true. Same work, their vocabulary. The match check above exists to find exactly those spots.</p>
+    </div>
+
+    <div class="fact">
+      <h3>One resume per posting beats one resume for everywhere<span class="label verified">Verified — as reported</span></h3>
+      <p>Because the match is against <em>that</em> posting's words, a resume tailored to one posting — your real record, arranged and worded for that job — outperforms the same generic resume blasted at fifty postings. Tailoring is not lying: it's choosing which true things to put first and what to call them. Your draft saves on this device, so tailoring a copy for the next posting starts from your record, not from a blank page.</p>
+    </div>
+  </section>
+
+  <section id="missing" aria-labelledby="missing-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">?!</span><h2 id="missing-h">What are we missing?</h2>
+      <p>Help us make these the tools you really need. Every page here stays in open beta, permanently — everybody using it is a tester, and this is the testers' door.</p></div>
+    <details class="missing-layer" id="missingDoor">
+      <summary>Open — say what's missing, what's wrong, or what tool is really needed</summary>
+      <div class="invite-grid">
+        <div class="invite"><b>What's missing</b>A kind of work this builder words badly, a section real resumes need that isn't here, a trade whose language the match check should understand better.</div>
+        <div class="invite"><b>What's wrong</b>A claim on this page you can check and we got wrong, a figure that's gone stale, a step that doesn't work the way it says. Name it, and it gets checked and fixed in place.</div>
+        <div class="invite"><b>What tool is really needed</b>The thing you actually needed while applying — a cover-letter record, a way to track where you applied, help answering knockout questions straight — that nobody has built honestly yet.</div>
+      </div>
+      <a class="poster-door" href="https://theposterboard.fwh.is" target="_blank" rel="noopener">Say it on the Poster Board ↗</a>
+      <p style="margin:12px 0 4px;color:var(--muted);font-size:.95rem">The Poster Board is public and free — no account, no sign-up. Guest posts are held in a moderation queue before they appear, so nothing posted there is lost to spam. If you'd rather talk than post, the conversation is welcome there too.</p>
+    </details>
+  </section>
+
+  <section id="sources" aria-labelledby="sources-h">
+    <div class="sec-head"><span class="motif" aria-hidden="true">📚</span><h2 id="sources-h">Sources &amp; open questions</h2>
+      <p>Research gathered November 14, 2026. Every figure on this page is as reported on the date shown beside it. Interests are noted where they matter.</p></div>
+    <ul class="sources">
+      <li>Jobscan — Fortune 500 ATS usage report (2025): roughly 98% of Fortune 500 companies use applicant tracking software. Jobscan sells ATS resume tools — an interested party; the count itself is a company-by-company audit of public application systems.</li>
+      <li>The “75% auto-rejected” figure: traced to Preptel, a resume-services company that ceased operating in 2013; no study or methodology was ever published. Repeated widely by resume services since — labeled NOT VERIFIED on this page at full size, on purpose.</li>
+      <li>Enhancv — 2025 survey of US recruiters (n=25): screening systems primarily rank and sort; automatic rejections concentrate in knockout questions (work authorization, required licenses, schedule). Small sample — treated on this page as an estimate, not a census.</li>
+      <li>Resume-parsing accuracy figures (single-column ~93% vs two-column ~86%; tables scrambling parse order): vendor-reported testing by parsing-software companies — interested parties, labeled vendor-reported wherever used.</li>
+      <li>Exact-word matching and limited synonym handling: as documented in ATS vendor documentation and recruiter guidance (2025) — the basis for the “same work, their vocabulary” rule and for the match check's design.</li>
+      <li>This tool's privacy, stated plainly: the builder, the match check, and the draft save all run in the visitor's own browser. The draft is kept in this browser's local storage on this device only, is never transmitted, and is erased by the “Forget my resume” control. The match check's phrase extraction is simple word-counting done on this device — no AI reads your posting or your resume.</li>
+    </ul>
+    <div class="explain" style="margin-top:16px">
+      <p><b>Open questions, plainly:</b> recruiter-survey samples on screening software are small and mostly run by companies that sell into the market; there is no public, independent census of how each major system ranks. Parsing accuracy varies by system and by document. Where this page couldn't verify, it says so at the claim, at full size — and the What are we missing door above is where a better source belongs.</p>
+    </div>
+  </section>
+
+  <div class="foot" id="bottom">
+    <p>The Resume Builder — part of The Thriving Plan. Copyleft: this page is CC BY-SA 4.0 — copy it, share it, build on it; anything made from it carries the same freedom. The name (The Thriving Plan) is not part of the grant.</p>
+    <p><a href="#top">Back to the top ↑</a></p>
+  </div>
+
+</div>
+</main>
+
+<!-- ============ Compass dock — the house kit ============
+     A bar of icon-over-label stacks: the ?! stack fronting this
+     page's What are we missing section at the left, the compass
+     disc over the Navigate pill centered, the Settings stack at
+     the right — all discs one size. Bottom by default; the dock
+     position lives in Page settings and is saved on this device.
+     The compass is navigation only: Go to opens as two dropdown
+     faces (This page / Other pages), both folded on open, with
+     Previous part, Last place, and the Top/Bottom bookends outside
+     the folds. When the panel or the settings sheet is open, a
+     bar-level Close stack joins the bar and the stacks space
+     evenly across it. -->
+<div class="compass-scrim" id="compassScrim" hidden></div>
+<div class="compass-wrap" id="compassWrap">
+  <a class="dock-stack" id="missingBtn" href="#missing" aria-label="What are we missing?! — go to the What are we missing section">
+    <span class="dock-disc" aria-hidden="true">?!</span>
+    <span class="dock-pill missing-pill">What are we missing</span>
+  </a>
+  <div class="dock-stack compass-stack">
+    <button class="dock-disc" id="compassBtn" type="button" aria-label="Open navigation" aria-haspopup="true" aria-expanded="false" aria-controls="compassPanel">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="1.4"/>
+        <path d="M20 6 L23.5 20 L20 34 L16.5 20 Z" fill="#ffffff"/>
+        <path d="M6 20 L20 16.5 L34 20 L20 23.5 Z" fill="rgba(255,255,255,.55)"/>
+        <circle cx="20" cy="20" r="2.6" fill="#ffffff"/>
+      </svg>
+    </button>
+    <span class="dock-pill">Navigate</span>
+  </div>
+  <button class="dock-stack" id="barClose" type="button" aria-label="Close the open panel">
+    <span class="dock-disc" aria-hidden="true">✕</span>
+    <span class="dock-pill">Close</span>
+  </button>
+  <button class="dock-stack" id="settingsBtn" type="button" aria-expanded="false" aria-controls="settingsPanel">
+    <span class="dock-disc" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></span>
+    <span class="dock-pill">Settings</span>
+  </button>
+</div>
+
+<nav class="compass-panel" id="compassPanel" hidden aria-label="Page navigation">
+  <div class="compass-head">
+    <h4>Go to</h4>
+    <button class="compass-close" id="compassClose" type="button" aria-label="Close navigation and stay here">✕ Close</button>
+  </div>
+  <p class="small">Two short lists, kept folded so they are easy to scan. Tap <strong>This page</strong> for places here, or <strong>Other pages</strong> for doors off this page.</p>
+  <button class="compass-prev" id="compassPrev" type="button" disabled>← Previous part — no previous place yet</button>
+  <div class="bookend-row" aria-label="Top and bottom of this page">
+    <a href="#top" data-place="Top of page">↑ Top</a>
+    <a href="#bottom" data-place="Bottom of page">↓ Bottom</a>
+  </div>
+  <button class="goto-toggle" id="thisPagesToggle" type="button" aria-expanded="false" aria-controls="thisPages"><span>This page<span class="goto-sub">Sections on this page</span></span><span class="goto-arrow" id="thisPagesArrow" aria-hidden="true">▾</span></button>
+  <div class="goto-group" id="thisPages" hidden>
+    <div class="goto-grid">
+      <a href="#builder" data-place="Build your resume">1 · Build your resume</a>
+      <a href="#previewSec" data-place="Your resume, live">2 · Your resume, live</a>
+      <a href="#match" data-place="The honest match check">3 · Match check</a>
+      <a href="#why" data-place="Why it looks this plain">4 · Why so plain?</a>
+      <a href="#facts" data-place="The record on screening software">5 · The record</a>
+      <a href="#missing" data-place="What are we missing?">6 · Missing?</a>
+      <a href="#sources" data-place="Sources &amp; open questions">7 · Sources</a>
+    </div>
+  </div>
+  <button class="other-toggle" id="otherPagesToggle" type="button" aria-expanded="false" aria-controls="otherPages"><span>Other pages<span class="goto-sub">Doors off this page</span></span><span class="other-arrow" id="otherPagesArrow" aria-hidden="true">▾</span></button>
+  <div class="other-pages" id="otherPages" hidden>
+    <p class="small">The most important pages come first — the serious and record pages ahead of everything else, then Tools, then For fun on its own shelf. Each door opens its own page, at its own address; your browser's back button brings you right back here.</p>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is" target="_blank" rel="noopener"><span class="pg-name">The Thriving Plan ↗</span><span class="pg-desc">The one root everything branches from.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/any-legal-case-the-record-qs6xc8xpohxpxmo/3Mz7y6LxZlpRvFjKrNn0KOpzMW44OTcYbNm-VJ4EkrU" target="_blank" rel="noopener"><span class="pg-name">Any Legal Case — The Record ↗</span><span class="pg-desc">The legal side of this umbrella: a free tool for any person, any case — lay the record out straight.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/for-veterans-the-record.html" target="_blank" rel="noopener"><span class="pg-name">For Veterans — The Record ↗</span><span class="pg-desc">For veterans — the record laid out straight: what's owed, what's in the way, and the free help that's already there by law.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/the-thought-process.html" target="_blank" rel="noopener"><span class="pg-name">The Thought Process ↗</span><span class="pg-desc">How this AI works — the thought process, in the open.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/test-runs.html" target="_blank" rel="noopener"><span class="pg-name">Test Runs — The Results ↗</span><span class="pg-desc">The tests already run against the plan, filed on their own page: 119 runs, their graphs, and the pattern they make.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/flights" target="_blank" rel="noopener"><span class="pg-name">US Flights Grounded — November 13, 2026 ↗</span><span class="pg-desc">The November 13, 2026 groundings, on the record.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/mkultra-and-mind-control-the-record.html" target="_blank" rel="noopener"><span class="pg-name">MKUltra and Mind Control — The Record ↗</span><span class="pg-desc">MKUltra and mind control — what the record shows.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/my-dui-case-the-record-mxg6xc3xdxdh5xjxg/lI3LrVPdIODp8oddo6XOtXN563MXu5VJS-DLgl-AEIk" target="_blank" rel="noopener"><span class="pg-name">My DUI Case — The Record ↗</span><span class="pg-desc">One DUI case laid out in full, on the record.</span></a>
+    <span class="pg-link"><span class="pg-name">Officials Resigned Since the Election</span></span>
+    <a class="pg-link" href="https://muse.ai/s/stephen-miller-the-record-wr6xjuxpqjxdxsxs/FSn8u9j9XgB26wUGaYJM3KQHvheBoOE4vYN6ujOOKIA" target="_blank" rel="noopener"><span class="pg-name">Stephen Miller — The Record ↗</span><span class="pg-desc">Stephen Miller's record, laid out from the sources.</span></a>
+    <span class="pg-link"><span class="pg-name">Texas Senate 2026 — The Record</span></span>
+    <span class="pg-link"><span class="pg-name">The Trump Record — Visual Map</span></span>
+    <span class="pg-link"><span class="pg-name">Trump and Minors — Question Examined</span></span>
+    <a class="pg-link" href="https://muse.ai/s/trump-in-the-epstein-files-the-count-xhxm6xcoxu9jxjxlxl/FwNdyOp9N5caGNj17U_rCUJJOMd3I9D3tzNU_TkKTPE" target="_blank" rel="noopener"><span class="pg-name">Trump in the Epstein Files — The Count ↗</span><span class="pg-desc">Trump in the Epstein files — the count, on the record.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/copyleft-vs-copyright.html" target="_blank" rel="noopener"><span class="pg-name">Copyleft vs Copyright ↗</span><span class="pg-desc">Copyleft vs copyright — the two systems, side by side.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/what-abortion-is-xmn6xmx0xlx0qxexuxk/WXkpuDFzwhUrYwcQLnxmYJ1O1zDjVBBhJ-Vl4QjRWuc" target="_blank" rel="noopener"><span class="pg-name">What Abortion Is ↗</span><span class="pg-desc">What abortion is, stated plainly from the record.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/ai-and-the-world-s-jobs-the-data-wxh6xaxsfxlgxmfc/FxC45v-9gOT8T8oxkcuukc48FfOFrqo10Z1V5nJCNwQ" target="_blank" rel="noopener"><span class="pg-name">AI and the World's Jobs — The Data ↗</span><span class="pg-desc">What the data says about AI and jobs worldwide.</span></a>
+    <span class="pg-link"><span class="pg-name">The No-Money Switch</span></span>
+    <span class="pg-link"><span class="pg-name">Darryl Anka — the man who channels Bashar</span></span>
+    <span class="pg-link"><span class="pg-name">Dave Chappelle — The Criticism, Broken Down</span></span>
+    <span class="pg-link"><span class="pg-name">The Darkest Goddesses — The Record</span></span>
+    <span class="pg-link"><span class="pg-name">Psychics &amp; Superhumans — Record Check</span></span>
+    <span class="pg-link"><span class="pg-name">Was Hitler a Socialist?</span></span>
+    <a class="pg-link" href="https://muse.ai/s/which-party-votes-to-keep-prices-high-xpxk6xaxfhxouexqx0/oAX038eb09fo5zrDq3Vb7pVTOL_URqX6PLjqC_Lc0O4" target="_blank" rel="noopener"><span class="pg-name">Which Party Votes to Keep Prices High? — The Stats ↗</span><span class="pg-desc">Voting records on prices — the stats.</span></a>
+    <span class="pg-link"><span class="pg-name">The Nice List — Deep Dive</span></span>
+    <a class="pg-link" href="https://muse.ai/s/the-issue-game-your-ballot-2026-txp6xbrxuxzi4m7/pYdIs0SV7Weq3ynY1AGPFln_xR-twW2TYeiqzKUaWaw" target="_blank" rel="noopener"><span class="pg-name">Truth and Dare — Your Ballot 2026 ↗</span><span class="pg-desc">Your Ballot 2026 — truth and dare on the issues.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener"><span class="pg-name">What Are We Missing? ↗</span><span class="pg-desc">The intake door for what's missing, what's wrong, and what tool is really needed.</span></a>
+    <p class="pg-cat">Tools</p>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/find-a-coupon.html" target="_blank" rel="noopener"><span class="pg-name">Find a Coupon ↗</span><span class="pg-desc">Free coupon, deal, and cashback doors, verified — never pay to use a coupon.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/the-trait-library-xpb6xnjxw8xifo5/fpM0EUQ2xaKUJseueWPMlmi9R7bQI5HbJWZF-qaMHxA" target="_blank" rel="noopener"><span class="pg-name">The Trait Library ↗</span><span class="pg-desc">Nature's trait catalogue — every striking trait, graded honestly, as a candidate tool.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/the-video-release-template-xks6xo0xjxjxthm0/itdjFe8dq3PL-MTND1imPqVUPPvle41WLle_LVPyNMU" target="_blank" rel="noopener"><span class="pg-name">The Video Release Template ↗</span><span class="pg-desc">A ready template for video releases.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/the-holiday-shopping-list-pxh6xo5xlxcxt7wf/anxj7SscFUa8JcMrZ7VDua2hEu5IH7v0wEfp5M2Eto0" target="_blank" rel="noopener"><span class="pg-name">The Shopping List ↗</span><span class="pg-desc">The holiday shopping list — verified picks, no pay-to-rank.</span></a>
+    <p class="pg-cat">For fun</p>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/stars" target="_blank" rel="noopener"><span class="pg-name">Star Chart Maker ↗</span><span class="pg-desc">Cast a full star chart and read it — free, for entertainment, not verdicts.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/star-chart-postcard-xrxq6xnxyxtfxpxzxqv/NiAWolORKNUDfO9IVOOHxW3Wg0lhZtVfx3GhaIAjOVE" target="_blank" rel="noopener"><span class="pg-name">Star Chart Postcard ↗</span><span class="pg-desc">The star chart, postcard-style.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/star-chart-qb6xlxpeb6xgxta/iY_pEszoXyMJTsVLs8U0vo5GLgR0GJJSN5PLFF4UbAo" target="_blank" rel="noopener"><span class="pg-name">Star Chart ↗</span><span class="pg-desc">One complete chart, worked in full — this Maker's companion page.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener"><span class="pg-name">Create Your Own Story ↗</span><span class="pg-desc">Build your own story, step by step.</span></a>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/a-modern-day-brontosaurus.html" target="_blank" rel="noopener"><span class="pg-name">A Modern-Day Brontosaurus ↗</span><span class="pg-desc">A brontosaurus in the modern day — just for fun.</span></a>
+    <a class="pg-link" href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener"><span class="pg-name">What Are We Missing? ↗</span><span class="pg-desc">The intake door for what's missing, what's wrong, and what tool is really needed.</span></a>
+    <p class="pg-cat">Still growing</p>
+    <p class="small">Early ideas. Some were an hour's thought. They have their place — they're not finished.</p>
+    <a class="pg-link" href="https://thethrivingplan.fwh.is/unicorns-do-not-exist.html" target="_blank" rel="noopener"><span class="pg-name">Unicorns Do Not Exist ↗</span><span class="pg-desc">The unicorn claim checked against 4,500 years of evidence.</span></a>
+    <span class="pg-link"><span class="pg-name">Don't Jump</span></span>
+    <span class="pg-link"><span class="pg-name">Dutch Bros &amp; the Windmill</span></span>
+    <span class="pg-link"><span class="pg-name">Invention Help, by the Record</span></span>
+    <span class="pg-link"><span class="pg-name">Launch Page</span></span>
+    <a class="pg-link" href="https://muse.ai/s/go-for-it-pm6xfxxb1xbo0r/-_4cmnjkeFtuUCqtVpiTjXChVlJc6i5zwmTpQ8HSayc" target="_blank" rel="noopener"><span class="pg-name">Go For It? ↗</span><span class="pg-desc">The football call game — just for fun.</span></a>
+    <span class="pg-link"><span class="pg-name">Purple Halloween String Lights — Side-by-Side</span></span>
+  </div>
+  <button class="compass-center" id="compassCenter" type="button" aria-label="Close navigation and stay at the last place">
+    <small>Last place — tap to close</small><span id="compassLast">Top of page</span>
+  </button>
+  <button class="compass-close-stay" id="compassCloseStay" type="button">Close — stay on this page</button>
+</nav>
+
+<!-- Page settings: this visitor's own choices for this page — where
+     the compass dock sits, and the resume preview's text size. The
+     sheet is layered like the rest of the page: each setting is a
+     closed face (name + core line) with its controls one tap down.
+     Saved on this device only, for this page only — never shared,
+     published, or sent anywhere. -->
+<div class="settings-backdrop" id="settingsBackdrop" hidden></div>
+<div class="settings-panel" id="settingsPanel" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="settings-head">
+    <h2 id="settingsTitle">Page settings</h2>
+    <button class="settings-close" id="settingsClose" type="button" aria-label="Close page settings">×</button>
+  </div>
+
+  <details class="settings-face" id="settingsDockFace">
+    <summary>
+      <span>
+        <span class="settings-face-name">Compass dock position</span>
+        <span class="settings-face-core">Where the dock sits — currently <b id="settingsDockCurrent">Bottom</b>. Tap to change it.</span>
+      </span>
+    </summary>
+    <div class="settings-face-body">
+      <p class="small">Where the whole compass dock sits. The page moves with it — the empty gutter follows the dock, so nothing is ever covered.</p>
+      <div class="hpicks" role="radiogroup" aria-label="Compass dock position">
+        <label class="hpick"><input type="radio" name="dockpos" value="right" aria-label="Dock position: Right"><span>Right</span></label>
+        <label class="hpick"><input type="radio" name="dockpos" value="left" aria-label="Dock position: Left"><span>Left — for left hands</span></label>
+        <label class="hpick"><input type="radio" name="dockpos" value="top" aria-label="Dock position: Top"><span>Top</span></label>
+        <label class="hpick"><input type="radio" name="dockpos" value="bottom" aria-label="Dock position: Bottom" checked><span>Bottom — the house default</span></label>
+      </div>
+    </div>
+  </details>
+
+  <details class="settings-face" id="settingsPreviewFace">
+    <summary>
+      <span>
+        <span class="settings-face-name">Resume preview size</span>
+        <span class="settings-face-core">How big the preview reads — currently <b id="settingsPreviewCurrent">Standard</b>. Tap to change it.</span>
+      </span>
+    </summary>
+    <div class="settings-face-body">
+      <p class="small">Reading size for the on-screen preview only. It changes nothing in the document itself — the copied, downloaded, and printed resume is exactly the same either way.</p>
+      <div class="hpicks" role="radiogroup" aria-label="Resume preview size">
+        <label class="hpick"><input type="radio" name="previewsize" value="standard" checked><span>Standard</span></label>
+        <label class="hpick"><input type="radio" name="previewsize" value="large"><span>Large — easier to read on a small screen</span></label>
+      </div>
+    </div>
+  </details>
+
+  <div class="settings-note">
+    <p><b>Private, and saved right here:</b> these settings are saved in this browser, for this page only — set them once and they're still set when you come back, and they never follow you to another page. They are never shared, published, announced, or sent anywhere. <b>No one has to know except for what they look at on your screen.</b></p>
+    <p><b>Honest timing:</b> applying a change may take a page refresh and a minute to fully apply on some devices. That's normal — not a bug, and not you doing anything wrong.</p>
+    <button class="refresh-btn" id="refreshBtn" type="button">Refresh the page now</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Offline door: download this page as a single file.
+  var btn = document.getElementById('offlineBtn');
+  btn.addEventListener('click', function(){
+    var html = '<!doctype html>\n' + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'resume-builder.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  });
+
+  // ---------- Compass dock — the house kit ----------
+  // The compass is navigation only. The dock's stacks open and close
+  // the Go to panel; every setting lives in the Settings sheet below.
+  var wrap = document.getElementById('compassWrap');
+  var cBtn = document.getElementById('compassBtn');
+  var panel = document.getElementById('compassPanel');
+  var scrim = document.getElementById('compassScrim');
+  var last = document.getElementById('compassLast');
+  var prevBtn = document.getElementById('compassPrev');
+  var barClose = document.getElementById('barClose');
+  var sPanel = document.getElementById('settingsPanel');
+  var sBackdrop = document.getElementById('settingsBackdrop');
+  var sBtn = document.getElementById('settingsBtn');
+
+  // The bar-level Close stack rides the bar whenever a panel or the
+  // settings sheet is open; with it showing, the bar's stacks space
+  // evenly instead of spreading to the ends.
+  function syncBar(){
+    var anyOpen = !panel.hidden || !sPanel.hidden;
+    barClose.classList.toggle('show', anyOpen);
+    wrap.classList.toggle('bar-even', anyOpen);
+  }
+  function collapseGroups(){
+    var tp = document.getElementById('thisPages'), tt = document.getElementById('thisPagesToggle'), ta = document.getElementById('thisPagesArrow'),
+        op = document.getElementById('otherPages'), ot = document.getElementById('otherPagesToggle'), oa = document.getElementById('otherPagesArrow');
+    if(tp){ tp.hidden = true; }
+    if(tt){ tt.setAttribute('aria-expanded','false'); }
+    if(ta){ ta.textContent = '▾'; }
+    if(op){ op.hidden = true; }
+    if(ot){ ot.setAttribute('aria-expanded','false'); }
+    if(oa){ oa.textContent = '▾'; }
+  }
+  function openPanel(){
+    closeSettings();
+    collapseGroups();
+    panel.hidden = false; scrim.hidden = false;
+    cBtn.setAttribute('aria-expanded','true');
+    cBtn.setAttribute('aria-label','Close navigation');
+    syncBar();
+    var c = document.getElementById('compassClose');
+    if(c){ c.focus(); }
+  }
+  function closePanel(){
+    var hadFocus = panel.contains(document.activeElement);
+    panel.hidden = true; scrim.hidden = true;
+    cBtn.setAttribute('aria-expanded','false');
+    cBtn.setAttribute('aria-label','Open navigation');
+    syncBar();
+    if(hadFocus){ cBtn.focus(); }
+  }
+  cBtn.addEventListener('click', function(){ if(panel.hidden){ openPanel(); } else { closePanel(); } });
+  document.getElementById('compassClose').addEventListener('click', closePanel);
+  document.getElementById('compassCloseStay').addEventListener('click', closePanel);
+  document.getElementById('compassCenter').addEventListener('click', closePanel); // names the last place; only ever closes
+  scrim.addEventListener('click', closePanel);
+  document.addEventListener('click', function(e){
+    if(!panel.hidden && !panel.contains(e.target) && !wrap.contains(e.target)){ closePanel(); }
+  });
+
+  // Go to dropdowns: each toggle opens and closes its list in place;
+  // both start folded every time the panel opens (see openPanel).
+  function wireToggle(toggleId, groupId, arrowId){
+    var t = document.getElementById(toggleId), g = document.getElementById(groupId), a = document.getElementById(arrowId);
+    if(t && g){ t.addEventListener('click', function(){
+      var opening = g.hidden;
+      g.hidden = !opening;
+      t.setAttribute('aria-expanded', String(opening));
+      if(a){ a.textContent = opening ? '▴' : '▾'; }
+    }); }
+  }
+  wireToggle('thisPagesToggle','thisPages','thisPagesArrow');
+  wireToggle('otherPagesToggle','otherPages','otherPagesArrow');
+
+  // Previous part: walks a small in-memory history of the places the
+  // compass itself has taken the reader to. Nothing is stored.
+  var placeStack = [], currentHash = '#top';
+  function updatePrev(){
+    if(!prevBtn){ return; }
+    if(placeStack.length){
+      var prev = placeStack[placeStack.length - 1];
+      prevBtn.disabled = false;
+      prevBtn.textContent = '← Previous part — back to ' + prev.name;
+    } else {
+      prevBtn.disabled = true;
+      prevBtn.textContent = '← Previous part — no previous place yet';
+    }
+  }
+  if(prevBtn){ prevBtn.addEventListener('click', function(){
+    if(!placeStack.length){ return; }
+    var prev = placeStack.pop();
+    currentHash = prev.hash;
+    last.textContent = prev.name;
+    updatePrev();
+    closePanel();
+    var el = document.getElementById(prev.hash.slice(1));
+    if(el){ el.scrollIntoView(); } else if(prev.hash === '#top'){ window.scrollTo(0, 0); }
+  }); }
+  panel.querySelectorAll("a[href^='#']").forEach(function(a){
+    a.addEventListener('click', function(){
+      var target = a.getAttribute('href');
+      if(target !== currentHash){
+        placeStack.push({ name: last.textContent, hash: currentHash });
+        currentHash = target;
+        updatePrev();
+      }
+      if(a.dataset.place){ last.textContent = a.dataset.place; }
+      closePanel();
+    });
+  });
+
+  // The ?! stack fronts this page's What are we missing section: it
+  // jumps there and opens the section's layer, so the visitor lands
+  // on the open door, not its closed face.
+  var missingBtn = document.getElementById('missingBtn');
+  if(missingBtn){ missingBtn.addEventListener('click', function(){
+    if(!panel.hidden){ closePanel(); }
+    var door = document.getElementById('missingDoor');
+    if(door){ door.open = true; }
+  }); }
+
+  // ---------- Page settings — this visitor's, this page only ----------
+  // Dock position and preview size, saved in this browser for this
+  // page alone under one key. Nothing here is shared, published,
+  // announced, or sent anywhere: it never leaves this screen.
+  var SETTINGS_KEY = 'resume-builder-page-settings-v1';
+  var settings = { dock:'bottom', preview:'standard' };
+  try {
+    var rawSaved = window.localStorage.getItem(SETTINGS_KEY);
+    if(rawSaved){
+      var savedSettings = JSON.parse(rawSaved);
+      if(savedSettings){
+        if(['right','left','top','bottom'].indexOf(savedSettings.dock) >= 0){ settings.dock = savedSettings.dock; }
+        if(['standard','large'].indexOf(savedSettings.preview) >= 0){ settings.preview = savedSettings.preview; }
+      }
+    }
+  } catch(e){ /* storage unavailable in this browser/session: settings still work for the visit */ }
+  var placedDock = document.documentElement.getAttribute('data-dock');
+  if(['right','left','top','bottom'].indexOf(placedDock) >= 0){ settings.dock = placedDock; }
+  function saveSettings(){
+    try { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e){}
+  }
+  function applySettings(){
+    document.documentElement.setAttribute('data-dock', settings.dock);
+    document.querySelectorAll("input[name='dockpos']").forEach(function(r){ r.checked = (r.value === settings.dock); });
+    var cur = document.getElementById('settingsDockCurrent');
+    if(cur){ cur.textContent = settings.dock.charAt(0).toUpperCase() + settings.dock.slice(1); }
+    document.querySelectorAll("input[name='previewsize']").forEach(function(r){ r.checked = (r.value === settings.preview); });
+    var pcur = document.getElementById('settingsPreviewCurrent');
+    if(pcur){ pcur.textContent = settings.preview === 'large' ? 'Large' : 'Standard'; }
+    var paper = document.getElementById('resumePaper');
+    if(paper){ paper.classList.toggle('large', settings.preview === 'large'); }
+  }
+  document.querySelectorAll("input[name='dockpos']").forEach(function(r){
+    r.addEventListener('change', function(){ if(r.checked){ settings.dock = r.value; saveSettings(); applySettings(); } });
+  });
+  document.querySelectorAll("input[name='previewsize']").forEach(function(r){
+    r.addEventListener('change', function(){ if(r.checked){ settings.preview = r.value; saveSettings(); applySettings(); } });
+  });
+  document.getElementById('refreshBtn').addEventListener('click', function(){ window.location.reload(); });
+  function openSettings(){
+    if(!panel.hidden){ closePanel(); }
+    // Layered, every time: the sheet opens on its faces, folded.
+    sPanel.querySelectorAll('.settings-face').forEach(function(f){ f.open = false; });
+    sPanel.hidden = false; sBackdrop.hidden = false;
+    sBtn.setAttribute('aria-expanded','true');
+    syncBar();
+    var c = document.getElementById('settingsClose');
+    if(c){ c.focus(); }
+  }
+  function closeSettings(){
+    if(sPanel.hidden){ return; }
+    sPanel.hidden = true; sBackdrop.hidden = true;
+    sBtn.setAttribute('aria-expanded','false');
+    syncBar();
+  }
+  sBtn.addEventListener('click', function(){ if(sPanel.hidden){ openSettings(); } else { closeSettings(); } });
+  document.getElementById('settingsClose').addEventListener('click', closeSettings);
+  sBackdrop.addEventListener('click', closeSettings);
+  barClose.addEventListener('click', function(){
+    if(!panel.hidden){ closePanel(); }
+    if(!sPanel.hidden){ closeSettings(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      if(!panel.hidden){ closePanel(); }
+      if(!sPanel.hidden){ closeSettings(); }
+    }
+  });
+  applySettings();
+  syncBar();
+
+  // ---------- The resume builder ----------
+  // Everything below runs in this browser, on this device. The draft
+  // is kept in this browser's local storage under one key, labeled
+  // where it sits, and erased by the Forget control. Nothing is
+  // transmitted anywhere — there is no server side to this page.
+  var DRAFT_KEY = 'resume-builder-draft-v1';
+  function blankJob(){ return { title:'', employer:'', city:'', start:'', end:'', present:false, bullets:'' }; }
+  function blankEdu(){ return { school:'', cred:'', city:'', year:'' }; }
+  function defaultState(){ return { name:'', city:'', phone:'', email:'', summary:'', skills:'', certs:'', jobs:[blankJob()], education:[blankEdu()] }; }
+  var state = defaultState();
+  try {
+    var rawDraft = window.localStorage.getItem(DRAFT_KEY);
+    if(rawDraft){
+      var d = JSON.parse(rawDraft);
+      if(d && typeof d === 'object'){
+        ['name','city','phone','email','summary','skills','certs'].forEach(function(k){ if(typeof d[k] === 'string'){ state[k] = d[k]; } });
+        if(Array.isArray(d.jobs) && d.jobs.length){ state.jobs = d.jobs.map(function(j){ var b = blankJob(); if(j){ ['title','employer','city','start','end','bullets'].forEach(function(k){ if(typeof j[k] === 'string'){ b[k] = j[k]; } }); b.present = !!j.present; } return b; }); }
+        if(Array.isArray(d.education) && d.education.length){ state.education = d.education.map(function(ed){ var b = blankEdu(); if(ed){ ['school','cred','city','year'].forEach(function(k){ if(typeof ed[k] === 'string'){ b[k] = ed[k]; } }); } return b; }); }
+      }
+    }
+  } catch(e){ /* no readable draft: start blank */ }
+
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function linesOf(text){ return String(text || '').split(/\r?\n/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length; }); }
+  function skillsList(){ return String(state.skills || '').split(/[\n,]+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length; }); }
+  function jobDates(j){
+    var end = j.present ? 'Present' : (j.end || '');
+    if(j.start && end){ return j.start + ' – ' + end; }
+    return j.start || end || '';
+  }
+  function jobHasContent(j){ return !!(j.title || j.employer || j.city || j.start || j.end || j.present || linesOf(j.bullets).length); }
+  function eduHasContent(e){ return !!(e.school || e.cred || e.city || e.year); }
+
+  // ----- plain text: the canonical output every door uses -----
+  function plainText(){
+    var out = [];
+    if(state.name.trim()){ out.push(state.name.trim().toUpperCase()); }
+    var contact = [state.city.trim(), state.phone.trim(), state.email.trim()].filter(function(s){ return s; }).join(' | ');
+    if(contact){ out.push(contact); }
+    if(state.summary.trim()){ out.push('', 'Summary', state.summary.trim()); }
+    var jobs = state.jobs.filter(jobHasContent);
+    if(jobs.length){
+      out.push('', 'Work Experience');
+      jobs.forEach(function(j, i){
+        if(i > 0){ out.push(''); }
+        var head = [j.title.trim(), j.employer.trim()].filter(function(s){ return s; }).join(' — ');
+        if(j.city.trim()){ head = head ? head + ', ' + j.city.trim() : j.city.trim(); }
+        var dates = jobDates(j);
+        if(head && dates){ out.push(head + '  (' + dates + ')'); }
+        else if(head){ out.push(head); }
+        else if(dates){ out.push(dates); }
+        linesOf(j.bullets).forEach(function(b){ out.push('- ' + b); });
+      });
+    }
+    var sk = skillsList();
+    if(sk.length){ out.push('', 'Skills', sk.join(', ')); }
+    var eds = state.education.filter(eduHasContent);
+    if(eds.length){
+      out.push('', 'Education');
+      eds.forEach(function(e){
+        var parts = [];
+        if(e.cred.trim()){ parts.push(e.cred.trim()); }
+        if(e.school.trim()){ parts.push(e.school.trim()); }
+        var line = parts.join(' — ');
+        var tail = [e.city.trim(), e.year.trim()].filter(function(s){ return s; }).join(', ');
+        if(line && tail){ line += ', ' + tail; } else if(tail){ line = tail; }
+        if(line){ out.push(line); }
+      });
+    }
+    var certs = linesOf(state.certs);
+    if(certs.length){
+      out.push('', 'Certifications');
+      certs.forEach(function(c){ out.push('- ' + c); });
+    }
+    return out.join('\n');
+  }
+
+  // ----- live preview -----
+  var paper = document.getElementById('resumePaper');
+  function renderPreview(){
+    var html = '';
+    var hasAny = state.name.trim() || state.city.trim() || state.phone.trim() || state.email.trim() ||
+      state.summary.trim() || state.jobs.some(jobHasContent) || skillsList().length ||
+      state.education.some(eduHasContent) || linesOf(state.certs).length;
+    if(!hasAny){
+      paper.innerHTML = '<p class="rempty">Your resume will appear here as you type — start with your name above.</p>';
+      return;
+    }
+    if(state.name.trim()){ html += '<p class="rname">' + esc(state.name.trim()) + '</p>'; }
+    var contact = [state.city.trim(), state.phone.trim(), state.email.trim()].filter(function(s){ return s; }).join(' | ');
+    if(contact){ html += '<p class="rcontact">' + esc(contact) + '</p>'; }
+    if(state.summary.trim()){ html += '<h3>Summary</h3><p>' + esc(state.summary.trim()) + '</p>'; }
+    var jobs = state.jobs.filter(jobHasContent);
+    if(jobs.length){
+      html += '<h3>Work Experience</h3>';
+      jobs.forEach(function(j){
+        var head = [j.title.trim(), j.employer.trim()].filter(function(s){ return s; }).join(' — ');
+        if(j.city.trim()){ head = head ? head + ', ' + j.city.trim() : j.city.trim(); }
+        var dates = jobDates(j);
+        html += '<div class="rjob"><p>';
+        if(dates){ html += '<span class="rdates">' + esc(dates) + '</span>'; }
+        if(head){ html += '<span class="rtitle">' + esc(head) + '</span>'; }
+        html += '</p>';
+        var bs = linesOf(j.bullets);
+        if(bs.length){ html += '<ul>' + bs.map(function(b){ return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>'; }
+        html += '</div>';
+      });
+    }
+    var sk = skillsList();
+    if(sk.length){ html += '<h3>Skills</h3><p>' + esc(sk.join(', ')) + '</p>'; }
+    var eds = state.education.filter(eduHasContent);
+    if(eds.length){
+      html += '<h3>Education</h3>';
+      eds.forEach(function(e){
+        var parts = [];
+        if(e.cred.trim()){ parts.push(e.cred.trim()); }
+        if(e.school.trim()){ parts.push(e.school.trim()); }
+        var line = parts.join(' — ');
+        var tail = [e.city.trim(), e.year.trim()].filter(function(s){ return s; }).join(', ');
+        if(line && tail){ line += ', ' + tail; } else if(tail){ line = tail; }
+        if(line){ html += '<p>' + esc(line) + '</p>'; }
+      });
+    }
+    var certs = linesOf(state.certs);
+    if(certs.length){ html += '<h3>Certifications</h3><ul>' + certs.map(function(c){ return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>'; }
+    paper.innerHTML = html;
+  }
+
+  // ----- draft save (this device only) -----
+  var saveState = document.getElementById('saveState');
+  var saveTimer = null;
+  function saveDraft(){
+    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); } catch(e){}
+    if(saveState){
+      var now = new Date();
+      var hh = now.getHours(), mm = now.getMinutes();
+      var ap = hh >= 12 ? 'PM' : 'AM'; hh = hh % 12; if(hh === 0){ hh = 12; }
+      var when = hh + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+      saveState.innerHTML = '<b>Saved on this device only</b> — nothing is sent anywhere. Last saved ' + when + '; it restores itself when you come back.';
+    }
+  }
+  function queueSave(){ if(saveTimer){ clearTimeout(saveTimer); } saveTimer = setTimeout(saveDraft, 400); }
+  function changed(){ renderPreview(); queueSave(); }
+
+  // ----- form: simple fields -----
+  document.querySelectorAll('[data-bind]').forEach(function(el){
+    el.value = state[el.getAttribute('data-bind')] || '';
+    el.addEventListener('input', function(){ state[el.getAttribute('data-bind')] = el.value; changed(); });
+  });
+
+  // ----- form: repeatable entries -----
+  var jobsWrap = document.getElementById('jobsWrap');
+  var eduWrap = document.getElementById('eduWrap');
+  function bulletFlagText(bullets){
+    var bad = linesOf(bullets).filter(function(l){ return /^(responsible for|responsible|duties included|duties|tasked with|in charge of duties)/i.test(l); });
+    if(!bad.length){ return ''; }
+    return bad.length + (bad.length === 1 ? ' line starts' : ' lines start') + ' with duty-filler (“responsible for…”). Try leading with what you did instead: “Ran…”, “Trained…”, “Fixed…” — plus a number where there’s a true one.';
+  }
+  function buildJobs(){
+    jobsWrap.innerHTML = '';
+    state.jobs.forEach(function(j, i){
+      var div = document.createElement('div');
+      div.className = 'entry';
+      div.innerHTML =
+        '<div class="entry-head"><span class="et">Job ' + (i + 1) + (i === 0 ? ' — most recent' : '') + '</span>' +
+        (state.jobs.length > 1 ? '<button class="remove-btn" type="button" data-remove-job="' + i + '">Remove this job</button>' : '') + '</div>' +
+        '<div class="fgrid">' +
+        '<div class="field"><label>Job title</label><input type="text" data-job="' + i + '" data-field="title" placeholder="e.g. Line Cook" /></div>' +
+        '<div class="field"><label>Employer</label><input type="text" data-job="' + i + '" data-field="employer" placeholder="e.g. Rosa’s Kitchen" /></div>' +
+        '<div class="field"><label>City, State</label><input type="text" data-job="' + i + '" data-field="city" placeholder="e.g. Arlington, TX" /></div>' +
+        '<div class="field"><label>Start</label><input type="text" data-job="' + i + '" data-field="start" placeholder="e.g. Mar 2022" /></div>' +
+        '<div class="field"><label>End</label><input type="text" data-job="' + i + '" data-field="end" placeholder="e.g. Jun 2025" /></div>' +
+        '<div class="field"><label class="checkline"><input type="checkbox" data-job="' + i + '" data-field="present" /> I work here now</label></div>' +
+        '<div class="field full"><label>What you did — one per line</label>' +
+        '<textarea class="tall" data-job="' + i + '" data-field="bullets" placeholder="Prepped and plated 150+ covers a night on the grill station&#10;Trained 6 new hires; wrote the station checklist they still use&#10;Cut ticket times from 18 to 12 minutes on Friday nights"></textarea>' +
+        '<p class="bullet-flag" data-flag="' + i + '" hidden></p></div>' +
+        '</div>';
+      jobsWrap.appendChild(div);
+      div.querySelectorAll('[data-field]').forEach(function(inp){
+        var f = inp.getAttribute('data-field');
+        if(inp.type === 'checkbox'){ inp.checked = !!j[f]; } else { inp.value = j[f] || ''; }
+      });
+      var flag = div.querySelector('[data-flag]');
+      var ft = bulletFlagText(j.bullets);
+      if(flag && ft){ flag.textContent = ft; flag.hidden = false; }
+    });
+  }
+  function buildEdu(){
+    eduWrap.innerHTML = '';
+    state.education.forEach(function(e, i){
+      var div = document.createElement('div');
+      div.className = 'entry';
+      div.innerHTML =
+        '<div class="entry-head"><span class="et">School ' + (i + 1) + '</span>' +
+        (state.education.length > 1 ? '<button class="remove-btn" type="button" data-remove-edu="' + i + '">Remove this school</button>' : '') + '</div>' +
+        '<div class="fgrid">' +
+        '<div class="field"><label>School</label><input type="text" data-edu="' + i + '" data-field="school" placeholder="e.g. Tarrant County College" /></div>' +
+        '<div class="field"><label>Degree or credential</label><input type="text" data-edu="' + i + '" data-field="cred" placeholder="e.g. Associate of Applied Science" /></div>' +
+        '<div class="field"><label>City, State</label><input type="text" data-edu="' + i + '" data-field="city" placeholder="e.g. Fort Worth, TX" /></div>' +
+        '<div class="field"><label>Year finished (or “in progress”)</label><input type="text" data-edu="' + i + '" data-field="year" placeholder="e.g. 2023" /></div>' +
+        '</div>';
+      eduWrap.appendChild(div);
+      div.querySelectorAll('[data-field]').forEach(function(inp){ inp.value = e[inp.getAttribute('data-field')] || ''; });
+    });
+  }
+  jobsWrap.addEventListener('input', function(e){
+    var t = e.target;
+    if(!t.getAttribute || t.getAttribute('data-job') === null){ return; }
+    var i = parseInt(t.getAttribute('data-job'), 10), f = t.getAttribute('data-field');
+    if(!state.jobs[i] || !f){ return; }
+    state.jobs[i][f] = (t.type === 'checkbox') ? t.checked : t.value;
+    if(f === 'bullets'){
+      var entry = t.closest('.entry');
+      var flag = entry ? entry.querySelector('[data-flag]') : null;
+      if(flag){ var ft = bulletFlagText(t.value); flag.textContent = ft; flag.hidden = !ft; }
+    }
+    changed();
+  });
+  jobsWrap.addEventListener('change', function(e){
+    var t = e.target;
+    if(t.type === 'checkbox' && t.getAttribute('data-job') !== null){
+      var i = parseInt(t.getAttribute('data-job'), 10);
+      if(state.jobs[i]){ state.jobs[i].present = t.checked; changed(); }
+    }
+  });
+  jobsWrap.addEventListener('click', function(e){
+    var t = e.target;
+    if(t.getAttribute && t.getAttribute('data-remove-job') !== null){
+      state.jobs.splice(parseInt(t.getAttribute('data-remove-job'), 10), 1);
+      if(!state.jobs.length){ state.jobs = [blankJob()]; }
+      buildJobs(); changed();
+    }
+  });
+  eduWrap.addEventListener('input', function(e){
+    var t = e.target;
+    if(!t.getAttribute || t.getAttribute('data-edu') === null){ return; }
+    var i = parseInt(t.getAttribute('data-edu'), 10), f = t.getAttribute('data-field');
+    if(state.education[i] && f){ state.education[i][f] = t.value; changed(); }
+  });
+  eduWrap.addEventListener('click', function(e){
+    var t = e.target;
+    if(t.getAttribute && t.getAttribute('data-remove-edu') !== null){
+      state.education.splice(parseInt(t.getAttribute('data-remove-edu'), 10), 1);
+      if(!state.education.length){ state.education = [blankEdu()]; }
+      buildEdu(); changed();
+    }
+  });
+  document.getElementById('addJob').addEventListener('click', function(){ state.jobs.push(blankJob()); buildJobs(); changed(); });
+  document.getElementById('addEdu').addEventListener('click', function(){ state.education.push(blankEdu()); buildEdu(); changed(); });
+  document.getElementById('builderForm').addEventListener('submit', function(e){ e.preventDefault(); });
+
+  // ----- Forget my resume: two taps, on purpose -----
+  var forgetBtn = document.getElementById('forgetBtn');
+  var forgetArmed = false, forgetTimer = null;
+  forgetBtn.addEventListener('click', function(){
+    if(!forgetArmed){
+      forgetArmed = true;
+      forgetBtn.classList.add('armed');
+      forgetBtn.textContent = 'Tap again to erase everything on this device';
+      forgetTimer = setTimeout(function(){
+        forgetArmed = false; forgetBtn.classList.remove('armed'); forgetBtn.textContent = 'Forget my resume';
+      }, 5000);
+      return;
+    }
+    clearTimeout(forgetTimer);
+    forgetArmed = false;
+    forgetBtn.classList.remove('armed');
+    forgetBtn.textContent = 'Forget my resume';
+    try { window.localStorage.removeItem(DRAFT_KEY); } catch(e){}
+    state = defaultState();
+    document.querySelectorAll('[data-bind]').forEach(function(el){ el.value = ''; });
+    buildJobs(); buildEdu(); renderPreview();
+    if(saveState){ saveState.innerHTML = '<b>Erased.</b> The draft on this device is gone. Typing again starts a fresh one — saved on this device only, as always.'; }
+    var mr = document.getElementById('matchResults'); if(mr){ mr.hidden = true; }
+  });
+
+  // ----- Outputs -----
+  var copyNote = document.getElementById('copyNote');
+  var copyDefault = copyNote.innerHTML;
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var text = plainText();
+    function done(){
+      copyNote.innerHTML = '<b>Copied.</b> The whole resume as plain text — paste it anywhere. It carries no formatting the screening software can choke on.';
+      setTimeout(function(){ copyNote.innerHTML = copyDefault; }, 6000);
+    }
+    if(!text.trim()){
+      copyNote.innerHTML = 'There’s nothing to copy yet — type your name and at least one job above first.';
+      setTimeout(function(){ copyNote.innerHTML = copyDefault; }, 6000);
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+    } else { fallbackCopy(text); done(); }
+  });
+  function fallbackCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e){}
+    ta.remove();
+  }
+  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+  document.getElementById('downloadBtn').addEventListener('click', function(){
+    var text = plainText();
+    var blob = new Blob([text], {type:'text/plain'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var base = state.name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    a.href = url; a.download = (base ? base + '-resume' : 'resume') + '.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  });
+
+  // ---------- The honest match check ----------
+  // Simple word-counting, done on this device: pull the posting's
+  // repeated key phrases, compare them against the resume's own
+  // words. It never writes a word into the resume — the visitor's
+  // own line, typed by them, is the only thing that can be added.
+  var STOP = {};
+  ('the,of,and,to,in,a,is,for,with,on,at,by,an,be,as,or,are,will,you,your,our,this,that,from,have,has,who,can,all,any,per,etc,work,working,ability,abilities,experience,required,requirements,requirement,preferred,job,position,role,team,candidate,skills,skill,knowledge,including,include,includes,responsible,responsibilities,duty,duties,task,tasks,day,ability,able,must,other,more,than,into,about,over,under,within,across,using,use,used,ensure,ensures,help,helps,support,supports,provide,provides,related,strong,excellent,good,great,new,well,also,one,two,three,years,year,months,high,school,diploma,equivalent,ged,opportunity,equal,employer,employment,apply,application,please,note,may,including,but,not,limited,if,when,where,what,how,why,they,them,their,it,its,this,these,those,there,here,been,being,were,was,had,do,does,done,doing,make,makes,made,get,gets,keep,keeps,set,sets,need,needs,needed,want,wants,like,such,each,every,per,hour,hours,week,weekly,daily,full,time,part,shift,shifts,schedule,available,availability,weekends,weekend,environment,fast,paced,company,companies,business,service,services,customer,customers,guest,guests').split(',').forEach(function(w){ STOP[w] = 1; });
+  function normText(s){ return ' ' + String(s || '').toLowerCase().replace(/[^a-z0-9+#]+/g,' ').replace(/\s+/g,' ') + ' '; }
+  function extractPhrases(text){
+    var tokens = String(text || '').toLowerCase().replace(/[^a-z0-9+#\s]+/g,' ').split(/\s+/).filter(function(w){ return w.length; });
+    var counts = {}, order = [];
+    function bump(phrase, n){
+      if(!counts[phrase]){ counts[phrase] = 0; order.push(phrase); }
+      counts[phrase] += 1;
+    }
+    var i, n, j, parts, ok;
+    for(i = 0; i < tokens.length; i++){
+      for(n = 1; n <= 3; n++){
+        if(i + n > tokens.length){ break; }
+        parts = tokens.slice(i, i + n);
+        if(STOP[parts[0]] || STOP[parts[parts.length - 1]]){ continue; }
+        if(n === 1 && parts[0].length < 4){ continue; }
+        ok = true;
+        for(j = 0; j < parts.length; j++){ if(parts[j].length < 2){ ok = false; } }
+        if(!ok){ continue; }
+        bump(parts.join(' '), n);
+      }
+    }
+    var cands = order.map(function(p){
+      var words = p.split(' ').length;
+      return { phrase: p, count: counts[p], words: words, score: counts[p] * (1 + 0.7 * (words - 1)) };
+    }).filter(function(c){ return c.words > 1 ? c.count >= 2 : c.count >= 3; });
+    cands.sort(function(a, b){ return b.score - a.score || b.words - a.words; });
+    var picked = [];
+    for(i = 0; i < cands.length && picked.length < 24; i++){
+      var c = cands[i], swallowed = false;
+      for(j = 0; j < picked.length; j++){
+        if(picked[j].phrase.indexOf(c.phrase) !== -1 && picked[j].count >= c.count){ swallowed = true; break; }
+      }
+      if(!swallowed){ picked.push(c); }
+    }
+    // Drop single words that are already covered by a picked phrase
+    // ("food" adds nothing once "food safety" is on the list).
+    var multi = picked.filter(function(c){ return c.words > 1; }).map(function(c){ return ' ' + c.phrase + ' '; });
+    picked = picked.filter(function(c){
+      if(c.words > 1){ return true; }
+      return !multi.some(function(p){ return p.indexOf(' ' + c.phrase + ' ') !== -1; });
+    });
+    return picked.map(function(c){ return c.phrase; });
+  }
+  var matchBtn = document.getElementById('matchBtn');
+  var matchErr = document.getElementById('matchErr');
+  var matchResults = document.getElementById('matchResults');
+  var haveList = document.getElementById('haveList');
+  var missList = document.getElementById('missList');
+  matchBtn.addEventListener('click', function(){
+    var posting = document.getElementById('postingInput').value || '';
+    matchErr.hidden = true;
+    if(posting.trim().length < 40){
+      matchErr.textContent = 'Paste the whole posting first — duties, requirements, all of it. The check needs the posting’s own words to work with.';
+      matchErr.hidden = false;
+      matchResults.hidden = true;
+      return;
+    }
+    var phrases = extractPhrases(posting);
+    if(!phrases.length){
+      matchErr.textContent = 'No repeated key phrases could be pulled from that text. Try pasting the full posting, including the requirements list.';
+      matchErr.hidden = false;
+      matchResults.hidden = true;
+      return;
+    }
+    var hay = normText(plainText());
+    var have = [], miss = [];
+    phrases.forEach(function(p){ if(hay.indexOf(' ' + p + ' ') !== -1){ have.push(p); } else { miss.push(p); } });
+    haveList.innerHTML = '';
+    if(have.length){
+      have.forEach(function(p){
+        var li = document.createElement('li'); li.textContent = p; haveList.appendChild(li);
+      });
+    } else {
+      var li0 = document.createElement('li');
+      li0.textContent = 'None of the posting’s key phrases are in your resume yet — that’s what the other list is for.';
+      haveList.appendChild(li0);
+    }
+    missList.innerHTML = '';
+    if(!miss.length){
+      var done = document.createElement('p');
+      done.className = 'small'; done.style.marginTop = '10px';
+      done.textContent = 'Every key phrase the tool pulled is already in your resume, in your own words. That’s the whole game — send it.';
+      missList.appendChild(done);
+    }
+    miss.forEach(function(p){
+      var item = document.createElement('div');
+      item.className = 'miss-item';
+      var ph = document.createElement('span'); ph.className = 'phrase'; ph.textContent = '“' + p + '”';
+      var q = document.createElement('p');
+      q.textContent = 'Have you actually done this? If yes, add where — in your own words. Your line goes into your most recent job exactly as you write it; the tool will not write it for you.';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'e.g. where and how you did this, in your own words';
+      input.setAttribute('aria-label', 'In your own words: where have you done ' + p + '?');
+      var actions = document.createElement('div'); actions.className = 'miss-actions';
+      var add = document.createElement('button'); add.type = 'button'; add.className = 'mini-btn'; add.textContent = 'Add my line to my most recent job';
+      var skip = document.createElement('button'); skip.type = 'button'; skip.className = 'mini-ghost'; skip.textContent = 'I haven’t done this — leave it out';
+      var note = document.createElement('p'); note.className = 'miss-note'; note.hidden = true;
+      actions.appendChild(add); actions.appendChild(skip);
+      item.appendChild(ph); item.appendChild(q); item.appendChild(input); item.appendChild(actions); item.appendChild(note);
+      add.addEventListener('click', function(){
+        var line = input.value.trim();
+        if(!line){
+          note.textContent = 'Write the line first — where you did it, in your own words. Nothing gets added until you do.';
+          note.style.color = 'var(--red)'; note.hidden = false;
+          input.focus();
+          return;
+        }
+        if(!state.jobs.length){ state.jobs = [blankJob()]; }
+        var cur = state.jobs[0].bullets || '';
+        state.jobs[0].bullets = cur.trim() ? cur.replace(/\s+$/,'') + '\n' + line : line;
+        buildJobs(); changed();
+        note.textContent = 'Added — your words, exactly as written, under your most recent job. It’s in the preview now.';
+        note.style.color = 'var(--green)'; note.hidden = false;
+        input.disabled = true; add.disabled = true; skip.disabled = true;
+      });
+      skip.addEventListener('click', function(){ item.remove(); });
+      missList.appendChild(item);
+    });
+    matchResults.hidden = false;
+    matchResults.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  });
+
+  // ----- first paint -----
+  buildJobs();
+  buildEdu();
+  renderPreview();
+})();
+</script>
+</body>
+</html>

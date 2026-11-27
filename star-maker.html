@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:," />
+    <title>Star Maker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #04060f;
+        color: #eef2ff;
+        overflow: hidden;
+      }
+      .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+      /* ---------- Stage ---------- */
+      #stage { position: fixed; inset: 0; overflow: hidden; background: #04060f; }
+      #cam {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: cover; display: none;
+      }
+      #sky {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        touch-action: none; cursor: grab;
+      }
+      #sky:active { cursor: grabbing; }
+      .vignette {
+        position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse at center, transparent 55%, rgba(2,4,12,.55) 100%);
+      }
+
+      /* ---------- Top readout bar ---------- */
+      #topbar {
+        position: absolute; top: 0; left: 0; right: 0;
+        padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px;
+        display: flex; align-items: flex-start; gap: 10px;
+        pointer-events: none; z-index: 5;
+      }
+      #topbar .brand {
+        font-weight: 800; font-size: 17px; letter-spacing: .2px;
+        text-shadow: 0 1px 8px rgba(0,0,0,.8); white-space: nowrap;
+      }
+      #topbar .brand .dot { color: #f2c14e; }
+      #readouts {
+        margin-left: auto; text-align: right;
+        font-size: 11.5px; line-height: 1.55; color: #c9d4f5;
+        text-shadow: 0 1px 6px rgba(0,0,0,.9);
+      }
+      #readouts b { color: #fff; font-weight: 600; }
+      #modeBadge {
+        display: inline-block; margin-top: 2px; padding: 2px 8px;
+        border: 1px solid rgba(127,212,255,.45); border-radius: 999px;
+        color: #7fd4ff; font-size: 10.5px; letter-spacing: .4px;
+      }
+
+      /* ---------- Center reticle ---------- */
+      #reticle {
+        position: absolute; left: 50%; top: 46%; width: 54px; height: 54px;
+        transform: translate(-50%, -50%); pointer-events: none; z-index: 4;
+        opacity: .9;
+      }
+      #reticle::before, #reticle::after {
+        content: ""; position: absolute; background: rgba(255,255,255,.85);
+        box-shadow: 0 0 6px rgba(0,0,0,.6);
+      }
+      #reticle::before { left: 50%; top: 0; width: 1.5px; height: 100%; transform: translateX(-50%); }
+      #reticle::after { top: 50%; left: 0; height: 1.5px; width: 100%; transform: translateY(-50%); }
+      #reticle .ring {
+        position: absolute; inset: 14px; border: 1.5px solid rgba(242,193,78,.9);
+        border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,.5);
+      }
+      #centerLabel {
+        position: absolute; left: 50%; top: calc(46% + 44px); transform: translateX(-50%);
+        text-align: center; pointer-events: none; z-index: 4; width: max-content; max-width: 92vw;
+      }
+      #centerLabel .name {
+        font-weight: 800; font-size: 19px; text-shadow: 0 2px 10px rgba(0,0,0,.95);
+      }
+      #centerLabel .sub {
+        font-size: 12.5px; color: #d7e0ff; text-shadow: 0 1px 8px rgba(0,0,0,.95);
+      }
+
+      /* ---------- Guide banner (search target) ---------- */
+      #guide {
+        position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 86px);
+        transform: translateX(-50%); z-index: 6;
+        display: none; align-items: center; gap: 10px;
+        background: rgba(8,12,28,.82); border: 1px solid rgba(242,193,78,.5);
+        border-radius: 999px; padding: 7px 14px 7px 9px; max-width: 94vw;
+        backdrop-filter: blur(8px);
+      }
+      #guide.show { display: flex; }
+      #guideArrow {
+        width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%;
+        background: rgba(242,193,78,.16); display: grid; place-items: center;
+        font-size: 19px; color: #f2c14e; transition: transform .12s linear;
+      }
+      #guideText { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #guideText .dim { color: #aebadd; font-weight: 400; }
+      #guideClose {
+        flex: 0 0 auto; width: 36px; height: 36px; min-height: 36px; border-radius: 50%;
+        border: 1px solid rgba(255,255,255,.25); background: transparent; color: #fff;
+        font-size: 15px; cursor: pointer;
+      }
+
+      /* ---------- Bottom dock ---------- */
+      #dock {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+        padding: 8px 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
+        background: linear-gradient(to top, rgba(3,5,14,.92) 55%, rgba(3,5,14,0));
+      }
+      #chips {
+        display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      }
+      #chips::-webkit-scrollbar { display: none; }
+      .chip {
+        flex: 0 0 auto; border: 1px solid rgba(255,255,255,.28);
+        background: rgba(10,15,34,.78); color: #eef2ff;
+        border-radius: 999px; padding: 0 14px; font-size: 13.5px; font-weight: 600;
+        cursor: pointer; min-height: 40px;
+      }
+      .chip:active { background: rgba(242,193,78,.25); }
+      .chip .alt { color: #8fd0ff; font-weight: 500; font-size: 12px; margin-left: 5px; }
+      #chipsEmpty { color: #93a3cf; font-size: 13px; padding: 6px 2px 10px; }
+
+      #searchRow { display: flex; gap: 8px; align-items: stretch; }
+      #searchWrap {
+        flex: 1; display: flex; align-items: center; gap: 8px;
+        background: rgba(10,15,34,.88); border: 1px solid rgba(255,255,255,.3);
+        border-radius: 999px; padding: 0 6px 0 16px;
+      }
+      #searchWrap .mag { color: #8fa1cf; font-size: 16px; }
+      #search {
+        flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
+        color: #fff; font: inherit; font-size: 15.5px; min-height: 44px;
+      }
+      #search::placeholder { color: #8fa1cf; }
+      #searchGo {
+        border: 0; border-radius: 999px; background: #f2c14e; color: #191104;
+        font-weight: 800; font-size: 14px; padding: 0 16px; cursor: pointer; min-height: 38px;
+      }
+      #controls { display: flex; gap: 8px; margin-top: 8px; }
+      .ctl {
+        flex: 1; border: 1px solid rgba(255,255,255,.24); border-radius: 12px;
+        background: rgba(10,15,34,.78); color: #dfe7ff; font: inherit;
+        font-size: 12.5px; font-weight: 700; cursor: pointer; min-height: 44px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+        padding: 4px 2px;
+      }
+      .ctl .ic { font-size: 16px; line-height: 1; }
+      .ctl.on { border-color: #f2c14e; color: #f2c14e; }
+      .ctl:active { background: rgba(255,255,255,.12); }
+
+      #timeRow {
+        display: none; align-items: center; gap: 10px; margin-top: 10px;
+        background: rgba(10,15,34,.85); border: 1px solid rgba(255,255,255,.2);
+        border-radius: 12px; padding: 8px 12px;
+      }
+      #timeRow.show { display: flex; }
+      #timeRow label { font-size: 12px; color: #aebadd; font-weight: 700; white-space: nowrap; }
+      #timeSlider { flex: 1; accent-color: #f2c14e; min-height: 36px; }
+      #timeVal { font-size: 12.5px; min-width: 86px; text-align: right; }
+      #timeNow {
+        border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff;
+        border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700;
+        padding: 0 10px; cursor: pointer; min-height: 36px;
+      }
+
+      /* ---------- Detail sheet ---------- */
+      #sheet {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 9;
+        background: rgba(7,10,24,.97); border-top: 1px solid rgba(242,193,78,.4);
+        border-radius: 20px 20px 0 0; padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 18px);
+        transform: translateY(105%); transition: transform .28s ease;
+        max-height: 62vh; overflow-y: auto;
+      }
+      #sheet.show { transform: translateY(0); }
+      #sheet h2 { margin: 0 34px 2px 0; font-size: 23px; font-weight: 800; }
+      #sheet .latin { color: #8fd0ff; font-size: 13px; margin-bottom: 10px; }
+      #sheetClose {
+        position: absolute; top: 12px; right: 12px; width: 40px; height: 40px;
+        border-radius: 50%; border: 1px solid rgba(255,255,255,.3);
+        background: transparent; color: #fff; font-size: 16px; cursor: pointer;
+      }
+      .layer { margin-top: 12px; }
+      .layer h3 {
+        margin: 0 0 3px; font-size: 11.5px; letter-spacing: 1.4px;
+        text-transform: uppercase; color: #f2c14e; font-weight: 800;
+      }
+      .layer p { margin: 0; font-size: 15px; line-height: 1.55; color: #e6ecff; }
+      #sheetStats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+      .stat {
+        border: 1px solid rgba(255,255,255,.18); border-radius: 10px;
+        padding: 7px 11px; font-size: 12.5px; color: #c9d4f5;
+      }
+      .stat b { color: #fff; display: block; font-size: 14.5px; }
+      #sheetStars { margin-top: 14px; }
+      #sheetStars h3 { margin: 0 0 6px; font-size: 11.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #f2c14e; }
+      #sheetStars ul { margin: 0; padding: 0; list-style: none; }
+      #sheetStars li {
+        display: flex; justify-content: space-between; gap: 10px;
+        padding: 9px 2px; border-top: 1px solid rgba(255,255,255,.09);
+        font-size: 14px; cursor: pointer; min-height: 40px; align-items: center;
+      }
+      #sheetStars li .r { color: #8fd0ff; font-size: 12.5px; text-align: right; }
+      #sheetStars li.down { opacity: .45; }
+
+      /* ---------- Start overlay ---------- */
+      #start {
+        position: absolute; inset: 0; z-index: 20;
+        background: radial-gradient(ellipse at 50% 30%, #101a3d 0%, #04060f 68%);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 28px 24px; text-align: center; overflow-y: auto;
+      }
+      #start .stars-deco { font-size: 15px; letter-spacing: 14px; color: #f2c14e; margin-bottom: 14px; }
+      #start h1 { margin: 0 0 8px; font-size: 40px; font-weight: 800; letter-spacing: .3px; }
+      #start h1 .dot { color: #f2c14e; }
+      #start .lede { margin: 0 0 6px; font-size: 16.5px; line-height: 1.55; color: #d7e0ff; max-width: 30em; }
+      #start .fine { font-size: 12.5px; color: #8fa1cf; max-width: 32em; line-height: 1.5; margin: 10px 0 0; }
+      #startBtns { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; width: min(340px, 90vw); }
+      .bigbtn {
+        border: 0; border-radius: 14px; padding: 15px 18px; font: inherit;
+        font-size: 16.5px; font-weight: 800; cursor: pointer; min-height: 54px;
+      }
+      #btnLive { background: #f2c14e; color: #191104; }
+      #btnDemo { background: transparent; color: #eef2ff; border: 1px solid rgba(255,255,255,.4); }
+      #startStatus { margin-top: 14px; font-size: 13.5px; color: #ffb3b3; min-height: 1.3em; max-width: 34em; line-height: 1.5; }
+
+      #toast {
+        position: absolute; left: 50%; bottom: 190px; transform: translateX(-50%) translateY(20px);
+        background: rgba(8,12,28,.92); border: 1px solid rgba(255,255,255,.3);
+        color: #fff; border-radius: 999px; padding: 9px 16px; font-size: 13.5px;
+        opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 15;
+        max-width: 92vw; text-align: center;
+      }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      @media (min-width: 760px) {
+        #dock { max-width: 640px; left: 50%; right: auto; transform: translateX(-50%); width: 100%; }
+        #sheet { max-width: 640px; left: 50%; right: auto; transform: translateX(-50%) translateY(105%); width: 100%; }
+        #sheet.show { transform: translateX(-50%) translateY(0); }
+        #start h1 { font-size: 52px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <video id="cam" autoplay playsinline muted></video>
+      <canvas id="sky"></canvas>
+      <div class="vignette"></div>
+
+      <div id="topbar">
+        <div class="brand">Star<span class="dot">·</span>Maker</div>
+        <div id="readouts" class="mono">
+          <div>HDG <b id="roHdg">—</b> · ALT <b id="roAlt">—</b></div>
+          <div id="roLoc">Locating…</div>
+          <div><span id="roTime">—</span> · <span id="modeBadge">DEMO SKY</span></div>
+        </div>
+      </div>
+
+      <div id="reticle"><div class="ring"></div></div>
+      <div id="centerLabel"><div class="name" id="centerName"></div><div class="sub" id="centerSub"></div></div>
+
+      <div id="guide">
+        <div id="guideArrow">➤</div>
+        <div id="guideText">—</div>
+        <button id="guideClose" aria-label="Stop guiding">✕</button>
+      </div>
+
+      <div id="dock">
+        <div id="chips"></div>
+        <div id="searchRow">
+          <div id="searchWrap">
+            <span class="mag">⌕</span>
+            <input id="search" type="text" list="skyList" placeholder="Search a star or constellation — try Mintaka" autocomplete="off" />
+            <datalist id="skyList"></datalist>
+            <button id="searchGo">Find</button>
+          </div>
+        </div>
+        <div id="controls">
+          <button class="ctl" id="btnCam"><span class="ic">📷</span>Camera</button>
+          <button class="ctl" id="btnOrient"><span class="ic">🧭</span>Compass</button>
+          <button class="ctl on" id="btnLines"><span class="ic">✦</span>Lines</button>
+          <button class="ctl on" id="btnLabels"><span class="ic">Aa</span>Labels</button>
+          <button class="ctl" id="btnTime"><span class="ic">🕐</span>Time</button>
+        </div>
+        <div id="timeRow">
+          <label for="timeSlider">Tonight</label>
+          <input id="timeSlider" type="range" min="-720" max="720" step="5" value="0" />
+          <span id="timeVal" class="mono">Now</span>
+          <button id="timeNow">Now</button>
+        </div>
+      </div>
+
+      <div id="sheet">
+        <button id="sheetClose" aria-label="Close details">✕</button>
+        <h2 id="sheetName">—</h2>
+        <div class="latin" id="sheetLatin">—</div>
+        <div class="layer"><h3>What it is</h3><p id="sheetIs">—</p></div>
+        <div class="layer"><h3>The story</h3><p id="sheetStory">—</p></div>
+        <div class="layer"><h3>What it could mean for you</h3><p id="sheetCould">—</p></div>
+        <div id="sheetStats"></div>
+        <div id="sheetStars"><h3>Its stars tonight</h3><ul id="sheetStarList"></ul></div>
+      </div>
+
+      <div id="toast"></div>
+
+      <div id="start">
+        <div class="stars-deco">✦ ✦ ✦</div>
+        <h1>Star<span class="dot">·</span>Maker</h1>
+        <p class="lede">Hold your phone up to the night sky. Star Maker looks through your camera, works out which way you're pointing from your compass and location, and draws the constellations right where they really are.</p>
+        <p class="lede">Tap any constellation to hear its story — and what it could mean for you.</p>
+        <div id="startBtns">
+          <button class="bigbtn" id="btnLive">📷 &nbsp;Start looking up</button>
+          <button class="bigbtn" id="btnDemo">Explore the sky without a camera</button>
+        </div>
+        <div id="startStatus"></div>
+        <p class="fine">Camera, compass, and location are asked for only when you tap Start, and they're used only on this device to aim the sky — nothing is sent anywhere. No camera or compass? The demo sky still works: drag to look around.</p>
+      </div>
+    </div>
+
+    <script>
+    "use strict";
+    /* ================================================================
+       STAR CATALOG — bright stars: [RA hours, Dec degrees, magnitude]
+       Coordinates are standard catalog positions (J2000).
+       ================================================================ */
+    var STARS = {
+      /* Orion */
+      "Betelgeuse":[5.919,7.41,0.5], "Rigel":[5.242,-8.20,0.1], "Bellatrix":[5.418,6.35,1.6],
+      "Alnitak":[5.679,-1.94,1.9], "Alnilam":[5.604,-1.20,1.7], "Mintaka":[5.533,-0.30,2.2],
+      "Saiph":[5.796,-9.67,2.1], "Meissa":[5.585,9.93,3.3],
+      /* Ursa Major */
+      "Dubhe":[11.062,61.75,1.8], "Merak":[11.031,56.38,2.4], "Phecda":[11.897,53.69,2.4],
+      "Megrez":[12.257,57.03,3.3], "Alioth":[12.901,55.96,1.8], "Mizar":[13.399,54.93,2.3], "Alkaid":[13.792,49.31,1.9],
+      /* Ursa Minor */
+      "Polaris":[2.530,89.26,2.0], "Kochab":[14.845,74.16,2.1], "Pherkad":[15.345,71.83,3.0], "Yildun":[17.536,86.59,4.4],
+      "Ursa Minor ε":[16.766,82.04,4.2],
+      /* Cassiopeia */
+      "Caph":[0.153,59.15,2.3], "Schedar":[0.675,56.54,2.2], "Gamma Cassiopeiae":[0.945,60.72,2.5],
+      "Ruchbah":[1.430,60.24,2.7], "Segin":[1.907,63.67,3.4],
+      /* Lyra */
+      "Vega":[18.616,38.78,0.0], "Sheliak":[18.835,33.36,3.5], "Sulafat":[18.982,32.69,3.3],
+      "Epsilon Lyrae":[18.736,39.67,3.9], "Delta Lyrae":[18.908,36.90,4.3],
+      /* Cygnus */
+      "Deneb":[20.690,45.28,1.3], "Sadr":[20.370,40.26,2.2], "Albireo":[19.512,27.96,3.2],
+      "Delta Cygni":[19.749,45.13,2.9], "Gienah Cygni":[20.770,33.97,2.5],
+      /* Scorpius */
+      "Acrab":[16.090,-19.80,2.6], "Dschubba":[16.006,-22.62,2.3], "Pi Scorpii":[15.980,-26.11,2.9],
+      "Antares":[16.490,-26.43,1.1], "Wei":[16.836,-34.29,1.9], "Shaula":[17.560,-37.10,1.6], "Sargas":[17.622,-42.99,1.9],
+      /* Leo */
+      "Ras Elased":[9.764,23.77,3.0], "Regulus":[10.139,11.97,1.4], "Algieba":[10.333,19.84,2.1],
+      "Zosma":[11.235,20.52,2.6], "Chertan":[11.237,15.43,3.3], "Denebola":[11.818,14.57,2.1],
+      /* Gemini */
+      "Castor":[7.576,31.89,1.6], "Pollux":[7.755,28.03,1.1], "Alhena":[6.628,16.40,1.9],
+      "Wasat":[7.333,21.98,3.5], "Mebsuta":[6.732,25.13,3.0], "Tejat":[6.382,22.51,2.9],
+      /* Taurus */
+      "Aldebaran":[4.599,16.51,0.9], "Elnath":[5.438,28.61,1.7], "Alcyone":[3.790,24.11,2.9],
+      "Gamma Tauri":[4.329,15.63,3.7], "Zeta Tauri":[5.627,21.14,3.0],
+      /* Aquila */
+      "Altair":[19.846,8.87,0.8], "Tarazed":[19.770,10.61,2.7], "Alshain":[19.921,6.41,3.7],
+      /* Pegasus + Andromeda */
+      "Markab":[23.079,15.21,2.5], "Scheat":[23.063,28.08,2.4], "Algenib":[0.221,15.18,2.8],
+      "Alpheratz":[0.139,29.09,2.1], "Enif":[21.736,9.88,2.4],
+      "Mirach":[1.162,35.62,2.1], "Almach":[2.065,42.33,2.3],
+      /* Perseus */
+      "Mirfak":[3.409,49.86,1.8], "Algol":[3.136,40.96,2.1], "Gamma Persei":[3.079,53.51,2.9], "Delta Persei":[3.715,47.79,3.0],
+      /* Boötes */
+      "Arcturus":[14.261,-5.43,-0.1], "Nekkar":[15.032,40.39,3.5], "Seginus":[14.534,38.30,2.7],
+      "Izar":[14.749,27.07,2.7], "Muphrid":[13.911,18.40,2.7],
+      /* Virgo */
+      "Spica":[13.420,-11.16,1.0], "Porrima":[12.694,-1.45,3.5], "Vindemiatrix":[13.036,10.96,2.9], "Zavijava":[11.849,1.76,3.6],
+      /* Sagittarius */
+      "Alnasl":[18.096,-30.42,3.0], "Kaus Media":[18.349,-29.83,2.7], "Kaus Australis":[18.403,-34.38,1.9],
+      "Kaus Borealis":[18.467,-25.42,2.8], "Nunki":[18.921,-26.30,2.0], "Ascella":[19.043,-29.88,2.6],
+      /* Canis Major */
+      "Sirius":[6.752,-16.72,-1.5], "Mirzam":[6.378,-17.96,2.0], "Wezen":[7.139,-26.39,1.8],
+      "Adhara":[6.977,-28.97,1.5], "Aludra":[7.401,-29.30,2.5],
+      /* Auriga */
+      "Capella":[5.278,45.99,0.1], "Menkalinan":[5.992,44.95,1.9], "Iota Aurigae":[4.950,33.16,2.7], "Theta Aurigae":[5.995,37.21,2.6],
+      /* Canis Minor */
+      "Procyon":[7.655,5.22,0.3], "Gomeisa":[7.452,8.29,2.9],
+      /* Aries */
+      "Hamal":[2.119,23.46,2.0], "Sheratan":[1.911,20.81,2.6], "Mesarthim":[1.897,19.29,3.9],
+      /* Corona Borealis */
+      "Alphecca":[15.578,26.72,2.2], "Nusakan":[15.463,29.10,3.7], "Theta Coronae":[15.548,31.36,4.1],
+      "Epsilon Coronae":[15.961,26.87,4.1], "Delta Coronae":[15.826,26.07,4.6],
+      /* Hercules */
+      "Kornephoros":[16.503,21.49,2.8], "Zeta Herculis":[16.688,31.60,2.8], "Rasalgethi":[17.244,14.39,3.5],
+      "Pi Herculis":[17.251,36.81,3.2], "Eta Herculis":[16.715,38.92,3.5],
+      /* Ophiuchus */
+      "Rasalhague":[17.588,12.56,2.1], "Cebalrai":[17.724,4.57,2.8], "Sabik":[17.174,-15.72,2.4],
+      /* Libra */
+      "Zubenelgenubi":[14.847,-16.04,2.8], "Zubeneschamali":[15.283,-9.38,2.6],
+      /* Corvus */
+      "Alchiba":[12.139,-24.72,4.0], "Gienah Corvi":[12.263,-17.54,2.6], "Algorab":[12.497,-22.63,2.9], "Kraz":[12.571,-23.40,2.7],
+      /* Southern sky */
+      "Canopus":[6.399,-52.70,-0.7], "Alpha Centauri":[14.660,-60.83,-0.3], "Hadar":[14.064,-60.37,0.6],
+      "Acrux":[12.443,-63.10,0.8], "Mimosa":[12.795,-59.69,1.3], "Gacrux":[12.519,-57.11,1.6], "Imai":[12.252,-58.75,2.8],
+      "Fomalhaut":[22.961,-29.62,1.2], "Achernar":[1.629,-57.24,0.5], "Diphda":[0.726,-17.99,2.0],
+      "Alphard":[9.460,-8.66,2.0], "Sadalsuud":[21.526,-5.57,2.9], "Sadalmelik":[21.096,-0.32,3.0],
+      "Deneb Algedi":[21.783,-16.13,2.9], "Dabih":[20.352,-14.78,3.1]
+    };
+    /* Fix Betelgeuse declination (+7.41) — written plainly to avoid confusion */
+    STARS["Betelgeuse"] = [5.919, 7.41, 0.5];
+
+    /* Star facts: light-years where well established */
+    var STAR_FACTS = {
+      "Sirius": { ly: 8.6, note: "The brightest star in the whole night sky — twice as bright as any other." },
+      "Canopus": { ly: 310, note: "Second brightest star in the sky, a giant many times the Sun's width." },
+      "Alpha Centauri": { ly: 4.37, note: "The closest star system to us — our nearest stellar neighbor." },
+      "Arcturus": { ly: 37, note: "An orange giant, the brightest star in the northern half of the sky." },
+      "Vega": { ly: 25, note: "Once the North Star, thousands of years ago — and it will be again one day." },
+      "Capella": { ly: 43, note: "Really two pairs of stars dancing around each other." },
+      "Rigel": { ly: 860, note: "A blue supergiant pouring out tens of thousands of times the Sun's light." },
+      "Procyon": { ly: 11.5, note: "One of our close neighbors, with a tiny white-dwarf companion." },
+      "Betelgeuse": { ly: 550, note: "A red supergiant so wide it would swallow Jupiter's orbit. It will end as a supernova — someday." },
+      "Altair": { ly: 17, note: "Spins so fast it's noticeably squashed — wider than it is tall." },
+      "Aldebaran": { ly: 65, note: "The orange eye of the Bull, an old giant nearing the end of its life." },
+      "Antares": { ly: 550, note: "The rival of Mars — a red supergiant, among the largest stars known." },
+      "Spica": { ly: 250, note: "Two hot blue stars so close they tug each other out of round." },
+      "Pollux": { ly: 34, note: "The brighter of the Twins' heads, with a planet of its own." },
+      "Fomalhaut": { ly: 25, note: "A young star ringed by a great belt of dust and rubble." },
+      "Deneb": { ly: 2600, note: "So far and so bright it defies easy measuring — a true supergiant." },
+      "Regulus": { ly: 79, note: "The Lion's heart, spinning near the edge of tearing itself apart." },
+      "Castor": { ly: 51, note: "Look closely: not one star but six, in three close pairs." },
+      "Polaris": { ly: 447, note: "The North Star. It sits almost exactly over Earth's north pole, so the whole sky seems to wheel around it." },
+      "Mintaka": { ly: 1200, note: "The western star of Orion's Belt — several suns braided together. Its light tonight left around the time of Charlemagne." },
+      "Alnilam": { ly: 2000, note: "The middle star of the Belt, a brilliant blue supergiant." },
+      "Alnitak": { ly: 1260, note: "The eastern star of the Belt, a triple-star system." },
+      "Achernar": { ly: 139, note: "The flattest star known — spun into an oval by its own rotation." },
+      "Algol": { ly: 93, note: "The Demon Star: it winks every 2.87 days as a dimmer companion crosses in front of it." }
+    };
+
+    /* ================================================================
+       CONSTELLATIONS — lines, home star list, and the three layers:
+       what it is / the story / what it could mean for you.
+       ================================================================ */
+    var CONSTELLATIONS = [
+      { name:"Orion", latin:"The Hunter", stars:["Betelgeuse","Bellatrix","Alnitak","Alnilam","Mintaka","Saiph","Rigel","Meissa"],
+        lines:[["Meissa","Betelgeuse"],["Meissa","Bellatrix"],["Betelgeuse","Alnitak"],["Bellatrix","Mintaka"],["Alnitak","Alnilam"],["Alnilam","Mintaka"],["Alnitak","Saiph"],["Mintaka","Rigel"],["Saiph","Rigel"]],
+        is:"The most recognizable constellation on Earth, visible from nearly everywhere humans live. Two bright shoulders, two knees, and the famous three-star Belt — Alnitak, Alnilam, and Mintaka — hanging where his sword would be.",
+        story:"Orion was the great hunter of Greek myth, so proud he boasted he could kill every animal on Earth. The Earth sent a scorpion to sting him — which is why Orion and Scorpius never share the sky: as one rises, the other flees.",
+        could:"A hunter defined by one boast. It could be a reminder that the loudest claim you make about yourself is rarely the truest thing about you — the Belt, three quiet stars in a row, is what the whole world actually knows him by." },
+      { name:"Ursa Major", latin:"The Great Bear — home of the Big Dipper", stars:["Dubhe","Merak","Phecda","Megrez","Alioth","Mizar","Alkaid"],
+        lines:[["Dubhe","Merak"],["Merak","Phecda"],["Phecda","Megrez"],["Megrez","Dubhe"],["Megrez","Alioth"],["Alioth","Mizar"],["Mizar","Alkaid"]],
+        is:"The Big Dipper is not a constellation itself — it's the bright rump and tail of the Great Bear, the third-largest constellation in the sky. Its two front bowl stars, Dubhe and Merak, are the Pointers: a line through them leads straight to the North Star.",
+        story:"In Greek myth the bear is Callisto, turned into an animal by a jealous goddess and later placed in the sky by Zeus. In many Native American traditions the same stars are a bear pursued forever by hunters — the faint star by Mizar is the hunters' cooking pot.",
+        could:"The Dipper has guided travelers for thousands of years simply by pointing at something steadier than itself. It could be worth asking what your pointers are — the two or three fixed things you check before you decide which way is north." },
+      { name:"Ursa Minor", latin:"The Little Bear — home of the Little Dipper", stars:["Polaris","Yildun","Ursa Minor ε","Pherkad","Kochab"],
+        lines:[["Polaris","Yildun"],["Yildun","Ursa Minor ε"],["Ursa Minor ε","Pherkad"],["Pherkad","Kochab"],["Kochab","Polaris"]],
+        is:"The Little Dipper, with Polaris — the North Star — at the tip of its handle. Polaris sits within a degree of the true north celestial pole, so every other star appears to circle around it through the night.",
+        story:"Sailors steered by this bear for centuries; the Phoenicians were known for navigating by Ursa Minor when others used the Great Bear. A slave narrative tradition in America called the North Star the drinking gourd's pointer — the way north, and the way to freedom.",
+        could:"Polaris isn't the brightest star, or the biggest — it's just the one that stays. It could be a picture of what steadiness is worth: not shining the hardest, but being findable when everything else has moved." },
+      { name:"Cassiopeia", latin:"The Queen", stars:["Caph","Schedar","Gamma Cassiopeiae","Ruchbah","Segin"],
+        lines:[["Caph","Schedar"],["Schedar","Gamma Cassiopeiae"],["Gamma Cassiopeiae","Ruchbah"],["Ruchbah","Segin"]],
+        is:"Five stars in an unmistakable W (or M, depending on the season) that circles the North Star all year from northern latitudes. It sits in the band of the Milky Way, rich with star clusters.",
+        story:"Cassiopeia was a queen whose vanity about her beauty offended the sea gods, and she was placed in the sky on a throne that tips her upside down for half of every night — punished, forever, in public view.",
+        could:"Her W wheels around the pole all year, high and low, never setting. It could be a small comfort about the embarrassing seasons: they rotate too. Nothing in that sky stays upside down." },
+      { name:"Lyra", latin:"The Lyre", stars:["Vega","Epsilon Lyrae","Delta Lyrae","Sheliak","Sulafat"],
+        lines:[["Vega","Epsilon Lyrae"],["Epsilon Lyrae","Delta Lyrae"],["Delta Lyrae","Sheliak"],["Sheliak","Sulafat"],["Sulafat","Vega"],["Vega","Delta Lyrae"]],
+        is:"A small parallelogram hanging from Vega, the fifth-brightest star in the sky. Lyra holds the Ring Nebula between Sheliak and Sulafat, and Epsilon Lyrae — the famous 'Double Double,' two pairs of stars in one point of light.",
+        story:"This is Orpheus's lyre. His music could charm stones and rivers, and he played it in the underworld itself trying to win back Eurydice. When he died, Zeus set the instrument among the stars, still sounding.",
+        could:"Orpheus's gift wasn't power — it was music, and it opened doors that force couldn't. It could be a nudge to notice which of your own tools works like that: the one that persuades instead of pushes." },
+      { name:"Cygnus", latin:"The Swan — the Northern Cross", stars:["Deneb","Sadr","Gienah Cygni","Delta Cygni","Albireo"],
+        lines:[["Deneb","Sadr"],["Sadr","Albireo"],["Sadr","Gienah Cygni"],["Sadr","Delta Cygni"]],
+        is:"A great cross flying along the Milky Way: Deneb at the tail, Albireo at the beak, Sadr at the heart. Albireo, at the head, is one of the sky's finest double stars — one gold, one blue-green, visible in any small telescope.",
+        story:"The swan is Zeus in disguise in one telling; in another it's Orpheus again, placed beside his lyre after death, still close to his music. Sailors and farmers alike watched for its rising as a sign of the turning seasons.",
+        could:"A cross and a swan in the same stars — burden and grace in one shape, depending on how you join the dots. It could be worth noticing how often that's true off the sky too: the shape changes with the joining." },
+      { name:"Scorpius", latin:"The Scorpion", stars:["Acrab","Dschubba","Pi Scorpii","Antares","Wei","Shaula","Sargas"],
+        lines:[["Acrab","Dschubba"],["Dschubba","Pi Scorpii"],["Pi Scorpii","Antares"],["Antares","Wei"],["Wei","Shaula"],["Shaula","Sargas"]],
+        is:"One of the few constellations that truly looks like its name: claws, a long curving body, and a raised stinger (Shaula and its neighbor, the Sting). At its heart burns Antares, a red supergiant — the rival of Mars.",
+        story:"The scorpion that killed Orion, set on the opposite side of the sky so the two can never meet again. In Pacific traditions the same curve is a great fishhook — Maui's hook, which pulled islands up from the sea.",
+        could:"The sky itself keeps Orion and the scorpion apart — some pairs are healthiest at a distance. It could be permission to let a separation be structural, not a failure: even the heavens schedule some things to never meet." },
+      { name:"Leo", latin:"The Lion", stars:["Ras Elased","Regulus","Algieba","Zosma","Chertan","Denebola"],
+        lines:[["Ras Elased","Regulus"],["Regulus","Algieba"],["Algieba","Zosma"],["Zosma","Chertan"],["Chertan","Denebola"],["Chertan","Regulus"]],
+        is:"A backward question mark — the Sickle — forms the Lion's head and mane, with Regulus, its heart, at the base. A triangle of stars closes the body at Denebola, the tail.",
+        story:"This is the Nemean lion of Hercules' first labor, whose hide no blade could pierce. Hercules strangled it and wore its skin ever after — the one opponent he carried with him for the rest of his story.",
+        could:"Hercules kept the lion's skin as armor for every labor after. It could be a way to look at your hardest finished fight: not just survived, but worn — the thing that protects you in the next one." },
+      { name:"Gemini", latin:"The Twins", stars:["Castor","Pollux","Mebsuta","Wasat","Alhena","Tejat"],
+        lines:[["Castor","Mebsuta"],["Mebsuta","Wasat"],["Wasat","Alhena"],["Castor","Pollux"],["Pollux","Wasat"],["Pollux","Tejat"]],
+        is:"Two parallel stick figures side by side, heads marked by Castor and Pollux. Pollux is the brighter; Castor, through a telescope, resolves into six stars bound together.",
+        story:"Castor and Pollux were twin brothers — one mortal, one divine. When Castor fell, Pollux refused to leave him and begged to share his own immortality, so Zeus set them together in the sky, each spending half of eternity with the other.",
+        could:"The twins' bargain was simple: neither shines alone. It could be a picture of the best kind of loyalty — not saving someone, but splitting what you have so neither of you has to go dark." },
+      { name:"Taurus", latin:"The Bull", stars:["Alcyone","Gamma Tauri","Aldebaran","Elnath","Zeta Tauri"],
+        lines:[["Alcyone","Gamma Tauri"],["Gamma Tauri","Aldebaran"],["Aldebaran","Elnath"],["Aldebaran","Zeta Tauri"]],
+        is:"A V of stars — the Hyades cluster — makes the Bull's face, with orange Aldebaran as its eye. On its shoulder ride the Pleiades, the Seven Sisters, a cluster of young blue stars born together.",
+        story:"Zeus became a gentle white bull to carry Europa across the sea. The Pleiades on the bull's back were sisters fleeing Orion's pursuit — the chase still written across the winter sky, the hunter forever a step behind.",
+        could:"The Bull's face is a cluster, not a single star — hundreds of suns traveling together. It could be a reminder that some strengths only exist as a group: the V holds its shape because no star in it travels alone." },
+      { name:"Aquila", latin:"The Eagle", stars:["Altair","Tarazed","Alshain"],
+        lines:[["Tarazed","Altair"],["Altair","Alshain"]],
+        is:"The Eagle, marked by Altair — one corner of the Summer Triangle with Vega and Deneb. Altair spins once in about nine hours, fast enough to bulge noticeably at its equator.",
+        story:"Aquila was Zeus's eagle, the carrier of his thunderbolts and the one sent to fetch Ganymede to Olympus. In Japanese and Chinese tradition, Altair is the cowherd who crosses the Milky Way once a year to meet Vega, the weaver.",
+        could:"The cowherd and the weaver get one night a year. It could be a gentle frame for the people you love at a distance: the bridge is rare, but the sky keeps building it on schedule." },
+      { name:"Pegasus", latin:"The Winged Horse", stars:["Markab","Scheat","Algenib","Alpheratz","Enif"],
+        lines:[["Markab","Scheat"],["Scheat","Alpheratz"],["Alpheratz","Algenib"],["Algenib","Markab"],["Markab","Enif"]],
+        is:"The Great Square — four stars forming a huge diamond of sky — is the Horse's body, with Enif at its nose. The Square is a famous landmark: from its corner star Alpheratz, the Andromeda Galaxy waits a short hop away.",
+        story:"Pegasus sprang from the sea-foam and the blood of Medusa, fully grown and winged. The hero Bellerophon rode him against monsters — until pride made him try to fly to Olympus itself, and the horse threw him.",
+        could:"Pegasus kept flying after the fall of the man who rode him. It could be a thought about the work outliving the worker: build the thing well, and it doesn't come down when you do." },
+      { name:"Andromeda", latin:"The Chained Maiden", stars:["Alpheratz","Mirach","Almach"],
+        lines:[["Alpheratz","Mirach"],["Mirach","Almach"]],
+        is:"A chain of stars running from the Great Square of Pegasus. Just off this line sits the Andromeda Galaxy — 2.5 million light-years away and the most distant thing you can see with your naked eye on a dark night.",
+        story:"Andromeda was chained to a rock as a sacrifice for her mother Cassiopeia's boasting, and rescued by Perseus flying home on Pegasus. The whole family drama — queen, maiden, hero, monster — still plays out across one corner of the autumn sky.",
+        could:"The galaxy above her chain is the farthest thing your bare eyes can reach. It could be a scale worth keeping in your pocket: the light entering your eyes tonight began its trip before humans existed." },
+      { name:"Perseus", latin:"The Hero", stars:["Mirfak","Gamma Persei","Algol","Delta Persei"],
+        lines:[["Gamma Persei","Mirfak"],["Mirfak","Delta Persei"],["Mirfak","Algol"]],
+        is:"A crooked chain of stars beside Cassiopeia, holding Algol — the Demon Star — which visibly dims every 2.87 days as a fainter companion star eclipses it. Every August the Perseid meteors rain from this direction.",
+        story:"Perseus slew Medusa, whose gaze turned men to stone, by watching her reflection in a polished shield — never looking directly. He carried her head home and used its terrible face only when he had no other choice.",
+        could:"The shield trick is the whole lesson: some things can only be faced in reflection, at one remove. It could be that the indirect approach isn't avoidance — sometimes it's the only way the work gets done at all." },
+      { name:"Boötes", latin:"The Herdsman", stars:["Arcturus","Muphrid","Izar","Seginus","Nekkar"],
+        lines:[["Arcturus","Muphrid"],["Arcturus","Izar"],["Izar","Seginus"],["Seginus","Nekkar"],["Nekkar","Arcturus"]],
+        is:"A kite-shaped figure anchored by Arcturus, the fourth-brightest star in the sky and the brightest in the northern hemisphere. Find it by following the Big Dipper's handle: 'arc to Arcturus.'",
+        story:"The herdsman who, in one old telling, invented the plow and was set in the sky for feeding mankind. He follows the Great Bear around the pole forever — a worker trailing his animal, patient as seasons.",
+        could:"His fame is one instruction long: arc to Arcturus. It could be worth having your own version — a single remembered move that reliably gets you from where you are to the brightest thing nearby." },
+      { name:"Virgo", latin:"The Maiden", stars:["Zavijava","Porrima","Vindemiatrix","Spica"],
+        lines:[["Zavijava","Porrima"],["Porrima","Spica"],["Porrima","Vindemiatrix"]],
+        is:"The largest constellation of the zodiac, sprawled and subtle, with brilliant blue-white Spica — its ear of wheat — as the anchor. Virgo's region of sky is a treasure chest of galaxies, the Virgo Cluster, thousands strong.",
+        story:"She is often Astraea, goddess of justice, the last immortal to leave a corrupt Earth — or Demeter, holding wheat, whose grief for her daughter Persephone became the seasons themselves.",
+        could:"Demeter's story says winter is what grief looks like from far away — and that it ends. It could be a frame for a hard season of your own: a season, by definition, is the part that turns." },
+      { name:"Sagittarius", latin:"The Archer — the Teapot", stars:["Alnasl","Kaus Media","Kaus Borealis","Kaus Australis","Ascella","Nunki"],
+        lines:[["Alnasl","Kaus Media"],["Kaus Media","Kaus Borealis"],["Kaus Borealis","Nunki"],["Kaus Media","Kaus Australis"],["Kaus Australis","Ascella"],["Ascella","Nunki"]],
+        is:"Most people know it as the Teapot — a perfect little pot tipped over the southern horizon in summer. Behind it lies the center of our galaxy: the Milky Way is thickest here, and a supermassive black hole sits at its heart.",
+        story:"The archer is a centaur aiming at the Scorpion's heart. But the teapot pours something better than arrows: the 'steam' above its spout is the star clouds of the galactic center, billions of suns deep.",
+        could:"You're looking at the center of everything you belong to, gravitationally speaking. It could be grounding to remember the view comes free on any clear summer night — home has a direction, and you can point at it." },
+      { name:"Canis Major", latin:"The Great Dog", stars:["Sirius","Mirzam","Wezen","Adhara","Aludra"],
+        lines:[["Sirius","Mirzam"],["Sirius","Adhara"],["Adhara","Wezen"],["Wezen","Aludra"]],
+        is:"Orion's hunting dog, home to Sirius — the brightest star in the entire night sky, outshining everything but the Sun, Moon, and planets. Sirius is close, just 8.6 light-years, and has a faint white-dwarf companion, the Pup.",
+        story:"The ancient Egyptians timed their calendar by Sirius: its return to the dawn sky announced the Nile's flood and the new year. The 'dog days' of summer are named for this dog, rising with the Sun in the heat of the year.",
+        could:"A civilization built its calendar on watching for one star to come back. It could be a question worth sitting with: what is your Sirius — the returning sign that tells you a new season has actually started?" },
+      { name:"Auriga", latin:"The Charioteer", stars:["Capella","Menkalinan","Theta Aurigae","Iota Aurigae","Elnath"],
+        lines:[["Capella","Menkalinan"],["Menkalinan","Theta Aurigae"],["Theta Aurigae","Iota Aurigae"],["Iota Aurigae","Capella"],["Theta Aurigae","Elnath"]],
+        is:"A big pentagon of stars overhead in winter, crowned by Capella — the sixth-brightest star, a pair of yellow giants resembling our Sun grown older. Auriga shares its bottom star, Elnath, with Taurus.",
+        story:"The charioteer is often Erichthonius of Athens, the king who invented the four-horse chariot — and who, born with lame legs, invented it partly so that he himself could move like the wind.",
+        could:"A man who couldn't walk built the fastest machine of his age. It could be the oldest story in the sky about accommodation: the limitation didn't excuse him from the journey — it redesigned the vehicle." },
+      { name:"Corona Borealis", latin:"The Northern Crown", stars:["Nusakan","Alphecca","Theta Coronae","Epsilon Coronae","Delta Coronae"],
+        lines:[["Nusakan","Alphecca"],["Alphecca","Theta Coronae"],["Nusakan","Delta Coronae"],["Delta Coronae","Epsilon Coronae"],["Epsilon Coronae","Alphecca"]],
+        is:"A small, perfect arc of stars between Boötes and Hercules — one of the easiest shapes in the sky to recognize once seen. Its jewel is Alphecca, a bright eclipsing pair.",
+        story:"The crown of Ariadne, who gave Theseus the thread that led him out of the labyrinth — and was left behind on an island for her trouble. The god Dionysus found her there, and set her wedding crown in the sky.",
+        could:"Ariadne's real gift wasn't the crown; it was the thread — a way back out of the maze. It could be worth asking, before your next labyrinth, what your thread is and who's holding the other end." },
+      { name:"Hercules", latin:"The Kneeling Hero", stars:["Kornephoros","Zeta Herculis","Eta Herculis","Pi Herculis","Rasalgethi"],
+        lines:[["Kornephoros","Zeta Herculis"],["Zeta Herculis","Eta Herculis"],["Eta Herculis","Pi Herculis"],["Pi Herculis","Zeta Herculis"],["Zeta Herculis","Rasalgethi"]],
+        is:"A sprawling figure whose centerpiece is the Keystone, a four-star trapezoid. Just off the Keystone's western edge sits the Great Hercules Cluster — a swarm of several hundred thousand stars, catchable in binoculars.",
+        story:"The strongest man of myth, kneeling in the sky mid-labor. His twelve labors were penance for a terrible act done in madness — the strength came first; the wisdom about what it was for came at great cost, after.",
+        could:"He's kneeling, not standing — the strongest figure in the sky, drawn mid-bow. It could be a useful picture: strength that has learned to kneel is a different substance from strength that only knows how to lift." },
+      { name:"Corvus", latin:"The Crow", stars:["Alchiba","Gienah Corvi","Algorab","Kraz"],
+        lines:[["Alchiba","Gienah Corvi"],["Gienah Corvi","Algorab"],["Algorab","Kraz"],["Kraz","Gienah Corvi"]],
+        is:"A small, neat quadrilateral — a little sail of stars — low in the spring sky, riding on the back of Hydra, the great water snake.",
+        story:"Apollo sent his crow to fetch water in a cup. The crow dawdled, gorged on figs, then lied about it, blaming the water snake. Apollo, seeing through it, set all three — crow, cup, and snake — in the sky together, the crow forever thirsty beside the cup it cannot reach.",
+        could:"It's the sky's small monument to a cover story that didn't work. It could be a quiet encouragement: the figs-and-snake excuses rarely survive daylight, and the plain errand was never that hard." },
+      { name:"Aries", latin:"The Ram", stars:["Hamal","Sheratan","Mesarthim"],
+        lines:[["Hamal","Sheratan"],["Sheratan","Mesarthim"]],
+        is:"A small, faint triangle in the autumn sky — modest now, but two thousand years ago the spring equinox sun stood in Aries, making it the first sign of the zodiac and the start of the year.",
+        story:"The ram with the golden fleece — the same fleece Jason and the Argonauts later crossed the world to steal. The ram itself was sacrificed, gratefully, and placed in the sky; its fleece became the prize of heroes.",
+        could:"The ram's whole glory was given away — fleece, life, everything — and it still got the sky. It could be a thought about generosity that costs: the giving is the part that got remembered." },
+      { name:"Crux", latin:"The Southern Cross", stars:["Acrux","Imai","Mimosa","Gacrux"],
+        lines:[["Acrux","Gacrux"],["Mimosa","Imai"]],
+        is:"The smallest constellation in the sky and the most famous in the southern hemisphere. Its long axis points almost exactly to the south celestial pole — the southern sky's compass. From Texas it never climbs above the horizon; you have to travel south to meet it.",
+        story:"It rides on the flags of Australia, New Zealand, Brazil, and more. For southern sailors it was the sign of home waters; Dante wrote of its four stars 'ne'er seen by first human beings' — the sky has a whole half that northern eyes never grew up under.",
+        could:"Some things can't be seen from where you stand, no matter how clear the night. It could be an argument for the journey itself: half the sky is a reason to go." }
+    ];
+
+    /* Which constellation owns each star (first claim wins) */
+    var STAR_HOME = {};
+    CONSTELLATIONS.forEach(function(c){ c.stars.forEach(function(s){ if(!STAR_HOME[s]) STAR_HOME[s] = c.name; }); });
+    var CONST_BY_NAME = {};
+    CONSTELLATIONS.forEach(function(c){ CONST_BY_NAME[c.name] = c; });
+    </script>
+
+    <script>
+    "use strict";
+    /* ================================================================
+       STATE
+       ================================================================ */
+    var $ = function(id){ return document.getElementById(id); };
+    var canvas = $("sky"), ctx = canvas.getContext("2d");
+    var video = $("cam");
+
+    var state = {
+      lat: 32.7555, lon: -97.3308, locName: "Fort Worth, TX (default)",
+      manualHdg: 185, manualAlt: 32,
+      sensorHdg: null, sensorAlt: null, sensorOn: false,
+      offHdg: 0, offAlt: 0,
+      camOn: false, camStream: null,
+      showLines: true, showLabels: true,
+      timeOffsetMin: 0,
+      target: null,           /* {kind:'star'|'const', name} */
+      sheetOpen: false
+    };
+
+    /* Faint background field stars (fixed RA/Dec so the sky wheels correctly) */
+    var FIELD = [];
+    (function(){
+      var seed = 1234567;
+      function rnd(){ seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+      for (var i = 0; i < 750; i++){
+        var ra = rnd() * 24;
+        var dec = Math.asin(rnd() * 2 - 1) * 180 / Math.PI; /* uniform on sphere */
+        FIELD.push([ra, dec, 4.4 + rnd() * 2.2]);
+      }
+    })();
+
+    /* ================================================================
+       ASTRONOMY — RA/Dec -> Alt/Az for here and now
+       ================================================================ */
+    var D2R = Math.PI / 180, R2D = 180 / Math.PI;
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function wrap360(v){ return ((v % 360) + 360) % 360; }
+    function wrap180(v){ v = wrap360(v); return v > 180 ? v - 360 : v; }
+
+    function effDate(){ return new Date(Date.now() + state.timeOffsetMin * 60000); }
+
+    function lstDeg(date){
+      var jd = date.getTime() / 86400000 + 2440587.5;
+      var d = jd - 2451545.0, T = d / 36525;
+      var gmst = 280.46061837 + 360.98564736629 * d + 0.000387933 * T * T - (T * T * T) / 38710000;
+      return wrap360(gmst + state.lon);
+    }
+
+    function altAz(raH, decDeg, lst){
+      var ha = wrap180(lst - raH * 15) * D2R;
+      var dec = decDeg * D2R, phi = state.lat * D2R;
+      var alt = Math.asin(Math.sin(dec) * Math.sin(phi) + Math.cos(dec) * Math.cos(phi) * Math.cos(ha));
+      var y = Math.sin(ha);
+      var x = Math.cos(ha) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi);
+      var az = wrap360(Math.atan2(y, x) * R2D + 180);
+      return { alt: alt * R2D, az: az };
+    }
+
+    function azWord(az){
+      var words = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+      return words[Math.round(wrap360(az) / 22.5) % 16];
+    }
+    function fmtAlt(alt){ return (alt < 0 ? "below horizon" : alt.toFixed(0) + "° up"); }
+
+    /* Current view direction (degrees) */
+    function viewDir(){
+      var h = (state.sensorOn && state.sensorHdg != null) ? state.sensorHdg : state.manualHdg;
+      var a = (state.sensorOn && state.sensorAlt != null) ? state.sensorAlt : state.manualAlt;
+      return { hdg: wrap360(h + state.offHdg), alt: clamp(a + state.offAlt, -85, 90) };
+    }
+
+    /* ================================================================
+       PROJECTION — pinhole camera model
+       ================================================================ */
+    var W = 0, H = 0, DPR = 1;
+    function resize(){
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    }
+    window.addEventListener("resize", resize); resize();
+
+    var VFOV = 62;
+    function projector(view){
+      var tanV = Math.tan(VFOV / 2 * D2R);
+      var tanH = tanV * (W / H);
+      var H0 = view.hdg * D2R, A0 = view.alt * D2R;
+      var f = [Math.cos(A0) * Math.sin(H0), Math.cos(A0) * Math.cos(H0), Math.sin(A0)];
+      var r = [Math.cos(H0), -Math.sin(H0), 0];
+      var u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
+      return function(alt, az){
+        var a = alt * D2R, z = az * D2R;
+        var v = [Math.cos(a) * Math.sin(z), Math.cos(a) * Math.cos(z), Math.sin(a)];
+        var d = v[0] * f[0] + v[1] * f[1] + v[2] * f[2];
+        if (d < 0.06) return null;
+        var sx = (v[0] * r[0] + v[1] * r[1] + v[2] * r[2]) / d / tanH;
+        var sy = (v[0] * u[0] + v[1] * u[1] + v[2] * u[2]) / d / tanV;
+        if (sx < -1.25 || sx > 1.25 || sy < -1.3 || sy > 1.3) return null;
+        return { x: (sx + 1) / 2 * W, y: (1 - sy) / 2 * H, d: d };
+      };
+    }
+
+    /* Per-frame cache of projected catalog stars */
+    var frameStars = {};   /* name -> {x,y,alt,az} */
+    var frameConst = {};   /* name -> {cx, cy, alt, az, count} */
+
+    function draw(){
+      var date = effDate(), lst = lstDeg(date);
+      var view = viewDir();
+      var proj = projector(view);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      /* Demo sky backdrop (hidden once the real camera is on) */
+      if (!state.camOn){
+        var g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, "#060b22"); g.addColorStop(0.6, "#04060f"); g.addColorStop(1, "#0a0f24");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      }
+
+      /* Horizon glow + cardinal points */
+      ctx.lineWidth = 1;
+      var horizonPts = [];
+      for (var azH = 0; azH <= 360; azH += 4){
+        var hp = proj(0, azH);
+        if (hp) horizonPts.push(hp); else if (horizonPts.length){ horizonPts.push(null); }
+      }
+      ctx.strokeStyle = "rgba(127,212,255,0.35)";
+      ctx.beginPath();
+      var pen = false;
+      horizonPts.forEach(function(p){
+        if (!p){ pen = false; return; }
+        if (!pen){ ctx.moveTo(p.x, p.y); pen = true; } else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+      ctx.font = "600 13px Manrope, sans-serif"; ctx.textAlign = "center";
+      [["N",0],["E",90],["S",180],["W",270]].forEach(function(c){
+        var p = proj(2.5, c[1]);
+        if (p){ ctx.fillStyle = "rgba(200,216,255,0.85)"; ctx.fillText(c[0], p.x, p.y); }
+      });
+
+      /* Faint field stars */
+      var fieldAlpha = state.camOn ? 0.30 : 0.75;
+      ctx.fillStyle = "#cdd9ff";
+      for (var i = 0; i < FIELD.length; i++){
+        var fs = FIELD[i], faa = altAz(fs[0], fs[1], lst);
+        if (faa.alt < -2) continue;
+        var fp = proj(faa.alt, faa.az);
+        if (!fp) continue;
+        ctx.globalAlpha = fieldAlpha * clamp((faa.alt + 2) / 14, 0.12, 1) * (0.55 + 0.45 * Math.sin(i * 12.9898));
+        var fr = clamp(2.6 - fs[2] * 0.3, 0.5, 1.3);
+        ctx.beginPath(); ctx.arc(fp.x, fp.y, fr, 0, 6.2832); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      /* Catalog stars: compute positions */
+      frameStars = {}; frameConst = {};
+      var names = Object.keys(STARS);
+      names.forEach(function(n){
+        var s = STARS[n], aa = altAz(s[0], s[1], lst);
+        var p = proj(aa.alt, aa.az);
+        if (p) frameStars[n] = { x: p.x, y: p.y, alt: aa.alt, az: aa.az, mag: s[2] };
+        var home = STAR_HOME[n];
+        if (home){
+          var c = frameConst[home] || (frameConst[home] = { sx: 0, sy: 0, count: 0, altSum: 0, az: 0 });
+          var caa = aa;
+          if (p){ c.sx += p.x; c.sy += p.y; c.count++; }
+          c.altSum += caa.alt;
+        }
+      });
+      CONSTELLATIONS.forEach(function(c){
+        var fc = frameConst[c.name];
+        if (fc){
+          fc.alt = fc.altSum / c.stars.length;
+          var cAA = constAltAz(c, lst); fc.az = cAA.az;
+          if (fc.count) { fc.cx = fc.sx / fc.count; fc.cy = fc.sy / fc.count; }
+        }
+      });
+
+      /* Constellation lines */
+      if (state.showLines){
+        CONSTELLATIONS.forEach(function(c){
+          var isTarget = state.target && state.target.kind === "const" && state.target.name === c.name;
+          c.lines.forEach(function(pair){
+            var a = frameStars[pair[0]], b = frameStars[pair[1]];
+            if (!a || !b) return;
+            if (a.alt < -3 || b.alt < -3) return;
+            ctx.strokeStyle = isTarget ? "rgba(242,193,78,0.95)" : "rgba(127,212,255,0.42)";
+            ctx.lineWidth = isTarget ? 2 : 1.2;
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          });
+        });
+      }
+
+      /* Catalog stars + labels */
+      var t = Date.now();
+      names.forEach(function(n){
+        var p = frameStars[n]; if (!p) return;
+        var dim = p.alt < 0 ? 0.25 : 1;
+        var r = clamp(3.6 - p.mag * 0.62, 0.9, 4.6);
+        var tw = 0.82 + 0.18 * Math.sin(t / 620 + n.length * 1.7);
+        ctx.globalAlpha = dim * tw;
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(160,195,255,0.9)"; ctx.shadowBlur = p.mag < 1.5 ? 10 : 4;
+        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.2832); ctx.fill();
+        ctx.shadowBlur = 0;
+        if (state.showLabels && p.mag <= 2.3 && p.alt > -1){
+          ctx.globalAlpha = dim * 0.92;
+          ctx.font = "600 11.5px Manrope, sans-serif"; ctx.textAlign = "left";
+          ctx.fillStyle = "#dbe6ff";
+          ctx.fillText(n, p.x + r + 4, p.y + 3.5);
+        }
+        ctx.globalAlpha = 1;
+      });
+
+      /* Constellation name labels */
+      if (state.showLabels){
+        ctx.textAlign = "center";
+        CONSTELLATIONS.forEach(function(c){
+          var fc = frameConst[c.name];
+          if (!fc || !fc.count || fc.alt < 0) return;
+          var isTarget = state.target && state.target.kind === "const" && state.target.name === c.name;
+          ctx.font = "800 13px Manrope, sans-serif";
+          ctx.fillStyle = isTarget ? "rgba(242,193,78,0.98)" : "rgba(159,196,255,0.85)";
+          ctx.fillText(c.name.toUpperCase(), fc.cx, fc.cy - 14);
+        });
+      }
+
+      /* Target ring */
+      if (state.target){
+        var tp = targetPoint(lst);
+        if (tp && tp.proj){
+          ctx.strokeStyle = "rgba(242,193,78,0.95)"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(tp.proj.x, tp.proj.y, 17 + 3 * Math.sin(t / 300), 0, 6.2832); ctx.stroke();
+        }
+      }
+
+      updateReadouts(view, date);
+      updateCenter(view, lst);
+      updateGuide(view, lst);
+      requestAnimationFrame(draw);
+    }
+
+    function constAltAz(c, lst){
+      var raSum = 0, decSum = 0;
+      c.stars.forEach(function(n){ raSum += STARS[n][0]; decSum += STARS[n][1]; });
+      return altAz(raSum / c.stars.length, decSum / c.stars.length, lst);
+    }
+
+    function targetPoint(lst){
+      if (!state.target) return null;
+      var aa, projFn = projector(viewDir());
+      if (state.target.kind === "star"){
+        var s = STARS[state.target.name];
+        aa = altAz(s[0], s[1], lst);
+      } else {
+        aa = constAltAz(CONST_BY_NAME[state.target.name], lst);
+      }
+      return { alt: aa.alt, az: aa.az, proj: projFn(aa.alt, aa.az) };
+    }
+
+    /* ================================================================
+       READOUTS / CENTER / GUIDE / CHIPS
+       ================================================================ */
+    var lastCenterKey = "";
+    function updateReadouts(view, date){
+      $("roHdg").textContent = azWord(view.hdg) + " " + Math.round(view.hdg) + "°";
+      $("roAlt").textContent = Math.round(view.alt) + "°";
+      $("roTime").textContent = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) +
+        (state.timeOffsetMin ? " (shifted)" : "");
+      $("roLoc").textContent = state.locName + " · " +
+        Math.abs(state.lat).toFixed(2) + "°" + (state.lat >= 0 ? "N" : "S") + " " +
+        Math.abs(state.lon).toFixed(2) + "°" + (state.lon >= 0 ? "E" : "W");
+    }
+
+    function updateCenter(view, lst){
+      var cx = W / 2, cy = H * 0.46, best = null, bestD = 52;
+      Object.keys(frameStars).forEach(function(n){
+        var p = frameStars[n];
+        var d = Math.hypot(p.x - cx, p.y - cy);
+        if (d < bestD){ bestD = d; best = { kind: "star", name: n }; }
+      });
+      if (!best){
+        var bestCD = 110;
+        CONSTELLATIONS.forEach(function(c){
+          var fc = frameConst[c.name];
+          if (!fc || !fc.count) return;
+          var d = Math.hypot(fc.cx - cx, fc.cy - cy);
+          if (d < bestCD){ bestCD = d; best = { kind: "const", name: c.name }; }
+        });
+      }
+      var key = best ? best.kind + ":" + best.name : "";
+      if (key === lastCenterKey) return;
+      lastCenterKey = key;
+      if (!best){ $("centerName").textContent = ""; $("centerSub").textContent = ""; canvas._center = null; return; }
+      canvas._center = best;
+      if (best.kind === "star"){
+        $("centerName").textContent = best.name;
+        $("centerSub").textContent = (STAR_HOME[best.name] || "") + " · mag " + STARS[best.name][2].toFixed(1) + " · tap for its story";
+      } else {
+        $("centerName").textContent = best.name;
+        $("centerSub").textContent = CONST_BY_NAME[best.name].latin + " · tap for its story";
+      }
+    }
+
+    function updateGuide(view, lst){
+      var g = $("guide");
+      if (!state.target){ g.className = ""; return; }
+      g.className = "show";
+      var tp = targetPoint(lst);
+      var name = state.target.name;
+      if (tp.alt < -2){
+        $("guideArrow").textContent = "☾";
+        $("guideArrow").style.transform = "rotate(0deg)";
+        $("guideText").innerHTML = name + " <span class='dim'>is below the horizon right now — try the Time dial</span>";
+        return;
+      }
+      var dAz = wrap180(tp.az - view.hdg), dAlt = tp.alt - view.alt;
+      var dist = Math.hypot(dAz * Math.cos(view.alt * D2R), dAlt);
+      if (dist < 4){
+        $("guideArrow").textContent = "✦";
+        $("guideArrow").style.transform = "rotate(0deg)";
+        $("guideText").innerHTML = name + " <span class='dim'>— in view, at the center of your screen</span>";
+        return;
+      }
+      $("guideArrow").textContent = "➤";
+      $("guideArrow").style.transform = "rotate(" + (Math.atan2(-dAlt, dAz) * R2D) + "deg)";
+      var turn = Math.abs(dAz) < 3 ? "" : ("turn " + (dAz > 0 ? "right " : "left ") + Math.round(Math.abs(dAz)) + "°");
+      var tilt = Math.abs(dAlt) < 3 ? "" : ((turn ? " · " : "") + (dAlt > 0 ? "raise " : "lower ") + Math.round(Math.abs(dAlt)) + "°");
+      $("guideText").innerHTML = name + " <span class='dim'>" + turn + tilt + "</span>";
+    }
+
+    var chipsTimer = 0;
+    function refreshChips(){
+      var now = Date.now();
+      if (now - chipsTimer < 600) return;
+      chipsTimer = now;
+      var lst = lstDeg(effDate()), view = viewDir();
+      var inView = [];
+      CONSTELLATIONS.forEach(function(c){
+        var aa = constAltAz(c, lst);
+        if (aa.alt < -2) return;
+        var d = Math.abs(wrap180(aa.az - view.hdg));
+        inView.push({ name: c.name, alt: aa.alt, d: d });
+      });
+      inView.sort(function(a, b){ return a.d - b.d; });
+      var near = inView.filter(function(x){ return x.d < 65; }).slice(0, 8);
+      var box = $("chips");
+      if (!near.length){
+        box.innerHTML = "<div id='chipsEmpty'>Nothing catalogued in this direction — pan around, or search below.</div>";
+        return;
+      }
+      box.innerHTML = "";
+      near.forEach(function(x){
+        var b = document.createElement("button");
+        b.className = "chip";
+        b.innerHTML = x.name + "<span class='alt'>" + fmtAlt(x.alt) + "</span>";
+        b.addEventListener("click", function(){ openConstellation(x.name); });
+        box.appendChild(b);
+      });
+    }
+    setInterval(refreshChips, 700);
+
+    /* ================================================================
+       DETAIL SHEET
+       ================================================================ */
+    function starRows(c, lst){
+      var ul = $("sheetStarList"); ul.innerHTML = "";
+      c.stars.forEach(function(n){
+        var s = STARS[n], aa = altAz(s[0], s[1], lst);
+        var li = document.createElement("li");
+        if (aa.alt < 0) li.className = "down";
+        li.innerHTML = "<span>" + n + "</span><span class='r'>mag " + s[2].toFixed(1) + " · " +
+          (aa.alt < 0 ? "below horizon" : azWord(aa.az) + ", " + Math.round(aa.alt) + "° up") + "</span>";
+        li.addEventListener("click", function(){ setTarget("star", n); closeSheet(); });
+        ul.appendChild(li);
+      });
+    }
+    function statsHTML(items){
+      return items.map(function(it){ return "<div class='stat'>" + it[0] + "<b>" + it[1] + "</b></div>"; }).join("");
+    }
+    function openConstellation(name){
+      var c = CONST_BY_NAME[name]; if (!c) return;
+      var lst = lstDeg(effDate()), aa = constAltAz(c, lst);
+      var up = c.stars.filter(function(n){ return altAz(STARS[n][0], STARS[n][1], lst).alt > 0; }).length;
+      $("sheetName").textContent = c.name;
+      $("sheetLatin").textContent = c.latin;
+      $("sheetIs").textContent = c.is;
+      $("sheetStory").textContent = c.story;
+      $("sheetCould").textContent = c.could;
+      $("sheetStats").innerHTML = statsHTML([
+        ["Direction", azWord(aa.az) + " · " + Math.round(wrap360(aa.az)) + "°"],
+        ["Height now", fmtAlt(aa.alt)],
+        ["Stars up", up + " of " + c.stars.length],
+        ["Best season", bestSeason(c)]
+      ]);
+      $("sheetStars").querySelector("h3").textContent = "Its stars tonight — tap one to aim at it";
+      starRows(c, lst);
+      $("sheet").className = "show"; state.sheetOpen = true;
+    }
+    function openStar(name){
+      var s = STARS[name]; if (!s) return;
+      var home = STAR_HOME[name], c = home ? CONST_BY_NAME[home] : null;
+      var lst = lstDeg(effDate()), aa = altAz(s[0], s[1], lst);
+      var fact = STAR_FACTS[name];
+      $("sheetName").textContent = name;
+      $("sheetLatin").textContent = home ? "A star of " + home + " — " + CONST_BY_NAME[home].latin : "A bright star";
+      $("sheetIs").textContent = fact ? fact.note :
+        ("A magnitude " + s[2].toFixed(1) + " star" + (home ? " in " + home : "") + " — one of the named lights that draw the picture in the sky.");
+      $("sheetStory").textContent = c ? c.story : "—";
+      $("sheetCould").textContent = c ? c.could : "—";
+      var stats = [
+        ["Direction", azWord(aa.az) + " · " + Math.round(wrap360(aa.az)) + "°"],
+        ["Height now", fmtAlt(aa.alt)],
+        ["Brightness", "mag " + s[2].toFixed(1)]
+      ];
+      if (fact && fact.ly) stats.push(["Distance", "~" + fact.ly + " light-years"]);
+      $("sheetStats").innerHTML = statsHTML(stats);
+      if (c){
+        $("sheetStars").querySelector("h3").textContent = "More of " + home + " — tap one to aim at it";
+        starRows(c, lst);
+        $("sheetStars").style.display = "";
+      } else $("sheetStars").style.display = "none";
+      $("sheet").className = "show"; state.sheetOpen = true;
+    }
+    function bestSeason(c){
+      /* Rough: month when the constellation's center transits near 10 PM */
+      var raSum = 0; c.stars.forEach(function(n){ raSum += STARS[n][0]; });
+      var ra = raSum / c.stars.length;
+      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      var m = Math.round(((ra - 8.7) / 24 * 12) % 12);
+      return months[(m + 12) % 12] + " evenings";
+    }
+    function closeSheet(){ $("sheet").className = ""; state.sheetOpen = false; }
+    $("sheetClose").addEventListener("click", closeSheet);
+
+    /* ================================================================
+       SEARCH + GUIDE TARGET
+       ================================================================ */
+    function setTarget(kind, name){
+      state.target = { kind: kind, name: name };
+      toast("Guiding you to " + name + " — follow the arrow up top");
+    }
+    function findAndGuide(){
+      var q = $("search").value.trim().toLowerCase();
+      if (!q) return;
+      var starHit = Object.keys(STARS).filter(function(n){ return n.toLowerCase() === q; })[0] ||
+                    Object.keys(STARS).filter(function(n){ return n.toLowerCase().indexOf(q) === 0; })[0] ||
+                    Object.keys(STARS).filter(function(n){ return n.toLowerCase().indexOf(q) >= 0; })[0];
+      if (starHit){ setTarget("star", starHit); return; }
+      var cHit = CONSTELLATIONS.filter(function(c){ return c.name.toLowerCase() === q; })[0] ||
+                 CONSTELLATIONS.filter(function(c){ return c.name.toLowerCase().indexOf(q) >= 0; })[0];
+      if (cHit){ setTarget("const", cHit.name); return; }
+      toast("No star or constellation by that name in the catalog — try Orion, Mintaka, Vega…");
+    }
+    $("searchGo").addEventListener("click", findAndGuide);
+    $("search").addEventListener("keydown", function(e){ if (e.key === "Enter"){ findAndGuide(); $("search").blur(); } });
+    $("search").addEventListener("change", findAndGuide);
+    $("guideClose").addEventListener("click", function(){ state.target = null; $("guide").className = ""; });
+
+    (function buildList(){
+      var dl = $("skyList");
+      var items = CONSTELLATIONS.map(function(c){ return c.name; }).concat(Object.keys(STARS)).sort();
+      items.forEach(function(n){
+        var o = document.createElement("option"); o.value = n; dl.appendChild(o);
+      });
+    })();
+
+    /* ================================================================
+       CAMERA
+       ================================================================ */
+    function startCamera(){
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        toast("This browser can't open a camera here — the demo sky still works.");
+        return Promise.resolve(false);
+      }
+      return navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+        .then(function(stream){
+          state.camStream = stream; state.camOn = true;
+          video.srcObject = stream; video.style.display = "block";
+          $("modeBadge").textContent = "LIVE CAMERA";
+          $("btnCam").classList.add("on");
+          return true;
+        })
+        .catch(function(){
+          toast("Camera didn't open (permission or no camera) — showing the demo sky instead.");
+          return false;
+        });
+    }
+    function stopCamera(){
+      if (state.camStream){ state.camStream.getTracks().forEach(function(t){ t.stop(); }); }
+      state.camStream = null; state.camOn = false;
+      video.srcObject = null; video.style.display = "none";
+      $("modeBadge").textContent = state.sensorOn ? "COMPASS" : "DEMO SKY";
+      $("btnCam").classList.remove("on");
+    }
+    $("btnCam").addEventListener("click", function(){ state.camOn ? stopCamera() : startCamera(); });
+
+    /* ================================================================
+       COMPASS / ORIENTATION
+       ================================================================ */
+    function onOrient(e){
+      var hdg = null;
+      if (typeof e.webkitCompassHeading === "number" && !isNaN(e.webkitCompassHeading)) hdg = e.webkitCompassHeading;
+      else if (e.alpha != null) hdg = wrap360(360 - e.alpha);
+      if (hdg == null || e.beta == null) return;
+      var alt = clamp(e.beta - 90, -88, 90);
+      if (state.sensorHdg == null){ state.sensorHdg = hdg; state.sensorAlt = alt; }
+      else {
+        state.sensorHdg = wrap360(state.sensorHdg + wrap180(hdg - state.sensorHdg) * 0.3);
+        state.sensorAlt = state.sensorAlt + (alt - state.sensorAlt) * 0.3;
+      }
+    }
+    function startSensors(){
+      function attach(){
+        window.addEventListener("deviceorientation", onOrient, true);
+        state.sensorOn = true;
+        $("btnOrient").classList.add("on");
+        if (!state.camOn) $("modeBadge").textContent = "COMPASS";
+        setTimeout(function(){
+          if (state.sensorHdg == null) toast("Compass is on — if the sky doesn't follow your phone, this device may not share motion data here. Dragging still works.");
+        }, 1600);
+      }
+      if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
+        return DeviceOrientationEvent.requestPermission().then(function(res){
+          if (res === "granted"){ attach(); return true; }
+          toast("Compass permission wasn't granted — drag to look around instead.");
+          return false;
+        }).catch(function(){ toast("Compass isn't available here — drag to look around."); return false; });
+      }
+      attach(); return Promise.resolve(true);
+    }
+    function stopSensors(){
+      window.removeEventListener("deviceorientation", onOrient, true);
+      state.sensorOn = false; state.sensorHdg = null; state.sensorAlt = null;
+      $("btnOrient").classList.remove("on");
+      if (!state.camOn) $("modeBadge").textContent = "DEMO SKY";
+    }
+    $("btnOrient").addEventListener("click", function(){ state.sensorOn ? stopSensors() : startSensors(); });
+
+    /* ================================================================
+       LOCATION
+       ================================================================ */
+    function askLocation(){
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(function(pos){
+        state.lat = pos.coords.latitude; state.lon = pos.coords.longitude;
+        state.locName = "Your location";
+        toast("Location set — the sky is now aimed for where you stand.");
+      }, function(){ /* keep default silently */ }, { timeout: 8000, maximumAge: 600000 });
+    }
+
+    /* ================================================================
+       DRAG TO LOOK (also fine-aims on top of the compass)
+       ================================================================ */
+    var drag = null;
+    canvas.addEventListener("pointerdown", function(e){
+      drag = { x: e.clientX, y: e.clientY, moved: 0 };
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", function(e){
+      if (!drag) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      drag.moved += Math.abs(dx) + Math.abs(dy);
+      drag.x = e.clientX; drag.y = e.clientY;
+      var view = viewDir();
+      var degPerPxX = 55 / W, degPerPxY = 55 / H;
+      if (state.sensorOn){ state.offHdg -= dx * degPerPxX; state.offAlt += dy * degPerPxY; state.offAlt = clamp(state.offAlt, -60, 60); }
+      else {
+        state.manualHdg = wrap360(state.manualHdg - dx * degPerPxX);
+        state.manualAlt = clamp(state.manualAlt + dy * degPerPxY, -80, 90);
+      }
+    });
+    canvas.addEventListener("pointerup", function(e){
+      if (drag && drag.moved < 8) handleTap(e.clientX, e.clientY);
+      drag = null;
+    });
+    canvas.addEventListener("dblclick", function(){
+      state.offHdg = 0; state.offAlt = 0;
+      toast("Aim reset to the compass reading.");
+    });
+    function handleTap(x, y){
+      var best = null, bestD = 46;
+      Object.keys(frameStars).forEach(function(n){
+        var p = frameStars[n];
+        var d = Math.hypot(p.x - x, p.y - y);
+        if (d < bestD){ bestD = d; best = n; }
+      });
+      if (best){ openStar(best); return; }
+      if (canvas._center){
+        if (canvas._center.kind === "star") openStar(canvas._center.name);
+        else openConstellation(canvas._center.name);
+        return;
+      }
+      if (state.sheetOpen) closeSheet();
+    }
+
+    /* ================================================================
+       CONTROLS
+       ================================================================ */
+    $("btnLines").addEventListener("click", function(){
+      state.showLines = !state.showLines; this.classList.toggle("on", state.showLines);
+    });
+    $("btnLabels").addEventListener("click", function(){
+      state.showLabels = !state.showLabels; this.classList.toggle("on", state.showLabels);
+    });
+    $("btnTime").addEventListener("click", function(){
+      $("timeRow").classList.toggle("show"); this.classList.toggle("on");
+    });
+    $("timeSlider").addEventListener("input", function(){
+      state.timeOffsetMin = parseInt(this.value, 10);
+      var d = effDate();
+      $("timeVal").textContent = state.timeOffsetMin === 0 ? "Now" :
+        d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    });
+    $("timeNow").addEventListener("click", function(){
+      state.timeOffsetMin = 0; $("timeSlider").value = 0; $("timeVal").textContent = "Now";
+    });
+
+    /* ================================================================
+       START
+       ================================================================ */
+    $("btnLive").addEventListener("click", function(){
+      $("startStatus").textContent = "Asking for camera, compass, and location…";
+      var p1 = startCamera();
+      var p2 = (typeof DeviceOrientationEvent !== "undefined") ? startSensors() : Promise.resolve(false);
+      askLocation();
+      Promise.all([p1, p2]).then(function(){
+        $("start").style.display = "none";
+        toast(state.camOn ? "Hold the phone up and turn slowly — the labels ride the real sky." :
+              "Demo sky: drag to look around. Search below aims you at anything in the catalog.");
+      });
+    });
+    $("btnDemo").addEventListener("click", function(){
+      $("start").style.display = "none";
+      askLocation();
+      toast("Demo sky — drag to look around. Try searching for Mintaka.");
+    });
+
+    requestAnimationFrame(draw);
+    </script>
+</body>
+</html>

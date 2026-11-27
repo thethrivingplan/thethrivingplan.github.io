@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Ring Number Hunt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+
+      :root {
+        --bg: #e9eefb;
+        --bg-deep: #d7e0f7;
+        --ink: #101c3d;
+        --ink-soft: #44538a;
+        --board: #1b2450;
+        --board-2: #232d63;
+        --ring-line: rgba(190, 205, 255, 0.35);
+        --num: #f2f5ff;
+        --center-bg: #39448f;
+        --accent: #ffb020;
+        --accent-ink: #241a00;
+        --good: #2fce6e;
+        --bad: #ff5252;
+        --card: #ffffff;
+        --card-line: #c3cfef;
+        --shadow: 0 18px 44px rgba(23, 35, 92, 0.28);
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #060d24;
+          --bg-deep: #04081a;
+          --ink: #eef2ff;
+          --ink-soft: #9aa9dd;
+          --board: #131b42;
+          --board-2: #1a2456;
+          --ring-line: rgba(160, 180, 255, 0.30);
+          --num: #f2f5ff;
+          --center-bg: #2e3a80;
+          --accent: #ffb020;
+          --accent-ink: #241a00;
+          --card: #101a3e;
+          --card-line: #2b3a75;
+          --shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+          color-scheme: dark;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif;
+        background: radial-gradient(120% 90% at 50% 0%, var(--bg) 0%, var(--bg-deep) 100%);
+        color: var(--ink);
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 14px 12px 28px;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .wrap { width: 100%; max-width: 560px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+      /* ---------- HUD ---------- */
+      .hud {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 8px;
+      }
+      .hud .side { display: flex; align-items: center; gap: 8px; }
+      .hud .side.right { justify-content: flex-end; }
+      .stat { line-height: 1.05; }
+      .stat .k { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+      .stat .v { font-family: "Bricolage Grotesque", "Nunito", sans-serif; font-size: 1.45rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .stat .v.low { color: var(--bad); animation: pulse 0.6s ease-in-out infinite alternate; }
+      @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+      .target {
+        text-align: center;
+        background: var(--board);
+        color: #fff;
+        border-radius: 18px;
+        padding: 6px 22px 9px;
+        box-shadow: var(--shadow);
+        min-width: 128px;
+      }
+      .target .k { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #aebcf5; }
+      .target .v { font-family: "Bricolage Grotesque", sans-serif; font-size: 2.5rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+      .target.done .v { color: var(--good); }
+
+      .icon-btn {
+        width: 44px; height: 44px; min-height: 44px;
+        border-radius: 50%;
+        border: 2px solid var(--card-line);
+        background: var(--card);
+        color: var(--ink);
+        font-size: 1.15rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer;
+      }
+      .icon-btn:active { transform: scale(0.93); }
+
+      .progress {
+        width: 100%; height: 10px; border-radius: 99px;
+        background: color-mix(in srgb, var(--ink) 12%, transparent);
+        overflow: hidden;
+      }
+      .progress > div {
+        height: 100%; width: 0%;
+        background: linear-gradient(90deg, #2fce6e, #39c2ff);
+        border-radius: 99px;
+        transition: width 0.25s ease;
+      }
+      .progress-meta { width: 100%; display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 800; color: var(--ink-soft); margin-top: -6px; }
+
+      /* ---------- Board ---------- */
+      .board-zone { position: relative; width: min(94vw, 540px); aspect-ratio: 1 / 1; }
+      .board {
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 42%, var(--board-2) 0%, var(--board) 62%, color-mix(in srgb, var(--board) 78%, #000) 100%);
+        box-shadow: var(--shadow), inset 0 0 0 2px var(--ring-line), inset 0 0 60px rgba(0,0,0,0.35);
+        overflow: hidden;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .board.shake { animation: shake 0.32s ease; }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-7px); }
+        45% { transform: translateX(6px); }
+        70% { transform: translateX(-4px); }
+        90% { transform: translateX(3px); }
+      }
+      .ring-guide {
+        position: absolute; border: 1.5px solid var(--ring-line); border-radius: 50%;
+        transform: translate(-50%, -50%); left: 50%; top: 50%;
+        pointer-events: none;
+      }
+      .num {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        border: none; background: transparent;
+        color: var(--num);
+        font-family: "Nunito", sans-serif;
+        font-weight: 900;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        padding: 0;
+        line-height: 1;
+        min-height: 0;
+      }
+      .num:active { background: rgba(255,255,255,0.14); }
+      .num.found { cursor: default; animation: pop 0.3s ease; }
+      @keyframes pop { 0% { scale: 1; } 45% { scale: 1.45; } 100% { scale: 1; } }
+      .num.hinting { animation: hintpulse 0.45s ease-in-out 3; border-radius: 50%; }
+      @keyframes hintpulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 176, 32, 0); }
+        50% { box-shadow: 0 0 0 9px rgba(255, 176, 32, 0.55); }
+      }
+      .center-num {
+        background: var(--center-bg);
+        box-shadow: inset 0 0 0 1.5px var(--ring-line), 0 4px 14px rgba(0,0,0,0.3);
+        z-index: 3;
+      }
+      .center-num.found { background: var(--center-bg); }
+
+      /* ---------- Overlay panels ---------- */
+      .veil {
+        position: absolute; inset: 0; z-index: 10;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--board) 82%, transparent);
+        backdrop-filter: blur(3px);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 12%;
+        color: #eef2ff;
+      }
+      .veil[hidden] { display: none; }
+      .veil h2 { font-family: "Bricolage Grotesque", sans-serif; font-size: clamp(1.5rem, 6.4vw, 2.2rem); font-weight: 800; margin: 0 0 6px; line-height: 1.05; }
+      .veil p { margin: 0 0 14px; font-weight: 700; color: #b9c6f5; font-size: clamp(0.85rem, 3.4vw, 1rem); line-height: 1.45; }
+      .veil .big-emoji { font-size: 2.4rem; margin-bottom: 6px; }
+      .result-grid { display: flex; gap: 18px; margin: 2px 0 16px; }
+      .result-grid .r { line-height: 1.1; }
+      .result-grid .r .rv { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .result-grid .r .rk { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #9fb0ea; }
+
+      .btn {
+        font-family: "Nunito", sans-serif;
+        font-weight: 900;
+        border: none; cursor: pointer;
+        border-radius: 99px;
+        padding: 12px 26px;
+        font-size: 1.05rem;
+        min-height: 48px;
+      }
+      .btn.primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 8px 22px rgba(255, 176, 32, 0.4); }
+      .btn.primary:active { transform: scale(0.96); }
+      .btn.ghost { background: transparent; color: #cdd8ff; border: 2px solid rgba(190, 205, 255, 0.45); }
+      .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+      /* ---------- Below-board controls ---------- */
+      .controls { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+      .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+      .mode {
+        border: 2px solid var(--card-line);
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 16px;
+        padding: 9px 14px;
+        font-family: "Nunito", sans-serif;
+        font-weight: 900;
+        cursor: pointer;
+        min-height: 48px;
+        line-height: 1.15;
+        text-align: left;
+      }
+      .mode small { display: block; font-weight: 800; color: var(--ink-soft); font-size: 0.72rem; }
+      .mode[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--card)); box-shadow: 0 0 0 2px var(--accent) inset; }
+      .toggles { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 8px;
+        border: 2px solid var(--card-line); background: var(--card);
+        border-radius: 99px; padding: 8px 14px;
+        font-weight: 800; font-size: 0.9rem; color: var(--ink);
+        cursor: pointer; min-height: 44px;
+      }
+      .chip input { width: 20px; height: 20px; accent-color: #e8930c; margin: 0; }
+      .hint-btn {
+        border: 2px solid var(--card-line); background: var(--card); color: var(--ink);
+        border-radius: 99px; padding: 8px 18px; font-family: "Nunito", sans-serif;
+        font-weight: 900; font-size: 0.95rem; cursor: pointer; min-height: 44px;
+      }
+      .hint-btn:disabled { opacity: 0.45; cursor: default; }
+      .howto { max-width: 480px; text-align: center; color: var(--ink-soft); font-weight: 700; font-size: 0.92rem; line-height: 1.5; margin: 0; }
+      .howto b { color: var(--ink); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .board.shake, .num.found, .stat .v.low { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <!-- HUD -->
+      <div class="hud">
+        <div class="side">
+          <div class="stat">
+            <div class="k">Time</div>
+            <div class="v" id="timeVal">–</div>
+          </div>
+        </div>
+        <div class="target" id="targetBox">
+          <div class="k">Find</div>
+          <div class="v" id="targetVal">1</div>
+        </div>
+        <div class="side right">
+          <button class="icon-btn" id="soundBtn" type="button" aria-label="Toggle sound">🔊</button>
+          <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause game">⏸</button>
+        </div>
+      </div>
+
+      <div class="progress" aria-hidden="true"><div id="progressFill"></div></div>
+      <div class="progress-meta">
+        <span id="foundMeta">Found 0 of 40</span>
+        <span id="mistakeMeta">Mistakes 0</span>
+      </div>
+
+      <!-- Board -->
+      <div class="board-zone">
+        <div class="board" id="board" role="group" aria-label="Number ring board"></div>
+
+        <!-- Start veil -->
+        <div class="veil" id="startVeil">
+          <div class="big-emoji" aria-hidden="true">🎯</div>
+          <h2>Train your brain</h2>
+          <p>The numbers are hiding in the rings — and the rings are moving. Tap them in order, <b style="color:#fff">1, 2, 3…</b> all the way to the end before the clock runs out.</p>
+          <button class="btn primary" id="startBtn" type="button">▶&nbsp; Start hunting</button>
+        </div>
+
+        <!-- Pause veil -->
+        <div class="veil" id="pauseVeil" hidden>
+          <h2>Paused</h2>
+          <p>The rings are holding still. Catch your breath.</p>
+          <div class="btn-row">
+            <button class="btn primary" id="resumeBtn" type="button">Resume</button>
+            <button class="btn ghost" id="restartBtn" type="button">Restart</button>
+          </div>
+        </div>
+
+        <!-- End veil -->
+        <div class="veil" id="endVeil" hidden>
+          <div class="big-emoji" id="endEmoji" aria-hidden="true">🏆</div>
+          <h2 id="endTitle">You found them all!</h2>
+          <p id="endLine"></p>
+          <div class="result-grid">
+            <div class="r"><div class="rv" id="endFound">0</div><div class="rk">Found</div></div>
+            <div class="r"><div class="rv" id="endTime">0s</div><div class="rk">Time</div></div>
+            <div class="r"><div class="rv" id="endMiss">0</div><div class="rk">Mistakes</div></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="againBtn" type="button">Play again</button>
+            <button class="btn ghost" id="endRestartBtn" type="button">Change level</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="modes" role="group" aria-label="Difficulty">
+          <button class="mode" type="button" data-mode="chill" aria-pressed="false">Chill<small>1–25 · 90 seconds</small></button>
+          <button class="mode" type="button" data-mode="classic" aria-pressed="true">Classic<small>1–40 · 80 seconds</small></button>
+          <button class="mode" type="button" data-mode="sprint" aria-pressed="false">Sprint<small>1–60 · 60 seconds</small></button>
+        </div>
+        <div class="toggles">
+          <label class="chip"><input type="checkbox" id="spinToggle" checked /> Spinning rings</label>
+          <button class="hint-btn" id="hintBtn" type="button" disabled>💡 Hint (<span id="hintsLeft">3</span>)</button>
+          <button class="hint-btn" id="newGameBtn" type="button">↻ New game</button>
+        </div>
+        <p class="howto"><b>How to play:</b> tap the numbers in counting order. The number in the middle is always <b>1</b> — start there. Wrong taps cost <b>3 seconds</b>. Each ring spins its own way, so keep your eyes moving!</p>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var MODES = {
+          chill:   { total: 25, seconds: 90, rings: [6, 8, 10],        speeds: [5, -4, 3] },
+          classic: { total: 40, seconds: 80, rings: [7, 10, 10, 12],  speeds: [5, -4, 3.2, -2.4] },
+          sprint:  { total: 60, seconds: 60, rings: [9, 12, 16, 22],  speeds: [6, -5, 4, -3] }
+        };
+        var FOUND_COLORS = ["#ff5a5a", "#39c2ff", "#ffd23f", "#52e07a", "#ff7ad9", "#3fe0c5", "#ffa94d", "#b78bff"];
+
+        var board = document.getElementById("board");
+        var timeVal = document.getElementById("timeVal");
+        var targetVal = document.getElementById("targetVal");
+        var targetBox = document.getElementById("targetBox");
+        var progressFill = document.getElementById("progressFill");
+        var foundMeta = document.getElementById("foundMeta");
+        var mistakeMeta = document.getElementById("mistakeMeta");
+        var startVeil = document.getElementById("startVeil");
+        var pauseVeil = document.getElementById("pauseVeil");
+        var endVeil = document.getElementById("endVeil");
+        var hintBtn = document.getElementById("hintBtn");
+        var hintsLeftEl = document.getElementById("hintsLeft");
+        var spinToggle = document.getElementById("spinToggle");
+
+        var mode = "classic";
+        var spinning = true;
+        var soundOn = true;
+
+        var numbers = [];       // {value, el, ring, baseAngle, radius}
+        var ringAngles = [];
+        var ringSpeeds = [];
+        var target = 1;
+        var found = 0;
+        var mistakes = 0;
+        var hints = 3;
+        var timeLeft = 0;
+        var elapsed = 0;
+        var running = false;
+        var paused = false;
+        var lastTs = null;
+        var rafId = null;
+
+        /* ---------- Sound (WebAudio, created on first tap) ---------- */
+        var audioCtx = null;
+        function ac() {
+          if (!audioCtx) {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+          }
+          if (audioCtx && audioCtx.state === "suspended") { audioCtx.resume(); }
+          return audioCtx;
+        }
+        function blip(freq, dur, type, vol, when) {
+          if (!soundOn) return;
+          var ctx = ac(); if (!ctx) return;
+          var t = ctx.currentTime + (when || 0);
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol || 0.16, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(t); o.stop(t + dur + 0.05);
+        }
+        function sndCorrect(n, total) {
+          var f = 440 + (n / total) * 520;
+          blip(f, 0.14, "sine", 0.18);
+          blip(f * 1.5, 0.1, "triangle", 0.08, 0.03);
+        }
+        function sndWrong() { blip(150, 0.18, "sawtooth", 0.07); blip(110, 0.2, "square", 0.05, 0.02); }
+        function sndWin() { [523, 659, 784, 1047].forEach(function (f, i) { blip(f, 0.22, "triangle", 0.16, i * 0.11); }); }
+        function sndLose() { [392, 330, 262].forEach(function (f, i) { blip(f, 0.24, "triangle", 0.13, i * 0.13); }); }
+        function sndTick() { blip(980, 0.05, "sine", 0.06); }
+
+        /* ---------- Board building ---------- */
+        function shuffle(a) {
+          for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = a[i]; a[i] = a[j]; a[j] = t;
+          }
+          return a;
+        }
+
+        function buildBoard(playable) {
+          var cfg = MODES[mode];
+          board.innerHTML = "";
+          numbers = [];
+          ringAngles = cfg.rings.map(function () { return Math.random() * 360; });
+          ringSpeeds = cfg.speeds.slice();
+
+          // Ring guide circles (radii match number placement)
+          var radii = ringRadii(cfg);
+          radii.forEach(function (r) {
+            var g = document.createElement("div");
+            g.className = "ring-guide";
+            g.style.width = (r * 2) + "%";
+            g.style.height = (r * 2) + "%";
+            board.appendChild(g);
+          });
+          var centerGuide = document.createElement("div");
+          centerGuide.className = "ring-guide";
+          centerGuide.style.width = "25%"; centerGuide.style.height = "25%";
+          board.appendChild(centerGuide);
+
+          // Center: always 1
+          var centerBtn = makeNum(1, -1, 0, 0, true, playable);
+          numbers.push(centerBtn);
+
+          // Scatter 2..total across the rings
+          var rest = [];
+          for (var n = 2; n <= cfg.total; n++) rest.push(n);
+          shuffle(rest);
+          var idx = 0;
+          cfg.rings.forEach(function (count, ri) {
+            var offset = Math.random() * 360;
+            for (var k = 0; k < count; k++) {
+              var value = rest[idx++];
+              var baseAngle = offset + (360 / count) * k + (Math.random() * 10 - 5);
+              var rec = makeNum(value, ri, baseAngle, radii[ri], false, playable);
+              numbers.push(rec);
+            }
+          });
+          layout();
+        }
+
+        function ringRadii(cfg) {
+          // Percent of board half-size for each ring's number centers
+          if (cfg.rings.length === 3) return [24, 35, 45];
+          return [21, 30, 38.5, 45.2];
+        }
+
+        function fontFor(ring, total) {
+          // px sizes tuned per ring crowding; scaled by board via clamp in layout
+          if (total <= 25) return ring === -1 ? 30 : 21;
+          if (total <= 40) return ring === -1 ? 30 : (ring === 3 ? 17 : 19);
+          if (ring === -1) return 30;
+          if (ring === 3) return 15.5;
+          if (ring === 2) return 16.5;
+          return 18;
+        }
+
+        function makeNum(value, ring, baseAngle, radiusPct, isCenter, playable) {
+          var b = document.createElement(playable ? "button" : "span");
+          if (playable) {
+            b.type = "button";
+            b.setAttribute("aria-label", "Number " + value);
+          } else {
+            b.setAttribute("aria-hidden", "true");
+            b.style.pointerEvents = "none";
+            b.style.cursor = "default";
+          }
+          b.className = "num" + (isCenter ? " center-num" : "");
+          b.textContent = value;
+          b.dataset.value = value;
+          var boardPx = board.clientWidth || 360;
+          var fs = fontFor(ring, MODES[mode].total) * (boardPx / 540);
+          if (isCenter) fs = 34 * (boardPx / 540);
+          b.style.fontSize = Math.max(12, fs) + "px";
+          var hit = isCenter ? 15.5 : Math.max(9.4, 100 / (MODES[mode].rings[ring] || 10) * 0.92);
+          b.style.width = (isCenter ? 15.5 : hit) + "%";
+          b.style.height = (isCenter ? 15.5 : hit) + "%";
+          if (playable) b.addEventListener("click", function () { onTap(value, b); });
+          board.appendChild(b);
+          return { value: value, el: b, ring: ring, baseAngle: baseAngle, radius: radiusPct, found: false };
+        }
+
+        function layout() {
+          var cfg = MODES[mode];
+          numbers.forEach(function (rec) {
+            if (rec.ring === -1) {
+              rec.el.style.left = "50%";
+              rec.el.style.top = "50%";
+              return;
+            }
+            var a = (rec.baseAngle + ringAngles[rec.ring]) * Math.PI / 180;
+            var x = 50 + rec.radius * Math.cos(a);
+            var y = 50 + rec.radius * Math.sin(a);
+            rec.el.style.left = x + "%";
+            rec.el.style.top = y + "%";
+          });
+        }
+
+        /* ---------- Game flow ---------- */
+        function fmtTime(s) {
+          s = Math.max(0, Math.ceil(s));
+          var m = Math.floor(s / 60), r = s % 60;
+          return m + ":" + (r < 10 ? "0" : "") + r;
+        }
+
+        function updateHUD() {
+          var cfg = MODES[mode];
+          timeVal.textContent = running || found > 0 ? fmtTime(timeLeft) : fmtTime(cfg.seconds);
+          timeVal.classList.toggle("low", running && timeLeft <= 10.5);
+          targetVal.textContent = target > cfg.total ? "✓" : target;
+          targetBox.classList.toggle("done", target > cfg.total);
+          progressFill.style.width = (found / cfg.total * 100) + "%";
+          foundMeta.textContent = "Found " + found + " of " + cfg.total;
+          mistakeMeta.textContent = "Mistakes " + mistakes;
+          hintsLeftEl.textContent = hints;
+          hintBtn.disabled = !running || paused || hints <= 0;
+        }
+
+        function startGame() {
+          var cfg = MODES[mode];
+          target = 1; found = 0; mistakes = 0; hints = 3;
+          timeLeft = cfg.seconds; elapsed = 0;
+          running = true; paused = false;
+          startVeil.hidden = true;
+          endVeil.hidden = true;
+          pauseVeil.hidden = true;
+          buildBoard(true);
+          updateHUD();
+          ac();
+          lastTs = null;
+          if (rafId) cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(loop);
+        }
+
+        function endGame(wonGame) {
+          running = false;
+          if (rafId) cancelAnimationFrame(rafId);
+          var cfg = MODES[mode];
+          document.getElementById("endEmoji").textContent = wonGame ? "🏆" : "⏰";
+          document.getElementById("endTitle").textContent = wonGame ? "You found them all!" : "Time's up!";
+          document.getElementById("endLine").textContent = wonGame
+            ? (mistakes === 0 ? "A flawless hunt — every tap in order, no misses. Sharp eyes!" :
+               elapsed <= cfg.seconds * 0.5 ? "Fast and clean. The rings never stood a chance." :
+               "Right down to the wire — but every last number found.")
+            : "You tracked down " + found + " of " + cfg.total + ". The rest are still spinning out there…";
+          document.getElementById("endFound").textContent = found + "/" + cfg.total;
+          document.getElementById("endTime").textContent = Math.round(elapsed) + "s";
+          document.getElementById("endMiss").textContent = mistakes;
+          endVeil.hidden = false;
+          if (wonGame) sndWin(); else sndLose();
+          updateHUD();
+        }
+
+        function onTap(value, el) {
+          if (!running || paused) return;
+          var cfg = MODES[mode];
+          var rec = null;
+          for (var i = 0; i < numbers.length; i++) if (numbers[i].value === value) { rec = numbers[i]; break; }
+          if (!rec || rec.found) return;
+
+          if (value === target) {
+            rec.found = true;
+            found++;
+            el.disabled = true;
+            el.classList.add("found");
+            el.style.color = FOUND_COLORS[(value - 1) % FOUND_COLORS.length];
+            el.style.textShadow = "0 0 10px rgba(0,0,0,0.35)";
+            el.setAttribute("aria-label", "Number " + value + ", found");
+            sndCorrect(value, cfg.total);
+            target++;
+            if (target > cfg.total) { updateHUD(); endGame(true); return; }
+          } else {
+            mistakes++;
+            timeLeft = Math.max(0, timeLeft - 3);
+            sndWrong();
+            board.classList.remove("shake");
+            void board.offsetWidth;
+            board.classList.add("shake");
+            el.style.color = "#ff6b6b";
+            setTimeout(function () { if (!rec.found) el.style.color = ""; }, 350);
+            if (timeLeft <= 0) { updateHUD(); endGame(false); return; }
+          }
+          updateHUD();
+        }
+
+        var lastTickSecond = -1;
+        function loop(ts) {
+          if (!running) return;
+          if (lastTs == null) lastTs = ts;
+          var dt = Math.min(0.05, (ts - lastTs) / 1000);
+          lastTs = ts;
+
+          if (!paused) {
+            elapsed += dt;
+            timeLeft -= dt;
+            if (spinning && spinToggle.checked) {
+              for (var i = 0; i < ringAngles.length; i++) ringAngles[i] += ringSpeeds[i] * dt;
+              layout();
+            }
+            var whole = Math.ceil(timeLeft);
+            if (timeLeft <= 5.5 && whole !== lastTickSecond && timeLeft > 0) { lastTickSecond = whole; sndTick(); }
+            if (timeLeft <= 0) { timeLeft = 0; updateHUD(); endGame(false); return; }
+            timeVal.textContent = fmtTime(timeLeft);
+            timeVal.classList.toggle("low", timeLeft <= 10.5);
+          }
+          rafId = requestAnimationFrame(loop);
+        }
+
+        /* ---------- Controls ---------- */
+        document.querySelectorAll(".mode").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            mode = btn.dataset.mode;
+            document.querySelectorAll(".mode").forEach(function (b) {
+              b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+            });
+            running = false;
+            if (rafId) cancelAnimationFrame(rafId);
+            endVeil.hidden = true; pauseVeil.hidden = true;
+            startVeil.hidden = false;
+            target = 1; found = 0; mistakes = 0;
+            buildBoard();
+            updateHUD();
+          });
+        });
+
+        document.getElementById("startBtn").addEventListener("click", startGame);
+        document.getElementById("againBtn").addEventListener("click", startGame);
+        document.getElementById("restartBtn").addEventListener("click", startGame);
+        document.getElementById("newGameBtn").addEventListener("click", function () {
+          running = false;
+          if (rafId) cancelAnimationFrame(rafId);
+          endVeil.hidden = true; pauseVeil.hidden = true;
+          startVeil.hidden = false;
+          target = 1; found = 0; mistakes = 0;
+          buildBoard();
+          updateHUD();
+        });
+        document.getElementById("endRestartBtn").addEventListener("click", function () {
+          endVeil.hidden = true;
+          startVeil.hidden = false;
+          target = 1; found = 0; mistakes = 0;
+          buildBoard();
+          updateHUD();
+        });
+
+        document.getElementById("pauseBtn").addEventListener("click", function () {
+          if (!running) return;
+          paused = !paused;
+          pauseVeil.hidden = !paused;
+          this.textContent = paused ? "▶" : "⏸";
+          this.setAttribute("aria-label", paused ? "Resume game" : "Pause game");
+          updateHUD();
+        });
+        document.getElementById("resumeBtn").addEventListener("click", function () {
+          paused = false;
+          pauseVeil.hidden = true;
+          var pb = document.getElementById("pauseBtn");
+          pb.textContent = "⏸"; pb.setAttribute("aria-label", "Pause game");
+          updateHUD();
+        });
+
+        document.getElementById("soundBtn").addEventListener("click", function () {
+          soundOn = !soundOn;
+          this.textContent = soundOn ? "🔊" : "🔇";
+          if (soundOn) blip(660, 0.08, "sine", 0.12);
+        });
+
+        hintBtn.addEventListener("click", function () {
+          if (!running || paused || hints <= 0) return;
+          hints--;
+          for (var i = 0; i < numbers.length; i++) {
+            if (numbers[i].value === target) {
+              numbers[i].el.classList.remove("hinting");
+              void numbers[i].el.offsetWidth;
+              numbers[i].el.classList.add("hinting");
+              break;
+            }
+          }
+          blip(880, 0.1, "sine", 0.1);
+          updateHUD();
+        });
+
+        spinToggle.addEventListener("change", function () { spinning = this.checked; });
+
+        var resizeTimer = null;
+        window.addEventListener("resize", function () {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(function () { if (!running) { buildBoard(); } }, 200);
+        });
+
+        // First paint: show a board behind the start veil
+        buildBoard();
+        updateHUD();
+      })();
+    </script>
+  </body>
+</html>
