@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>The Spectrum Spectacles — Blueprint</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#e8edf2; --paper:#f8fafc; --paper2:#eef3f8; --ink:#132639; --muted:#4c6175;
+        --line:#b7c7d6; --line-strong:#7e97ad; --accent:#0b5fa5; --accent-ink:#ffffff;
+        --chip:#e2ebf3; --good:#0d7a4f; --warn:#9a5b00; --bp-stroke:#2c4d6e;
+        --gridline:rgba(44,77,110,.10); --shadow:0 10px 30px rgba(19,38,57,.12);
+        --lensglow:rgba(11,95,165,.16);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#060d18; --paper:#0c1a2c; --paper2:#0a1626; --ink:#e7eff7; --muted:#9db2c7;
+          --line:#22384f; --line-strong:#3d5a76; --accent:#4db2ff; --accent-ink:#04121f;
+          --chip:#12283f; --good:#4cc38a; --warn:#f0b35e; --bp-stroke:#8fb8d8;
+          --gridline:rgba(143,184,216,.09); --shadow:0 10px 30px rgba(0,0,0,.45);
+          --lensglow:rgba(77,178,255,.18);
+        }
+      }
+      html{ scroll-behavior:smooth; }
+      body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size:17px; line-height:1.55; }
+      .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+      .wrap{ max-width:1100px; margin:0 auto; padding:0 18px 64px; }
+      a{ color:var(--accent); }
+      :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+      /* ---------- Intro ---------- */
+      .intro{ padding:34px 0 8px; }
+      .status-line{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+      .tag{ font-family:"IBM Plex Mono",monospace; font-size:.78rem; letter-spacing:.04em;
+        border:1px solid var(--line-strong); border-radius:999px; padding:5px 12px; color:var(--muted); background:var(--paper); }
+      .tag.solid{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+      h1{ font-size:clamp(2rem, 6vw, 3.4rem); line-height:1.04; margin:0 0 12px; font-weight:700; letter-spacing:-.01em; }
+      .lede{ font-size:clamp(1.05rem,2.6vw,1.3rem); color:var(--muted); max-width:44em; margin:0 0 10px; }
+      .lede strong{ color:var(--ink); }
+
+      /* ---------- Simulator ---------- */
+      .sim{ margin-top:22px; background:var(--paper); border:1px solid var(--line-strong); border-radius:14px;
+        box-shadow:var(--shadow); overflow:hidden; }
+      .sim-head{ display:flex; flex-wrap:wrap; gap:10px; align-items:baseline; justify-content:space-between;
+        padding:16px 20px 12px; border-bottom:1px dashed var(--line-strong); }
+      .sim-head h2{ margin:0; font-size:1.25rem; }
+      .sim-head .hint{ color:var(--muted); font-size:.92rem; }
+      .sim-grid{ display:grid; grid-template-columns:1.65fr 1fr; }
+      @media (max-width:860px){ .sim-grid{ grid-template-columns:1fr; } }
+      .stage{ padding:18px; background:
+        repeating-linear-gradient(0deg, var(--gridline) 0 1px, transparent 1px 26px),
+        repeating-linear-gradient(90deg, var(--gridline) 0 1px, transparent 1px 26px), var(--paper2); }
+      .viewport{ position:relative; border:2px solid var(--ink); border-radius:10px; overflow:hidden; background:#0a1420; }
+      .viewport svg{ display:block; width:100%; height:auto; }
+      .blendwash{ position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity .35s; mix-blend-mode:screen; }
+      .frame-key{ position:absolute; left:10px; bottom:10px; right:10px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+        background:rgba(4,12,20,.82); color:#eaf2f9; border:1px solid rgba(255,255,255,.35); border-radius:8px;
+        padding:8px 12px; font-family:"IBM Plex Mono",monospace; font-size:.8rem; }
+      .frame-key .dot{ width:14px; height:14px; border-radius:50%; border:2px solid #fff; flex:none; }
+      .specs{ margin:16px auto 0; max-width:430px; }
+      .specs svg{ display:block; width:100%; height:auto; }
+      .lensglass{ transition:fill .4s; }
+      .disc-row{ display:flex; gap:16px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+      .disc{ width:92px; height:92px; border-radius:50%; flex:none; border:3px solid var(--ink);
+        background:conic-gradient(#e33 0 51deg,#f80 51deg 103deg,#fd0 103deg 154deg,#3c3 154deg 206deg,#09f 206deg 257deg,#63c 257deg 309deg,#c3c 309deg 360deg);
+        position:relative; }
+      .disc::after{ content:""; position:absolute; inset:0; border-radius:50%; background:#fff; opacity:var(--wash,0); transition:opacity .3s; }
+      .disc .hubdot{ position:absolute; left:50%; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:var(--paper); border:2px solid var(--ink); z-index:2; }
+      .disc.spinning{ animation:spin 1s linear infinite; }
+      @keyframes spin{ to{ transform:rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce){ .disc.spinning{ animation-duration:4s; } html{ scroll-behavior:auto; } }
+      .disc-note{ font-size:.92rem; color:var(--muted); max-width:30em; }
+      .disc-note strong{ color:var(--ink); }
+
+      .panel{ padding:18px; border-left:1px solid var(--line); display:flex; flex-direction:column; gap:16px; }
+      @media (max-width:860px){ .panel{ border-left:none; border-top:1px solid var(--line); } }
+      .panel h3{ margin:0 0 8px; font-size:.85rem; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-weight:600; }
+      .bandgrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .bandbtn{ appearance:none; border:1.5px solid var(--line-strong); background:var(--paper); color:var(--ink);
+        border-radius:10px; padding:10px 12px; text-align:left; cursor:pointer; font:inherit; font-size:.95rem; font-weight:600;
+        display:flex; align-items:center; gap:9px; min-height:48px; }
+      .bandbtn .sw{ width:16px; height:16px; border-radius:4px; flex:none; border:1px solid rgba(0,0,0,.25); }
+      .bandbtn[aria-pressed="true"]{ border-color:var(--accent); background:var(--lensglow); box-shadow:inset 0 0 0 1px var(--accent); }
+      .bandbtn small{ display:block; font-weight:400; color:var(--muted); font-size:.76rem; font-family:"IBM Plex Mono",monospace; }
+      .spinrow{ display:flex; gap:8px; flex-wrap:wrap; }
+      .btn{ appearance:none; border:1.5px solid var(--ink); background:var(--ink); color:var(--paper);
+        border-radius:10px; padding:10px 16px; font:inherit; font-weight:600; cursor:pointer; min-height:48px; }
+      .btn.ghost{ background:transparent; color:var(--ink); }
+      .btn[aria-pressed="true"]{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+      input[type="range"]{ width:100%; accent-color:var(--accent); min-height:44px; }
+      .speedlab{ display:flex; justify-content:space-between; font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--muted); }
+      .readout{ border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:var(--paper2); }
+      .readout .rname{ font-size:1.3rem; font-weight:700; margin:0 0 2px; }
+      .readout dl{ margin:10px 0 0; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:.92rem; }
+      .readout dt{ font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--muted); padding-top:2px; white-space:nowrap; }
+      .readout dd{ margin:0; }
+      .readout p{ margin:8px 0 0; font-size:.95rem; }
+
+      /* ---------- Spectrum strip ---------- */
+      .strip{ margin-top:22px; }
+      .strip h2{ font-size:1.15rem; margin:0 0 4px; }
+      .strip p{ color:var(--muted); margin:0 0 12px; font-size:.95rem; max-width:46em; }
+      .stripbar{ display:flex; border:1.5px solid var(--ink); border-radius:10px; overflow:hidden; }
+      .seg{ flex:1 1 0; border:none; border-right:1px solid var(--ink); padding:10px 4px 8px; cursor:pointer; font:inherit;
+        font-family:"IBM Plex Mono",monospace; font-size:.72rem; text-align:center; color:#fff; min-height:52px; line-height:1.25; }
+      .seg:last-child{ border-right:none; }
+      .seg small{ display:block; opacity:.85; font-size:.64rem; }
+      .seg[aria-pressed="true"]{ box-shadow:inset 0 0 0 3px #fff, inset 0 -6px 0 rgba(255,255,255,.55); font-weight:700; }
+      .seg{ min-width:0; overflow:hidden; }
+      @media (max-width:560px){ .stripbar{ flex-wrap:wrap; } .seg{ flex-basis:25%; font-size:.68rem; padding:10px 2px 9px; border-bottom:1px solid var(--ink); } .seg small{ display:none; } }
+      .viszoom{ margin-top:10px; border:1px dashed var(--line-strong); border-radius:10px; padding:10px 14px; background:var(--paper);
+        font-size:.92rem; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+      .visbar{ height:14px; flex:1 1 200px; border-radius:7px; border:1px solid var(--line-strong);
+        background:linear-gradient(90deg,#7b2ff7,#3155e8,#18a957,#f5d90a,#f07d0a,#d92323); position:relative; }
+      .visbar::before,.visbar::after{ content:""; position:absolute; top:-5px; bottom:-5px; width:2px; background:var(--ink); }
+      .visbar::before{ left:12%; } .visbar::after{ right:12%; }
+
+      /* ---------- Sections ---------- */
+      section.block{ margin-top:44px; }
+      .block > h2{ font-size:clamp(1.4rem,3.4vw,1.9rem); margin:0 0 6px; letter-spacing:-.01em; }
+      .block > .sub{ color:var(--muted); margin:0 0 18px; max-width:46em; }
+      .four{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+      @media (max-width:700px){ .four{ grid-template-columns:1fr; } }
+      .thought{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:20px; }
+      .thought .num{ font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent); font-weight:600; letter-spacing:.08em; }
+      .thought h3{ margin:6px 0 8px; font-size:1.15rem; }
+      .thought p{ margin:0; color:var(--muted); font-size:.97rem; }
+      .thought p strong{ color:var(--ink); }
+
+      .blueprint{ background:var(--paper2); border:1.5px solid var(--line-strong); border-radius:14px; padding:20px;
+        background-image:repeating-linear-gradient(0deg, var(--gridline) 0 1px, transparent 1px 26px),
+        repeating-linear-gradient(90deg, var(--gridline) 0 1px, transparent 1px 26px); }
+      .blueprint svg{ display:block; width:100%; height:auto; }
+      .bp-line{ stroke:var(--bp-stroke); fill:none; stroke-width:2; }
+      .bp-thin{ stroke:var(--bp-stroke); fill:none; stroke-width:1.2; }
+      .bp-fill{ fill:var(--bp-stroke); }
+      .bp-txt{ fill:var(--bp-stroke); font-family:"IBM Plex Mono",monospace; font-size:13px; }
+      .bp-num{ fill:var(--paper); font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:700; text-anchor:middle; }
+      .bp-note{ font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--muted); margin-top:10px; }
+
+      .tablewrap{ margin-top:18px; border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; background:var(--paper); }
+      table{ border-collapse:collapse; width:100%; font-size:.93rem; }
+      caption{ text-align:left; padding:14px 16px 4px; font-weight:700; font-size:1.02rem; }
+      caption span{ display:block; font-weight:400; color:var(--muted); font-size:.88rem; margin-top:2px; }
+      th,td{ text-align:left; vertical-align:top; padding:11px 14px; border-top:1px solid var(--line); }
+      thead th{ border-top:none; font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); background:var(--paper2); }
+      td.part{ font-weight:700; white-space:nowrap; }
+      td.part .mono{ color:var(--accent); margin-right:6px; }
+      @media (max-width:760px){
+        table, tbody, tr, td{ display:block; width:100%; }
+        thead{ display:none; }
+        tr{ border-top:2px solid var(--line-strong); padding:8px 0; }
+        tr:first-child{ border-top:none; }
+        td{ border-top:none; padding:5px 16px; }
+        td::before{ content:attr(data-l); display:block; font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:1px; }
+        td.part{ font-size:1.05rem; } td.part::before{ display:none; }
+      }
+      .ladder{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; align-items:center; font-size:.92rem; }
+      .ladder .step{ background:var(--chip); border:1px solid var(--line); border-radius:8px; padding:7px 12px; font-weight:600; }
+      .ladder .arr{ color:var(--muted); font-family:"IBM Plex Mono",monospace; }
+
+      .stages{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+      @media (max-width:900px){ .stages{ grid-template-columns:repeat(2,1fr); } }
+      @media (max-width:520px){ .stages{ grid-template-columns:1fr; } }
+      .stage-card{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:18px; }
+      .stage-card .num{ font-family:"IBM Plex Mono",monospace; color:var(--accent); font-weight:600; font-size:.8rem; letter-spacing:.08em; }
+      .stage-card h3{ margin:6px 0 8px; font-size:1.05rem; }
+      .stage-card p{ margin:0; font-size:.93rem; color:var(--muted); }
+      .stage-card .exists{ display:inline-block; margin-top:10px; font-family:"IBM Plex Mono",monospace; font-size:.74rem;
+        border:1px solid var(--line-strong); border-radius:999px; padding:3px 10px; color:var(--muted); }
+      .stage-card .exists.yes{ color:var(--good); border-color:var(--good); }
+
+      .limits{ background:var(--paper); border:1.5px solid var(--warn); border-radius:12px; padding:20px 22px; }
+      .limits h2{ margin-top:0; }
+      .limits ul{ margin:10px 0 0; padding-left:20px; }
+      .limits li{ margin-bottom:8px; }
+
+      /* ---------- Layers ---------- */
+      .layernav{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:16px; }
+      .layernav .ln-label{ font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--muted); letter-spacing:.05em; }
+      .layernav button{ appearance:none; border:1.5px solid var(--line-strong); background:var(--paper); color:var(--ink);
+        border-radius:999px; padding:8px 14px; font:inherit; font-size:.9rem; font-weight:600; cursor:pointer; }
+      .layernav button:hover{ border-color:var(--accent); color:var(--accent); }
+      details.layer{ background:var(--paper); border:1.5px solid var(--line-strong); border-radius:14px; margin-top:16px; box-shadow:var(--shadow); }
+      details.layer > summary{ cursor:pointer; list-style:none; padding:18px 20px 14px; display:block; }
+      details.layer > summary::-webkit-details-marker{ display:none; }
+      details.layer > summary .lk{ display:block; font-family:"IBM Plex Mono",monospace; font-size:.78rem; letter-spacing:.09em; color:var(--accent); font-weight:600; }
+      details.layer > summary .lt{ display:block; font-size:1.3rem; font-weight:700; margin-top:3px; letter-spacing:-.01em; }
+      details.layer > summary .lte{ display:block; color:var(--muted); font-size:.95rem; margin-top:3px; max-width:44em; }
+      details.layer > summary::after{ content:"Tap to open this layer ↓"; display:inline-block; margin-top:10px;
+        font-family:"IBM Plex Mono",monospace; font-size:.78rem; font-weight:600; color:var(--accent);
+        border:1px solid var(--accent); border-radius:999px; padding:4px 12px; }
+      details.layer[open] > summary::after{ content:"Close this layer ↑"; }
+      details.layer > summary:hover .lt{ color:var(--accent); }
+      .layer-intro{ color:var(--muted); margin:0; padding:2px 20px 14px; max-width:46em; }
+      details.layer > .blueprint{ margin:0 16px 16px; }
+      details.layer > .tablewrap{ margin:0 16px 16px; }
+      details.layer > .ladder{ padding:0 20px 18px; margin-top:0; }
+      details.layer > .stages{ padding:0 16px 16px; }
+      details.layer.nested{ margin:0 16px 16px; box-shadow:none; background:var(--paper2); }
+      .limits-list{ margin:0; padding:0 20px 18px 40px; }
+      .limits-list li{ margin-bottom:8px; }
+      .thought details.deep{ margin-top:12px; border-top:1px dashed var(--line-strong); padding-top:10px; }
+      .thought details.deep > summary{ cursor:pointer; list-style:none; font-weight:600; color:var(--accent); font-size:.92rem; font-family:"IBM Plex Mono",monospace; }
+      .thought details.deep > summary::-webkit-details-marker{ display:none; }
+      .thought details.deep > summary::after{ content:" ↓"; }
+      .thought details.deep[open] > summary::after{ content:" ↑"; }
+      .thought details.deep p{ margin-top:8px; }
+      footer{ margin-top:44px; border-top:1px dashed var(--line-strong); padding-top:16px; color:var(--muted); font-size:.9rem; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <header class="intro">
+        <div class="status-line">
+          <span class="tag solid">BLUEPRINT — DESIGN ON PAPER, NOT BUILT</span>
+          <span class="tag">SIMULATION INCLUDED · TRY EVERY BAND</span>
+        </div>
+        <h1>The Spectrum Spectacles</h1>
+        <p class="lede">Not one magic lens — <strong>a key-ring you wear.</strong> Every band of light gets its own catcher, a translator re-keys it into the one window your eye owns (about 380–750&nbsp;nm), and a dial on the bridge chooses which layer you read. Spin the dial fast enough and the layers stop taking turns: they blend, the way Newton’s disc blends the spectrum into white.</p>
+        <p class="lede">Start with the simulation — that’s the face. Everything else is layered underneath it: the idea, the drawing, every part down to the screw, the pathway, and the limits. Nothing is gone. It’s just down a layer, and then another.</p>
+        <nav class="layernav" aria-label="Layers on this sheet">
+          <span class="ln-label">GO DOWN A LAYER:</span>
+          <button type="button" data-open="layer-idea">1 · The idea</button>
+          <button type="button" data-open="layer-drawing">2 · The drawing</button>
+          <button type="button" data-open="layer-parts">3 · The parts</button>
+          <button type="button" data-open="layer-pathway">4 · The pathway</button>
+          <button type="button" data-open="layer-limits">5 · The limits</button>
+        </nav>
+      </header>
+
+      <!-- ================= SIMULATOR ================= -->
+      <section class="sim" aria-labelledby="sim-h">
+        <div class="sim-head">
+          <h2 id="sim-h">The simulation — one scene, every band</h2>
+          <span class="hint">Same crow, same flower, same branch. Only the key changes.</span>
+        </div>
+        <div class="sim-grid">
+          <div class="stage">
+            <div class="viewport" id="viewport">
+              <svg viewBox="0 0 640 400" role="img" aria-label="A garden scene — a crow on a branch beside a flower — rendered in the selected spectrum band" id="scene">
+                <defs>
+                  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="10"/></filter>
+                  <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+                </defs>
+                <rect id="sky" x="0" y="0" width="640" height="400" fill="#a8cdf0"/>
+                <!-- BASE / VISIBLE SCENE -->
+                <g id="ly-base">
+                  <circle cx="540" cy="66" r="34" fill="#ffd94d"/>
+                  <path d="M0 330 Q120 300 260 322 T640 318 V400 H0 Z" fill="#5d9c59"/>
+                  <path d="M40 268 Q220 236 420 258 Q540 270 640 252" stroke="#6b4a2f" stroke-width="15" fill="none" stroke-linecap="round"/>
+                  <path d="M430 258 Q470 226 520 224" stroke="#6b4a2f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                  <ellipse cx="505" cy="216" rx="17" ry="11" fill="#3f7d3a" transform="rotate(-24 505 216)"/>
+                  <ellipse cx="120" cy="252" rx="16" ry="10" fill="#3f7d3a" transform="rotate(18 120 252)"/>
+                  <!-- crow -->
+                  <g id="crow">
+                    <path d="M238 258 L196 300 L262 292 Z" fill="#14181d"/>
+                    <ellipse cx="300" cy="238" rx="66" ry="40" fill="#1b2129"/>
+                    <circle cx="362" cy="212" r="27" fill="#20272f"/>
+                    <path d="M386 206 L424 216 L386 226 Z" fill="#0c0f12"/>
+                    <circle cx="368" cy="206" r="4.5" fill="#f2f5f7"/>
+                    <path d="M292 276 L288 296 M316 278 L316 298" stroke="#0c0f12" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M258 210 Q300 188 344 206 Q300 200 258 210Z" fill="#2b3644"/>
+                  </g>
+                  <!-- flower -->
+                  <g id="flower">
+                    <path d="M96 392 Q90 340 98 306" stroke="#3f7d3a" stroke-width="6" fill="none"/>
+                    <ellipse cx="118" cy="352" rx="16" ry="9" fill="#4c8a45" transform="rotate(-30 118 352)"/>
+                    <g fill="#e86aa8">
+                      <circle cx="98" cy="282" r="15"/><circle cx="76" cy="298" r="15"/><circle cx="120" cy="298" r="15"/>
+                      <circle cx="84" cy="318" r="15"/><circle cx="112" cy="318" r="15"/>
+                    </g>
+                    <circle cx="98" cy="302" r="12" fill="#f7b731"/>
+                  </g>
+                </g>
+                <!-- UV LAYER: patterns no human eye receives -->
+                <g id="ly-uv" opacity="0">
+                  <ellipse cx="292" cy="230" rx="46" ry="24" fill="#c9a7ff" opacity=".85" filter="url(#soft2)"/>
+                  <ellipse cx="356" cy="210" rx="18" ry="12" fill="#e6d5ff" opacity=".9" filter="url(#soft2)"/>
+                  <path d="M252 214 Q300 196 340 210" stroke="#b388ff" stroke-width="7" fill="none" filter="url(#soft2)"/>
+                  <g stroke="#2a1052" stroke-width="4">
+                    <path d="M98 302 L80 282"/><path d="M98 302 L98 278"/><path d="M98 302 L118 284"/>
+                    <path d="M98 302 L74 302"/><path d="M98 302 L122 302"/>
+                  </g>
+                  <circle cx="98" cy="302" r="7" fill="#2a1052"/>
+                  <circle cx="540" cy="66" r="46" fill="none" stroke="#c9a7ff" stroke-width="3" stroke-dasharray="5 7"/>
+                </g>
+                <!-- INFRARED LAYER: heat -->
+                <g id="ly-ir" opacity="0">
+                  <ellipse cx="305" cy="238" rx="72" ry="46" fill="#ff5a1f" opacity=".8" filter="url(#soft)"/>
+                  <ellipse cx="360" cy="212" rx="30" ry="26" fill="#ffb03a" opacity=".9" filter="url(#soft)"/>
+                  <ellipse cx="540" cy="66" rx="52" ry="52" fill="#ff2d78" opacity=".55" filter="url(#soft)"/>
+                  <ellipse cx="98" cy="302" rx="26" ry="22" fill="#7a1fd0" opacity=".65" filter="url(#soft)"/>
+                  <path d="M40 268 Q220 236 420 258 Q540 270 640 252" stroke="#31319e" stroke-width="17" fill="none" opacity=".7" filter="url(#soft2)"/>
+                </g>
+                <!-- RADIO / MICROWAVE LAYER: waves passing through -->
+                <g id="ly-radio" opacity="0" fill="none" stroke="#ff7847" stroke-width="3">
+                  <path d="M60 60 a60 60 0 0 1 60 60"/><path d="M60 60 a105 105 0 0 1 105 105"/><path d="M60 60 a150 150 0 0 1 150 150"/>
+                  <circle cx="60" cy="60" r="6" fill="#ff7847" stroke="none"/>
+                  <path d="M640 330 a70 70 0 0 0 -70 -70" stroke="#ffb03a"/><path d="M640 330 a120 120 0 0 0 -120 -120" stroke="#ffb03a"/>
+                  <path d="M180 360 q30 -18 60 0 t60 0 t60 0 t60 0 t60 0" stroke="#ff7847" stroke-width="2.5"/>
+                </g>
+                <!-- X-RAY LAYER: density — the skeleton -->
+                <g id="ly-xray" opacity="0" stroke="#dfe9f2" fill="none" stroke-width="3">
+                  <path d="M248 244 Q310 224 366 214" />
+                  <path d="M272 232 l-4 22 M292 228 l-3 24 M312 224 l-2 24 M332 220 l0 22" stroke-width="2.4"/>
+                  <circle cx="366" cy="210" r="17"/>
+                  <path d="M382 206 L416 215 L382 223" />
+                  <path d="M292 250 L286 296 M316 250 L316 298" stroke-width="2.4"/>
+                  <path d="M60 262 Q300 232 620 250" stroke="#8fa6ba" stroke-width="6"/>
+                  <path d="M98 390 Q94 344 98 310" stroke="#8fa6ba" stroke-width="3"/>
+                </g>
+                <!-- GAMMA LAYER: rare, violent events -->
+                <g id="ly-gamma" opacity="0" fill="#ffffff">
+                  <g transform="translate(150 80)"><path d="M0-16 L3-3 L16 0 L3 3 L0 16 L-3 3 L-16 0 L-3-3Z"/></g>
+                  <g transform="translate(470 130) scale(.7)"><path d="M0-16 L3-3 L16 0 L3 3 L0 16 L-3 3 L-16 0 L-3-3Z"/></g>
+                  <g transform="translate(330 60) scale(.5)"><path d="M0-16 L3-3 L16 0 L3 3 L0 16 L-3 3 L-16 0 L-3-3Z"/></g>
+                  <circle cx="540" cy="66" r="5"/><circle cx="90" cy="180" r="4"/><circle cx="600" cy="240" r="4"/>
+                  <circle cx="240" cy="150" r="3"/><circle cx="420" cy="300" r="3"/>
+                </g>
+              </svg>
+              <div class="blendwash" id="blendwash"></div>
+              <div class="frame-key" aria-live="polite">
+                <span class="dot" id="keydot" style="background:#f5d90a"></span>
+                <span id="keytext">KEY PRINTED ON THE FRAME — BAND: VISIBLE · MAP: TRUE COLOR · NO TRANSLATION</span>
+              </div>
+            </div>
+
+            <div class="specs" aria-hidden="true">
+              <svg viewBox="0 0 430 120">
+                <circle class="lensglass" id="lensL" cx="118" cy="58" r="46" fill="#bcd8ee" fill-opacity=".55" stroke="var(--bp-stroke)" stroke-width="5"/>
+                <circle class="lensglass" id="lensR" cx="312" cy="58" r="46" fill="#bcd8ee" fill-opacity=".55" stroke="var(--bp-stroke)" stroke-width="5"/>
+                <path d="M164 52 Q215 34 266 52" stroke="var(--bp-stroke)" stroke-width="5" fill="none"/>
+                <path d="M72 50 L14 30 M358 50 L416 30" stroke="var(--bp-stroke)" stroke-width="5" fill="none" stroke-linecap="round"/>
+                <circle cx="215" cy="46" r="13" fill="var(--paper)" stroke="var(--bp-stroke)" stroke-width="4"/>
+                <path d="M215 38 V46 L221 50" stroke="var(--bp-stroke)" stroke-width="3" fill="none"/>
+                <circle cx="118" cy="58" r="4" fill="var(--bp-stroke)"/><circle cx="312" cy="58" r="4" fill="var(--bp-stroke)"/>
+              </svg>
+            </div>
+
+            <div class="disc-row">
+              <div class="disc" id="disc"><span class="hubdot"></span></div>
+              <p class="disc-note"><strong>The spin test — Newton’s disc, DLP projectors, this dial.</strong>
+              Turn the wheel slow and you read one band at a time. Spin it fast and persistence of vision mixes the bands in the eye itself — everything at once arrives as the blend: white. The whole, or the parts. The dial chooses. Try the speed slider while spinning.</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div>
+              <h3>Choose the key — one band at a time</h3>
+              <div class="bandgrid" id="bandgrid" role="group" aria-label="Spectrum band selector"></div>
+            </div>
+            <div>
+              <h3>The dial — rotate through the bands</h3>
+              <div class="spinrow">
+                <button class="btn" id="spinbtn" aria-pressed="false">Spin the wheel</button>
+                <button class="btn ghost" id="blendbtn" aria-pressed="false">Blend all bands</button>
+              </div>
+              <div style="margin-top:12px">
+                <div class="speedlab"><span>SPIN SPEED</span><span id="speedval">4 / 10</span></div>
+                <input type="range" id="speed" min="1" max="10" step="1" value="4" aria-label="Spin speed, 1 slowest to 10 fastest" />
+                <div class="speedlab"><span>SLOW — READ EACH LAYER</span><span>FAST — BLEND TO WHITE</span></div>
+              </div>
+            </div>
+            <div class="readout" aria-live="polite">
+              <p class="rname" id="r-name">Visible</p>
+              <span class="mono" id="r-range" style="color:var(--muted); font-size:.85rem;">≈ 380–750 nm</span>
+              <dl>
+                <dt>CATCHER</dt><dd id="r-catcher">The eye itself — three cones. No device needed.</dd>
+                <dt>SHOWN AS</dt><dd id="r-map">True color. The one band that needs no translation.</dd>
+                <dt>REVEALS</dt><dd id="r-reveals">The crow reads black; the flower reads pink. The home window.</dd>
+              </dl>
+              <p id="r-desc">This is the band the whole device serves: every other band exists here only after being re-keyed into this window.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SPECTRUM STRIP ================= -->
+      <section class="strip" aria-labelledby="strip-h">
+        <h2 id="strip-h">The whole line — and the slice you were born with</h2>
+        <p>The electromagnetic spectrum runs from radio waves longer than a football field to gamma rays smaller than an atom. Your eye owns one thin slice in the middle. Everything else on this line is real, present, and — without a catcher and a translator — invisible. Tap any segment to wear that key in the simulation. (Widths compressed; the true scale is logarithmic.)</p>
+        <div class="stripbar" id="stripbar" role="group" aria-label="Full electromagnetic spectrum selector"></div>
+        <div class="viszoom">
+          <span class="mono" style="font-weight:600;">THE EYE’S WINDOW</span>
+          <div class="visbar" aria-hidden="true"></div>
+          <span>≈ 380–750 nm — violet to red. <strong>Every other band must be translated into this strip before you can see it.</strong> That translation is the whole invention.</span>
+        </div>
+      </section>
+
+      <!-- ================= FOUR THOUGHTS ================= -->
+      <section class="block" id="layer-idea" aria-labelledby="four-h">
+        <p class="mono" style="color:var(--accent); font-weight:600; font-size:.8rem; letter-spacing:.09em; margin:0 0 4px;">LAYER 1 — THE IDEA</p>
+        <h2 id="four-h">The design in four thoughts</h2>
+        <p class="sub">Everything else on this sheet hangs off these four. Each one answers a wall that stopped every earlier attempt at a see-everything lens — and each one opens one layer down for the full reasoning.</p>
+        <div class="four">
+          <article class="thought">
+            <span class="num">THOUGHT 01</span>
+            <h3>Many eyes, not one lens</h3>
+            <p>No single material passes the whole line — the wall is physics, not craftsmanship. So the Spectacles don’t try. <strong>Each band gets its own catcher.</strong> A key-ring, not a key.</p>
+            <details class="deep">
+              <summary>ONE LAYER DOWN</summary>
+              <p>Ordinary glass blocks ultraviolet on one side and swallows infrared on the other. The Spectacles copy the mantis shrimp, which runs twelve-plus channels instead of one better eye: quartz for UV, germanium for thermal infrared, antennas for radio, and scintillator counters — which count individual events rather than form images — for the X-ray and gamma end.</p>
+            </details>
+          </article>
+          <article class="thought">
+            <span class="num">THOUGHT 02</span>
+            <h3>A translator, not a window — and the key is printed on the frame</h3>
+            <p>Nothing outside the visible band can be “looked through.” It is <strong>caught, decoded, and re-drawn inside the eye’s window</strong> — false color, honestly worn, with the key printed on the frame.</p>
+            <details class="deep">
+              <summary>ONE LAYER DOWN</summary>
+              <p>The band and the mapping are printed on the frame itself, in the wearer’s view at all times, so a translation can never pass itself off as the thing itself. A guess in a photograph’s clothes is what happens when the label falls off; this device is built so the label can’t.</p>
+            </details>
+          </article>
+          <article class="thought">
+            <span class="num">THOUGHT 03</span>
+            <h3>The lens is liquid, because the original was</h3>
+            <p>Glass is a liquid that got frozen mid-pour. The eye never used it — the eye’s soft lens <strong>morphs</strong>. The Spectacles copy the original, not the imitation. <strong>The lens stays in the frame; the water inside it becomes the dial.</strong></p>
+            <details class="deep">
+              <summary>ONE LAYER DOWN</summary>
+              <p>The eye is a ball of water whose lens is squeezed fatter or flatter by a muscle. The Spectacles’ version is an electrowetting cell — a sealed droplet of water and oil whose curve changes with voltage. No moving parts, nothing to swap. Change the liquid’s shape and tuning, and the key changes with it.</p>
+            </details>
+          </article>
+          <article class="thought">
+            <span class="num">THOUGHT 04</span>
+            <h3>Any band — but not all bands at once, unless you spin</h3>
+            <p>The window is narrow and the spectrum is endless; pour everything in at once and the layers paint over each other into mush. So the wearer chooses, one layer at a time — <strong>or turns the dial fast</strong> and blends them. Slow for the parts, fast for the whole.</p>
+            <details class="deep">
+              <summary>ONE LAYER DOWN</summary>
+              <p>Spun fast, the eye does what it does with Newton’s disc and every DLP projector: it fuses the separate bands into one blended whole. The choosing stays the wearer’s, every time — the device never picks the layer for them.</p>
+            </details>
+          </article>
+        </div>
+      </section>
+
+      <!-- ================= BLUEPRINT DRAWING ================= -->
+      <section class="block" aria-labelledby="bp-h">
+        <h2 id="bp-h">Deeper layers — the sheet itself</h2>
+        <p class="sub">The drawing is one layer down. The parts list is one layer down from that. The pathway and the limits sit below them. Open only as far as you want to go.</p>
+        <details class="layer" id="layer-drawing">
+          <summary>
+            <span class="lk">LAYER 2</span>
+            <span class="lt">Blueprint — the device, drawn</span>
+            <span class="lte">Front and side elevation, hub dial on the bridge, numbered callouts that match the parts list one layer further down.</span>
+          </summary>
+          <p class="layer-intro">Front and side elevation, with the hub dial on the bridge — two rings, one bridge, a dial where the nose sits, the same form as the spinning trainer that inspired it. Numbers match the parts list in the next layer down. All dimensions are design targets, stated as the design’s own figures.</p>
+        <div class="blueprint">
+          <svg viewBox="0 0 900 430" role="img" aria-label="Technical drawing of the Spectrum Spectacles: front view with two round liquid-lens rings joined by a bridge carrying the hub dial, side view showing the sensor ring, translator housing and temple arm, with numbered part callouts">
+            <!-- FRONT VIEW -->
+            <text class="bp-txt" x="40" y="30" font-weight="600">FRONT ELEVATION</text>
+            <circle class="bp-line" cx="185" cy="150" r="88"/>
+            <circle class="bp-thin" cx="185" cy="150" r="66"/>
+            <circle class="bp-thin" cx="185" cy="150" r="30"/>
+            <circle class="bp-line" cx="465" cy="150" r="88"/>
+            <circle class="bp-thin" cx="465" cy="150" r="66"/>
+            <circle class="bp-thin" cx="465" cy="150" r="30"/>
+            <path class="bp-line" d="M273 138 Q325 112 377 138"/>
+            <circle class="bp-line" cx="325" cy="128" r="21"/>
+            <path class="bp-thin" d="M325 114 V128 L334 133"/>
+            <path class="bp-line" d="M97 138 L30 116 M553 138 L622 116"/>
+            <path class="bp-thin" d="M140 268 Q185 282 230 268 M420 268 Q465 282 510 268"/>
+            <text class="bp-txt" x="150" y="285">Ø 52 mm CELL</text>
+            <text class="bp-txt" x="288" y="86">HUB DIAL</text>
+            <!-- SIDE VIEW -->
+            <text class="bp-txt" x="660" y="30" font-weight="600">SIDE ELEVATION</text>
+            <circle class="bp-line" cx="712" cy="150" r="80"/>
+            <circle class="bp-thin" cx="712" cy="150" r="58"/>
+            <path class="bp-line" d="M786 128 L872 118 Q884 117 882 132 L878 168"/>
+            <rect class="bp-line" x="676" y="66" width="72" height="20" rx="6"/>
+            <path class="bp-thin" d="M700 240 v26 M736 238 v28"/>
+            <text class="bp-txt" x="648" y="300">TEMPLE ARM:</text>
+            <text class="bp-txt" x="648" y="318">TRANSLATOR + CELL</text>
+            <!-- CALLOUTS -->
+            <g>
+              <circle class="bp-fill" cx="185" cy="84" r="11"/><text class="bp-num" x="185" y="88">2</text>
+              <path class="bp-thin" d="M185 95 V104"/>
+              <circle class="bp-fill" cx="96" cy="150" r="11"/><text class="bp-num" x="96" y="154">3</text>
+              <circle class="bp-fill" cx="325" cy="180" r="11"/><text class="bp-num" x="325" y="184">5</text>
+              <path class="bp-thin" d="M325 158 V169"/>
+              <circle class="bp-fill" cx="560" cy="96" r="11"/><text class="bp-num" x="560" y="100">1</text>
+              <path class="bp-thin" d="M556 106 L548 122"/>
+              <circle class="bp-fill" cx="712" cy="52" r="11"/><text class="bp-num" x="712" y="56">4</text>
+              <path class="bp-thin" d="M712 63 V66"/>
+              <circle class="bp-fill" cx="856" cy="196" r="11"/><text class="bp-num" x="856" y="200">6</text>
+              <path class="bp-thin" d="M862 186 L872 172"/>
+              <circle class="bp-fill" cx="640" cy="238" r="11"/><text class="bp-num" x="640" y="242">7</text>
+              <path class="bp-thin" d="M650 232 L676 226"/>
+              <circle class="bp-fill" cx="420" cy="238" r="11"/><text class="bp-num" x="420" y="242">8</text>
+            </g>
+            <!-- BOTTOM NOTES -->
+            <path class="bp-thin" d="M40 348 H860"/>
+            <text class="bp-txt" x="40" y="374" font-size="11.5">1 FRAME · 2 LIQUID LENS CELL · 3 SENSOR RING (ONE CATCHER PER BAND) · 4 TRANSLATOR</text>
+            <text class="bp-txt" x="40" y="396" font-size="11.5">5 HUB DIAL · 6 POWER CELL · 7 RECORD BRIDGE (IMPRINT OUT) · 8 UNIVERSAL FASTENER — ONE DRIVE</text>
+          </svg>
+          <p class="bp-note">DRAWING NOTES — The frame carries the key in the wearer’s view at all times: current band + mapping, etched on the brow bar and mirrored in the lens corner. Nothing is shown without its label. The record bridge writes every decode to a file the wearer owns, so the seeing can be checked by somebody who wasn’t wearing it.</p>
+        </div>
+
+        <!-- ================= PARTS LIST (one layer further down) ================= -->
+        <details class="layer nested" id="layer-parts">
+          <summary>
+            <span class="lk">LAYER 3</span>
+            <span class="lt">Parts list — down to the smallest detail</span>
+            <span class="lte">All eight parts, each with what it is, what it needs, what making and fitting it takes, and where the resource comes from.</span>
+          </summary>
+        <div class="tablewrap">
+          <table>
+            <caption>Parts list — down to the smallest detail
+              <span>Every part answers four questions: what it is · what it needs · what making and fitting it takes · where and how to get it.</span>
+            </caption>
+            <thead><tr><th>Part</th><th>What it is</th><th>Material / resource</th><th>Make &amp; fit</th><th>Where &amp; how to get it</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="part"><span class="mono">1</span>Frame</td>
+                <td data-l="What it is">Two rings and a bridge holding every other part in alignment in front of the eyes; carries the printed key on the brow bar.</td>
+                <td data-l="Material">Titanium wire and plate, or glass-filled nylon for the prototype run.</td>
+                <td data-l="Make &amp; fit">CNC-bent rings, Ø 56 mm outside; bridge width fitted to the wearer (standard 18–22 mm); brow bar etched, not stickered, so the key can’t peel off.</td>
+                <td data-l="Source">Titanium stock from any metals supplier; prototype frames 3D-printed from free CAD files, then cast or machined.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">2</span>Liquid lens cell ×2</td>
+                <td data-l="What it is">The morphing lens. A sealed droplet whose curve — and so its focus and tuning — changes with voltage. This is the part that “morphs”; it replaces lens-swapping entirely.</td>
+                <td data-l="Material">Two immiscible liquids (water and oil), a hydrophobic-coated cell, two transparent electrodes, fused-silica windows (quartz where the UV path needs it — plain glass would eat the UV before it lands).</td>
+                <td data-l="Make &amp; fit">Electrowetting cell, Ø 52 mm aperture, sealed against evaporation; driven 0–60 V AC from the translator board; no moving parts, nothing to wear out.</td>
+                <td data-l="Source">Electrowetting lenses are commercial parts today (sold for barcode scanners and industrial cameras) — buy the cell, don’t reinvent it; silica windows from optical suppliers.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">3</span>Sensor ring</td>
+                <td data-l="What it is">The many eyes: one catcher per band, seated in the rim of each ring — UV photodiode, visible sensor, thermal microbolometer for infrared, a stub antenna feed for the radio/microwave end, and a scintillator counter seated in the brow bar for the X-ray and gamma end, which counts individual events instead of forming an image.</td>
+                <td data-l="Material">Silicon (visible), silicon-carbide or gallium-nitride (UV), vanadium-oxide microbolometer array (thermal IR), germanium window over the IR catcher, copper antenna trace, and a scintillator crystal (sodium-iodide or a modern equivalent) coupled to a photodiode for the counter.</td>
+                <td data-l="Make &amp; fit">Each catcher looks through its own window material — quartz for UV, germanium for IR, polymer for visible — because no one window passes them all. Ring-mounted, factory-aligned to the lens axis. The counter needs no window and no alignment; it is shielded, brow-bar mounted, and reports counts, never pictures.</td>
+                <td data-l="Source">UV photodiodes and microbolometer modules are catalog parts from sensor distributors; germanium windows from infrared-optics suppliers; scintillator counter modules from radiation-detector suppliers.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">4</span>Translator</td>
+                <td data-l="What it is">The key itself: a processor in the temple arm that takes each catcher’s raw band and re-draws it inside the visible window — assigning the false colors, holding the mapping, and driving the liquid cells and the display layer.</td>
+                <td data-l="Material">A low-power system-on-chip, a micro-display or transparent waveguide per eye, and the mapping tables in firmware.</td>
+                <td data-l="Make &amp; fit">Firmware carries one labeled mapping per band (thermal palette, UV violet-white, and so on); switching the dial switches the table, nothing else. Mappings are published with the design — a key anyone can inspect.</td>
+                <td data-l="Source">Commodity phone-class chips and micro-displays from electronics distributors; firmware is part of this blueprint, free to build from.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">5</span>Hub dial</td>
+                <td data-l="What it is">The wearer’s choice, as a physical control on the bridge: click from band to band, or push past the last click into Spin, where rotation speed sets the blend.</td>
+                <td data-l="Material">Knurled aluminum wheel, detent ring, rotary encoder.</td>
+                <td data-l="Make &amp; fit">Ø 26 mm, seven detents (one per band) plus the spin zone; encoder read by the translator. Operable by touch alone — the wearer never has to look at it.</td>
+                <td data-l="Source">Encoder and wheel are stock parts; the detent ring is machined with the frame.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">6</span>Power cell</td>
+                <td data-l="What it is">A rechargeable cell in the temple tip, counterweighting the front of the frame; charges over the same universal connector the rest of the family uses.</td>
+                <td data-l="Material">Lithium-polymer pouch cell, ≈ 400 mAh per side.</td>
+                <td data-l="Make &amp; fit">Sized for a day of intermittent band-switching; the thermal catcher is the hungry part, so IR mode carries a duty cycle and says so on the frame.</td>
+                <td data-l="Source">Stock pouch cells from battery distributors; connector is the universal one, below.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">7</span>Record bridge</td>
+                <td data-l="What it is">The imprint-to-record bridge: every decode — band, mapping, timestamp, image — written to a file the wearer owns, so a seeing can be checked later by someone who wasn’t there.</td>
+                <td data-l="Material">Flash storage on the translator board; a small record indicator in the lens corner, visible to the wearer whenever recording runs.</td>
+                <td data-l="Make &amp; fit">Recording is never silent: the indicator stands whenever the bridge is open, and the file carries the key it was decoded with, so the record can’t outrun its label.</td>
+                <td data-l="Source">Commodity flash; the file format is documented in this blueprint, readable by any computer.</td>
+              </tr>
+              <tr>
+                <td class="part"><span class="mono">8</span>Universal fastener</td>
+                <td data-l="What it is">Every screw in the device — one drive, everywhere, so one driver opens all of it. Sizes scale by load; the interface never changes.</td>
+                <td data-l="Material">Stainless micro-screws, M1.2–M2, single standard drive.</td>
+                <td data-l="Make &amp; fit">Named on the sheet because the fastener is part of the design: a device nobody can open is a device nobody can check.</td>
+                <td data-l="Source">Any fastener supplier, by the standard size — deliberately nothing proprietary.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ladder" aria-label="The sourcing ladder">
+          <span class="step">KNOW what you need</span><span class="arr">→</span>
+          <span class="step">KNOW HOW TO GET it</span><span class="arr">→</span>
+          <span class="step">GET it</span><span class="arr">→</span>
+          <span class="step">USE it for its purpose</span>
+          <span style="color:var(--muted)">— the ladder every part above is listed against.</span>
+        </div>
+        </details>
+        </details>
+      </section>
+
+      <!-- ================= PATHWAY ================= -->
+      <section class="block" aria-labelledby="path-h">
+        <details class="layer" id="layer-pathway">
+          <summary>
+            <span class="lk">LAYER 4</span>
+            <span class="lt" id="path-h">The pathway — built in stages</span>
+            <span class="lte">Four stages, from a tabletop wheel that already exists to the wearable nobody has built yet. The first stage is astronomy standard today.</span>
+          </summary>
+          <p class="layer-intro">There is always a pathway; it just gets found one stage at a time. Telescope cameras have run rotating filter wheels — UV and infrared filters clicking through, exposures blended into one image — for decades. The unbuilt piece was never the capturing. It’s the wearing.</p>
+        <div class="stages">
+          <article class="stage-card">
+            <span class="num">STAGE 1</span>
+            <h3>The tabletop wheel</h3>
+            <p>A filter wheel and a camera on a bench: one exposure per band, blended afterward into a single multispectral picture. Proves the rotation-and-blend on real light, with stock parts.</p>
+            <span class="exists yes">EXISTS TODAY — ASTRONOMY STANDARD</span>
+          </article>
+          <article class="stage-card">
+            <span class="num">STAGE 2</span>
+            <h3>The liquid cell</h3>
+            <p>One electrowetting droplet lens on the bench, voltage sweeping its curve — focus and tuning changing with no moving parts and nothing swapped. Proves the morph.</p>
+            <span class="exists yes">EXISTS TODAY — SOLD FOR SCANNERS &amp; CAMERAS</span>
+          </article>
+          <article class="stage-card">
+            <span class="num">STAGE 3</span>
+            <h3>The sensor stack + translator</h3>
+            <p>UV, visible, and thermal catchers feeding one processor, decoded live into a phone or monitor with the key printed on screen. Night-vision and thermal scopes each prove one band of this; the stack proves them together, labeled.</p>
+            <span class="exists">PARTS EXIST — INTEGRATION IS THE WORK</span>
+          </article>
+          <article class="stage-card">
+            <span class="num">STAGE 4</span>
+            <h3>The wearable</h3>
+            <p>Stages 1–3 folded into the frame on this sheet: dial on the bridge, liquid cells in the rings, record bridge in the arm. The live, on-the-face, in-the-moment version — the piece nobody has built yet.</p>
+            <span class="exists">THIS BLUEPRINT</span>
+          </article>
+        </div>
+        </details>
+      </section>
+
+      <!-- ================= LIMITS ================= -->
+      <section class="block" aria-labelledby="lim-h">
+        <details class="layer" id="layer-limits" style="border-color:var(--warn);">
+          <summary>
+            <span class="lk">LAYER 5</span>
+            <span class="lt" id="lim-h">The limits, printed on the sheet</span>
+            <span class="lte">What the device cannot do — stated in the same ink as what it can.</span>
+          </summary>
+          <p class="layer-intro">A blueprint by this method states what the thing does — and states its walls in the same ink.</p>
+        <ul class="limits-list">
+          <li><strong>It shows decodes, never the world “as it really looks.”</strong> Every band outside the visible arrives as a translation. True ones, if the keys are honest — but translations all the same. The crow doesn’t see a white crow either; it sees crow, in crow. There is no view from no key at all.</li>
+          <li><strong>False color is honest only while it’s labeled.</strong> That is why the band and mapping stand printed on the frame, in the wearer’s view, and inside every recorded file. Remove the label and the same image becomes the crow post’s mistake: a guess wearing a photograph’s clothes.</li>
+          <li><strong>Any band, not all bands at once.</strong> Simultaneously means the blend — and the blend trades the separations for the whole. Slow dial for layers, fast dial for white. The wearer chooses, every time; the device never chooses for them.</li>
+          <li><strong>The eye never morphs.</strong> The world gets re-keyed into the eye, never the other way around. That condition — <em>as long as your eye could see it</em> — is not a flaw in the design. It is the design.</li>
+          <li><strong>The radio and gamma ends are hear-and-count, not look.</strong> At those wavelengths there is no image-forming in any lens-like sense; the Spectacles render them as pattern and brightness mapped from antenna and counter data, and the frame’s key says exactly that when those bands are selected.</li>
+        </ul>
+        </details>
+      </section>
+
+      <footer>
+        <p><strong>The Spectrum Spectacles — blueprint and simulation.</strong> A design on paper, not a built device; the simulation shows translations of a scene, drawn by hand, not sensor data. Born from a night’s chain: Franklin’s layered lenses, the crow’s fourth channel, a spinning two-ring trainer with a dial at its hub, Newton’s disc, and the liquid the eye was made of. There’s a pathway to get there. This sheet is the map of it so far.</p>
+      </footer>
+    </div>
+
+    <script>
+      (function(){
+        var BANDS = [
+          { id:'radio', name:'Radio', range:'> 1 m — up to kilometres', sw:'#8a4b2a', sky:'#131c2e',
+            catcher:'The stub antenna in the rim. No lens forms an image at this length — the catcher hears, it does not look.',
+            map:'Pattern and brightness drawn from antenna data, shown in ember orange. The key says so: this band is rendered, not seen.',
+            reveals:'Waves that pass through walls, fog, and the scene itself. The garden is almost transparent; the broadcasts are the landscape.',
+            desc:'The long end of the line. Radio pours through the scene all day — the Spectacles draw its weather as moving wavefronts over a ghost of the visible world.',
+            layers:{ base:.22, uv:0, ir:0, radio:1, xray:0, gamma:0 }, baseFilter:'grayscale(.8) brightness(.75)' },
+          { id:'microwave', name:'Microwave', range:'1 mm – 1 m', sw:'#c46a1b', sky:'#1c1a2e',
+            catcher:'The same antenna feed, tuned shorter — plus the thermal catcher’s cold end.',
+            map:'Antenna pattern in amber over a dimmed scene.',
+            reveals:'Fainter wavefronts than radio, and the first hint of heat: warm bodies begin to separate from cold ground.',
+            desc:'The band of radar and the cosmic background — the afterglow of the early universe sits here, arriving from every direction at once.',
+            layers:{ base:.35, uv:0, ir:.25, radio:.55, xray:0, gamma:0 }, baseFilter:'grayscale(.5) brightness(.8)' },
+          { id:'infrared', name:'Infrared', range:'750 nm – 1 mm', sw:'#d92323', sky:'#160a24',
+            catcher:'A vanadium-oxide microbolometer behind a germanium window — germanium because glass is opaque out here.',
+            map:'Thermal palette: cold violet and blue, warm orange, hottest white-yellow. False color, labeled on the frame.',
+            reveals:'Heat itself. The crow glows against the cold branch; the flower runs cool; the sun is a furnace. This is the night-vision and thermal-scope band.',
+            desc:'Herschel found this band with a thermometer placed past the red end of a spectrum — heat where no light could be seen. The first proof the line runs past the window.',
+            layers:{ base:.12, uv:0, ir:1, radio:0, xray:0, gamma:0 }, baseFilter:'brightness(.5) saturate(.4)' },
+          { id:'visible', name:'Visible', range:'≈ 380–750 nm', sw:'#f5d90a', sky:'#a8cdf0',
+            catcher:'The eye itself — three cones. No device needed.',
+            map:'True color. The one band that needs no translation.',
+            reveals:'The crow reads black; the flower reads pink. The home window.',
+            desc:'This is the band the whole device serves: every other band exists here only after being re-keyed into this window.',
+            layers:{ base:1, uv:0, ir:0, radio:0, xray:0, gamma:0 }, baseFilter:'none' },
+          { id:'ultraviolet', name:'Ultraviolet', range:'10 – 380 nm', sw:'#7b2ff7', sky:'#241a4d',
+            catcher:'A silicon-carbide UV photodiode behind a fused-silica (quartz) window — ordinary glass would eat this band before it landed.',
+            map:'Violet and white pattern-work over a darkened scene. False color, labeled on the frame.',
+            reveals:'The crow’s secret: UV sheen and pattern across feathers that read plain black to us — the fourth channel corvids actually live in. And the flower’s nectar guides, runway markings painted for bees.',
+            desc:'Ritter found this band past the violet end, on silver chloride that darkened where no light could be seen. The crow has been reading this layer all along; this key lets you borrow the reading — as a labeled translation, not as the crow’s own seeing.',
+            layers:{ base:.62, uv:1, ir:0, radio:0, xray:0, gamma:0 }, baseFilter:'saturate(1.25) hue-rotate(-14deg) brightness(.92)' },
+          { id:'xray', name:'X-ray', range:'0.01 – 10 nm', sw:'#dfe9f2', sky:'#05080c',
+            catcher:'A scintillator and photodiode pair in the rim — X-rays are counted as they convert to flashes, not focused by any lens.',
+            map:'Density in bone-white on black: the denser the material, the brighter the line.',
+            reveals:'Structure, not surface. The crow becomes its skeleton on the branch; the flower nearly vanishes. This band answers “what is it built from,” not “what does it look like.”',
+            desc:'Nothing out here is seen — it is counted, flash by flash, and the count is drawn. The frame’s key says exactly that whenever this band is on.',
+            layers:{ base:.08, uv:0, ir:0, radio:0, xray:1, gamma:0 }, baseFilter:'grayscale(1) brightness(.6)' },
+          { id:'gamma', name:'Gamma', range:'< 0.01 nm', sw:'#ffffff', sky:'#000000',
+            catcher:'A scintillation counter. Gamma rays arrive as rare individual events from violent sources; there is no picture to form.',
+            map:'Each counted event drawn as a flash of white on black. A rendering of a count, labeled as one.',
+            reveals:'Almost nothing of a garden — and that emptiness is the honest reading. Gamma belongs to exploding stars and radioactive decay, not to crows and flowers.',
+            desc:'The short end of the line, where “light” stops behaving like light and arrives as single bullets of energy. The Spectacles can count them and show the count. Anyone who shows you more than that in this band is drawing, and the frame must say so.',
+            layers:{ base:.05, uv:0, ir:0, radio:0, xray:0, gamma:1 }, baseFilter:'grayscale(1) brightness(.4)' }
+        ];
+        var byId = {}; BANDS.forEach(function(b){ byId[b.id]=b; });
+        var current = 'visible', spinning = false, blended = false, timer = null, idx = 3;
+
+        var $ = function(id){ return document.getElementById(id); };
+        var bandgrid = $('bandgrid'), stripbar = $('stripbar');
+
+        BANDS.forEach(function(b, i){
+          var btn = document.createElement('button');
+          btn.className = 'bandbtn'; btn.type = 'button'; btn.dataset.band = b.id;
+          btn.setAttribute('aria-pressed', b.id === current ? 'true' : 'false');
+          btn.innerHTML = '<span class="sw" style="background:' + b.sw + '"></span><span>' + b.name + '<small>' + b.range + '</small></span>';
+          btn.addEventListener('click', function(){ stopSpin(); setBand(b.id); });
+          bandgrid.appendChild(btn);
+
+          var seg = document.createElement('button');
+          seg.className = 'seg'; seg.type = 'button'; seg.dataset.band = b.id;
+          seg.setAttribute('aria-pressed', b.id === current ? 'true' : 'false');
+          seg.style.background = 'linear-gradient(180deg,' + b.sw + ',' + b.sw + ')';
+          seg.style.flexGrow = b.id === 'visible' ? .55 : 1;
+          seg.style.color = (b.id === 'visible' || b.id === 'xray' || b.id === 'gamma') ? '#101820' : '#fff';
+          seg.innerHTML = b.name + '<small>' + b.range.split('—')[0].split('–')[0] + '</small>';
+          seg.setAttribute('aria-label', 'Select ' + b.name + ' band');
+          seg.addEventListener('click', function(){ stopSpin(); setBand(b.id); $('viewport').scrollIntoView({behavior:'smooth', block:'center'}); });
+          stripbar.appendChild(seg);
+        });
+
+        function setPressed(){
+          var nodes = document.querySelectorAll('[data-band]');
+          for (var i = 0; i < nodes.length; i++){
+            nodes[i].setAttribute('aria-pressed', (!blended && nodes[i].dataset.band === current) ? 'true' : 'false');
+          }
+        }
+        function applyLayers(L, filter){
+          $('sky').setAttribute('fill', blended ? '#3a4a63' : byId[current].sky);
+          var base = $('ly-base');
+          base.setAttribute('opacity', L.base);
+          base.style.filter = filter || 'none';
+          $('ly-uv').setAttribute('opacity', L.uv);
+          $('ly-ir').setAttribute('opacity', L.ir);
+          $('ly-radio').setAttribute('opacity', L.radio);
+          $('ly-xray').setAttribute('opacity', L.xray);
+          $('ly-gamma').setAttribute('opacity', L.gamma);
+        }
+        function setBand(id){
+          blended = false; $('blendbtn').setAttribute('aria-pressed','false'); $('blendwash').style.opacity = spinning ? washForSpeed() : 0;
+          current = id; idx = BANDS.indexOf(byId[id]);
+          var b = byId[id];
+          applyLayers(b.layers, b.baseFilter);
+          $('lensL').setAttribute('fill', b.sw); $('lensR').setAttribute('fill', b.sw);
+          $('keydot').style.background = b.sw;
+          $('keytext').textContent = 'KEY PRINTED ON THE FRAME — BAND: ' + b.name.toUpperCase() + ' · MAP: ' + (id === 'visible' ? 'TRUE COLOR · NO TRANSLATION' : 'FALSE COLOR — SEE READOUT');
+          $('r-name').textContent = b.name;
+          $('r-range').textContent = b.range;
+          $('r-catcher').textContent = b.catcher;
+          $('r-map').textContent = b.map;
+          $('r-reveals').textContent = b.reveals;
+          $('r-desc').textContent = b.desc;
+          setPressed();
+        }
+        function washForSpeed(){
+          var s = parseInt($('speed').value, 10);
+          return s >= 7 ? ((s - 6) / 4 * .8).toFixed(2) : 0;
+        }
+        function startSpin(){
+          spinning = true; blended = false; $('blendbtn').setAttribute('aria-pressed','false');
+          $('spinbtn').setAttribute('aria-pressed','true'); $('spinbtn').textContent = 'Stop the wheel';
+          $('disc').classList.add('spinning'); updateDiscSpeed(); tick(); schedule();
+        }
+        function stopSpin(){
+          if (!spinning) { return; }
+          spinning = false;
+          if (timer) { clearInterval(timer); timer = null; }
+          $('spinbtn').setAttribute('aria-pressed','false'); $('spinbtn').textContent = 'Spin the wheel';
+          $('disc').classList.remove('spinning'); $('blendwash').style.opacity = 0;
+        }
+        function schedule(){
+          if (timer) { clearInterval(timer); }
+          var s = parseInt($('speed').value, 10);
+          var ms = Math.max(90, 1150 - s * 115);
+          timer = setInterval(tick, ms);
+        }
+        function tick(){
+          idx = (idx + 1) % BANDS.length;
+          var keepWash = spinning;
+          setBand(BANDS[idx].id);
+          if (keepWash) { $('blendwash').style.opacity = washForSpeed(); }
+          var s = parseInt($('speed').value, 10);
+          if (s >= 9) {
+            $('r-name').textContent = byId[current].name + ' — blending toward white';
+            $('r-desc').textContent = 'At this speed the bands stop taking turns. Persistence of vision mixes them in the eye itself — the whole spectrum arriving as one blended view, the way Newton’s disc turns the spectrum white. Slow the dial down to separate the layers again.';
+          }
+        }
+        function updateDiscSpeed(){
+          var s = parseInt($('speed').value, 10);
+          $('speedval').textContent = s + ' / 10';
+          var disc = $('disc');
+          disc.style.animationDuration = Math.max(.12, 1.6 - s * .16) + 's';
+          disc.style.setProperty('--wash', s >= 7 ? ((s - 6) / 4 * .88).toFixed(2) : 0);
+          if (spinning) { $('blendwash').style.opacity = washForSpeed(); schedule(); }
+        }
+        $('spinbtn').addEventListener('click', function(){ spinning ? stopSpin() : startSpin(); });
+        $('speed').addEventListener('input', updateDiscSpeed);
+        $('blendbtn').addEventListener('click', function(){
+          stopSpin();
+          if (blended) { setBand('visible'); return; }
+          blended = true; this.setAttribute('aria-pressed','true');
+          applyLayers({ base:.8, uv:.75, ir:.6, radio:.7, xray:.55, gamma:.6 }, 'saturate(1.1)');
+          $('sky').setAttribute('fill', '#3a4a63');
+          $('lensL').setAttribute('fill', '#ffffff'); $('lensR').setAttribute('fill', '#ffffff');
+          $('keydot').style.background = '#ffffff';
+          $('keytext').textContent = 'KEY PRINTED ON THE FRAME — MODE: BLEND · ALL BANDS STACKED, EACH LABELED IN THE RECORD';
+          $('r-name').textContent = 'Blend — all bands, stacked';
+          $('r-range').textContent = 'Radio → gamma, one view';
+          $('r-catcher').textContent = 'Every catcher in the ring, reporting at once.';
+          $('r-map').textContent = 'Each band keeps its own false color, stacked at partial strength — the telescope way: separate exposures, woven into one picture.';
+          $('r-reveals').textContent = 'The whole and the parts at once — at the price of depth. Layers paint over each other; fine detail in any single band is the first thing lost.';
+          $('r-desc').textContent = 'This is how the famous space photographs are actually built: never one exposure, always a blend. Hubble weaves about three bands into a view; this stacks all seven, and you can see why three is the comfortable count.';
+          setPressed();
+        });
+        setBand('visible'); updateDiscSpeed();
+      })();
+    </script>
+    <script>
+      (function(){
+        function openChain(el){
+          var node = el;
+          while (node) {
+            if (node.tagName === 'DETAILS') { node.open = true; }
+            node = node.parentElement ? node.parentElement.closest('details') : null;
+          }
+        }
+        var btns = document.querySelectorAll('[data-open]');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].addEventListener('click', function(){
+            var target = document.getElementById(this.getAttribute('data-open'));
+            if (!target) { return; }
+            openChain(target);
+            target.scrollIntoView({ behavior:'smooth', block:'start' });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

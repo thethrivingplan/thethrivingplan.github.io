@@ -1,0 +1,3424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:," />
+<title>The Studios</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<style>
+:root{
+  --bg:#0a0a0e; --panel:#12121a; --panel2:#171722; --panel3:#1d1d2b;
+  --line:#262635; --line2:#33334a;
+  --text:#eceaf2; --muted:#a7a3b8; --faint:#6f6c84;
+  --gold:#d4af37; --gold-dim:#8a742a; --gold-soft:rgba(212,175,55,.14);
+  --red:#e5484d; --green:#3fb97f; --blue:#4f8ff7;
+  --cell:#1a1a28; --cell-alt:#15151f;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+button,[role="button"],select,input:not([type="checkbox"],[type="range"]){min-height:36px}
+a{color:var(--gold)}
+.wrap{max-width:1180px;margin:0 auto;padding:10px 12px 0}
+
+/* ---------- header (tight top) ---------- */
+header.top{padding:6px 2px 10px}
+header.top h1{font-size:26px;line-height:1.1;margin:0;font-weight:800;letter-spacing:.2px}
+header.top h1 .gold{color:var(--gold)}
+.core-line{margin:5px 0 0;color:var(--muted);font-size:14.5px;line-height:1.45;max-width:76ch}
+.core-line b{color:var(--text)}
+.honest{display:inline-block;margin-top:8px;font-size:12px;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:5px 10px;background:var(--panel)}
+.honest b{color:var(--text);font-weight:650}
+
+/* ---------- transport ---------- */
+.transport{position:sticky;top:0;z-index:40;background:rgba(10,10,14,.96);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.tgroup{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tbtn{min-width:52px;padding:6px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--panel3);cursor:pointer;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tbtn:active{transform:translateY(1px)}
+.tbtn.play{background:var(--gold);border-color:var(--gold);color:#141200;min-width:64px}
+.tbtn.play.playing{background:#f0cd55}
+.tbtn.rec{color:#ff8a8e}
+.tbtn.rec.armed{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1.1s infinite}
+.btn.rec.armed{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1.1s infinite}
+.tbtn.beacon{border-color:var(--gold-dim);color:var(--gold)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.tbtn.rec.armed{animation:none}.rec-dot{animation:none}}
+.readout{background:#000;border:1px solid var(--line);border-radius:9px;padding:4px 12px;min-width:118px;text-align:center}
+.readout .pos{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:1px;line-height:1.15}
+.readout .lbl{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
+.ctl{display:flex;flex-direction:column;gap:2px;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px 10px}
+.ctl label{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
+.ctl label output{color:var(--gold);font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:0;text-transform:none}
+.ctl input[type="range"]{width:104px;accent-color:var(--gold);min-height:20px}
+#viz{width:92px;height:44px;background:#000;border:1px solid var(--line);border-radius:9px}
+.transport .spacer{flex:1}
+.modebar{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px 6px}
+.modebar .mlbl{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;padding:0 2px}
+.modebtn{border:1px solid var(--line2);background:var(--panel3);border-radius:7px;padding:5px 14px;cursor:pointer;font-weight:750;font-size:13.5px;min-height:36px}
+.modebtn.active{background:var(--gold);border-color:var(--gold);color:#141200}
+
+/* ---------- start here ---------- */
+.start{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+@media(max-width:640px){.start{grid-template-columns:1fr}}
+.startbtn{border:1.5px solid var(--gold-dim);background:var(--panel2);border-radius:14px;padding:15px 14px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:3px;min-height:84px}
+.startbtn:hover{border-color:var(--gold)}
+.startbtn .big{font-size:19px;font-weight:800;line-height:1.2}
+.startbtn .small{font-size:13px;color:var(--muted);line-height:1.4}
+.startbtn.go{background:var(--gold);border-color:var(--gold);color:#141200}
+.startbtn.go .small{color:#4a3d05}
+.panel{scroll-margin-top:88px}
+details.layer .modebar{margin-top:2px}
+
+/* ---------- room tabs ---------- */
+.rooms{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.roombtn{border:1px solid var(--line2);background:var(--panel);border-radius:9px;padding:7px 14px;cursor:pointer;font-weight:700;font-size:14px;min-height:40px}
+.roombtn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.roombtn small{display:block;font-weight:400;font-size:11px;color:var(--faint)}
+
+/* ---------- panels ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:10px;padding:12px}
+.panel h2{margin:0 0 4px;font-size:15px;font-weight:750}
+.panel .sub{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.45}
+.panel .sub b{color:var(--text)}
+.rowflex{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+.field input[type="number"]{background:#000;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;width:150px;font-family:ui-monospace,Menlo,monospace;font-size:16px;color:var(--gold)}
+.preset{border:1px solid var(--line2);background:var(--panel3);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.preset.active{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.btn{border:1px solid var(--line2);background:var(--panel3);border-radius:9px;padding:7px 14px;cursor:pointer;font-weight:650;font-size:14px;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#141200}
+.btn.danger{color:#ff8a8e}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.switchline{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;max-width:560px;cursor:pointer}
+.switchline input{width:20px;height:20px;margin-top:1px;accent-color:var(--gold);flex:none}
+.switchline span{font-size:13.5px;line-height:1.4}
+.switchline small{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.4}
+.ladder-strip{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.rung-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid var(--line);background:#000;border-radius:999px;padding:5px 9px;color:var(--muted)}
+.rung-chip b{color:var(--text);font-weight:600}
+.rung-chip.heart{border-color:var(--gold);color:var(--gold)}
+.rung-chip.heart b{color:var(--gold)}
+.mini{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+
+/* ---------- the numbers (weave) ---------- */
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+@media(max-width:900px){.nums{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.nums{grid-template-columns:1fr}}
+.num{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.num.center-card{border-color:var(--gold-dim);background:var(--gold-soft)}
+.num .f{font-family:ui-monospace,Menlo,monospace;font-size:23px;font-weight:700;color:var(--text)}
+.num .f small{font-size:13px;color:var(--muted);font-weight:400}
+.num .who{margin-top:2px;font-size:12px;letter-spacing:.14em;color:var(--gold);font-weight:700}
+.num .org{margin-top:4px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.num .org b{color:var(--text);font-weight:650}
+
+/* ---------- instrument rack ---------- */
+.rack{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.inst{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 9px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-height:58px}
+.inst .nm{font-weight:750;font-size:14.5px;display:flex;align-items:center;gap:7px}
+.inst .ds{font-size:11.5px;color:var(--muted);line-height:1.3}
+.inst .dot{width:9px;height:9px;border-radius:50%;background:var(--faint);flex:none}
+.inst.hasnotes .dot{background:var(--gold)}
+.inst.sel{border-color:var(--gold);background:var(--gold-soft)}
+.inst.sel .nm{color:var(--gold)}
+.inst.muted{opacity:.55}
+.inst.muted .nm{text-decoration:line-through}
+.sel-detail{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.sel-detail .who{font-size:14px}
+.sel-detail .who b{color:var(--gold)}
+.sel-detail input[type="range"]{width:150px;accent-color:var(--gold);min-height:24px}
+.sel-detail select{background:#000;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;min-height:36px}
+
+/* ---------- piano roll ---------- */
+.roll-tools{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:10px}
+.roll-tools .sep{flex:1}
+.roll-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#000;-webkit-overflow-scrolling:touch}
+.roll{display:grid;min-width:900px}
+.roll .rh,.roll .cell,.roll .corner,.roll .stepnum{border-right:1px solid #1e1e2c;border-bottom:1px solid #1e1e2c}
+.roll .rh.cluster-start,.roll .cell.cluster-start{border-top:2px solid #34344e}
+.corner{position:sticky;left:0;z-index:3;background:#0d0d14;font-size:10px;color:var(--faint);display:flex;align-items:center;padding:0 8px;letter-spacing:.08em;text-transform:uppercase}
+.stepnum{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--faint);text-align:center;padding:3px 0;background:#0d0d14}
+.stepnum.bar{color:var(--gold)}
+.stepnum.now{color:#000;background:var(--gold);font-weight:700}
+.rh{position:sticky;left:0;z-index:2;background:#0d0d14;padding:3px 8px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.3;white-space:nowrap}
+.rh .hz{color:var(--text);font-weight:700;font-size:12px}
+.rh .nt{color:var(--gold)}
+.rh .ct{color:var(--faint)}
+.tag{display:inline-block;font-size:9.5px;letter-spacing:.09em;padding:1px 5px;border:1px solid var(--line2);border-radius:4px;color:var(--muted);vertical-align:1px;font-weight:700}
+.rh.heart{background:#1c1807}
+.rh.heart .hz{color:var(--gold)}
+.rh.center{background:#2a2108}
+.rh.center .hz{color:var(--gold)}
+.cell{height:34px;background:var(--cell);cursor:pointer;padding:0;border-top:0;border-left:0;border-radius:0;min-height:34px;position:relative}
+.cell.alt{background:var(--cell-alt)}
+.cell.beat{background:#20202f}
+.cell.alt.beat{background:#1b1b29}
+.cell.now{box-shadow:inset 0 0 0 2px rgba(212,175,55,.55)}
+.cell.on{background:var(--gold)}
+.cell.on.now{box-shadow:inset 0 0 0 2px #fff3c4}
+.cell.ghost::after{content:"";position:absolute;inset:9px 7px;border-radius:4px;background:rgba(236,234,242,.28)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+
+/* ---------- pads + fluctuate ---------- */
+.pads{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+@media(min-width:640px){.pads.ladder{grid-template-columns:repeat(5,1fr)}.pads.weave{grid-template-columns:repeat(4,1fr)}}
+.pad{border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel3),var(--panel2));border-radius:11px;padding:10px 8px;cursor:pointer;text-align:center;min-height:64px;user-select:none;-webkit-user-select:none;touch-action:none}
+.pad .phz{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:15px;display:block}
+.pad .pnt{font-size:12px;color:var(--gold);display:block;margin-top:2px}
+.pad .pct{font-size:11px;color:var(--faint);display:block}
+.pad.heart{border-color:var(--gold)}
+.pad.beacon{border-color:var(--gold);background:var(--gold-soft)}
+.pad.hit{background:var(--gold);color:#141200}
+.pad.hit .pnt,.pad.hit .pct{color:#4a3d05}
+.fluc{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.fluc-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.fluc-head .t{font-weight:750;font-size:14.5px}
+.fluc-head .sep{flex:1}
+.fluc input[type="range"]{width:100%;accent-color:var(--gold);min-height:30px}
+.fluc-ends{display:flex;justify-content:space-between;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--faint);margin-top:-2px;gap:8px;flex-wrap:wrap}
+.fluc-ends .mid{color:var(--gold)}
+.fluc-read{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+.fluc-read b{color:var(--gold);font-weight:600}
+
+/* ---------- mic / status ---------- */
+.mic-state{font-size:13.5px;color:var(--muted);line-height:1.5}
+.mic-state b{color:var(--text)}
+.rec-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);vertical-align:-1px;margin-right:6px;animation:pulse 1s infinite}
+audio{width:100%;margin-top:8px}
+.statusline{font-size:13px;color:var(--muted);min-height:20px;margin-top:8px;line-height:1.5}
+.statusline b{color:var(--gold);font-weight:650}
+
+/* ---------- editor room ---------- */
+.ed-wrap{border:1px solid var(--line);border-radius:10px;background:#000;overflow:hidden}
+#edCanvas{width:100%;height:190px;display:block;touch-action:none;cursor:crosshair}
+.ed-tools{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:10px}
+.ed-tools .sep{flex:1}
+.ed-read{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.6}
+.ed-read b{color:var(--gold);font-weight:600}
+.ed-amp{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:4px 10px}
+.ed-amp label{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
+.ed-amp input[type="range"]{width:110px;accent-color:var(--gold);min-height:20px}
+.ed-amp output{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--gold);min-width:52px}
+.viewtoggle{display:flex;gap:6px}
+input[type="file"]{background:var(--panel3);border:1px solid var(--line2);border-radius:9px;padding:6px 10px;max-width:100%}
+
+/* ---------- batch bench ---------- */
+.dropzone{border:1.5px dashed var(--line2);border-radius:12px;padding:22px 14px;text-align:center;color:var(--muted);font-size:14px;background:var(--panel2)}
+.dropzone.over{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.dropzone b{color:var(--text)}
+.batch-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.batch-item{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13.5px}
+.batch-item .bn{font-weight:650;word-break:break-all}
+.batch-item .bm{color:var(--faint);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.batch-item .bs{margin-left:auto;font-size:12.5px;color:var(--muted)}
+.checkline{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;flex:1;min-width:230px}
+.checkline input{width:20px;height:20px;margin-top:1px;accent-color:var(--gold);flex:none}
+.checkline span{font-size:13.5px;line-height:1.4}
+.checkline small{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.4}
+
+/* ---------- converter room ---------- */
+.field select{background:#000;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;min-height:38px;font-size:14.5px}
+.conv-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.conv-fmt{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;letter-spacing:.08em;border:1px solid var(--gold-dim);color:var(--gold);border-radius:4px;padding:1px 6px;vertical-align:1px;white-space:nowrap}
+
+/* ---------- tracks / mixer ---------- */
+.track{border:1px solid var(--line);background:var(--panel2);border-radius:11px;padding:10px 12px;margin-top:8px}
+.track-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.track-name{font-weight:750;font-size:15px}
+.track-kind{font-size:11px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+.track-ctls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:8px}
+.track-ctls .tc{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+.track-ctls input[type="range"]{width:110px;accent-color:var(--gold);min-height:22px}
+.track-ctls output{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--gold);min-width:38px;text-transform:none;letter-spacing:0}
+.msbtn{border:1px solid var(--line2);background:var(--panel3);border-radius:7px;padding:4px 12px;cursor:pointer;font-weight:700;font-size:12.5px;min-height:32px}
+.msbtn.on-m{background:var(--red);border-color:var(--red);color:#fff}
+.msbtn.on-s{background:var(--gold);border-color:var(--gold);color:#141200}
+details.more{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:0 12px}
+details.more summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:13.5px;color:var(--muted);list-style:none;min-height:40px;display:flex;align-items:center;gap:8px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary .plus{color:var(--gold);font-size:18px;margin-left:auto}
+details.more .more-body{padding:0 0 12px}
+.fx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px}
+@media(min-width:700px){.fx-grid{grid-template-columns:repeat(3,1fr)}}
+.fx{display:flex;flex-direction:column;gap:2px}
+.fx label{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;display:flex;justify-content:space-between;gap:6px}
+.fx label output{color:var(--gold);font-family:ui-monospace,Menlo,monospace;font-size:11.5px;letter-spacing:0;text-transform:none}
+.fx input[type="range"]{width:100%;accent-color:var(--gold);min-height:22px}
+
+/* ---------- hum room ---------- */
+.hum-big{display:block;width:100%;border:2px solid var(--gold-dim);background:var(--gold-soft);color:var(--text);border-radius:14px;padding:20px 14px;font-size:20px;font-weight:800;cursor:pointer;min-height:76px}
+.hum-big.listening{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1.2s infinite}
+.hum-read{font-family:ui-monospace,Menlo,monospace;font-size:15px;color:var(--muted);margin-top:12px;line-height:1.6;min-height:26px}
+.hum-read b{color:var(--gold)}
+.hum-meter{height:14px;background:#000;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:8px}
+.hum-meter i{display:block;height:100%;width:0%;background:var(--gold);transition:width .06s linear}
+
+/* ---------- loop shelf ---------- */
+.loops{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(max-width:640px){.loops{grid-template-columns:1fr}}
+.loop{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+.loop .ln{font-weight:750;font-size:15px}
+.loop .ld{font-size:12.5px;color:var(--muted);line-height:1.45;margin:3px 0 9px}
+.loop .lbtns{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- layers ---------- */
+details.layer{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:10px;padding:0 14px}
+details.layer summary{cursor:pointer;padding:13px 0;font-weight:750;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px}
+details.layer summary::-webkit-details-marker{display:none}
+details.layer summary .plus{color:var(--gold);font-size:20px;font-weight:400}
+details.layer .body{padding:0 0 14px;color:#cfccdd;font-size:14.5px;line-height:1.65;max-width:78ch}
+details.layer .body p{margin:0 0 10px}
+details.layer .body b{color:var(--text)}
+details.layer .body .gold{color:var(--gold)}
+details.layer .body blockquote{margin:0 0 10px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;background:var(--panel2);color:var(--text)}
+details.layer table{border-collapse:collapse;width:100%;font-size:13.5px;margin:6px 0 10px}
+details.layer th,details.layer td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+details.layer th{color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+details.layer td:first-child{font-weight:700;color:var(--gold);white-space:nowrap}
+
+/* ---------- footer ---------- */
+footer{margin-top:14px;border-top:1px solid var(--line);padding:14px 2px 26px;color:var(--muted);font-size:13px;line-height:1.7}
+footer .frow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+footer .clock{font-family:ui-monospace,Menlo,monospace;color:var(--text)}
+footer .clock b{color:var(--gold);font-weight:600}
+@media(max-width:560px){
+  .rack{grid-template-columns:repeat(2,1fr)}
+  #viz{display:none}
+  .readout{min-width:104px}
+  .ctl input[type="range"]{width:84px}
+  header.top h1{font-size:23px}
+  .modebar .mlbl{display:none}
+}
+
+/* ---------- THE HUB (the face — doors only, no tools) ---------- */
+[hidden]{display:none!important}
+.hubwrap{max-width:880px;margin:0 auto;padding:18px 2px 10px}
+.hubwrap h1{font-size:34px;line-height:1.08;margin:0;font-weight:800;letter-spacing:.2px}
+.hubwrap h1 .gold{color:var(--gold)}
+.hubwrap h2{font-size:28px;line-height:1.12;margin:10px 0 0;font-weight:800}
+.hub-sub{margin:8px 0 0;color:var(--muted);font-size:16px;line-height:1.5;max-width:56ch}
+.hub-sub b{color:var(--text)}
+.hubsearch{margin-top:20px}
+.hubsearch input{width:100%;background:var(--panel);border:1.5px solid var(--line2);border-radius:14px;padding:15px 16px;font-size:17px;color:var(--text);min-height:56px}
+.hubsearch input::placeholder{color:var(--faint)}
+.hubsearch input:focus{outline:2px solid var(--gold-dim);outline-offset:1px;border-color:var(--gold-dim)}
+.sresults{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.sresult{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;min-height:52px}
+.sresult .st{font-weight:750;font-size:15.5px}
+.sresult .sk{font-size:11px;color:var(--gold);border:1px solid var(--gold-dim);border-radius:999px;padding:2px 8px;flex:none}
+.sresult .sd{color:var(--muted);font-size:13px;margin-left:auto;text-align:right}
+.sresult .arr{color:var(--gold);flex:none}
+.sweb{display:block;margin-top:8px;font-size:13.5px;color:var(--muted);padding:4px 2px}
+.kindgrid{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+.kinddoor{display:block;width:100%;text-align:left;background:var(--panel);border:1.5px solid var(--line2);border-radius:18px;padding:22px;cursor:pointer}
+.kinddoor.live{border-color:var(--gold-dim)}
+.kinddoor.live:active{transform:translateY(1px)}
+.kinddoor .kt{font-size:25px;font-weight:800;line-height:1.15;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.kinddoor .kd{margin-top:6px;color:var(--muted);font-size:15px;line-height:1.5;max-width:58ch}
+.kinddoor .km{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:4px 11px;border:1px solid var(--line2);color:var(--muted)}
+.pill.open{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.kinddoor .arr{margin-left:auto;color:var(--gold);font-size:22px;font-weight:800}
+.kinddoor.coming{cursor:pointer;opacity:.82}
+.ghostdoor{border:1.5px dashed var(--line2);border-radius:18px;padding:18px 22px;color:var(--faint);font-size:14.5px;line-height:1.5}
+.hubfoot{margin-top:24px;border-top:1px solid var(--line);padding:14px 2px 30px;color:var(--muted);font-size:13.5px;line-height:1.6}
+.hubfoot b{color:var(--text)}
+.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+@media(max-width:640px){.toolgrid{grid-template-columns:1fr}.hubwrap h1{font-size:29px}.kinddoor .kt{font-size:22px}}
+.tooldoor{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:18px;cursor:pointer;min-height:108px}
+.tooldoor:active{transform:translateY(1px)}
+.tooldoor .tt{font-size:19px;font-weight:800;line-height:1.2;display:flex;align-items:center;gap:8px}
+.tooldoor .tt .arr{margin-left:auto;color:var(--gold)}
+.tooldoor .td{margin-top:5px;color:var(--muted);font-size:13.5px;line-height:1.45}
+.backbtn{border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:700;font-size:14px;min-height:44px;color:var(--text)}
+.backbtn:active{transform:translateY(1px)}
+.backbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0 2px}
+.backbar .toolname{font-size:21px;font-weight:800}
+.backbar .spacer{flex:1}
+.soon-note{color:var(--muted);font-size:14.5px;line-height:1.6;max-width:58ch}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============================================================
+     THE HUB — the face of The Studios. Doors only: no transport,
+     no panels, no tools live here. Each kind is a door; each tool
+     stands on its own behind its door. To add a new kind of
+     studio later, copy one kind-door block below — the hub's
+     shape does not change.
+     ============================================================ -->
+<div id="view-hub">
+  <div class="hubwrap">
+    <h1>The <span class="gold">Studios</span></h1>
+    <p class="hub-sub">Pick what you want to make. <b>Tap a door — you're in.</b> Nothing to learn first, nothing to break.</p>
+
+    <div class="hubsearch" role="search">
+      <input type="search" id="hubSearch" placeholder="Search the studios — try “convert”, “hum”, “loops”…" aria-label="Search the studios" autocomplete="off" />
+      <div class="sresults" id="hubResults"></div>
+    </div>
+
+    <div class="kindgrid" role="group" aria-label="Kinds of studio">
+      <button class="kinddoor live" data-kind="music">
+        <span class="kt">Music Studio <span class="arr">→</span></span>
+        <span class="kd">Make music — tap out a tune, hum one in, sing over it, fix a recording, or turn a file into the format you need.</span>
+        <span class="km"><span class="pill open">Open — 9 tools inside</span><span class="pill">Free for any use, commercial included</span></span>
+      </button>
+      <button class="kinddoor coming" data-kind="video">
+        <span class="kt">Video Studio <span class="arr">→</span></span>
+        <span class="kd">Cut and finish video.</span>
+        <span class="km"><span class="pill">Coming — nothing built here yet</span></span>
+      </button>
+      <button class="kinddoor coming" data-kind="art">
+        <span class="kt">Art Studio <span class="arr">→</span></span>
+        <span class="kd">Draw, paint, and make pictures.</span>
+        <span class="km"><span class="pill">Coming — nothing built here yet</span></span>
+      </button>
+      <div class="ghostdoor">More kinds of studio will get a door here, in this same shape, as they're built — the hub doesn't get rebuilt, it just gains a door.</div>
+    </div>
+
+    <p class="hubfoot"><b>Free. Always free.</b> No account, no ads. Everything runs on your device and nothing is uploaded — your work saves itself on this device as you go.</p>
+  </div>
+</div>
+
+<!-- ================= MUSIC STUDIO — its doors ================= -->
+<div id="view-music" hidden>
+  <div class="hubwrap">
+    <button class="backbtn" data-back="hub">← All Studios</button>
+    <h2>Music Studio</h2>
+    <p class="hub-sub">Tap what you want to do. <b>Each one is its own place</b> — one tool, open in front of you, nothing else stacked on top of it.</p>
+    <div class="toolgrid" role="group" aria-label="Music tools">
+      <button class="tooldoor" data-tool="ladder"><span class="tt">The Ladder Studio <span class="arr">→</span></span><span class="td">One number halved down into music. Tap squares, press play — a tune is already loaded.</span></button>
+      <button class="tooldoor" data-tool="weave"><span class="tt">The Weave Studio <span class="arr">→</span></span><span class="td">Three tunings of the same note, and the exact center found between them. Hear the beacon.</span></button>
+      <button class="tooldoor" data-tool="hum"><span class="tt">Sing &amp; Hum <span class="arr">→</span></span><span class="td">Hum, sing, or beatbox into the mic — it comes back as notes you can edit.</span></button>
+      <button class="tooldoor" data-tool="karaoke"><span class="tt">Karaoke <span class="arr">→</span></span><span class="td">Sing over the loop, then sing the next part over yourself — layer your voice, take after take.</span></button>
+      <button class="tooldoor" data-tool="tracks"><span class="tt">Tracks &amp; Mixer <span class="arr">→</span></span><span class="td">Every sound and voice as its own track — volume, pan, mute, solo, and effects per track.</span></button>
+      <button class="tooldoor" data-tool="editor"><span class="tt">Edit a Recording <span class="arr">→</span></span><span class="td">See a recording as a wave. Cut it, fade it, make it louder, save it back out.</span></button>
+      <button class="tooldoor" data-tool="converter"><span class="tt">Convert Files <span class="arr">→</span></span><span class="td">Any audio file in, the format you want out — WAV, MP3, WebM, M4A. All on your device.</span></button>
+      <button class="tooldoor" data-tool="batch"><span class="tt">Fix Many Files <span class="arr">→</span></span><span class="td">The same fix — level, trim the silence — for a whole pile of files in one pass.</span></button>
+      <button class="tooldoor" data-tool="loops"><span class="tt">Ready-Made Loops <span class="arr">→</span></span><span class="td">Tap a loop and it plays. Then change it and make it yours.</span></button>
+    </div>
+    <p class="hubfoot">Your music keeps itself: switch tools, leave, come back — <b>each tuning and each tool keeps its own work</b>, saved on this device.</p>
+  </div>
+</div>
+
+<!-- ================= A KIND THAT IS COMING ================= -->
+<div id="view-soon" hidden>
+  <div class="hubwrap">
+    <button class="backbtn" data-back="hub">← All Studios</button>
+    <h2 id="soonTitle">Coming</h2>
+    <p class="soon-note" id="soonText"></p>
+    <p class="soon-note">This door is honest: there is no room behind it yet, and this page won't pretend there is. When the first tool for this kind is built, it will stand here as its own door — the hub won't change shape to fit it.</p>
+  </div>
+</div>
+
+<!-- ================= ONE TOOL, ON ITS OWN ================= -->
+<div id="view-tool" hidden>
+  <div class="backbar">
+    <button class="backbtn" id="btnBackMusic">← Music Studio</button>
+    <span class="toolname" id="toolName">Studio</span>
+    <span class="spacer"></span>
+    <button class="backbtn" id="btnBackHub">All Studios</button>
+  </div>
+
+<!-- ================= TRANSPORT ================= -->
+<div class="transport" id="transportBar" role="region" aria-label="Transport">
+  <div class="tgroup">
+    <button class="tbtn play" id="btnPlay" aria-label="Play or pause">▶ Play</button>
+    <button class="tbtn" id="btnStop" aria-label="Stop">■ Stop</button>
+  </div>
+  <div class="readout" aria-live="off">
+    <div class="pos" id="posReadout">1 · 01</div>
+    <div class="lbl">Bar · Step</div>
+  </div>
+  <div class="ctl">
+    <label for="bpm">Tempo <output id="bpmOut">144 BPM</output></label>
+    <input type="range" id="bpm" min="40" max="200" step="1" value="144" />
+  </div>
+  <div class="ctl">
+    <label for="masterVol">Master <output id="masterOut">80%</output></label>
+    <input type="range" id="masterVol" min="0" max="100" step="1" value="80" />
+  </div>
+  <canvas id="viz" width="184" height="88" aria-hidden="true"></canvas>
+  <div class="spacer"></div>
+  <div class="tgroup">
+    <button class="btn gold" id="btnBounce">⬇ Download WAV</button>
+  </div>
+</div>
+
+<!-- ================= ROOMS ================= -->
+<nav class="rooms" aria-label="Rooms" style="display:none">
+  <button class="roombtn active" data-room="studio">Make Music</button>
+  <button class="roombtn" data-room="hum">Sing &amp; Hum</button>
+  <button class="roombtn" data-room="editor">Edit a Recording</button>
+  <button class="roombtn" data-room="converter">Convert Files</button>
+  <button class="roombtn" data-room="batch">Fix Many Files</button>
+  <button class="roombtn" data-room="loops">Ready-Made Loops</button>
+</nav>
+
+<!-- ================= STUDIO ROOM ================= -->
+<div id="room-studio">
+
+<!-- ===== TUNING DOOR (the deep layer) ===== -->
+<details class="layer" id="tuningDoor">
+  <summary>The tuning underneath — the Ladder &amp; the Weave <span class="plus">+</span></summary>
+  <div style="padding-bottom:14px">
+  <div class="modebar" role="group" aria-label="Tuning">
+    <span class="mlbl">Tuning</span>
+    <button class="modebtn active" id="modeLadder" aria-pressed="true">Ladder</button>
+    <button class="modebtn" id="modeWeave" aria-pressed="false">Weave</button>
+  </div>
+  <p class="sub" style="margin:10px 0 0;color:var(--muted);font-size:13.5px;line-height:1.55">Two ways of tuning the same notes. <b style="color:var(--text)">Ladder:</b> one big number halved down into hearing. <b style="color:var(--text)">Weave:</b> three numbers around the same note, with a found center between them. Switching never loses your work — each tuning keeps its own grid. You never need this door to make music; it's here for when you get curious.</p>
+
+<!-- ===== LADDER TUNING ===== -->
+<section class="panel" id="ladderPanel" aria-label="Base frequency and the ladder">
+  <h2>The ladder — pick a starting number</h2>
+  <p class="sub">One starting number, halved again and again until it lands in hearing — every rung the same note, C♯, just higher or lower. Change the number and the whole studio re-tunes around it. The full math is at the bottom of the page.</p>
+  <div class="rowflex">
+    <div class="field">
+      <label for="baseFreq">Base frequency (Hz)</label>
+      <input type="number" id="baseFreq" value="144000" min="30" max="2000000" step="any" />
+    </div>
+    <button class="btn gold" id="btnApplyBase">Apply &amp; re-tune</button>
+    <div class="field">
+      <label>Presets</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="preset active" data-base="144000">144,000</button>
+        <button class="preset" data-base="432">432</button>
+        <button class="preset" data-base="528">528</button>
+        <button class="preset" data-base="100000">100,000</button>
+      </div>
+    </div>
+  </div>
+  <label class="switchline" style="margin-top:12px">
+    <input type="checkbox" id="gridToggle" />
+    <span>Measure against the ladder's own grid (<span id="gridA">A = 446.4</span>)
+      <small>Against the piano (A = 440) every rung sits 25 cents sharp of C♯. Crown the ladder's own grid instead and the same rungs read as exact C♯, 0 cents. The sound does not change — only the ruler does.</small>
+    </span>
+  </label>
+  <div class="ladder-strip" id="ladderStrip" aria-label="The rungs"></div>
+</section>
+
+<!-- ===== WEAVE TUNING ===== -->
+<section class="panel" id="weavePanel" aria-label="The three frequencies" style="display:none">
+  <h2>The three numbers — the whole tuning of the weave</h2>
+  <p class="sub">Three numbers, each making its own ladder of the same note. The grid holds all of them at once — clusters of three around every C♯ — and at the heart a fourth row joins: the exact middle of the outer two, <b>found by math, not chosen</b>. The full story is at the bottom of the page.</p>
+  <div class="nums">
+    <div class="num">
+      <div class="f">554.3653 <small>Hz</small></div>
+      <div class="who">PIANO · C♯5 · 0 CENTS</div>
+      <div class="org">The piano's C♯5 exactly — true by <b>definition</b> of the standard grid, A = 440. Untouched, as given.</div>
+    </div>
+    <div class="num center-card">
+      <div class="f">561.635 <small>Hz</small></div>
+      <div class="who">CENTER · C♯5 · 22.55¢ FROM EACH</div>
+      <div class="org">The exact pitch-midpoint of the outer two — <b>√(554.3653 × 569)</b>, computed, never chosen. The default middle voice.</div>
+    </div>
+    <div class="num">
+      <div class="f">562.5 <small>Hz</small></div>
+      <div class="who">LADDER · C♯5 · +25 CENTS</div>
+      <div class="org">The ladder's C♯5 — <b>144,000 Hz halved by octaves eight times</b>. It sits 2.66 cents above the true center: near it, not on it — and not the default.</div>
+    </div>
+    <div class="num">
+      <div class="f">569 <small>Hz</small></div>
+      <div class="who">CLAIM · C♯5 · +45 CENTS</div>
+      <div class="org">The church video's <b>claimed</b> C♯5 for the Funchal Cathedral rose window — printed as a claim, graded as a claim. Untouched, as given.</div>
+    </div>
+  </div>
+  <p class="sub" style="margin:10px 0 0">The default, in the words that set it: <b>“Matched perfectly. Nothing was moved. The center was found, not fitted.”</b> The screen rounds its labels — the sound doesn't; every frequency is computed at full precision.</p>
+</section>
+  </div>
+</details>
+
+<!-- ===== INSTRUMENT RACK ===== -->
+<section class="panel" aria-label="Instrument rack">
+  <h2>Pick a sound</h2>
+  <p class="sub">Nine sounds, all made live in the page — no recordings. Tap one to write with it; you'll hear it play a note.</p>
+  <div class="rack" id="rack"></div>
+  <div class="sel-detail">
+    <span class="who">You're writing with: <b id="selName">Pure</b></span>
+    <span class="mini">Volume</span>
+    <input type="range" id="instVol" min="0" max="100" value="80" aria-label="Selected instrument volume" />
+    <button class="btn" id="instMute">Mute</button>
+    <span class="mini">Sound style</span>
+    <select id="instPreset" aria-label="Selected instrument preset"></select>
+    <button class="btn" id="instTest">♪ Hear this sound</button>
+  </div>
+</section>
+
+<!-- ===== PIANO ROLL ===== -->
+<section class="panel" id="rollPanel" aria-label="Piano roll">
+  <h2>Tap squares to add notes</h2>
+  <p class="sub" id="rollSubLadder">Each square is one note, one moment. <b>Tap to add it, tap again to take it away</b> — or press and drag to paint a run of them. High notes at the top, low at the bottom, and the whole thing loops. Pale squares are other sounds' notes; pick that sound above to change them.</p>
+  <p class="sub" id="rollSubWeave" style="display:none">Each square is one note, one moment. <b>Tap to add it, tap again to take it away</b> — or press and drag to paint. Rows come in clusters of three (the weave's three tunings of the same note), with the found center joining at the heart. Pale squares are other sounds' notes; pick that sound above to change them.</p>
+  <div class="roll-tools">
+    <span class="mini" id="rollInfo">562.5 Hz is the heart</span>
+    <span class="sep"></span>
+    <button class="btn" id="btnDemo">Load a ready-made tune</button>
+    <button class="btn" id="btnClearInst">Clear this sound</button>
+    <button class="btn" id="btnClear">Clear everything</button>
+  </div>
+  <div class="roll-scroll"><div class="roll" id="roll"></div></div>
+  <div class="legend" id="legendLadder">
+    <span><i style="background:var(--gold)"></i>Note — selected instrument</span>
+    <span><i style="background:rgba(236,234,242,.35)"></i>Note — another instrument</span>
+    <span><i style="background:#1c1807;border:1px solid var(--gold)"></i>The heart rung</span>
+  </div>
+  <div class="legend" id="legendWeave" style="display:none">
+    <span><i style="background:var(--gold)"></i>Note — selected instrument</span>
+    <span><i style="background:rgba(236,234,242,.35)"></i>Note — another instrument</span>
+    <span><i style="background:#1c1807;border:1px solid var(--gold)"></i>The heart cluster — the homing beacon · the CENTER row is the found middle · the LADDER row sits 2.66¢ off it</span>
+    <span><i style="background:var(--panel3);border-top:2px solid #34344e"></i>Thick line — a new C♯ octave begins</span>
+  </div>
+</section>
+
+<!-- ===== LIVE PADS ===== -->
+<section class="panel" id="padsPanel" aria-label="Live pads">
+  <h2 id="padsTitle">Tap the pads — play notes right now</h2>
+  <p class="sub" id="padsSubLadder">Big buttons, one note each, played by the sound you picked above. Tap to play; hold for a longer sound. Want to keep what you play? Tap <b>● Record my taps</b>, press Play up top, and your taps land in the grid as it goes around.</p>
+  <p class="sub" id="padsSubWeave" style="display:none">One pad for each voice of the matched set — piano, the found center, claim — and one that plays all three at once: the beacon. Want to keep what you play? Tap <b>● Record my taps</b>, press Play up top, and your taps land in the grid as it goes around.</p>
+  <div class="pads ladder" id="pads"></div>
+  <div class="ed-tools" style="margin-top:12px">
+    <button class="btn rec" id="btnRec" aria-label="Record what you play on the pads into the grid">● Record my taps</button>
+    <span class="mic-state">Records your pad taps into the grid while the loop plays.</span>
+    <span class="sep"></span>
+    <button class="btn beacon" id="btnBeacon" style="display:none;border-color:var(--gold-dim);color:var(--gold)">♪ Play the beacon</button>
+  </div>
+
+  <div class="fluc" id="flucBlock" style="display:none">
+    <div class="fluc-head">
+      <span class="t">Fluctuate — slide between the three</span>
+      <span class="sep"></span>
+      <button class="btn" id="flucAuto">Auto-sweep: off</button>
+      <button class="btn gold" id="flucToggle">▶ Start the weave</button>
+    </div>
+    <p class="sub" style="margin-bottom:8px">Two tones hold steady — the piano's and the claim's. A third slides between them, straight through the found center. Where it meets a held tone, the pulsing slows to nothing; in between, it runs fastest. Slide it and listen — the beauty is in the moving.</p>
+    <input type="range" id="flucSlider" min="554.3653" max="569" step="0.001" value="561.635" aria-label="Fluctuate — moving tone frequency" />
+    <div class="fluc-ends"><span>554.3653 · PIANO</span><span class="mid">561.635 · CENTER — found, not fitted</span><span>569 · CLAIM</span></div>
+    <div class="fluc-read" id="flucRead">Moving tone: <b>561.635 Hz</b> — beats vs the piano 7.3/s · vs the claim 7.4/s · distance from the found center: 0.00 Hz</div>
+  </div>
+</section>
+
+<!-- ===== MIC + BOUNCE ===== -->
+<section class="panel" id="voicePanel" aria-label="Microphone track and bounce">
+  <h2>Record your voice over it</h2>
+  <p class="sub">Sing or play something real into the mic and it loops along with everything else. It never leaves this device — your browser will ask permission first.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+    <button class="btn" id="btnMicRec">🎙 Start mic recording</button>
+    <button class="btn danger" id="btnMicDel" disabled>Delete clip</button>
+    <span class="mic-state" id="micState">No clip yet.</span>
+  </div>
+  <audio id="micAudio" controls style="display:none"></audio>
+  <div class="statusline" id="statusLine" role="status"></div>
+  <p class="sub" style="margin-top:10px">When it sounds right, the <b>⬇ Download WAV</b> button up top saves the whole loop — every sound, your mic clip, your voice tracks, effects and all — as a file you keep.</p>
+</section>
+
+<!-- ===== TRACKS / MIXER ===== -->
+<section class="panel" id="tracksPanel" aria-label="Tracks and mixer">
+  <h2>Layer your voice — sing over the loop, again and again</h2>
+  <p class="sub">Press the gold button: the loop plays, you sing or play over one full round, and your take becomes a track that loops with everything else. Record again to stack the next voice on top. Every track's volume, pan, and effects live in the mixer door below — there when you want them, out of the way when you don't.</p>
+  <div class="ed-tools" style="margin-top:2px">
+    <button class="btn gold" id="btnPassRec">● Record a voice pass</button>
+    <span class="mic-state" id="passState">One full loop per pass. Each pass becomes its own track below.</span>
+  </div>
+  <details class="more">
+    <summary>Mixer — every track: volume · pan · mute · solo · effects <span class="plus">+</span></summary>
+    <div class="more-body"><div id="trackList"></div></div>
+  </details>
+  <div class="statusline" id="passStatus" role="status"></div>
+</section>
+
+</div><!-- /room-studio -->
+
+<!-- ================= HUM ROOM ================= -->
+<section class="panel" id="room-hum" style="display:none" aria-label="Sing and hum — microphone to music">
+  <h2>Sing &amp; hum — your noise, played back as music</h2>
+  <p class="sub">Hum it, sing it, beatbox it, tap it on the table. The page listens <b>on this device only</b> — nothing is recorded or sent anywhere — follows your pitch and your rhythm, and plays it back as real notes in the grid, in the <b id="humTuningName">ladder</b> tuning. After that you can edit it like anything else here.</p>
+  <button class="hum-big" id="humBtn">🎙 Start listening — then hum, sing, or beatbox</button>
+  <div class="hum-meter" aria-hidden="true"><i id="humMeterFill"></i></div>
+  <div class="hum-read" id="humRead">Not listening yet. One clear note is all it takes.</div>
+  <div class="ed-tools">
+    <div class="field">
+      <label for="humInst">Play it back with</label>
+      <select id="humInst"></select>
+    </div>
+    <div class="field">
+      <label for="humMode">I'm going to</label>
+      <select id="humMode">
+        <option value="melody">Sing / hum a melody</option>
+        <option value="beat">Beatbox / tap a rhythm</option>
+      </select>
+    </div>
+    <span class="sep"></span>
+    <button class="btn gold" id="humPlay" disabled>▶ Hear it in the loop</button>
+    <button class="btn" id="humUndo" disabled>Undo what I just sang</button>
+  </div>
+  <details class="more">
+    <summary>More controls — how it listens <span class="plus">+</span></summary>
+    <div class="more-body">
+      <div class="fx-grid">
+        <div class="fx"><label for="humGate">Mic sensitivity <output id="humGateOut">normal</output></label><input type="range" id="humGate" min="2" max="20" step="1" value="7" /></div>
+        <div class="fx"><label for="humSnap">Beat sorting — low/high split <output id="humSnapOut">1000 Hz</output></label><input type="range" id="humSnap" min="500" max="2000" step="50" value="1000" /></div>
+      </div>
+      <p class="sub" style="margin:10px 0 0">In beat mode each hit is sorted by how bright it sounds: a <b>low thump</b> (a "boots" kick, a chest tap) lands on the heart rung; a <b>high snap</b> (a "cats" hiss, a finger snap) lands three rungs higher. The slider sets where low becomes high. It is a <b>rough sort, honestly labeled</b> — a guess from brightness, not a drum machine's brain. In melody mode a note is written when your pitch holds steady on a rung for a moment; timing wraps into the 32 steps of the loop, counting from when you pressed listen — press Play in the Studio room first if you want to hum along with the loop. <b>Honest label:</b> microphone capture can't be tested from inside this page's sandbox — nothing here can prove your mic works until you try it, so <b>your device is the referee</b>. Pitch tracking is a good ear, not a perfect one: one clear note at a time, close to the mic, in a quiet-ish room, and it follows you well.</p>
+    </div>
+  </details>
+  <div class="statusline" id="humStatus" role="status"></div>
+</section>
+
+<!-- ================= EDITOR ROOM ================= -->
+<section class="panel" id="room-editor" style="display:none" aria-label="Waveform editor">
+  <h2>Edit a recording — see it, cut it</h2>
+  <p class="sub">Open any audio file from your device and you'll see it as a wave. Drag across it to select a piece, then cut, copy, paste, trim, fade, or make it louder — and save it back out. Edits apply to your selection, or to the whole file if nothing is selected. Nothing is uploaded.</p>
+  <div class="ed-tools" style="margin:0 0 10px">
+    <input type="file" id="edFile" accept="audio/*" aria-label="Open an audio file" />
+    <button class="btn" id="edSendLoop" disabled>Use as the studio's mic clip</button>
+    <span class="sep"></span>
+    <div class="viewtoggle" role="group" aria-label="Editor view">
+      <button class="btn gold" id="edViewWave">Waveform</button>
+      <button class="btn" id="edViewSpec">Spectrum</button>
+    </div>
+  </div>
+  <div class="ed-wrap"><canvas id="edCanvas" width="1120" height="380" aria-label="Waveform display — drag to select a region"></canvas></div>
+  <div class="ed-read" id="edRead">No file open yet. Open one above — MP3, WAV, M4A, OGG, whatever your browser can decode.</div>
+  <div class="ed-tools">
+    <button class="btn gold" id="edPlaySel" disabled>▶ Play selection</button>
+    <button class="btn" id="edPlayAll" disabled>▶ Play all</button>
+    <button class="btn" id="edStop" disabled>■ Stop</button>
+    <span class="sep"></span>
+    <button class="btn" id="edCut" disabled>✂ Cut</button>
+    <button class="btn" id="edCopy" disabled>Copy</button>
+    <button class="btn" id="edPaste" disabled>Paste</button>
+    <button class="btn" id="edTrim" disabled>Trim to selection</button>
+  </div>
+  <details class="more">
+    <summary>More controls — fades, silence, reverse, normalize, amplify <span class="plus">+</span></summary>
+    <div class="more-body">
+  <div class="ed-tools" style="margin-top:0">
+    <button class="btn" id="edFadeIn" disabled>Fade in</button>
+    <button class="btn" id="edFadeOut" disabled>Fade out</button>
+    <button class="btn" id="edSilence" disabled>Silence</button>
+    <button class="btn" id="edReverse" disabled>Reverse</button>
+    <button class="btn" id="edNormalize" disabled>Normalize</button>
+    <span class="ed-amp">
+      <label for="edAmpDb">Amplify</label>
+      <input type="range" id="edAmpDb" min="-24" max="24" step="0.5" value="0" />
+      <output id="edAmpOut">0 dB</output>
+      <button class="btn" id="edAmpApply" disabled>Apply</button>
+    </span>
+  </div>
+    </div>
+  </details>
+  <div class="ed-tools">
+    <button class="btn" id="edAutoTrim" disabled>Auto-trim silence</button>
+    <button class="btn" id="edFindSilence" disabled>Find silence</button>
+    <span class="sep"></span>
+    <button class="btn gold" id="edExport" disabled>⬇ Export WAV</button>
+  </div>
+  <div class="statusline" id="edStatus" role="status"></div>
+</section>
+
+<!-- ================= CONVERTER ROOM ================= -->
+<section class="panel" id="room-converter" style="display:none" aria-label="Audio converter">
+  <h2>Convert a file — any format in, the one you want out</h2>
+  <p class="sub">Drop a file, pick the format, press Convert. <b>WAV</b> is the full-quality one that plays everywhere; <b>MP3</b> is the small one that plays everywhere; <b>WebM</b> and <b>M4A</b> appear when your browser can make them. It all happens <b>on this device</b> — nothing is uploaded. One honest note: turning an MP3 into WAV makes a bigger file, not a better sound.</p>
+  <div class="dropzone" id="convDrop">
+    <b>Drop audio files here</b> — or pick them:<br /><br />
+    <input type="file" id="convFiles" accept="audio/*" multiple aria-label="Pick audio files to convert" />
+  </div>
+  <div class="ed-tools">
+    <div class="field">
+      <label for="convFormat">Convert to</label>
+      <select id="convFormat">
+        <option value="wav">WAV — lossless, plays everywhere</option>
+        <option value="mp3">MP3 — small, plays everywhere</option>
+        <option value="webm">WebM / Opus — small, modern browsers</option>
+        <option value="m4a">M4A / AAC — Apple-friendly</option>
+      </select>
+    </div>
+    <button class="btn gold" id="convGo" disabled>Convert all</button>
+    <button class="btn" id="convClear" disabled>Clear</button>
+  </div>
+  <details class="more">
+    <summary>More controls — bitrate, sample rate, channels, treatments <span class="plus">+</span></summary>
+    <div class="more-body">
+      <div class="rowflex" style="align-items:flex-end">
+        <div class="field"><label for="convBitrate">MP3 bitrate</label>
+          <select id="convBitrate"><option value="128">128 kbps — smallest</option><option value="192" selected>192 kbps — balanced</option><option value="320">320 kbps — biggest MP3</option></select></div>
+        <div class="field"><label for="convSr">Sample rate</label>
+          <select id="convSr"><option value="0">Keep the file's own</option><option value="48000">48,000 Hz — video standard</option><option value="44100">44,100 Hz — CD standard</option><option value="22050">22,050 Hz — voice is fine</option><option value="16000">16,000 Hz — voice only, tiny</option></select></div>
+        <div class="field"><label for="convCh">Channels</label>
+          <select id="convCh"><option value="0">Keep as-is</option><option value="1">Mono — one channel</option><option value="2">Stereo — two channels</option></select></div>
+      </div>
+      <div class="rowflex" style="margin-top:10px;align-items:stretch">
+        <label class="checkline"><input type="checkbox" id="convNorm" /><span>Normalize first<small>Raise each file's peak to just under full scale before converting.</small></span></label>
+        <label class="checkline"><input type="checkbox" id="convTrim" /><span>Trim silence first<small>Cut dead air below −45 dB from the head and tail.</small></span></label>
+      </div>
+      <p class="sub" id="convSupport" style="margin:10px 0 0"></p>
+    </div>
+  </details>
+  <div class="conv-list" id="convList"></div>
+  <div class="statusline" id="convStatus" role="status"></div>
+</section>
+
+<!-- ================= BATCH ROOM ================= -->
+<section class="panel" id="room-batch" style="display:none" aria-label="Batch processing">
+  <h2>Fix many files at once</h2>
+  <p class="sub">Drop several audio files, pick the fixes, and every file gets treated and handed back as WAV in one pass — each one yours to download. Everything happens on this device.</p>
+  <div class="dropzone" id="batchDrop">
+    <b>Drop audio files here</b> — or pick them:<br /><br />
+    <input type="file" id="batchFiles" accept="audio/*" multiple aria-label="Pick audio files to process" />
+  </div>
+  <details class="more">
+    <summary>More controls — treatments <span class="plus">+</span></summary>
+    <div class="more-body">
+  <div class="rowflex" style="align-items:stretch">
+    <label class="checkline">
+      <input type="checkbox" id="batchNorm" checked />
+      <span>Normalize each file<small>Peak raised (or lowered) to just under full scale, so a pile of takes sits at one honest level.</small></span>
+    </label>
+    <label class="checkline">
+      <input type="checkbox" id="batchTrim" />
+      <span>Auto-trim leading &amp; trailing silence<small>Dead air below −45 dB at the head and tail of each file is cut away.</small></span>
+    </label>
+  </div>
+    </div>
+  </details>
+  <div class="ed-tools">
+    <button class="btn gold" id="batchGo" disabled>Process all → WAV</button>
+    <button class="btn" id="batchClear" disabled>Clear the bench</button>
+  </div>
+  <div class="batch-list" id="batchList"></div>
+  <div class="statusline" id="batchStatus" role="status"></div>
+</section>
+
+<!-- ================= LOOP SHELF ================= -->
+<section class="panel" id="room-loops" style="display:none" aria-label="Loop shelf">
+  <h2>Ready-made loops — tap one and it plays</h2>
+  <p class="sub">Patterns composed in this page — no audio files, no licenses, nothing to clear. Loading one replaces the grid for the tuning you're in (the other tuning keeps its own grid), and it plays in whichever tuning is live.</p>
+  <div class="loops" id="loops"></div>
+  <div class="statusline" id="loopStatus" role="status"></div>
+</section>
+
+<!-- ================= LAYERS ================= -->
+<details class="layer">
+  <summary>What was borrowed, and from whom — the honest grading <span class="plus">+</span></summary>
+  <div class="body">
+    <p><b>This studio is a combination, and it says so.</b> Our two frequency studios — the Ladder and the Weave — merged whole into one page, plus the best parts of the named tools, taken the house way: keep what serves, leave the forced defaults, ads, accounts, paywalls, and license traps.</p>
+    <table>
+      <tr><th>Borrowed from</th><th>The part worth taking</th></tr>
+      <tr><td>Studio One</td><td>The single-window spine: transport on top, everything visible at once, no hunting through menus. This page's shape.</td></tr>
+      <tr><td>Audacity</td><td>The waveform editor room — open a file, see it, select, cut/copy/paste/trim, fades, amplify, normalize, silence, reverse, export. And its spirit: free for any use, commercial included.</td></tr>
+      <tr><td>NCH WavePad</td><td>Batch processing — many files, one pass — plus auto-trim and silence-finding as one-tap tools, and a spectral view in the editor. (Its fine print we left behind: the free WavePad is licensed for non-commercial home use only. This page carries no such clause — see the header.)</td></tr>
+      <tr><td>NCH Switch</td><td>The converter room — format to format (WAV, MP3, WebM, M4A), with bitrate, sample-rate, and channel choices under one More controls door. Its fine print stayed behind, same as WavePad's.</td></tr>
+      <tr><td>Hum-to-MIDI tools</td><td>The Sing &amp; Hum room: pitch and onset tracking that turns a hummed line or a beatboxed rhythm into editable notes in the roll, snapped to the studio's own tunings.</td></tr>
+      <tr><td>Logic</td><td>Musical defaults: a shelf of composed loops and per-instrument starting presets, so a first tap already sounds like something.</td></tr>
+      <tr><td>Ableton</td><td>The pad grid as play: the live pads behave like launchable clips, not just keys.</td></tr>
+    </table>
+    <p><b>The honest limits, printed plainly:</b> a browser page cannot host VST or AU plugins, has no MIDI in or out, no effects rack beyond what each voice carries, and will not match a desktop DAW's depth on a hundred-track session. This is a working studio, not a replacement claim. What it does — synthesis, sequencing, multitrack mixing with pan and effects, loop-layered voice recording, hum-to-notes, waveform editing, batch work, format conversion, bouncing — it does for real, on your device.</p>
+    <p><b>Privacy is structural:</b> everything runs on the visitor's device. Your work autosaves to this device only, as you go. Nothing is sent anywhere, there is no account, and there never will be.</p>
+  </div>
+</details>
+
+<details class="layer">
+  <summary>The ladder — the math, and where 144,000 is really from <span class="plus">+</span></summary>
+  <div class="body">
+    <p><b>The octave math is exact.</b> Halving a frequency drops it exactly one octave; the note name survives every halving, only the height changes. Start at 144,000 Hz and halve: 72,000 → 36,000 are still ultrasound. The first rung inside the textbook audible range is <span class="gold">18,000 Hz</span> (three octaves down — most adults won't hear it; a child might). Then 9,000 · 4,500 · 2,250 · 1,125 · <span class="gold">562.5 — the heart, nearest the middle of hearing</span> · 281.25 · 140.625 · 70.31 · 35.16 Hz, near the floor where tone turns into pulse. Against the piano's grid (A = 440), every rung lands on <b>C♯, sharp by exactly 25 cents</b> — octaves preserve the offset, so the whole family sits a quarter-semitone above the C♯ line, all the way down. That is verified arithmetic, and this studio is tuned to it: crown the ladder's own grid (A = 446.4) with the toggle in Ladder mode and those same rungs read as exact C♯.</p>
+    <p><b>Where 144,000 is really from.</b> The number has two real homes. In Revelation, the 144,000 are the sealed — 12,000 from each of twelve tribes: <b>12 × 12 × 1,000</b>, completeness squared and multiplied; in the text they are a people, and nothing calls them a frequency. In the Maya calendar, one <b>baktun is exactly 144,000 days</b> — about 394 years — a genuine unit from a genuine chain of use. Both are real, old, and checkable.</p>
+    <p><b>What is not supported:</b> 144,000 <i>as a frequency</i> is 144 kHz — ultrasound, seven times above the top of human hearing. No ear hears it and no ordinary speaker plays it. Claims that this frequency heals, awakens, or aligns anything are <b>not supported by evidence</b>. What is true is smaller and better: a real number, a real ratio, and — once you octave it down — a real note you can play, record, and build with. That is what this page does with it, and it does not claim more.</p>
+    <p><b>Two laws under the studio. 1 — Size sets the pitch, shape sets the pattern.</b> Grow or shrink a vibrating thing and its frequency moves in exact inverse ratio to the size — twice as big, half the frequency, one octave down — and the ratio holds at <i>every</i> size of change, with no smallest stair. It doesn't step; it slides, like water, like a glissando. And through the whole slide the pattern never changes. That is why the ladder works at all: change the base number and every rung slides together, the note — the pattern — untouched. The Glide voice is this law with a fader.</p>
+    <p><b>2 — A tuning is a rule written while calm.</b> A grid is a choice, crowned once and then measured against. Concert pitch has wandered for centuries — Baroque orchestras sat near A = 415, a full semitone below today; several modern orchestras play at 443–446 because sharp reads as brilliant. This ladder's grid, A = 446.4, sits inside the range humans already use. Neither grid is nature. Both are rules. The honest move is to say which ruler you're holding — so this studio prints both, and lets you switch.</p>
+  </div>
+</details>
+
+<details class="layer">
+  <summary>The weave — matched, not fitted <span class="plus">+</span></summary>
+  <div class="body">
+    <p><b>Three numbers, three different kinds of truth.</b> <span class="gold">554.3653 Hz</span> is the piano's C♯5 — true by definition of the standard grid, A = 440; it is not measured, it is declared, and the declaration is the grid. <span class="gold">562.5 Hz</span> is the ladder's C♯5 — 144,000 Hz halved by octaves eight times; halving is exact, so this one is pure arithmetic, 25.2 cents sharp of the piano. <span class="gold">569 Hz</span> is the church video's claimed C♯5 for the Funchal Cathedral rose window — the video never showed its conversion rule, so this one is graded as what it is: <b>a claim</b>, 45 cents sharp. Each of the three makes its own octave ladder, and the weave roll holds all of them, interleaved.</p>
+    <blockquote><b>Matched perfectly. Nothing was moved. The center was found, not fitted.</b></blockquote>
+    <p>That is the weave's default setting, and it is a rule about hands off. The piano's 554.3653 stands untouched, exactly as given. The claim's 569 stands untouched, exactly as given — nobody nudged it a hair to force the picture symmetric; that would be fitting, and fitting is forbidden here. Between them, the middle voice is not chosen and not averaged into place: it is <b>computed</b> — the exact pitch-midpoint of the outer two, the geometric mean √(554.3653 × 569) = <span class="gold">561.635 Hz</span>, sitting exactly 22.55 cents from each. That found center is the default middle voice: it is what the beacon sounds, what the center pad plays, and where the Fluctuate slider rests.</p>
+    <p><b>And the ladder's own rung?</b> 562.5 keeps its ladder, its cluster, and its row — labeled as what it is. It sits 0.87 Hz above the exact center: <b>2.66 cents off</b> — 25.2 cents above the piano, 19.9 cents below the claim. Near the center, not on it. It is not the default center, and this page does not call it one. Almost is a real address; it just isn't this one.</p>
+    <p><b>The screen rounds — the sound doesn't.</b> Labels on this page round to a decimal or two so they can be read. The synthesis underneath computes every frequency at full precision, straight from the formulas — 440 × 2<sup>4/12</sup>, √(554.3653… × 569), 144,000 ÷ 256 — not a cent of a Hertz off, anywhere.</p>
+    <p><b>What three tones together actually make:</b> no new frequency. Tones adding in air stay exactly the tones they are. What they create is a pattern on top — the <b>beating</b>, pulsing at their difference rates. The matched set beats at 7.3, 7.4, and 14.6 times a second. A beacon is not defined by its pitch; it is defined by its pulse — which is why the three together sound like something calling through fog. If the three stood in exact whole-number ratios, they would fuse into a single voice, the way an instrument's harmonics blend into one note. These refuse to fuse, because they are not three notes. They are three tunings of the <i>same</i> note.</p>
+    <p><b>The words for what you hear.</b> The man who asked for this studio named it himself:</p>
+    <blockquote>“Cognitive dissonance between the three of them — but still how they're beautiful and go together perfectly at the same time.”</blockquote>
+    <p>Beside his phrase, at the same size, the acoustic facts: in sound, this clash has a technical name — <b>roughness</b>. Tones this close together beat inside the ear's critical band, and the ear registers that beating as roughness, a felt friction. Yet the three are also, genuinely, the same note — so the ear holds clash and sameness at once, and neither cancels the other. His words and the acoustics are describing the same hearing from two sides. Both are printed. Neither is corrected into the other.</p>
+    <p><b>The weave is the Diamond teaching: the center is a weave, not a middle value.</b> The matched set sharpens the teaching rather than breaking it. There <i>is</i> an exact middle value — 561.635, found by math, not fitted by hand — and it sings here as a voice. But the weave itself, the thing you actually hear when the beacon sounds, is still not that value or any value: it is the three sounding together, the pulse riding on top of them. The center was found. The weave is what the found center sounds like with its neighbors. A middle value can be computed; a weave can only be heard.</p>
+  </div>
+</details>
+
+<details class="layer">
+  <summary>How the nine instruments work <span class="plus">+</span></summary>
+  <div class="body">
+    <p>Every voice is synthesized live with the Web Audio API — oscillators, harmonic stacks, filters, and gain envelopes. No samples, nothing fetched. Each voice also carries starting presets (in the rack, above): a tone, a level, and a note-length feel, so a first tap already sounds like something. One line each:</p>
+    <table>
+      <tr><th>Voice</th><th>How it's made</th></tr>
+      <tr><td>Pure</td><td>A single sine wave — the fundamental alone, with a soft attack and release. The ladder with nothing added.</td></tr>
+      <tr><td>Organ</td><td>Sine harmonics stacked like drawbars (1×, 2×, 3×, 4×), held at full sustain until the step ends.</td></tr>
+      <tr><td>Piano</td><td>A bright harmonic stack struck hard, then decaying exponentially — loud overtones first, fundamental last.</td></tr>
+      <tr><td>Strings</td><td>Two detuned sawtooth waves through a lowpass filter, bowing in slowly — chorus from the detune itself.</td></tr>
+      <tr><td>Flute</td><td>A sine with gentle vibrato and a breathy slow attack; a whisper of the octave above, nothing more.</td></tr>
+      <tr><td>Bell</td><td>Inharmonic partials (1×, 2.76×, 5.4×) that decay at different speeds — metal, not a tuned string.</td></tr>
+      <tr><td>Pluck</td><td>A triangle wave through a filter that slams shut — the Karplus snap of a string let go.</td></tr>
+      <tr><td>Pad</td><td>Three detuned saws, heavily lowpassed, swelling in and out slowly — weather, not melody.</td></tr>
+      <tr><td>Glide</td><td>One continuous sine voice that slides — portamento — from the last note to the next, never stepping. The glissando voice.</td></tr>
+    </table>
+    <p>The mic track is the tenth voice and the only real one: your own sound, recorded on this device, looped at step 1.</p>
+  </div>
+</details>
+
+<footer>
+  <div class="frow">
+    <span>Free. Always free.</span>
+    <span class="clock" id="runClock">Running since October 19, 2026</span>
+    <a href="index.html" download="the-studios.html">Download this page — the-studios.html (the offline door)</a>
+    <span>© The Thriving Plan — CC BY-SA 4.0</span>
+  </div>
+</footer>
+
+</div><!-- /view-tool -->
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   The Studio — the Ladder and the Weave in one room, with a
+   waveform editor, a batch bench, and a loop shelf folded in.
+   All state lives on this device (localStorage). No network.
+   ============================================================ */
+var STEPS = 32;
+var NOTE_NAMES = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+
+/* ---------- the weave's three numbers (full precision) ---------- */
+var PIANO_F  = 440 * Math.pow(2, 4/12);      /* 554.3652619537442 */
+var CLAIM_F  = 569;                           /* untouched, as given */
+var CENTER_F = Math.sqrt(PIANO_F * CLAIM_F);  /* 561.6349651256414 */
+var LADDER_F = 562.5;                         /* 144,000 ÷ 256, exact */
+
+var INSTRUMENTS = [
+  {id:"pure",   name:"Pure",   desc:"Sine — the fundamental alone"},
+  {id:"organ",  name:"Organ",  desc:"Drawbar harmonics, held"},
+  {id:"piano",  name:"Piano",  desc:"Struck stack, long decay"},
+  {id:"strings",name:"Strings",desc:"Detuned saws, slow bow"},
+  {id:"flute",  name:"Flute",  desc:"Sine + vibrato, breathy"},
+  {id:"bell",   name:"Bell",   desc:"Inharmonic metal partials"},
+  {id:"pluck",  name:"Pluck",  desc:"Snapped string, fast filter"},
+  {id:"pad",    name:"Pad",    desc:"Slow detuned swell"},
+  {id:"glide",  name:"Glide",  desc:"One voice, slides — glissando"}
+];
+/* Per-instrument starting presets (Logic's musical defaults):
+   tone = lowpass ceiling in Hz, gain = level trim, dur = note-length feel. */
+var PRESETS = {
+  pure:   [{name:"Clean",bright:19000,gain:1.0,dur:1.0},{name:"Soft",bright:5200,gain:0.9,dur:1.35},{name:"Round",bright:9000,gain:1.05,dur:1.8}],
+  organ:  [{name:"Drawbar",bright:12000,gain:1.0,dur:1.0},{name:"Chapel",bright:4200,gain:0.95,dur:1.5},{name:"Bright",bright:19000,gain:1.1,dur:0.85}],
+  piano:  [{name:"Studio grand",bright:15000,gain:1.0,dur:1.0},{name:"Felt",bright:3800,gain:0.9,dur:1.15},{name:"Bright pop",bright:19000,gain:1.08,dur:0.8}],
+  strings:[{name:"Section",bright:6000,gain:1.0,dur:1.2},{name:"Warm",bright:3200,gain:1.0,dur:1.5},{name:"High sheen",bright:11000,gain:0.95,dur:1.0}],
+  flute:  [{name:"Breathy",bright:8000,gain:1.0,dur:1.1},{name:"Pure tone",bright:5000,gain:0.95,dur:1.3},{name:"Airy",bright:14000,gain:1.05,dur:0.95}],
+  bell:   [{name:"Temple",bright:17000,gain:1.0,dur:1.3},{name:"Muted",bright:6000,gain:0.9,dur:0.9},{name:"Crystal",bright:19000,gain:1.05,dur:1.7}],
+  pluck:  [{name:"Snap",bright:12000,gain:1.0,dur:0.9},{name:"Nylon",bright:4500,gain:0.95,dur:1.1},{name:"Harp",bright:16000,gain:1.0,dur:1.5}],
+  pad:    [{name:"Weather",bright:3200,gain:1.0,dur:1.6},{name:"Deep",bright:1800,gain:1.05,dur:2.0},{name:"Shimmer",bright:8000,gain:0.95,dur:1.4}],
+  glide:  [{name:"Slide",bright:19000,gain:1.0,dur:1.0},{name:"Slow water",bright:9000,gain:0.95,dur:1.5},{name:"Quick",bright:19000,gain:1.05,dur:0.7}]
+};
+
+/* ---------- ladder math ---------- */
+function computeLadder(base){
+  var f = base, guard = 0;
+  while (f > 20000 && guard++ < 60) f /= 2;
+  var rungs = [];
+  guard = 0;
+  while (f >= 30 && guard++ < 40){ rungs.push(f); f /= 2; }
+  if (!rungs.length) rungs = [Math.min(Math.max(base,30),20000)];
+  var heart = 0, best = 1e9;
+  for (var i=0;i<rungs.length;i++){
+    var d = Math.abs(Math.log2(rungs[i]/562.5));
+    if (d < best){ best = d; heart = i; }
+  }
+  return { rungs:rungs, heart:heart };
+}
+function noteFor(freq, refA){
+  var midiFloat = 69 + 12 * Math.log2(freq / refA);
+  var midi = Math.round(midiFloat);
+  var cents = (midiFloat - midi) * 100;
+  var name = NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi/12) - 1);
+  return { name:name, cents:cents };
+}
+function ladderRefA(){
+  var lad = computeLadder(state.baseFreq);
+  var heartFreq = lad.rungs[lad.heart];
+  var n = noteFor(heartFreq, 440);
+  return 440 * Math.pow(2, Math.round(n.cents) / 1200);
+}
+function fmtHz(f){
+  if (f >= 1000) return (Math.round(f*10)/10).toLocaleString("en-US");
+  return (Math.round(f*100)/100).toString();
+}
+function fmtRowHz(row){
+  if (row.src === "center") return (Math.round(row.freq*1000)/1000).toString();
+  return fmtHz(row.freq);
+}
+function centsTxt(f){
+  var c = noteFor(f, 440).cents;
+  if (Math.abs(c) < 0.05) return "exact";
+  return (c > 0 ? "+" : "") + (Math.round(c*10)/10) + "¢";
+}
+function srcName(src){
+  return src === "piano" ? "PIANO" : src === "ladder" ? "LADDER" : src === "claim" ? "CLAIM" : src === "center" ? "CENTER" : "";
+}
+
+/* ---------- weave rows: all rungs of all three ladders + the found center ---------- */
+var WEAVE_SOURCES = [
+  { id:"piano",  base:PIANO_F  },
+  { id:"ladder", base:LADDER_F },
+  { id:"claim",  base:CLAIM_F  }
+];
+function computeWeaveRows(){
+  var out = [];
+  WEAVE_SOURCES.forEach(function(s){
+    for (var k=-3;k<=5;k++) out.push({ freq:s.base * Math.pow(2,k), src:s.id, oct:k });
+  });
+  out.push({ freq:CENTER_F, src:"center", oct:0 });
+  out.sort(function(a,b){ return b.freq - a.freq; });
+  return out;
+}
+var weaveRows = computeWeaveRows();
+function weaveRowIdx(src, oct){
+  for (var i=0;i<weaveRows.length;i++) if (weaveRows[i].src === src && weaveRows[i].oct === oct) return i;
+  return -1;
+}
+
+/* ---------- state ---------- */
+function defaultPattern(nrows){
+  var p = {};
+  INSTRUMENTS.forEach(function(inst){
+    p[inst.id] = [];
+    for (var r=0;r<nrows;r++){ p[inst.id].push(new Array(STEPS).fill(false)); }
+  });
+  return p;
+}
+function normalizePattern(p, nrows){
+  var out = defaultPattern(nrows);
+  if (!p) return out;
+  INSTRUMENTS.forEach(function(inst){
+    var src = p[inst.id];
+    if (!Array.isArray(src)) return;
+    for (var r=0;r<Math.min(nrows, src.length);r++){
+      if (!Array.isArray(src[r])) continue;
+      for (var c=0;c<STEPS;c++) out[inst.id][r][c] = !!src[r][c];
+    }
+  });
+  return out;
+}
+var ladder = computeLadder(144000);
+var state = {
+  mode: "ladder",
+  baseFreq: 144000,
+  bpm: 144,
+  masterVol: 0.8,
+  selected: "pure",
+  gridLadder: false,
+  instVol: {}, instMute: {}, instPreset: {}, instPan: {}, instSolo: {}, instFx: {},
+  patterns: {
+    ladder: defaultPattern(ladder.rungs.length),
+    weave: defaultPattern(weaveRows.length)
+  }
+};
+function defaultFx(){ return { reverb:0, echo:0, chorus:0, warmth:0, eqLow:0, eqMid:0, eqHigh:0 }; }
+INSTRUMENTS.forEach(function(inst){ state.instVol[inst.id]=0.8; state.instMute[inst.id]=false; state.instPreset[inst.id]=0; state.instPan[inst.id]=0; state.instSolo[inst.id]=false; state.instFx[inst.id]=defaultFx(); });
+
+/* rows for the live mode: [{freq, src, oct|heart, clusterStart}] */
+var rows = [];
+function computeRows(){
+  if (state.mode === "weave"){
+    rows = weaveRows.map(function(r){ return { freq:r.freq, src:r.src, oct:r.oct }; });
+  } else {
+    rows = ladder.rungs.map(function(f, i){ return { freq:f, src:"ladder", heart:(i === ladder.heart) }; });
+  }
+  for (var i=0;i<rows.length;i++){
+    rows[i].clusterStart = (i === 0) || (state.mode === "weave" && rows[i-1].oct !== rows[i].oct);
+  }
+}
+computeRows();
+function P(){ return state.patterns[state.mode]; }
+function heartRowIdx(){
+  if (state.mode === "weave") return weaveRowIdx("center", 0);
+  return ladder.heart;
+}
+function heartFreq(){
+  return state.mode === "weave" ? CENTER_F : ladder.rungs[ladder.heart];
+}
+function refA(){ return (state.mode === "ladder" && state.gridLadder) ? ladderRefA() : 440; }
+
+function save(){
+  try{
+    localStorage.setItem("the-studio-v1", JSON.stringify({
+      mode:state.mode, baseFreq:state.baseFreq, bpm:state.bpm, masterVol:state.masterVol,
+      selected:state.selected, gridLadder:state.gridLadder,
+      instVol:state.instVol, instMute:state.instMute, instPreset:state.instPreset,
+      instPan:state.instPan, instSolo:state.instSolo, instFx:state.instFx,
+      patterns:state.patterns
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    var raw = localStorage.getItem("the-studio-v1");
+    if (!raw) return false;
+    var s = JSON.parse(raw);
+    if (typeof s.baseFreq === "number" && s.baseFreq >= 30) state.baseFreq = s.baseFreq;
+    ladder = computeLadder(state.baseFreq);
+    if (s.mode === "weave" || s.mode === "ladder") state.mode = s.mode;
+    if (typeof s.bpm === "number") state.bpm = Math.min(200, Math.max(40, s.bpm));
+    if (typeof s.masterVol === "number") state.masterVol = s.masterVol;
+    if (s.selected) state.selected = s.selected;
+    state.gridLadder = !!s.gridLadder;
+    if (s.instVol) state.instVol = Object.assign(state.instVol, s.instVol);
+    if (s.instMute) state.instMute = Object.assign(state.instMute, s.instMute);
+    if (s.instPreset) state.instPreset = Object.assign(state.instPreset, s.instPreset);
+    if (s.instPan) state.instPan = Object.assign(state.instPan, s.instPan);
+    if (s.instSolo) state.instSolo = Object.assign(state.instSolo, s.instSolo);
+    if (s.instFx) INSTRUMENTS.forEach(function(inst){ if (s.instFx[inst.id]) state.instFx[inst.id] = Object.assign(defaultFx(), s.instFx[inst.id]); });
+    if (s.patterns){
+      state.patterns.ladder = normalizePattern(s.patterns.ladder, ladder.rungs.length);
+      state.patterns.weave = normalizePattern(s.patterns.weave, weaveRows.length);
+    }
+    computeRows();
+    return true;
+  }catch(e){ return false; }
+}
+function retune(newBase){
+  var old = ladder;
+  state.baseFreq = newBase;
+  ladder = computeLadder(newBase);
+  if (ladder.rungs.length !== old.rungs.length){
+    var np = defaultPattern(ladder.rungs.length);
+    var src = state.patterns.ladder;
+    INSTRUMENTS.forEach(function(inst){
+      for (var r=0;r<old.rungs.length;r++){
+        var nr = r - old.heart + ladder.heart;
+        if (nr < 0 || nr >= ladder.rungs.length) continue;
+        for (var c=0;c<STEPS;c++) np[inst.id][nr][c] = src[inst.id][r][c];
+      }
+    });
+    state.patterns.ladder = np;
+  }
+  if (state.mode === "ladder"){ computeRows(); buildAll(); }
+  else { buildStrip(); }
+  save();
+}
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   AUDIO — one synth function that works on a live
+   AudioContext and on an OfflineAudioContext alike.
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+var actx = null, masterGain = null, analyser = null;
+var instGains = {}; /* live only: id -> voice GainNode */
+var instChains = {}; /* live only: id -> fx chain */
+var audioTracks = []; /* recorded voice passes: {id,name,buffer,vol,pan,mute,solo,fx} */
+var trackChains = {}; /* live only: track id -> {gain, chain} */
+function makeImpulse(ctx, dur, decay){
+  var rate = ctx.sampleRate, len = Math.max(1, Math.floor(rate * dur));
+  var buf = ctx.createBuffer(2, len, rate);
+  for (var ch=0; ch<2; ch++){
+    var d = buf.getChannelData(ch);
+    for (var i=0;i<len;i++) d[i] = (Math.random()*2 - 1) * Math.pow(1 - i/len, decay);
+  }
+  return buf;
+}
+/* One effects chain per track: pan → warmth (lowpass) → 3-band EQ →
+   dry out, with chorus, echo, and reverb as parallel sends.
+   Works on a live AudioContext and an OfflineAudioContext alike. */
+function buildFxChain(ctx, dest, fx){
+  fx = fx || defaultFx();
+  var input = ctx.createGain();
+  var panNode = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+  var warm = ctx.createBiquadFilter(); warm.type = "lowpass"; warm.frequency.value = 19000; warm.Q.value = 0.3;
+  var eqLow = ctx.createBiquadFilter(); eqLow.type = "lowshelf"; eqLow.frequency.value = 200;
+  var eqMid = ctx.createBiquadFilter(); eqMid.type = "peaking"; eqMid.frequency.value = 1000; eqMid.Q.value = 0.8;
+  var eqHigh = ctx.createBiquadFilter(); eqHigh.type = "highshelf"; eqHigh.frequency.value = 4200;
+  var dry = ctx.createGain(); dry.gain.value = 1;
+  input.connect(panNode); panNode.connect(warm); warm.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh);
+  eqHigh.connect(dry); dry.connect(dest);
+  var chorusDelay = ctx.createDelay(0.12); chorusDelay.delayTime.value = 0.024;
+  var chorusGain = ctx.createGain(); chorusGain.gain.value = 0;
+  var lfo = ctx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.9;
+  var lfoDepth = ctx.createGain(); lfoDepth.gain.value = 0.007;
+  lfo.connect(lfoDepth); lfoDepth.connect(chorusDelay.delayTime); lfo.start();
+  eqHigh.connect(chorusDelay); chorusDelay.connect(chorusGain); chorusGain.connect(dest);
+  var echoDelay = ctx.createDelay(2); echoDelay.delayTime.value = 0.27;
+  var echoFb = ctx.createGain(); echoFb.gain.value = 0.34;
+  var echoGain = ctx.createGain(); echoGain.gain.value = 0;
+  eqHigh.connect(echoDelay); echoDelay.connect(echoFb); echoFb.connect(echoDelay);
+  echoDelay.connect(echoGain); echoGain.connect(dest);
+  var conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx, 2.4, 2.6);
+  var revGain = ctx.createGain(); revGain.gain.value = 0;
+  eqHigh.connect(conv); conv.connect(revGain); revGain.connect(dest);
+  var chain = { ctx:ctx, input:input, panNode:panNode, warm:warm, eqLow:eqLow, eqMid:eqMid, eqHigh:eqHigh, chorusGain:chorusGain, echoGain:echoGain, revGain:revGain };
+  applyFxToChain(chain, fx, 0);
+  return chain;
+}
+function applyFxToChain(chain, fx, panVal){
+  if (!chain || !fx) return;
+  var t = chain.ctx ? chain.ctx.currentTime : 0;
+  function setp(param, v){ if (!param) return; try{ param.setTargetAtTime(v, t, 0.03); }catch(e){ try{ param.value = v; }catch(e2){} } }
+  if (chain.panNode.pan) setp(chain.panNode.pan, panVal || 0);
+  setp(chain.warm.frequency, (fx.warmth || 0) > 0 ? 19000 - (fx.warmth / 100) * 17200 : 19000);
+  setp(chain.eqLow.gain, fx.eqLow || 0);
+  setp(chain.eqMid.gain, fx.eqMid || 0);
+  setp(chain.eqHigh.gain, fx.eqHigh || 0);
+  setp(chain.chorusGain.gain, (fx.chorus || 0) / 100 * 0.5);
+  setp(chain.echoGain.gain, (fx.echo || 0) / 100 * 0.55);
+  setp(chain.revGain.gain, (fx.reverb || 0) / 100 * 0.7);
+}
+function anySoloActive(){
+  for (var i=0;i<INSTRUMENTS.length;i++) if (state.instSolo[INSTRUMENTS[i].id]) return true;
+  for (var j=0;j<audioTracks.length;j++) if (audioTracks[j].solo) return true;
+  return false;
+}
+function instAudible(id){
+  if (state.instMute[id]) return false;
+  if (anySoloActive() && !state.instSolo[id]) return false;
+  return true;
+}
+function trackAudible(track){
+  if (track.mute) return false;
+  if (anySoloActive() && !track.solo) return false;
+  return true;
+}
+function refreshInstGain(id){
+  var g = instGains[id];
+  if (g && actx) g.gain.setTargetAtTime(instAudible(id) ? state.instVol[id] : 0, actx.currentTime, 0.02);
+}
+function refreshTrackGain(track){
+  var tc = trackChains[track.id];
+  if (tc && actx) tc.gain.gain.setTargetAtTime(trackAudible(track) ? track.vol : 0, actx.currentTime, 0.02);
+}
+function refreshAllGains(){
+  INSTRUMENTS.forEach(function(inst){ refreshInstGain(inst.id); });
+  audioTracks.forEach(function(tr){ refreshTrackGain(tr); });
+}
+function trackChainLive(track){
+  if (!actx) return null;
+  if (!trackChains[track.id]){
+    var g = actx.createGain();
+    g.gain.value = trackAudible(track) ? track.vol : 0;
+    var chain = buildFxChain(actx, masterGain, track.fx);
+    applyFxToChain(chain, track.fx, track.pan);
+    g.connect(chain.input);
+    trackChains[track.id] = { gain:g, chain:chain };
+  }
+  return trackChains[track.id];
+}
+function ensureAudio(){
+  if (actx) { if (actx.state === "suspended") actx.resume(); return; }
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  actx = new AC();
+  masterGain = actx.createGain();
+  masterGain.gain.value = state.masterVol;
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 256;
+  masterGain.connect(analyser);
+  analyser.connect(actx.destination);
+  INSTRUMENTS.forEach(function(inst){
+    var g = actx.createGain();
+    g.gain.value = instAudible(inst.id) ? state.instVol[inst.id] : 0;
+    var chain = buildFxChain(actx, masterGain, state.instFx[inst.id]);
+    applyFxToChain(chain, state.instFx[inst.id], state.instPan[inst.id] || 0);
+    g.connect(chain.input);
+    instGains[inst.id] = g;
+    instChains[inst.id] = chain;
+  });
+  audioTracks.forEach(function(tr){ trackChainLive(tr); });
+  drawViz();
+}
+function envGain(ctx, dest, t, a, peak, d, sustainLevel, dur, r){
+  var g = ctx.createGain();
+  g.connect(dest);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(peak,0.0002), t + Math.max(a,0.005));
+  if (sustainLevel > 0){
+    g.gain.exponentialRampToValueAtTime(Math.max(peak*sustainLevel,0.0002), t + Math.max(a,0.005) + d);
+    g.gain.setValueAtTime(Math.max(peak*sustainLevel,0.0002), t + Math.max(dur - r, a + d));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  } else {
+    g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(a,0.005) + d);
+    if (dur > a + d) g.gain.setValueAtTime(0.0001, t + dur);
+  }
+  return g;
+}
+function osc(ctx, type, freq, dest){
+  var o = ctx.createOscillator();
+  o.type = type; o.frequency.value = freq;
+  o.connect(dest); return o;
+}
+var glideState = { osc:null, gain:null, lastFreq:562.5 };
+function stopGlide(){
+  if (!actx || !glideState.osc) return;
+  try{
+    var t = actx.currentTime;
+    glideState.gain.gain.cancelScheduledValues(t);
+    glideState.gain.gain.setTargetAtTime(0.0001, t, 0.06);
+    glideState.osc.stop(t + 0.4);
+  }catch(e){}
+  glideState.osc = null; glideState.gain = null;
+}
+function playGlideLive(freq, dur){
+  ensureAudio(); if (!actx) return;
+  var dest = instGains["glide"]; if (!dest) return;
+  var t = actx.currentTime;
+  if (!glideState.osc){
+    var g = actx.createGain(); g.gain.value = 0.0001; g.connect(dest);
+    var o = actx.createOscillator(); o.type = "sine";
+    o.frequency.value = glideState.lastFreq;
+    o.connect(g); o.start(t);
+    g.gain.exponentialRampToValueAtTime(0.9, t + 0.08);
+    glideState.osc = o; glideState.gain = g;
+  }
+  glideState.osc.frequency.cancelScheduledValues(t);
+  glideState.osc.frequency.setValueAtTime(glideState.osc.frequency.value, t);
+  glideState.osc.frequency.exponentialRampToValueAtTime(freq, t + 0.18);
+  glideState.lastFreq = freq;
+  clearTimeout(playGlideLive._tm);
+  playGlideLive._tm = setTimeout(stopGlide, Math.max(dur*1000, 350));
+}
+
+/* The voice builder. vel 0..1, dur in seconds. The selected
+   preset wraps the voice in a tone filter + level trim and
+   scales the note's length — Logic's starting-point idea. */
+function buildVoice(ctx, dest, instId, freq, t, dur, vel){
+  vel = vel == null ? 0.9 : vel;
+  var P = PRESETS[instId] && PRESETS[instId][state.instPreset[instId] || 0];
+  if (P){
+    dur = dur * P.dur;
+    var tone = ctx.createBiquadFilter(); tone.type = "lowpass"; tone.frequency.value = P.bright;
+    var vg = ctx.createGain(); vg.gain.value = P.gain;
+    vg.connect(tone); tone.connect(dest); dest = vg;
+  }
+  var stopAt = t + dur + 1.6;
+  function start(o, when){ o.start(when || t); o.stop(stopAt); }
+  switch(instId){
+    case "pure": {
+      var g1 = envGain(ctx, dest, t, 0.02, 0.85*vel, 0.08, 0.75, dur, 0.12);
+      start(osc(ctx, "sine", freq, g1)); break;
+    }
+    case "organ": {
+      var parts = [[1,0.5],[2,0.32],[3,0.2],[4,0.12]];
+      var go = envGain(ctx, dest, t, 0.03, 0.8*vel, 0.05, 0.95, dur, 0.06);
+      parts.forEach(function(p){ var og = ctx.createGain(); og.gain.value = p[1]; og.connect(go); start(osc(ctx,"sine",freq*p[0],og)); });
+      break;
+    }
+    case "piano": {
+      var gp = envGain(ctx, dest, t, 0.004, 0.9*vel, Math.max(dur*1.4,0.9), 0, dur, 0);
+      [[1,0.6],[2,0.35],[3,0.22],[4.2,0.1],[5.4,0.06]].forEach(function(p){
+        var og = ctx.createGain(); og.gain.value = p[1]; og.connect(gp);
+        start(osc(ctx,"triangle",freq*p[0],og));
+      });
+      break;
+    }
+    case "strings": {
+      var flt = ctx.createBiquadFilter(); flt.type="lowpass"; flt.frequency.value = Math.min(freq*6, 6000); flt.Q.value = 0.4;
+      var gs = envGain(ctx, dest, t, Math.min(dur*0.4,0.35), 0.5*vel, 0.2, 0.8, dur, 0.25);
+      flt.connect(gs);
+      [-6, 5].forEach(function(cents){
+        var o = osc(ctx, "sawtooth", freq, flt); o.detune.value = cents; start(o);
+      });
+      break;
+    }
+    case "flute": {
+      var gf = envGain(ctx, dest, t, 0.09, 0.75*vel, 0.1, 0.85, dur, 0.18);
+      var of = osc(ctx, "sine", freq, gf); start(of);
+      var lfo = osc(ctx, "sine", 5.2, ctx.createGain());
+      var lg = ctx.createGain(); lg.gain.value = freq * 0.006;
+      lfo.connect(lg); lg.connect(of.frequency); lfo.start(t + 0.15); lfo.stop(stopAt);
+      var og2 = ctx.createGain(); og2.gain.value = 0.12; og2.connect(gf);
+      start(osc(ctx, "sine", freq*2, og2));
+      break;
+    }
+    case "bell": {
+      [[1,0.55,1.6],[2.76,0.3,0.9],[5.4,0.16,0.45],[8.9,0.07,0.25]].forEach(function(p){
+        var gb = envGain(ctx, dest, t, 0.002, 0.8*vel, p[2], 0, dur, 0);
+        var og = ctx.createGain(); og.gain.value = p[1]; og.connect(gb);
+        start(osc(ctx, "sine", freq*p[0], og));
+      });
+      break;
+    }
+    case "pluck": {
+      var fp = ctx.createBiquadFilter(); fp.type="lowpass"; fp.Q.value = 1;
+      fp.frequency.setValueAtTime(Math.min(freq*10, 9000), t);
+      fp.frequency.exponentialRampToValueAtTime(Math.max(freq*1.2, 120), t + 0.28);
+      var gpl = envGain(ctx, dest, t, 0.003, 0.85*vel, 0.32, 0, dur, 0);
+      fp.connect(gpl);
+      start(osc(ctx, "triangle", freq, fp));
+      var og3 = ctx.createGain(); og3.gain.value = 0.3; og3.connect(gpl);
+      start(osc(ctx, "square", freq, og3));
+      break;
+    }
+    case "pad": {
+      var fd = ctx.createBiquadFilter(); fd.type="lowpass"; fd.frequency.value = Math.min(freq*3.5, 3200);
+      var gd = envGain(ctx, dest, t, Math.min(dur*0.5,0.6), 0.42*vel, 0.4, 0.8, dur, 0.6);
+      fd.connect(gd);
+      [-9, 0, 8].forEach(function(cents){
+        var o = osc(ctx, "sawtooth", freq, fd); o.detune.value = cents; start(o);
+      });
+      break;
+    }
+    case "glide": {
+      var gg = envGain(ctx, dest, t, 0.05, 0.85*vel, 0.08, 0.85, dur, 0.15);
+      var og4 = ctx.createOscillator(); og4.type = "sine";
+      og4.frequency.setValueAtTime(buildVoice._lastGlide || freq, t);
+      og4.frequency.exponentialRampToValueAtTime(freq, t + 0.16);
+      og4.connect(gg); og4.start(t); og4.stop(stopAt);
+      buildVoice._lastGlide = freq;
+      break;
+    }
+  }
+}
+function playNoteLive(instId, freq, dur){
+  if (instId === "glide"){ playGlideLive(freq, dur || 0.5); return; }
+  ensureAudio(); if (!actx) return;
+  var dest = instGains[instId]; if (!dest) return;
+  buildVoice(actx, dest, instId, freq, actx.currentTime + 0.01, dur || 0.55, 0.9);
+}
+function bufferToWav(buf){
+  var nCh = Math.min(buf.numberOfChannels, 2), sr = buf.sampleRate, len = buf.length;
+  var bytes = 44 + len * nCh * 2;
+  var ab = new ArrayBuffer(bytes), v = new DataView(ab);
+  function ws(off, str){ for (var i=0;i<str.length;i++) v.setUint8(off+i, str.charCodeAt(i)); }
+  ws(0,"RIFF"); v.setUint32(4, bytes-8, true); ws(8,"WAVE"); ws(12,"fmt ");
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,nCh,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*nCh*2,true); v.setUint16(32,nCh*2,true);
+  v.setUint16(34,16,true); ws(36,"data"); v.setUint32(40, len*nCh*2, true);
+  var chans = [];
+  for (var c=0;c<nCh;c++) chans.push(buf.getChannelData(c));
+  var off = 44;
+  for (var i=0;i<len;i++){
+    for (var c2=0;c2<nCh;c2++){
+      var s = Math.max(-1, Math.min(1, chans[c2][i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2;
+    }
+  }
+  return new Blob([ab], { type:"audio/wav" });
+}
+function downloadBlob(blob, name){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  return url;
+}
+</script>
+
+<script>
+"use strict";
+/* ================= UI refs ================= */
+var els = {
+  play:$("btnPlay"), stop:$("btnStop"), rec:$("btnRec"), pos:$("posReadout"),
+  bpm:$("bpm"), bpmOut:$("bpmOut"), master:$("masterVol"), masterOut:$("masterOut"),
+  base:$("baseFreq"), grid:$("gridToggle"), gridA:$("gridA"), strip:$("ladderStrip"),
+  rack:$("rack"), selName:$("selName"), instVol:$("instVol"), instMute:$("instMute"), instPreset:$("instPreset"),
+  roll:$("roll"), rollInfo:$("rollInfo"), pads:$("pads"),
+  micBtn:$("btnMicRec"), micDel:$("btnMicDel"), micState:$("micState"), micAudio:$("micAudio"),
+  status:$("statusLine"), viz:$("viz"), beacon:$("btnBeacon")
+};
+function setStatus(msg){ els.status.innerHTML = msg; }
+
+/* ================= build: ladder strip, rack, roll, pads ================= */
+function buildStrip(){
+  var A = state.gridLadder ? ladderRefA() : 440;
+  els.strip.innerHTML = "";
+  ladder.rungs.forEach(function(f, i){
+    var n = noteFor(f, A);
+    var chip = document.createElement("span");
+    chip.className = "rung-chip" + (i === ladder.heart ? " heart" : "");
+    chip.innerHTML = "<b>" + fmtHz(f) + " Hz</b> · " + n.name +
+      (Math.abs(n.cents) >= 0.5 ? " " + (n.cents > 0 ? "+" : "") + Math.round(n.cents) + "¢" : " exact") +
+      (i === ladder.heart ? " · ♥ heart" : "");
+    els.strip.appendChild(chip);
+  });
+  els.gridA.textContent = "A = " + (Math.round(ladderRefA()*10)/10).toLocaleString("en-US");
+  if (state.mode === "ladder"){
+    els.rollInfo.textContent = fmtHz(ladder.rungs[ladder.heart]) + " Hz is the heart · grid: " +
+      (state.gridLadder ? "the ladder's own (A = " + (Math.round(ladderRefA()*10)/10) + ")" : "the piano (A = 440)");
+  } else {
+    els.rollInfo.textContent = "The gold cluster is the heart — piano · center · ladder · claim, 554–569 Hz";
+  }
+}
+function buildRack(){
+  els.rack.innerHTML = "";
+  var pat = P();
+  INSTRUMENTS.forEach(function(inst){
+    var has = pat[inst.id].some(function(row){ return row.some(Boolean); });
+    var b = document.createElement("button");
+    b.className = "inst" + (state.selected === inst.id ? " sel" : "") +
+      (state.instMute[inst.id] ? " muted" : "") + (has ? " hasnotes" : "");
+    b.setAttribute("aria-pressed", state.selected === inst.id ? "true" : "false");
+    b.innerHTML = '<span class="nm"><span class="dot"></span>' + inst.name +
+      (state.instMute[inst.id] ? ' <span class="mini">muted</span>' : "") + '</span><span class="ds">' + inst.desc + "</span>";
+    b.addEventListener("click", function(){
+      state.selected = inst.id; buildRack(); syncSelDetail(); buildRoll(); save();
+      playNoteLive(inst.id, heartFreq(), 0.5);
+    });
+    els.rack.appendChild(b);
+  });
+}
+function syncSelDetail(){
+  var inst = INSTRUMENTS.filter(function(i){ return i.id === state.selected; })[0];
+  els.selName.textContent = inst.name;
+  els.instVol.value = Math.round(state.instVol[state.selected] * 100);
+  els.instMute.textContent = state.instMute[state.selected] ? "Unmute" : "Mute";
+  els.instPreset.innerHTML = "";
+  PRESETS[state.selected].forEach(function(p, i){
+    var o = document.createElement("option");
+    o.value = i; o.textContent = p.name;
+    if ((state.instPreset[state.selected] || 0) === i) o.selected = true;
+    els.instPreset.appendChild(o);
+  });
+}
+var cellEls = []; /* [row][step] */
+function buildRoll(){
+  var A = refA();
+  els.roll.style.gridTemplateColumns = (state.mode === "weave" ? "158px" : "118px") + " repeat(" + STEPS + ", 1fr)";
+  els.roll.innerHTML = ""; cellEls = [];
+  var corner = document.createElement("div"); corner.className = "corner"; corner.textContent = "Rung ↓ · Step →";
+  els.roll.appendChild(corner);
+  for (var s=0;s<STEPS;s++){
+    var sn = document.createElement("div");
+    sn.className = "stepnum" + (s % 16 === 0 ? " bar" : "");
+    sn.textContent = s + 1; sn.dataset.step = s;
+    els.roll.appendChild(sn);
+  }
+  for (var r=0;r<rows.length;r++){
+    (function(r){
+      var row = rows[r];
+      var rh = document.createElement("div");
+      if (state.mode === "weave"){
+        var n = noteFor(row.freq, 440);
+        var isHeart = row.oct === 0, isCenter = row.src === "center";
+        rh.className = "rh" + (isHeart ? " heart" : "") + (isCenter ? " center" : "") + (row.clusterStart ? " cluster-start" : "");
+        rh.innerHTML = '<span class="hz">' + fmtRowHz(row) + '</span> <span class="tag">' + srcName(row.src) + "</span><br>" +
+          '<span class="nt">' + n.name + '</span> <span class="ct">' + centsTxt(row.freq) + "</span>";
+      } else {
+        var n2 = noteFor(row.freq, A);
+        rh.className = "rh" + (row.heart ? " heart" : "");
+        rh.innerHTML = '<span class="hz">' + fmtHz(row.freq) + '</span> <span class="nt">' + n2.name + "</span> " +
+          '<span class="ct">' + (Math.abs(n2.cents) >= 0.5 ? (n2.cents > 0 ? "+" : "") + Math.round(n2.cents) + "¢" : "exact") + (row.heart ? " ♥" : "") + "</span>";
+      }
+      els.roll.appendChild(rh);
+      cellEls.push([]);
+      for (var c=0;c<STEPS;c++){
+        (function(c){
+          var cell = document.createElement("button");
+          cell.className = "cell" + ((r % 2) ? " alt" : "") + ((c % 4 === 0) ? " beat" : "") + (row.clusterStart ? " cluster-start" : "");
+          cell.setAttribute("aria-label", "Row " + fmtRowHz(row) + " Hz" + (state.mode === "weave" ? " (" + srcName(row.src) + ")" : "") + ", step " + (c+1));
+          cell.addEventListener("pointerdown", function(ev){
+            ev.preventDefault();
+            ensureAudio();
+            var cur = P()[state.selected][r][c];
+            paintValue = !cur;
+            setCell(r, c, paintValue);
+            painting = true;
+            if (paintValue) playNoteLive(state.selected, row.freq, 0.45);
+          });
+          cell.addEventListener("pointerenter", function(){
+            if (painting) setCell(r, c, paintValue);
+          });
+          els.roll.appendChild(cell);
+          cellEls[r].push(cell);
+        })(c);
+      }
+    })(r);
+  }
+  refreshRollCells();
+}
+var painting = false, paintValue = true;
+document.addEventListener("pointerup", function(){ painting = false; });
+function setCell(r, c, v){
+  P()[state.selected][r][c] = v;
+  refreshCell(r, c); buildRack(); save();
+}
+function refreshCell(r, c){
+  var cell = cellEls[r] && cellEls[r][c]; if (!cell) return;
+  var pat = P();
+  var on = pat[state.selected][r][c];
+  var ghost = false;
+  if (!on){
+    for (var i=0;i<INSTRUMENTS.length;i++){
+      var id = INSTRUMENTS[i].id;
+      if (id !== state.selected && pat[id][r][c]){ ghost = true; break; }
+    }
+  }
+  cell.classList.toggle("on", on);
+  cell.classList.toggle("ghost", ghost);
+}
+function refreshRollCells(){
+  for (var r=0;r<cellEls.length;r++) for (var c=0;c<STEPS;c++) refreshCell(r, c);
+}
+function buildPads(){
+  els.pads.innerHTML = "";
+  els.pads.className = "pads " + state.mode;
+  if (state.mode === "weave"){ buildWeavePads(); return; }
+  var A = refA();
+  ladder.rungs.forEach(function(f, r){
+    var n = noteFor(f, A);
+    var pad = document.createElement("button");
+    pad.className = "pad" + (r === ladder.heart ? " heart" : "");
+    pad.innerHTML = '<span class="phz">' + fmtHz(f) + ' Hz</span><span class="pnt">' + n.name +
+      (r === ladder.heart ? " · the heart ♥" : "") + '</span><span class="pct">' +
+      (Math.abs(n.cents) >= 0.5 ? (n.cents > 0 ? "+" : "") + Math.round(n.cents) + " cents vs grid" : "exact on this grid") + "</span>";
+    var stopPad = function(){
+      pad.classList.remove("hit");
+      if (state.selected === "glide") stopGlide();
+    };
+    pad.addEventListener("pointerdown", function(ev){
+      ev.preventDefault();
+      ensureAudio();
+      pad.classList.add("hit");
+      playNoteLive(state.selected, f, 0.7);
+      if (recArmed && playing){
+        setCell(r, currentStep, true);
+        setStatus("Recorded <b>" + INSTRUMENTS.filter(function(i){return i.id===state.selected;})[0].name +
+          "</b> at " + fmtHz(f) + " Hz into step " + (currentStep + 1) + ".");
+      }
+    });
+    pad.addEventListener("pointerup", stopPad);
+    pad.addEventListener("pointerleave", stopPad);
+    pad.addEventListener("pointercancel", stopPad);
+    els.pads.appendChild(pad);
+  });
+}
+function buildWeavePads(){
+  var hearts = [
+    { freq:PIANO_F,  row:weaveRowIdx("piano",0),  tag:"PIANO",  sub:"C♯5 · exact on A = 440" },
+    { freq:CENTER_F, row:weaveRowIdx("center",0), tag:"CENTER", sub:"C♯5 · the found middle — 22.55¢ from each" },
+    { freq:CLAIM_F,  row:weaveRowIdx("claim",0),  tag:"CLAIM",  sub:"C♯5 · +45¢ — untouched, as given" }
+  ];
+  hearts.forEach(function(h){
+    var pad = document.createElement("button");
+    pad.className = "pad";
+    pad.innerHTML = '<span class="phz">' + fmtRowHz({freq:h.freq, src:h.tag === "CENTER" ? "center" : ""}) + ' Hz</span>' +
+      '<span class="pnt">' + h.tag + '</span><span class="pct">' + h.sub + "</span>";
+    var release = function(){ pad.classList.remove("hit"); if (state.selected === "glide") stopGlide(); };
+    pad.addEventListener("pointerdown", function(ev){
+      ev.preventDefault();
+      ensureAudio();
+      pad.classList.add("hit");
+      playNoteLive(state.selected, h.freq, 0.7);
+      if (recArmed && playing){
+        setCell(h.row, currentStep, true);
+        setStatus("Recorded <b>" + h.tag + "</b> at " + fmtHz(h.freq) + " Hz into step " + (currentStep + 1) + ".");
+      }
+    });
+    pad.addEventListener("pointerup", release);
+    pad.addEventListener("pointerleave", release);
+    pad.addEventListener("pointercancel", release);
+    els.pads.appendChild(pad);
+  });
+  var bp = document.createElement("button");
+  bp.className = "pad beacon";
+  bp.innerHTML = '<span class="phz">ALL THREE</span><span class="pnt">THE BEACON</span><span class="pct">piano + center + claim — the matched set</span>';
+  var bRelease = function(){ bp.classList.remove("hit"); };
+  bp.addEventListener("pointerdown", function(ev){
+    ev.preventDefault();
+    ensureAudio();
+    bp.classList.add("hit");
+    playBeacon(3.2);
+    if (recArmed && playing){
+      setCell(weaveRowIdx("piano",0), currentStep, true);
+      setCell(weaveRowIdx("center",0), currentStep, true);
+      setCell(weaveRowIdx("claim",0), currentStep, true);
+      setStatus("Recorded <b>the beacon</b> — all three matched rows — into step " + (currentStep + 1) + ".");
+    }
+  });
+  bp.addEventListener("pointerup", bRelease);
+  bp.addEventListener("pointerleave", bRelease);
+  bp.addEventListener("pointercancel", bRelease);
+  els.pads.appendChild(bp);
+}
+function buildAll(){ buildStrip(); buildRack(); syncSelDetail(); buildRoll(); buildPads(); }
+
+/* ================= the beacon ================= */
+function playBeacon(dur){
+  ensureAudio(); if (!actx) return;
+  if (actx.state === "suspended") actx.resume();
+  var t = actx.currentTime + 0.02;
+  [PIANO_F, CENTER_F, CLAIM_F].forEach(function(f){
+    buildVoice(actx, masterGain, "pure", f, t, dur || 4, 0.45);
+  });
+  setStatus("<b>The beacon:</b> the matched set — piano + the found center + claim, sounding together. " +
+    "No new note is born; listen for the pulse on top: " +
+    (CENTER_F - PIANO_F).toFixed(1) + ", " + (CLAIM_F - CENTER_F).toFixed(1) + " and " +
+    (CLAIM_F - PIANO_F).toFixed(1) + " beats a second.");
+}
+els.beacon.addEventListener("click", function(){ playBeacon(4.5); });
+
+/* ================= fluctuate ================= */
+var fluc = { on:false, auto:false, gain:null, fixed1:null, fixed2:null, move:null, raf:0, t0:0 };
+var flucEls = { slider:$("flucSlider"), read:$("flucRead"), toggle:$("flucToggle"), auto:$("flucAuto") };
+function flucReadout(f){
+  flucEls.read.innerHTML = "Moving tone: <b>" + f.toFixed(3) + " Hz</b> — beats vs the piano " +
+    Math.abs(f - PIANO_F).toFixed(1) + "/s · vs the claim " + Math.abs(f - CLAIM_F).toFixed(1) +
+    "/s · distance from the found center: " + Math.abs(f - CENTER_F).toFixed(2) + " Hz";
+}
+function flucSetFreq(f){
+  flucEls.slider.value = f;
+  if (fluc.move && actx) fluc.move.frequency.setTargetAtTime(f, actx.currentTime, 0.03);
+  flucReadout(f);
+}
+function startFluc(){
+  ensureAudio(); if (!actx){ setStatus("Audio isn't available in this browser."); return; }
+  if (actx.state === "suspended") actx.resume();
+  fluc.gain = actx.createGain();
+  fluc.gain.gain.value = 0.0001;
+  fluc.gain.connect(masterGain);
+  fluc.gain.gain.setTargetAtTime(0.5, actx.currentTime, 0.4);
+  function mk(f){
+    var o = actx.createOscillator(); o.type = "sine"; o.frequency.value = f;
+    var g = actx.createGain(); g.gain.value = 0.3;
+    o.connect(g); g.connect(fluc.gain); o.start();
+    return o;
+  }
+  fluc.fixed1 = mk(PIANO_F);
+  fluc.fixed2 = mk(CLAIM_F);
+  fluc.move = mk(parseFloat(flucEls.slider.value));
+  fluc.on = true;
+  flucEls.toggle.textContent = "⏹ Stop the weave";
+}
+function stopFluc(){
+  if (!fluc.on) return;
+  var g = fluc.gain, oscs = [fluc.fixed1, fluc.fixed2, fluc.move];
+  if (actx && g) g.gain.setTargetAtTime(0.0001, actx.currentTime, 0.15);
+  setTimeout(function(){ oscs.forEach(function(o){ try{ o.stop(); }catch(e){} }); }, 700);
+  fluc.on = false; fluc.fixed1 = fluc.fixed2 = fluc.move = null; fluc.gain = null;
+  flucEls.toggle.textContent = "▶ Start the weave";
+  setFlucAuto(false);
+}
+function setFlucAuto(on){
+  fluc.auto = on;
+  flucEls.auto.textContent = "Auto-sweep: " + (on ? "on" : "off");
+  flucEls.auto.classList.toggle("gold", on);
+  if (on){
+    if (!fluc.on) startFluc();
+    var cur = parseFloat(flucEls.slider.value);
+    var pos = (cur - PIANO_F) / (CLAIM_F - PIANO_F);
+    fluc.t0 = performance.now() - pos * 13000;
+    cancelAnimationFrame(fluc.raf);
+    fluc.raf = requestAnimationFrame(flucSweep);
+  } else {
+    cancelAnimationFrame(fluc.raf);
+  }
+}
+function flucSweep(){
+  if (!fluc.auto) return;
+  var ph = ((performance.now() - fluc.t0) % 26000) / 26000;
+  var pos = ph < 0.5 ? ph * 2 : 2 - ph * 2;
+  flucSetFreq(PIANO_F + pos * (CLAIM_F - PIANO_F));
+  fluc.raf = requestAnimationFrame(flucSweep);
+}
+flucEls.toggle.addEventListener("click", function(){ fluc.on ? stopFluc() : startFluc(); });
+flucEls.auto.addEventListener("click", function(){ setFlucAuto(!fluc.auto); });
+flucEls.slider.addEventListener("input", function(){
+  if (fluc.auto) setFlucAuto(false);
+  if (!fluc.on) startFluc();
+  flucSetFreq(parseFloat(flucEls.slider.value));
+});
+
+/* ================= mode switching ================= */
+function setMode(m, silent){
+  if (state.mode === m && !silent){ /* still re-sync UI */ }
+  if (state.mode !== m && m === "ladder") stopFluc();
+  state.mode = m;
+  computeRows();
+  $("modeLadder").classList.toggle("active", m === "ladder");
+  $("modeLadder").setAttribute("aria-pressed", m === "ladder" ? "true" : "false");
+  $("modeWeave").classList.toggle("active", m === "weave");
+  $("modeWeave").setAttribute("aria-pressed", m === "weave" ? "true" : "false");
+  $("ladderPanel").style.display = m === "ladder" ? "" : "none";
+  $("weavePanel").style.display = m === "weave" ? "" : "none";
+  $("rollSubLadder").style.display = m === "ladder" ? "" : "none";
+  $("rollSubWeave").style.display = m === "weave" ? "" : "none";
+  $("legendLadder").style.display = m === "ladder" ? "" : "none";
+  $("legendWeave").style.display = m === "weave" ? "" : "none";
+  $("padsSubLadder").style.display = m === "ladder" ? "" : "none";
+  $("padsSubWeave").style.display = m === "weave" ? "" : "none";
+  $("padsTitle").textContent = m === "weave" ? "Live pads — the heart, and the beacon" : "Live pads — play the rungs";
+  $("flucBlock").style.display = m === "weave" ? "" : "none";
+  els.beacon.style.display = m === "weave" ? "" : "none";
+  $("btnDemo").textContent = "Load a ready-made tune";
+  buildAll();
+  save();
+  if (!silent){
+    setStatus(m === "weave"
+      ? "Weave mode: the roll now holds all three C♯5 ladders and the found center. Your ladder roll is kept, untouched."
+      : "Ladder mode: the roll is the ladder's rungs again. Your weave roll is kept, untouched.");
+  }
+}
+$("modeLadder").addEventListener("click", function(){ if (state.mode !== "ladder") setMode("ladder"); });
+$("modeWeave").addEventListener("click", function(){ if (state.mode !== "weave") setMode("weave"); });
+
+/* ================= rooms ================= */
+function setRoom(name){
+  document.querySelectorAll(".roombtn").forEach(function(b){
+    b.classList.toggle("active", b.dataset.room === name);
+  });
+  $("room-studio").style.display = name === "studio" ? "" : "none";
+  $("room-editor").style.display = name === "editor" ? "" : "none";
+  $("room-hum").style.display = name === "hum" ? "" : "none";
+  $("room-converter").style.display = name === "converter" ? "" : "none";
+  $("room-batch").style.display = name === "batch" ? "" : "none";
+  $("room-loops").style.display = name === "loops" ? "" : "none";
+  if (name === "editor") edDraw();
+  if (name === "hum"){ var tn = $("humTuningName"); if (tn) tn.textContent = state.mode === "weave" ? "weave — the three C♯5 numbers and their found center" : "ladder"; }
+}
+document.querySelectorAll(".roombtn").forEach(function(b){
+  b.addEventListener("click", function(){ setRoom(b.dataset.room); });
+});
+</script>
+
+<script>
+"use strict";
+/* ================= sequencer ================= */
+var playing = false, recArmed = false, currentStep = 0, nextTime = 0, timerID = null;
+var drawQueue = [];
+function stepDur(){ return 60 / state.bpm / 4; }
+function scheduler(){
+  if (!actx) return;
+  while (nextTime < actx.currentTime + 0.12){
+    scheduleStep(currentStep, nextTime);
+    drawQueue.push({ step: currentStep, time: nextTime });
+    nextTime += stepDur();
+    currentStep = (currentStep + 1) % STEPS;
+  }
+}
+function scheduleStep(step, t){
+  var dur = stepDur() * 2.2;
+  var pat = P();
+  INSTRUMENTS.forEach(function(inst){
+    if (!instAudible(inst.id)) return;
+    var dest = instGains[inst.id]; if (!dest) return;
+    for (var r=0;r<rows.length;r++){
+      if (pat[inst.id][r][step]){
+        if (inst.id === "glide" && actx){
+          (function(f, when){
+            var delay = Math.max(0, (when - actx.currentTime) * 1000);
+            setTimeout(function(){ if (playing) playGlideLive(f, stepDur()*2); }, delay);
+          })(rows[r].freq, t);
+        } else {
+          buildVoice(actx, dest, inst.id, rows[r].freq, t, Math.max(dur, 0.3), 0.85);
+        }
+      }
+    }
+  });
+  if (step === 0 && actx){
+    if (micBuffer){
+      var msrc = actx.createBufferSource();
+      msrc.buffer = micBuffer; msrc.connect(masterGain); msrc.start(t);
+    }
+    audioTracks.forEach(function(tr){
+      if (!trackAudible(tr)) return;
+      var tc = trackChainLive(tr); if (!tc) return;
+      var tsrc = actx.createBufferSource();
+      tsrc.buffer = tr.buffer; tsrc.connect(tc.gain); tsrc.start(t);
+    });
+  }
+}
+function drawLoop(){
+  if (!actx) return;
+  var now = actx.currentTime;
+  while (drawQueue.length && drawQueue[0].time <= now + 0.02){
+    var item = drawQueue.shift();
+    highlightStep(item.step);
+  }
+  if (playing) requestAnimationFrame(drawLoop);
+}
+function highlightStep(step){
+  els.pos.textContent = (Math.floor(step/16) + 1) + " · " + String(step + 1).padStart(2, "0");
+  var nums = els.roll.querySelectorAll(".stepnum");
+  nums.forEach(function(el){
+    el.classList.toggle("now", parseInt(el.dataset.step, 10) === step);
+  });
+  for (var r=0;r<cellEls.length;r++) for (var c=0;c<STEPS;c++){
+    cellEls[r][c].classList.toggle("now", c === step);
+  }
+}
+function clearHighlight(){
+  els.pos.textContent = "1 · 01";
+  els.roll.querySelectorAll(".stepnum.now").forEach(function(el){ el.classList.remove("now"); });
+  cellEls.forEach(function(row){ row.forEach(function(cell){ cell.classList.remove("now"); }); });
+}
+function startPlay(){
+  ensureAudio(); if (!actx){ setStatus("Audio isn't available in this browser."); return; }
+  if (actx.state === "suspended") actx.resume();
+  playing = true;
+  currentStep = 0; drawQueue = [];
+  nextTime = actx.currentTime + 0.06;
+  timerID = setInterval(scheduler, 25);
+  requestAnimationFrame(drawLoop);
+  els.play.textContent = "⏸ Pause"; els.play.classList.add("playing");
+}
+function pausePlay(){
+  playing = false;
+  clearInterval(timerID); stopGlide();
+  els.play.textContent = "▶ Play"; els.play.classList.remove("playing");
+}
+function stopPlay(){
+  pausePlay(); currentStep = 0; clearHighlight();
+}
+els.play.addEventListener("click", function(){ playing ? pausePlay() : startPlay(); });
+els.stop.addEventListener("click", stopPlay);
+els.rec.addEventListener("click", function(){
+  recArmed = !recArmed;
+  els.rec.classList.toggle("armed", recArmed);
+  els.rec.textContent = recArmed ? "● Recording — tap the pads" : "● Record my taps";
+  setStatus(recArmed
+    ? "Recording armed. Press Play and hit the <b>live pads</b> — notes land in the roll at the passing step."
+    : "Recording disarmed.");
+});
+
+/* ================= transport controls ================= */
+els.bpm.addEventListener("input", function(){
+  state.bpm = parseInt(els.bpm.value, 10);
+  els.bpmOut.textContent = state.bpm + " BPM"; save();
+});
+els.master.addEventListener("input", function(){
+  state.masterVol = parseInt(els.master.value, 10) / 100;
+  els.masterOut.textContent = els.master.value + "%";
+  if (masterGain) masterGain.gain.setTargetAtTime(state.masterVol, actx.currentTime, 0.02);
+  save();
+});
+els.instVol.addEventListener("input", function(){
+  state.instVol[state.selected] = parseInt(els.instVol.value, 10) / 100;
+  refreshInstGain(state.selected);
+  save();
+});
+els.instMute.addEventListener("click", function(){
+  var id = state.selected;
+  state.instMute[id] = !state.instMute[id];
+  refreshAllGains();
+  syncSelDetail(); buildRack();
+  if (typeof buildTracks === "function") buildTracks();
+  save();
+});
+els.instPreset.addEventListener("change", function(){
+  state.instPreset[state.selected] = parseInt(els.instPreset.value, 10) || 0;
+  save();
+  playNoteLive(state.selected, heartFreq(), 0.7);
+  setStatus("<b>" + state.selected + "</b> preset: " + PRESETS[state.selected][state.instPreset[state.selected]].name + " — hear the difference at the heart.");
+});
+$("instTest").addEventListener("click", function(){
+  playNoteLive(state.selected, heartFreq(), 0.9);
+});
+$("btnClear").addEventListener("click", function(){
+  state.patterns[state.mode] = defaultPattern(rows.length);
+  refreshRollCells(); buildRack(); save();
+  setStatus("Roll cleared — the " + state.mode + " roll, every instrument. The other mode's roll is untouched.");
+});
+$("btnClearInst").addEventListener("click", function(){
+  for (var r=0;r<rows.length;r++) P()[state.selected][r] = new Array(STEPS).fill(false);
+  refreshRollCells(); buildRack(); save();
+  setStatus("Cleared the selected instrument's notes in this roll.");
+});
+$("btnDemo").addEventListener("click", function(){
+  loadDemo();
+  refreshRollCells(); buildRack(); save();
+  setStatus(state.mode === "weave"
+    ? "Weave demo loaded: the beacon chord at the bar lines, bells walking the piano's ladder down, the ladder's own rungs plucked, and Glide sliding through the matched set."
+    : "Ladder demo loaded: the ladder itself, walking down and back up — switch instruments to see each voice's part.");
+});
+function loadDemo(){
+  if (state.mode === "weave") loadWeaveDemo(); else loadLadderDemo();
+}
+function loadLadderDemo(){
+  var nrows = ladder.rungs.length;
+  var p = defaultPattern(nrows);
+  var seq = [];
+  for (var i=0;i<nrows;i++) seq.push(i);
+  for (var j=nrows-2;j>=0;j--) seq.push(j);
+  for (var s=0;s<STEPS;s++){
+    var rung = seq[s % seq.length];
+    p.glide[rung][s] = true;
+    if (s % 2 === 0) p.pure[rung][s] = true;
+    if (s % 4 === 0) p.bell[ladder.heart][s] = true;
+    if (s % 8 === 4) p.pluck[Math.min(nrows-1, ladder.heart+1)][s] = true;
+  }
+  p.pad[ladder.heart][0] = true; p.pad[ladder.heart][16] = true;
+  state.patterns.ladder = p;
+}
+function loadWeaveDemo(){
+  var p = defaultPattern(weaveRows.length);
+  var hp = weaveRowIdx("piano",0), hc = weaveRowIdx("center",0), hl = weaveRowIdx("ladder",0), hq = weaveRowIdx("claim",0);
+  [0,16].forEach(function(s){ p.pure[hp][s] = true; p.pure[hc][s] = true; p.pure[hq][s] = true; });
+  var octs = [4,3,2,1,0,-1,-2,-3];
+  octs.forEach(function(o, i){ var r = weaveRowIdx("piano", o); if (r >= 0) p.bell[r][i*4] = true; });
+  [[1,2],[0,6],[1,10],[0,14],[1,18],[0,22],[1,26],[0,30]].forEach(function(pr){
+    var r = weaveRowIdx("ladder", pr[0]); if (r >= 0) p.pluck[r][pr[1]] = true;
+  });
+  p.pad[hq][0] = true; p.pad[hc][16] = true;
+  var gseq = [hp, hc, hq, hc];
+  for (var i=0;i<8;i++){ p.glide[gseq[i % 4]][i*4] = true; }
+  if (hl >= 0) p.organ[hl][8] = true;
+  state.patterns.weave = p;
+}
+
+/* ================= base frequency ================= */
+document.querySelectorAll(".preset").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    var v = parseFloat(btn.dataset.base);
+    els.base.value = v;
+    markPreset(v);
+    retune(v);
+    setStatus("Re-tuned to a base of <b>" + v.toLocaleString("en-US") + " Hz</b> — " +
+      ladder.rungs.length + " audible rungs, heart at " + fmtHz(ladder.rungs[ladder.heart]) + " Hz.");
+    playNoteLive(state.selected, heartFreq(), 0.7);
+  });
+});
+function markPreset(v){
+  document.querySelectorAll(".preset").forEach(function(b){
+    b.classList.toggle("active", parseFloat(b.dataset.base) === v);
+  });
+}
+$("btnApplyBase").addEventListener("click", function(){
+  var v = parseFloat(els.base.value);
+  if (!isFinite(v) || v < 30 || v > 2000000){
+    setStatus("Pick a base between 30 and 2,000,000 Hz."); return;
+  }
+  markPreset(v); retune(v);
+  setStatus("Re-tuned to a base of <b>" + v.toLocaleString("en-US") + " Hz</b> — " +
+    ladder.rungs.length + " audible rungs, heart at " + fmtHz(ladder.rungs[ladder.heart]) + " Hz.");
+  playNoteLive(state.selected, heartFreq(), 0.7);
+});
+els.grid.addEventListener("change", function(){
+  state.gridLadder = els.grid.checked;
+  buildStrip(); buildRoll(); buildPads(); save();
+  setStatus(state.gridLadder
+    ? "Now measuring against <b>the ladder's own grid</b> — the rungs read as exact notes. Same sound, different ruler."
+    : "Now measuring against <b>the piano (A = 440)</b> — the rungs read 25 cents sharp of C♯ on the default ladder.");
+});
+
+/* ================= mic track ================= */
+var micBuffer = null, micStream = null, mediaRec = null, micChunks = [], micRecording = false, micURL = null;
+function setMicBuffer(buf, label){
+  micBuffer = buf;
+  els.micDel.disabled = false;
+  els.micState.innerHTML = "<b>" + label + "</b> — " + buf.duration.toFixed(1) +
+    "s. It starts at step 1 on every loop pass and is included in the bounce.";
+}
+els.micBtn.addEventListener("click", function(){
+  if (micRecording){ mediaRec && mediaRec.stop(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined"){
+    els.micState.innerHTML = "<b>Mic recording isn't supported in this browser.</b> The rest of the studio still works.";
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+    micStream = stream; micChunks = [];
+    mediaRec = new MediaRecorder(stream);
+    mediaRec.ondataavailable = function(e){ if (e.data && e.data.size) micChunks.push(e.data); };
+    mediaRec.onstop = function(){
+      micRecording = false;
+      els.micBtn.textContent = "🎙 Start mic recording";
+      if (micStream){ micStream.getTracks().forEach(function(t){ t.stop(); }); micStream = null; }
+      var blob = new Blob(micChunks, { type: mediaRec.mimeType || "audio/webm" });
+      if (micURL) URL.revokeObjectURL(micURL);
+      micURL = URL.createObjectURL(blob);
+      els.micAudio.src = micURL; els.micAudio.style.display = "block";
+      els.micDel.disabled = false;
+      blob.arrayBuffer().then(function(ab){
+        ensureAudio();
+        if (!actx) return;
+        actx.decodeAudioData(ab.slice(0), function(buf){
+          setMicBuffer(buf, "Clip ready");
+        }, function(){
+          els.micState.innerHTML = "<b>Clip recorded</b> — preview it above. (This browser couldn't decode it for loop playback.)";
+        });
+      });
+    };
+    mediaRec.start();
+    micRecording = true;
+    els.micBtn.textContent = "⏹ Stop mic recording";
+    els.micState.innerHTML = '<span class="rec-dot"></span><b>Recording…</b> sing or play, then stop.';
+  }).catch(function(){
+    els.micState.innerHTML = "<b>Mic permission was declined.</b> The studio works without it — allow the mic in your browser settings if you want the track.";
+  });
+});
+els.micDel.addEventListener("click", function(){
+  micBuffer = null;
+  if (micURL) URL.revokeObjectURL(micURL);
+  micURL = null;
+  els.micAudio.removeAttribute("src"); els.micAudio.style.display = "none";
+  els.micDel.disabled = true;
+  els.micState.textContent = "No clip yet.";
+  setStatus("Mic clip deleted.");
+});
+
+/* ================= bounce (offline WAV render) ================= */
+$("btnBounce").addEventListener("click", function(){
+  var btn = $("btnBounce");
+  btn.disabled = true; btn.textContent = "Rendering…";
+  setStatus("Rendering the loop offline…");
+  setTimeout(function(){
+    try{
+      var durSteps = stepDur();
+      var total = durSteps * STEPS + 1.8;
+      var sr = 44100;
+      var off = new OfflineAudioContext(2, Math.ceil(sr * total), sr);
+      var offMaster = off.createGain(); offMaster.gain.value = state.masterVol;
+      offMaster.connect(off.destination);
+      var offGains = {};
+      INSTRUMENTS.forEach(function(inst){
+        var g = off.createGain();
+        g.gain.value = instAudible(inst.id) ? state.instVol[inst.id] : 0;
+        var chain = buildFxChain(off, offMaster, state.instFx[inst.id]);
+        applyFxToChain(chain, state.instFx[inst.id], state.instPan[inst.id] || 0);
+        g.connect(chain.input); offGains[inst.id] = g;
+      });
+      buildVoice._lastGlide = null;
+      var pat = P();
+      for (var s=0;s<STEPS;s++){
+        var t = 0.05 + s * durSteps;
+        INSTRUMENTS.forEach(function(inst){
+          if (!instAudible(inst.id)) return;
+          for (var r=0;r<rows.length;r++){
+            if (pat[inst.id][r][s]){
+              buildVoice(off, offGains[inst.id], inst.id, rows[r].freq, t, Math.max(durSteps*2.2, 0.3), 0.85);
+            }
+          }
+        });
+      }
+      if (micBuffer){
+        var src = off.createBufferSource(); src.buffer = micBuffer; src.connect(offMaster); src.start(0.05);
+      }
+      audioTracks.forEach(function(tr){
+        if (!trackAudible(tr)) return;
+        var tg = off.createGain(); tg.gain.value = tr.vol;
+        var tchain = buildFxChain(off, offMaster, tr.fx);
+        applyFxToChain(tchain, tr.fx, tr.pan);
+        tg.connect(tchain.input);
+        var tsrc = off.createBufferSource(); tsrc.buffer = tr.buffer; tsrc.connect(tg); tsrc.start(0.05);
+      });
+      off.startRendering().then(function(buf){
+        downloadBlob(bufferToWav(buf), "the-studios-" + state.mode + "-" + state.bpm + "bpm.wav");
+        btn.disabled = false; btn.textContent = "⬇ Download WAV";
+        setStatus("<b>Bounced.</b> Your WAV is downloading — the full 32-step loop in " + state.mode + " mode at " + state.bpm + " BPM.");
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = "⬇ Download WAV";
+        setStatus("The render failed in this browser — the loop itself is still here and autosaved.");
+      });
+    }catch(e){
+      btn.disabled = false; btn.textContent = "⬇ Download WAV";
+      setStatus("Bounce isn't available in this browser — the loop itself is still here and autosaved.");
+    }
+  }, 30);
+});
+
+/* ================= visualizer ================= */
+function drawViz(){
+  var cv = els.viz; if (!cv || !analyser) return;
+  var g = cv.getContext("2d");
+  var data = new Uint8Array(analyser.frequencyBinCount);
+  (function frame(){
+    requestAnimationFrame(frame);
+    analyser.getByteFrequencyData(data);
+    g.fillStyle = "#000"; g.fillRect(0, 0, cv.width, cv.height);
+    g.fillStyle = "#d4af37";
+    var bars = 24, bw = cv.width / bars;
+    for (var i=0;i<bars;i++){
+      var val = data[Math.floor(i * data.length / bars / 1.6)] / 255;
+      var h = Math.max(2, val * cv.height);
+      g.fillRect(i * bw + 1, cv.height - h, bw - 2, h);
+    }
+  })();
+}
+</script>
+
+<script>
+"use strict";
+/* ================= loop shelf (Logic room) ================= */
+function clampRow(i){ return Math.max(0, Math.min(rows.length - 1, i)); }
+function applyHeartbeat(){
+  var p = defaultPattern(rows.length), h = heartRowIdx();
+  for (var s=0;s<STEPS;s+=4) p.bell[h][s] = true;
+  [0,8,16,24].forEach(function(s){ p.pure[clampRow(h+2)][s] = true; p.pluck[h][s+4 > 31 ? s : s+4] = true; });
+  p.pad[h][0] = true; p.pad[h][16] = true;
+  state.patterns[state.mode] = p;
+}
+function applyBeaconPulse(){
+  var p = defaultPattern(rows.length), h = heartRowIdx();
+  if (state.mode === "weave"){
+    var hp = weaveRowIdx("piano",0), hc = weaveRowIdx("center",0), hq = weaveRowIdx("claim",0);
+    [0,8,16,24].forEach(function(s){ p.pure[hp][s] = true; p.pure[hc][s] = true; p.pure[hq][s] = true; });
+    p.organ[hc][0] = true; p.organ[hc][16] = true; p.bell[hq][24] = true;
+  } else {
+    [0,8,16,24].forEach(function(s){ p.pure[h][s] = true; p.bell[h][s] = true; });
+    p.organ[h][0] = true; p.organ[h][16] = true;
+    [4,12,20,28].forEach(function(s){ p.pluck[clampRow(h-1)][s] = true; });
+  }
+  state.patterns[state.mode] = p;
+}
+function applyNightWeave(){
+  var p = defaultPattern(rows.length), h = heartRowIdx();
+  [0,16].forEach(function(s){
+    p.pad[clampRow(h-1)][s] = true; p.pad[h][s] = true; p.pad[clampRow(h+1)][s] = true;
+  });
+  p.strings[h][0] = true; p.strings[clampRow(h+1)][16] = true;
+  var offs = [-2,-1,0,-1,1,0,-1,-2], steps = [0,3,6,11,16,19,22,27];
+  steps.forEach(function(s, i){ p.flute[clampRow(h + offs[i])][s] = true; });
+  p.bell[clampRow(h+2)][8] = true; p.bell[clampRow(h+2)][24] = true;
+  state.patterns[state.mode] = p;
+}
+var LOOPS = [
+  { id:"walk", name:"The Walk", desc:"The tuning itself, walking down its rungs and back up — Glide slides it, Pure walks beside it, bells mark the heart. The demo, on the shelf where it belongs.", apply:function(){ loadDemo(); } },
+  { id:"heartbeat", name:"Heartbeat", desc:"A bell on the heart every four steps, a low pure pulse under it, a pad breathing at the bar lines. The simplest thing this studio knows how to feel.", apply:applyHeartbeat },
+  { id:"beaconpulse", name:"Beacon Pulse", desc:"In Weave mode: the matched set — piano, found center, claim — striking together four times a loop, a pulse calling through fog. In Ladder mode: the heart rung, struck the same way.", apply:applyBeaconPulse },
+  { id:"nightweave", name:"Night Weave", desc:"Three pad rows sustained around the heart, strings underneath, and a flute line wandering the rungs nearby. Slow water for a 144 BPM room.", apply:applyNightWeave }
+];
+(function buildLoops(){
+  var wrap = $("loops");
+  LOOPS.forEach(function(loop){
+    var card = document.createElement("div");
+    card.className = "loop";
+    card.innerHTML = '<div class="ln">' + loop.name + '</div><div class="ld">' + loop.desc + '</div>';
+    var btns = document.createElement("div"); btns.className = "lbtns";
+    var b1 = document.createElement("button"); b1.className = "btn"; b1.textContent = "Load into the roll";
+    var b2 = document.createElement("button"); b2.className = "btn gold"; b2.textContent = "Load & ▶ play";
+    function doLoad(){
+      loop.apply();
+      refreshRollCells(); buildRack(); save();
+      $("loopStatus").innerHTML = "<b>" + loop.name + "</b> loaded into the " + state.mode + " roll. The other mode's roll is untouched.";
+    }
+    b1.addEventListener("click", doLoad);
+    b2.addEventListener("click", function(){ doLoad(); setRoom("studio"); if (!playing) startPlay(); });
+    btns.appendChild(b1); btns.appendChild(b2);
+    card.appendChild(btns);
+    wrap.appendChild(card);
+  });
+})();
+
+/* ================= buffer helpers (editor + batch) ================= */
+function bufExtract(buf, a, b){
+  var sr = buf.sampleRate;
+  var s0 = Math.max(0, Math.floor(a * sr)), s1 = Math.min(buf.length, Math.floor(b * sr));
+  var out = actx.createBuffer(buf.numberOfChannels, Math.max(1, s1 - s0), sr);
+  for (var ch=0; ch<buf.numberOfChannels; ch++){
+    out.getChannelData(ch).set(buf.getChannelData(ch).subarray(s0, s1));
+  }
+  return out;
+}
+function bufPeak(buf){
+  var peak = 0;
+  for (var ch=0; ch<buf.numberOfChannels; ch++){
+    var d = buf.getChannelData(ch);
+    for (var i=0;i<d.length;i++){ var v = Math.abs(d[i]); if (v > peak) peak = v; }
+  }
+  return peak;
+}
+function bufScaled(buf, gain){
+  var out = actx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  for (var ch=0; ch<buf.numberOfChannels; ch++){
+    var src = buf.getChannelData(ch), dst = out.getChannelData(ch);
+    for (var i=0;i<src.length;i++) dst[i] = Math.max(-1, Math.min(1, src[i] * gain));
+  }
+  return out;
+}
+var SIL_THR = 0.0056; /* ≈ −45 dB */
+function bufTrimRange(buf){
+  var first = -1, last = -1;
+  var chans = [];
+  for (var ch=0; ch<buf.numberOfChannels; ch++) chans.push(buf.getChannelData(ch));
+  for (var i=0;i<buf.length;i++){
+    for (var c=0;c<chans.length;c++){
+      if (Math.abs(chans[c][i]) > SIL_THR){ if (first < 0) first = i; last = i; break; }
+    }
+  }
+  if (first < 0) return null;
+  return { a: first / buf.sampleRate, b: (last + 1) / buf.sampleRate };
+}
+
+/* ================= waveform editor (Audacity room) ================= */
+function escHtml(s){
+  return String(s).replace(/[&<>"']/g, function(ch){
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch];
+  });
+}
+var ed = { buffer:null, name:"", selA:0, selB:0, clipboard:null, view:"wave", src:null };
+var edEls = {
+  canvas:$("edCanvas"), read:$("edRead"), status:$("edStatus"), file:$("edFile"),
+  ampDb:$("edAmpDb"), ampOut:$("edAmpOut")
+};
+function edSetStatus(m){ edEls.status.innerHTML = m; }
+function fmtTime(t){
+  var m = Math.floor(t / 60), s = t - m * 60;
+  return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1);
+}
+function edRange(){
+  if (!ed.buffer) return null;
+  var a = Math.min(ed.selA, ed.selB), b = Math.max(ed.selA, ed.selB);
+  if (b - a < 0.01) return { a:0, b:ed.buffer.duration, whole:true };
+  return { a:a, b:b, whole:false };
+}
+function edUpdate(msg){
+  var ids = ["edPlaySel","edPlayAll","edStop","edCut","edCopy","edPaste","edTrim","edFadeIn","edFadeOut","edSilence","edReverse","edNormalize","edAmpApply","edAutoTrim","edFindSilence","edExport","edSendLoop"];
+  ids.forEach(function(id){
+    var el = $(id); if (!el) return;
+    el.disabled = !ed.buffer || (id === "edPaste" && !ed.clipboard);
+  });
+  if (ed.buffer){
+    var r = edRange();
+    edEls.read.innerHTML = "<b>" + escHtml(ed.name) + "</b> · " + ed.buffer.duration.toFixed(2) + "s · " +
+      ed.buffer.sampleRate.toLocaleString("en-US") + " Hz · " + ed.buffer.numberOfChannels + " ch · peak " +
+      (bufPeak(ed.buffer) * 100).toFixed(1) + "% · selection: " +
+      (r.whole ? "whole file" : fmtTime(r.a) + " → " + fmtTime(r.b) + " (" + (r.b - r.a).toFixed(2) + "s)");
+  }
+  if (msg) edSetStatus(msg);
+  edDraw();
+}
+function edDraw(){
+  var cv = edEls.canvas, g = cv.getContext("2d");
+  var W = cv.width, H = cv.height;
+  g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+  if (!ed.buffer){
+    g.fillStyle = "#6f6c84"; g.font = "28px system-ui"; g.textAlign = "center";
+    g.fillText("Open an audio file to see its waveform", W/2, H/2);
+    return;
+  }
+  if (ed.view === "spec"){ edDrawSpec(g, W, H); }
+  else { edDrawWave(g, W, H); }
+  var r = edRange();
+  if (r && !r.whole){
+    var x0 = r.a / ed.buffer.duration * W, x1 = r.b / ed.buffer.duration * W;
+    g.fillStyle = "rgba(212,175,55,.20)"; g.fillRect(x0, 0, x1 - x0, H);
+    g.fillStyle = "#d4af37"; g.fillRect(x0, 0, 2, H); g.fillRect(x1 - 2, 0, 2, H);
+  }
+}
+function edDrawWave(g, W, H){
+  var buf = ed.buffer, len = buf.length;
+  var chans = [];
+  for (var ch=0; ch<buf.numberOfChannels; ch++) chans.push(buf.getChannelData(ch));
+  var mid = H / 2;
+  g.strokeStyle = "#2c2c40"; g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke();
+  g.fillStyle = "#9fb4d8";
+  var per = len / W;
+  for (var x=0;x<W;x++){
+    var s0 = Math.floor(x * per), s1 = Math.max(s0 + 1, Math.floor((x + 1) * per));
+    var mn = 1, mx = -1;
+    for (var c=0;c<chans.length;c++){
+      for (var i=s0;i<s1 && i<len;i+=Math.max(1, Math.floor(per/8))){
+        var v = chans[c][i];
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
+    }
+    if (mx < mn){ mn = -0.02; mx = 0.02; }
+    g.fillRect(x, mid - mx * (H/2 - 6), 1, Math.max(1, (mx - mn) * (H/2 - 6)));
+  }
+}
+function fft(re, im){
+  var n = re.length;
+  for (var i=1, j=0; i<n; i++){
+    var bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j){ var tr=re[i]; re[i]=re[j]; re[j]=tr; var ti=im[i]; im[i]=im[j]; im[j]=ti; }
+  }
+  for (var len=2; len<=n; len<<=1){
+    var ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (var base=0; base<n; base+=len){
+      var cwr=1, cwi=0;
+      for (var k=0;k<len/2;k++){
+        var ur=re[base+k], ui=im[base+k];
+        var vr=re[base+k+len/2]*cwr - im[base+k+len/2]*cwi;
+        var vi=re[base+k+len/2]*cwi + im[base+k+len/2]*cwr;
+        re[base+k]=ur+vr; im[base+k]=ui+vi;
+        re[base+k+len/2]=ur-vr; im[base+k+len/2]=ui-vi;
+        var nwr = cwr*wr - cwi*wi; cwi = cwr*wi + cwi*wr; cwr = nwr;
+      }
+    }
+  }
+}
+function edDrawSpec(g, W, H){
+  var buf = ed.buffer, len = buf.length;
+  var d0 = buf.getChannelData(0);
+  var d1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : d0;
+  var N = 1024, cols = 420, rowsN = 190;
+  var off = document.createElement("canvas"); off.width = cols; off.height = rowsN;
+  var og = off.getContext("2d");
+  var img = og.createImageData(cols, rowsN);
+  var hop = Math.max(N, Math.floor(len / cols));
+  var re = new Float64Array(N), im = new Float64Array(N);
+  for (var x=0;x<cols;x++){
+    var start = Math.min(len - 1, x * hop);
+    for (var i=0;i<N;i++){
+      var idx = start + i;
+      var v = idx < len ? (d0[idx] + d1[idx]) / 2 : 0;
+      var win = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+      re[i] = v * win; im[i] = 0;
+    }
+    fft(re, im);
+    for (var y=0;y<rowsN;y++){
+      var frac = 1 - y / rowsN;
+      var bin = Math.max(1, Math.floor(Math.pow(frac, 1.6) * (N/2 - 1)));
+      var mag = Math.sqrt(re[bin]*re[bin] + im[bin]*im[bin]) / (N/4);
+      var inten = Math.min(1, Math.pow(mag, 0.55));
+      var p = (y * cols + x) * 4;
+      img.data[p]     = Math.floor(inten * 232);
+      img.data[p + 1] = Math.floor(inten * 186);
+      img.data[p + 2] = Math.floor(inten * 62);
+      img.data[p + 3] = 255;
+    }
+  }
+  og.putImageData(img, 0, 0);
+  g.imageSmoothingEnabled = true;
+  g.drawImage(off, 0, 0, W, H);
+  g.fillStyle = "#a7a3b8"; g.font = "20px system-ui"; g.textAlign = "left";
+  g.fillText("spectrum — low frequencies at the bottom, time left → right", 12, 26);
+}
+/* selection by drag */
+(function(){
+  var cv = edEls.canvas, dragging = false;
+  function timeAt(ev){
+    var rect = cv.getBoundingClientRect();
+    var x = (ev.clientX - rect.left) / rect.width;
+    return Math.max(0, Math.min(ed.buffer.duration, x * ed.buffer.duration));
+  }
+  cv.addEventListener("pointerdown", function(ev){
+    if (!ed.buffer) return;
+    dragging = true;
+    cv.setPointerCapture(ev.pointerId);
+    ed.selA = ed.selB = timeAt(ev);
+    edUpdate();
+  });
+  cv.addEventListener("pointermove", function(ev){
+    if (!dragging || !ed.buffer) return;
+    ed.selB = timeAt(ev);
+    edUpdate();
+  });
+  cv.addEventListener("pointerup", function(){ dragging = false; });
+  cv.addEventListener("pointercancel", function(){ dragging = false; });
+})();
+edEls.file.addEventListener("change", function(){
+  var file = edEls.file.files && edEls.file.files[0];
+  if (!file) return;
+  ensureAudio();
+  if (!actx){ edSetStatus("Audio isn't available in this browser."); return; }
+  edSetStatus("Decoding <b>" + escHtml(file.name) + "</b>…");
+  file.arrayBuffer().then(function(ab){
+    var done = false;
+    function ok(buf){
+      if (done) return; done = true;
+      ed.buffer = buf; ed.name = file.name; ed.selA = 0; ed.selB = 0; ed.clipboard = null;
+      edUpdate("Opened <b>" + escHtml(file.name) + "</b> — drag across the waveform to select a region.");
+    }
+    function err(){
+      if (done) return; done = true;
+      edSetStatus("This browser couldn't decode <b>" + escHtml(file.name) + "</b>. Try a WAV, MP3, M4A, or OGG.");
+    }
+    var pr = null;
+    try{ pr = actx.decodeAudioData(ab.slice(0), ok, err); }catch(e){ err(); }
+    if (pr && pr.then) pr.then(ok, err);
+  });
+});
+function edStopPlayback(){
+  if (ed.src){ try{ ed.src.stop(); }catch(e){} ed.src = null; }
+}
+function edPlayRange(a, b){
+  ensureAudio(); if (!actx || !ed.buffer) return;
+  edStopPlayback();
+  var src = actx.createBufferSource();
+  src.buffer = ed.buffer; src.connect(masterGain);
+  src.start(0, a, Math.max(0.05, b - a));
+  ed.src = src;
+}
+$("edPlaySel").addEventListener("click", function(){ var r = edRange(); if (r) edPlayRange(r.a, r.b); });
+$("edPlayAll").addEventListener("click", function(){ if (ed.buffer) edPlayRange(0, ed.buffer.duration); });
+$("edStop").addEventListener("click", edStopPlayback);
+$("edViewWave").addEventListener("click", function(){
+  ed.view = "wave";
+  $("edViewWave").classList.add("gold"); $("edViewSpec").classList.remove("gold");
+  edDraw();
+});
+$("edViewSpec").addEventListener("click", function(){
+  ed.view = "spec";
+  $("edViewSpec").classList.add("gold"); $("edViewWave").classList.remove("gold");
+  edSetStatus("Computing the spectrum…");
+  setTimeout(edDraw, 30);
+});
+function edSplice(a, b, insert){
+  var buf = ed.buffer, sr = buf.sampleRate;
+  var head = bufExtract(buf, 0, a);
+  var tail = bufExtract(buf, b, buf.duration);
+  var total = head.length + (insert ? insert.length : 0) + tail.length;
+  var out = actx.createBuffer(buf.numberOfChannels, Math.max(1, total), sr);
+  for (var ch=0; ch<buf.numberOfChannels; ch++){
+    var dst = out.getChannelData(ch), off = 0;
+    dst.set(head.getChannelData(ch), off); off += head.length;
+    if (insert){ dst.set(insert.getChannelData(Math.min(ch, insert.numberOfChannels - 1)), off); off += insert.length; }
+    dst.set(tail.getChannelData(ch), off);
+  }
+  return out;
+}
+$("edCut").addEventListener("click", function(){
+  var r = edRange(); if (!r || r.whole){ edSetStatus("Select a region first — cutting the whole file would leave nothing."); return; }
+  ed.clipboard = bufExtract(ed.buffer, r.a, r.b);
+  ed.buffer = edSplice(r.a, r.b, null);
+  ed.selA = ed.selB = r.a;
+  edUpdate("Cut " + (r.b - r.a).toFixed(2) + "s to the clipboard. Paste puts it back anywhere.");
+});
+$("edCopy").addEventListener("click", function(){
+  var r = edRange(); if (!r) return;
+  ed.clipboard = bufExtract(ed.buffer, r.a, r.b);
+  edUpdate("Copied " + (r.b - r.a).toFixed(2) + "s" + (r.whole ? " (the whole file)" : "") + " to the clipboard.");
+});
+$("edPaste").addEventListener("click", function(){
+  if (!ed.clipboard) return;
+  var r = edRange(); if (!r) return;
+  var at = r.whole ? 0 : r.a, until = r.whole ? 0 : r.b;
+  ed.buffer = edSplice(at, until, ed.clipboard);
+  ed.selA = at; ed.selB = at + ed.clipboard.duration;
+  edUpdate("Pasted " + ed.clipboard.duration.toFixed(2) + "s at " + fmtTime(at) + ".");
+});
+$("edTrim").addEventListener("click", function(){
+  var r = edRange(); if (!r || r.whole){ edSetStatus("Select a region first — trim keeps only the selection."); return; }
+  ed.buffer = bufExtract(ed.buffer, r.a, r.b);
+  ed.selA = ed.selB = 0;
+  edUpdate("Trimmed to the selection — " + ed.buffer.duration.toFixed(2) + "s remains.");
+});
+function edMapSel(fn, label){
+  var r = edRange(); if (!r) return;
+  var sr = ed.buffer.sampleRate;
+  var s0 = Math.floor(r.a * sr), s1 = Math.floor(r.b * sr);
+  for (var ch=0; ch<ed.buffer.numberOfChannels; ch++){
+    var d = ed.buffer.getChannelData(ch);
+    for (var i=s0;i<s1 && i<d.length;i++){
+      d[i] = fn(d[i], (i - s0) / Math.max(1, s1 - s0));
+    }
+  }
+  edUpdate(label + (r.whole ? " (whole file)." : " (selection)."));
+}
+$("edFadeIn").addEventListener("click", function(){ edMapSel(function(v, t){ return v * t; }, "Faded in"); });
+$("edFadeOut").addEventListener("click", function(){ edMapSel(function(v, t){ return v * (1 - t); }, "Faded out"); });
+$("edSilence").addEventListener("click", function(){ edMapSel(function(){ return 0; }, "Silenced"); });
+$("edReverse").addEventListener("click", function(){
+  if (!ed.buffer) return;
+  for (var ch=0; ch<ed.buffer.numberOfChannels; ch++){
+    var d = ed.buffer.getChannelData(ch);
+    var copy = Float32Array.from(d);
+    for (var i=0;i<d.length;i++) d[i] = copy[d.length - 1 - i];
+  }
+  edUpdate("Reversed the whole file.");
+});
+$("edNormalize").addEventListener("click", function(){
+  if (!ed.buffer) return;
+  var peak = bufPeak(ed.buffer);
+  if (peak <= 0){ edSetStatus("The file is silent — nothing to normalize."); return; }
+  var gain = 0.99 / peak;
+  for (var ch=0; ch<ed.buffer.numberOfChannels; ch++){
+    var d = ed.buffer.getChannelData(ch);
+    for (var i=0;i<d.length;i++) d[i] = Math.max(-1, Math.min(1, d[i] * gain));
+  }
+  edUpdate("Normalized — peak was " + (peak * 100).toFixed(1) + "%, now 99%.");
+});
+edEls.ampDb.addEventListener("input", function(){
+  edEls.ampOut.textContent = edEls.ampDb.value + " dB";
+});
+$("edAmpApply").addEventListener("click", function(){
+  var db = parseFloat(edEls.ampDb.value) || 0;
+  var gain = Math.pow(10, db / 20);
+  edMapSel(function(v){ return Math.max(-1, Math.min(1, v * gain)); }, "Amplified " + (db >= 0 ? "+" : "") + db + " dB");
+});
+$("edAutoTrim").addEventListener("click", function(){
+  if (!ed.buffer) return;
+  var range = bufTrimRange(ed.buffer);
+  if (!range){ edSetStatus("The whole file is below −45 dB — nothing to trim to."); return; }
+  if (range.a < 0.005 && ed.buffer.duration - range.b < 0.005){ edSetStatus("No leading or trailing silence to trim."); return; }
+  ed.buffer = bufExtract(ed.buffer, range.a, range.b);
+  ed.selA = ed.selB = 0;
+  edUpdate("Auto-trimmed — kept " + fmtTime(range.a) + " → " + fmtTime(range.b) + ", now " + ed.buffer.duration.toFixed(2) + "s.");
+});
+$("edFindSilence").addEventListener("click", function(){
+  if (!ed.buffer) return;
+  var buf = ed.buffer, sr = buf.sampleRate;
+  var chans = [];
+  for (var ch=0; ch<buf.numberOfChannels; ch++) chans.push(buf.getChannelData(ch));
+  var minRun = Math.floor(0.3 * sr), runs = [], runStart = -1;
+  for (var i=0;i<buf.length;i++){
+    var loud = false;
+    for (var c=0;c<chans.length;c++){ if (Math.abs(chans[c][i]) > SIL_THR){ loud = true; break; } }
+    if (!loud){ if (runStart < 0) runStart = i; }
+    else { if (runStart >= 0 && i - runStart >= minRun) runs.push([runStart / sr, i / sr]); runStart = -1; }
+  }
+  if (runStart >= 0 && buf.length - runStart >= minRun) runs.push([runStart / sr, buf.duration]);
+  if (!runs.length){ edSetStatus("No silence longer than 0.3s below −45 dB in this file."); return; }
+  var txt = runs.slice(0, 4).map(function(r){ return fmtTime(r[0]) + " → " + fmtTime(r[1]); }).join(" · ");
+  edSetStatus("Found <b>" + runs.length + "</b> silent region" + (runs.length > 1 ? "s" : "") + " (≥0.3s, below −45 dB): " + txt + (runs.length > 4 ? " · …" : ""));
+});
+$("edExport").addEventListener("click", function(){
+  if (!ed.buffer) return;
+  var base = ed.name.replace(/\.[^.]+$/, "") || "audio";
+  downloadBlob(bufferToWav(ed.buffer), base + "-edited.wav");
+  edSetStatus("<b>Exported.</b> " + escHtml(base) + "-edited.wav is downloading — WAV, full quality, yours.");
+});
+$("edSendLoop").addEventListener("click", function(){
+  if (!ed.buffer) return;
+  setMicBuffer(ed.buffer, "Editor clip loaded as the mic track");
+  setRoom("studio");
+  setStatus("The edited file is now the <b>mic clip</b> — press Play and it loops inside the pattern from step 1.");
+});
+
+/* ================= batch bench (WavePad room) ================= */
+var batchItems = [];
+function renderBatch(){
+  var wrap = $("batchList");
+  wrap.innerHTML = "";
+  batchItems.forEach(function(item, idx){
+    var row = document.createElement("div");
+    row.className = "batch-item";
+    var meta = item.meta || (item.file.size / 1024).toFixed(0) + " KB";
+    row.innerHTML = '<span class="bn">' + escHtml(item.file.name) + '</span><span class="bm">' + escHtml(meta) + "</span>";
+    var st = document.createElement("span");
+    st.className = "bs";
+    if (item.url){
+      st.innerHTML = "✓ done · ";
+      var dl = document.createElement("a");
+      dl.href = item.url; dl.download = item.outName; dl.textContent = "⬇ " + item.outName;
+      st.appendChild(dl);
+    } else {
+      st.textContent = item.status;
+    }
+    row.appendChild(st);
+    wrap.appendChild(row);
+  });
+  $("batchGo").disabled = !batchItems.length;
+  $("batchClear").disabled = !batchItems.length;
+}
+function addBatchFiles(fileList){
+  for (var i=0;i<fileList.length;i++){
+    batchItems.push({ file:fileList[i], status:"waiting", url:null, outName:"", meta:"" });
+  }
+  renderBatch();
+  $("batchStatus").innerHTML = batchItems.length + " file" + (batchItems.length > 1 ? "s" : "") + " on the bench. Pick the treatments, then process.";
+}
+$("batchFiles").addEventListener("change", function(){
+  if (this.files && this.files.length) addBatchFiles(this.files);
+  this.value = "";
+});
+var dropZone = $("batchDrop");
+["dragenter","dragover"].forEach(function(ev){
+  dropZone.addEventListener(ev, function(e){ e.preventDefault(); dropZone.classList.add("over"); });
+});
+["dragleave","drop"].forEach(function(ev){
+  dropZone.addEventListener(ev, function(e){ e.preventDefault(); dropZone.classList.remove("over"); });
+});
+dropZone.addEventListener("drop", function(e){
+  var files = e.dataTransfer && e.dataTransfer.files;
+  if (files && files.length) addBatchFiles(files);
+});
+$("batchClear").addEventListener("click", function(){
+  batchItems.forEach(function(it){ if (it.url) URL.revokeObjectURL(it.url); });
+  batchItems = [];
+  renderBatch();
+  $("batchStatus").textContent = "";
+});
+$("batchGo").addEventListener("click", function(){
+  ensureAudio();
+  if (!actx){ $("batchStatus").textContent = "Audio isn't available in this browser."; return; }
+  var doNorm = $("batchNorm").checked, doTrim = $("batchTrim").checked;
+  var btn = $("batchGo");
+  btn.disabled = true; btn.textContent = "Processing…";
+  var idx = 0;
+  function next(){
+    if (idx >= batchItems.length){
+      btn.disabled = false; btn.textContent = "Process all → WAV";
+      $("batchStatus").innerHTML = "<b>Done.</b> Every file processed in one pass — download links are on each row. Nothing left this device.";
+      return;
+    }
+    var item = batchItems[idx];
+    item.status = "decoding…"; renderBatch();
+    item.file.arrayBuffer().then(function(ab){
+      var done = false;
+      function ok(buf){
+        if (done) return; done = true;
+        try{
+          var out = buf;
+          if (doTrim){
+            var range = bufTrimRange(out);
+            if (range) out = bufExtract(out, range.a, range.b);
+          }
+          if (doNorm){
+            var peak = bufPeak(out);
+            if (peak > 0) out = bufScaled(out, 0.99 / peak);
+          }
+          item.meta = buf.duration.toFixed(1) + "s in → " + out.duration.toFixed(1) + "s WAV out";
+          item.outName = item.file.name.replace(/\.[^.]+$/, "") + "-batch.wav";
+          if (item.url) URL.revokeObjectURL(item.url);
+          item.url = URL.createObjectURL(bufferToWav(out));
+          item.status = "done";
+        }catch(e){ item.status = "failed in this browser"; }
+        idx++; renderBatch(); next();
+      }
+      function err(){
+        if (done) return; done = true;
+        item.status = "couldn't decode";
+        idx++; renderBatch(); next();
+      }
+      var pr = null;
+      try{ pr = actx.decodeAudioData(ab.slice(0), ok, err); }catch(e){ err(); }
+      if (pr && pr.then) pr.then(ok, err);
+    }).catch(function(){
+      item.status = "couldn't read the file";
+      idx++; renderBatch(); next();
+    });
+  }
+  next();
+});
+
+/* ================= footer clock ================= */
+(function(){
+  var anchor = new Date("2026-10-19T00:00:00-05:00").getTime();
+  var el = $("runClock");
+  function tick(){
+    var now = new Date();
+    var diff = Math.max(0, now.getTime() - anchor);
+    var days = Math.floor(diff / 86400000);
+    var rem = diff - days * 86400000;
+    var hh = String(Math.floor(rem / 3600000)).padStart(2, "0");
+    var mm = String(Math.floor(rem / 60000) % 60).padStart(2, "0");
+    var ss = String(Math.floor(rem / 1000) % 60).padStart(2, "0");
+    el.innerHTML = "Running since October 19, 2026 — <b>" + days + " days, " + hh + ":" + mm + ":" + ss +
+      "</b> · now " + now.toLocaleTimeString("en-US");
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ================= init ================= */
+var hadSave = load();
+els.base.value = state.baseFreq;
+markPreset(state.baseFreq);
+els.bpm.value = state.bpm; els.bpmOut.textContent = state.bpm + " BPM";
+els.master.value = Math.round(state.masterVol * 100); els.masterOut.textContent = Math.round(state.masterVol * 100) + "%";
+els.grid.checked = state.gridLadder;
+if (!hadSave){ loadLadderDemo(); loadWeaveDemo(); }
+setMode(state.mode, true);
+edUpdate();
+document.addEventListener("pointerdown", function(){ ensureAudio(); }, { once:true });
+</script>
+
+<script>
+"use strict";
+/* ================= tracks / mixer (workstation hub) ================= */
+var FX_DEFS = [
+  { k:"reverb", label:"Reverb", min:0, max:100, unit:"%" },
+  { k:"echo", label:"Echo", min:0, max:100, unit:"%" },
+  { k:"chorus", label:"Chorus", min:0, max:100, unit:"%" },
+  { k:"warmth", label:"Warmth", min:0, max:100, unit:"%" },
+  { k:"eqLow", label:"EQ · low", min:-15, max:15, unit:" dB" },
+  { k:"eqMid", label:"EQ · mid", min:-15, max:15, unit:" dB" },
+  { k:"eqHigh", label:"EQ · high", min:-15, max:15, unit:" dB" }
+];
+function makeFxDetails(fx, onFx){
+  var det = document.createElement("details"); det.className = "more";
+  var sum = document.createElement("summary");
+  sum.innerHTML = 'More controls — effects: reverb · echo · chorus · warmth · EQ <span class="plus">+</span>';
+  det.appendChild(sum);
+  var body = document.createElement("div"); body.className = "more-body";
+  var grid = document.createElement("div"); grid.className = "fx-grid";
+  FX_DEFS.forEach(function(def){
+    var cell = document.createElement("div"); cell.className = "fx";
+    var lab = document.createElement("label"); lab.textContent = def.label + " ";
+    var out = document.createElement("output"); out.textContent = Math.round(fx[def.k]) + def.unit;
+    lab.appendChild(out);
+    var inp = document.createElement("input");
+    inp.type = "range"; inp.min = def.min; inp.max = def.max;
+    inp.step = def.k.indexOf("eq") === 0 ? 0.5 : 1; inp.value = fx[def.k];
+    inp.setAttribute("aria-label", def.label);
+    inp.addEventListener("input", function(){
+      fx[def.k] = parseFloat(inp.value);
+      out.textContent = Math.round(fx[def.k]) + def.unit;
+      onFx();
+    });
+    cell.appendChild(lab); cell.appendChild(inp); grid.appendChild(cell);
+  });
+  body.appendChild(grid); det.appendChild(body);
+  return det;
+}
+function trackRow(cfg){
+  var row = document.createElement("div"); row.className = "track";
+  var head = document.createElement("div"); head.className = "track-head";
+  var nm = document.createElement("span"); nm.className = "track-name"; nm.textContent = cfg.name;
+  var kd = document.createElement("span"); kd.className = "track-kind"; kd.textContent = cfg.sub;
+  head.appendChild(nm); head.appendChild(kd);
+  if (cfg.onDelete){
+    var del = document.createElement("button");
+    del.className = "btn danger"; del.textContent = "Delete track"; del.style.marginLeft = "auto";
+    del.addEventListener("click", cfg.onDelete);
+    head.appendChild(del);
+  }
+  row.appendChild(head);
+  var ctls = document.createElement("div"); ctls.className = "track-ctls";
+  var volWrap = document.createElement("span"); volWrap.className = "tc"; volWrap.appendChild(document.createTextNode("Vol "));
+  var vol = document.createElement("input");
+  vol.type = "range"; vol.min = 0; vol.max = 100; vol.value = Math.round(cfg.getVol() * 100);
+  vol.setAttribute("aria-label", cfg.name + " volume");
+  var volOut = document.createElement("output"); volOut.textContent = Math.round(cfg.getVol() * 100) + "%";
+  vol.addEventListener("input", function(){
+    cfg.setVol(parseInt(vol.value, 10) / 100);
+    volOut.textContent = vol.value + "%";
+    cfg.onVol();
+  });
+  volWrap.appendChild(vol); volWrap.appendChild(volOut); ctls.appendChild(volWrap);
+  var panWrap = document.createElement("span"); panWrap.className = "tc"; panWrap.appendChild(document.createTextNode("Pan "));
+  function panTxt(v){ var n = Math.round(v * 100); return n === 0 ? "C" : (n < 0 ? "L" + (-n) : "R" + n); }
+  var pan = document.createElement("input");
+  pan.type = "range"; pan.min = -100; pan.max = 100; pan.value = Math.round(cfg.getPan() * 100);
+  pan.setAttribute("aria-label", cfg.name + " pan");
+  var panOut = document.createElement("output"); panOut.textContent = panTxt(cfg.getPan());
+  pan.addEventListener("input", function(){
+    cfg.setPan(parseInt(pan.value, 10) / 100);
+    panOut.textContent = panTxt(cfg.getPan());
+    cfg.onFx();
+  });
+  panWrap.appendChild(pan); panWrap.appendChild(panOut); ctls.appendChild(panWrap);
+  var mb = document.createElement("button");
+  mb.className = "msbtn" + (cfg.getMute() ? " on-m" : ""); mb.textContent = "Mute";
+  mb.setAttribute("aria-pressed", cfg.getMute() ? "true" : "false");
+  mb.addEventListener("click", function(){ cfg.setMute(!cfg.getMute()); cfg.onMS(); });
+  var sb = document.createElement("button");
+  sb.className = "msbtn" + (cfg.getSolo() ? " on-s" : ""); sb.textContent = "Solo";
+  sb.setAttribute("aria-pressed", cfg.getSolo() ? "true" : "false");
+  sb.addEventListener("click", function(){ cfg.setSolo(!cfg.getSolo()); cfg.onMS(); });
+  ctls.appendChild(mb); ctls.appendChild(sb);
+  row.appendChild(ctls);
+  row.appendChild(makeFxDetails(cfg.fx, cfg.onFx));
+  return row;
+}
+function buildTracks(){
+  var wrap = $("trackList"); if (!wrap) return;
+  wrap.innerHTML = "";
+  INSTRUMENTS.forEach(function(inst){
+    var id = inst.id;
+    wrap.appendChild(trackRow({
+      name: inst.name, sub: "instrument · its notes live in the roll",
+      fx: state.instFx[id],
+      getVol: function(){ return state.instVol[id]; },
+      setVol: function(v){ state.instVol[id] = v; if (state.selected === id) els.instVol.value = Math.round(v * 100); },
+      onVol: function(){ refreshInstGain(id); save(); },
+      getPan: function(){ return state.instPan[id] || 0; },
+      setPan: function(v){ state.instPan[id] = v; },
+      getMute: function(){ return !!state.instMute[id]; },
+      setMute: function(v){ state.instMute[id] = v; },
+      getSolo: function(){ return !!state.instSolo[id]; },
+      setSolo: function(v){ state.instSolo[id] = v; },
+      onMS: function(){ refreshAllGains(); buildRack(); syncSelDetail(); buildTracks(); save(); },
+      onFx: function(){ if (instChains[id]) applyFxToChain(instChains[id], state.instFx[id], state.instPan[id] || 0); save(); }
+    }));
+  });
+  audioTracks.forEach(function(tr){
+    wrap.appendChild(trackRow({
+      name: tr.name, sub: "recorded voice pass · " + tr.buffer.duration.toFixed(1) + "s · loops from step 1",
+      fx: tr.fx,
+      getVol: function(){ return tr.vol; },
+      setVol: function(v){ tr.vol = v; },
+      onVol: function(){ refreshTrackGain(tr); },
+      getPan: function(){ return tr.pan; },
+      setPan: function(v){ tr.pan = v; },
+      getMute: function(){ return tr.mute; },
+      setMute: function(v){ tr.mute = v; },
+      getSolo: function(){ return tr.solo; },
+      setSolo: function(v){ tr.solo = v; },
+      onMS: function(){ refreshAllGains(); buildTracks(); },
+      onFx: function(){ var tc = trackChains[tr.id]; if (tc) applyFxToChain(tc.chain, tr.fx, tr.pan); },
+      onDelete: function(){
+        audioTracks = audioTracks.filter(function(x){ return x.id !== tr.id; });
+        var tc = trackChains[tr.id];
+        if (tc){ try{ tc.gain.disconnect(); }catch(e){} delete trackChains[tr.id]; }
+        refreshAllGains(); buildTracks();
+        $("passStatus").innerHTML = "<b>" + escHtml(tr.name) + "</b> deleted. The other tracks are untouched.";
+      }
+    }));
+  });
+}
+
+/* ================= loop recording — voice passes ================= */
+var passRec = { recording:false, stream:null, rec:null, chunks:[], timer:null };
+function stopPassRec(){
+  clearTimeout(passRec.timer);
+  if (passRec.rec && passRec.recording){ try{ passRec.rec.stop(); }catch(e){} }
+}
+$("btnPassRec").addEventListener("click", function(){
+  if (passRec.recording){ stopPassRec(); return; }
+  ensureAudio();
+  if (!actx){ $("passStatus").textContent = "Audio isn't available in this browser."; return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined"){
+    $("passState").innerHTML = "<b>Loop recording isn't supported in this browser.</b> The rest of the workstation still works.";
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+    passRec.stream = stream; passRec.chunks = [];
+    var mr = new MediaRecorder(stream);
+    passRec.rec = mr;
+    mr.ondataavailable = function(e){ if (e.data && e.data.size) passRec.chunks.push(e.data); };
+    mr.onstop = function(){
+      passRec.recording = false;
+      $("btnPassRec").textContent = "● Record a voice pass";
+      if (passRec.stream){ passRec.stream.getTracks().forEach(function(t){ t.stop(); }); passRec.stream = null; }
+      var blob = new Blob(passRec.chunks, { type: mr.mimeType || "audio/webm" });
+      blob.arrayBuffer().then(function(ab){
+        var done = false;
+        function ok(buf){
+          if (done) return; done = true;
+          var tr = {
+            id: "voice" + Date.now(), name: "Voice pass " + (audioTracks.length + 1),
+            buffer: buf, vol: 0.9, pan: 0, mute: false, solo: false, fx: defaultFx()
+          };
+          audioTracks.push(tr);
+          trackChainLive(tr);
+          buildTracks();
+          $("passState").textContent = "Loop recording: press the button and the loop plays — sing or play over it for one full loop and your pass becomes a new track that loops with everything else. Record again to layer the next pass on top.";
+          $("passStatus").innerHTML = "<b>" + escHtml(tr.name) + "</b> is a track now — " + buf.duration.toFixed(1) + "s, looping from step 1 with its own volume, pan, mute, solo, and effects in the mixer above. It is part of the bounce, too.";
+        }
+        function err(){ if (done) return; done = true; $("passStatus").textContent = "The pass was recorded but this browser couldn't decode it into a track."; }
+        var pr = null;
+        try{ pr = actx.decodeAudioData(ab.slice(0), ok, err); }catch(e){ err(); }
+        if (pr && pr.then) pr.then(ok, err);
+      });
+    };
+    mr.start();
+    passRec.recording = true;
+    $("btnPassRec").textContent = "⏹ Stop the pass here";
+    if (!playing) startPlay();
+    var loopSec = stepDur() * STEPS;
+    $("passState").innerHTML = '<span class="rec-dot"></span><b>Recording a pass…</b> one full loop (' + loopSec.toFixed(1) + 's at ' + state.bpm + ' BPM). It stops itself at the loop\'s end — or stop it early with the button.';
+    passRec.timer = setTimeout(function(){ if (passRec.recording) stopPassRec(); }, Math.round(loopSec * 1000));
+  }).catch(function(){
+    $("passState").innerHTML = "<b>Mic permission was declined.</b> The workstation works without it — allow the mic in your browser settings if you want voice passes.";
+  });
+});
+buildTracks();
+</script>
+
+<script>
+"use strict";
+/* ================= sing & hum — microphone to music ================= */
+var hum = { on:false, stream:null, srcNode:null, analyser:null, timer:null, t0:0,
+            written:[], notes:0, hits:0, curRow:-1, stableRow:-1, stableCount:0,
+            lastOnset:0, prevRms:0 };
+function humSetStatus(m){ $("humStatus").innerHTML = m; }
+function autocorrelate(buf, sr){
+  var SIZE = buf.length, rms = 0, i;
+  for (i=0;i<SIZE;i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.008) return -1;
+  var r1 = 0, r2 = SIZE - 1, th = 0.2;
+  for (i=0;i<SIZE/2;i++){ if (Math.abs(buf[i]) < th){ r1 = i; break; } }
+  for (i=SIZE-1;i>SIZE/2;i--){ if (Math.abs(buf[i]) < th){ r2 = i; break; } }
+  var n = Math.min(r2 - r1, 1400);
+  if (n < 64) return -1;
+  var c = new Float32Array(n);
+  for (var lag=0; lag<n; lag++){
+    var s = 0;
+    for (var k=0;k<n-lag;k++) s += buf[r1+k] * buf[r1+k+lag];
+    c[lag] = s;
+  }
+  var d = 0;
+  while (d < n-1 && c[d] > c[d+1]) d++;
+  var maxv = -1, maxp = -1;
+  for (var m=d;m<n;m++){ if (c[m] > maxv){ maxv = c[m]; maxp = m; } }
+  if (maxp <= 0) return -1;
+  var freq = sr / maxp;
+  if (freq < 50 || freq > 4000) return -1;
+  return freq;
+}
+function nearestRow(freq){
+  var best = -1, bd = 1e9;
+  for (var i=0;i<rows.length;i++){
+    var dd = Math.abs(Math.log2(freq / rows[i].freq));
+    if (dd < bd){ bd = dd; best = i; }
+  }
+  return best;
+}
+function humWriteCell(instId, row, step){
+  if (row < 0 || row >= rows.length) return;
+  var pat = P();
+  if (!pat[instId][row][step]){
+    pat[instId][row][step] = true;
+    hum.written.push({ inst:instId, row:row, step:step });
+  }
+  refreshCell(row, step);
+}
+function humPoll(){
+  if (!hum.on || !hum.analyser || !actx) return;
+  var an = hum.analyser;
+  var td = new Float32Array(an.fftSize);
+  an.getFloatTimeDomainData(td);
+  var rms = 0, i;
+  for (i=0;i<td.length;i++) rms += td[i] * td[i];
+  rms = Math.sqrt(rms / td.length);
+  $("humMeterFill").style.width = Math.min(100, Math.round(rms * 320)) + "%";
+  var now = actx.currentTime;
+  var step = Math.floor((now - hum.t0) / stepDur()) % STEPS;
+  var gate = parseInt($("humGate").value, 10) / 100;
+  var instId = $("humInst").value;
+  var instName = INSTRUMENTS.filter(function(x){ return x.id === instId; })[0].name;
+  if ($("humMode").value === "beat"){
+    if (rms > Math.max(gate, 0.05) && rms > hum.prevRms * 1.7 && (now - hum.lastOnset) > 0.11){
+      hum.lastOnset = now;
+      var fd = new Uint8Array(an.frequencyBinCount);
+      an.getByteFrequencyData(fd);
+      var num = 0, den = 0;
+      for (i=0;i<fd.length;i++){ var fHz = i * (actx.sampleRate / 2) / fd.length; num += fHz * fd[i]; den += fd[i]; }
+      var centroid = den > 0 ? num / den : 0;
+      var thr = parseFloat($("humSnap").value);
+      var heart = heartRowIdx();
+      var isThump = centroid < thr;
+      var row = isThump ? heart : Math.max(0, heart - 3);
+      humWriteCell(instId, row, step);
+      hum.hits++;
+      playNoteLive(instId, rows[row].freq, 0.3);
+      $("humRead").innerHTML = "Hit heard: <b>" + (isThump ? "low thump" : "high snap") + "</b> (rough sort — brightness " +
+        Math.round(centroid) + " Hz) → <b>" + instName + "</b> at " + fmtHz(rows[row].freq) + " Hz, step " + (step + 1) + " · " + hum.hits + " hits so far";
+    }
+  } else {
+    if (rms > gate){
+      var f = autocorrelate(td, actx.sampleRate);
+      if (f > 0){
+        var row = nearestRow(f);
+        $("humRead").innerHTML = "Hearing <b>" + f.toFixed(0) + " Hz</b> → snapped to <b>" + fmtHz(rows[row].freq) +
+          " Hz</b> · step " + (step + 1) + " · " + hum.notes + " notes written";
+        if (row === hum.stableRow) hum.stableCount++;
+        else { hum.stableRow = row; hum.stableCount = 1; }
+        if (hum.stableCount >= 2 && hum.curRow !== row){
+          hum.curRow = row;
+          humWriteCell(instId, row, step);
+          hum.notes++;
+          playNoteLive(instId, rows[row].freq, 0.5);
+        }
+      }
+    } else {
+      hum.stableRow = -1; hum.stableCount = 0;
+      if (rms < gate * 0.6) hum.curRow = -1;
+    }
+  }
+  hum.prevRms = rms;
+}
+function humStart(){
+  ensureAudio();
+  if (!actx){ humSetStatus("Audio isn't available in this browser."); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    humSetStatus("<b>Microphone listening isn't supported in this browser.</b> The rest of the studio still works.");
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio:true }).then(function(stream){
+    hum.stream = stream;
+    hum.srcNode = actx.createMediaStreamSource(stream);
+    hum.analyser = actx.createAnalyser();
+    hum.analyser.fftSize = 2048;
+    hum.srcNode.connect(hum.analyser);
+    hum.on = true;
+    hum.t0 = actx.currentTime;
+    hum.written = []; hum.notes = 0; hum.hits = 0;
+    hum.curRow = -1; hum.stableRow = -1; hum.stableCount = 0; hum.prevRms = 0; hum.lastOnset = 0;
+    var btn = $("humBtn");
+    btn.textContent = "⏹ Stop listening";
+    btn.classList.add("listening");
+    $("humPlay").disabled = true; $("humUndo").disabled = true;
+    hum.timer = setInterval(humPoll, 55);
+    humSetStatus("Listening — everything is heard and processed <b>on this device</b>; nothing is sent anywhere. Sing, hum, or beatbox, and watch the roll in the Studio room fill in.");
+  }).catch(function(){
+    humSetStatus("<b>Mic permission was declined.</b> Allow the microphone in your browser settings and try again — your device is the referee here.");
+  });
+}
+function humStop(){
+  if (!hum.on) return;
+  hum.on = false;
+  clearInterval(hum.timer);
+  if (hum.stream){ hum.stream.getTracks().forEach(function(t){ t.stop(); }); hum.stream = null; }
+  var btn = $("humBtn");
+  btn.textContent = "🎙 Start listening — then hum, sing, or beatbox";
+  btn.classList.remove("listening");
+  $("humMeterFill").style.width = "0%";
+  refreshRollCells(); buildRack(); save();
+  var total = hum.notes + hum.hits;
+  $("humPlay").disabled = !total; $("humUndo").disabled = !total;
+  var instName = INSTRUMENTS.filter(function(x){ return x.id === $("humInst").value; })[0].name;
+  if (total){
+    humSetStatus("<b>Done.</b> Wrote " + hum.notes + " note" + (hum.notes === 1 ? "" : "s") + " and " + hum.hits +
+      " hit" + (hum.hits === 1 ? "" : "s") + " into the <b>" + state.mode + "</b> roll with the <b>" + instName +
+      "</b> — real notes now, sitting in the Studio room's piano roll where you can move, delete, loop, and bounce them like anything else here.");
+    $("humRead").innerHTML = "Stopped. <b>" + total + "</b> new notes are in the roll — press <b>▶ Hear it in the loop</b>.";
+  } else {
+    humSetStatus("Stopped — nothing landed in the roll. Try one clear, steady note a little closer to the mic, or lower the sensitivity under More controls.");
+  }
+}
+$("humBtn").addEventListener("click", function(){ hum.on ? humStop() : humStart(); });
+$("humPlay").addEventListener("click", function(){
+  setRoom("studio");
+  if (!playing) startPlay();
+});
+$("humUndo").addEventListener("click", function(){
+  var pat = P();
+  hum.written.forEach(function(w){ pat[w.inst][w.row][w.step] = false; });
+  hum.written = [];
+  refreshRollCells(); buildRack(); save();
+  $("humPlay").disabled = true; $("humUndo").disabled = true;
+  humSetStatus("Undone — every note that listening session wrote is back out of the roll. Anything that was there before it is untouched.");
+});
+$("humGate").addEventListener("input", function(){
+  var v = parseInt(this.value, 10);
+  $("humGateOut").textContent = v <= 4 ? "quiet room" : v <= 10 ? "normal" : "loud room";
+});
+$("humSnap").addEventListener("input", function(){ $("humSnapOut").textContent = this.value + " Hz"; });
+(function(){
+  var sel = $("humInst");
+  INSTRUMENTS.forEach(function(inst){
+    var o = document.createElement("option");
+    o.value = inst.id; o.textContent = inst.name;
+    if (inst.id === state.selected) o.selected = true;
+    sel.appendChild(o);
+  });
+})();
+
+/* ================= audio converter ================= */
+var convItems = [];
+function convTarget(fmt){
+  if (fmt === "wav") return { mime:"audio/wav", ext:"wav" };
+  if (fmt === "mp3") return (typeof lamejs !== "undefined" && lamejs.Mp3Encoder) ? { mime:"audio/mpeg", ext:"mp3" } : null;
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return null;
+  var cands = fmt === "webm"
+    ? [["audio/webm;codecs=opus","webm"],["audio/webm","webm"],["audio/ogg;codecs=opus","ogg"],["audio/ogg","ogg"]]
+    : [["audio/mp4;codecs=mp4a.40.2","m4a"],["audio/mp4","m4a"],["audio/aac","m4a"]];
+  for (var i=0;i<cands.length;i++) if (MediaRecorder.isTypeSupported(cands[i][0])) return { mime:cands[i][0], ext:cands[i][1] };
+  return null;
+}
+function convSupportNote(){
+  var el = $("convSupport"); if (!el) return;
+  var parts = [];
+  parts.push((typeof lamejs !== "undefined" && lamejs.Mp3Encoder) ? "MP3 encoder loaded ✓" : "MP3 encoder couldn't load (it needs the network once) — WAV still works");
+  parts.push(convTarget("webm") ? "WebM can be made here ✓" : "WebM not in this browser");
+  parts.push(convTarget("m4a") ? "M4A can be made here ✓" : "M4A not in this browser");
+  el.textContent = "On this browser — " + parts.join(" · ") + ".";
+  var sel = $("convFormat");
+  for (var i=0;i<sel.options.length;i++){
+    if (sel.options[i].value !== "wav" && !convTarget(sel.options[i].value)) sel.options[i].disabled = true;
+  }
+}
+function renderConv(){
+  var wrap = $("convList");
+  wrap.innerHTML = "";
+  convItems.forEach(function(item){
+    var row = document.createElement("div");
+    row.className = "batch-item";
+    var ext = (item.file.name.split(".").pop() || "").toUpperCase();
+    row.innerHTML = '<span class="bn">' + escHtml(item.file.name) + '</span> <span class="conv-fmt">' + escHtml(ext) + '</span>' +
+      '<span class="bm">' + escHtml(item.meta || (item.file.size / 1024).toFixed(0) + " KB") + "</span>";
+    var st = document.createElement("span");
+    st.className = "bs";
+    if (item.url){
+      st.innerHTML = "✓ done · ";
+      var dl = document.createElement("a");
+      dl.href = item.url; dl.download = item.outName; dl.textContent = "⬇ " + item.outName;
+      st.appendChild(dl);
+    } else {
+      st.textContent = item.status;
+    }
+    row.appendChild(st);
+    wrap.appendChild(row);
+  });
+  $("convGo").disabled = !convItems.length;
+  $("convClear").disabled = !convItems.length;
+}
+function addConvFiles(fileList){
+  for (var i=0;i<fileList.length;i++){
+    convItems.push({ file:fileList[i], status:"waiting", url:null, outName:"", meta:"" });
+  }
+  renderConv();
+  $("convStatus").innerHTML = convItems.length + " file" + (convItems.length > 1 ? "s" : "") + " ready. Pick the format and press Convert all.";
+}
+$("convFiles").addEventListener("change", function(){
+  if (this.files && this.files.length) addConvFiles(this.files);
+  this.value = "";
+});
+var convDrop = $("convDrop");
+["dragenter","dragover"].forEach(function(ev){
+  convDrop.addEventListener(ev, function(e){ e.preventDefault(); convDrop.classList.add("over"); });
+});
+["dragleave","drop"].forEach(function(ev){
+  convDrop.addEventListener(ev, function(e){ e.preventDefault(); convDrop.classList.remove("over"); });
+});
+convDrop.addEventListener("drop", function(e){
+  var files = e.dataTransfer && e.dataTransfer.files;
+  if (files && files.length) addConvFiles(files);
+});
+$("convClear").addEventListener("click", function(){
+  convItems.forEach(function(it){ if (it.url) URL.revokeObjectURL(it.url); });
+  convItems = [];
+  renderConv();
+  $("convStatus").textContent = "";
+});
+function convDecode(file){
+  return new Promise(function(resolve, reject){
+    file.arrayBuffer().then(function(ab){
+      var done = false;
+      function ok(buf){ if (done) return; done = true; resolve(buf); }
+      function err(){ if (done) return; done = true; reject(new Error("decode")); }
+      var pr = null;
+      try{ pr = actx.decodeAudioData(ab.slice(0), ok, err); }catch(e){ err(); }
+      if (pr && pr.then) pr.then(ok, err);
+    }).catch(reject);
+  });
+}
+function convResample(buf, srSel, chSel){
+  var sr = srSel || buf.sampleRate;
+  var ch = chSel || buf.numberOfChannels;
+  if (sr === buf.sampleRate && ch === buf.numberOfChannels) return Promise.resolve(buf);
+  var Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!Off) return Promise.resolve(buf);
+  var off = new Off(ch, Math.max(1, Math.ceil(buf.duration * sr)), sr);
+  var src = off.createBufferSource();
+  src.buffer = buf; src.connect(off.destination); src.start(0);
+  return off.startRendering();
+}
+function floatTo16(d){
+  var out = new Int16Array(d.length);
+  for (var i=0;i<d.length;i++){
+    var s = Math.max(-1, Math.min(1, d[i]));
+    out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  return out;
+}
+function encodeMp3(buf, kbps){
+  if (typeof lamejs === "undefined" || !lamejs.Mp3Encoder) throw new Error("mp3 encoder unavailable");
+  var ch = Math.min(2, buf.numberOfChannels);
+  var enc = new lamejs.Mp3Encoder(ch, buf.sampleRate, kbps);
+  var left = floatTo16(buf.getChannelData(0));
+  var right = ch > 1 ? floatTo16(buf.getChannelData(1)) : null;
+  var parts = [];
+  var block = 1152;
+  for (var i=0;i<left.length;i+=block){
+    var l = left.subarray(i, i + block);
+    var data = ch > 1 ? enc.encodeBuffer(l, right.subarray(i, i + block)) : enc.encodeBuffer(l);
+    if (data && data.length) parts.push(new Blob([data], { type:"audio/mpeg" }));
+  }
+  var end = enc.flush();
+  if (end && end.length) parts.push(new Blob([end], { type:"audio/mpeg" }));
+  return new Blob(parts, { type:"audio/mpeg" });
+}
+function encodeViaRecorder(buf, mime){
+  return new Promise(function(resolve, reject){
+    ensureAudio();
+    if (!actx || typeof MediaRecorder === "undefined"){ reject(new Error("recorder")); return; }
+    if (actx.state === "suspended") actx.resume();
+    var dest = actx.createMediaStreamDestination();
+    var rec;
+    try{ rec = new MediaRecorder(dest.stream, { mimeType: mime }); }catch(e){ reject(e); return; }
+    var chunks = [];
+    rec.ondataavailable = function(e){ if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = function(){ resolve(new Blob(chunks, { type: rec.mimeType || mime })); };
+    rec.onerror = function(){ reject(new Error("recorder")); };
+    var src = actx.createBufferSource();
+    src.buffer = buf; src.connect(dest);
+    src.onended = function(){ setTimeout(function(){ try{ rec.stop(); }catch(e){} }, 300); };
+    rec.start(250);
+    src.start(0);
+  });
+}
+$("convGo").addEventListener("click", function(){
+  ensureAudio();
+  if (!actx){ $("convStatus").textContent = "Audio isn't available in this browser."; return; }
+  var fmt = $("convFormat").value;
+  var target = convTarget(fmt);
+  if (!target){ $("convStatus").innerHTML = "This browser can't make that format — WAV and MP3 are the safe picks."; return; }
+  var kbps = parseInt($("convBitrate").value, 10) || 192;
+  var srSel = parseInt($("convSr").value, 10) || 0;
+  var chSel = parseInt($("convCh").value, 10) || 0;
+  var doNorm = $("convNorm").checked, doTrim = $("convTrim").checked;
+  var realtime = target.ext === "webm" || target.ext === "m4a" || target.ext === "ogg";
+  var btn = $("convGo");
+  btn.disabled = true; btn.textContent = "Converting…";
+  var idx = 0;
+  function next(){
+    if (idx >= convItems.length){
+      btn.disabled = false; btn.textContent = "Convert all";
+      $("convStatus").innerHTML = "<b>Done.</b> Every converted file is on its row, ready to download. Nothing left this device.";
+      return;
+    }
+    var item = convItems[idx];
+    item.status = "decoding…"; renderConv();
+    convDecode(item.file).then(function(buf){
+      var out = buf;
+      if (doTrim){ var rg = bufTrimRange(out); if (rg) out = bufExtract(out, rg.a, rg.b); }
+      if (doNorm){ var pk = bufPeak(out); if (pk > 0) out = bufScaled(out, 0.99 / pk); }
+      item.status = realtime ? "converting in real time — about " + out.duration.toFixed(0) + "s…" : "converting…";
+      renderConv();
+      return convResample(out, srSel, chSel).then(function(rs){
+        var blob;
+        if (target.ext === "wav") blob = bufferToWav(rs);
+        else if (target.ext === "mp3") blob = encodeMp3(rs, kbps);
+        else return encodeViaRecorder(rs, target.mime).then(function(b){ return { blob:b, rs:rs }; });
+        return { blob:blob, rs:rs };
+      }).then(function(res){
+        item.meta = buf.duration.toFixed(1) + "s · " + buf.sampleRate.toLocaleString("en-US") + " Hz · " + buf.numberOfChannels +
+          " ch in → " + (res.blob.size / 1024).toFixed(0) + " KB " + target.ext.toUpperCase() + " out";
+        var base = item.file.name.replace(/\.[^.]+$/, "") || "audio";
+        item.outName = base + "." + target.ext;
+        if (item.url) URL.revokeObjectURL(item.url);
+        item.url = URL.createObjectURL(res.blob);
+        item.status = "done";
+        idx++; renderConv(); next();
+      });
+    }).catch(function(){
+      item.status = "couldn't convert in this browser";
+      idx++; renderConv(); next();
+    });
+  }
+  next();
+});
+convSupportNote();
+</script>
+
+<script>
+"use strict";
+/* ============================================================
+   THE HUB — doors only. The hub holds no tools: it shows one
+   view at a time (hub → a kind's doors → one tool on its own),
+   and every tool underneath keeps all of its own code, state,
+   and saved work, untouched by the navigation.
+   ============================================================ */
+function rollHasNotes(){
+  var pat = P();
+  for (var i=0;i<INSTRUMENTS.length;i++){
+    var rowsArr = pat[INSTRUMENTS[i].id];
+    for (var r=0;r<rowsArr.length;r++) for (var c=0;c<STEPS;c++) if (rowsArr[r][c]) return true;
+  }
+  return false;
+}
+var HUB_VIEWS = ["view-hub", "view-music", "view-soon", "view-tool"];
+function showView(id){
+  HUB_VIEWS.forEach(function(v){ var el = $(v); if (el) el.hidden = (v !== id); });
+  window.scrollTo(0, 0);
+}
+function goHub(){ showView("view-hub"); }
+function goMusic(){ showView("view-music"); }
+function openSoon(kind){
+  var t = $("soonTitle"), x = $("soonText");
+  if (kind === "video"){
+    t.textContent = "Video Studio — coming";
+    x.textContent = "There are no video tools here yet. The door is on the hub so the shape is settled — music, video, art, each in its own place — and so nobody has to wonder where video will live when it arrives.";
+  } else {
+    t.textContent = "Art Studio — coming";
+    x.textContent = "There are no art tools here yet. The door is on the hub so the shape is settled — music, video, art, each in its own place — and so nobody has to wonder where art will live when it arrives.";
+  }
+  showView("view-soon");
+}
+var TOOL_INFO = {
+  ladder:    { name:"The Ladder Studio", room:"studio", transport:true },
+  weave:     { name:"The Weave Studio", room:"studio", transport:true },
+  hum:       { name:"Sing & Hum", room:"hum", transport:true },
+  karaoke:   { name:"Karaoke", room:"studio", transport:true, scrollTo:"voicePanel" },
+  tracks:    { name:"Tracks & Mixer", room:"studio", transport:true, scrollTo:"tracksPanel", openMixer:true },
+  editor:    { name:"Edit a Recording", room:"editor", transport:false },
+  converter: { name:"Convert Files", room:"converter", transport:false },
+  batch:     { name:"Fix Many Files", room:"batch", transport:false },
+  loops:     { name:"Ready-Made Loops", room:"loops", transport:true }
+};
+function openTool(key){
+  var info = TOOL_INFO[key]; if (!info) return;
+  if (key === "ladder" && state.mode !== "ladder") setMode("ladder", true);
+  if (key === "weave" && state.mode !== "weave") setMode("weave", true);
+  setRoom(info.room);
+  var tb = $("transportBar");
+  if (tb) tb.style.display = info.transport ? "" : "none";
+  $("toolName").textContent = info.name;
+  showView("view-tool");
+  if (key === "ladder" || key === "weave"){
+    if (!rollHasNotes()){ loadDemo(); refreshRollCells(); buildRack(); save(); }
+    ensureAudio();
+    if (!playing) startPlay();
+    setStatus("<b>It's playing.</b> Tap squares in the grid to change the tune while it plays — or scroll down to the pads and play along.");
+  }
+  if (info.openMixer){
+    var tp = $("tracksPanel");
+    if (tp){ var d = tp.querySelector("details.more"); if (d) d.open = true; }
+  }
+  if (info.scrollTo){
+    var target = $(info.scrollTo);
+    if (target) setTimeout(function(){ target.scrollIntoView({ behavior:"smooth", block:"start" }); }, 60);
+  }
+}
+document.querySelectorAll(".kinddoor").forEach(function(b){
+  b.addEventListener("click", function(){
+    var k = b.getAttribute("data-kind");
+    if (k === "music") goMusic();
+    else openSoon(k);
+  });
+});
+document.querySelectorAll(".tooldoor").forEach(function(b){
+  b.addEventListener("click", function(){ openTool(b.getAttribute("data-tool")); });
+});
+document.querySelectorAll("[data-back='hub']").forEach(function(b){
+  b.addEventListener("click", goHub);
+});
+$("btnBackMusic").addEventListener("click", goMusic);
+$("btnBackHub").addEventListener("click", goHub);
+
+/* ---------- hub search: our doors first, then the web ---------- */
+var SEARCH_INDEX = [
+  { kind:"Music Studio", title:"The Ladder Studio", desc:"Tap squares, press play", keys:"ladder tune melody compose grid notes play piano roll pads frequency", go:function(){ openTool("ladder"); } },
+  { kind:"Music Studio", title:"The Weave Studio", desc:"Three tunings, one found center", keys:"weave beacon fluctuate matched center tuning frequencies", go:function(){ openTool("weave"); } },
+  { kind:"Music Studio", title:"Sing & Hum", desc:"Hum it in — it comes back as notes", keys:"sing hum microphone mic beatbox voice melody listen record", go:function(){ openTool("hum"); } },
+  { kind:"Music Studio", title:"Karaoke", desc:"Sing over the loop, layer your voice", keys:"karaoke sing along voice over loop record microphone", go:function(){ openTool("karaoke"); } },
+  { kind:"Music Studio", title:"Tracks & Mixer", desc:"Volume, pan, effects per track", keys:"tracks mixer volume pan mute solo effects reverb echo eq layer", go:function(){ openTool("tracks"); } },
+  { kind:"Music Studio", title:"Edit a Recording", desc:"Cut, fade, fix a wave", keys:"edit recording waveform cut trim fade normalize amplify audacity editor", go:function(){ openTool("editor"); } },
+  { kind:"Music Studio", title:"Convert Files", desc:"WAV, MP3, WebM, M4A", keys:"convert file format mp3 wav webm m4a switch change", go:function(){ openTool("converter"); } },
+  { kind:"Music Studio", title:"Fix Many Files", desc:"One fix for a pile of files", keys:"batch many files normalize trim silence fix all", go:function(){ openTool("batch"); } },
+  { kind:"Music Studio", title:"Ready-Made Loops", desc:"Tap a loop, it plays", keys:"loops ready made patterns beats shelf play", go:function(){ openTool("loops"); } },
+  { kind:"Coming", title:"Video Studio", desc:"Nothing built here yet", keys:"video film movie cut edit", go:function(){ openSoon("video"); } },
+  { kind:"Coming", title:"Art Studio", desc:"Nothing built here yet", keys:"art draw paint picture image drawing", go:function(){ openSoon("art"); } }
+];
+var hubSearchEl = $("hubSearch"), hubResultsEl = $("hubResults");
+function renderHubSearch(){
+  var q = (hubSearchEl.value || "").trim().toLowerCase();
+  hubResultsEl.innerHTML = "";
+  if (!q) return;
+  var words = q.split(/\s+/);
+  var hits = SEARCH_INDEX.filter(function(item){
+    var hay = (item.title + " " + item.keys).toLowerCase();
+    return words.every(function(w){ return hay.indexOf(w) !== -1; });
+  });
+  hits.slice(0, 6).forEach(function(item){
+    var b = document.createElement("button");
+    b.className = "sresult";
+    b.innerHTML = '<span class="sk"></span><span class="st"></span><span class="sd"></span><span class="arr">→</span>';
+    b.querySelector(".sk").textContent = item.kind;
+    b.querySelector(".st").textContent = item.title;
+    b.querySelector(".sd").textContent = item.desc;
+    b.addEventListener("click", function(){ hubSearchEl.value = ""; hubResultsEl.innerHTML = ""; item.go(); });
+    hubResultsEl.appendChild(b);
+  });
+  var web = document.createElement("a");
+  web.className = "sweb";
+  web.href = "https://www.google.com/search?q=" + encodeURIComponent(hubSearchEl.value.trim());
+  web.target = "_blank"; web.rel = "noopener";
+  web.textContent = hits.length
+    ? "Not it? Search the web for “" + hubSearchEl.value.trim() + "” →"
+    : "Nothing here by that name yet — search the web for “" + hubSearchEl.value.trim() + "” →";
+  hubResultsEl.appendChild(web);
+}
+hubSearchEl.addEventListener("input", renderHubSearch);
+hubSearchEl.addEventListener("keydown", function(ev){
+  if (ev.key === "Enter"){
+    var first = hubResultsEl.querySelector(".sresult");
+    if (first){ ev.preventDefault(); first.click(); }
+  }
+});
+showView("view-hub");
+</script>
+</body>
+</html>
