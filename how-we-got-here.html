@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>How We Got Here</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+
+      :root {
+        --bg: #f7f5f1;
+        --surface: #ffffff;
+        --ink: #1c1a17;
+        --ink-soft: #4c463f;
+        --ink-faint: #6f675c;
+        --line: #ddd5c8;
+        --gold: #9a6a12;
+        --gold-soft: #f3e8cf;
+        --teal: #1f6f6b;
+        --teal-soft: #dceeed;
+        --rust: #a44a2a;
+        --rust-soft: #f6e2d8;
+        --bar: #efe9dd;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121110;
+          --surface: #1c1a17;
+          --ink: #f0ebe2;
+          --ink-soft: #cfc7b9;
+          --ink-faint: #9d9484;
+          --line: #38332c;
+          --gold: #e0aa3e;
+          --gold-soft: #2e2513;
+          --teal: #5fc4bd;
+          --teal-soft: #142e2c;
+          --rust: #e08a63;
+          --rust-soft: #33201a;
+          --bar: #1e1b17;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 17px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1, h2, h3, .serif {
+        font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      button { font: inherit; color: inherit; }
+
+      /* ---------- App shell ---------- */
+      .app {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        max-width: 1060px;
+        margin: 0 auto;
+      }
+
+      /* ---------- App bar ---------- */
+      .appbar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+        background: var(--bar);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar-btn {
+        appearance: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 40px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 14.5px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .bar-btn svg { width: 17px; height: 17px; flex: 0 0 auto; }
+      .bar-btn[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft); color: var(--ink); }
+      .bar-btn:active { transform: translateY(1px); }
+      .bar-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: center;
+        font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+        font-size: 17px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      @media (max-width: 480px) {
+        .bar-btn .btn-label { display: none; }
+        .bar-btn { padding: 7px 10px; }
+        .bar-btn.home-btn .btn-label { display: inline; }
+      }
+
+      /* ---------- Views ---------- */
+      .viewport { flex: 1 1 auto; position: relative; overflow: hidden; }
+      .view {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        display: none;
+        padding: 22px 20px 56px;
+      }
+      .view.active { display: block; }
+      .view-inner { max-width: 760px; margin: 0 auto; }
+
+      /* ---------- Home ---------- */
+      .home-head { max-width: 760px; margin: 0 auto 18px; }
+      .home-head .dateline {
+        font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase;
+        color: var(--ink-faint); margin: 0 0 10px;
+      }
+      .home-head .standfirst { font-size: 18.5px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+      .home-head .standfirst strong { color: var(--ink); }
+
+      .bubbles {
+        max-width: 900px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      @media (min-width: 760px) { .bubbles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      .bubble {
+        appearance: none;
+        cursor: pointer;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+        height: auto;
+        padding: 16px 16px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+      }
+      .bubble:active { transform: translateY(1px); }
+      .bubble .b-when {
+        font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+        color: var(--ink-faint); font-weight: 700; margin: 0;
+        overflow-wrap: break-word;
+      }
+      .bubble .b-title {
+        font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+        font-size: 19px; font-weight: 700; line-height: 1.25; margin: 0;
+        overflow-wrap: break-word;
+      }
+      .bubble .b-teaser {
+        font-size: 14px; line-height: 1.45; color: var(--ink-soft); margin: 0;
+        overflow-wrap: break-word;
+      }
+      .bubble .b-open {
+        margin-top: auto; padding-top: 6px;
+        font-size: 13px; font-weight: 700; color: var(--gold);
+      }
+      .bubble.wide { grid-column: 1 / -1; border-color: var(--gold); background: var(--gold-soft); }
+      .bubble.wide .b-title { font-size: 24px; }
+      .bubble.wide .b-teaser { font-size: 15px; max-width: 38em; }
+      .bubble.tone-teal { border-top: 4px solid var(--teal); }
+      .bubble.tone-rust { border-top: 4px solid var(--rust); }
+      .bubble.tone-gold { border-top: 4px solid var(--gold); }
+      .home-foot {
+        max-width: 900px; margin: 20px auto 0;
+        font-size: 13px; color: var(--ink-faint); line-height: 1.55;
+      }
+
+      /* ---------- Section views (the thread, re-housed) ---------- */
+      .stop { position: relative; }
+      .stop .when {
+        font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase;
+        color: var(--ink-faint); margin: 0 0 6px;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .stop .when::before {
+        content: ""; width: 11px; height: 11px; border-radius: 50%;
+        border: 3px solid var(--gold); background: var(--bg); flex: 0 0 auto;
+      }
+      .stop.teal .when::before { border-color: var(--teal); }
+      .stop.rust .when::before { border-color: var(--rust); }
+      .stop h2 { font-size: 28px; margin: 0 0 12px; }
+      .stop p { margin: 0 0 12px; color: var(--ink-soft); }
+      .stop p strong, .stop li strong { color: var(--ink); }
+
+      .back-row { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px; }
+      .back-btn {
+        appearance: none; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 7px;
+        min-height: 42px; padding: 8px 16px;
+        border-radius: 999px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink);
+        font-size: 15px; font-weight: 600;
+      }
+      .back-btn svg { width: 16px; height: 16px; }
+
+      /* Video card */
+      .video-card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+        padding: 18px 20px; margin: 14px 0 16px;
+      }
+      .video-card .vtitle { font-family: Georgia, serif; font-size: 19px; font-weight: 600; margin: 0 0 4px; color: var(--ink); }
+      .video-card .vmeta { font-size: 14.5px; color: var(--ink-faint); margin: 0; }
+      .video-card .vmeta b { color: var(--ink-soft); font-weight: 600; }
+
+      /* Three surveys */
+      .surveys { display: grid; gap: 10px; margin: 14px 0 16px; }
+      @media (min-width: 620px) { .surveys { grid-template-columns: repeat(3, 1fr); } }
+      .survey {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 16px;
+      }
+      .survey .sname { font-family: Georgia, serif; font-size: 18px; font-weight: 700; margin: 0; }
+      .survey .srole { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); margin: 2px 0 8px; font-weight: 700; }
+      .survey p { font-size: 15px; margin: 0; color: var(--ink-soft); }
+
+      /* Modes list */
+      .modes { list-style: none; margin: 12px 0 16px; padding: 0; display: grid; gap: 10px; }
+      .modes li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 13px 16px; font-size: 15.5px; color: var(--ink-soft); }
+      .modes .mname { font-weight: 700; color: var(--ink); }
+      .modes .mname.g { color: var(--gold); }
+      .modes .mname.p { color: var(--teal); }
+      .modes .mname.d { color: var(--rust); }
+
+      /* Seven candidates */
+      .cands { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 12px; }
+      .cand {
+        appearance: none; cursor: pointer; font: inherit;
+        min-width: 52px; min-height: 52px; padding: 8px 10px;
+        border-radius: 10px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink);
+        font-family: Georgia, serif; font-size: 20px; font-weight: 700;
+        display: flex; flex-direction: column; align-items: center; gap: 1px;
+      }
+      .cand small { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); font-family: -apple-system, sans-serif; }
+      .cand[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft); }
+      .cand-detail {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 16px; font-size: 15.5px; color: var(--ink-soft); margin: 0 0 16px; min-height: 76px;
+      }
+      .cand-detail strong { color: var(--ink); }
+      .cand-detail .status { font-weight: 700; }
+      .cand-detail .status.closed { color: var(--rust); }
+      .cand-detail .status.explained { color: var(--gold); }
+      .cand-detail .status.open { color: var(--teal); }
+
+      /* Built list */
+      .built { list-style: none; counter-reset: built; margin: 12px 0 8px; padding: 0; display: grid; gap: 12px; }
+      .built li { position: relative; padding-left: 44px; color: var(--ink-soft); font-size: 16px; }
+      .built li::before {
+        counter-increment: built; content: counter(built);
+        position: absolute; left: 0; top: 1px;
+        width: 30px; height: 30px; border-radius: 50%;
+        border: 1.5px solid var(--gold); color: var(--gold);
+        font-family: Georgia, serif; font-weight: 700; font-size: 15px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .built strong { color: var(--ink); }
+
+      blockquote {
+        margin: 18px 0; padding: 4px 0 4px 18px;
+        border-left: 3px solid var(--gold);
+        font-family: Georgia, serif; font-size: 19px; font-style: italic; color: var(--ink);
+      }
+      blockquote p { margin: 0; color: var(--ink); }
+
+      /* ---------- Credit ---------- */
+      .credit {
+        background: var(--surface);
+        border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px 10px;
+      }
+      .credit h2 { font-size: 28px; margin: 0 0 6px; }
+      .credit .sub { color: var(--ink-faint); margin: 0 0 20px; font-size: 15px; }
+      .credit-item { padding: 16px 0; border-top: 1px solid var(--line); }
+      .credit-item:first-of-type { border-top: none; padding-top: 4px; }
+      .credit-item .who { font-family: Georgia, serif; font-size: 20px; font-weight: 700; margin: 0 0 2px; }
+      .credit-item .handle { font-size: 14.5px; color: var(--gold); font-weight: 600; margin: 0 0 8px; }
+      .credit-item p { margin: 0 0 10px; color: var(--ink-soft); font-size: 15.5px; }
+      .honest {
+        background: var(--gold-soft); border-radius: 10px; padding: 14px 16px;
+        font-size: 15px; color: var(--ink-soft); margin: 12px 0 16px;
+      }
+      .honest strong { color: var(--ink); }
+
+      .point h2 { font-size: 28px; margin: 0 0 10px; }
+      .point p { color: var(--ink-soft); margin: 0 0 12px; }
+      .point .last { font-family: Georgia, serif; font-size: 20px; color: var(--ink); }
+      .record-note {
+        margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line);
+        font-size: 13.5px; color: var(--ink-faint);
+      }
+      .record-note p { margin: 0; color: var(--ink-faint); }
+
+      /* ---------- Compass ---------- */
+      .compass-intro { max-width: 760px; margin: 0 auto 8px; }
+      .compass-intro h2 { font-size: 26px; margin: 0 0 8px; }
+      .compass-intro p { color: var(--ink-soft); margin: 0 0 10px; }
+      .dial-wrap { display: flex; justify-content: center; padding: 14px 0 6px; }
+      .dial {
+        position: relative;
+        width: min(88vw, 430px);
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        border: 2px solid var(--line);
+        background: var(--surface);
+      }
+      .dial::before, .dial::after {
+        content: ""; position: absolute; background: var(--line);
+      }
+      .dial::before { left: 50%; top: 4%; bottom: 4%; width: 1px; }
+      .dial::after { top: 50%; left: 4%; right: 4%; height: 1px; }
+      .dial .ring {
+        position: absolute; inset: 16%; border-radius: 50%;
+        border: 1px dashed var(--line);
+      }
+      .dial .dir {
+        position: absolute; transform: translate(-50%, -50%);
+        font-size: 11px; font-weight: 700; letter-spacing: .14em;
+        color: var(--ink-faint); text-transform: uppercase;
+      }
+      .dial .needle {
+        position: absolute; left: 50%; top: 50%;
+        width: 3px; height: 34%;
+        background: var(--gold);
+        border-radius: 2px;
+        transform-origin: 50% 100%;
+        transform: translate(-50%, -100%) rotate(0deg);
+      }
+      .dial .hub-dot {
+        position: absolute; left: 50%; top: 50%;
+        width: 15px; height: 15px; border-radius: 50%;
+        background: var(--gold); border: 3px solid var(--surface);
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 0 1px var(--line);
+      }
+      .dial-point {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        appearance: none; cursor: pointer;
+        width: 86px; max-width: 26%;
+        min-height: 52px;
+        padding: 7px 6px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: Georgia, serif; font-size: 13.5px; font-weight: 700; line-height: 1.2;
+        overflow-wrap: break-word;
+        box-shadow: 0 1px 4px rgba(0,0,0,.08);
+        z-index: 2;
+      }
+      .dial-point.center {
+        width: 96px; max-width: 30%;
+        border-color: var(--gold); background: var(--gold-soft);
+      }
+      .dial-point:active { transform: translate(-50%, -50%) scale(.97); }
+      .compass-list { max-width: 760px; margin: 18px auto 0; display: grid; gap: 8px; }
+      .compass-row {
+        appearance: none; cursor: pointer; text-align: left;
+        display: flex; align-items: baseline; gap: 12px;
+        width: 100%; padding: 12px 16px;
+        border-radius: 12px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink);
+      }
+      .compass-row .c-dir {
+        flex: 0 0 34px; font-size: 12px; font-weight: 700; letter-spacing: .1em;
+        color: var(--gold); text-transform: uppercase;
+      }
+      .compass-row .c-name { font-family: Georgia, serif; font-size: 17px; font-weight: 700; }
+      .compass-row .c-when { margin-left: auto; font-size: 12.5px; color: var(--ink-faint); text-align: right; }
+
+      /* ---------- Settings ---------- */
+      .settings h2 { font-size: 26px; margin: 0 0 6px; }
+      .settings .sub { color: var(--ink-faint); margin: 0 0 20px; font-size: 15px; }
+      .set-group {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+        padding: 20px 20px 8px; margin: 0 0 16px;
+      }
+      .set-group h3 { font-size: 19px; margin: 0 0 4px; }
+      .set-group .g-sub { font-size: 14.5px; color: var(--ink-faint); margin: 0 0 14px; }
+      .seg { display: grid; gap: 8px; margin: 0 0 14px; }
+      @media (min-width: 560px) { .seg { grid-template-columns: 1fr 1fr; } }
+      .seg-btn {
+        appearance: none; cursor: pointer; text-align: left;
+        padding: 13px 15px; border-radius: 12px;
+        border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+      }
+      .seg-btn .seg-name { display: block; font-family: Georgia, serif; font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+      .seg-btn .seg-desc { display: block; font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; }
+      .seg-btn[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft); }
+      .set-row-btn {
+        appearance: none; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 7px;
+        min-height: 42px; padding: 8px 16px; margin: 0 0 14px;
+        border-radius: 999px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink);
+        font-size: 15px; font-weight: 600;
+      }
+      .set-note { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 12px; }
+      .set-note strong { color: var(--ink); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bubble:active, .bar-btn:active, .dial-point:active { transform: none; }
+        .dial-point:active { transform: translate(-50%, -50%); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+
+      <header class="appbar">
+        <button class="bar-btn home-btn" id="btnHome" type="button" aria-label="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>
+          <span class="btn-label">Home</span>
+        </button>
+        <div class="bar-title" id="barTitle">How We Got Here</div>
+        <button class="bar-btn" id="btnCompass" type="button" aria-label="Compass" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5Z"/></svg>
+          <span class="btn-label">Compass</span>
+        </button>
+        <button class="bar-btn" id="btnSettings" type="button" aria-label="Settings" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2.1-1.63-2-3.46-2.48 1a7 7 0 0 0-2.42-1.4L13.66 2.6h-3.32l-.4 2.51a7 7 0 0 0-2.42 1.4l-2.48-1-2 3.46L5.14 10.6A7 7 0 0 0 5 12c0 .48.05.94.14 1.4L3.04 15.03l2 3.46 2.48-1a7 7 0 0 0 2.42 1.4l.4 2.51h3.32l.4-2.51a7 7 0 0 0 2.42-1.4l2.48 1 2-3.46-2.1-1.63c.09-.46.14-.92.14-1.4Z"/></svg>
+          <span class="btn-label">Settings</span>
+        </button>
+      </header>
+
+      <div class="viewport" id="viewport">
+
+        <!-- ============ HOME ============ -->
+        <section class="view" id="view-home" aria-label="Home">
+          <div class="home-head">
+            <p class="dateline">November 23, 2026 · The credit record</p>
+            <p class="standfirst">A full day of work — research, a page, a film, and a rule that turned out to apply everywhere — started with <strong>one small video, honestly made, on a small account</strong>. This page gives the credit where it happened, in the open, and tells the chain in order.</p>
+          </div>
+
+          <div id="homeBubbles">
+            <nav class="bubbles" aria-label="Sections">
+              <button class="bubble wide" type="button" data-open="credit">
+                <span class="b-when">The credit · given in the open</span>
+                <span class="b-title">The Credit</span>
+                <span class="b-teaser">Kalpana Pot and her page TokNerdyToMe, credited for the video that started it — and Project Hephaistos, the science underneath. Given in the open, where it happened — because that is where it belongs.</span>
+                <span class="b-open">Open →</span>
+              </button>
+              <button class="bubble tone-gold" type="button" data-open="spark">
+                <span class="b-when">The spark</span>
+                <span class="b-title">It started on TikTok</span>
+                <span class="b-teaser">A screen recording of a Dyson-sphere video, and the three sky surveys behind the hunt: Gaia, 2MASS, WISE.</span>
+                <span class="b-open">Open →</span>
+              </button>
+              <button class="bubble tone-teal" type="button" data-open="turned">
+                <span class="b-when">The moment it turned</span>
+                <span class="b-title">“That sounds like a Lonsdaleite test”</span>
+                <span class="b-teaser">Three readers, three ways of looking — Golden the spread, Platinum the 1:1 test, Diamond the weave.</span>
+                <span class="b-open">Open →</span>
+              </button>
+              <button class="bubble tone-rust" type="button" data-open="research">
+                <span class="b-when">What the research found</span>
+                <span class="b-title">Seven maybes, zero confirmed</span>
+                <span class="b-teaser">The seven Hephaistos candidates, checked one by one. Tap a letter inside to see where each one stands.</span>
+                <span class="b-open">Open →</span>
+              </button>
+              <button class="bubble tone-gold" type="button" data-open="built">
+                <span class="b-when">What got built from it</span>
+                <span class="b-title">One video, a whole day</span>
+                <span class="b-teaser">The Seven Maybes page, the narrated film, the follow-on question, and the rule named that afternoon.</span>
+                <span class="b-open">Open →</span>
+              </button>
+              <button class="bubble tone-teal" type="button" data-open="rule">
+                <span class="b-when">Where it landed</span>
+                <span class="b-title">The three-ish rule</span>
+                <span class="b-teaser">Look for the third. It will be there in some measure — and the measure is the reading.</span>
+                <span class="b-open">Open →</span>
+              </button>
+              <button class="bubble tone-gold" type="button" data-open="point">
+                <span class="b-when">The point</span>
+                <span class="b-title">The line doesn't stop</span>
+                <span class="b-teaser">Just because the line that we see stops doesn't mean the line stops. Neither did this one.</span>
+                <span class="b-open">Open →</span>
+              </button>
+            </nav>
+            <p class="home-foot">Record of November 23, 2026. Candidate statuses follow the follow-up literature named in “Seven maybes, zero confirmed”; Hephaistos IV (Zackrisson et al. 2026) is a preprint.</p>
+          </div>
+
+          <div id="homeCompass" hidden></div>
+        </section>
+
+        <!-- ============ THE SPARK ============ -->
+        <section class="view" id="view-spark" aria-label="It started on TikTok">
+          <div class="view-inner">
+            <div class="stop">
+              <p class="when">The spark</p>
+              <h2>It started on TikTok</h2>
+              <p>A screen recording came in from TikTok: a video explaining a search for Dyson spheres — structures a civilization might build around a star, catching its light and giving the energy back as waste heat.</p>
+              <div class="video-card">
+                <p class="vtitle">“Analysis of Potential Dyson Sphere Discoveries in Space”</p>
+                <p class="vmeta">The video that sparked the hunt — credited to <b>Kalpana Pot</b> and her page <b>TokNerdyToMe</b> (<b>@toknerdytome</b>); see The Credit for how that credit is worded, and why.</p>
+              </div>
+              <p>The video explains <strong>Project Hephaistos</strong>, a real research program (Suazo et al. 2024, <em>Monthly Notices of the Royal Astronomical Society</em> 531:695) that searched roughly <strong>five million stars</strong> for Dyson-sphere candidates by combining three sky surveys:</p>
+              <div class="surveys">
+                <div class="survey">
+                  <p class="sname">Gaia</p>
+                  <p class="srole">The foundation</p>
+                  <p>Positions and distances of the ~5 million stars — where everything sits.</p>
+                </div>
+                <div class="survey">
+                  <p class="sname">2MASS</p>
+                  <p class="srole">The middle</p>
+                  <p>The near-infrared bridge between starlight and heat.</p>
+                </div>
+                <div class="survey">
+                  <p class="sname">WISE</p>
+                  <p class="srole">The burn</p>
+                  <p>The waste heat itself — the infrared glow a swarm would leave behind.</p>
+                </div>
+              </div>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="turned">Next: The moment it turned →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ THE MOMENT IT TURNED ============ -->
+        <section class="view" id="view-turned" aria-label="That sounds like a Lonsdaleite test">
+          <div class="view-inner">
+            <div class="stop teal">
+              <p class="when">The moment it turned</p>
+              <h2>“That sounds like a Lonsdaleite test”</h2>
+              <p>The reaction, in substance: the three instruments together <strong>sound like a Lonsdaleite test</strong>. Three readers, three ways of looking, and a thing that only exists where all three agree. The reading that followed mapped the hunt onto the three modes:</p>
+              <ul class="modes">
+                <li><span class="mname g">Golden — the spread.</span> Five million stars went in and nobody aimed at any one of them. A Dyson swarm is itself a spread, never a shell — energy caught where it's needed, not wrapped whole.</li>
+                <li><span class="mname p">Platinum — the 1:1 test.</span> The light missing from a star must equal the heat coming back extra. What goes out has to match what shows up.</li>
+                <li><span class="mname d">Diamond — the weave.</span> A candidate exists only where all three surveys agree — and the weave caught its own false positives: background galaxies standing behind the stars, wearing their heat.</li>
+              </ul>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="research">Next: Seven maybes, zero confirmed →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ SEVEN MAYBES ============ -->
+        <section class="view" id="view-research" aria-label="Seven maybes, zero confirmed">
+          <div class="view-inner">
+            <div class="stop rust">
+              <p class="when">What the research found</p>
+              <h2>Seven maybes, zero confirmed</h2>
+              <p>The same day, the seven Hephaistos candidates were checked against the follow-up work (Ren et al. 2024–2026; Zackrisson et al. 2026, Hephaistos IV, preprint; Blain 2024). Tap a letter to see where each one stands:</p>
+              <div class="cands" role="group" aria-label="The seven candidates">
+                <button class="cand" data-cand="G" aria-pressed="true">G<small>Closed</small></button>
+                <button class="cand" data-cand="D" aria-pressed="false">D<small>Closed</small></button>
+                <button class="cand" data-cand="E" aria-pressed="false">E<small>Closed</small></button>
+                <button class="cand" data-cand="B" aria-pressed="false">B<small>Nearly closed</small></button>
+                <button class="cand" data-cand="C" aria-pressed="false">C<small>Nearly closed</small></button>
+                <button class="cand" data-cand="A" aria-pressed="false">A<small>Weakened</small></button>
+                <button class="cand" data-cand="F" aria-pressed="false">F<small>Untested</small></button>
+              </div>
+              <p class="cand-detail" id="candDetail" aria-live="polite"></p>
+              <p><strong>None of the seven stands as a confirmed Dyson candidate.</strong> Nothing was forced to make the count come out nicer — the honest result is the result.</p>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="built">Next: One video, a whole day →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ WHAT GOT BUILT ============ -->
+        <section class="view" id="view-built" aria-label="One video, a whole day">
+          <div class="view-inner">
+            <div class="stop">
+              <p class="when">What got built from it</p>
+              <h2>One video, a whole day</h2>
+              <ol class="built">
+                <li><strong>The Seven Maybes</strong> — a page mapping the seven candidates as a convergence map, not a leaderboard.</li>
+                <li><strong>“Three Eyes, Three Modes — The Dyson Hunt”</strong> — a narrated vertical video of the hunt and its honest result: seven maybes, zero confirmed, nothing forced.</li>
+                <li><strong>The follow-on question</strong> — “the line doesn't stop, so how do we follow it?” — answered with the same three modes: add readers, and weave them.</li>
+                <li><strong>The three-ish rule</strong> — named the same afternoon, below.</li>
+              </ol>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="rule">Next: The three-ish rule →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ THE THREE-ISH RULE ============ -->
+        <section class="view" id="view-rule" aria-label="The three-ish rule">
+          <div class="view-inner">
+            <div class="stop teal">
+              <p class="when">Where it landed</p>
+              <h2>The three-ish rule</h2>
+              <p>Three is the smallest number that makes a pattern — but the threes fluctuate, the way the matched frequencies did: hovering around a center none of them lands on exactly. So the rule isn't “exactly three, every time.” It's:</p>
+              <blockquote><p>Look for the third. It will be there in some measure — two and a half, two and sixteen seventeenths — and the measure is the reading.</p></blockquote>
+              <p>The same rule read the seven candidates honestly: <strong>three fully closed, two nearly closed, one weakened, one untouched</strong> — a live count hovering around one and a half to two and a fraction real maybes, moving every time a sharper eye looks. And it lands at every scale it touches: two people is a thread and the third is where a circle starts; an economy works when its third — the flow between having and needing — flows, and fails when that third gets dammed.</p>
+              <p>For something this big, the name is almost nonchalant. That's the tell. The load-bearing things say it plain and keep walking.</p>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="credit">Next: The Credit →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ THE CREDIT ============ -->
+        <section class="view" id="view-credit" aria-label="The Credit">
+          <div class="view-inner">
+            <div class="credit" aria-labelledby="credit-h">
+              <h2 id="credit-h">The Credit</h2>
+              <p class="sub">Given in the open, where it happened — because that is where it belongs.</p>
+
+              <div class="credit-item">
+                <p class="who">Kalpana Pot</p>
+                <p class="handle">TokNerdyToMe · @toknerdytome on TikTok</p>
+                <p>For the video that sparked the Dyson hunt — and everything that followed from it. A clear, honest explainer that carried an entire day of building: the research, the Seven Maybes page, the film, and the three-ish rule all trace back to that spark. No spark, no hunt.</p>
+                <div class="honest">
+                  <p style="margin:0"><strong>The belief, labeled honestly:</strong> we believe the person in that video is <strong>Kalpana Pot</strong> — the science communicator behind <strong>TokNerdyToMe</strong>. That is a <strong>belief, not a confirmed identification</strong>, and this page makes <strong>no claim about who made the video</strong>. The credit stands either way: the video is the spark, and the credit goes to her and her page.</p>
+                </div>
+              </div>
+
+              <div class="credit-item">
+                <p class="who">Project Hephaistos</p>
+                <p class="handle">Matías Suazo and collaborators</p>
+                <p>For the underlying science: the survey of ~5 million stars, the seven candidates, and the follow-up work that tested them — including the sharp looks that closed three of them. The hunt was honest enough to catch its own false positives, and this page exists because it was.</p>
+              </div>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="spark">Read the chain from the spark →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ THE POINT ============ -->
+        <section class="view" id="view-point" aria-label="The point">
+          <div class="view-inner">
+            <div class="point">
+              <h2>The point</h2>
+              <p>A small video, honestly made, redirected an entire day of building — research, a page, a film, and a rule that turned out to apply everywhere it lands.</p>
+              <p class="last">Just because the line that we see stops doesn't mean the line stops. Neither did this one.</p>
+            </div>
+            <div class="record-note">
+              <p>Record of November 23, 2026. Candidate statuses follow the follow-up literature named above; Hephaistos IV (Zackrisson et al. 2026) is a preprint. The belief that the person in the video is Kalpana Pot is labeled as a belief on this page — unconfirmed, and no claim is made about who made the video.</p>
+            </div>
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+              <button class="back-btn" type="button" data-open="credit">The Credit →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ COMPASS ============ -->
+        <section class="view" id="view-compass" aria-label="Compass">
+          <div id="compassMount"></div>
+        </section>
+
+        <template id="compassTpl">
+          <div class="compass-intro">
+            <h2>Compass</h2>
+            <p>The whole record on one dial. The credit sits at the center; the chain runs around it in the order it happened. Tap any point to open it.</p>
+          </div>
+          <div class="dial-wrap">
+            <div class="dial" role="group" aria-label="Compass navigation">
+              <div class="ring" aria-hidden="true"></div>
+              <span class="dir" style="left:50%; top:4.5%;">N</span>
+              <span class="dir" style="left:95.5%; top:50%; transform:translate(-50%,-50%);">E</span>
+              <span class="dir" style="left:50%; bottom:4.5%;">S</span>
+              <span class="dir" style="left:4.5%; top:50%; transform:translate(-50%,-50%);">W</span>
+              <div class="needle" data-needle aria-hidden="true"></div>
+              <div class="hub-dot" aria-hidden="true"></div>
+              <button class="dial-point" type="button" data-open="spark" data-angle="-90" style="left:50%; top:15%;">The Spark</button>
+              <button class="dial-point" type="button" data-open="turned" data-angle="-38" style="left:79.7%; top:26.9%;">The Turn</button>
+              <button class="dial-point" type="button" data-open="research" data-angle="38" style="left:79.7%; top:73.1%;">Seven Maybes</button>
+              <button class="dial-point" type="button" data-open="built" data-angle="90" style="left:50%; top:85%;">What Got Built</button>
+              <button class="dial-point" type="button" data-open="rule" data-angle="142" style="left:20.3%; top:73.1%;">Three-ish Rule</button>
+              <button class="dial-point" type="button" data-open="point" data-angle="-142" style="left:20.3%; top:26.9%;">The Point</button>
+              <button class="dial-point center" type="button" data-open="credit" data-angle="0" style="left:50%; top:50%;">The Credit</button>
+            </div>
+          </div>
+          <nav class="compass-list" aria-label="Compass sections list">
+            <button class="compass-row" type="button" data-open="credit"><span class="c-dir">●</span><span class="c-name">The Credit</span><span class="c-when">Given in the open</span></button>
+            <button class="compass-row" type="button" data-open="spark"><span class="c-dir">N</span><span class="c-name">It started on TikTok</span><span class="c-when">The spark</span></button>
+            <button class="compass-row" type="button" data-open="turned"><span class="c-dir">NE</span><span class="c-name">“That sounds like a Lonsdaleite test”</span><span class="c-when">The moment it turned</span></button>
+            <button class="compass-row" type="button" data-open="research"><span class="c-dir">SE</span><span class="c-name">Seven maybes, zero confirmed</span><span class="c-when">What the research found</span></button>
+            <button class="compass-row" type="button" data-open="built"><span class="c-dir">S</span><span class="c-name">One video, a whole day</span><span class="c-when">What got built from it</span></button>
+            <button class="compass-row" type="button" data-open="rule"><span class="c-dir">SW</span><span class="c-name">The three-ish rule</span><span class="c-when">Where it landed</span></button>
+            <button class="compass-row" type="button" data-open="point"><span class="c-dir">NW</span><span class="c-name">The point</span><span class="c-when">The line doesn't stop</span></button>
+          </nav>
+        </template>
+
+        <!-- ============ SETTINGS ============ -->
+        <section class="view" id="view-settings" aria-label="Page settings">
+          <div class="view-inner settings">
+            <h2>Page settings</h2>
+            <p class="sub">How this page is arranged on this device, for this visit.</p>
+
+            <div class="set-group">
+              <h3>Navigation</h3>
+              <p class="g-sub">Choose how Home lays out the sections. Both doors stay open either way — the compass is never removed.</p>
+              <div class="seg" role="group" aria-label="Navigation style">
+                <button class="seg-btn" type="button" id="segBubbles" aria-pressed="true">
+                  <span class="seg-name">Bubbles</span>
+                  <span class="seg-desc">Sections as tiles on the home screen, credit first and widest, the chain in priority order.</span>
+                </button>
+                <button class="seg-btn" type="button" id="segCompass" aria-pressed="false">
+                  <span class="seg-name">Compass</span>
+                  <span class="seg-desc">The whole record on one dial — the credit at the center, the chain running around it in order.</span>
+                </button>
+              </div>
+              <button class="set-row-btn" type="button" data-open="compass">Open the Compass now →</button>
+              <p class="set-note">The <strong>Compass</strong> button in the app bar opens the compass whichever style Home uses.</p>
+            </div>
+
+            <div class="set-group">
+              <h3>About this record</h3>
+              <p class="set-note"><strong>How We Got Here</strong> — the credit record of November 23, 2026: one small video, honestly made, and the full day of work that followed from it.</p>
+              <p class="set-note">Candidate statuses follow the follow-up literature named on the page; Hephaistos IV (Zackrisson et al. 2026) is a preprint. The belief that the person in the video is Kalpana Pot is labeled as a belief on this page — unconfirmed, and no claim is made about who made the video.</p>
+            </div>
+
+            <div class="back-row">
+              <button class="back-btn" type="button" data-open="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Home</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        /* ---------- View routing ---------- */
+        var titles = {
+          home: "How We Got Here",
+          spark: "It started on TikTok",
+          turned: "The moment it turned",
+          research: "Seven maybes, zero confirmed",
+          built: "One video, a whole day",
+          rule: "The three-ish rule",
+          credit: "The Credit",
+          point: "The point",
+          compass: "Compass",
+          settings: "Page settings"
+        };
+        var barTitle = document.getElementById("barTitle");
+        var btnCompass = document.getElementById("btnCompass");
+        var btnSettings = document.getElementById("btnSettings");
+        var current = "home";
+        var navMode = "bubbles";
+
+        function show(name) {
+          if (!titles.hasOwnProperty(name)) name = "home";
+          current = name;
+          var views = document.querySelectorAll(".view");
+          for (var i = 0; i < views.length; i++) {
+            var on = views[i].id === "view-" + name;
+            views[i].classList.toggle("active", on);
+            if (on) views[i].scrollTop = 0;
+          }
+          barTitle.textContent = titles[name];
+          btnCompass.setAttribute("aria-pressed", name === "compass" ? "true" : "false");
+          btnSettings.setAttribute("aria-pressed", name === "settings" ? "true" : "false");
+        }
+
+        document.addEventListener("click", function (e) {
+          var t = e.target;
+          while (t && t !== document) {
+            if (t.getAttribute && t.getAttribute("data-open")) {
+              show(t.getAttribute("data-open"));
+              return;
+            }
+            t = t.parentNode;
+          }
+        });
+
+        document.getElementById("btnHome").addEventListener("click", function () { show("home"); });
+        btnCompass.addEventListener("click", function () { show(current === "compass" ? "home" : "compass"); });
+        btnSettings.addEventListener("click", function () { show(current === "settings" ? "home" : "settings"); });
+
+        /* ---------- Compass: one dial, mounted twice (Compass view + Home in compass mode) ---------- */
+        var tpl = document.getElementById("compassTpl");
+        function mountCompass(target) {
+          target.appendChild(document.importNode(tpl.content, true));
+        }
+        mountCompass(document.getElementById("compassMount"));
+        mountCompass(document.getElementById("homeCompass"));
+
+        /* Needle follows the tapped point within its own dial */
+        document.addEventListener("click", function (e) {
+          var t = e.target;
+          while (t && t !== document) {
+            if (t.classList && t.classList.contains("dial-point")) {
+              var dial = t.parentNode;
+              var needle = dial.querySelector("[data-needle]");
+              if (needle) needle.style.transform = "translate(-50%, -100%) rotate(" + (t.getAttribute("data-angle") || "0") + "deg)";
+              return;
+            }
+            t = t.parentNode;
+          }
+        });
+
+        /* ---------- Page settings → Navigation ---------- */
+        var homeBubbles = document.getElementById("homeBubbles");
+        var homeCompass = document.getElementById("homeCompass");
+        var segBubbles = document.getElementById("segBubbles");
+        var segCompass = document.getElementById("segCompass");
+        function setNavMode(mode) {
+          navMode = mode;
+          homeBubbles.hidden = mode !== "bubbles";
+          homeCompass.hidden = mode !== "compass";
+          segBubbles.setAttribute("aria-pressed", mode === "bubbles" ? "true" : "false");
+          segCompass.setAttribute("aria-pressed", mode === "compass" ? "true" : "false");
+        }
+        segBubbles.addEventListener("click", function () { setNavMode("bubbles"); show("home"); });
+        segCompass.addEventListener("click", function () { setNavMode("compass"); show("home"); });
+        setNavMode("bubbles");
+
+        /* ---------- Seven candidates ---------- */
+        var details = {
+          G: { status: "Closed", cls: "closed", text: "Resolved as a background galaxy — sharp looks by VLBI and JWST settled it. The weave caught a galaxy standing behind the star, wearing its heat." },
+          D: { status: "Closed", cls: "closed", text: "Resolved as a background galaxy by VLBI and JWST follow-up. One of the three that landed exact." },
+          E: { status: "Closed", cls: "closed", text: "Resolved as a background galaxy by VLBI and JWST follow-up. Closed, like G and D." },
+          B: { status: "Effectively explained", cls: "explained", text: "Every thread of evidence converges on a background galaxy — but the settling sharp look has not yet been taken. Nearly closed, not closed." },
+          C: { status: "Effectively explained", cls: "explained", text: "Like B: the evidence leans galaxy on every thread, and the final sharp look is still outstanding. Nearly closed, not closed." },
+          A: { status: "Weakened, not closed", cls: "open", text: "The case for A has thinned under follow-up, but it has not been settled either way. Maybe half a candidate left." },
+          F: { status: "Untested", cls: "open", text: "Simply untested. Barely two and a half eyes have ever looked — positions and heat, no radio, no spectrum. A full maybe, because nobody has looked yet." }
+        };
+        var buttons = Array.prototype.slice.call(document.querySelectorAll(".cand"));
+        var detail = document.getElementById("candDetail");
+        function showCand(key) {
+          var d = details[key];
+          detail.innerHTML = "<strong>Candidate " + key + "</strong> — <span class=\"status " + d.cls + "\">" + d.status + ".</span> " + d.text;
+          buttons.forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-cand") === key ? "true" : "false"); });
+        }
+        buttons.forEach(function (b) {
+          b.addEventListener("click", function () { showCand(b.getAttribute("data-cand")); });
+        });
+        showCand("G");
+
+        show("home");
+      })();
+    </script>
+  </body>
+</html>

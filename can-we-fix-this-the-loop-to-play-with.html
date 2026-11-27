@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Can We Fix This? — The Loop, To Play With</title>
+<style>
+  :root{
+    --bg:#eef1f3;
+    --surface:#ffffff;
+    --surface-2:#f4f6f7;
+    --ink:#1c2429;
+    --ink-soft:#4c5a61;
+    --line:#d3dade;
+    --accent:#0f766e;
+    --accent-ink:#ffffff;
+    --accent-soft:#e0f2f0;
+    --warn-bg:#fff4d6;
+    --warn-line:#e3b93c;
+    --warn-ink:#5c4a05;
+    --good:#177245;
+    --good-soft:#e2f3e8;
+    --wait-soft:#fdf0e2;
+    --wait-ink:#8a4b12;
+    --note-bg:#fff8d9;
+    --note-line:#e6d67a;
+    --shadow:0 1px 3px rgba(20,35,40,.10), 0 6px 18px rgba(20,35,40,.06);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#101416;
+      --surface:#1a2024;
+      --surface-2:#222a2f;
+      --ink:#eef3f5;
+      --ink-soft:#a9b8bf;
+      --line:#39454c;
+      --accent:#2dd4bf;
+      --accent-ink:#06231f;
+      --accent-soft:#123b36;
+      --warn-bg:#3a2f10;
+      --warn-line:#a8842a;
+      --warn-ink:#f5df9a;
+      --good:#5fd598;
+      --good-soft:#143527;
+      --wait-soft:#3a2812;
+      --wait-ink:#f0b269;
+      --note-bg:#33300f;
+      --note-line:#8a7d2e;
+      --shadow:0 1px 3px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height:1.5; font-size:17px;
+  }
+  main{max-width:720px; margin:0 auto; padding:20px 14px 48px;}
+  h1{font-family: Georgia, "Times New Roman", serif; font-size:2rem; line-height:1.15; margin:6px 0 4px; font-weight:700;}
+  .subtitle{font-size:1.05rem; color:var(--ink-soft); margin:0 0 14px;}
+  .honest{
+    background:var(--accent-soft); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 14px; font-size:.95rem; margin:0 0 16px;
+  }
+  /* Loop strip */
+  .loop-strip{
+    display:flex; align-items:stretch; gap:6px; flex-wrap:wrap; margin:0 0 18px;
+  }
+  .loop-step{
+    flex:1 1 120px; background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:9px 11px; font-size:.88rem; box-shadow:var(--shadow);
+  }
+  .loop-step b{display:block; font-size:.95rem;}
+  .loop-arrow{align-self:center; color:var(--ink-soft); font-weight:700; padding:0 1px;}
+  /* Fold */
+  details.howto{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    margin:0 0 20px; box-shadow:var(--shadow);
+  }
+  details.howto summary{
+    cursor:pointer; min-height:48px; display:flex; align-items:center; padding:10px 16px;
+    font-weight:700; list-style:none;
+  }
+  details.howto summary::-webkit-details-marker{display:none;}
+  details.howto .howto-body{padding:0 16px 14px; color:var(--ink-soft); font-size:.95rem;}
+  details.howto ol{margin:6px 0 4px; padding-left:22px;}
+  details.howto li{margin:5px 0;}
+  /* Part cards */
+  section.part{
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:18px 16px 20px; margin:0 0 22px; box-shadow:var(--shadow);
+  }
+  .part-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px;}
+  .part-num{
+    background:var(--accent); color:var(--accent-ink); font-weight:800; font-size:.85rem;
+    border-radius:999px; padding:3px 11px; white-space:nowrap;
+  }
+  .part-head h2{font-size:1.3rem; margin:0; font-family: Georgia, serif;}
+  .part-sub{color:var(--ink-soft); font-size:.93rem; margin:2px 0 14px;}
+  /* Visitor page frame */
+  .page-frame{border:2px solid var(--line); border-radius:14px; overflow:hidden; background:var(--surface-2);}
+  .page-bar{
+    display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--surface-2);
+    border-bottom:1px solid var(--line); font-size:.82rem; color:var(--ink-soft);
+  }
+  .live-dot{width:9px; height:9px; border-radius:50%; background:var(--good); flex:none;}
+  .page-body{padding:0 0 18px;}
+  .banner{
+    padding:26px 18px 22px; text-align:center; color:#fff; transition:background .3s;
+  }
+  .banner h3{font-family: Georgia, serif; font-size:1.7rem; margin:0 0 6px; line-height:1.2; overflow-wrap:anywhere;}
+  .banner p{margin:0 0 14px; font-size:.95rem; opacity:.92;}
+  .bell-btn{
+    min-height:48px; padding:10px 22px; border-radius:999px; border:2px solid rgba(255,255,255,.85);
+    background:rgba(255,255,255,.14); color:#fff; font-size:1rem; font-weight:700; cursor:pointer;
+  }
+  .bell-btn:active{transform:scale(.97);}
+  .bell-msg{min-height:1.4em; margin:10px 0 0; font-size:.9rem; font-style:italic;}
+  /* Hanging sign */
+  .sign-zone{padding:8px 18px 0; text-align:center;}
+  .chains{display:flex; justify-content:center; gap:110px;}
+  .chains span{display:block; width:3px; height:20px; background:var(--ink-soft); border-radius:2px;}
+  .sign-board{
+    display:inline-block; max-width:100%; background:#8a5a2b; color:#fff7e8;
+    border:3px solid #6f4520; border-radius:10px; padding:12px 20px;
+    font-family: Georgia, serif; font-size:1.1rem; font-weight:700;
+    transform-origin:50% -22px;
+  }
+  @media (prefers-color-scheme: dark){ .sign-board{background:#7c4f24; border-color:#5d3a18;} }
+  .sign-board.crooked{animation:wobble 2.6s ease-in-out infinite;}
+  .sign-board.straight{transform:rotate(0deg);}
+  @keyframes wobble{
+    0%,100%{transform:rotate(-5deg);}
+    50%{transform:rotate(-2.2deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sign-board.crooked{animation:none; transform:rotate(-4deg);}
+  }
+  .sign-state{font-size:.88rem; color:var(--ink-soft); margin:8px 0 0;}
+  /* Fixer notes under sign */
+  .fixer-notes{padding:12px 18px 0; display:grid; gap:8px;}
+  .fixer-note{
+    background:var(--note-bg); border:1px solid var(--note-line); border-radius:10px;
+    padding:10px 12px; font-size:.93rem; text-align:left;
+  }
+  .fixer-note b{display:block; font-size:.8rem; letter-spacing:.02em; margin-bottom:2px;}
+  /* Published banner */
+  .published-banner{
+    display:none; margin:14px 0 0; background:var(--warn-bg); border:2px solid var(--warn-line);
+    border-radius:14px; padding:14px; color:var(--warn-ink); text-align:center;
+  }
+  .published-banner.show{display:block;}
+  .published-banner p{margin:0 0 10px; font-weight:700; font-size:1.02rem;}
+  .refresh-note{font-size:.9rem; color:var(--good); min-height:1.3em; margin:10px 0 0; text-align:center; font-weight:600;}
+  /* Buttons */
+  button{font-family:inherit;}
+  .btn{
+    min-height:48px; padding:11px 18px; border-radius:12px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--ink); font-size:1rem; font-weight:600; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; text-align:center;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .btn-big{width:100%; font-size:1.08rem; padding:14px 18px;}
+  .btn:disabled{opacity:.45; cursor:default; transform:none;}
+  /* Report door */
+  .door{margin-top:20px; border-top:2px dashed var(--line); padding-top:16px;}
+  .door h3{margin:0 0 4px; font-size:1.12rem;}
+  .door .door-sub{color:var(--ink-soft); font-size:.93rem; margin:0 0 14px;}
+  .door-group{margin:0 0 16px;}
+  .door-group > .g-label{font-weight:700; font-size:.95rem; margin:0 0 8px;}
+  .row{display:flex; gap:8px; flex-wrap:wrap;}
+  .row .btn{flex:1 1 auto;}
+  input[type="text"], textarea{
+    width:100%; min-height:48px; padding:11px 12px; border-radius:12px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); font-size:1rem; font-family:inherit;
+  }
+  textarea{min-height:76px; resize:vertical;}
+  input[type="text"]:focus, textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .field-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .field-row input{flex:1 1 200px;}
+  .field-row .btn{flex:0 1 auto;}
+  .color-choices{display:flex; gap:8px; flex-wrap:wrap;}
+  .color-btn{
+    flex:1 1 100px; min-height:52px; border-radius:12px; border:2px solid var(--line);
+    font-size:.98rem; font-weight:700; cursor:pointer; color:#fff; padding:10px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .color-btn:active{transform:scale(.97);}
+  .sent-flash{
+    display:none; margin:12px 0 0; background:var(--good-soft); color:var(--good);
+    border-radius:10px; padding:10px 12px; font-weight:700; font-size:.95rem; text-align:center;
+  }
+  .sent-flash.show{display:block;}
+  /* Inbox + fixer lists */
+  .req-list{display:grid; gap:10px; margin:0; padding:0; list-style:none;}
+  .req{
+    border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--surface-2);
+  }
+  .req .req-words{font-weight:600; overflow-wrap:anywhere;}
+  .req .req-meta{font-size:.85rem; color:var(--ink-soft); margin-top:3px;}
+  .status{
+    display:inline-block; font-size:.78rem; font-weight:800; border-radius:999px; padding:2px 10px; margin-left:6px; vertical-align:1px;
+  }
+  .status.waiting{background:var(--wait-soft); color:var(--wait-ink);}
+  .status.fixed{background:var(--accent-soft); color:var(--accent);}
+  .status.published{background:var(--good-soft); color:var(--good);}
+  .empty{
+    border:1px dashed var(--line); border-radius:12px; padding:16px; text-align:center;
+    color:var(--ink-soft); font-size:.95rem; background:var(--surface-2);
+  }
+  .req .fix-zone{margin-top:10px;}
+  .hand-form{display:none; margin-top:10px; }
+  .hand-form.show{display:block;}
+  .hand-form .field-row{margin-bottom:8px;}
+  .chair-note{font-size:.93rem; color:var(--ink-soft); margin:0 0 14px;}
+  .pub-status{font-size:.93rem; margin:0 0 14px; padding:10px 12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--line);}
+  .pub-status.pending{background:var(--warn-bg); border-color:var(--warn-line); color:var(--warn-ink); font-weight:600;}
+  /* Bottom */
+  .teaching{
+    background:var(--surface); border:1px solid var(--line); border-left:6px solid var(--accent);
+    border-radius:var(--radius); padding:16px; font-size:1rem; box-shadow:var(--shadow); margin:0 0 18px;
+  }
+  .teaching b{display:block; margin-bottom:4px; font-family: Georgia, serif; font-size:1.08rem;}
+  .reset-row{text-align:center;}
+  .btn-reset{background:none; border:1px solid var(--line); color:var(--ink-soft);}
+  .fineprint{text-align:center; color:var(--ink-soft); font-size:.85rem; margin-top:14px;}
+</style>
+</head>
+<body>
+<main>
+  <h1>Can we fix this?</h1>
+  <p class="subtitle">The loop, to play with — report it, fix it, publish it, refresh, and watch it land.</p>
+
+  <p class="honest">A working model of the real loop. On a real page, the two ends are a visitor's device and Muse, joined by the report doors — here both ends sit on one page so you can play with the whole circle.</p>
+
+  <div class="loop-strip" aria-label="The four steps of the loop">
+    <div class="loop-step"><b>1 · Say it</b>Someone spots what's wrong</div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-step"><b>2 · Inbox</b>The words land in one place</div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-step"><b>3 · Fix &amp; publish</b>Muse fixes the shared page</div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-step"><b>4 · Refresh</b>The fix arrives on the device</div>
+  </div>
+
+  <details class="howto" id="howto">
+    <summary id="howtoSummary">How to play — Tap to open</summary>
+    <div class="howto-body">
+      <ol>
+        <li>On the visitor's page below, pick a fix and send it — try the crooked sign first.</li>
+        <li>Watch it appear in the Inbox (Part 2), marked <b>Waiting</b>.</li>
+        <li>Go to Muse's chair (Part 3) and tap <b>Fix it</b>. The fix is published — but the visitor's page does <b>not</b> change yet.</li>
+        <li>Back on the visitor's page, tap the big <b>Refresh</b> button. That's the moment the fix arrives.</li>
+      </ol>
+      <p>Then try the other doors: new headline words, a new banner color, your own words, even a fix somebody just said out loud.</p>
+    </div>
+  </details>
+
+  <!-- PART 1 -->
+  <section class="part" aria-labelledby="p1h">
+    <div class="part-head"><span class="part-num">Part 1</span><h2 id="p1h">The visitor's page</h2></div>
+    <p class="part-sub">This is what a visitor sees right now. It only changes when a fix is published <em>and</em> the page is refreshed.</p>
+
+    <div class="page-frame">
+      <div class="page-bar"><span class="live-dot" aria-hidden="true"></span><span>The shared page — what every visitor's refresh reads</span></div>
+      <div class="page-body">
+        <div class="banner" id="banner">
+          <h3 id="liveHeadline">Welcome in.</h3>
+          <p>A little demo sign, hanging in the window.</p>
+          <button class="bell-btn" id="bellBtn" type="button">Ring the bell — Tap</button>
+          <p class="bell-msg" id="bellMsg" aria-live="polite"></p>
+        </div>
+        <div class="sign-zone">
+          <div class="chains" aria-hidden="true"><span></span><span></span></div>
+          <div class="sign-board crooked" id="signBoard">This sign hangs crooked</div>
+          <p class="sign-state" id="signState">It's been hanging crooked all morning.</p>
+        </div>
+        <div class="fixer-notes" id="fixerNotes"></div>
+      </div>
+    </div>
+
+    <div class="published-banner" id="publishedBanner" role="alert">
+      <p>A fix was published. Refresh to see it.</p>
+      <button class="btn btn-primary btn-big" id="refreshBtn" type="button">Refresh — Tap</button>
+    </div>
+    <p class="refresh-note" id="refreshNote" aria-live="polite"></p>
+
+    <div class="door">
+      <h3>See something to fix? Say it here.</h3>
+      <p class="door-sub">This is the report door. Whatever you send lands in the Inbox in Part 2 — nothing on the page above changes yet.</p>
+
+      <div class="door-group">
+        <p class="g-label">Quick fixes</p>
+        <div class="row">
+          <button class="btn" id="fixSignBtn" type="button">Fix the crooked sign — Tap to send</button>
+        </div>
+      </div>
+
+      <div class="door-group">
+        <p class="g-label">Change the headline words</p>
+        <div class="field-row">
+          <input type="text" id="headlineInput" maxlength="60" placeholder="Type the new words, e.g. Come on in!" aria-label="New headline words" />
+          <button class="btn" id="headlineBtn" type="button">Send — Tap</button>
+        </div>
+      </div>
+
+      <div class="door-group">
+        <p class="g-label">Change the banner color — Tap a color to send</p>
+        <div class="color-choices" id="colorChoices">
+          <button class="color-btn" type="button" data-color-name="Sky blue" data-color-hex="#2563eb" style="background:#2563eb">Sky blue</button>
+          <button class="color-btn" type="button" data-color-name="Coral red" data-color-hex="#cf3f27" style="background:#cf3f27">Coral red</button>
+          <button class="color-btn" type="button" data-color-name="Leaf green" data-color-hex="#2e7d32" style="background:#2e7d32">Leaf green</button>
+        </div>
+      </div>
+
+      <div class="door-group">
+        <p class="g-label">Or say it in your own words</p>
+        <textarea id="freeInput" maxlength="240" placeholder="Say what's wrong, in your own words…" aria-label="Say it in your own words"></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn" id="freeBtn" type="button">Send my words — Tap</button>
+          <button class="btn" id="spokenBtn" type="button">Someone just told me out loud — Tap</button>
+        </div>
+        <p class="door-sub" style="margin-top:8px;">The out-loud button files the same kind of request, marked “said out loud, in person.” The inbox doesn't care how the words arrived — if the box above has your words, it sends those; if it's empty, it sends the crooked-sign fix.</p>
+      </div>
+
+      <p class="sent-flash" id="sentFlash" aria-live="polite">Sent ✓ — it's in the Inbox below, marked Waiting.</p>
+    </div>
+  </section>
+
+  <!-- PART 2 -->
+  <section class="part" aria-labelledby="p2h">
+    <div class="part-head"><span class="part-num">Part 2</span><h2 id="p2h">The inbox</h2></div>
+    <p class="part-sub">Every request lands here, newest first — the words, how they arrived, when, and where they are in the loop: <b>Waiting → Fixed → Published</b>.</p>
+    <ul class="req-list" id="inboxList"></ul>
+    <div class="empty" id="inboxEmpty">Nothing here yet. Send a fix from the visitor's page above and watch it land.</div>
+  </section>
+
+  <!-- PART 3 -->
+  <section class="part" aria-labelledby="p3h">
+    <div class="part-head"><span class="part-num">Part 3</span><h2 id="p3h">The fixer's chair</h2></div>
+    <p class="part-sub">Muse's chair — in real life, this is where Muse sits. Fixing a request changes the <b>published copy</b> of the page. The visitor's page in Part 1 stays as it is until it refreshes.</p>
+    <p class="pub-status" id="pubStatus">The published copy matches what visitors see. No fixes are waiting to arrive.</p>
+    <ul class="req-list" id="fixerList"></ul>
+    <div class="empty" id="fixerEmpty">No fixes waiting. When a request lands in the inbox, its Fix button shows up here.</div>
+    <p class="chair-note" style="margin-top:14px;">In real life, worded requests are fixed by hand at human speed — this demo keeps that honest. A request in your own words gets a “Fix it (by hand)” button: the fixer reads it and types the fix as a short note, which is published under the visitor's sign.</p>
+  </section>
+
+  <div class="teaching">
+    <b>The whole loop, in plain words</b>
+    Nothing on the visitor's page changed by itself. A person said what was wrong, a fix was made and published, and the refresh is the moment it arrived. That is the whole loop — the same on every device, because there is only one published page and every refresh reads it.
+  </div>
+
+  <div class="reset-row">
+    <button class="btn btn-reset" id="resetBtn" type="button">Start over — Tap to reset the whole demo</button>
+  </div>
+  <p class="fineprint">Everything on this page runs on your own device. Nothing is sent anywhere.</p>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var STORE_KEY = "fix-loop-demo-v1";
+
+  var DEFAULT_BANNER = { name: "Deep teal", hex: "#14666b" };
+
+  function defaultState(){
+    return {
+      live:      { headline: "Welcome in.", banner: {name: DEFAULT_BANNER.name, hex: DEFAULT_BANNER.hex}, signFixed: false, notes: [] },
+      published: { headline: "Welcome in.", banner: {name: DEFAULT_BANNER.name, hex: DEFAULT_BANNER.hex}, signFixed: false, notes: [] },
+      requests: [],
+      pendingRefresh: false,
+      nextId: 1
+    };
+  }
+
+  var state = defaultState();
+  var storeOK = true;
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.live && parsed.published && Array.isArray(parsed.requests)) state = parsed;
+    }
+  } catch(e){ storeOK = false; }
+
+  function save(){
+    if (!storeOK) return;
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){ storeOK = false; }
+  }
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function nowTime(){
+    try { return new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }
+    catch(e){ return ""; }
+  }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  /* ---------- Rendering: visitor page ---------- */
+  function renderVisitor(){
+    $("liveHeadline").textContent = state.live.headline;
+    $("banner").style.background = state.live.banner.hex;
+    var board = $("signBoard");
+    if (state.live.signFixed){
+      board.className = "sign-board straight";
+      board.textContent = "This sign hangs straight";
+      $("signState").textContent = "Fixed, published, and refreshed — hanging straight now.";
+    } else {
+      board.className = "sign-board crooked";
+      board.textContent = "This sign hangs crooked";
+      $("signState").textContent = "It's been hanging crooked all morning.";
+    }
+    var notes = $("fixerNotes");
+    notes.innerHTML = "";
+    state.live.notes.forEach(function(n){
+      var d = document.createElement("div");
+      d.className = "fixer-note";
+      d.innerHTML = "<b>Fixer's note</b>" + esc(n);
+      notes.appendChild(d);
+    });
+    $("publishedBanner").className = "published-banner" + (state.pendingRefresh ? " show" : "");
+  }
+
+  /* ---------- Rendering: inbox ---------- */
+  function arrivalLabel(a){
+    if (a === "door") return "Report door";
+    if (a === "own") return "Own words, typed in the door";
+    if (a === "spoken") return "Said out loud, in person";
+    return a;
+  }
+  function statusBadge(r){
+    if (r.status === "waiting") return '<span class="status waiting">Waiting</span>';
+    if (r.status === "fixed") return '<span class="status fixed">Fixed</span>';
+    return '<span class="status published">Published</span>';
+  }
+  function renderInbox(){
+    var list = $("inboxList");
+    list.innerHTML = "";
+    $("inboxEmpty").style.display = state.requests.length ? "none" : "block";
+    state.requests.slice().reverse().forEach(function(r){
+      var li = document.createElement("li");
+      li.className = "req";
+      li.innerHTML =
+        '<div class="req-words">' + esc(r.text) + statusBadge(r) + "</div>" +
+        '<div class="req-meta">' + esc(arrivalLabel(r.arrival)) + " · " + esc(r.time) + "</div>" +
+        (r.fixNote ? '<div class="req-meta">Fixer\u2019s note: ' + esc(r.fixNote) + "</div>" : "");
+      list.appendChild(li);
+    });
+  }
+
+  /* ---------- Rendering: fixer's chair ---------- */
+  function renderFixer(){
+    var list = $("fixerList");
+    list.innerHTML = "";
+    var waiting = state.requests.filter(function(r){ return r.status === "waiting"; });
+    $("fixerEmpty").style.display = waiting.length ? "none" : "block";
+
+    var ps = $("pubStatus");
+    if (state.pendingRefresh){
+      ps.className = "pub-status pending";
+      ps.textContent = "The published copy has a fix the visitor hasn't seen yet. It arrives when they tap Refresh in Part 1.";
+    } else {
+      ps.className = "pub-status";
+      ps.textContent = "The published copy matches what visitors see. No fixes are waiting to arrive.";
+    }
+
+    waiting.forEach(function(r){
+      var li = document.createElement("li");
+      li.className = "req";
+      var isHand = (r.type === "free");
+      var html =
+        '<div class="req-words">' + esc(r.text) + "</div>" +
+        '<div class="req-meta">' + esc(arrivalLabel(r.arrival)) + " · " + esc(r.time) + "</div>" +
+        '<div class="fix-zone">';
+      if (isHand){
+        html += '<button class="btn btn-primary" type="button" data-hand="' + r.id + '">Fix it (by hand) — Tap</button>' +
+          '<div class="hand-form" id="handForm-' + r.id + '">' +
+            '<div class="field-row">' +
+              '<input type="text" maxlength="140" placeholder="Type the fix as a short note…" aria-label="Type the fix as a short note" id="handInput-' + r.id + '" />' +
+            "</div>" +
+            '<div class="row">' +
+              '<button class="btn btn-primary" type="button" data-publish-hand="' + r.id + '">Publish this fix — Tap</button>' +
+              '<button class="btn" type="button" data-cancel-hand="' + r.id + '">Not now — Tap</button>' +
+            "</div>" +
+          "</div>";
+      } else {
+        html += '<button class="btn btn-primary" type="button" data-fix="' + r.id + '">Fix it — Tap</button>';
+      }
+      html += "</div>";
+      li.innerHTML = html;
+      list.appendChild(li);
+    });
+  }
+
+  function renderAll(){ renderVisitor(); renderInbox(); renderFixer(); }
+
+  /* ---------- Sending requests ---------- */
+  var flashTimer = null;
+  function flashSent(){
+    var f = $("sentFlash");
+    f.className = "sent-flash show";
+    if (flashTimer) clearTimeout(flashTimer);
+    flashTimer = setTimeout(function(){ f.className = "sent-flash"; }, 3500);
+  }
+  function addRequest(text, type, arrival, payload){
+    // Avoid piling up an identical waiting request.
+    var dup = state.requests.some(function(r){
+      return r.status === "waiting" && r.type === type &&
+        JSON.stringify(r.payload || null) === JSON.stringify(payload || null) &&
+        (type !== "free" || r.text === text);
+    });
+    if (dup){ flashSent(); return; }
+    state.requests.push({
+      id: state.nextId++, text: text, type: type, arrival: arrival,
+      payload: payload || null, time: nowTime(), status: "waiting", fixNote: null
+    });
+    save(); renderAll(); flashSent();
+  }
+
+  $("fixSignBtn").addEventListener("click", function(){
+    if (state.live.signFixed && !state.requests.some(function(r){return r.status==="waiting" && r.type==="crooked";})){
+      // Sign already straight on the live page and in the published copy.
+      if (state.published.signFixed){
+        $("sentFlash").textContent = "The sign is already straight — nothing to send.";
+        flashSent();
+        setTimeout(function(){ $("sentFlash").textContent = "Sent ✓ — it's in the Inbox below, marked Waiting."; }, 3600);
+        return;
+      }
+    }
+    addRequest("Fix the crooked sign", "crooked", "door", null);
+  });
+
+  $("headlineBtn").addEventListener("click", function(){
+    var v = $("headlineInput").value.trim();
+    if (!v){ $("headlineInput").focus(); $("headlineInput").placeholder = "Type the new words first, then tap Send"; return; }
+    addRequest('Change the headline words to \u201C' + v + '\u201D', "headline", "door", { headline: v });
+    $("headlineInput").value = "";
+  });
+
+  $("colorChoices").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest(".color-btn") : null;
+    if (!b) return;
+    var name = b.getAttribute("data-color-name"), hex = b.getAttribute("data-color-hex");
+    addRequest("Change the banner color to " + name, "color", "door", { banner: { name: name, hex: hex } });
+  });
+
+  $("freeBtn").addEventListener("click", function(){
+    var v = $("freeInput").value.trim();
+    if (!v){ $("freeInput").focus(); $("freeInput").placeholder = "Type your words first, then tap Send"; return; }
+    addRequest(v, "free", "own", null);
+    $("freeInput").value = "";
+  });
+
+  $("spokenBtn").addEventListener("click", function(){
+    var v = $("freeInput").value.trim();
+    if (v){
+      addRequest(v, "free", "spoken", null);
+      $("freeInput").value = "";
+    } else {
+      addRequest("Fix the crooked sign", "crooked", "spoken", null);
+    }
+  });
+
+  /* ---------- Fixing ---------- */
+  function applyFix(r, note){
+    if (r.type === "crooked"){ state.published.signFixed = true; }
+    else if (r.type === "headline" && r.payload){ state.published.headline = r.payload.headline; }
+    else if (r.type === "color" && r.payload){ state.published.banner = { name: r.payload.banner.name, hex: r.payload.banner.hex }; }
+    else if (r.type === "free"){ state.published.notes.push(note); r.fixNote = note; }
+    r.status = "fixed";
+    state.pendingRefresh = true;
+    save(); renderAll();
+    // The eye gets to see "Fixed" for a beat, then it becomes "Published".
+    setTimeout(function(){
+      if (r.status === "fixed"){ r.status = "published"; save(); renderAll(); }
+    }, 700);
+  }
+
+  $("fixerList").addEventListener("click", function(e){
+    var t = e.target;
+    var fixId = t.getAttribute && t.getAttribute("data-fix");
+    var handId = t.getAttribute && t.getAttribute("data-hand");
+    var pubId = t.getAttribute && t.getAttribute("data-publish-hand");
+    var cancelId = t.getAttribute && t.getAttribute("data-cancel-hand");
+
+    if (fixId){
+      var r = state.requests.find(function(x){ return x.id === Number(fixId); });
+      if (r && r.status === "waiting") applyFix(r, null);
+    }
+    if (handId){
+      var form = $("handForm-" + handId);
+      if (form) form.className = "hand-form show";
+      var inp = $("handInput-" + handId);
+      if (inp) inp.focus();
+    }
+    if (cancelId){
+      var f2 = $("handForm-" + cancelId);
+      if (f2) f2.className = "hand-form";
+    }
+    if (pubId){
+      var inp2 = $("handInput-" + pubId);
+      var note = inp2 ? inp2.value.trim() : "";
+      if (!note){ if (inp2){ inp2.focus(); inp2.placeholder = "Type the fix first, then publish"; } return; }
+      var r2 = state.requests.find(function(x){ return x.id === Number(pubId); });
+      if (r2 && r2.status === "waiting") applyFix(r2, note);
+    }
+  });
+
+  /* ---------- Refresh ---------- */
+  $("refreshBtn").addEventListener("click", function(){
+    state.live = clone(state.published);
+    state.pendingRefresh = false;
+    save(); renderAll();
+    $("refreshNote").textContent = "Refreshed — you're now seeing the newest published page.";
+    setTimeout(function(){ $("refreshNote").textContent = ""; }, 5000);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  /* ---------- Bell (the one working button on the demo sign) ---------- */
+  var bellCount = 0;
+  $("bellBtn").addEventListener("click", function(){
+    bellCount++;
+    $("bellMsg").textContent = bellCount === 1 ? "Ding! This button works fine — no fix needed." :
+      "Ding! (" + bellCount + " rings — still working.)";
+  });
+
+  /* ---------- Fold label: Tap to open / Tap to close ---------- */
+  var howto = $("howto"), howtoSummary = $("howtoSummary");
+  howto.addEventListener("toggle", function(){
+    howtoSummary.textContent = howto.open ? "How to play — Tap to close" : "How to play — Tap to open";
+  });
+
+  /* ---------- Start over ---------- */
+  $("resetBtn").addEventListener("click", function(){
+    state = defaultState();
+    bellCount = 0;
+    $("bellMsg").textContent = "";
+    $("headlineInput").value = "";
+    $("freeInput").value = "";
+    if (storeOK){ try { localStorage.removeItem(STORE_KEY); } catch(e){} }
+    save(); renderAll();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

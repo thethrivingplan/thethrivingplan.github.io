@@ -1,0 +1,1309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Life Choices Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+
+      :root {
+        --bg: #fff6e8;
+        --panel: #fffdf8;
+        --panel-2: #ffeeda;
+        --ink: #262033;
+        --ink-soft: #5c5470;
+        --line: #262033;
+        --coral: #ff5d47;
+        --coral-deep: #d63e2a;
+        --teal: #0e9594;
+        --teal-deep: #0a6e6d;
+        --sun: #ffc53d;
+        --sun-deep: #e09e12;
+        --sky: #aee3f5;
+        --grass: #8ed081;
+        --shadow: 0 6px 0 rgba(38, 32, 51, 0.9);
+        --shadow-sm: 0 3px 0 rgba(38, 32, 51, 0.9);
+        --caption-bg: #14101d;
+        --caption-ink: #fff8ea;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #17131f;
+          --panel: #241d33;
+          --panel-2: #2e2542;
+          --ink: #f6ecd9;
+          --ink-soft: #bdb2cf;
+          --line: #0d0a14;
+          --coral: #ff6d57;
+          --coral-deep: #ff8a76;
+          --teal: #2bb3b1;
+          --teal-deep: #57c7c5;
+          --sun: #ffc53d;
+          --sun-deep: #ffd166;
+          --sky: #274b63;
+          --grass: #3f7d4e;
+          --shadow: 0 6px 0 rgba(0, 0, 0, 0.55);
+          --shadow-sm: 0 3px 0 rgba(0, 0, 0, 0.55);
+          --caption-bg: #000000;
+          --caption-ink: #fff8ea;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Nunito", system-ui, sans-serif;
+        font-size: 1.05rem;
+        line-height: 1.5;
+      }
+      h1, h2, h3, .display {
+        font-family: "Bricolage Grotesque", "Nunito", system-ui, sans-serif;
+        line-height: 1.08;
+        margin: 0;
+      }
+      button { font: inherit; cursor: pointer; }
+      :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+
+      .wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 56px; }
+
+      /* ---------- Intro ---------- */
+      .intro { padding: 14px 0 6px; }
+      .intro h1 { font-size: clamp(2rem, 6.5vw, 3.4rem); font-weight: 800; letter-spacing: -0.01em; }
+      .intro h1 .hl { background: var(--sun); padding: 0 0.14em; border-radius: 8px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+      @media (prefers-color-scheme: dark) { .intro h1 .hl { color: #262033; } }
+      .intro p { color: var(--ink-soft); max-width: 56ch; margin: 14px 0 0; font-size: 1.08rem; }
+      .intro p strong { color: var(--ink); }
+      .rules { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .rule-chip {
+        border: 2px solid var(--line); border-radius: 999px; padding: 6px 14px;
+        font-weight: 800; font-size: 0.88rem; background: var(--panel);
+        box-shadow: var(--shadow-sm);
+      }
+      .rule-chip b { color: var(--coral-deep); }
+      @media (prefers-color-scheme: dark) { .rule-chip b { color: var(--coral); } }
+
+      /* ---------- HUD ---------- */
+      .hud {
+        margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center;
+        border: 2px solid var(--line); border-radius: 16px; background: var(--panel);
+        padding: 12px 16px; box-shadow: var(--shadow);
+      }
+      .hud .moment { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.05rem; }
+      .meter { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.9rem; }
+      .meter .track { width: 92px; height: 12px; border: 2px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--panel-2); }
+      .meter .fill { height: 100%; width: 0%; transition: width 0.5s ease; }
+      .fill.gold { background: var(--sun); }
+      .fill.poop { background: var(--coral); }
+      .hud .spacer { flex: 1; }
+      .sound-btn {
+        border: 2px solid var(--line); background: var(--panel-2); border-radius: 999px;
+        font-weight: 800; font-size: 0.85rem; padding: 4px 14px; box-shadow: var(--shadow-sm);
+      }
+      .sound-btn:active { transform: translateY(2px); box-shadow: none; }
+
+      /* ---------- Scenario ---------- */
+      .scenario {
+        margin-top: 22px; border: 2px solid var(--line); border-radius: 20px;
+        background: var(--panel); box-shadow: var(--shadow); padding: 22px 22px 18px;
+      }
+      .scenario .where {
+        display: inline-block; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--teal-deep);
+        border: 2px solid var(--line); border-radius: 999px; padding: 3px 12px; background: var(--panel-2);
+      }
+      @media (prefers-color-scheme: dark) { .scenario .where { color: var(--teal); } }
+      .scenario h2 { font-size: clamp(1.45rem, 4.5vw, 2rem); font-weight: 800; margin-top: 12px; }
+      .scenario p { margin: 10px 0 0; color: var(--ink-soft); font-size: 1.08rem; max-width: 62ch; }
+      .scenario p strong { color: var(--ink); }
+
+      /* ---------- Compass of choices ---------- */
+      .compass {
+        margin-top: 20px; display: grid; gap: 12px;
+        grid-template-columns: 1fr 0.9fr 1fr;
+        grid-template-areas: ". n ." "w hub e" ". s .";
+        align-items: stretch;
+      }
+      .choice {
+        position: relative; text-align: left; border: 2px solid var(--line); border-radius: 16px;
+        background: var(--panel); color: var(--ink); padding: 14px 16px 14px 18px;
+        box-shadow: var(--shadow-sm); font-weight: 700; font-size: 1rem; line-height: 1.35;
+        transition: transform 0.08s ease, box-shadow 0.08s ease;
+        display: flex; flex-direction: column; gap: 6px; justify-content: center;
+      }
+      .choice:hover { transform: translateY(-2px); box-shadow: 0 5px 0 rgba(38,32,51,0.9); }
+      .choice:active { transform: translateY(2px); box-shadow: none; }
+      .choice .dir {
+        align-self: flex-start; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+        font-size: 0.72rem; letter-spacing: 0.1em; padding: 2px 9px; border-radius: 999px;
+        border: 2px solid var(--line); color: #262033;
+      }
+      .dir-n { background: var(--sun); } .dir-e { background: #ffb3a7; }
+      .dir-s { background: #9ad1d0; } .dir-w { background: #cdeac0; }
+      .pos-n { grid-area: n; } .pos-e { grid-area: e; } .pos-s { grid-area: s; } .pos-w { grid-area: w; }
+      .hub {
+        grid-area: hub; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 6px; text-align: center; padding: 8px;
+      }
+      .hub .top-spin { width: 54px; height: 54px; animation: spin 3.2s linear infinite; transform-origin: 50% 62%; }
+      .hub span { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+      @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+      /* ---------- The fifth ---------- */
+      .fifth {
+        margin-top: 16px; border: 2px dashed var(--line); border-radius: 16px;
+        background: var(--panel-2); padding: 16px 18px;
+      }
+      .fifth h3 { font-size: 1.15rem; font-weight: 800; }
+      .fifth h3 .five {
+        display: inline-grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%;
+        background: var(--coral); color: #fff; border: 2px solid var(--line); font-size: 0.95em;
+        vertical-align: -0.45em; margin-right: 0.3em;
+      }
+      .fifth p { margin: 6px 0 0; color: var(--ink-soft); font-size: 0.98rem; }
+      .fifth form { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+      .fifth input {
+        flex: 1 1 220px; font: inherit; font-weight: 600; color: var(--ink);
+        border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--panel);
+      }
+      .fifth input::placeholder { color: var(--ink-soft); }
+      .btn {
+        border: 2px solid var(--line); border-radius: 12px; padding: 10px 20px;
+        font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1rem;
+        background: var(--coral); color: #fff; box-shadow: var(--shadow-sm);
+        transition: transform 0.08s ease, box-shadow 0.08s ease;
+      }
+      .btn:hover { transform: translateY(-2px); }
+      .btn:active { transform: translateY(2px); box-shadow: none; }
+      .btn.teal { background: var(--teal); }
+      .btn.sun { background: var(--sun); color: #262033; }
+      .fifth .err { color: var(--coral-deep); font-weight: 800; font-size: 0.9rem; margin-top: 8px; min-height: 1.2em; }
+      @media (prefers-color-scheme: dark) { .fifth .err { color: var(--coral); } }
+
+      /* ---------- Outcome "video" stage ---------- */
+      .stage { margin-top: 26px; }
+      .screen {
+        border: 3px solid var(--line); border-radius: 20px; overflow: hidden;
+        background: var(--sky); box-shadow: var(--shadow); position: relative;
+      }
+      .screen-top {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        background: var(--panel); border-bottom: 2px solid var(--line);
+        font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;
+      }
+      .rec { width: 11px; height: 11px; border-radius: 50%; background: var(--coral); animation: blink 1.1s steps(2) infinite; }
+      @keyframes blink { 50% { opacity: 0.15; } }
+      .screen-top .you-chose { margin-left: auto; font-family: "Nunito", sans-serif; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink-soft); font-size: 0.88rem; text-align: right; }
+      .scene { position: relative; aspect-ratio: 16 / 8.2; min-height: 210px; overflow: hidden; }
+      .scene .sun-disc { position: absolute; top: 8%; right: 7%; width: 58px; height: 58px; border-radius: 50%; background: var(--sun); border: 3px solid rgba(38,32,51,0.85); }
+      .scene .cloud { position: absolute; background: #fff; border: 3px solid rgba(38,32,51,0.85); border-radius: 999px; opacity: 0.95; }
+      .cloud.c1 { top: 12%; left: 6%; width: 92px; height: 30px; }
+      .cloud.c2 { top: 26%; left: 62%; width: 66px; height: 24px; }
+      @media (prefers-color-scheme: dark) { .scene .cloud { background: #d9d2e8; } }
+      .scene .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: var(--grass); border-top: 3px solid rgba(38,32,51,0.85); }
+      .kid-wrap { position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%); width: min(240px, 52vw); }
+      .kid-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+      .bob { animation: bob 0.9s ease-in-out infinite; transform-origin: 50% 90%; }
+      @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
+      .strum-arm { transform-origin: 118px 118px; animation: strum 0.45s ease-in-out infinite alternate; }
+      @keyframes strum { from { transform: rotate(-14deg); } to { transform: rotate(16deg); } }
+      .note { font-family: "Nunito", sans-serif; font-weight: 800; fill: var(--ink); opacity: 0; animation: floatnote 2.4s ease-in infinite; }
+      .note.n2 { animation-delay: 0.8s; } .note.n3 { animation-delay: 1.6s; }
+      @keyframes floatnote { 0% { opacity: 0; transform: translateY(6px); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-26px); } }
+      .bubble {
+        position: absolute; top: 6%; left: 4%; max-width: 46%;
+        background: #fff; color: #262033; border: 3px solid #262033; border-radius: 16px;
+        padding: 10px 14px; font-weight: 800; font-size: clamp(0.85rem, 2.6vw, 1.02rem); line-height: 1.3;
+        box-shadow: 0 4px 0 rgba(38,32,51,0.85);
+      }
+      .bubble::after {
+        content: ""; position: absolute; bottom: -14px; left: 55%; width: 18px; height: 18px;
+        background: #fff; border-right: 3px solid #262033; border-bottom: 3px solid #262033;
+        transform: rotate(45deg) skew(8deg, 8deg);
+      }
+      .bubble.pop { animation: pop 0.25s ease; }
+      @keyframes pop { from { transform: scale(0.85); } to { transform: scale(1); } }
+      .stamp {
+        position: absolute; top: 10px; right: 12px; transform: rotate(7deg) scale(0);
+        font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; letter-spacing: 0.06em;
+        font-size: clamp(0.85rem, 3vw, 1.15rem); padding: 6px 14px; border-radius: 10px;
+        border: 3px solid #262033; background: var(--sun); color: #262033;
+        box-shadow: 0 4px 0 rgba(38,32,51,0.85);
+      }
+      .stamp.show { animation: stampin 0.35s cubic-bezier(0.2, 2.2, 0.4, 1) forwards; }
+      @keyframes stampin { to { transform: rotate(7deg) scale(1); } }
+      .stamp.bad { background: var(--coral); color: #fff; }
+      .stamp.mid { background: #fff; }
+      .stamp.wild { background: var(--teal); color: #fff; }
+      .caption {
+        background: var(--caption-bg); color: var(--caption-ink);
+        font-weight: 800; font-size: clamp(0.95rem, 3vw, 1.12rem); text-align: center;
+        padding: 12px 16px; min-height: 3.2em; display: flex; align-items: center; justify-content: center;
+      }
+      .outcome-text {
+        margin-top: 16px; border: 2px solid var(--line); border-radius: 16px; background: var(--panel);
+        padding: 16px 18px; box-shadow: var(--shadow-sm); font-size: 1.06rem;
+      }
+      .outcome-text .kid-says { margin-top: 10px; color: var(--ink-soft); font-style: italic; }
+      .stage-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+      .btn.ghost { background: var(--panel); color: var(--ink); }
+      .dots { display: flex; gap: 6px; margin-left: auto; }
+      .dots i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); background: var(--panel); }
+      .dots i.on { background: var(--coral); }
+
+      /* ---------- End screen ---------- */
+      .end-card {
+        margin-top: 26px; border: 2px solid var(--line); border-radius: 20px; background: var(--panel);
+        box-shadow: var(--shadow); padding: 26px 22px; text-align: center;
+      }
+      .end-card h2 { font-size: clamp(1.7rem, 5.5vw, 2.5rem); font-weight: 800; }
+      .end-card p { color: var(--ink-soft); max-width: 54ch; margin: 12px auto 0; font-size: 1.08rem; }
+      .end-card p strong { color: var(--ink); }
+      .tally { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 18px; }
+      .tally .t {
+        border: 2px solid var(--line); border-radius: 14px; padding: 10px 16px; background: var(--panel-2);
+        font-weight: 800; box-shadow: var(--shadow-sm); min-width: 118px;
+      }
+      .tally .t .num { display: block; font-family: "Bricolage Grotesque", sans-serif; font-size: 1.7rem; font-weight: 800; }
+      .recap { text-align: left; margin: 22px auto 0; max-width: 560px; }
+      .recap h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 8px; }
+      .recap li { margin: 6px 0; color: var(--ink-soft); }
+      .recap li b { color: var(--ink); }
+      .recap .tag { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; padding: 1px 8px; border-radius: 999px; border: 2px solid var(--line); color: #262033; white-space: nowrap; }
+      .tag.g { background: var(--sun); } .tag.b { background: var(--coral); color: #fff; }
+      .tag.m { background: #fff; } .tag.w { background: var(--teal); color: #fff; }
+      .end-actions { margin-top: 22px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+      .foot { margin-top: 34px; text-align: center; color: var(--ink-soft); font-size: 0.92rem; }
+      .foot strong { color: var(--ink); }
+
+      /* ---------- Story hub ---------- */
+      .hub-face { margin-top: 26px; border: 2px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: var(--shadow); padding: 22px; }
+      .hub-face h2 { font-size: clamp(1.5rem, 4.5vw, 2.1rem); font-weight: 800; }
+      .hub-face > p { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+      .hub-face > p strong { color: var(--ink); }
+      .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+      .mode-card { text-align: left; border: 2px solid var(--line); border-radius: 16px; background: var(--panel-2); padding: 16px 18px; box-shadow: var(--shadow-sm); color: var(--ink); display: flex; flex-direction: column; gap: 6px; }
+      .mode-card:hover { transform: translateY(-2px); }
+      .mode-card .mode-num { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+      .mode-card .mode-title { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.2rem; }
+      .mode-card .mode-desc { font-weight: 600; color: var(--ink-soft); font-size: .95rem; line-height: 1.4; }
+      .idea-box { margin-top: 16px; border: 2px dashed var(--line); border-radius: 16px; padding: 16px 18px; background: var(--panel); }
+      .idea-box h3 { font-size: 1.05rem; font-weight: 800; }
+      .idea-box p { color: var(--ink-soft); margin: 6px 0 0; }
+      .idea-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+      .idea-row input { flex: 1 1 220px; font: inherit; font-weight: 600; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--panel); }
+      #ideaOutput { font-weight: 800; color: var(--ink); margin-top: 12px; min-height: 1.5em; }
+
+      /* ---------- Creator studio ---------- */
+      .creator { margin-top: 26px; border: 2px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: var(--shadow); padding: 22px; }
+      .creator h2 { font-size: clamp(1.45rem, 4.5vw, 2rem); font-weight: 800; }
+      .creator > p { color: var(--ink-soft); margin: 10px 0 0; max-width: 64ch; }
+      .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+      .step { border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--panel-2); font-weight: 800; font-size: .88rem; }
+      .step span { display: block; font-family: "Bricolage Grotesque", sans-serif; font-size: 1.3rem; }
+      .templates { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; align-items: center; }
+      .templates .tlabel { font-weight: 800; font-size: .9rem; }
+      .chip-btn { border: 2px solid var(--line); border-radius: 999px; background: var(--panel); padding: 6px 14px; font-weight: 800; font-size: .88rem; box-shadow: var(--shadow-sm); }
+      .chip-btn:active { transform: translateY(2px); box-shadow: none; }
+      .field { margin-top: 16px; }
+      .field label { display: block; font-weight: 800; margin-bottom: 6px; }
+      .field .hint { font-weight: 600; color: var(--ink-soft); font-size: .9rem; margin-top: 4px; }
+      .field input[type="text"], .field textarea, .field select, .opt-editor input[type="text"], .opt-editor textarea, .opt-editor select { width: 100%; font: inherit; font-weight: 600; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--panel); }
+      .field textarea, .opt-editor textarea { min-height: 84px; resize: vertical; }
+      .opt-editor textarea { min-height: 64px; }
+      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .opt-editor { margin-top: 14px; border: 2px solid var(--line); border-radius: 16px; padding: 16px; background: var(--panel-2); }
+      .opt-editor h3 { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .opt-editor .field { margin-top: 12px; }
+      .creator-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+      .creator-msg { font-weight: 800; margin-top: 12px; min-height: 1.4em; }
+      .creator-msg.err { color: var(--coral-deep); }
+      @media (prefers-color-scheme: dark) { .creator-msg.err { color: var(--coral); } }
+
+      /* ---------- Shelf ---------- */
+      .shelf { margin-top: 26px; border: 2px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: var(--shadow); padding: 22px; }
+      .shelf h2 { font-size: 1.45rem; font-weight: 800; }
+      .shelf > p { color: var(--ink-soft); margin: 8px 0 0; }
+      .shelf-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+      .shelf-item { border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--panel-2); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+      .shelf-item .shelf-meta { font-weight: 700; color: var(--ink-soft); font-size: .9rem; }
+      .shelf-item .shelf-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+      .small-btn { border: 2px solid var(--line); border-radius: 999px; background: var(--panel); padding: 5px 13px; font-weight: 800; font-size: .85rem; box-shadow: var(--shadow-sm); color: var(--ink); }
+      .shelf-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+      @media (max-width: 640px) { .mode-grid, .steps, .two-col { grid-template-columns: 1fr; } }
+
+      [hidden] { display: none !important; }
+
+      @media (max-width: 640px) {
+        .compass { grid-template-columns: 1fr; grid-template-areas: "n" "e" "s" "w"; }
+        .hub { display: none; }
+        .bubble { max-width: 62%; }
+        .scene { aspect-ratio: 16 / 10.5; }
+        .screen-top .you-chose { display: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bob, .strum-arm, .note, .hub .top-spin, .rec { animation: none !important; }
+        .note { opacity: 0.9; }
+        * { transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <section class="intro">
+        <h1>Life hands you a moment. <span class="hl">Nothing&rsquo;s stopping you.</span></h1>
+        <p>Each moment comes with <strong>four choices</strong> on the compass &mdash; and a <strong>fifth door</strong>: write your own. Pick one and watch how it plays out. A kid with a guitar narrates every outcome, and he does not sugarcoat. You <em>can</em> do the bad thing. Nobody will stop you. It&rsquo;s just&hellip; a little shitty.</p>
+        <p>This is also the <strong>Create Your Own Story hub</strong> &mdash; the same game, turned around. Don&rsquo;t just play the moments below: <strong>write your own moment, give it four choices and four outcomes, and play the story you made.</strong> Your stories live on the shelf further down, ready to play as a full run of their own.</p>
+        <div class="rules" aria-hidden="true">
+          <span class="rule-chip"><b>4</b> choices on the compass</span>
+          <span class="rule-chip"><b>5th</b> &mdash; write your own</span>
+          <span class="rule-chip"><b>8</b> built-in moments, one life</span>
+          <span class="rule-chip"><b>+</b> every story you create</span>
+          <span class="rule-chip">No take-backs. Like life.</span>
+        </div>
+      </section>
+
+      <!-- ============ CREATE YOUR OWN STORY HUB ============ -->
+      <section class="hub-face" aria-labelledby="hubTitle">
+        <h2 id="hubTitle">The Create Your Own Story hub</h2>
+        <p>Four doors, one hub. <strong>Play</strong> the built-in life, <strong>create</strong> a moment of your own, <strong>build</strong> a whole story out of your moments, or open <strong>your shelf</strong> and play what you made. The box in the middle is your otherwise &mdash; type any kind of moment and get a starting idea.</p>
+        <div class="mode-grid">
+          <button class="mode-card" type="button" data-goto="playArea"><span class="mode-num">North &middot; Play</span><span class="mode-title">Play the game</span><span class="mode-desc">Eight everyday moments, four choices each, one kid with a guitar calling it like he sees it.</span></button>
+          <button class="mode-card" type="button" data-goto="creator"><span class="mode-num">South &middot; Create</span><span class="mode-title">Create a moment</span><span class="mode-desc">Write the situation, the four choices, what happens, and what the kid says about each one.</span></button>
+          <button class="mode-card" type="button" data-goto="creator"><span class="mode-num">East &middot; Build</span><span class="mode-title">Build a story</span><span class="mode-desc">Stack your moments in order &mdash; first day, big choice, fallout, ending &mdash; and they become one playable story.</span></button>
+          <button class="mode-card" type="button" data-goto="shelf"><span class="mode-num">West &middot; Yours</span><span class="mode-title">My Stories shelf</span><span class="mode-desc">Every moment you create lands here. Play one, play them all as your own life, or download the whole story.</span></button>
+        </div>
+        <div class="idea-box">
+          <h3>Need a starting idea?</h3>
+          <p>Type a place, a person, or a feeling &mdash; or just spin for one. Then take it down to the creator and make it yours.</p>
+          <div class="idea-row">
+            <input id="ideaInput" type="text" maxlength="60" autocomplete="off" placeholder="e.g. a borrowed car, a group chat, a first job&hellip;" aria-label="What kind of story moment do you want an idea for?" />
+            <button class="btn teal" id="ideaBtn" type="button">Get an idea</button>
+            <button class="btn sun" id="ideaSpinBtn" type="button">Spin one for me</button>
+          </div>
+          <p id="ideaOutput" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <div class="hud" role="status" aria-live="polite">
+        <span class="moment" id="hudMoment">Moment 1 of 8</span>
+        <span class="meter" title="Golden choices">
+          <span aria-hidden="true">&#9733;</span> Golden
+          <span class="track"><span class="fill gold" id="goldFill"></span></span>
+          <span id="goldCount">0</span>
+        </span>
+        <span class="meter" title="A little shitty choices">
+          <span aria-hidden="true">&#9785;</span> A little shitty
+          <span class="track"><span class="fill poop" id="poopFill"></span></span>
+          <span id="poopCount">0</span>
+        </span>
+        <span class="spacer"></span>
+        <button class="sound-btn" id="soundBtn" type="button" aria-pressed="true">Guitar: on</button>
+      </div>
+
+      <!-- ============ PLAY AREA ============ -->
+      <main id="playArea">
+        <section class="scenario" aria-labelledby="scTitle">
+          <span class="where" id="scWhere"></span>
+          <h2 id="scTitle"></h2>
+          <p id="scText"></p>
+        </section>
+
+        <div class="compass" id="compass" role="group" aria-label="Your four choices"></div>
+
+        <section class="fifth" aria-labelledby="fifthTitle">
+          <h3 id="fifthTitle"><span class="five">5</span>Or&hellip; pick your own</h3>
+          <p>The four on the compass aren&rsquo;t the whole world. Type what <em>you&rsquo;d</em> actually do, and the kid will react to that instead.</p>
+          <form id="customForm">
+            <input id="customInput" type="text" maxlength="90" autocomplete="off"
+              placeholder="I would&hellip;" aria-label="Write your own choice" />
+            <button class="btn" type="submit">Play it out</button>
+          </form>
+          <p class="err" id="customErr" role="alert"></p>
+        </section>
+      </main>
+
+      <!-- ============ OUTCOME STAGE ============ -->
+      <section class="stage" id="stage" hidden aria-labelledby="stageLabel">
+        <div class="screen">
+          <div class="screen-top">
+            <span class="rec" aria-hidden="true"></span>
+            <span id="stageLabel">NOW PLAYING: THE OUTCOME</span>
+            <span class="you-chose" id="youChose"></span>
+          </div>
+          <div class="scene" aria-hidden="true">
+            <div class="sun-disc"></div>
+            <div class="cloud c1"></div>
+            <div class="cloud c2"></div>
+            <div class="ground"></div>
+            <div class="bubble" id="bubble"></div>
+            <div class="stamp" id="stamp"></div>
+            <div class="kid-wrap">
+              <svg viewBox="0 0 220 190" role="img" aria-label="A kid playing guitar">
+                <g class="bob">
+                  <!-- legs -->
+                  <rect x="86" y="140" width="16" height="34" rx="7" fill="#3b5bdb" stroke="#262033" stroke-width="3"/>
+                  <rect x="118" y="140" width="16" height="34" rx="7" fill="#3b5bdb" stroke="#262033" stroke-width="3"/>
+                  <rect x="80" y="168" width="26" height="12" rx="6" fill="#ff5d47" stroke="#262033" stroke-width="3"/>
+                  <rect x="114" y="168" width="26" height="12" rx="6" fill="#ff5d47" stroke="#262033" stroke-width="3"/>
+                  <!-- body -->
+                  <rect x="82" y="86" width="56" height="62" rx="16" fill="#0e9594" stroke="#262033" stroke-width="3"/>
+                  <!-- head -->
+                  <circle cx="110" cy="52" r="30" fill="#f2b183" stroke="#262033" stroke-width="3"/>
+                  <!-- cap -->
+                  <path d="M80 46 a30 30 0 0 1 60 0 z" fill="#ff5d47" stroke="#262033" stroke-width="3"/>
+                  <rect x="128" y="40" width="30" height="9" rx="4.5" fill="#ff5d47" stroke="#262033" stroke-width="3"/>
+                  <!-- face (expressions swapped by JS) -->
+                  <circle cx="99" cy="54" r="3.4" fill="#262033"/>
+                  <circle cx="121" cy="54" r="3.4" fill="#262033"/>
+                  <path id="browL" d="M91 45 h14" stroke="#262033" stroke-width="3" stroke-linecap="round" fill="none"/>
+                  <path id="browR" d="M115 45 h14" stroke="#262033" stroke-width="3" stroke-linecap="round" fill="none"/>
+                  <path id="mouth" d="M100 66 q10 8 20 0" stroke="#262033" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+                  <!-- guitar -->
+                  <g transform="rotate(-18 118 118)">
+                    <ellipse cx="104" cy="126" rx="34" ry="27" fill="#c97b2d" stroke="#262033" stroke-width="3"/>
+                    <circle cx="108" cy="122" r="9" fill="#262033"/>
+                    <rect x="126" y="104" width="52" height="10" rx="5" fill="#8a5420" stroke="#262033" stroke-width="3"/>
+                    <rect x="172" y="101" width="14" height="16" rx="4" fill="#262033"/>
+                  </g>
+                  <!-- strumming arm -->
+                  <g class="strum-arm">
+                    <rect x="112" y="104" width="13" height="34" rx="6.5" fill="#f2b183" stroke="#262033" stroke-width="3"/>
+                  </g>
+                  <!-- holding arm -->
+                  <rect x="76" y="96" width="13" height="36" rx="6.5" transform="rotate(38 82 100)" fill="#f2b183" stroke="#262033" stroke-width="3"/>
+                  <!-- notes -->
+                  <text class="note n1" x="168" y="66" font-size="24">&#9835;</text>
+                  <text class="note n2" x="188" y="92" font-size="18">&#9834;</text>
+                  <text class="note n3" x="150" y="40" font-size="16">&#9834;</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="caption" id="caption" aria-live="polite"></div>
+        </div>
+
+        <div class="outcome-text" id="outcomeText" hidden></div>
+
+        <div class="stage-actions">
+          <button class="btn ghost" id="skipBtn" type="button">Skip the song</button>
+          <button class="btn teal" id="nextBtn" type="button" hidden>Next moment &rarr;</button>
+          <span class="dots" id="dots" aria-hidden="true"></span>
+        </div>
+      </section>
+
+      <!-- ============ END SCREEN ============ -->
+      <section class="end-card" id="endCard" hidden>
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <div class="tally" id="tally"></div>
+        <div class="recap">
+          <h3>Your life, as chosen:</h3>
+          <ul id="recapList"></ul>
+        </div>
+        <div class="end-actions">
+          <button class="btn sun" id="againBtn" type="button">Live it again</button>
+          <button class="btn teal" id="endCreateBtn" type="button">Now write your own moment</button>
+        </div>
+      </section>
+
+      <!-- ============ CREATOR STUDIO ============ -->
+      <section class="creator" id="creator" aria-labelledby="creatorTitle">
+        <h2 id="creatorTitle">Creator studio &mdash; write your own moment</h2>
+        <p>Every story here is built the same way, in four thoughts. Fill them in and your moment works exactly like the built-in ones: compass, fifth door, guitar kid, verdict stamp and all.</p>
+        <div class="steps" aria-hidden="true">
+          <div class="step"><span>1</span>The moment &mdash; what happens?</div>
+          <div class="step"><span>2</span>Four choices &mdash; N, E, S, W</div>
+          <div class="step"><span>3</span>The outcomes &mdash; how each plays out</div>
+          <div class="step"><span>4</span>The kid&rsquo;s line &mdash; the verdict</div>
+        </div>
+
+        <div class="templates">
+          <span class="tlabel">Start from:</span>
+          <button class="chip-btn" type="button" data-template="blank">Blank</button>
+          <button class="chip-btn" type="button" data-template="borrowed">The Borrowed Thing</button>
+          <button class="chip-btn" type="button" data-template="groupchat">The Group Chat Secret</button>
+          <button class="chip-btn" type="button" data-template="firstday">The First Day</button>
+        </div>
+
+        <form id="creatorForm" novalidate>
+          <div class="two-col">
+            <div class="field">
+              <label for="cTitle">Moment title</label>
+              <input id="cTitle" type="text" maxlength="60" placeholder="e.g. The Borrowed Truck" />
+            </div>
+            <div class="field">
+              <label for="cWhere">Where &amp; when</label>
+              <input id="cWhere" type="text" maxlength="60" placeholder="e.g. Your street &middot; Saturday morning" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="cText">What happens?</label>
+            <textarea id="cText" maxlength="600" placeholder="Set the scene. Who&rsquo;s involved, what&rsquo;s at stake, and why is it hard to just do the good thing?"></textarea>
+            <p class="hint">Tip: the best moments have no villain &mdash; just a person, a temptation, and nobody watching.</p>
+          </div>
+          <div id="optEditors"></div>
+          <p class="creator-msg" id="creatorMsg" role="alert"></p>
+          <div class="creator-actions">
+            <button class="btn" type="submit">Add to My Stories</button>
+            <button class="btn teal" type="button" id="createAndPlayBtn">Add &amp; play it now</button>
+            <button class="btn ghost" type="button" id="creatorResetBtn">Clear the form</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ============ MY STORIES SHELF ============ -->
+      <section class="shelf" id="shelf" aria-labelledby="shelfTitle">
+        <h2 id="shelfTitle">My Stories shelf</h2>
+        <p id="shelfEmpty">Nothing here yet. Create a moment above and it lands on this shelf &mdash; then play your own story start to finish, in the order you made it. Stories you create stay in this tab while you play; download a copy below to keep the words.</p>
+        <ul class="shelf-list" id="shelfList"></ul>
+        <div class="shelf-actions">
+          <button class="btn sun" type="button" id="playMineBtn" hidden>Play my whole story &rarr;</button>
+          <button class="btn teal" type="button" id="playBuiltInBtn" hidden>Back to the built-in game</button>
+          <button class="btn ghost" type="button" id="downloadBtn" hidden>Download my story (.txt)</button>
+        </div>
+      </section>
+
+      <p class="foot">Nothing in this game can stop you from picking anything &mdash; or from writing the moment yourself. <strong>That&rsquo;s not a bug. That&rsquo;s the whole point.</strong></p>
+    </div>
+
+    <script>
+      "use strict";
+
+      /* ================= DATA ================= */
+      var SCENARIOS = [
+        {
+          where: "The break room · 12:04 PM",
+          title: "The Last Slice",
+          text: "One slice of pizza left in the box. You&rsquo;re still hungry. Your coworker Dana hasn&rsquo;t had lunch yet &mdash; she&rsquo;s stuck on a call, and everybody in the office knows that slice has her name on it. Nobody is watching the break room.",
+          options: [
+            { dir: "N", label: "North · Leave it for Dana",
+              align: "good",
+              outcome: "Dana comes off her call, finds the slice waiting, and eats it like it&rsquo;s the best meal of her life. She doesn&rsquo;t know it was you. She doesn&rsquo;t have to.",
+              kid: ["See that?", "Nothing stopped you from eating it. You just&hellip; didn&rsquo;t.", "That&rsquo;s the whole trick. There is no trick."] },
+            { dir: "E", label: "East · Eat it. Slowly. In front of the security camera.",
+              align: "shitty",
+              outcome: "The slice is delicious. The footage is forever. Dana eats vending-machine crackers for lunch and the office tells the story for a year. You are, technically, fed. You are also, technically, the villain of a very small story.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "Nobody stopped you. That&rsquo;s the worst part. Nobody had to."] },
+            { dir: "S", label: "South · Split it down the middle",
+              align: "good",
+              outcome: "Half a slice each. Dana laughs, you laugh, and somehow half a slice shared tastes better than a whole one stolen. Science cannot explain this. Nobody cares.",
+              kid: ["Half a slice!", "You did math AND kindness.", "Somebody write that down."] },
+            { dir: "W", label: "West · Take it, then order Dana a whole pizza to her desk",
+              align: "chaotic",
+              outcome: "Chaos, but make it generous. Dana gets a full pizza with her name on the box. You get the last slice and a reputation as either a saint or a lunatic. The office never decides which.",
+              kid: ["Okay, that was&hellip; a lot.", "Weird? Yes. Shitty? No.", "Points for style."] }
+          ]
+        },
+        {
+          where: "The sidewalk · Tuesday",
+          title: "The Found Wallet",
+          text: "A wallet on the pavement. Inside: <strong>$60 in cash</strong>, a driver&rsquo;s license with an address six blocks away, and a photo of somebody&rsquo;s grandma. No one saw it fall. No one saw you pick it up.",
+          options: [
+            { dir: "N", label: "North · Walk it to the address on the license",
+              align: "good",
+              outcome: "The owner answers the door half-expecting bad news and gets the opposite. He tries to give you twenty bucks. You refuse. He insists. You refuse again. This goes on for a while. It&rsquo;s nice.",
+              kid: ["Six blocks.", "That&rsquo;s all it cost to be the good part of somebody&rsquo;s day.", "Sixty bucks richer in the way that counts."] },
+            { dir: "E", label: "East · Keep the cash, toss the wallet in a mailbox",
+              align: "shitty",
+              outcome: "You&rsquo;re $60 up. The wallet eventually gets home &mdash; emptier. Somewhere out there, a guy is telling people &lsquo;some jerk took the cash.&rsquo; He is correct. The jerk is you.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "Sixty dollars. That&rsquo;s what your good name went for."] },
+            { dir: "S", label: "South · Turn it in at the coffee shop on the corner",
+              align: "neutral",
+              outcome: "The barista puts it behind the counter with a sticky note. Honestly? It probably works out. Probably. You did a decent thing at a safe distance, which is still a decent thing.",
+              kid: ["Not heroic. Not shitty.", "Just&hellip; handled.", "The middle of the road has a lovely view, huh."] },
+            { dir: "W", label: "West · Keep the whole thing and the identity too",
+              align: "shitty",
+              outcome: "Bold move. You now own a wallet, sixty dollars, and a photo of a stranger&rsquo;s grandma who is, somehow, disappointed in you. She&rsquo;s a photograph. And yet.",
+              kid: ["The grandma photo?!", "Even the photo knows.", "That&rsquo;s not a little shitty. That&rsquo;s a lot shitty."] }
+          ]
+        },
+        {
+          where: "The grocery store · Aisle 9",
+          title: "The Extra Twenty",
+          text: "You paid with a fifty. The cashier &mdash; a tired teenager on hour seven of her shift &mdash; hands you change for a hundred. <strong>Twenty extra dollars</strong>, sitting in your palm. She hasn&rsquo;t noticed. Her register will come up short tonight, though.",
+          options: [
+            { dir: "N", label: "North · Hand it back: &lsquo;Hey, I think this is too much&rsquo;",
+              align: "good",
+              outcome: "She blinks, recounts, and exhales like you just handed her the whole evening back. &lsquo;Thank you,&rsquo; she says, &lsquo;nobody ever says anything.&rsquo; Almost nobody. Today, you did.",
+              kid: ["&lsquo;Nobody ever says anything.&rsquo;", "You said something.", "Twenty dollars of pure character."] },
+            { dir: "E", label: "East · Pocket it. The store can afford it.",
+              align: "shitty",
+              outcome: "The store can afford it. The teenager&rsquo;s register, however, comes up $20 short, and the store takes it out of <em>her</em> paycheck. You saved twenty bucks. It cost her twenty bucks. Funny how that math works.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "The store didn&rsquo;t pay for that. She did."] },
+            { dir: "S", label: "South · Leave it in the tip jar on the counter",
+              align: "chaotic",
+              outcome: "A philosophical donation. The money goes back into the store&rsquo;s ecosystem, the jar gets a mysterious blessing, and you walk out having laundered your conscience in the most confusing way possible.",
+              kid: ["The tip jar?!", "That&rsquo;s not how any of this works.", "And yet&hellip; nobody got hurt. Wild."] },
+            { dir: "W", label: "West · Say nothing, feel weird about it for six years",
+              align: "neutral",
+              outcome: "You keep the twenty. You also keep the memory, which surfaces at 3 AM roughly once a year, forever. Interest on a guilty conscience compounds at a brutal rate.",
+              kid: ["Six years of 3 AM.", "Twenty bucks, paid in installments of regret.", "You could&rsquo;ve just&hellip; handed it back."] }
+          ]
+        },
+        {
+          where: "Downtown · Rush hour",
+          title: "The Parking Spot",
+          text: "A car ahead of you has its blinker on, patiently waiting for a spot to open up. The spot frees up &mdash; and from your angle, you could slide right in first. <strong>Totally legal. Totally doable.</strong> The other driver is making eye contact with you right now.",
+          options: [
+            { dir: "N", label: "North · Wave them in. It&rsquo;s their spot.",
+              align: "good",
+              outcome: "They wave back with the universal two-finger steering-wheel salute of gratitude. You circle the block one more time and find an even better spot. The universe does this sometimes. Not always. Sometimes.",
+              kid: ["The little wave!", "That&rsquo;s the currency.", "You spent thirty seconds and bought a stranger&rsquo;s whole mood."] },
+            { dir: "E", label: "East · Take the spot. You snooze, you lose.",
+              align: "shitty",
+              outcome: "You park. They stare. You perform the world&rsquo;s most dedicated study of your own dashboard until they drive off. You got the spot. You also get to sit in it, marinating.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "Enjoy the spot. It comes with a guy thinking about you forever."] },
+            { dir: "S", label: "South · Take it, then leave a note: &lsquo;Sorry. Rough day.&rsquo;",
+              align: "neutral",
+              outcome: "The note does not give them their spot back. But it does make you the most polite spot-thief in the city&rsquo;s history, and the driver keeps the note because honestly, it&rsquo;s the first apology a windshield has ever received.",
+              kid: ["An apology note.", "For a crime you committed on purpose.", "Half credit. Weird half, but half."] },
+            { dir: "W", label: "West · Back up slowly and let fate decide",
+              align: "chaotic",
+              outcome: "You create a diplomatic incident involving three cars, a bus, and one extremely confused cyclist. The original driver gets the spot. You get a story. Traffic gets a new legend.",
+              kid: ["You chose chaos and traffic chose back.", "Everybody lived. Barely.", "The cyclist sends his regards."] }
+          ]
+        },
+        {
+          where: "Marcus&rsquo;s porch · Saturday",
+          title: "The Terrible Haircut",
+          text: "Your friend Marcus cut his own hair. It is&hellip; a situation. There are visible layers. He turns to you, hopeful, scissors still in hand: <strong>&ldquo;Be honest. How does it look?&rdquo;</strong>",
+          options: [
+            { dir: "N", label: "North · Honest, but kind: &lsquo;The back needs help. I&rsquo;ll fix it.&rsquo;",
+              align: "good",
+              outcome: "Twenty minutes, one YouTube tutorial, and two friends laughing in a bathroom mirror later, the haircut is genuinely fine. Honesty didn&rsquo;t hurt him. It handed him a mirror and a hand.",
+              kid: ["Truth, with a ladder down.", "That&rsquo;s how you tell it.", "He asked for honest. You gave him honest AND help."] },
+            { dir: "E", label: "East · &lsquo;It&rsquo;s giving haunted scarecrow, my guy.&rsquo;",
+              align: "shitty",
+              outcome: "Technically honest. Spiritually a drive-by. Marcus wears a hat for three weeks and brings the comment up at his wedding, years later, in the speech. Everybody laughs. He does not.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "Honest is not the same as kind. You knew that."] },
+            { dir: "S", label: "South · &lsquo;It looks GREAT&rsquo; (it does not look great)",
+              align: "neutral",
+              outcome: "Marcus struts into his date that night radiating confidence and catastrophic hair. The date goes&hellip; fine? Confidence is a powerful drug. You will take this lie to your grave, and it will be a kind grave.",
+              kid: ["A lie, but a load-bearing lie.", "He felt good. That counts for something.", "Not my favorite. Not the worst."] },
+            { dir: "W", label: "West · Shave your own head in solidarity",
+              align: "chaotic",
+              outcome: "You are both bald now. The bond is unbreakable. The photos are unspeakable. In forty years, this is the picture his grandkids will ask about, and he will laugh until he cries.",
+              kid: ["SOLIDARITY BALD.", "Unhinged. Beautiful.", "This is what friendship actually is, I think."] }
+          ]
+        },
+        {
+          where: "The group project · Due tomorrow",
+          title: "The Teammate Who Vanished",
+          text: "Group project, four people, due tomorrow. Three of you did the work. <strong>Jay did nothing</strong> &mdash; not one slide &mdash; and just texted the group chat: &lsquo;lol we good?&rsquo; The professor lets the group decide whose names go on the cover.",
+          options: [
+            { dir: "N", label: "North · Leave Jay&rsquo;s name on, but tell the professor the truth privately",
+              align: "neutral",
+              outcome: "Jay passes. The professor knows. Jay knows the professor knows. It&rsquo;s a quiet, honest outcome with no explosion &mdash; just a record, correct and on the books, where the right person can see it.",
+              kid: ["No explosion. Just the truth, filed.", "Grown-up move.", "A little mercy, a little record. Balanced."] },
+            { dir: "E", label: "East · Take Jay&rsquo;s name off. No warning. Due at midnight.",
+              align: "shitty",
+              outcome: "Jay fails the assignment and finds out from the grade portal. Did Jay earn it? Mostly. Did you enjoy it a little? Also mostly. That second part is the part that follows you home.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "He earned a consequence. You skipped the conversation."] },
+            { dir: "S", label: "South · Text Jay: &lsquo;You have 2 hours to do the conclusion slide&rsquo;",
+              align: "good",
+              outcome: "Jay panics, produces a genuinely decent conclusion slide, and apologizes with snacks. He did the least possible work at the last possible second &mdash; but he did it, because somebody handed him a door instead of a wall.",
+              kid: ["A door instead of a wall.", "Two hours. One slide. One lesson.", "That&rsquo;s teaching. You just taught."] },
+            { dir: "W", label: "West · Do Jay&rsquo;s part yourself and say nothing, forever",
+              align: "neutral",
+              outcome: "The project gets an A. You get a quiet, simmering martyrdom you will nurse for years. Jay gets an A too, and learns exactly one lesson: that this works. It will work again. On someone else. Because of you.",
+              kid: ["Martyr math never adds up.", "You taught him it works.", "Kind to Jay. Shitty to the next group. Think about it."] }
+          ]
+        },
+        {
+          where: "Your doorstep · This morning",
+          title: "The Wrong Package",
+          text: "A package lands on your porch with your neighbor&rsquo;s address on it &mdash; the nice headphones, the expensive ones, the ones you&rsquo;ve had in an online cart for months. The delivery photo is blurry. <strong>No signature. No witness.</strong> Just you, the box, and the tape.",
+          options: [
+            { dir: "N", label: "North · Walk it over to your neighbor, unopened",
+              align: "good",
+              outcome: "Your neighbor opens the door, sees the box, and says the sentence you will remember for years: &lsquo;People don&rsquo;t do this anymore.&rsquo; You walk home a little taller. The porch feels different now. So does the street.",
+              kid: ["&lsquo;People don&rsquo;t do this anymore.&rsquo;", "You do.", "Walk tall, neighbor."] },
+            { dir: "E", label: "East · Keep them. The universe delivered.",
+              align: "shitty",
+              outcome: "The headphones sound incredible. Every song is crystal clear, including the quiet part of your conscience going &lsquo;hey.&rsquo; You will hear that part in high fidelity for the rest of the headphones&rsquo; natural life.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "Great sound quality on that guilt, though."] },
+            { dir: "S", label: "South · Leave it on their porch with no note, like a headphone fairy",
+              align: "good",
+              outcome: "Your neighbor never learns how the box got there. They post in the neighborhood group: &lsquo;Package appeared?? Faith in humanity restored.&rsquo; You read it, sip your coffee, and say nothing. Perfect crime, except the crime is kindness.",
+              kid: ["The Headphone Fairy.", "Anonymous good is still good.", "Better, maybe. Nobody&rsquo;s performing."] },
+            { dir: "W", label: "West · Open it, try them once, then deliver it &lsquo;as found&rsquo;",
+              align: "shitty",
+              outcome: "One little listen. Harmless, right? Except the neighbor pairs them and sees a device already named &lsquo;MY PHONE lol&rsquo; in the Bluetooth list, and now there is a neighborhood mystery with exactly one suspect.",
+              kid: ["&lsquo;MY PHONE lol.&rsquo;", "You named the evidence.", "That&rsquo;s a little shitty AND a little sloppy."] }
+          ]
+        },
+        {
+          where: "The office · Friday, 4:58 PM",
+          title: "The Credit",
+          text: "Last moment, biggest one. The big idea that saved the project was <strong>Priya&rsquo;s</strong> &mdash; you were there when she said it. But in the meeting, the boss turned to <em>you</em> and said, &lsquo;Great idea.&rsquo; Everyone is packing up. Priya is looking at you. The promotion talk is Monday.",
+          options: [
+            { dir: "N", label: "North · Speak up, right now: &lsquo;That was Priya&rsquo;s idea.&rsquo;",
+              align: "good",
+              outcome: "Five words. The room recalibrates. Priya gets her moment, the boss gets the truth, and on Monday the promotion talk includes the right name. You lose nothing real. You were never owed a thing that wasn&rsquo;t yours.",
+              kid: ["Five words.", "&lsquo;That was Priya&rsquo;s idea.&rsquo;", "That&rsquo;s the whole game, right there."] },
+            { dir: "E", label: "East · Smile. Nod. Take the credit.",
+              align: "shitty",
+              outcome: "You get the praise, the visibility, maybe the promotion. Priya gets to watch it happen in real time and recalibrate exactly how much she trusts you &mdash; to zero, permanently, and she tells people why. Promotions end. Reputations compound.",
+              kid: ["Well&hellip;", "That&rsquo;s a little shitty.", "The biggest moment. The smallest move.", "Nothing stopped you from those five words."] },
+            { dir: "S", label: "South · Say nothing now, email the boss the truth tonight",
+              align: "neutral",
+              outcome: "The email works. Priya gets credited, quietly, in writing, where it counts. She never knows you almost didn&rsquo;t. You know. But you did &mdash; late is a lot better than never, and the record is right.",
+              kid: ["Late, but written down.", "The record is right.", "Next time, try the five words out loud."] },
+            { dir: "W", label: "West · Split it: &lsquo;Priya and I worked it out together&rsquo;",
+              align: "neutral",
+              outcome: "A diplomatic fiction. Priya gets half of what&rsquo;s hers, you keep half of what isn&rsquo;t, and everyone senses the wobble without naming it. It&rsquo;s better than theft. It&rsquo;s worse than the truth. You will think about the ratio for a while.",
+              kid: ["Half of hers. Half of not-yours.", "Better than stealing. Worse than truth.", "You did the math on a person. Hmm."] }
+          ]
+        }
+      ];
+
+      /* Custom-choice reaction lines, picked by a light word-sniff.
+         The kid is guessing, and he says so — it's a game, not a mind reader. */
+      var CUSTOM_REACTIONS = {
+        good: {
+          stamp: "OFF-SCRIPT · GOLDEN", cls: "wild",
+          outcome: "You wrote that one yourself &mdash; no compass, no menu. And look at it: it&rsquo;s a good one. The fifth door is the whole point. Anybody can pick from a list. You brought your own answer and it held up.",
+          kid: ["You wrote that yourself?!", "Off the menu. Off the charts.", "That&rsquo;s the fifth door working as designed."]
+        },
+        shitty: {
+          stamp: "OFF-SCRIPT · A LITTLE SHITTY", cls: "bad",
+          outcome: "Nobody offered you that one. You invented it, all on your own, in the free space where nobody was watching &mdash; and that&rsquo;s where it counts most. It&rsquo;s still a little shitty. Maybe more impressive that way. Definitely more yours.",
+          kid: ["You came up with that YOURSELF?", "Nobody even suggested it!", "That&rsquo;s a little shitty. Artisanal shitty. Handmade."]
+        },
+        wild: {
+          stamp: "OFF-SCRIPT · WILD CARD", cls: "wild",
+          outcome: "The kid reads your answer twice. It is not on any compass. It may not be legal in every state of mind. But it&rsquo;s yours &mdash; the fifth choice, the one standing outside the four, doing whatever it wants. The game bows to it.",
+          kid: ["&hellip;I have no slide for this.", "You broke the compass. Respect.", "The fifth one always wins. That&rsquo;s the rule."]
+        }
+      };
+
+      /* ================= STATE ================= */
+      var PLAYLIST = null; /* set to SCENARIOS below, or to the player's own stories */
+      var idx = 0;
+      var tally = { good: 0, neutral: 0, shitty: 0, chaotic: 0, custom: 0 };
+      var historyLog = [];
+      var timers = [];
+      var soundOn = true;
+      var audioCtx = null;
+
+      var $ = function (id) { return document.getElementById(id); };
+      /* Labels carry HTML entities for the innerHTML paths; decode them for
+         the textContent / aria-label paths so nothing reads "&rsquo;" aloud. */
+      function decode(s) { var t = document.createElement("textarea"); t.innerHTML = s; return t.value; }
+      var playArea = $("playArea"), stage = $("stage"), endCard = $("endCard");
+
+      function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+      function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+      /* ================= SOUND (tiny guitar plucks) ================= */
+      function strum(bright) {
+        if (!soundOn) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          var notes = bright ? [329.63, 392.0, 493.88, 587.33] : [220.0, 261.63, 329.63, 392.0];
+          var t = audioCtx.currentTime;
+          notes.forEach(function (f, i) {
+            var o = audioCtx.createOscillator(), g = audioCtx.createGain(), fl = audioCtx.createBiquadFilter();
+            o.type = "triangle"; o.frequency.value = f;
+            fl.type = "lowpass"; fl.frequency.value = 2400;
+            g.gain.setValueAtTime(0.0001, t + i * 0.07);
+            g.gain.exponentialRampToValueAtTime(0.16, t + i * 0.07 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.7);
+            o.connect(fl); fl.connect(g); g.connect(audioCtx.destination);
+            o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.75);
+          });
+        } catch (e) { /* sound is a bonus, never a blocker */ }
+      }
+
+      /* ================= RENDER SCENARIO ================= */
+      var DIRCLASS = { N: "dir-n", E: "dir-e", S: "dir-s", W: "dir-w" };
+      var POSCLASS = { N: "pos-n", E: "pos-e", S: "pos-s", W: "pos-w" };
+
+      function renderScenario() {
+        var sc = PLAYLIST[idx];
+        $("hudMoment").textContent = "Moment " + (idx + 1) + " of " + PLAYLIST.length;
+        $("scWhere").textContent = sc.where;
+        $("scTitle").textContent = sc.title;
+        $("scText").innerHTML = sc.text;
+
+        var compass = $("compass");
+        compass.innerHTML = "";
+        sc.options.forEach(function (opt) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "choice " + POSCLASS[opt.dir];
+          b.innerHTML = '<span class="dir ' + DIRCLASS[opt.dir] + '">' + opt.dir + "</span><span>" + opt.label.replace(/^[^·]+·\s*/, "") + "</span>";
+          b.setAttribute("aria-label", decode(opt.label));
+          b.addEventListener("click", function () { choose(opt, false); });
+          compass.appendChild(b);
+        });
+        var hub = document.createElement("div");
+        hub.className = "hub";
+        hub.setAttribute("aria-hidden", "true");
+        hub.innerHTML =
+          '<svg class="top-spin" viewBox="0 0 60 60"><polygon points="30,4 52,26 8,26" fill="#ffc53d" stroke="#262033" stroke-width="3"/><polygon points="30,56 20,26 40,26" fill="#ff5d47" stroke="#262033" stroke-width="3"/><circle cx="30" cy="26" r="4.5" fill="#262033"/></svg>' +
+          "<span>You choose</span>";
+        compass.appendChild(hub);
+
+        $("customInput").value = "";
+        $("customErr").textContent = "";
+        playArea.hidden = false;
+        stage.hidden = true;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* ================= CHOOSE ================= */
+      function choose(opt, isCustom) {
+        clearTimers();
+        var sc = PLAYLIST[idx];
+        tally[opt.align] = (tally[opt.align] || 0) + 1;
+        if (isCustom) tally.custom += 1;
+        historyLog.push({ title: sc.title, choice: opt.label, align: opt.align, custom: isCustom });
+        updateHud();
+
+        playArea.hidden = true;
+        endCard.hidden = true;
+        stage.hidden = false;
+        $("outcomeText").hidden = true;
+        $("nextBtn").hidden = true;
+        $("skipBtn").hidden = false;
+        $("youChose").textContent = "You chose: " + decode(opt.label.replace(/^[^·]+·\s*/, ""));
+
+        var stamp = $("stamp");
+        var stampMap = {
+          good:    { t: "GOLDEN", cls: "" },
+          neutral: { t: "FAIR ENOUGH", cls: "mid" },
+          shitty:  { t: "A LITTLE SHITTY", cls: "bad" },
+          chaotic: { t: "WILD CARD", cls: "wild" }
+        };
+        var s = opt.stamp ? { t: opt.stamp, cls: opt.cls || "" } : stampMap[opt.align];
+        stamp.textContent = s.t;
+        stamp.className = "stamp " + s.cls;
+
+        setFace(opt.align);
+        playLines(opt);
+        strum(opt.align === "good" || opt.align === "chaotic");
+        stage.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function setFace(align) {
+        var mouth = $("mouth"), browL = $("browL"), browR = $("browR");
+        if (align === "good") {
+          mouth.setAttribute("d", "M99 64 q11 10 22 0");
+          browL.setAttribute("d", "M91 44 q7 -4 14 0");
+          browR.setAttribute("d", "M115 44 q7 -4 14 0");
+        } else if (align === "shitty") {
+          mouth.setAttribute("d", "M100 69 h20");
+          browL.setAttribute("d", "M91 42 l14 4");
+          browR.setAttribute("d", "M115 46 l14 -4");
+        } else if (align === "chaotic") {
+          mouth.setAttribute("d", "M102 64 a8 8 0 1 0 16 0 a8 8 0 1 0 -16 0");
+          browL.setAttribute("d", "M91 41 h14");
+          browR.setAttribute("d", "M115 41 h14");
+        } else {
+          mouth.setAttribute("d", "M101 67 q9 3 18 0");
+          browL.setAttribute("d", "M91 44 h14");
+          browR.setAttribute("d", "M115 42 h14");
+        }
+      }
+
+      function playLines(opt) {
+        var bubble = $("bubble"), caption = $("caption"), dots = $("dots");
+        dots.innerHTML = "";
+        opt.kid.forEach(function () {
+          var d = document.createElement("i");
+          dots.appendChild(d);
+        });
+        var dotEls = dots.querySelectorAll("i");
+        bubble.textContent = "\u2026";
+        caption.textContent = "[ guitar strumming ]";
+
+        opt.kid.forEach(function (line, i) {
+          later(function () {
+            bubble.innerHTML = line;
+            bubble.classList.remove("pop"); void bubble.offsetWidth; bubble.classList.add("pop");
+            caption.innerHTML = "KID (playing guitar): \u201C" + line.replace(/&[a-z]+;/g, function (m) {
+              return { "&hellip;": "\u2026", "&lsquo;": "\u2018", "&rsquo;": "\u2019", "&ldquo;": "\u201C", "&rdquo;": "\u201D", "&mdash;": "\u2014" }[m] || m;
+            }) + "\u201D";
+            dotEls.forEach(function (d, j) { d.className = j <= i ? "on" : ""; });
+            if (i > 0) strum(opt.align === "good" || opt.align === "chaotic");
+            if (i === opt.kid.length - 1) finishOutcome(opt);
+          }, 350 + i * 2100);
+        });
+      }
+
+      function finishOutcome(opt) {
+        $("stamp").classList.add("show");
+        var ot = $("outcomeText");
+        ot.innerHTML = opt.outcome + '<p class="kid-says">The kid keeps playing. The moment is over. It went how it went &mdash; because you chose it.</p>';
+        ot.hidden = false;
+        $("skipBtn").hidden = true;
+        var nb = $("nextBtn");
+        nb.textContent = idx === PLAYLIST.length - 1 ? "See how your life went \u2192" : "Next moment \u2192";
+        nb.hidden = false;
+      }
+
+      /* ================= HUD ================= */
+      function updateHud() {
+        var total = PLAYLIST.length;
+        $("goldCount").textContent = tally.good;
+        $("poopCount").textContent = tally.shitty;
+        $("goldFill").style.width = (tally.good / total * 100) + "%";
+        $("poopFill").style.width = (tally.shitty / total * 100) + "%";
+      }
+
+      /* ================= CUSTOM (THE FIFTH) ================= */
+      function sniffCustom(text) {
+        var t = " " + text.toLowerCase() + " ";
+        var bad = [" steal ", " keep it", " keep the", " lie ", " lied", " blame", " take the credit", " take it", " pocket", " cheat", " frame", " snitch on", " rat out", " ditch", " ghost", " ignore", " pretend", " never tell", " say nothing and keep", " blackmail", " sell it", " pawn"];
+        var good = [" give", " return", " tell the truth", " tell her", " tell him", " tell them", " help", " share", " split", " apologize", " apologise", " pay", " fix", " confess", " admit", " be honest", " honest", " take it back", " walk it", " deliver", " hand it", " own up", " speak up", " stand up"];
+        var score = 0;
+        bad.forEach(function (w) { if (t.indexOf(w) > -1) score -= 1; });
+        good.forEach(function (w) { if (t.indexOf(w) > -1) score += 1; });
+        if (score < 0) return "shitty";
+        if (score > 0) return "good";
+        return "wild";
+      }
+
+      $("customForm").addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var val = $("customInput").value.trim();
+        if (val.length < 3) {
+          $("customErr").textContent = "The fifth door needs an actual answer. Type what you'd really do.";
+          $("customInput").focus();
+          return;
+        }
+        var verdict = sniffCustom(val);
+        var r = CUSTOM_REACTIONS[verdict];
+        choose({
+          dir: "5",
+          label: "Your own: \u201C" + val + "\u201D",
+          align: verdict === "wild" ? "chaotic" : verdict,
+          stamp: r.stamp, cls: r.cls,
+          outcome: r.outcome, kid: r.kid
+        }, true);
+      });
+
+      /* ================= STAGE CONTROLS ================= */
+      $("skipBtn").addEventListener("click", function () {
+        clearTimers();
+        var last = historyLog[historyLog.length - 1];
+        /* Rebuild the current option from the scenario or the custom reaction */
+        var current = currentOpt;
+        if (current) {
+          $("bubble").innerHTML = current.kid[current.kid.length - 1];
+          $("caption").textContent = "";
+          var dotEls = $("dots").querySelectorAll("i");
+          dotEls.forEach(function (d) { d.className = "on"; });
+          finishOutcome(current);
+        }
+      });
+      var currentOpt = null;
+      var origChoose = choose;
+      choose = function (opt, isCustom) { currentOpt = opt; origChoose(opt, isCustom); };
+
+      $("nextBtn").addEventListener("click", function () {
+        clearTimers();
+        idx += 1;
+        if (idx >= PLAYLIST.length) { showEnd(); }
+        else { renderScenario(); }
+      });
+
+      $("soundBtn").addEventListener("click", function () {
+        soundOn = !soundOn;
+        this.textContent = soundOn ? "Guitar: on" : "Guitar: off";
+        this.setAttribute("aria-pressed", soundOn ? "true" : "false");
+        if (soundOn) strum(true);
+      });
+
+      /* ================= END SCREEN ================= */
+      function showEnd() {
+        stage.hidden = true;
+        playArea.hidden = true;
+        endCard.hidden = false;
+        $("hudMoment").textContent = "One life, lived";
+
+        var g = tally.good, s = tally.shitty, n = tally.neutral, c = tally.chaotic;
+        var title, text;
+        if (s === 0 && g >= 5) {
+          title = "Certified Golden";
+          text = "Not one little-shitty call in the whole run. The kid is almost suspicious. Almost. <strong>Nothing stopped you from doing the bad thing &mdash; you just kept not doing it.</strong> That&rsquo;s not luck. That&rsquo;s a pattern, and patterns are who we are.";
+        } else if (s === 0) {
+          title = "Clean Hands, Interesting Life";
+          text = "Zero little-shitty choices, and you still found the wild doors. <strong>You proved the game&rsquo;s whole point: the good thing was never locked.</strong> It was just one of five doors, and you kept walking through it.";
+        } else if (g > s && s <= 2) {
+          title = "Mostly Golden, Slightly Shitty";
+          text = "A good life with a couple of smudges on it &mdash; which is to say, a life. The kid&rsquo;s verdict: <strong>the smudges were choices, not accidents, and you know exactly which ones they were.</strong> That knowing is worth more than a clean record you never tested.";
+        } else if (g >= s) {
+          title = "A Real Mixed Bag";
+          text = "Good calls, bad calls, wild calls &mdash; a genuine human distribution. The kid shrugs and keeps strumming: <strong>nobody&rsquo;s life adds up clean. The question was never whether you&rsquo;d mess up. It&rsquo;s whether you noticed.</strong> You&rsquo;re here, reading this. You noticed.";
+        } else if (s >= 5) {
+          title = "A Little Shitty, Repeatedly";
+          text = "Okay. Wow. The kid has played the same three chords so many times his fingers hurt. <strong>Nothing stopped you &mdash; that was the deal &mdash; and you spent the freedom like it was on sale.</strong> The good news: every one of those moments is over, and the next one hasn&rsquo;t happened yet. That&rsquo;s always the good news.";
+        } else {
+          title = "Shitty-Leaning, Self-Aware";
+          text = "More little-shitty than golden &mdash; but you played the whole game and read every verdict, which the truly committed villains never do. <strong>The door to the good thing is still exactly where it always was: unlocked, unguarded, yours.</strong>";
+        }
+        $("endTitle").textContent = title;
+        $("endText").innerHTML = text;
+
+        var rows = [
+          { n: g, label: "Golden", cls: "" },
+          { n: n, label: "Fair enough", cls: "" },
+          { n: c, label: "Wild card", cls: "" },
+          { n: s, label: "A little shitty", cls: "" },
+          { n: tally.custom, label: "Wrote your own", cls: "" }
+        ];
+        $("tally").innerHTML = rows.map(function (r) {
+          return '<div class="t"><span class="num">' + r.n + "</span>" + r.label + "</div>";
+        }).join("");
+
+        var tagMap = { good: ["GOLDEN", "g"], neutral: ["FAIR", "m"], shitty: ["A LITTLE SHITTY", "b"], chaotic: ["WILD", "w"] };
+        $("recapList").innerHTML = historyLog.map(function (h) {
+          var t = tagMap[h.align];
+          return "<li><b>" + h.title + "</b> &mdash; " + h.choice.replace(/^[^·]+·\s*/, "") +
+            ' <span class="tag ' + t[1] + '">' + t[0] + "</span></li>";
+        }).join("");
+
+        renderShelf();
+        endCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        strum(g >= s);
+      }
+
+      $("againBtn").addEventListener("click", function () {
+        idx = 0;
+        tally = { good: 0, neutral: 0, shitty: 0, chaotic: 0, custom: 0 };
+        historyLog = [];
+        currentOpt = null;
+        updateHud();
+        endCard.hidden = true;
+        renderScenario();
+      });
+
+      /* ================= CREATE YOUR OWN STORY HUB ================= */
+      var userStories = [];
+      var DIRS = [
+        { dir: "N", name: "North", cls: "dir-n" },
+        { dir: "E", name: "East", cls: "dir-e" },
+        { dir: "S", name: "South", cls: "dir-s" },
+        { dir: "W", name: "West", cls: "dir-w" }
+      ];
+      var ALIGN_LABEL = { good: "Golden", neutral: "Fair enough", shitty: "A little shitty", chaotic: "Wild card" };
+
+      function esc(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      /* Build the four choice editors */
+      (function buildEditors() {
+        var wrap = $("optEditors");
+        DIRS.forEach(function (d, i) {
+          var div = document.createElement("div");
+          div.className = "opt-editor";
+          div.innerHTML =
+            '<h3><span class="dir ' + d.cls + '" style="font-family:\'Bricolage Grotesque\',sans-serif;font-weight:800;font-size:.72rem;letter-spacing:.1em;padding:2px 9px;border-radius:999px;border:2px solid var(--line);color:#262033;">' + d.dir + "</span> " + d.name + " choice</h3>" +
+            '<div class="field"><label for="optLabel' + i + '">What does the player do?</label>' +
+            '<input id="optLabel' + i + '" type="text" maxlength="110" placeholder="The choice, in a few words" /></div>' +
+            '<div class="field"><label for="optOutcome' + i + '">How does it play out?</label>' +
+            '<textarea id="optOutcome' + i + '" maxlength="500" placeholder="What happens next because they chose this?"></textarea></div>' +
+            '<div class="two-col"><div class="field"><label for="optKid' + i + '">The kid with the guitar says&hellip;</label>' +
+            '<input id="optKid' + i + '" type="text" maxlength="110" placeholder="One honest line" /></div>' +
+            '<div class="field"><label for="optAlign' + i + '">The verdict</label>' +
+            '<select id="optAlign' + i + '"><option value="good">Golden</option><option value="neutral">Fair enough</option><option value="shitty">A little shitty</option><option value="chaotic">Wild card</option></select></div></div>';
+          wrap.appendChild(div);
+        });
+        /* Sensible default verdict spread so a first story plays well out of the box */
+        $("optAlign0").value = "good"; $("optAlign1").value = "shitty";
+        $("optAlign2").value = "neutral"; $("optAlign3").value = "chaotic";
+      })();
+
+      var TEMPLATES = {
+        blank: { title: "", where: "", text: "", opts: ["", "", "", ""] },
+        borrowed: {
+          title: "The Borrowed Thing", where: "Your neighbour\u2019s porch \u00b7 Sunday",
+          text: "You borrowed your neighbour\u2019s ladder \u2014 and snapped a rung. It still works. Mostly. They\u2019re coming round this afternoon to collect it, and a new rung costs less than a takeaway.",
+          opts: ["Tell them straight and offer to pay for the repair", "Say nothing \u2014 it was probably already weak", "Fix it yourself with whatever\u2019s in the shed", "Buy them a brand-new ladder and never mention the old one"],
+          outcomes: ["They shrug, split the repair cost with you, and lend you things for years afterwards. Honesty turned out to be the cheapest option on the list.", "The rung gives way two weeks later, mid-job. Nobody is hurt, but the story of whose ladder it was gets told \u2014 and so does the part where you knew.", "Your repair holds. It also squeaks, forever, a small wooden witness to the day you chose the shed over the conversation.", "A new ladder appears and the old one quietly vanishes. Generous? Yes. Confusing? Deeply. The neighbour thinks about it more than you do."],
+          kids: ["Straight up, and it cost you almost nothing.", "Well\u2026 that\u2019s a little shitty.", "The squeak is your conscience now. It has a sound.", "A whole ladder?! Weird. Kind. Wild."]
+        },
+        groupchat: {
+          title: "The Group Chat Secret", where: "Your phone \u00b7 11:47 PM",
+          text: "In the group chat, Sam just told everyone something private about Jo \u2014 funny, juicy, and absolutely not Sam\u2019s to share. Everyone\u2019s reacting with laughing emojis. Jo is not in this chat. Jo would be crushed.",
+          opts: ["Say in the chat: \u2018That\u2019s Jo\u2019s business, not ours\u2019", "Laugh along \u2014 you didn\u2019t start it", "Screenshot it and send it to Jo so they know", "Quietly leave the chat and text Jo something kind, unrelated"],
+          outcomes: ["The chat goes quiet, then moves on. Sam apologises to Jo the next day \u2014 because somebody finally said the obvious out loud.", "Jo hears about it anyway, the way everyone always does, and learns the laugh track included you.", "Jo knows \u2014 and now Jo also knows it\u2019s being passed around as entertainment, screenshot by screenshot. The truth arrived; so did the circus.", "Jo never learns it from you, and your kind text lands on a rough night. The chat keeps being the chat, just without you in the audience."],
+          kids: ["One sentence. That\u2019s all it took.", "Well\u2026 that\u2019s a little shitty.", "You delivered the news AND the popcorn.", "You left the room and did a kind thing instead. Wild, quiet, good."]
+        },
+        firstday: {
+          title: "The First Day", where: "A new job \u00b7 9:03 AM",
+          text: "First morning at a new job. The person training you takes credit, in front of the boss, for a fix you spotted in your first hour. Everyone turns to you. It\u2019s day one. Making waves is scary. So is starting as a doormat.",
+          opts: ["Speak up, easy and light: \u2018Glad that one landed \u2014 spotted it on the walkthrough\u2019", "Let it go \u2014 it\u2019s only day one", "Correct them sharply so nobody tries it again", "Say nothing now, but keep a dated note of everything from today on"],
+          outcomes: ["No drama, no doormat. The boss clocks it, the trainer recalibrates, and your first day sets the terms for all the rest.", "Day one becomes the template. Small credits keep drifting the same direction, because the first one taught everyone it could.", "You win the point and spend a month as \u2018intense.\u2019 Right on the facts; expensive on the delivery.", "Months later, when it matters, your quiet little record is the most powerful thing in the room. Patience, filed and dated."],
+          kids: ["Light voice, clear record. Pro move.", "Day one sets the price. You just set it low.", "Right facts, loud delivery. Half credit.", "A dated note. The quietest wild card there is."]
+        }
+      };
+
+      function fillTemplate(key) {
+        var t = TEMPLATES[key];
+        if (!t) return;
+        $("cTitle").value = t.title; $("cWhere").value = t.where; $("cText").value = t.text;
+        DIRS.forEach(function (d, i) {
+          $("optLabel" + i).value = t.opts ? t.opts[i] || "" : "";
+          $("optOutcome" + i).value = t.outcomes ? t.outcomes[i] || "" : "";
+          $("optKid" + i).value = t.kids ? t.kids[i] || "" : "";
+        });
+        $("creatorMsg").textContent = key === "blank" ? "" : "Template loaded \u2014 change any of it. It\u2019s yours now.";
+        $("creatorMsg").className = "creator-msg";
+      }
+      document.querySelectorAll("[data-template]").forEach(function (b) {
+        b.addEventListener("click", function () { fillTemplate(b.getAttribute("data-template")); });
+      });
+      $("creatorResetBtn").addEventListener("click", function () { fillTemplate("blank"); $("creatorMsg").textContent = ""; });
+
+      /* Idea generator — the hub's otherwise */
+      var IDEA_SEEDS = [
+        "a found phone with no lock screen and one unread message",
+        "the last seat on a bus, and two people who both need it",
+        "a friend\u2019s secret recipe they swore you to secrecy over",
+        "an umbrella in a storm, and a stranger with a baby and no cover",
+        "a winning scratch card you found in a book someone lent you",
+        "a neighbour\u2019s dog that keeps escaping into your garden",
+        "credit for a group project, a promotion, and one quiet colleague",
+        "a double-booked evening: your oldest friend, or the date of the year"
+      ];
+      function makeIdea() {
+        var seed = $("ideaInput").value.trim();
+        var base = seed || IDEA_SEEDS[Math.floor(Math.random() * IDEA_SEEDS.length)];
+        $("ideaOutput").textContent = "Your moment: " + base + ". Who\u2019s tempted, who gets hurt, and what are the four doors? Take it to the creator below.";
+        $("cText").placeholder = "Set the scene around: " + base + "\u2026";
+      }
+      $("ideaBtn").addEventListener("click", makeIdea);
+      $("ideaSpinBtn").addEventListener("click", function () { $("ideaInput").value = ""; makeIdea(); });
+      $("ideaInput").addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); makeIdea(); } });
+
+      /* Hub door cards */
+      document.querySelectorAll("[data-goto]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var el = $(b.getAttribute("data-goto"));
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+      $("endCreateBtn").addEventListener("click", function () {
+        $("creator").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      function readCreatorForm() {
+        var title = $("cTitle").value.trim(), where = $("cWhere").value.trim(), text = $("cText").value.trim();
+        if (title.length < 3) return { error: "Give your moment a title first \u2014 three letters or more." };
+        if (text.length < 20) return { error: "The moment needs a real setup \u2014 a sentence or two about what happens and what\u2019s at stake." };
+        var options = [];
+        for (var i = 0; i < 4; i++) {
+          var label = $("optLabel" + i).value.trim();
+          var outcome = $("optOutcome" + i).value.trim();
+          var kidLine = $("optKid" + i).value.trim();
+          if (label.length < 3) return { error: "The " + DIRS[i].name + " choice is empty \u2014 every door on the compass needs something behind it." };
+          if (outcome.length < 10) return { error: "The " + DIRS[i].name + " choice needs an outcome \u2014 how does it play out?" };
+          options.push({
+            dir: DIRS[i].dir,
+            label: DIRS[i].name + " \u00b7 " + esc(label),
+            align: $("optAlign" + i).value,
+            outcome: esc(outcome),
+            kid: [kidLine ? esc(kidLine) : "You wrote this one. The kid just nods and keeps playing."]
+          });
+        }
+        return { story: { where: esc(where || "Somewhere \u00b7 Sometime"), title: esc(title), text: esc(text), options: options } };
+      }
+
+      function renderShelf() {
+        var list = $("shelfList");
+        list.innerHTML = "";
+        $("shelfEmpty").hidden = userStories.length > 0;
+        $("playMineBtn").hidden = userStories.length === 0;
+        $("downloadBtn").hidden = userStories.length === 0;
+        $("playBuiltInBtn").hidden = !customRun;
+        userStories.forEach(function (story, i) {
+          var li = document.createElement("li");
+          li.className = "shelf-item";
+          var left = document.createElement("div");
+          left.innerHTML = "<strong>" + story.title + '</strong><div class="shelf-meta">' + story.where + " \u00b7 Moment " + (i + 1) + " of your story</div>";
+          var btns = document.createElement("div");
+          btns.className = "shelf-btns";
+          var play = document.createElement("button");
+          play.type = "button"; play.className = "small-btn"; play.textContent = "Play this one";
+          play.addEventListener("click", function () { startRun([story], true); });
+          var del = document.createElement("button");
+          del.type = "button"; del.className = "small-btn"; del.textContent = "Remove";
+          del.addEventListener("click", function () { userStories.splice(i, 1); renderShelf(); });
+          btns.appendChild(play); btns.appendChild(del);
+          li.appendChild(left); li.appendChild(btns);
+          list.appendChild(li);
+        });
+      }
+
+      var customRun = false;
+      function startRun(stories, isCustom) {
+        clearTimers();
+        customRun = !!isCustom;
+        PLAYLIST = isCustom ? stories.slice() : SCENARIOS;
+        idx = 0;
+        tally = { good: 0, neutral: 0, shitty: 0, chaotic: 0, custom: 0 };
+        historyLog = [];
+        currentOpt = null;
+        updateHud();
+        endCard.hidden = true;
+        renderScenario();
+        renderShelf();
+        $("playArea").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function addFromForm(playNow) {
+        var res = readCreatorForm();
+        var msg = $("creatorMsg");
+        if (res.error) { msg.textContent = res.error; msg.className = "creator-msg err"; return; }
+        userStories.push(res.story);
+        renderShelf();
+        msg.textContent = "\u201C" + decode(res.story.title) + "\u201D is on your shelf \u2014 story moment #" + userStories.length + ".";
+        msg.className = "creator-msg";
+        if (playNow) startRun([res.story], true);
+        else $("shelf").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      $("creatorForm").addEventListener("submit", function (ev) { ev.preventDefault(); addFromForm(false); });
+      $("createAndPlayBtn").addEventListener("click", function () { addFromForm(true); });
+      $("playMineBtn").addEventListener("click", function () { if (userStories.length) startRun(userStories, true); });
+      $("playBuiltInBtn").addEventListener("click", function () { startRun(SCENARIOS, false); });
+      $("downloadBtn").addEventListener("click", function () {
+        if (!userStories.length) return;
+        var lines = ["MY STORY \u2014 made in the Create Your Own Story hub", ""];
+        userStories.forEach(function (s, i) {
+          lines.push("MOMENT " + (i + 1) + ": " + decode(s.title), decode(s.where), "", decode(s.text), "");
+          s.options.forEach(function (o) {
+            lines.push("  " + decode(o.label), "    Outcome: " + decode(o.outcome), "    The kid says: \u201C" + decode(o.kid[0]) + "\u201D  [" + (ALIGN_LABEL[o.align] || o.align) + "]", "");
+          });
+        });
+        var blob = new Blob([lines.join("\n")], { type: "text/plain" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "my-story.txt";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      });
+
+      /* ================= GO ================= */
+      PLAYLIST = SCENARIOS;
+      updateHud();
+      renderScenario();
+      renderShelf();
+    </script>
+  </body>
+</html>
