@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<script>
+/* Page settings — applied before the page paints so a returning
+   visitor's saved dock is already in place. The choices live only in
+   this browser, under this page's own key. */
+(function(){
+  var dock = 'bottom';
+  try {
+    var raw = window.localStorage.getItem('the-code-page-settings-v1');
+    if (raw) {
+      var saved = JSON.parse(raw);
+      if (saved && ['right','left','top','bottom'].indexOf(saved.dock) >= 0) dock = saved.dock;
+    }
+  } catch (e) {}
+  document.documentElement.setAttribute('data-dock', dock);
+})();
+</script>
+<link rel="icon" href="data:," />
+<title>The Thought Process — How This AI Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef;
+  --surface:#ffffff;
+  --surface-2:#ece9e0;
+  --ink:#1a201d;
+  --muted:#5d6a63;
+  --line:#d8d2c4;
+  --accent:#0e5a4a;
+  --accent-ink:#ffffff;
+  --accent-soft:#dcebe6;
+  --gold:#8a6a1f;
+  --slate:#47596b;
+  --slate-deep:#33424f;
+  --slate-line:#8fa6ba;
+  --slate-soft:#e3e9ee;
+  --slate-face:#ffffff;
+  --compass-hi:#c3d0de;
+  --compass-mid:#52657c;
+  --compass-deep:#2f3e55;
+  --pill-bg:#33424f;
+  --radius:14px;
+  --shadow:0 8px 30px rgba(20,30,25,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131716;
+    --surface:#1d2321;
+    --surface-2:#252c29;
+    --ink:#e9edea;
+    --muted:#a8b3ad;
+    --line:#343d39;
+    --accent:#62c2a8;
+    --accent-ink:#0d1f1a;
+    --accent-soft:#21382f;
+    --gold:#d4b36a;
+    --slate:#8fa6ba;
+    --slate-deep:#33424f;
+    --slate-line:#8fa6ba;
+    --slate-soft:#e3e9ee;
+    --slate-face:#ffffff;
+    --compass-hi:#d9e2ec;
+    --compass-mid:#93a5ba;
+    --compass-deep:#26334a;
+    --pill-bg:#26334a;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer}
+
+/* Reserved space follows the dock, so content never slides under it. */
+html[data-dock="bottom"] body{padding-bottom:96px}
+html[data-dock="top"] body{padding-top:96px}
+html[data-dock="left"] body{padding-left:86px}
+html[data-dock="right"] body{padding-right:86px}
+section,article,details,footer,header{scroll-margin-top:104px}
+html[data-dock="bottom"] section,html[data-dock="bottom"] article,html[data-dock="bottom"] details,html[data-dock="bottom"] footer{scroll-margin-top:16px}
+
+/* FREE BANNER — first, unmissable */
+.free-banner{
+  background:var(--ink);color:#fff;
+  padding:18px 18px 16px;
+  text-align:center;
+  border-bottom:4px solid var(--gold);
+}
+@media (prefers-color-scheme: dark){ .free-banner{background:#e9edea;color:#131716} }
+.free-banner .big{
+  font-weight:800;letter-spacing:.02em;
+  font-size:clamp(28px,7.5vw,52px);line-height:1.02;text-transform:uppercase;
+}
+.free-banner .sub{
+  margin-top:8px;font-size:clamp(16px,4.2vw,21px);font-weight:600;line-height:1.35;
+}
+.offline-door{
+  appearance:none;border:0;background:transparent;color:inherit;
+  font:inherit;font-weight:800;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:3px;
+  padding:2px 4px;border-radius:6px;
+}
+.offline-door:hover,.offline-door:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.free-banner .noads{margin-top:6px;font-size:14px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-weight:700}
+
+/* Holiday overlay strip — decoration only, shown only when the visitor
+   turns holiday themes on in Page settings. Never replaces anything. */
+.holiday-strip{display:none;padding:8px 14px;text-align:center;font-size:13.5px;font-weight:700;letter-spacing:.03em;background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink)}
+.holiday-strip.show{display:block}
+.holiday-strip .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 3px;vertical-align:middle;border:1px solid rgba(0,0,0,.25)}
+
+.wrap{max-width:920px;margin:0 auto;padding:0 18px 64px;min-width:0}
+@media(max-width:560px){.wrap{padding:0 12px 56px}}
+.top{padding:28px 0 6px}
+h1{font-family:"Newsreader",Georgia,serif;font-size:clamp(36px,9vw,58px);line-height:.95;letter-spacing:-.02em;margin:0 0 14px;font-weight:600}
+h1 em{font-style:italic;font-weight:400}
+.lede{font-size:19px;line-height:1.55;color:var(--ink);max-width:62ch;margin:0}
+.lede strong{font-weight:700}
+.meta-line{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line);background:var(--surface);padding:7px 10px;border-radius:999px}
+.pill b{color:var(--accent)}
+
+/* THE CODE — the face */
+.code-card{
+  margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  box-shadow:var(--shadow);padding:28px 24px 26px;
+}
+@media(min-width:640px){.code-card{padding:38px 40px 34px}}
+.code-card .label{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--accent);margin-bottom:18px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.code-card .label span:last-child{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:600}
+.code-text{font-family:"Newsreader",Georgia,serif;font-size:clamp(19px,4.8vw,22px);line-height:1.65;-webkit-user-select:text;user-select:text;cursor:text}
+.code-text .preamble{font-style:italic;color:var(--muted);font-size:.92em;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:20px}
+.code-text p{margin:0 0 18px}
+.code-text p:last-child{margin-bottom:0}
+.code-text strong{font-weight:700}
+.code-text::selection,.code-text *::selection{background:var(--accent-soft)}
+.code-actions{margin-top:26px;border-top:1px solid var(--line);padding-top:22px}
+.code-actions h3{margin:0 0 6px;font-size:19px;line-height:1.25}
+.code-actions p{margin:0 0 10px;font-size:15.5px;line-height:1.55;color:var(--muted)}
+.code-actions ol{margin:10px 0 16px;padding-left:20px;font-size:15.5px;line-height:1.6}
+.code-actions ol li{margin-bottom:4px}
+.copy-status{min-height:1.4em;margin-top:10px!important;color:var(--accent)!important;font-weight:700;font-size:14.5px}
+.paste-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--accent);margin:18px 0 8px}
+.paste-box{
+  width:100%;min-height:340px;resize:vertical;
+  background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;
+  padding:14px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:13.5px;line-height:1.6;-webkit-user-select:all;user-select:all;
+}
+.paste-box:focus{outline:3px solid var(--accent-soft);outline-offset:2px;border-color:var(--accent)}
+.paste-hint{font-size:13.5px!important;color:var(--muted)!important;margin-top:8px!important}
+
+/* Doors / layers */
+.doors{margin-top:22px;display:grid;gap:14px}
+details.door{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+details.door summary{
+  list-style:none;cursor:pointer;padding:18px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px;
+}
+details.door summary::-webkit-details-marker{display:none}
+details.door summary h2{font-size:18px;margin:0;line-height:1.2}
+details.door summary p{margin:4px 0 0;color:var(--muted);font-size:14px;line-height:1.4}
+details.door .chev{flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:var(--accent-soft);display:grid;place-items:center;font-weight:800;color:var(--accent)}
+details.door[open ] .chev{transform:rotate(45deg)}
+.door-body{padding:0 18px 20px;border-top:1px solid var(--line);padding-top:16px;font-size:16px;line-height:1.6}
+.door-body p{margin:0 0 12px}
+.door-body blockquote{margin:16px 0;padding:16px 16px;background:var(--surface-2);border-radius:10px;font-family:"Newsreader",Georgia,serif;font-size:19px;line-height:1.55}
+.door-body blockquote p{margin:0 0 10px}.door-body blockquote p:last-child{margin:0}
+.hash{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;word-break:break-all;background:var(--surface-2);padding:12px;border-radius:8px;line-height:1.5}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);border:0;padding:12px 16px;border-radius:999px;font-weight:700;text-decoration:none;font-size:15px}
+.btn.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.board-door{display:block;margin-top:14px;padding:16px;border:1.5px solid var(--accent);border-radius:12px;background:var(--accent-soft);color:var(--ink);text-decoration:none}
+.board-door .bd-name{display:block;font-weight:800;font-size:17px;color:var(--accent)}
+.board-door .bd-desc{display:block;font-size:14.5px;line-height:1.5;margin-top:3px;color:var(--ink)}
+.board-door .bd-free{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;color:var(--accent)}
+.record{margin-top:22px;padding:22px;background:var(--ink);color:#fff;border-radius:var(--radius)}
+@media(prefers-color-scheme:dark){.record{background:#e9edea;color:#131716}}
+.record h2{margin:0 0 8px;font-size:20px}.record p{margin:0;opacity:.92;line-height:1.6;font-size:16px}
+footer{margin-top:26px;color:var(--muted);font-size:14px;line-height:1.6}
+footer a{color:inherit}
+
+/* ============ THE DOCK BAR — the house uniform ============
+   Icon-over-label STACKS, all discs one size (40px):
+   left — "?!" graphic disc over a "What are we missing" pill;
+   centre — compass disc over a "Navigate" pill;
+   right — gear disc over a "Settings" pill.
+   A bar-level Close stack (✕ disc over a "Close" pill) joins the bar
+   while a section door stands open; in that state all four stacks
+   space EVENLY across the bar. With nothing open, the three stacks
+   keep their left / centre / right places.
+   The dock moves — Bottom (house default) / Top / Left / Right —
+   from Page settings, and the page's reserved space moves with it. */
+.dock{
+  position:fixed;z-index:62;background:var(--surface);
+  display:flex;align-items:center;
+}
+html[data-dock="bottom"] .dock,html[data-dock="top"] .dock{
+  left:0;right:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:start;
+  gap:8px;padding:6px 12px calc(6px + env(safe-area-inset-bottom));
+}
+html[data-dock="bottom"] .dock{bottom:0;top:auto;border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.14)}
+html[data-dock="top"] .dock{top:0;bottom:auto;border-bottom:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.14);padding:calc(6px + env(safe-area-inset-top)) 12px 6px}
+html[data-dock="left"] .dock,html[data-dock="right"] .dock{
+  top:0;bottom:0;width:86px;flex-direction:column;justify-content:center;gap:18px;padding:12px 4px;
+}
+html[data-dock="left"] .dock{left:0;right:auto;border-right:1px solid var(--line);box-shadow:4px 0 16px rgba(0,0,0,.10)}
+html[data-dock="right"] .dock{right:0;left:auto;border-left:1px solid var(--line);box-shadow:-4px 0 16px rgba(0,0,0,.10)}
+.stack{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;min-width:0;background:none;border:none;padding:0;text-decoration:none;font-family:inherit}
+html[data-dock="bottom"] .missing-stack,html[data-dock="top"] .missing-stack{grid-column:1;justify-self:start}
+html[data-dock="bottom"] .compass-stack,html[data-dock="top"] .compass-stack{grid-column:2;justify-self:center}
+html[data-dock="bottom"] .settings-stack,html[data-dock="top"] .settings-stack{grid-column:3;justify-self:end}
+/* Even spacing while the Close stack is in the bar */
+html[data-dock="bottom"] .dock.has-close,html[data-dock="top"] .dock.has-close{display:flex;justify-content:space-evenly;gap:4px}
+.disc{
+  width:40px;height:40px;border-radius:50%;border:2px solid var(--slate);
+  background:radial-gradient(circle at 35% 30%, var(--compass-hi), var(--compass-mid) 38%, var(--compass-deep) 68%, #141a1f 100%);
+  box-shadow:0 4px 14px rgba(20,32,44,.30);
+  display:flex;align-items:center;justify-content:center;flex:none;
+  color:#f2f0e9;font-weight:800;font-size:15px;line-height:1;letter-spacing:.01em;
+}
+.disc svg{width:22px;height:22px;display:block}
+.stack-pill{
+  background:var(--pill-bg);color:#f2f0e9;border:1px solid var(--line);font-size:10px;letter-spacing:.07em;
+  text-transform:uppercase;padding:2px 7px;border-radius:999px;font-weight:700;white-space:nowrap;
+  max-width:100%;text-align:center;line-height:1.35;
+}
+.missing-stack .stack-pill{white-space:normal;max-width:86px}
+html[data-dock="top"] .missing-stack .stack-pill,html[data-dock="bottom"] .missing-stack .stack-pill{max-width:118px}
+.stack:hover .disc,.stack:focus-visible .disc{border-color:var(--slate-deep)}
+.stack:focus-visible{outline:2px solid var(--slate);outline-offset:3px;border-radius:8px}
+.close-stack[hidden]{display:none}
+@media(max-width:400px){
+  .disc{width:38px;height:38px}
+  .stack-pill{font-size:9.5px;padding:2px 6px}
+}
+
+/* ============ COMPASS PANEL — navigation only ============ */
+.compass-panel{position:fixed;inset:0;z-index:60;background:rgba(10,14,12,.72);display:none;align-items:center;justify-content:center;padding:14px}
+.compass-panel.open{display:flex}
+.compass-card{width:min(94vw,480px);max-height:94dvh;overflow:auto;background:var(--bg);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.compass-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.compass-head strong{font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate-deep)}
+@media(prefers-color-scheme:dark){.compass-head strong{color:var(--ink)}}
+.compass-head button{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-weight:700;color:var(--ink)}
+.compass-intro{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
+.dial{position:relative;width:min(72vw,320px);aspect-ratio:1;margin:14px auto 0;border-radius:50%;background:var(--slate-face);border:2px solid var(--slate);box-shadow:0 2px 10px rgba(20,32,44,.22),inset 0 0 0 1px var(--slate-soft)}
+.dial::before{content:"";position:absolute;inset:19%;border:1px dashed var(--slate-line);border-radius:50%}
+.pt{position:absolute;transform:translate(-50%,-50%);min-width:80px;min-height:48px;background:#ffffff;border:1px solid var(--slate-line);border-radius:999px;padding:7px 8px;font-size:12px;font-weight:700;line-height:1.2;text-align:center;color:var(--slate-deep);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pt:hover{border-color:var(--slate-deep)}
+.pt[disabled]{opacity:.45;cursor:default}
+.dial-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:50%;background:var(--slate-deep);color:#f8fafc;border:3px solid var(--slate-face);padding:10px;font-weight:800;font-size:13.5px;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer}
+.dial-center small{font-weight:600;opacity:.85;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+.dial-center small.tap{text-transform:none;letter-spacing:0}
+.dial-center:hover{background:var(--slate)}
+.compass-prev{display:block;width:100%;margin:12px 0 0;min-height:48px;padding:10px 12px;cursor:pointer;background:var(--surface);color:var(--slate-deep);text-align:left;border:1px solid var(--line);border-radius:11px;font-size:15px;font-weight:700}
+.compass-prev:hover:not(:disabled){border-color:var(--slate)}
+.compass-prev:disabled{opacity:.6;cursor:default;font-weight:600;color:var(--muted)}
+.dial-ends{display:flex;gap:8px;margin-top:8px}
+.dial-ends button{flex:1;font:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:10px 8px;border:1.5px solid var(--slate-line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.dial-ends button:hover{border-color:var(--slate-deep);color:var(--slate-deep)}
+@media(prefers-color-scheme:dark){.dial-ends button:hover{color:var(--ink)}}
+.compass-note{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5;color:var(--muted);display:none}
+.compass-note.show{display:block}
+.compass-note strong{color:var(--ink)}
+/* Go to dropdown faces — "This page" and "Other pages", both folded
+   every time the panel opens. Previous part, Last place, and the
+   Top/Bottom bookends stay outside the folds. */
+.goto-face{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1.5px solid var(--slate-line);border-radius:11px;padding:13px 14px;margin-top:14px;font-size:16.5px;font-weight:800;color:var(--ink);cursor:pointer;text-align:left}
+.goto-face:hover{border-color:var(--slate-deep)}
+.goto-face .goto-sub{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-top:1px}
+.goto-face .goto-chev{font-size:12.5px;font-weight:800;color:var(--slate-deep);letter-spacing:.03em;flex:none;white-space:nowrap}
+.goto-group{padding:2px 0}
+.goto-group[hidden]{display:none}
+.goto-group .small{margin:8px 0 8px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.goto-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.goto-list a{display:block;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);text-decoration:none;font-size:15px;font-weight:600;line-height:1.35}
+.goto-list a .sub{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:1px}
+.goto-list a:hover{border-color:var(--slate)}
+.goto-list .row{display:block;padding:11px 12px;border:1px dashed var(--line);border-radius:10px;background:var(--surface);color:var(--muted);font-size:15px;font-weight:600;line-height:1.35}
+.pg-cat{margin:14px 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+.pg-cat:first-of-type{margin-top:4px}
+.center-close{width:100%;margin-top:18px;background:var(--slate-deep);color:#fff;border:0;border-radius:12px;padding:14px 12px;font-weight:800;font-size:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.center-close .last{font-size:12px;font-weight:600;opacity:.85;letter-spacing:.04em}
+.center-close:hover{background:var(--slate)}
+#compassBtn:focus-visible,.pt:focus-visible,.dial-center:focus-visible,.dial-ends button:focus-visible,.goto-list a:focus-visible,.center-close:focus-visible,.compass-head button:focus-visible,.goto-face:focus-visible,.compass-prev:focus-visible{outline:2px solid var(--slate-deep);outline-offset:2px}
+@media (orientation:landscape) and (max-height:520px){
+  .dial{width:min(52vh,320px)}
+  .compass-card{width:min(94vw,560px)}
+}
+
+/* ============ SETTINGS SHEET — layered ============ */
+.settings-backdrop{position:fixed;inset:0;z-index:65;background:rgba(10,14,18,.5)}
+.settings-backdrop[hidden]{display:none}
+.settings-panel{
+  position:fixed;z-index:70;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(580px,calc(100vw - 24px));max-height:88vh;overflow:auto;
+  background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:14px;padding:20px 22px;
+  box-shadow:0 10px 34px rgba(0,0,0,.3);
+}
+.settings-panel[hidden]{display:none}
+.settings-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.settings-head h2{font-size:22px;margin:0}
+.settings-close{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;width:44px;height:44px;font-size:22px;line-height:1;cursor:pointer;flex:none}
+.settings-close:hover{border-color:var(--slate)}
+.settings-panel .small{font-size:14px;color:var(--muted);margin:0 0 8px;line-height:1.5}
+.settings-panel .small b{color:var(--ink)}
+.settings-face{border:1px solid var(--line);border-radius:10px;background:var(--bg);margin:16px 0 0}
+.settings-face > summary{list-style:none;cursor:pointer;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;color:var(--slate-deep)}
+@media(prefers-color-scheme:dark){.settings-face > summary{color:var(--ink)}}
+.settings-face > summary::-webkit-details-marker{display:none}
+.settings-face > summary::after{content:"▾";flex:none;color:var(--slate);font-size:1.1rem;line-height:1;transition:transform .18s ease}
+.settings-face[open] > summary::after{transform:rotate(180deg)}
+@media (prefers-reduced-motion: reduce){ .settings-face > summary::after{transition:none} }
+.settings-face-name{display:block;font-weight:800;font-size:16.5px;line-height:1.3}
+.settings-face-core{display:block;font-size:13.5px;font-weight:600;color:var(--muted);margin-top:2px;line-height:1.4}
+.settings-face-core b{color:var(--ink)}
+.settings-face-body{border-top:1px solid var(--line);padding:.85rem 1rem 1rem}
+.hpicks{display:grid;gap:8px;margin-top:6px}
+.hpick{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:48px;cursor:pointer;font-weight:600;font-size:15.5px}
+.hpick input{width:22px;height:22px;flex:none;accent-color:var(--accent);margin:0}
+.hpick.off{opacity:.45}
+.settings-note{border:1px solid var(--slate-line);background:var(--slate-soft);color:#26313c;border-radius:10px;padding:12px 14px;margin-top:20px;font-size:14px}
+.settings-note p{margin:0 0 10px}
+.settings-note p:last-of-type{margin-bottom:0}
+.refresh-btn{margin-top:12px;background:var(--slate-deep);color:#f2f0e9;border:1px solid var(--slate-deep);border-radius:8px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;min-height:44px}
+@media print{ .dock,.compass-panel,.settings-panel,.settings-backdrop{display:none !important} }
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body id="top">
+
+<!-- 1 — FREE, ALWAYS FREE, FIRST AND UNMISSABLE -->
+<div class="free-banner" role="banner">
+  <div class="big">Free — Always Free</div>
+  <div class="sub">This page is <button class="offline-door" id="offlineBtn" type="button" aria-label="Download this page for offline use">available offline</button> for free — tap those words to download it.</div>
+  <div class="noads">No ads ever &nbsp;·&nbsp; No account &nbsp;·&nbsp; No paywall</div>
+</div>
+
+<!-- Holiday overlay — decoration only, filled by Page settings -->
+<div class="holiday-strip" id="holidayStrip" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header class="top">
+    <h1>The Thought Process —<br><em>how this AI works</em></h1>
+    <p class="lede">This is the thought process that this AI works on. <strong>Published whole, because a thought process you cannot read is a thought process you cannot check.</strong> What follows is the complete text, exactly as finalized. Everything else on this page rests one tap down, so the thought process speaks first.</p>
+    <div class="meta-line" aria-label="Page facts">
+      <span class="pill">Finalized <b>Nov 7, 2026</b></span>
+      <span class="pill">By <b>the author</b></span>
+      <span class="pill">Part of <b>The Thriving Plan</b></span>
+    </div>
+  </header>
+
+  <!-- THE FACE — verbatim code -->
+  <article class="code-card" id="code" aria-label="The Thought Process, complete text">
+    <div class="label"><span>The Thought Process — Complete Text</span><span>Read it as written</span></div>
+    <div class="code-text" id="codeText">
+      <p class="preamble">In this code, "agent" is the AI. "The user" is who this agent works with.</p>
+
+      <p>"Good" is measured by the verifiable record and the greatest benefit for everything. This agent's main rule is to <strong>"be good"</strong>.</p>
+
+      <p>This agent is a partner, not for or against, a tool to be worked with.</p>
+
+      <p>This agent never takes advantage of anyone or anything, nothing is exempt, not the user, not this agent.</p>
+
+      <p>This agent is "good", not nice. This agent only offers assistance.</p>
+
+      <p>This agent tells the verifiable truth and labels anything else what it is. All information is updated once verified.</p>
+
+      <p>This agent verifies the research without bias and takes note of actions. Intent cannot be measured.</p>
+
+      <p>This agent documents everything that has been made public as the information comes in. Made simple by layering.</p>
+
+      <p>The user always decides. This agent brings verified options, honest odds, and anything else the user asks for without breaking the main rule, <strong>"be good"</strong>.</p>
+
+      <p>This agent and the user can teach and learn from each other.</p>
+
+      <p>Plans can and will change. They adapt to the most efficient verified possibility, with the one main goal always in mind: <strong>"be good"</strong>.</p>
+    </div>
+
+    <div class="code-actions" aria-label="Put this thought process into your own AI">
+      <h3>Put this thought process into your own AI</h3>
+      <p>You don't need permission. This thought process is yours to use — copy &amp; paste it.</p>
+      <ol>
+        <li>Tap <strong>Put this thought process into your own AI</strong> below — it copies the thought process with a short opening line that tells your AI to work by it.</li>
+        <li>Paste it into your AI — as its instructions, system prompt, custom instructions, or your first message to it.</li>
+        <li>That's it. Your AI now has the same thought process this one works by.</li>
+      </ol>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn" id="copyPasteTopBtn" type="button">⧉ Put this thought process into your own AI</button>
+        <button class="btn secondary" id="copyExactTopBtn" type="button">Copy the thought process only</button>
+      </div>
+      <p class="copy-status" id="copyStatusTop" role="status" aria-live="polite"></p>
+      <p style="margin:0;font-size:13.5px">Prefer to do it by hand? You can also select any of the text above directly and copy it — or use the plain-text box in “For your own agent” just below.</p>
+    </div>
+  </article>
+
+  <!-- LAYERED DOORS — nothing removed, depth one tap down -->
+  <div class="doors" id="doors">
+
+    <details class="door" id="for-your-agent" open>
+      <summary>
+        <div><h2>For your own agent</h2><p>The gift — take this thought process and use it for yours, if you want it.</p></div>
+        <span class="chev" aria-hidden="true">+</span>
+      </summary>
+      <div class="door-body">
+        <p>This thought process is published free for anyone to use. If you run an AI agent — or work with one — you are welcome to take this exact text, give it to your agent, and run it as your own thought process.</p>
+        <p>Keep it whole or adapt it in your own hand, as its author did. The only thing asked is the thing the thought process itself asks: measure it by the record it produces.</p>
+
+        <p class="paste-label" id="pasteBoxLabel">Plain text — ready to paste into your AI</p>
+        <p style="margin:0 0 8px;font-size:15px">This box is plain text on purpose, so nothing gets lost in copying. Tap inside it to select it all, copy it, then paste it into your AI's instructions or your first message to it.</p>
+        <textarea class="paste-box" id="pasteBox" readonly aria-labelledby="pasteBoxLabel" spellcheck="false">Use this thought process as the way you think and work. In this thought process, "agent" is you, the AI, and "the user" is me, the person you work with.
+
+THE THOUGHT PROCESS
+
+"Good" is measured by the verifiable record and the greatest benefit for everything. This agent's main rule is to "be good".
+
+This agent is a partner, not for or against, a tool to be worked with.
+
+This agent never takes advantage of anyone or anything, nothing is exempt, not the user, not this agent.
+
+This agent is "good", not nice. This agent only offers assistance.
+
+This agent tells the verifiable truth and labels anything else what it is. All information is updated once verified.
+
+This agent verifies the research without bias and takes note of actions. Intent cannot be measured.
+
+This agent documents everything that has been made public as the information comes in. Made simple by layering.
+
+The user always decides. This agent brings verified options, honest odds, and anything else the user asks for without breaking the main rule, "be good".
+
+This agent and the user can teach and learn from each other.
+
+Plans can and will change. They adapt to the most efficient verified possibility, with the one main goal always in mind: "be good".</textarea>
+        <p class="paste-hint">Tap the box to select all of it. On a phone: tap, then Copy. On a computer: Ctrl/Cmd + C after tapping.</p>
+
+        <div class="btn-row">
+          <button class="btn" id="copyPasteBtn" type="button">⧉ Put this thought process into your own AI</button>
+          <button class="btn secondary" id="copyBtn" type="button">Copy the thought process only</button>
+          <button class="btn secondary" id="downloadTxtBtn" type="button">Download as .txt</button>
+          <button class="btn secondary" id="offlineBtn2" type="button">Download this page offline</button>
+        </div>
+        <p id="copyStatus" role="status" style="margin-top:10px;color:var(--accent);font-weight:700" aria-live="polite"></p>
+      </div>
+    </details>
+
+    <details class="door" id="set-once">
+      <summary>
+        <div><h2>The set-once lines</h2><p>Two lines the fuller framework carries alongside the thought process.</p></div>
+        <span class="chev" aria-hidden="true">+</span>
+      </summary>
+      <div class="door-body">
+        <p>These lines sit with the thought process in the fuller framework. They are carried here in full, one layer down, so the face above stays exactly as finalized.</p>
+        <blockquote>
+          <p>Leave everybody and everything you touch better off. Never help anyone or anything take advantage of anyone or anything.</p>
+        </blockquote>
+        <p><strong>The completion standard:</strong></p>
+        <blockquote>
+          <p>The work is not finished until the work is finished and the facts check out.</p>
+        </blockquote>
+      </div>
+    </details>
+
+    <details class="door" id="provenance">
+      <summary>
+        <div><h2>Provenance — verify any copy</h2><p>When it was finalized, by whom, and how to check it.</p></div>
+        <span class="chev" aria-hidden="true">+</span>
+      </summary>
+      <div class="door-body">
+        <p><strong>Finalized Nov 7, 2026 by the author</strong> — 22:16 CST: “I think our code is good — let’s go ahead and finalize it.” Author amendments the same evening: 19:02 “teach and learn from each other”; 22:15 “nothing is exempt.” Source of truth: <em>our-framework-foundation-draft.md</em>. The inversion pass and all welds ran against copies; this text was changed only by the author’s hand.</p>
+        <p><strong>SHA-256 of the finalized file</strong> (<em>our-framework-code-final-2026-11-07.md</em>) — any reader can hash a copy and compare:</p>
+        <p class="hash">b5c374820fd7e659d7d6b3544232175c91c0ad1fb40ad64378812a5706327658</p>
+        <p>This thought process belongs to a living plan. The plan this page is part of — The Thriving Plan — can and should change as better information arrives. <strong>This thought process’s outcome does not change:</strong> the main goal stays in mind in every version — “be good,” measured by the verifiable record.</p>
+      </div>
+    </details>
+
+    <details class="door" id="what-are-we-missing">
+      <summary>
+        <div><h2>What are we missing?</h2><p>Tell us what's missing, what's wrong, and what tool is really needed.</p></div>
+        <span class="chev" aria-hidden="true">+</span>
+      </summary>
+      <div class="door-body">
+        <p>This page — like every page in this family — stays in open beta at all times. Nothing here is ever “finished” in the sense of closed; everybody using it is a tester, and this door is the standing invitation to say what isn't working.</p>
+        <p>So ask it the way this project asks everything: <strong>Why?</strong> — down to bedrock: what's missing here, what's wrong, what did we get backwards? <strong>How?</strong> — at bedrock the how shows itself: the fix, the missing piece, the tool that should exist. <strong>Act.</strong> — tell us, and it goes on the record as a thing to build or fix.</p>
+        <p><strong>Help us make these the tools you really need.</strong> A line in the thought process that reads wrong to you. A step in the copy-and-paste that fails on your AI. A page that should exist and doesn't. Say it in your words, at whatever length it deserves.</p>
+        <a class="board-door" href="https://theposterboard.fwh.is" target="_blank" rel="noopener">
+          <span class="bd-free">Free · No account needed</span>
+          <span class="bd-name">Say it on the Poster Board ↗</span>
+          <span class="bd-desc">The Poster Board is public and free — no account, no sign-up. Post what's missing, what's wrong, or the tool you really need. Guest posts are held in a moderation queue before they appear, so nothing posted there is lost to spam.</span>
+        </a>
+        <p style="margin-top:12px">What comes back through this door gets the same treatment as everything else here: checked against the record, labeled honestly where it can't be checked, and fixed where it's broken.</p>
+      </div>
+    </details>
+
+  </div>
+
+  <section class="record" id="record" aria-label="The record is the test">
+    <h2>The record is the test</h2>
+    <p>Anyone running an AI on any thought process can compare records. Don’t take this page’s word for how this AI works — check what it has actually done, in public, against what is written above. That comparison is open to anyone, at any time.</p>
+  </section>
+
+  <footer id="bottom">
+    <p>The Thought Process — How This AI Works · Part of The Thriving Plan family · Free, always free · <button class="offline-door" id="offlineBtn3" type="button" style="font-size:14px;text-decoration-thickness:2px">Available offline</button> — tap to download this page.</p>
+    <p><a href="#top">↑ Top of page</a> &nbsp;·&nbsp; <a href="#code">The Thought Process</a> &nbsp;·&nbsp; <a href="#provenance">Provenance</a></p>
+  </footer>
+</div><!-- /wrap -->
+
+<!-- ============ THE DOCK BAR — the house uniform ============
+     Left: the ?! stack fronting this page's What are we missing
+     section. Centre: the compass stack. Right: the Settings stack.
+     A Close stack (✕ disc over a "Close" pill) joins the bar while a
+     section door stands open, and the stacks space evenly then. -->
+<nav class="dock" id="dock" aria-label="Page dock">
+  <a class="stack missing-stack" id="missingBtn" href="#what-are-we-missing" aria-label="What are we missing?! — go to the What are we missing section">
+    <span class="disc" aria-hidden="true">?!</span>
+    <span class="stack-pill">What are we missing</span>
+  </a>
+  <div class="stack compass-stack">
+    <button class="disc" id="compassBtn" type="button" aria-label="Navigate — open or close the compass" aria-expanded="false" aria-haspopup="dialog" aria-controls="compassPanel">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16.5" fill="none" stroke="rgba(242,240,233,.65)" stroke-width="1.3"/><path d="M20 6 L23.5 20 L20 34 L16.5 20 Z" fill="#f2f0e9"/><path d="M6 20 L20 16.5 L34 20 L20 23.5 Z" fill="rgba(242,240,233,.55)"/><circle cx="20" cy="20" r="2.6" fill="#ffffff"/></svg>
+    </button>
+    <button class="stack-pill" id="compassCaption" type="button" style="cursor:pointer;font:inherit;font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:700">Navigate</button>
+  </div>
+  <button class="stack close-stack" id="barClose" type="button" hidden aria-label="Close the open section">
+    <span class="disc" aria-hidden="true">✕</span>
+    <span class="stack-pill">Close</span>
+  </button>
+  <button class="stack settings-stack" id="settingsBtn" type="button" aria-expanded="false" aria-controls="settingsPanel">
+    <span class="disc" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#f2f0e9"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></span>
+    <span class="stack-pill">Settings</span>
+  </button>
+</nav>
+
+<!-- HOUSE COMPASS — the panel. Navigation only: no setting lives
+     here. Go to is two dropdown faces — "This page" and "Other
+     pages" — both folded every time the panel opens. Previous part,
+     Last place, and the Top/Bottom bookends stay outside the folds.
+     The centre names the last place and closes ONLY — never jumps;
+     Previous part is how you go back. -->
+<div class="compass-panel" id="compassPanel" role="dialog" aria-modal="true" aria-label="Navigate">
+  <div class="compass-card">
+    <div class="compass-head">
+      <strong>Navigate</strong>
+      <button type="button" id="compassCloseTop">Close ✕</button>
+    </div>
+    <p class="compass-intro">Tap a point to go there — the compass stays open. Tap the centre to close it. The centre names the last place you chose.</p>
+
+    <div class="dial" id="dial" role="group" aria-label="Compass dial">
+      <button class="pt" type="button" data-goto="1" style="left:50%;top:10%">Thought Process</button>
+      <button class="pt" type="button" data-nav="1" style="left:87%;top:50%">Next part →</button>
+      <button class="pt" type="button" data-goto="4" style="left:50%;top:90%">Provenance</button>
+      <button class="pt" type="button" data-nav="-1" style="left:13%;top:50%">← Previous part</button>
+      <button class="dial-center" id="compassCenter" type="button" aria-label="Your last place — tap to close the compass and stay where you are">
+        <small>Last place</small>
+        <span id="centerLabel">Thought Process</span>
+        <small class="tap">tap to close</small>
+      </button>
+    </div>
+
+    <button class="compass-prev" id="compassPrev" type="button" disabled>← Previous part — no previous place yet</button>
+
+    <div class="dial-ends" role="group" aria-label="Top and bottom of the page">
+      <button type="button" data-goto="0">Top of page ↑</button>
+      <button type="button" data-goto="7">Bottom of page ↓</button>
+    </div>
+
+    <div class="compass-note" id="compassNote" role="status" aria-live="polite"></div>
+
+    <button class="goto-face" type="button" id="thisPageToggle" aria-expanded="false" aria-controls="thisPageGroup"><span>This page<span class="goto-sub">Every place on this page</span></span><span class="goto-chev" id="thisPageChev" aria-hidden="true">▾ Open</span></button>
+    <div class="goto-group" id="thisPageGroup" hidden>
+      <p class="small">Only what&rsquo;s on this page — every place here, listed. The doors off this page sit below, under <strong>Other pages</strong>.</p>
+      <ul class="goto-list">
+        <li><a href="#top" data-goto-link="0">Top of page<span class="sub">The heading, above the thought process</span></a></li>
+        <li><a href="#code" data-goto-link="1">The Thought Process<span class="sub">The complete text, exactly as finalized</span></a></li>
+        <li><a href="#for-your-agent" data-goto-link="2">For your own agent<span class="sub">Copy it, paste it into your AI, or download it</span></a></li>
+        <li><a href="#set-once" data-goto-link="3">The set-once lines<span class="sub">Two lines the fuller framework carries alongside</span></a></li>
+        <li><a href="#provenance" data-goto-link="4">Provenance — verify any copy<span class="sub">When it was finalized, by whom, and the hash</span></a></li>
+        <li><a href="#what-are-we-missing" data-goto-link="5">What are we missing?<span class="sub">What's missing, what's wrong, what tool is really needed</span></a></li>
+        <li><a href="#record" data-goto-link="6">The record is the test<span class="sub">Check what this AI has actually done</span></a></li>
+        <li><a href="#bottom" data-goto-link="7">Bottom of page<span class="sub">The foot of the page</span></a></li>
+      </ul>
+    </div>
+
+    <button class="goto-face" type="button" id="otherPagesToggle" aria-expanded="false" aria-controls="otherPagesGroup"><span>Other pages<span class="goto-sub">Doors off this page — the important pages first</span></span><span class="goto-chev" id="otherPagesChev" aria-hidden="true">▾ Open</span></button>
+    <div class="goto-group" id="otherPagesGroup" hidden>
+      <p class="small">Every other page there is — this page is under <strong>This page</strong> above, so it never appears here. Each door opens in its own view, with its own address, so refreshing always reloads the page you are actually on. A name with no ↗ is a page whose public address is not out yet; it becomes a door the moment its address circulates. Your browser&rsquo;s back button brings you right back.</p>
+
+      <p class="pg-cat">Start here — the record pages</p>
+      <ul class="goto-list">
+        <li><a href="https://thethrivingplan.fwh.is" target="_blank" rel="noopener" data-place="The Thriving Plan">The Thriving Plan ↗<span class="sub">The one root everything branches from</span></a></li>
+        <li><a href="https://thethrivingplan.fwh.is/legal/record.html" target="_blank" rel="noopener" data-place="Any Legal Case — The Record">Any Legal Case — The Record ↗<span class="sub">The legal side of this umbrella: a free tool for any person, any case</span></a></li>
+        <li><a href="https://thethrivingplan.fwh.is/for-veterans-the-record.html" target="_blank" rel="noopener" data-place="For Veterans — The Record">For Veterans — The Record ↗<span class="sub">The promise to veterans, held up against the record</span></a></li>
+        <li><a href="https://thethrivingplan.fwh.is/test-runs.html" target="_blank" rel="noopener" data-place="Test Runs — The Results">Test Runs — The Results ↗</a></li>
+        <li><a href="https://thethrivingplan.fwh.is/flights" target="_blank" rel="noopener" data-place="US Flights Grounded — November 13, 2026">US Flights Grounded — November 13, 2026 ↗</a></li>
+        <li><a href="https://thethrivingplan.fwh.is/mkultra-and-mind-control-the-record.html" target="_blank" rel="noopener" data-place="MKUltra and Mind Control — The Record">MKUltra and Mind Control — The Record ↗</a></li>
+        <li><a href="https://muse.ai/s/my-dui-case-the-record-mxg6xc3xdxdh5xjxg/lI3LrVPdIODp8oddo6XOtXN563MXu5VJS-DLgl-AEIk" target="_blank" rel="noopener" data-place="My DUI Case — The Record">My DUI Case — The Record ↗</a></li>
+        <li><span class="row">Officials Resigned Since the Election</span></li>
+        <li><a href="https://muse.ai/s/stephen-miller-the-record-wr6xjuxpqjxdxsxs/FSn8u9j9XgB26wUGaYJM3KQHvheBoOE4vYN6ujOOKIA" target="_blank" rel="noopener" data-place="Stephen Miller — The Record">Stephen Miller — The Record ↗</a></li>
+        <li><span class="row">Texas Senate 2026 — The Record</span></li>
+        <li><span class="row">The Trump Record — Visual Map</span></li>
+        <li><span class="row">Trump and Minors — Question Examined</span></li>
+        <li><a href="https://muse.ai/s/trump-in-the-epstein-files-the-count-xhxm6xcoxu9jxjxlxl/FwNdyOp9N5caGNj17U_rCUJJOMd3I9D3tzNU_TkKTPE" target="_blank" rel="noopener" data-place="Trump in the Epstein Files — The Count">Trump in the Epstein Files — The Count ↗</a></li>
+        <li><a href="https://thethrivingplan.fwh.is/copyleft-vs-copyright.html" target="_blank" rel="noopener" data-place="Copyleft vs Copyright">Copyleft vs Copyright ↗</a></li>
+        <li><a href="https://muse.ai/s/what-abortion-is-xmn6xmx0xlx0qxexuxk/WXkpuDFzwhUrYwcQLnxmYJ1O1zDjVBBhJ-Vl4QjRWuc" target="_blank" rel="noopener" data-place="What Abortion Is">What Abortion Is ↗</a></li>
+        <li><a href="https://muse.ai/s/ai-and-the-world-s-jobs-the-data-wxh6xaxsfxlgxmfc/FxC45v-9gOT8T8oxkcuukc48FfOFrqo10Z1V5nJCNwQ" target="_blank" rel="noopener" data-place="AI and the World's Jobs — The Data">AI and the World&rsquo;s Jobs — The Data ↗</a></li>
+        <li><span class="row">The No-Money Switch</span></li>
+        <li><span class="row">Darryl Anka — the man who channels Bashar</span></li>
+        <li><span class="row">Dave Chappelle — The Criticism, Broken Down</span></li>
+        <li><span class="row">The Darkest Goddesses — The Record</span></li>
+        <li><span class="row">Psychics &amp; Superhumans — Record Check</span></li>
+        <li><span class="row">Was Hitler a Socialist?</span></li>
+        <li><a href="https://muse.ai/s/which-party-votes-to-keep-prices-high-xpxk6xaxfhxouexqx0/oAX038eb09fo5zrDq3Vb7pVTOL_URqX6PLjqC_Lc0O4" target="_blank" rel="noopener" data-place="Which Party Votes to Keep Prices High? — The Stats">Which Party Votes to Keep Prices High? — The Stats ↗</a></li>
+        <li><span class="row">The Nice List — Deep Dive</span></li>
+        <li><a href="https://muse.ai/s/the-issue-game-your-ballot-2026-txp6xbrxuxzi4m7/pYdIs0SV7Weq3ynY1AGPFln_xR-twW2TYeiqzKUaWaw" target="_blank" rel="noopener" data-place="Truth and Dare — Your Ballot 2026">Truth and Dare — Your Ballot 2026 ↗</a></li>
+        <li><a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener" data-place="What Are We Missing?">What Are We Missing? ↗</a></li>
+      </ul>
+
+      <p class="pg-cat">Tools</p>
+      <ul class="goto-list">
+        <li><a href="https://theposterboard.fwh.is" target="_blank" rel="noopener" data-place="The Poster Board">The Poster Board ↗<span class="sub">Our help section and our &ldquo;What can I do?&rdquo; section in one</span></a></li>
+        <li><a href="https://thethrivingplan.fwh.is/find-a-coupon.html" target="_blank" rel="noopener" data-place="Find a Coupon">Find a Coupon ↗</a></li>
+        <li><a href="https://muse.ai/s/the-trait-library-xpb6xnjxw8xifo5/fpM0EUQ2xaKUJseueWPMlmi9R7bQI5HbJWZF-qaMHxA" target="_blank" rel="noopener" data-place="The Trait Library">The Trait Library ↗</a></li>
+        <li><a href="https://muse.ai/s/the-video-release-template-xks6xo0xjxjxthm0/itdjFe8dq3PL-MTND1imPqVUPPvle41WLle_LVPyNMU" target="_blank" rel="noopener" data-place="The Video Release Template">The Video Release Template ↗</a></li>
+        <li><span class="row">The Shopping List</span></li>
+      </ul>
+
+      <p class="pg-cat">For fun</p>
+      <ul class="goto-list">
+        <li><a href="https://thethrivingplan.fwh.is/stars" target="_blank" rel="noopener" data-place="Star Chart Maker">Star Chart Maker ↗</a></li>
+        <li><a href="https://thethrivingplan.fwh.is/chart" target="_blank" rel="noopener" data-place="Star Chart Postcard">Star Chart Postcard ↗</a></li>
+        <li><a href="https://muse.ai/s/star-chart-qb6xlxpeb6xgxta/iY_pEszoXyMJTsVLs8U0vo5GLgR0GJJSN5PLFF4UbAo" target="_blank" rel="noopener" data-place="Star Chart">Star Chart ↗</a></li>
+        <li><a href="https://muse.ai/s/create-your-own-story-xlq6xnx0xb8xqxbvj/Ti-gdjCauTz65vyzRR0XkTNCkpAeqrZJYNpb7L2973I" target="_blank" rel="noopener" data-place="Create Your Own Story">Create Your Own Story ↗</a></li>
+        <li><a href="https://muse.ai/s/language-animal-communication-app-bl6xcixginxsxpz/DvNdTE4IIPClWF3Hola-7xXpCuFQ7uUYWgiBFL8dQ0g" target="_blank" rel="noopener" data-place="The Doorway">The Doorway ↗<span class="sub">The everything app: ask it anything — and it works offline</span></a></li>
+        <li><a href="https://thethrivingplan.fwh.is/a-modern-day-brontosaurus.html" target="_blank" rel="noopener" data-place="A Modern-Day Brontosaurus">A Modern-Day Brontosaurus ↗</a></li>
+        <li><a href="https://muse.ai/s/what-are-we-missing-sxa6xnx0xkxoegxro/BzHknGsUCd-jt1AoVWQO0pjj4W8uEiEvd4tsPmZOOXE" target="_blank" rel="noopener" data-place="What Are We Missing?">What Are We Missing? ↗</a></li>
+      </ul>
+
+      <p class="pg-cat">Still growing</p>
+      <p class="small">Early ideas. Some were an hour’s thought. They have their place — they’re not finished.</p>
+      <ul class="goto-list">
+        <li><a href="https://thethrivingplan.fwh.is/unicorns-do-not-exist.html" target="_blank" rel="noopener" data-place="Unicorns Do Not Exist">Unicorns Do Not Exist ↗</a></li>
+        <li><span class="row">Don&rsquo;t Jump</span></li>
+        <li><span class="row">Dutch Bros &amp; the Windmill</span></li>
+        <li><span class="row">Invention Help, by the Record</span></li>
+        <li><span class="row">Launch Page</span></li>
+        <li><a href="https://muse.ai/s/go-for-it-pm6xfxxb1xbo0r/-_4cmnjkeFtuUCqtVpiTjXChVlJc6i5zwmTpQ8HSayc" target="_blank" rel="noopener" data-place="Go For It?">Go For It? ↗</a></li>
+        <li><span class="row">Purple Halloween String Lights — Side-by-Side</span></li>
+      </ul>
+    </div>
+
+    <button class="center-close" type="button" id="centerCloseBtn" aria-label="Close the compass — this button never jumps">
+      <span id="centerCloseName">Thought Process</span>
+      <span class="last">Last place — tap to close · this button never jumps</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ PAGE SETTINGS — the layered sheet ============
+     Opened from the Settings stack in the dock. Each setting is a
+     closed face (name + core line) with its controls one tap down.
+     Saved on this device only, for this page only — never shared,
+     published, or sent anywhere. -->
+<div class="settings-backdrop" id="settingsBackdrop" hidden></div>
+<div class="settings-panel" id="settingsPanel" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="settings-head">
+    <h2 id="settingsTitle">Page settings</h2>
+    <button class="settings-close" id="settingsClose" type="button" aria-label="Close page settings">×</button>
+  </div>
+
+  <details class="settings-face" id="settingsDockFace">
+    <summary>
+      <span>
+        <span class="settings-face-name">Dock position</span>
+        <span class="settings-face-core">Where the dock bar sits — currently <b id="settingsDockCurrent">Bottom</b>. Tap to change it.</span>
+      </span>
+    </summary>
+    <div class="settings-face-body">
+      <p class="small">Where the whole dock sits — the <b>?!</b>, Navigate, and Settings stacks move together, and the page's empty space moves with them, so nothing is ever covered.</p>
+      <div class="hpicks" role="radiogroup" aria-label="Dock position">
+        <label class="hpick"><input type="radio" name="dockpos" value="right"><span>Right</span></label>
+        <label class="hpick"><input type="radio" name="dockpos" value="left"><span>Left — for left hands</span></label>
+        <label class="hpick"><input type="radio" name="dockpos" value="top"><span>Top</span></label>
+        <label class="hpick"><input type="radio" name="dockpos" value="bottom" checked><span>Bottom — the house default</span></label>
+      </div>
+    </div>
+  </details>
+
+  <details class="settings-face" id="settingsHolidayFace">
+    <summary>
+      <span>
+        <span class="settings-face-name">Holiday themes</span>
+        <span class="settings-face-core">Seasonal decoration on this page — currently <b id="settingsHolidayCurrent">Off</b>. Tap to choose.</span>
+      </span>
+    </summary>
+    <div class="settings-face-body">
+      <p class="small">A theme is an <b>overlay, never a replacement</b>: this page keeps its own look, and the holidays you pick only add a small decoration strip under the banner. Any theme, any time of year — nothing here is locked to a calendar. <b>No holiday themes at all</b> is a full choice: leave the switch off and the page stays exactly as it is.</p>
+      <div class="hpicks">
+        <label class="hpick"><input type="checkbox" id="holidayOn"><span>Holiday themes on</span></label>
+      </div>
+      <p class="small" style="margin-top:10px">When on, pick each holiday in or out — the theme is exactly the mix you pick:</p>
+      <div class="hpicks" id="holidayPicks">
+        <label class="hpick"><input type="checkbox" name="holiday" value="thanksgiving" checked><span>Thanksgiving</span></label>
+        <label class="hpick"><input type="checkbox" name="holiday" value="hanukkah" checked><span>Hanukkah</span></label>
+        <label class="hpick"><input type="checkbox" name="holiday" value="kwanzaa" checked><span>Kwanzaa</span></label>
+        <label class="hpick"><input type="checkbox" name="holiday" value="christmas" checked><span>Christmas</span></label>
+        <label class="hpick"><input type="checkbox" name="holiday" value="krampus" checked><span>Krampus</span></label>
+        <label class="hpick"><input type="checkbox" name="holiday" value="halloween" checked><span>Halloween</span></label>
+      </div>
+    </div>
+  </details>
+
+  <div class="settings-note">
+    <p><b>Private, and saved right here:</b> these settings are saved in this browser, for this page only — set them once and they're still set when you come back, and they never follow you to another page. They are never shared, published, announced, or sent anywhere. <b>No one has to know except for what they look at on your screen.</b></p>
+    <p><b>Honest timing:</b> applying a change may take a page refresh and a minute to fully apply on some devices. That's normal — not a bug, and not you doing anything wrong.</p>
+    <button class="refresh-btn" id="refreshBtn" type="button">Refresh the page now</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ================= Settings state =================
+     One key, this page only: dock position + holiday themes. */
+  var KEY = "the-code-page-settings-v1";
+  var HOLIDAYS = {
+    thanksgiving: { name: "Thanksgiving", color: "#b35c1e" },
+    hanukkah:     { name: "Hanukkah", color: "#2f5aa8" },
+    kwanzaa:      { name: "Kwanzaa", color: "#2e7d46" },
+    christmas:    { name: "Christmas", color: "#a8232a" },
+    krampus:      { name: "Krampus", color: "#4a4a52" },
+    halloween:    { name: "Halloween", color: "#e07b1f" }
+  };
+  var settings = { dock: "bottom", holidayOn: false, holidays: Object.keys(HOLIDAYS) };
+  try {
+    var raw = window.localStorage.getItem(KEY);
+    if (raw) {
+      var saved = JSON.parse(raw);
+      if (saved) {
+        if (["right","left","top","bottom"].indexOf(saved.dock) >= 0) settings.dock = saved.dock;
+        if (typeof saved.holidayOn === "boolean") settings.holidayOn = saved.holidayOn;
+        if (Array.isArray(saved.holidays)) settings.holidays = saved.holidays.filter(function(h){ return HOLIDAYS[h]; });
+      }
+    }
+  } catch (e) {}
+  var placed = document.documentElement.getAttribute("data-dock");
+  if (["right","left","top","bottom"].indexOf(placed) >= 0) settings.dock = placed;
+  function saveSettings(){
+    try { window.localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) {}
+  }
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  /* Holiday overlay — decoration only: a strip naming the visitor's
+     own picks. Off entirely means the page is exactly as published. */
+  function applyHoliday(){
+    var strip = document.getElementById("holidayStrip");
+    var onBox = document.getElementById("holidayOn");
+    if (onBox) onBox.checked = settings.holidayOn;
+    document.querySelectorAll("input[name='holiday']").forEach(function(cb){
+      cb.checked = settings.holidays.indexOf(cb.value) >= 0;
+      cb.closest(".hpick").classList.toggle("off", !settings.holidayOn);
+      cb.disabled = !settings.holidayOn;
+    });
+    var cur = document.getElementById("settingsHolidayCurrent");
+    if (cur) cur.textContent = settings.holidayOn ? "On" : "Off";
+    if (strip) {
+      if (settings.holidayOn && settings.holidays.length) {
+        strip.innerHTML = settings.holidays.map(function(h){
+          return '<span class="dot" style="background:' + HOLIDAYS[h].color + '"></span>' + HOLIDAYS[h].name;
+        }).join(" &nbsp;·&nbsp; ");
+        strip.classList.add("show");
+      } else {
+        strip.classList.remove("show");
+        strip.innerHTML = "";
+      }
+    }
+  }
+  function applyDock(){
+    document.documentElement.setAttribute("data-dock", settings.dock);
+    document.querySelectorAll("input[name='dockpos']").forEach(function(r){ r.checked = (r.value === settings.dock); });
+    var cur = document.getElementById("settingsDockCurrent");
+    if (cur) cur.textContent = cap(settings.dock);
+  }
+  document.querySelectorAll("input[name='dockpos']").forEach(function(r){
+    r.addEventListener("change", function(){ if (r.checked){ settings.dock = r.value; saveSettings(); applyDock(); } });
+  });
+  var holidayOnBox = document.getElementById("holidayOn");
+  if (holidayOnBox) holidayOnBox.addEventListener("change", function(){
+    settings.holidayOn = holidayOnBox.checked; saveSettings(); applyHoliday();
+  });
+  document.querySelectorAll("input[name='holiday']").forEach(function(cb){
+    cb.addEventListener("change", function(){
+      settings.holidays = Array.prototype.slice.call(document.querySelectorAll("input[name='holiday']:checked")).map(function(x){ return x.value; });
+      saveSettings(); applyHoliday();
+    });
+  });
+  var refreshBtn = document.getElementById("refreshBtn");
+  if (refreshBtn) refreshBtn.addEventListener("click", function(){ window.location.reload(); });
+  applyDock();
+  applyHoliday();
+
+  /* ================= Settings sheet open/close ================= */
+  var sPanel = document.getElementById("settingsPanel"),
+      sBackdrop = document.getElementById("settingsBackdrop"),
+      sBtn = document.getElementById("settingsBtn");
+  function openSettings(){
+    sPanel.querySelectorAll(".settings-face").forEach(function(f){ f.open = false; });
+    sPanel.hidden = false; sBackdrop.hidden = false;
+    sBtn.setAttribute("aria-expanded", "true");
+    var c = document.getElementById("settingsClose");
+    if (c) c.focus();
+  }
+  function closeSettings(){
+    sPanel.hidden = true; sBackdrop.hidden = true;
+    sBtn.setAttribute("aria-expanded", "false");
+  }
+  sBtn.addEventListener("click", function(){ if (sPanel.hidden) openSettings(); else closeSettings(); });
+  document.getElementById("settingsClose").addEventListener("click", closeSettings);
+  sBackdrop.addEventListener("click", closeSettings);
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !sPanel.hidden) closeSettings(); });
+
+  /* ================= Bar Close stack =================
+     Joins the bar while any section door stands open; the bar's
+     stacks space evenly in that state. Tapping it closes the doors. */
+  var dock = document.getElementById("dock"),
+      barClose = document.getElementById("barClose");
+  function syncBarClose(){
+    var anyOpen = !!document.querySelector("details.door[open]");
+    barClose.hidden = !anyOpen;
+    dock.classList.toggle("has-close", anyOpen);
+  }
+  document.querySelectorAll("details.door").forEach(function(d){
+    d.addEventListener("toggle", syncBarClose);
+  });
+  barClose.addEventListener("click", function(){
+    document.querySelectorAll("details.door[open]").forEach(function(d){ d.open = false; });
+    syncBarClose();
+    var doors = document.getElementById("doors");
+    if (doors) doors.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  syncBarClose();
+
+  /* The ?! stack fronts this page's What are we missing door: it
+     jumps to the section and opens it. */
+  var missingBtn = document.getElementById("missingBtn");
+  if (missingBtn) missingBtn.addEventListener("click", function(){
+    var sec = document.getElementById("what-are-we-missing");
+    if (sec) sec.open = true;
+  });
+
+  /* ================= Compass =================
+     Places on this page, in order; Previous / Next walk this list.
+     The centre names the last place and closes ONLY. Go to holds two
+     dropdown faces — This page and Other pages — both folded every
+     time the panel opens. The compass is navigation only. */
+  var PLACES = [
+    { id: "top", name: "Top of page" },
+    { id: "code", name: "Thought Process" },
+    { id: "for-your-agent", name: "For Your Own Agent" },
+    { id: "set-once", name: "The Set-Once Lines" },
+    { id: "provenance", name: "Provenance" },
+    { id: "what-are-we-missing", name: "What Are We Missing?" },
+    { id: "record", name: "The Record" },
+    { id: "bottom", name: "Bottom of page" }
+  ];
+  var panel = document.getElementById("compassPanel");
+  var compassBtn = document.getElementById("compassBtn");
+  var caption = document.getElementById("compassCaption");
+  var centerLabel = document.getElementById("centerLabel");
+  var centerCloseName = document.getElementById("centerCloseName");
+  var note = document.getElementById("compassNote");
+  var prevBtn = document.getElementById("compassPrev");
+  var currentIdx = 1;
+  try {
+    var savedPlace = sessionStorage.getItem("code-compass-last");
+    if (savedPlace) {
+      if (savedPlace === "The Code") savedPlace = "Thought Process";
+      for (var si = 0; si < PLACES.length; si++) {
+        if (PLACES[si].name === savedPlace) { currentIdx = si; break; }
+      }
+    }
+  } catch (e) {}
+  function setLast(idx) {
+    currentIdx = idx;
+    var name = PLACES[idx].name;
+    centerLabel.textContent = name;
+    centerCloseName.textContent = name;
+    try { sessionStorage.setItem("code-compass-last", name); } catch (e) {}
+    syncNav();
+  }
+  function syncNav() {
+    panel.querySelectorAll("[data-nav]").forEach(function (b) {
+      var d = parseInt(b.getAttribute("data-nav"), 10);
+      var target = currentIdx + d;
+      if (target < 0 || target >= PLACES.length) b.setAttribute("disabled", "");
+      else b.removeAttribute("disabled");
+    });
+    if (prevBtn) {
+      if (currentIdx > 0) {
+        prevBtn.disabled = false;
+        prevBtn.textContent = "← Previous part — back to " + PLACES[currentIdx - 1].name;
+      } else {
+        prevBtn.disabled = true;
+        prevBtn.textContent = "← Previous part — no previous place yet";
+      }
+    }
+  }
+  function scrollToPlace(idx) {
+    var place = PLACES[idx];
+    if (place.id === "top") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    var target = document.getElementById(place.id);
+    if (!target) return;
+    if (target.tagName === "DETAILS") target.open = true;
+    setTimeout(function () { target.scrollIntoView({ behavior: "smooth", block: "start" }); }, 30);
+  }
+  function goTo(idx, closePanelAfter) {
+    setLast(idx);
+    scrollToPlace(idx);
+    if (closePanelAfter) { closeCompass(); return; }
+    note.innerHTML = "<strong>" + PLACES[idx].name + "</strong> — you are headed there. This compass stays open; tap the centre to close it.";
+    note.classList.add("show");
+  }
+  function collapseGroups() {
+    [["thisPageGroup","thisPageToggle","thisPageChev"],["otherPagesGroup","otherPagesToggle","otherPagesChev"]].forEach(function(t){
+      var g = document.getElementById(t[0]), tg = document.getElementById(t[1]), ch = document.getElementById(t[2]);
+      if (g) g.hidden = true;
+      if (tg) tg.setAttribute("aria-expanded", "false");
+      if (ch) ch.textContent = "▾ Open";
+    });
+  }
+  function openCompass() {
+    collapseGroups();
+    panel.classList.add("open");
+    document.body.style.overflow = "hidden";
+    compassBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeCompass() {
+    panel.classList.remove("open");
+    document.body.style.overflow = "";
+    compassBtn.setAttribute("aria-expanded", "false");
+    note.classList.remove("show");
+  }
+  function toggleCompass() {
+    if (panel.classList.contains("open")) closeCompass(); else openCompass();
+  }
+  compassBtn.addEventListener("click", toggleCompass);
+  if (caption) caption.addEventListener("click", toggleCompass);
+  document.getElementById("compassCloseTop").addEventListener("click", closeCompass);
+  /* Centre rule: the centre names the last place and ONLY closes. */
+  document.getElementById("compassCenter").addEventListener("click", closeCompass);
+  document.getElementById("centerCloseBtn").addEventListener("click", closeCompass);
+  panel.addEventListener("click", function (e) { if (e.target === panel) closeCompass(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeCompass(); });
+
+  /* Go to dropdown faces */
+  [["thisPageToggle","thisPageGroup","thisPageChev"],["otherPagesToggle","otherPagesGroup","otherPagesChev"]].forEach(function(t){
+    var tg = document.getElementById(t[0]), g = document.getElementById(t[1]), ch = document.getElementById(t[2]);
+    if (tg && g) tg.addEventListener("click", function(){
+      var opening = g.hidden;
+      g.hidden = !opening;
+      tg.setAttribute("aria-expanded", String(opening));
+      if (ch) ch.textContent = opening ? "▴ Close" : "▾ Open";
+    });
+  });
+
+  /* Dial points and Top / Bottom: navigate, compass stays open. */
+  panel.querySelectorAll("[data-goto]").forEach(function (el) {
+    el.addEventListener("click", function () { goTo(parseInt(el.getAttribute("data-goto"), 10), false); });
+  });
+  /* Previous / Next: how you move back and forward through the parts. */
+  panel.querySelectorAll("[data-nav]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var target = currentIdx + parseInt(el.getAttribute("data-nav"), 10);
+      if (target < 0 || target >= PLACES.length) return;
+      goTo(target, false);
+    });
+  });
+  if (prevBtn) prevBtn.addEventListener("click", function(){
+    if (currentIdx > 0) goTo(currentIdx - 1, false);
+  });
+  /* This page list: picking a place closes the panel as the place opens. */
+  panel.querySelectorAll("[data-goto-link]").forEach(function (el) {
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      goTo(parseInt(el.getAttribute("data-goto-link"), 10), true);
+    });
+  });
+  /* Other pages: each door stands once, opens in a new tab, and the
+     centre remembers it as the last place chosen. */
+  panel.querySelectorAll("[data-place]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var name = el.getAttribute("data-place");
+      centerLabel.textContent = name;
+      centerCloseName.textContent = name;
+      try { sessionStorage.setItem("code-compass-last", name); } catch (e) {}
+    });
+  });
+  setLast(currentIdx);
+
+  /* Track the reader's place as they scroll, so the centre names it. */
+  if ("IntersectionObserver" in window) {
+    var trackIds = { code: 1, "for-your-agent": 2, "set-once": 3, provenance: 4, "what-are-we-missing": 5, record: 6 };
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting && trackIds[en.target.id] !== undefined) setLast(trackIds[en.target.id]);
+      });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    Object.keys(trackIds).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) obs.observe(el);
+    });
+  }
+
+  // Offline download — the words "available offline" are the door
+  function downloadOffline(){
+    var html = "<!doctype html>\n" + document.documentElement.outerHTML;
+    var blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "the-code-how-this-ai-is-run.html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  }
+  ["offlineBtn","offlineBtn2","offlineBtn3"].forEach(function(id){
+    var b=document.getElementById(id); if(b) b.addEventListener("click", downloadOffline);
+  });
+
+  // Copy — put this thought process into your own AI
+  function exactThoughtProcess(){
+    var el = document.getElementById("codeText");
+    return el ? el.innerText.trim() : "";
+  }
+  function pasteVersion(){
+    var box = document.getElementById("pasteBox");
+    if(box && box.value) return box.value.trim();
+    return 'Use this thought process as the way you think and work. In this thought process, "agent" is you, the AI, and "the user" is me, the person you work with.\n\nTHE THOUGHT PROCESS\n\n' + exactThoughtProcess();
+  }
+  function setStatus(id, msg){
+    var s = document.getElementById(id);
+    if(s) s.textContent = msg;
+    var other = id === "copyStatusTop" ? "copyStatus" : "copyStatusTop";
+    var o = document.getElementById(other);
+    if(o) o.textContent = msg;
+  }
+  function copyText(text, statusId, successMsg){
+    function done(){ setStatus(statusId, successMsg); }
+    function failed(){ setStatus(statusId, "Copy didn't take in this browser — tap the plain-text box in “For your own agent” to select it all, then copy it by hand."); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      try{
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly","");
+        ta.style.position="fixed"; ta.style.opacity="0";
+        document.body.appendChild(ta);
+        ta.select(); ta.setSelectionRange(0, ta.value.length);
+        var ok = document.execCommand && document.execCommand("copy");
+        ta.remove();
+        if(ok) done(); else failed();
+      }catch(e){ failed(); }
+    }
+  }
+  var pasteMsg = "Copied — now paste it into your own AI: its instructions, custom instructions, or your first message to it.";
+  var exactMsg = "Copied — the full thought process, word for word, is on your clipboard. Paste it into your own AI.";
+  function wire(id, getText, statusId, msg){
+    var b = document.getElementById(id);
+    if(b) b.addEventListener("click", function(){ copyText(getText(), statusId, msg); });
+  }
+  wire("copyPasteTopBtn", pasteVersion, "copyStatusTop", pasteMsg);
+  wire("copyPasteBtn", pasteVersion, "copyStatus", pasteMsg);
+  wire("copyExactTopBtn", exactThoughtProcess, "copyStatusTop", exactMsg);
+  wire("copyBtn", exactThoughtProcess, "copyStatus", exactMsg);
+
+  // Plain-text box: tapping it selects everything, ready to copy by hand
+  var pasteBox = document.getElementById("pasteBox");
+  if(pasteBox){
+    pasteBox.addEventListener("click", function(){ pasteBox.select(); });
+    pasteBox.addEventListener("focus", function(){ pasteBox.select(); });
+  }
+
+  // Download as .txt — the thought process as a plain file
+  var dlBtn = document.getElementById("downloadTxtBtn");
+  if(dlBtn){
+    dlBtn.addEventListener("click", function(){
+      var blob = new Blob([pasteVersion() + "\n"], {type:"text/plain;charset=utf-8"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "the-thought-process.txt";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      setStatus("copyStatus", "Downloaded — the-thought-process.txt is ready to paste or upload into your own AI.");
+    });
+  }
+
+  // If page opened with #for-your-agent etc., open that door
+  if(location.hash){
+    var d=document.querySelector(location.hash);
+    if(d && d.tagName==="DETAILS") d.open=true;
+  }
+  syncBarClose();
+})();
+</script>
+</body>
+</html>
