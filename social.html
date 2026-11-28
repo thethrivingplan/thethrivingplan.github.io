@@ -42,14 +42,40 @@
   h1{font-size:clamp(1.45rem,5.8vw,2.05rem);margin:.15rem auto .3rem;line-height:1.2;font-weight:bold;}
   .hubline{font-size:1rem;color:var(--ink-soft);margin:0 auto;line-height:1.45;max-width:30rem;}
 
-  /* ---------- The walk-in: four spheres on a web, search at the hub ---------- */
+  /* ---------- The walk-in: spheres on a web, search BIG in the middle ----------
+     The start-page form, corner layout: the big silver search sphere sits
+     dead center, and Social's four doors sit one in each corner. No grid,
+     no columns — nothing can squeeze a door into an oval, and the corner
+     distance keeps every door clear of the hub at every width. */
   .walkin{
+    /* Sizing discipline: ONE door diameter for all four doors and ONE hub
+       diameter, both set here — never percentages of a column, never
+       width:100%. Every door takes its width AND its height from --door,
+       the hub from --hub, so all four doors render exactly the same size
+       and the hub is always the biggest sphere on the face, phone included.
+       Both sizes are fractions of the hub box itself (cqw, with a vw
+       fallback), so the whole geometry scales in lockstep at any width:
+       door = 26% of the box, hub = 52%. Each door's center sits at a
+       corner point 15%/85% along both axes — 35% of the box from the
+       hub's center on each axis, a diagonal of ~49.5% against a combined
+       radius of 39% (door 13% + hub 26%). That leaves a clear gap of
+       ~10% of the box (~8.6% even at full breathing swell, halo
+       included), so no door can ever touch the hub or another door. */
+    --door:clamp(72px,24vw,148px);
+    --hub:clamp(160px,50vw,300px);
+    --door:26cqw;
+    --hub:52cqw;
+    container-type:inline-size;
     position:relative;
-    display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;gap:1.05rem .5rem;
-    max-width:560px;margin:.95rem auto 0;align-items:center;text-align:center;
-    padding:.5rem .2rem .8rem;
+    width:100%;max-width:560px;aspect-ratio:1/1;
+    margin:.95rem auto 0;text-align:center;
   }
-  .walkin>*{position:relative;z-index:1;}
+  .walkin>*{position:absolute;z-index:1;}
+  /* The same two sizes, restated on the children themselves: inside the
+     container, cqw resolves against the hub box without ambiguity, and
+     where cqw is unsupported this declaration is simply ignored and the
+     inherited vw-based values above stand. */
+  .walkin>*{--door:26cqw;--hub:52cqw;}
   .walkin>svg.web{
     position:absolute;inset:0;width:100%;height:100%;z-index:0;
     pointer-events:none;overflow:visible;
@@ -60,12 +86,7 @@
   @media (prefers-color-scheme: dark){
     .web .spoke{opacity:.7;} .web .ring{opacity:.5;} .web .dew{opacity:.7;}
   }
-  /* The four doors sit at the compass points around the hub */
-  #door-everything{grid-column:2;grid-row:1;}
-  #door-poster{grid-column:1;grid-row:2;}
-  .searchcell{grid-column:2;grid-row:2;}
-  #door-web{grid-column:3;grid-row:2;}
-  #door-start{grid-column:2;grid-row:3;}
+  .notline{font-size:1rem;color:var(--ink-soft);margin:1.3rem auto 0;line-height:1.5;max-width:30rem;}
 
   /* The spheres: radial shading, a specular gloss, a lit rim, a real drop shadow */
   a.tilelink{
@@ -195,14 +216,31 @@
     font-size:1.05rem;line-height:1.3;text-align:left;
   }
   .door small{display:block;font-size:.9rem;color:var(--ink-soft);margin-top:.25rem;line-height:1.4;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;}
-  a.tilelink{justify-self:center;width:100%;max-width:118px;}
-  a.tilelink small{font-size:.9rem;}
+  a.tilelink{width:var(--door);height:var(--door);flex:none;}
+  a.tilelink .doorname{font-family:Georgia,'Times New Roman',serif;font-size:.95rem;line-height:1.15;}
+  /* The four doors, one in each corner — same size, clear of the hub.
+     position:absolute is stated here with the higher specificity this
+     selector carries: a.tilelink's own position:relative (specificity
+     0-1-1) otherwise beats .walkin>* (0-1-0), the doors fall back into
+     normal flow, stack in a column, and the hub lands on top of them —
+     that was the overlap. Each door is placed by its CENTER: left/top
+     put the corner point at 15%/85% of the box, minus half the shared
+     diameter, so all four sit symmetrically in their corners. */
+  .walkin>a.tilelink{position:absolute;}
+  #door-everything{left:calc(15% - var(--door)/2);top:calc(15% - var(--door)/2);}
+  #door-poster{left:calc(85% - var(--door)/2);top:calc(15% - var(--door)/2);}
+  #door-web{left:calc(15% - var(--door)/2);top:calc(85% - var(--door)/2);}
+  #door-start{left:calc(85% - var(--door)/2);top:calc(85% - var(--door)/2);}
 
-  /* The search cell — the silver hub sphere the web hangs from */
+  /* The search cell — the BIG silver sphere in the middle of the hub,
+     the web hangs from it, exactly like the start page */
   .searchcell{
-    position:relative;justify-self:center;width:100%;max-width:196px;aspect-ratio:1/1;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;
-    border-radius:50%;padding:.75rem .85rem;
+    /* Dead center by arithmetic, not transform — left/top place the box,
+       so the breathing animation's transform can never shift it off-center */
+    left:calc(50% - var(--hub)/2);top:calc(50% - var(--hub)/2);
+    width:var(--hub);height:var(--hub);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;
+    border-radius:50%;padding:1.1rem 1.6rem;
     color:#0d1626;
     background:
       radial-gradient(circle at 33% 26%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.4) 28%, rgba(255,255,255,0) 56%),
@@ -224,12 +262,12 @@
   /* The hub's contents sit above its gloss, same as the doors */
   .searchcell>*{position:relative;}
   .searchcell .slabel{
-    font-size:.9rem;font-weight:bold;color:#0d1626;line-height:1.15;max-width:80%;
+    font-size:1.32rem;font-weight:bold;color:#0d1626;line-height:1.15;max-width:85%;
     text-shadow:0 0 3px rgba(255,255,255,.85), 0 1px 2px rgba(255,255,255,.6);
   }
   details.about:not([open]) .body{display:none;}
   .searchcell input{
-    width:100%;min-height:38px;padding:.4rem .55rem;font-size:.92rem;font-family:inherit;text-align:center;
+    width:100%;min-height:44px;padding:.5rem .7rem;font-size:1rem;font-family:inherit;text-align:center;
     border:2px solid #7d92b2;border-radius:999px;background:#f4f7fb;color:#0a1424;
     box-shadow:inset 0 2px 5px rgba(20,35,60,.28), 0 2px 4px rgba(20,35,60,.2);
   }
@@ -237,19 +275,19 @@
   /* The other two doors into the same search: voice and photo */
   .doorrow{display:flex;gap:.45rem;justify-content:center;align-items:center;}
   .doorbtn{
-    width:38px;height:38px;flex:none;border-radius:50%;cursor:pointer;
+    width:44px;height:44px;flex:none;border-radius:50%;cursor:pointer;
     display:inline-flex;align-items:center;justify-content:center;
     background:#f4f7fb;color:#22314d;border:2px solid #7d92b2;
     box-shadow:inset 0 2px 3px rgba(255,255,255,.85), 0 2px 4px rgba(20,35,60,.25);
     -webkit-tap-highlight-color:transparent;
   }
-  .doorbtn svg{width:19px;height:19px;}
+  .doorbtn svg{width:21px;height:21px;}
   .doorbtn:focus-visible{outline:3px solid var(--gold-line);outline-offset:2px;}
   @media (hover:hover){ .doorbtn:hover{filter:brightness(1.06);} }
   .doorbtn.listening{background:#c22f3d;border-color:#8e1f2b;color:#ffffff;animation:micPulse 1.2s ease-in-out infinite;}
   @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(194,47,61,.45);}50%{box-shadow:0 0 0 7px rgba(194,47,61,0);}}
   .micnote{
-    margin:0;max-width:78%;font-size:.56rem;line-height:1.3;color:#3a4a63;
+    margin:0;max-width:72%;font-size:.68rem;line-height:1.3;color:#3a4a63;
     font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
   }
   /* The one quiet tap that lets the web feel the phone's motion (iOS) */
@@ -302,19 +340,21 @@
   }
 
   @media (max-width:520px){
-    /* Same hub face as wide screens — the doors around the search in the
-       middle — just smaller spheres. Never a stacked list. */
-    .walkin{grid-template-columns:1.02fr 1.96fr 1.02fr;gap:1.45rem .35rem;padding:.35rem .55rem .7rem;}
-    a.tilelink{max-width:92px;width:94%;justify-self:center;margin-inline:auto;}
-    a.tilelink{font-size:.73rem;padding:.55rem .2rem;gap:.2rem;}
-    a.tilelink svg{width:22px;height:22px;}
-    .walkin .searchcell{max-width:none;width:100%;padding:.5rem .4rem;gap:.2rem;}
-    .searchcell .slabel{font-size:.8rem;}
-    .searchcell input{min-height:34px;font-size:.84rem;padding:.3rem .4rem;}
-    .doorrow{gap:.35rem;}
-    .doorbtn{width:30px;height:30px;border-width:1.5px;}
-    .doorbtn svg{width:15px;height:15px;}
-    .micnote{font-size:.5rem;max-width:80%;}
+    /* Same hub face as wide screens — the search BIG in the middle, the
+       four doors one in each corner — never a stacked list. --door and
+       --hub shrink with the viewport together, so all four doors stay
+       exactly the same size, stay round, stay clear of the hub, and the
+       hub sphere stays the biggest. */
+    a.tilelink{font-size:.85rem;padding:.5rem .15rem;gap:.18rem;}
+    a.tilelink .doorname{font-size:.68rem;line-height:1.1;}
+    a.tilelink svg{width:20px;height:20px;}
+    .walkin .searchcell{padding:.7rem .9rem;gap:.3rem;}
+    .searchcell .slabel{font-size:1.05rem;}
+    .searchcell input{min-height:40px;font-size:.92rem;padding:.35rem .5rem;}
+    .doorrow{gap:.4rem;}
+    .doorbtn{width:38px;height:38px;}
+    .doorbtn svg{width:18px;height:18px;}
+    .micnote{font-size:.58rem;max-width:78%;}
     .scount:not(:empty){top:calc(100% + 12px);}
   }
 </style>
@@ -324,16 +364,17 @@
 
   <p class="free">Free. Always free.</p>
   <h1>Social</h1>
-  <p class="hubline">One of the seven — with a hub of its own: Everything, the Poster Board, and the web of connection.</p>
+  <p class="hubline">One of the seven, with a hub of its own — pick a sphere, or search your own way in.</p>
 
   <div class="walkin" id="walkin">
     <svg class="web" id="web" aria-hidden="true" focusable="false"></svg>
-    <a class="tilelink" id="door-everything" href="https://thethrivingplan.github.io/everything.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2"/><path d="M6.3 9.3V20h11.4V9.3"/><path d="M10.3 20v-4.8h3.4V20"/></svg><span>Everything</span></a>
 
-    <a class="tilelink" id="door-poster" href="https://theposterboard.fwh.is" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="13" rx="1.6"/><path d="M12 5V2.8M9 9.5h6M9 12.5h6M9 15.5h3.5"/></svg><span>The Poster Board</span></a>
+    <a class="tilelink" id="door-everything" href="https://thethrivingplan.github.io/everything.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2"/><path d="M6.3 9.3V20h11.4V9.3"/><path d="M10.3 20v-4.8h3.4V20"/></svg><span class="doorname">Everything</span></a>
+
+    <a class="tilelink" id="door-poster" href="https://theposterboard.fwh.is" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="13" rx="1.6"/><path d="M12 5V2.8M9 9.5h6M9 12.5h6M9 15.5h3.5"/></svg><span class="doorname">The Poster Board</span></a>
 
     <div class="searchbox searchcell">
-      <label class="slabel" for="pagesearch">Search every page</label>
+      <label class="slabel" for="pagesearch">Social hub</label>
       <input id="pagesearch" type="search" placeholder="Try “bowling”…" autocomplete="off">
       <div class="doorrow">
         <button type="button" class="doorbtn" id="micbtn" aria-label="Search by voice" aria-pressed="false" title="Search by voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.8" width="6" height="11" rx="3"/><path d="M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.2M8.6 21.2h6.8"/></svg></button>
@@ -344,10 +385,12 @@
       <p class="scount" id="scount"></p>
     </div>
 
-    <a class="tilelink" id="door-web" href="https://thethrivingplan.github.io/tree/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.2" r="2.1"/><circle cx="5" cy="12.4" r="2.1"/><circle cx="19" cy="12.4" r="2.1"/><circle cx="8.2" cy="19" r="2.1"/><circle cx="15.8" cy="19" r="2.1"/><path d="M10.6 6.8 6.8 10.6M13.4 6.8l3.8 3.8M7.1 12.9l.5 3.9M16.9 12.9l-.5 3.9M10.3 19h3.4"/></svg><span>Web of Connection</span></a>
+    <a class="tilelink" id="door-web" href="https://thethrivingplan.github.io/tree/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.2" r="2.1"/><circle cx="5" cy="12.4" r="2.1"/><circle cx="19" cy="12.4" r="2.1"/><circle cx="8.2" cy="19" r="2.1"/><circle cx="15.8" cy="19" r="2.1"/><path d="M10.6 6.8 6.8 10.6M13.4 6.8l3.8 3.8M7.1 12.9l.5 3.9M16.9 12.9l-.5 3.9M10.3 19h3.4"/></svg><span class="doorname">Web of Connection</span></a>
 
-    <a class="tilelink" id="door-start" href="https://thethrivingplan.github.io/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 3.4v17.2M3.4 12h17.2M6 6l12 12M18 6 6 18"/></svg><span>Back to the start</span></a>
+    <a class="tilelink" id="door-start" href="https://thethrivingplan.github.io/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 3.4v17.2M3.4 12h17.2M6 6l12 12M18 6 6 18"/></svg><span class="doorname">Back to the start</span></a>
   </div>
+
+  <p class="notline">Not these four? The search in the middle is your own way in.</p>
 
   <div id="sresults" aria-live="polite"></div>
 
@@ -821,73 +864,7 @@
   input.addEventListener("input",run);
 })();
 </script>
-<script>
-/* The web: strands drawn sphere-to-sphere from the spheres' real positions,
-   so the web holds at any width. */
-(function(){
-  var box=document.getElementById("walkin"), svg=document.getElementById("web");
-  if(!box||!svg){return;}
-  var NS="http://www.w3.org/2000/svg";
-  function mk(name,cls){var e=document.createElementNS(NS,name);if(cls){e.setAttribute("class",cls);}return e;}
-  function draw(){
-    var br=box.getBoundingClientRect(), W=br.width, H=br.height;
-    if(W<10||H<10){return;}
-    svg.setAttribute("viewBox","0 0 "+W+" "+H);
-    while(svg.firstChild){svg.removeChild(svg.firstChild);}
-    var hub=box.querySelector(".searchcell");
-    if(!hub){return;}
-    function ctr(e){
-      var r=e.getBoundingClientRect();
-      return {x:r.left-br.left+r.width/2, y:r.top-br.top+r.height/2, r:Math.min(r.width,r.height)/2};
-    }
-    var c=ctr(hub);
-    var pts=[].slice.call(box.querySelectorAll("a.tilelink")).map(ctr);
-    if(!pts.length){return;}
-    function strand(d,cls){var p=mk("path",cls);p.setAttribute("d",d);svg.appendChild(p);}
-    /* Spokes: hub to every sphere, trimmed at each sphere's skin */
-    pts.forEach(function(p){
-      var dx=p.x-c.x, dy=p.y-c.y, len=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/len, uy=dy/len;
-      var x1=c.x+ux*(c.r*0.5), y1=c.y+uy*(c.r*0.5);
-      var x2=p.x-ux*(p.r*0.94), y2=p.y-uy*(p.r*0.94);
-      strand("M"+x1.toFixed(1)+" "+y1.toFixed(1)+" L"+x2.toFixed(1)+" "+y2.toFixed(1),"spoke");
-    });
-    /* Order the spheres by angle around the hub, so rings and the
-       perimeter strand follow the real layout at any screen width */
-    var sorted=pts.slice().sort(function(a,b){
-      return Math.atan2(a.y-c.y,a.x-c.x)-Math.atan2(b.y-c.y,b.x-c.x);
-    });
-    /* Concentric web rings: points along each spoke, joined by strands
-       that sag toward the hub, with a dew bead at every crossing */
-    [0.42,0.7].forEach(function(f,ri){
-      var rp=sorted.map(function(p){return {x:c.x+(p.x-c.x)*f, y:c.y+(p.y-c.y)*f};});
-      for(var i=0;i<rp.length;i++){
-        var a=rp[i], b=rp[(i+1)%rp.length];
-        var mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-        var qx=mx+(c.x-mx)*0.18, qy=my+(c.y-my)*0.18;
-        strand("M"+a.x.toFixed(1)+" "+a.y.toFixed(1)+" Q"+qx.toFixed(1)+" "+qy.toFixed(1)+" "+b.x.toFixed(1)+" "+b.y.toFixed(1),"ring");
-        var dot=mk("circle","dew");
-        dot.setAttribute("cx",a.x.toFixed(1)); dot.setAttribute("cy",a.y.toFixed(1));
-        dot.setAttribute("r",ri?2.3:1.8);
-        svg.appendChild(dot);
-      }
-    });
-    /* Perimeter strand: neighbouring spheres, centre to centre —
-       only the stretch between the spheres shows */
-    for(var j=0;j<sorted.length;j++){
-      var p1=sorted[j], p2=sorted[(j+1)%sorted.length];
-      var mx2=(p1.x+p2.x)/2, my2=(p1.y+p2.y)/2;
-      var qx2=mx2+(c.x-mx2)*0.1, qy2=my2+(c.y-my2)*0.1;
-      strand("M"+p1.x.toFixed(1)+" "+p1.y.toFixed(1)+" Q"+qx2.toFixed(1)+" "+qy2.toFixed(1)+" "+p2.x.toFixed(1)+" "+p2.y.toFixed(1),"ring");
-    }
-  }
-  var t=null;
-  function queue(){ if(t){clearTimeout(t);} t=setTimeout(draw,60); }
-  window.addEventListener("resize",queue);
-  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){draw();});}
-  window.addEventListener("load",draw);
-  draw(); setTimeout(draw,350); setTimeout(draw,900);
-})();
-</script>
+
 <script>
 /* The other two doors into the same search: voice and photo.
    Voice runs through the browser's own speech service — this page only
@@ -961,6 +938,66 @@
       });
     }
   }
+})();
+</script>
+<script>
+/* The web: strands drawn sphere-to-sphere from the spheres' real positions,
+   so the web holds at any width. */
+(function(){
+  var box=document.getElementById("walkin"), svg=document.getElementById("web");
+  if(!box||!svg){return;}
+  var NS="http://www.w3.org/2000/svg";
+  function mk(name,cls){var e=document.createElementNS(NS,name);if(cls){e.setAttribute("class",cls);}return e;}
+  function draw(){
+    var br=box.getBoundingClientRect(), W=br.width, H=br.height;
+    if(W<10||H<10){return;}
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    while(svg.firstChild){svg.removeChild(svg.firstChild);}
+    var hub=box.querySelector(".searchcell");
+    if(!hub){return;}
+    function ctr(e){
+      var r=e.getBoundingClientRect();
+      return {x:r.left-br.left+r.width/2, y:r.top-br.top+r.height/2, r:Math.min(r.width,r.height)/2};
+    }
+    var c=ctr(hub);
+    var pts=[].slice.call(box.querySelectorAll("a.tilelink")).map(ctr);
+    if(!pts.length){return;}
+    function strand(d,cls){var p=mk("path",cls);p.setAttribute("d",d);svg.appendChild(p);}
+    pts.forEach(function(p){
+      var dx=p.x-c.x, dy=p.y-c.y, len=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/len, uy=dy/len;
+      var x1=c.x+ux*(c.r*0.5), y1=c.y+uy*(c.r*0.5);
+      var x2=p.x-ux*(p.r*0.94), y2=p.y-uy*(p.r*0.94);
+      strand("M"+x1.toFixed(1)+" "+y1.toFixed(1)+" L"+x2.toFixed(1)+" "+y2.toFixed(1),"spoke");
+    });
+    var sorted=pts.slice().sort(function(a,b){
+      return Math.atan2(a.y-c.y,a.x-c.x)-Math.atan2(b.y-c.y,b.x-c.x);
+    });
+    [0.42,0.7].forEach(function(f,ri){
+      var rp=sorted.map(function(p){return {x:c.x+(p.x-c.x)*f, y:c.y+(p.y-c.y)*f};});
+      for(var i=0;i<rp.length;i++){
+        var a=rp[i], b=rp[(i+1)%rp.length];
+        var mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+        var qx=mx+(c.x-mx)*0.18, qy=my+(c.y-my)*0.18;
+        strand("M"+a.x.toFixed(1)+" "+a.y.toFixed(1)+" Q"+qx.toFixed(1)+" "+qy.toFixed(1)+" "+b.x.toFixed(1)+" "+b.y.toFixed(1),"ring");
+        var dot=mk("circle","dew");
+        dot.setAttribute("cx",a.x.toFixed(1)); dot.setAttribute("cy",a.y.toFixed(1));
+        dot.setAttribute("r",ri?2.3:1.8);
+        svg.appendChild(dot);
+      }
+    });
+    for(var j=0;j<sorted.length;j++){
+      var p1=sorted[j], p2=sorted[(j+1)%sorted.length];
+      var mx2=(p1.x+p2.x)/2, my2=(p1.y+p2.y)/2;
+      var qx2=mx2+(c.x-mx2)*0.1, qy2=my2+(c.y-my2)*0.1;
+      strand("M"+p1.x.toFixed(1)+" "+p1.y.toFixed(1)+" Q"+qx2.toFixed(1)+" "+qy2.toFixed(1)+" "+p2.x.toFixed(1)+" "+p2.y.toFixed(1),"ring");
+    }
+  }
+  var t=null;
+  function queue(){ if(t){clearTimeout(t);} t=setTimeout(draw,60); }
+  window.addEventListener("resize",queue);
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){draw();});}
+  window.addEventListener("load",draw);
+  draw(); setTimeout(draw,350); setTimeout(draw,900);
 })();
 </script>
 <script>
